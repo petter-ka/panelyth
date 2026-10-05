@@ -19,4 +19,7 @@ Focus on:
 - multi-selection
 - copy/move/delete/rename
 
+Viewer: sidebar, lazy tree and tile view (`docs/viewer/UX-DESIGN.md`).
+Commander: dual panels, cursor and marks, drives, tabs, hotlist, queue and dialogs (`docs/commander/UX-DESIGN.md`).
+
 Never load the entire filesystem into React.

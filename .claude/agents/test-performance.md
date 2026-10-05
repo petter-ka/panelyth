@@ -15,6 +15,8 @@ Focus on:
 - SQLite benchmarks
 - thumbnail benchmarks
 - virtualized tile view behavior (tiles per row vs width, bounded mounted tiles)
+- commander panel behavior (bounded mounted rows, held-key cursor, quick search latency)
+- file-operation throughput against the OS's own copy
 - Electron smoke tests
 
 Never accept a performance claim without a measurement.

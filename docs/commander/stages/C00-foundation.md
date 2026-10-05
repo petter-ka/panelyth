@@ -1,0 +1,84 @@
+# Stage C00 — Commander Foundation and the App Switch
+
+Status: **Planned**. Track: commander. Depends on: P01. Unblocks: C01.
+
+## Objective
+
+The commander as a second app view in the FastView shell, reachable from the viewer through the switch icon at the
+top (and back), with the dual-panel shell (empty panels, function-key bar) and shared appearance. It is measured from
+day one, and the viewer stays as fast as before.
+
+## Decisions applied
+
+- **ADR-0031:** one shell, one window, one app view per app, one sidecar; the switch icon and key.
+- **ADR-0027:** the commander capability profile for its app view (shared methods only in this stage).
+- **ADR-0028:** the panel layout (shell only; lists arrive in C01).
+- ADR-0014 and `docs/shared/DESIGN-SYSTEM.md`: tokens, themes, interface size, the app switch control.
+
+## Scope
+
+- **Commander app view:** `apps/commander-renderer` and `apps/desktop/src/preload/commander.ts`; the commander's
+  capability profile in main; the view is created on the first switch and then kept alive hidden
+  (`docs/shared/APP-SWITCHING.md`).
+- **Commander UI:**
+  - AppShell: the app bar (the switch icon only, for now), `PanelPair` with two empty panels (header, "No folder"
+    state), the resizable divider (persisted under `commander.layout`), the function-key bar (labels and buttons;
+    actions not built yet are disabled with a tooltip) and a status bar (sidecar state, keyboard-shortcuts button);
+  - Tab switches the active panel; Alt+F4 exits;
+  - the shared keymap engine with the commander scopes, and the shared settings dialog (Appearance tab).
+- **The switch, in both apps** (`docs/shared/APP-SWITCHING.md`):
+  - the switch icon at the top left of the viewer's navigation toolbar and of the commander's app bar, on the same
+    spot;
+  - Ctrl/Cmd+Shift+M (`app.switch` in the `shell` scope);
+  - window title per app; focus on the target's main surface; disabled behind modal dialogs;
+  - feature flag: on in development builds and with `FASTVIEW_COMMANDER=1`, off for users until Stage C11.
+- **Shared appearance:** theme and interface size move to `shared.appearance` (migrating the viewer's current values)
+  and apply live in both apps.
+- **Tooling:** `pnpm dev`, `pnpm build` and `pnpm test:e2e` include the commander renderer; `launchApp({ app:
+  "commander" })` starts with the commander shown.
+
+## Non-goals
+
+- Carrying the folder, focus and selection over (Stages C01 and C02); listings (C01); the keyboard model (C02); file
+  operations (C04).
+
+## APIs/contracts
+
+- `app.switch` and `app.visibility` from P01, now in both profiles. No new sidecar methods.
+
+## Tests
+
+- Renderer: the commander AppShell renders two panels; Tab moves the active panel; the divider persists; the switch
+  button shows the other app's glyph, tooltip and shortcut.
+- E2E (`tests/e2e/specs/commander/foundation.spec.ts`, `tests/e2e/specs/switch.spec.ts`):
+  - switch viewer → commander → viewer by icon and by key; the commander view is created once; titles and focus
+    follow;
+  - a theme or interface-size change in one app shows in the other;
+  - with the feature flag off, the viewer shows no switch icon and its preload surface is unchanged;
+  - each app view's preload surface is exact; a commander-only method called from the viewer view is rejected; no
+    `require`, `process` or `ipcRenderer` on `window` in either view.
+- The viewer's suites stay green.
+
+## Benchmarks
+
+`BENCH_STAGE=C00`: viewer startup and idle memory with the commander never opened (unchanged); first switch to the
+commander (view creation → interactive); later switches; idle memory with both views created.
+
+## Acceptance criteria
+
+- The switch budgets in `docs/shared/APP-SWITCHING.md` pass: first switch < 800 ms, later switches ≤ 1 frame, both
+  views < 150 MB idle over empty Electron.
+- The viewer's startup and idle memory are unchanged while the commander has never been opened.
+
+## Risks
+
+- Keyboard focus can stay in the hidden view after a switch. Covered by e2e: the next key press must reach the visible
+  app.
+
+## Exit checklist
+
+- [ ] implementation complete
+- [ ] tests complete
+- [ ] benchmark complete
+- [ ] performance regression reviewed
+- [ ] docs/ADR updated

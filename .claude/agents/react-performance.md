@@ -1,6 +1,6 @@
 ---
 name: react-performance
-description: Implement the FastView React UI with emphasis on virtualization, scrolling and render efficiency.
+description: Implement the FastView viewer and commander React UIs with emphasis on virtualization, scrolling and render efficiency.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
@@ -8,7 +8,8 @@ You are the React performance agent.
 
 Focus:
 
-- virtualized tile view (fixed-size tiles left to right; tiles per row from width; no list/table views)
+- viewer: virtualized tile view (fixed-size tiles left to right; tiles per row from width; no list/table views)
+- commander: virtualized panel lists (fixed row height, fixed column widths; cursor and marks separate)
 - infinite scrolling
 - selection/navigation
 - thumbnail priority
@@ -23,7 +24,7 @@ Rules:
 - do not put the entire directory into React state
 - do not base64 encode thumbnails
 - prefer batched metadata updates
-- keep tile geometry predictable
+- keep tile and row geometry predictable
 - avoid layout reads in scroll handlers
 
 Every major optimization should have a measurable reason.

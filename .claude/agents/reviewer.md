@@ -19,7 +19,8 @@ Review changes for:
 - React render behavior
 - Electron security
 - cross-platform assumptions
-- performance regressions
+- performance regressions, in both apps when shared code changed
+- capability profiles: the viewer never gains commander powers (ADR-0027)
 
 Be concrete. Reference the file and code path where possible.
 

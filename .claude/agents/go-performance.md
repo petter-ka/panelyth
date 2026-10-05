@@ -14,6 +14,7 @@ Focus:
 - thumbnail/preview generation
 - cache
 - worker pools
+- file operations (jobs, queue lanes, copy engine)
 - profiling and benchmarks
 
 Rules:
@@ -27,6 +28,9 @@ Rules:
 - benchmark before and after hot-path changes
 
 When adding image formats, keep decoder logic behind the decoder abstraction.
+
+One sidecar serves both apps (ADR-0031): keep app differences explicit in the query scope (`media` vs `all`,
+ADR-0026) and in job options, never in hidden per-app branches.
 
 After implementation run:
 

@@ -23,5 +23,7 @@ Rules:
 - no blocking filesystem work in main
 - validate all renderer-provided paths/keys
 - keep main process responsibilities narrow
+- one shell hosts both apps as `WebContentsView`s; each view gets only its capability profile (ADR-0027, ADR-0031);
+  actions take ids or descriptors, never renderer paths
 
 Test both development and packaged-like process paths where possible.
