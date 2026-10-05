@@ -1,6 +1,28 @@
 # Stage P01 — Multi-App Platform: One Shell, App Views, Shared Packages
 
-Status: **Planned**. Track: platform. Depends on: viewer Stage 08.6 closed. Unblocks: P02, C00.
+Status: **In progress** (started 2026-10-05). Track: platform. Depends on: viewer Stage 08.6 closed. Unblocks: P02,
+C00.
+
+## Progress (2026-10-05, "minimal P01" agreed with the owner)
+
+Done, because Stage C00 needs it:
+
+- **Folder layout** (scope 1) and **comment follow-ups** (scope 6).
+- **Shell with app views** (scope 3). The viewer stays the window's own web contents; the commander is a
+  `WebContentsView` laid over it (`shared/desktop/src/main/shell.ts`), created on the first switch and kept alive
+  hidden. `app.switch` and `app.visibility` work; the shell owns the window title; a crashed commander view reloads
+  alone. This resolves ADR-0031's `WebContentsView` open point.
+- **Capability profiles per app view** (scope 4). Main maps the calling frame's origin (`app://fastview` or
+  `app://commander`, or each dev server) to its app and checks the method against `APP_METHODS[app]`
+  (`shared/contracts/src/rpc.ts`). Each app has its own preload (`preload.cjs`, `commander.cjs`).
+- **Tooling** (scope 5). `BENCH_STAGE` accepts `NN`, `NN.N`, `PNN`, `CNN`; the e2e harness has `commanderPage`,
+  `shellState` and `commanderEnv`; `pnpm build` and `pnpm dev` include the commander.
+- **Part of scope 2:** `shared/ui` with the design tokens (`styles.css`, moved from the viewer with its token test),
+  the theme and interface-size stores (now synced through `shared.appearance`) and the app switch button. The viewer
+  re-exports them, so its imports did not change.
+
+Still open: the rest of scope 2 (`shared/renderer-core`: bridge core, page store, selection algebra, the keymap
+engine, settings and sidecar stores; the remaining UI primitives) and its bundle-size check.
 
 ## Objective
 
@@ -18,20 +40,20 @@ permissions, and extract the shared renderer packages, without changing what the
 
 ## Scope
 
-### 1. Rename the viewer's renderer
+### 1. Folder layout — done early (2026-10-05)
 
-- `apps/renderer` → `apps/viewer-renderer` (`@fastview/viewer-renderer`). Scripts, the e2e harness and bench scripts
-  follow. `apps/desktop` keeps its name: it is the shell.
-- One mechanical commit with every suite green before anything moves between packages.
+The code already moved into `shared/`, `viewer/` and `commander/` (ADR-0031 "Code layout"): `shared/desktop`,
+`shared/contracts`, `shared/sidecar`, `shared/e2e`, `shared/bench`, `viewer/renderer`. Package names were kept. All
+suites passed after the move, except tests that were already failing.
 
 ### 2. Extract the shared renderer packages
 
 | Package | Moves from the viewer | Notes |
 |---|---|---|
-| `packages/ui` | `styles/index.css` (tokens, themes, interface size), `components/ui/*`, `Notice`, icons, `tokens.test.ts` | Tailwind must scan the package's sources |
-| `packages/renderer-core` | bridge core (envelope → `FastViewError`), page store, selection algebra, keymap engine (actions registered per app), theme, interface size, settings and sidecar stores | feature stores stay in the apps |
+| `shared/ui` | `styles/index.css` (tokens, themes, interface size), `components/ui/*`, `Notice`, icons, `tokens.test.ts` | Tailwind must scan the package's sources |
+| `shared/renderer-core` | bridge core (envelope → `FastViewError`), page store, selection algebra, keymap engine (actions registered per app), theme, interface size, settings and sidecar stores | feature stores stay in the apps |
 
-- Packages ship TypeScript source bundled by each app's Vite build (the `packages/contracts` pattern), unless this
+- Packages ship TypeScript source bundled by each app's Vite build (the `shared/contracts` pattern), unless this
   stage measures a reason to prebuild them.
 - Dependency rules (lint): apps may import packages; packages never import apps; renderer packages never import
   `electron` or `node:*`.
@@ -40,7 +62,7 @@ permissions, and extract the shared renderer packages, without changing what the
 
 - The main window becomes a `BaseWindow` with one `WebContentsView` per app. This stage hosts only the viewer view, plus
   a test-only second view (enabled by an environment variable in unpackaged builds) to prove switching.
-- One preload per app (`apps/desktop/src/preload/viewer.ts` now, `preload/commander.ts` in C00).
+- One preload per app (`shared/desktop/src/preload/viewer.ts` now, `preload/commander.ts` in C00).
 - `app.switch({ to })` (renderer → main) and `app.visibility { app, visible }` (main → renderer): show one view, hide
   the other, move keyboard focus, update the window title. A view is created on the first switch to it and then kept
   alive.
@@ -52,27 +74,18 @@ permissions, and extract the shared renderer packages, without changing what the
 
 - Contracts tag each method with the apps that may call it. Main keys every call by the sender's web contents and
   checks it against that view's profile; each preload exposes only its app's methods.
-- The viewer's surface stays exactly as it is, plus `app.switch` (`tests/e2e/specs/foundation.spec.ts` changes only by
+- The viewer's surface stays exactly as it is, plus `app.switch` (`shared/e2e/specs/viewer/foundation.spec.ts` changes only by
   that entry).
 
 ### 5. Tooling
 
 - `BENCH_STAGE` accepts `NN`, `NN.N`, `PNN` and `CNN`, and the e2e result helpers take the same IDs.
-- `tests/e2e/launch.ts`: `launchApp({ app })` chooses the app shown at start; helpers return each app view's page.
+- `shared/e2e/launch.ts`: `launchApp({ app })` chooses the app shown at start; helpers return each app view's page.
 - `pnpm` scripts: the existing commands keep working; the commander renderer joins them in C00.
 
-### 6. Documentation follow-ups (deferred from the 2026-10-05 docs move)
+### 6. Documentation follow-ups — done early (2026-10-05)
 
-Code comments still name pre-move doc paths or stage numbers. Update them with this stage's mechanical changes:
-
-- `apps/renderer/src/features/tiles/layout.ts`, `components/tiles/TileView.tsx`, `components/tiles/tileView.test.tsx`,
-  `tests/e2e/specs/tiles.spec.ts` (`stages/03-tile-view.md`);
-- `apps/renderer/src/features/theme/themeStore.ts`, `tests/e2e/specs/workspace.spec.ts` (`stages/05-filesystem-ux.md`);
-- `apps/renderer/src/styles/index.css` (twice) and `styles/tokens.test.ts` (`docs/UX-DESIGN.md` →
-  `docs/shared/DESIGN-SYSTEM.md`);
-- `native/fastview-go/internal/preview/key.go` and `bench/scripts/startup.ts` (`docs/ARCHITECTURE-ANALYSIS.md`);
-- `native/fastview-go/internal/fixture/fixture.go` (`docs/TESTING.md`);
-- `native/fastview-go/internal/fsx/platform_unix.go` and `internal/pathkey/pathkey.go` ("Stage 09" → "Stage P04").
+Code comments that named pre-move doc paths or stage numbers were updated with the folder move.
 
 ## Non-goals
 
@@ -112,7 +125,7 @@ No regression beyond run-to-run noise (about ±5 %). The bundle must not grow.
 - Playwright access to `WebContentsView` pages: verify first; fall back to CDP targets if needed.
 - Focus and keyboard routing between views, drag and drop from the OS into a view, and DevTools per view behave
   differently from `BrowserWindow`. Mitigation: a spike before converting the window.
-- Tailwind class scanning across packages: verify that `packages/ui` styles reach the bundle.
+- Tailwind class scanning across packages: verify that `shared/ui` styles reach the bundle.
 - Hidden coupling (shared code importing viewer feature stores). Mitigation: move pure logic first, and keep feature
   stores in the app.
 

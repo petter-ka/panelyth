@@ -25,8 +25,8 @@ hotlist, history, the Brief view, and a full session restore.
   the viewer shows as a flat list.
 - Recent locations: one shared list fed by both apps; the commander's per-panel history stays per panel.
 - History per panel: Alt+↓ shows the list; persisted.
-- Brief view (Ctrl+F1): names in fixed-width columns, flowing top to bottom; horizontal virtualization; ←/→ change
-  columns.
+- Brief view (Ctrl+F1): names in fixed-width columns, flowing top to bottom; horizontal virtualization with
+  `@tanstack/react-virtual` (no TanStack Table: a list has no columns); ←/→ change columns.
 - Session restore: both panels, their tabs, views, sorts, column widths and cursor entries.
 - Settings, Panels tab: size format (bytes or units), date format, hidden files default, where letters go.
 

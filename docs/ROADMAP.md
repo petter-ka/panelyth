@@ -17,10 +17,10 @@ Only one stage is active at a time. Default order:
 
 | # | Stage | Track | Why here |
 |---|---|---|---|
-| 1 | 08.6 — UI polish v2 | viewer | active |
+| 1 | 08.6 — UI polish v2 | viewer | done 2026-10-05 |
 | 2 | P01 — Multi-app platform: one shell, app views | platform | everything after it builds on app views and shared packages |
 | 3 | P02 — Index scope: all entries, filtered per query | platform | the commander lists every file |
-| 4 | C00 — Commander foundation and the app switch | commander | the commander app view; the switch icon in both apps |
+| 4 | C00 — Commander foundation and the app switch | commander | active (started with the minimal part of P01) |
 | 5 | C01 — Panels and listing | commander | first useful version; folder and focus carried over on switch |
 | 6 | C02 — Keyboard, marks and quick search | commander | the Total Commander interaction model; selection carried over |
 | 7 | C03 — Drives, tabs, hotlist, history, session | commander | navigation complete; shared bookmarks and recent |
@@ -100,8 +100,9 @@ P04–P06 (2026-10-05). Viewer numbers 09–11 are retired; the next viewer stag
 
 ### P01 — Multi-app platform: one shell, app views, shared packages
 
-The window hosts one app view per app with its own capability profile; `apps/renderer` becomes
-`apps/viewer-renderer`; `packages/ui` and `packages/renderer-core` are extracted. The viewer is unchanged.
+The window hosts one app view per app with its own capability profile; `shared/ui` and
+`shared/renderer-core` are extracted. The folder layout (`shared/`, `viewer/`, `commander/`) is already done.
+The viewer is unchanged.
 
 ### P02 — Index scope: all entries, filtered per query
 

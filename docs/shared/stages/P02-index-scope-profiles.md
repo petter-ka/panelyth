@@ -32,7 +32,7 @@ commander can list everything, while the viewer keeps seeing exactly what it see
   folders are re-listed when it is shown.
 - **Kind checks in main:** `shell.open` and the media token protocol check the entry kind returned by the sidecar
   against the calling app view's profile (ADR-0027).
-- **Contracts:** new kinds and fields in `packages/contracts`, guards, golden fixtures regenerated.
+- **Contracts:** new kinds and fields in `shared/contracts`, guards, golden fixtures regenerated.
 
 ## Non-goals
 

@@ -85,7 +85,7 @@ Backend and IPC:
 
 ## Benchmarks
 
-Windows 11, i9-13900K, production build, ffmpeg 8.0.1. Results: `bench/results/stage-06-2026-10-01-e2e-media.jsonl`,
+Windows 11, i9-13900K, production build, ffmpeg 8.0.1. Results: `shared/bench/results/stage-06-2026-10-01-e2e-media.jsonl`,
 `stage-06-2026-10-01-petter-go-bench.txt`, `stage-06-2026-10-01-petter-startup.json`.
 
 | Metric | Result | Target |

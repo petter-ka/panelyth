@@ -1,0 +1,23 @@
+{
+  "ch": "preview.ready",
+  "p": {
+    "items": [
+      {
+        "height": 48,
+        "id": 16,
+        "profile": "grid-sm",
+        "url": "fastview-thumb://t/\u003ckey\u003e.jpg",
+        "width": 64
+      },
+      {
+        "height": 48,
+        "id": 17,
+        "profile": "grid-sm",
+        "url": "fastview-thumb://t/\u003ckey\u003e.jpg",
+        "width": 64
+      }
+    ]
+  },
+  "seq": 1,
+  "t": "evt"
+}

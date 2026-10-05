@@ -41,6 +41,16 @@ All documentation lives in `docs/`; only this file stays in the root. Platform b
 `docs/shared/`; anything only one app has goes to `docs/viewer/` or `docs/commander/`. ADR numbers are global across
 the folders. Write paths from the repository root. `docs/README.md` has the map and the reading order.
 
+## Code layout
+
+Code follows the same split as the docs (ADR-0031 "Code layout"):
+
+- `shared/`: `desktop` (the Electron shell), `contracts`, `sidecar` (Go), `e2e` (Playwright harness; specs per app
+  under `specs/viewer/`, `specs/commander/`), `bench`; later `ui`, `renderer-core`, `media-ui`
+- `viewer/renderer`: the viewer's React app
+- `commander/`: the commander's code (from Stage C00)
+- `scripts/`: repository tooling
+
 ## Stack
 
 - Desktop shell: Electron (one shell app; each app is a `WebContentsView` with its own renderer, preload and
@@ -55,6 +65,7 @@ the folders. Write paths from the repository root. `docs/README.md` has the map 
 - Package manager: pnpm
 - Tests: Vitest + React Testing Library for renderer, Go tests/benchmarks for backend, Playwright/electron test harness for end-to-end flows
 - Virtualization: `@tanstack/react-virtual`
+- Tables (commander Full view only): `@tanstack/react-table` with TanStack Virtual (ADR-0028)
 
 Use current stable releases at implementation time. Do not hardcode obsolete versions into architecture documents.
 
@@ -76,10 +87,10 @@ Use current stable releases at implementation time. Do not hardcode obsolete ver
 - prefer batched updates over per-file React updates
 - renderer must remain responsive while indexing, decoding or copying
 - viewer: use `@tanstack/react-virtual` for the tile view (tiles left to right, fixed size, more per row on wider windows; no list/table views, ADR-0004)
-- commander: use `@tanstack/react-virtual` for panel lists with fixed row heights and fixed column widths; the cursor and the marked set are separate (ADR-0028)
+- commander: the Full (table) view uses `@tanstack/react-table` (columns, headers, sizing; manual sorting, row model of the visible window only) with `@tanstack/react-virtual` rows; the Brief (list) and Thumbnails (tile) views use `@tanstack/react-virtual` alone; fixed row heights; the cursor and the marked set are separate (ADR-0028)
 - use fixed or predictably measurable tile and row geometry where possible
 - keep scrolling independent from data fetching
-- shared code lives in `packages/*`; never copy platform code into an app
+- shared code lives in `shared/*`; never copy platform code into an app
 
 ### Go
 

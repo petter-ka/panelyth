@@ -1,0 +1,38 @@
+{"at":"2026-10-05T07:11:03.853Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":275,"seekMs":204,"longTasksOver50":0}
+{"at":"2026-10-05T07:11:10.883Z","test":"dblclick-fullscreen","dblclickToPlayingMs":229}
+{"at":"2026-10-05T07:11:38.187Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":911,"warmAllPostersMs":215}
+{"at":"2026-10-05T07:11:40.178Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":302,"seekMs":215,"longTasksOver50":0}
+{"at":"2026-10-05T07:13:43.274Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":870,"warmAllPostersMs":207}
+{"at":"2026-10-05T07:13:45.300Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":301,"seekMs":207,"longTasksOver50":0}
+{"at":"2026-10-05T07:13:47.283Z","test":"dblclick-fullscreen","dblclickToPlayingMs":55}
+{"at":"2026-10-05T07:15:02.458Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":885,"warmAllPostersMs":223}
+{"at":"2026-10-05T07:15:04.395Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":268,"seekMs":217,"longTasksOver50":0}
+{"at":"2026-10-05T07:15:06.338Z","test":"dblclick-fullscreen","dblclickToPlayingMs":49}
+{"at":"2026-10-05T07:25:07.335Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":880,"warmAllPostersMs":223}
+{"at":"2026-10-05T07:25:09.750Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":276,"seekMs":196,"longTasksOver50":0}
+{"at":"2026-10-05T07:25:11.577Z","test":"dblclick-fullscreen","dblclickToPlayingMs":50}
+{"at":"2026-10-05T12:18:57.745Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":866,"warmAllPostersMs":224}
+{"at":"2026-10-05T12:18:59.695Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":286,"seekMs":217,"longTasksOver50":0}
+{"at":"2026-10-05T12:19:01.520Z","test":"dblclick-fullscreen","dblclickToPlayingMs":141}
+{"at":"2026-10-05T12:24:44.848Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":890,"warmAllPostersMs":247}
+{"at":"2026-10-05T12:24:46.754Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":283,"seekMs":203,"longTasksOver50":0}
+{"at":"2026-10-05T12:24:53.930Z","test":"dblclick-fullscreen","dblclickToPlayingMs":88}
+{"at":"2026-10-05T12:39:27.512Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":969,"warmAllPostersMs":276}
+{"at":"2026-10-05T12:40:30.657Z","test":"dblclick-fullscreen","dblclickToPlayingMs":158}
+{"at":"2026-10-05T12:40:47.418Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":944,"warmAllPostersMs":240}
+{"at":"2026-10-05T12:40:49.367Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":281,"seekMs":202,"longTasksOver50":0}
+{"at":"2026-10-05T12:40:56.644Z","test":"dblclick-fullscreen","dblclickToPlayingMs":92}
+{"at":"2026-10-05T12:43:40.163Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":947,"warmAllPostersMs":246}
+{"at":"2026-10-05T12:43:42.165Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":299,"seekMs":208,"longTasksOver50":0}
+{"at":"2026-10-05T12:43:44.151Z","test":"dblclick-fullscreen","dblclickToPlayingMs":151}
+{"at":"2026-10-05T13:05:37.519Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":1069,"warmAllPostersMs":471}
+{"at":"2026-10-05T13:05:40.357Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":267,"seekMs":215,"longTasksOver50":0}
+{"at":"2026-10-05T13:06:13.976Z","test":"dblclick-fullscreen","dblclickToPlayingMs":131}
+{"at":"2026-10-05T13:41:17.408Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":276,"seekMs":203,"longTasksOver50":0}
+{"at":"2026-10-05T13:41:21.088Z","test":"dblclick-fullscreen","dblclickToPlayingMs":157}
+{"at":"2026-10-05T13:46:07.911Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":888,"warmAllPostersMs":247}
+{"at":"2026-10-05T13:46:09.880Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":270,"seekMs":200,"longTasksOver50":0}
+{"at":"2026-10-05T13:46:11.717Z","test":"dblclick-fullscreen","dblclickToPlayingMs":52}
+{"at":"2026-10-05T14:03:47.593Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":877,"warmAllPostersMs":229}
+{"at":"2026-10-05T14:03:49.526Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":292,"seekMs":200,"longTasksOver50":0}
+{"at":"2026-10-05T14:03:51.398Z","test":"dblclick-fullscreen","dblclickToPlayingMs":44}

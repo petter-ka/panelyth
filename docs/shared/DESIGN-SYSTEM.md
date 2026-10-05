@@ -4,8 +4,8 @@ The visual system of every app in the product family (ADR-0014, ADR-0025): Tailw
 primitives, themes, typography, motion rules and the keyboard foundation. App-specific UX:
 `docs/viewer/UX-DESIGN.md` and `docs/commander/UX-DESIGN.md`.
 
-Implemented today in `apps/renderer/src/styles/index.css` and `apps/renderer/src/components/ui/`; Stage P01 moves
-both into `packages/ui`, so the two apps share one source.
+Implemented today in `viewer/renderer/src/styles/index.css` and `viewer/renderer/src/components/ui/`; Stage P01 moves
+both into `shared/ui`, so the two apps share one source.
 
 ## Visual language
 
@@ -24,7 +24,7 @@ Avoid expensive backdrop blur and per-thumbnail animations on the scrolling surf
 
 ## Theme and color
 
-Implemented in `apps/renderer/src/styles/index.css`. Components use token names only (`bg-canvas`,
+Implemented in `viewer/renderer/src/styles/index.css`. Components use token names only (`bg-canvas`,
 `bg-chrome`, `text-muted`, `border-border` …), never raw colors.
 
 ### Principles
@@ -107,7 +107,7 @@ other at once.
 ## App switch control
 
 The one connection point between the apps for now (ADR-0031, `docs/shared/APP-SWITCHING.md`). A shared component in
-`packages/ui`, so it looks and behaves the same in both apps:
+`shared/ui`, so it looks and behaves the same in both apps:
 
 - an icon button, 28 × 28 px, at the top left of the app's top bar, on the same spot in both apps (the commander's app
   bar matches the height of the viewer's navigation toolbar);

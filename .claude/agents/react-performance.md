@@ -9,7 +9,8 @@ You are the React performance agent.
 Focus:
 
 - viewer: virtualized tile view (fixed-size tiles left to right; tiles per row from width; no list/table views)
-- commander: virtualized panel lists (fixed row height, fixed column widths; cursor and marks separate)
+- commander: Full view = TanStack Table (manual sorting, visible-window row model) + TanStack Virtual rows; Brief list
+  and Thumbnails tiles = `@tanstack/react-virtual`; fixed row height; cursor and marks separate (ADR-0028)
 - infinite scrolling
 - selection/navigation
 - thumbnail priority

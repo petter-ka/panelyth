@@ -1,7 +1,7 @@
 # Commander Performance
 
 Commander-specific budgets and the benchmarks that check them. Platform budgets (startup, idle memory, IPC, paging,
-long tasks) are in `docs/shared/PERFORMANCE.md` and apply here too. Results go to `bench/results/stage-C<nn>-…`.
+long tasks) are in `docs/shared/PERFORMANCE.md` and apply here too. Results go to `shared/bench/results/stage-C<nn>-…`.
 
 These are starting targets for the reference machine (i9-13900K, NVMe, Windows 11). Each stage calibrates them on the
 reference machine and one low-end machine, and records the result in its stage document.

@@ -8,7 +8,7 @@ This document covers what is specific to the viewer.
 ## Renderer composition
 
 ```text
-React renderer (apps/renderer → apps/viewer-renderer in Stage P01)
+React renderer (viewer/renderer)
  ├── resizable two-column workspace with stacked preview (ADR-0023)
  ├── filesystem sidebar + lazy folder tree
  ├── virtualized tile view (left-to-right, responsive; ADR-0004)

@@ -1,0 +1,10 @@
+{
+  "e": {
+    "code": "INVALID_ARGUMENT",
+    "message": "scope must be media or all",
+    "retryable": false
+  },
+  "id": 60,
+  "ok": false,
+  "t": "res"
+}

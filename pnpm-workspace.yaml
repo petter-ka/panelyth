@@ -1,8 +1,12 @@
 packages:
-  - apps/*
-  - packages/*
-  - tests/e2e
-  - bench
+  - shared/desktop
+  - shared/contracts
+  - shared/e2e
+  - shared/bench
+  - shared/ui
+  - shared/renderer-core
+  - viewer/renderer
+  - commander/renderer
 
 onlyBuiltDependencies:
   - electron

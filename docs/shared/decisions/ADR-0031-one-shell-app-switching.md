@@ -60,16 +60,26 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 ### Code layout
 
 ```text
-apps/desktop               the shell: main process, one preload per app (preload/viewer, preload/commander)
-apps/viewer-renderer       (was apps/renderer) viewer React app
-apps/commander-renderer    commander React app (Stage C00)
-packages/contracts         wire types, guards, golden fixtures
-packages/ui                tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, the switch button
-packages/renderer-core     bridge, page store, selection algebra, keymap, theme, settings, sidecar store
-native/fastview-go         one sidecar for both apps
+shared/                   used by both apps
+  desktop/                the shell: Electron main, one preload per app (@fastview/desktop)
+  contracts/              wire types, guards, golden fixtures (@fastview/contracts)
+  sidecar/                the Go sidecar for both apps (module fastview/sidecar)
+  e2e/                    Playwright harness; specs/viewer/, later specs/commander/ (@fastview/e2e)
+  bench/                  startup benchmark, empty-Electron baseline, results/ (@fastview/bench)
+  ui/                     (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, switch button
+  renderer-core/          (Stage P01) bridge, page store, selection algebra, keymap, theme, settings, sidecar store
+  media-ui/               (Stage C05) image viewer, video player; tile components (Stage C10)
+viewer/
+  renderer/               the viewer's React app (@fastview/renderer)
+commander/
+  renderer/               (Stage C00) the commander's React app
+scripts/                  repository tooling (dev, build, Go wrapper, bench results)
 ```
 
-`packages/desktop-core` is not needed: there is one main process.
+The folders were reorganized on 2026-10-05 (from `apps/desktop`, `apps/renderer`, `packages/contracts`,
+`native/fastview-go`, `tests/e2e` and `bench`).
+
+A separate `desktop-core` package (ADR-0025) is not needed: there is one main process.
 
 ### Packaging
 
@@ -115,6 +125,13 @@ would be indexed and thumbnails generated twice.
 
 ## Open points (decided in Stage P01)
 
-- `WebContentsView` details: focus and keyboard routing between views, DevTools, drag and drop from the OS, and
-  Playwright access.
-- Whether the hidden app view is kept forever or released after a long idle time to save memory.
+- ~~`WebContentsView` details~~ — **resolved 2026-10-05 (P01/C00):** the viewer stays the `BrowserWindow`'s own web
+  contents and the commander is a `WebContentsView` laid over it, so the existing window code, dialogs and tests are
+  unchanged. Focus moves with the switch (`webContents.focus()`), keys reach only the visible app (e2e), each view has
+  its own DevTools in development, and Playwright reaches the commander's page through `app.windows()`. Drag and drop
+  from the OS is checked when the commander gets drop targets (Stage C04).
+- ~~Whether the hidden app view is kept forever or released after idle~~ — **resolved 2026-10-05 (owner decision
+  after Stage C00):** the hidden view is kept, so a switch stays within one frame. Measured: the commander view costs
+  about 97 MB at idle (one more renderer process); both views total about 153 MB over an empty Electron window. The
+  both-views budget is recalibrated from 150 MB to **160 MB** (`docs/shared/PERFORMANCE.md`). Releasing the hidden
+  view after a long idle time stays possible later if memory pressure warrants it.

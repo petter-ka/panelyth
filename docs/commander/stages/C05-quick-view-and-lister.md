@@ -16,7 +16,7 @@ hex, images and videos, an external editor, and opening files with their default
 ## Scope
 
 - **Shared media components:** move `ImageViewer`, `VideoPlayer` and their request logic (`viewerImages`, video
-  preferences) from the viewer into `packages/media-ui`. The viewer's suites must pass unchanged (regression gate).
+  preferences) from the viewer into `shared/media-ui`. The viewer's suites must pass unchanged (regression gate).
 - **Quick view (Ctrl+Q):** the other panel shows the cursor entry after it settles (150 ms): images and videos with
   the shared components; text (the first window, encoding detected); other files as hex plus properties.
 - **Lister (F3):** full window; Text (wrap, encodings, Ctrl+F find), Hex, Image, Video (1–4 switch modes); N / P next and

@@ -58,7 +58,7 @@ Also delivered:
 ## Benchmarks
 
 Environment: Windows 11, i9-13900K (32 threads), 64 GB, NVMe, Go 1.27.0. Two runs of each. Results:
-`bench/results/stage-02-2026-09-30-petter-{previews,startup,index}.json` and `stage-02-2026-09-30-e2e-previews.jsonl`.
+`shared/bench/results/stage-02-2026-09-30-petter-{previews,startup,index}.json` and `stage-02-2026-09-30-e2e-previews.jsonl`.
 
 ### Generation (`BENCH_STAGE=02 pnpm bench:previews`, 120 × 12 MP JPEG → `grid-md` 384 px)
 

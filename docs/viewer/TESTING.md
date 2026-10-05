@@ -16,8 +16,8 @@ Viewer-specific end-to-end scenarios. Layers, harness, isolation, fixtures and b
 9. permission/error case
 10. restart application after cache exists
 
-Specs: `tests/e2e/specs/` (`index`, `previews`, `tiles`, `viewer`, `workspace`, `media`, `jobs`, `theme`,
-`polish`, `foundation`). Each spec writes its measurements to `bench/results/stage-<id>-<date>-e2e-<kind>.jsonl`.
+Specs: `shared/e2e/specs/` (`index`, `previews`, `tiles`, `viewer`, `workspace`, `media`, `jobs`, `theme`,
+`polish`, `foundation`). Each spec writes its measurements to `shared/bench/results/stage-<id>-<date>-e2e-<kind>.jsonl`.
 
 ## Viewer fixtures
 

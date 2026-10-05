@@ -1,0 +1,254 @@
+{
+  "stage": "C00",
+  "benchmark": "startup-idle-ipc",
+  "date": "2026-10-05T13:01:31.294Z",
+  "commit": "2341f43-dirty",
+  "env": {
+    "host": "petter",
+    "os": "win32 10.0.26200",
+    "cpu": "13th Gen Intel(R) Core(TM) i9-13900K",
+    "cores": 32,
+    "ramGb": 64,
+    "runnerNode": "22.18.0",
+    "electron": "44.5.1",
+    "chrome": "152.0.7977.130",
+    "node": "24.21.0",
+    "go": "go1.27.0",
+    "build": "production renderer via app://, unpackaged Electron"
+  },
+  "fixture": "none (empty app)",
+  "runs": 10,
+  "startup": {
+    "note": "main.* are ms since Electron main-process start; wall.* include Playwright launch/attach overhead",
+    "firstRun": {
+      "wallToWindowMs": 146.33929999999998,
+      "wallToReadyMs": 232.07989999999995,
+      "main": {
+        "main-loaded": 33.0117,
+        "app-ready": 49.6269,
+        "sidecar-spawned": 61.1535,
+        "window-created": 72.7415,
+        "sidecar-ready": 138.0008,
+        "ready-to-show": 231.6034
+      },
+      "rendererFirstRenderMs": 83.89999999850988,
+      "closeMs": 112.33389999999997,
+      "sidecarGoneMs": 22.41730000000007
+    },
+    "main": {
+      "mainLoaded": {
+        "n": 10,
+        "min": 32.396,
+        "p50": 33.447,
+        "p95": 47.486,
+        "p99": 47.486,
+        "max": 47.486
+      },
+      "appReady": {
+        "n": 10,
+        "min": 49.627,
+        "p50": 51.385,
+        "p95": 66.926,
+        "p99": 66.926,
+        "max": 66.926
+      },
+      "sidecarSpawned": {
+        "n": 10,
+        "min": 61.154,
+        "p50": 63.826,
+        "p95": 79.12,
+        "p99": 79.12,
+        "max": 79.12
+      },
+      "sidecarReady": {
+        "n": 10,
+        "min": 122.628,
+        "p50": 134.07,
+        "p95": 153.748,
+        "p99": 153.748,
+        "max": 153.748
+      },
+      "windowCreated": {
+        "n": 10,
+        "min": 72.531,
+        "p50": 75.496,
+        "p95": 99.253,
+        "p99": 99.253,
+        "max": 99.253
+      },
+      "readyToShow": {
+        "n": 10,
+        "min": 226.982,
+        "p50": 228.765,
+        "p95": 264.011,
+        "p99": 264.011,
+        "max": 264.011
+      }
+    },
+    "rendererFirstRenderSinceNavigation": {
+      "n": 10,
+      "min": 83.1,
+      "p50": 84.4,
+      "p95": 88.2,
+      "p99": 88.2,
+      "max": 88.2
+    },
+    "wall": {
+      "toFirstWindow": {
+        "n": 10,
+        "min": 117.366,
+        "p50": 122.133,
+        "p95": 146.339,
+        "p99": 146.339,
+        "max": 146.339
+      },
+      "toSidecarReadyAndFirstRender": {
+        "n": 10,
+        "min": 200.901,
+        "p50": 212.336,
+        "p95": 270.701,
+        "p99": 270.701,
+        "max": 270.701
+      }
+    },
+    "shutdown": {
+      "appClose": {
+        "n": 10,
+        "min": 100.863,
+        "p50": 120.418,
+        "p95": 163.428,
+        "p99": 163.428,
+        "max": 163.428
+      },
+      "sidecarExitAfterCloseStart": {
+        "n": 10,
+        "min": 16.017,
+        "p50": 18.444,
+        "p95": 22.885,
+        "p99": 22.885,
+        "max": 22.885
+      },
+      "orphanedSidecars": 0
+    }
+  },
+  "steady": {
+    "idleAfterMs": 10000,
+    "memory": {
+      "electronWorkingSetKb": 363812,
+      "sidecarWorkingSetKb": 97276,
+      "totalKb": 461088,
+      "electronProcesses": [
+        {
+          "type": "Browser",
+          "pid": 27212,
+          "workingSetKb": 113480,
+          "cpu": 0
+        },
+        {
+          "type": "GPU",
+          "pid": 35728,
+          "workingSetKb": 102040,
+          "cpu": 0
+        },
+        {
+          "type": "Utility",
+          "pid": 34796,
+          "workingSetKb": 47752,
+          "cpu": 0
+        },
+        {
+          "type": "Tab",
+          "pid": 49528,
+          "workingSetKb": 100540,
+          "cpu": 0
+        }
+      ],
+      "sidecarGoHeapBytes": 79618240,
+      "sidecarGoRuntimeBytes": 98488320,
+      "sidecarGoroutines": 22
+    },
+    "ipc": {
+      "pingSequentialMs": {
+        "n": 1000,
+        "min": 0,
+        "p50": 0.1,
+        "p95": 0.2,
+        "p99": 0.3,
+        "max": 0.7
+      },
+      "pingConcurrent32Ms": {
+        "n": 1000,
+        "min": 0.3,
+        "p50": 0.5,
+        "p95": 1.2,
+        "p99": 1.4,
+        "max": 1.7
+      },
+      "pingConcurrent32Throughput": 53476,
+      "echo64KbMs": {
+        "n": 200,
+        "min": 0.4,
+        "p50": 0.6,
+        "p95": 0.8,
+        "p99": 1.9,
+        "max": 4.5
+      },
+      "echo64KbMBps": 208.3
+    },
+    "goVersion": "go1.27.0"
+  },
+  "emptyElectron": {
+    "totalKb": {
+      "n": 3,
+      "min": 300900,
+      "p50": 304812,
+      "p95": 305220,
+      "p99": 305220,
+      "max": 305220
+    }
+  },
+  "budgets": [
+    {
+      "name": "ready-to-show p50 (since main start)",
+      "value": 228.765,
+      "limit": 1000,
+      "unit": "ms",
+      "pass": true
+    },
+    {
+      "name": "sidecar ready p50 (since main start)",
+      "value": 134.07,
+      "limit": 500,
+      "unit": "ms",
+      "pass": true
+    },
+    {
+      "name": "idle memory, all processes (absolute)",
+      "value": 450.28125,
+      "limit": 400,
+      "unit": "MB",
+      "pass": false
+    },
+    {
+      "name": "idle memory over empty-Electron floor",
+      "value": 152.61328125,
+      "limit": 60,
+      "unit": "MB",
+      "pass": false
+    },
+    {
+      "name": "ping round trip p95",
+      "value": 0.2,
+      "limit": 3,
+      "unit": "ms",
+      "pass": true
+    },
+    {
+      "name": "sidecar exit after close p95",
+      "value": 22.885,
+      "limit": 1000,
+      "unit": "ms",
+      "pass": true
+    }
+  ]
+}

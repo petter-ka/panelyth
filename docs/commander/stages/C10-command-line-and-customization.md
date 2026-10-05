@@ -22,7 +22,8 @@ settings. The command line is the most sensitive feature and gets a security rev
   keymap and the context menu.
 - **Toolbar:** customizable buttons (icon, label, command) in the app bar, after the switch icon (which stays first
   and can't be removed); the function-key bar can be hidden.
-- **Thumbnails view (Ctrl+Shift+F1):** the viewer's tile components move to `packages/media-ui`; the panel shows tiles
+- **Thumbnails view (Ctrl+Shift+F1):** `@tanstack/react-virtual` tiles (ADR-0028); the viewer's tile components move
+  to `shared/media-ui`; the panel shows tiles
   on the shared preview cache with the same cursor and marks. The viewer's tile budgets apply, and the viewer's suites
   must pass unchanged.
 - **Settings:** Panels, Operations (default policies, verify), Confirmations, Editor and tools, Keys (shared dialog),

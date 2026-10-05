@@ -29,7 +29,7 @@ resolutions. The owner explicitly does **not** want a table or list presentation
 
 ## Implementation
 
-Implemented in Stage 03 (`docs/viewer/stages/03-tile-view.md`): `apps/renderer/src/features/tiles/*` and `components/tiles/*`.
+Implemented in Stage 03 (`docs/viewer/stages/03-tile-view.md`): `viewer/renderer/src/features/tiles/*` and `components/tiles/*`.
 
 ## Why
 

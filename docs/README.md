@@ -36,7 +36,7 @@ pnpm lint           # eslint + prettier + gofmt + go vet
 pnpm typecheck
 pnpm test           # contracts, desktop, renderer, Go
 pnpm test:e2e       # Playwright against the built Electron app
-BENCH_STAGE=02 pnpm bench:startup   # startup / idle memory / IPC → bench/results/ (never overwrites)
+BENCH_STAGE=02 pnpm bench:startup   # startup / idle memory / IPC → shared/bench/results/ (never overwrites)
 BENCH_STAGE=02 pnpm bench:index     # scan / write batches / paging on 100k files
 BENCH_STAGE=02 pnpm bench:previews  # thumbnail throughput, cache hits, coalescing
 pnpm bench:go       # Go micro-benchmarks
@@ -141,7 +141,7 @@ Claude Code should read these files in this order:
 | 0025 | Product family: two apps on one platform | shared | Accepted; process model and data superseded by 0031 |
 | 0026 | Index scope: all entries stored, filtered per query | shared | Proposed (Stage P02) |
 | 0027 | App capability profiles: allowlists, shell actions, launching | shared | Proposed (Stages P01, C05, C10) |
-| 0028 | Commander panels: dual-panel layout and virtualized lists | commander | Proposed (Stage C01) |
+| 0028 | Commander panels: dual-panel layout, TanStack Table (table view) and virtualized lists | commander | Proposed (Stage C01) |
 | 0029 | File-operation engine v2 | shared | Proposed (Stage P03) |
 | 0030 | Archives as folders | commander | Proposed (Stage C07) |
 | 0031 | One shell for both apps: app switching and shared state | shared | Accepted |

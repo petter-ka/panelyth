@@ -42,13 +42,13 @@ A stage is complete only when:
 | 07 | Batch operations + metadata foundations | 06 | done |
 | 08 | Product polish + extensibility foundations | 07 | implementation done; tests pending |
 | 08.5 | Viewer settings + interaction polish | 08 | implementation done; tests pending |
-| 08.6 | UI polish v2 (folder covers, …) | 08.5 | **active** |
+| 08.6 | UI polish v2 (folder covers, …) | 08.5 | done (2026-10-05) |
 
 ### Platform
 
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
-| P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | planned |
+| P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | in progress (minimal part done) |
 | P02 | Index scope: all entries, filtered per query | P01 | planned |
 | P03 | File-operation engine v2 | P02 | planned |
 | P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | planned |
@@ -59,7 +59,7 @@ A stage is complete only when:
 
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
-| C00 | Foundation and the app switch | P01 | planned |
+| C00 | Foundation and the app switch | P01 | **active**: implementation done; memory budget decision open |
 | C01 | Panels and listing | C00, P02 | planned |
 | C02 | Keyboard, marks and quick search | C01 | planned |
 | C03 | Drives, tabs, hotlist, history and session | C02 | planned |
@@ -77,23 +77,22 @@ A stage is complete only when:
 | Stage | Completed | Record |
 |---|---|---|
 | 00 — Foundation | 2026-09-30 | `docs/viewer/stages/00-foundation.md` |
-| 01 — File index | 2026-09-30 | `docs/viewer/stages/01-file-index.md`, `bench/results/stage-01-*` |
-| 02 — Thumbnail pipeline + cache | 2026-09-30 | `docs/viewer/stages/02-thumbnail-pipeline.md`, `bench/results/stage-02-*` |
-| 03 — Virtualized tile view | 2026-09-30 | `docs/viewer/stages/03-tile-view.md`, `bench/results/stage-03-*` |
-| 04 — Image viewer | 2026-09-30 | `docs/viewer/stages/04-viewer.md`, `bench/results/stage-04-*` |
-| 05 — Filesystem UX + navigation + search + sort | 2026-09-30 | `docs/viewer/stages/05-filesystem-ux.md`, `bench/results/stage-05-*` |
-| 06 — Video playback + media preview | 2026-10-01 | `docs/viewer/stages/06-media-playback.md`, `bench/results/stage-06-*` |
-| 07 — Batch operations + metadata foundations | 2026-10-01 | `docs/viewer/stages/07-batch-and-metadata.md`, `bench/results/stage-07-*` |
+| 01 — File index | 2026-09-30 | `docs/viewer/stages/01-file-index.md`, `shared/bench/results/stage-01-*` |
+| 02 — Thumbnail pipeline + cache | 2026-09-30 | `docs/viewer/stages/02-thumbnail-pipeline.md`, `shared/bench/results/stage-02-*` |
+| 03 — Virtualized tile view | 2026-09-30 | `docs/viewer/stages/03-tile-view.md`, `shared/bench/results/stage-03-*` |
+| 04 — Image viewer | 2026-09-30 | `docs/viewer/stages/04-viewer.md`, `shared/bench/results/stage-04-*` |
+| 05 — Filesystem UX + navigation + search + sort | 2026-09-30 | `docs/viewer/stages/05-filesystem-ux.md`, `shared/bench/results/stage-05-*` |
+| 06 — Video playback + media preview | 2026-10-01 | `docs/viewer/stages/06-media-playback.md`, `shared/bench/results/stage-06-*` |
+| 07 — Batch operations + metadata foundations | 2026-10-01 | `docs/viewer/stages/07-batch-and-metadata.md`, `shared/bench/results/stage-07-*` |
+| 08.6 — UI polish v2 | 2026-10-05 | `docs/viewer/stages/08.6-ui-polish-v2.md`, `shared/bench/results/stage-08.6-*` |
 
 ## Active stage
 
-`08.6 — UI polish v2` (`docs/viewer/stages/08.6-ui-polish-v2.md`), started 2026-10-05. Folder covers are implemented,
-tested and measured end to end, including a 2,000-folder scroll e2e (ADR-0024). Also done: double-click on a video
-plays it full screen, Ctrl/Cmd+C copies a picture to the OS clipboard (decoded in Go), richer tile and viewer context
-menus, and additive Ctrl/Cmd+Shift selection. More polish items will be added to the stage scope.
-
-Next: **P01 — Multi-app platform: one shell, app views, shared packages**
-(`docs/shared/stages/P01-multi-app-platform.md`), once 08.6 is closed.
+`C00 — Commander foundation and the app switch` (`docs/commander/stages/C00-foundation.md`), started 2026-10-05
+together with the minimal part of `P01` (`docs/shared/stages/P01-multi-app-platform.md`), as agreed with the owner.
+The commander runs as a second app view behind the `FASTVIEW_COMMANDER=1` flag; the switch works both ways (92 ms
+the first time, 4–6 ms after). Open: the memory budget with both views (≈ 153 MB vs 150 MB), then the rest of P01
+(`shared/renderer-core`) before C01.
 
 The Stage 08 and 08.5 gates are still open: their implementation is done (2026-10-01), but their automated coverage
 was never added (`docs/viewer/stages/08-product-polish.md`, `docs/viewer/stages/08.5-viewer-settings.md`).

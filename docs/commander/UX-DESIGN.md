@@ -52,8 +52,9 @@ for. People coming from Total Commander find their keys where they expect them.
   name and a lock glyph when locked.
 - **Path bar:** the full path and the active mask (`*.*`, or the quick filter). Click it or press Alt+D (as in Explorer) to edit;
   Enter navigates; Esc cancels.
-- **Column header:** Name, Ext, Size, Date, Attr. The sort column shows ↑ or ↓. Columns resize by dragging their edge
-  and persist per panel.
+- **Column header:** Name, Ext, Size, Date, Attr (the Full view is a TanStack Table, ADR-0028). The sort column shows
+  ↑ or ↓; clicking a header sorts in Go, never in the browser. Columns resize by dragging their edge and persist per
+  panel; hiding and reordering columns can come later from the same table model.
 - **Rows:** fixed height per interface size (S 20 px, M 22 px, L 26 px).
   - a type glyph (folder, image, video, archive, text, program, link, other; no per-file OS icons in the first
     release);

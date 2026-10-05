@@ -15,9 +15,9 @@ export default tseslint.config(
       "**/dist/**",
       "**/node_modules/**",
       "**/coverage/**",
-      "native/**",
-      "tests/e2e/test-results/**",
-      "tests/e2e/playwright-report/**",
+      "shared/sidecar/**",
+      "shared/e2e/test-results/**",
+      "shared/e2e/playwright-report/**",
     ],
   },
   js.configs.recommended,
@@ -33,7 +33,7 @@ export default tseslint.config(
     },
   },
   {
-    files: ["apps/renderer/**/*.{ts,tsx}"],
+    files: ["viewer/renderer/**/*.{ts,tsx}", "commander/**/*.{ts,tsx}", "shared/ui/**/*.{ts,tsx}"],
     languageOptions: { globals: globals.browser },
     plugins: { "react-hooks": reactHooks },
     rules: {
@@ -51,11 +51,11 @@ export default tseslint.config(
   },
   {
     files: [
-      "apps/desktop/**/*.ts",
+      "shared/desktop/**/*.ts",
       "scripts/**/*.mjs",
-      "tests/**/*.ts",
-      "bench/**/*.ts",
-      "packages/**/*.ts",
+      "shared/e2e/**/*.ts",
+      "shared/bench/**/*.ts",
+      "shared/contracts/**/*.ts",
     ],
     languageOptions: { globals: globals.node },
   },

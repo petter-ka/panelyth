@@ -1,7 +1,7 @@
 # Commander Testing
 
 Commander-specific scenarios, fixtures and safety tests. Layers, harness, isolation and benchmark rules are shared:
-`docs/shared/TESTING.md`. E2E specs live in `tests/e2e/specs/commander/` and launch the commander with
+`docs/shared/TESTING.md`. E2E specs live in `shared/e2e/specs/commander/` and launch the commander with
 `launchApp({ app: "commander" })` (Stage P01).
 
 ## End-to-end scenarios
@@ -40,7 +40,7 @@ Commander-specific scenarios, fixtures and safety tests. Layers, harness, isolat
 
 ## Fixtures
 
-Built by `native/fastview-go/cmd/fixturegen` (extended in Stage P02/C01), cached under `<tmp>/fastview-fixtures/`:
+Built by `shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached under `<tmp>/fastview-fixtures/`:
 
 | Fixture | Contents | Stages |
 |---|---|---|

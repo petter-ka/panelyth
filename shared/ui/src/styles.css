@@ -1,0 +1,252 @@
+/*
+ * FastView design system (shared by the viewer and the commander; ADR-0014,
+ * docs/shared/DESIGN-SYSTEM.md). Each app's entry CSS imports Tailwind first,
+ * then this file, and adds `@source` for this package's components.
+ */
+
+/* Class-based dark mode, driven by the theme store (dark by default). */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Design tokens (docs/shared/DESIGN-SYSTEM.md, "Theme and color").
+ *
+ * Neutral surround: every gray is exactly neutral (R = G = B) so the chrome
+ * never tints how a photo's colors are perceived. Media sits on the darker
+ * "canvas"; navigation and controls sit on "chrome", which frames it.
+ * Amber is the one accent (a darkroom safelight). It marks focus and
+ * selection only, because it stays visible on top of any image.
+ *
+ * Components use the Tailwind names (bg-canvas, text-muted, border-border…),
+ * never raw colors. Text and accent tokens are checked for WCAG AA contrast
+ * against every surface by src/styles/tokens.test.ts.
+ */
+:root {
+  color-scheme: light;
+  font-size: 16px;
+  --canvas: #e8e8e8;
+  --chrome: #f7f7f7;
+  --raised: #ffffff;
+  --border: #d4d4d4;
+  --text: #1c1c1c;
+  --muted: #5e5e5e;
+  --skeleton: #dcdcdc;
+  --accent: #8f5200;
+  --accent-foreground: #ffffff;
+  --success: #1f7a35;
+  --warning: #8a6d00;
+  --danger: #c4291c;
+  /* Color labels (ADR-0022): non-text marks, distinguishable on every surface. */
+  --label-red: #d1342b;
+  --label-orange: #c76a00;
+  --label-yellow: #a88a00;
+  --label-green: #2e8b3e;
+  --label-blue: #2a6fd6;
+  --label-purple: #8a4fd1;
+  --label-gray: #7a7a7a;
+}
+
+:root[data-interface-size="small"] {
+  font-size: 14px;
+}
+
+:root[data-interface-size="medium"] {
+  font-size: 16px;
+}
+
+:root[data-interface-size="large"] {
+  font-size: 18px;
+}
+
+:root.dark {
+  color-scheme: dark;
+  --canvas: #1b1b1b;
+  --chrome: #242424;
+  --raised: #2e2e2e;
+  --border: #3a3a3a;
+  --text: #e6e6e6;
+  --muted: #a3a3a3;
+  --skeleton: #2a2a2a;
+  --accent: #f0a23b;
+  --accent-foreground: #1b1b1b;
+  --success: #74c886;
+  --warning: #e3cc6b;
+  --danger: #ff8a7a;
+  --label-red: #ff6b5e;
+  --label-orange: #ff9f43;
+  --label-yellow: #f2d14c;
+  --label-green: #5cc97a;
+  --label-blue: #5aa2ff;
+  --label-purple: #b88cff;
+  --label-gray: #9a9a9a;
+}
+
+/* Optional, lightly tinted palettes. The original neutral Light and Dark
+   themes above remain available and stay the default pair. */
+:root[data-theme="dark-purple"] {
+  --canvas: #211a28;
+  --chrome: #2a2233;
+  --raised: #352b41;
+  --border: #4b4058;
+  --text: #f0eaf5;
+  --muted: #c1b5cc;
+  --skeleton: #302737;
+  --accent: #d3b3ef;
+  --accent-foreground: #291d34;
+  --success: #7bd79a;
+  --warning: #efd577;
+  --danger: #ff948c;
+  --label-red: #ff756d;
+  --label-orange: #ffab55;
+  --label-yellow: #f0d56a;
+  --label-green: #70d68c;
+  --label-blue: #77b4ff;
+  --label-purple: #d0a4ff;
+  --label-gray: #aaa2af;
+}
+
+:root[data-theme="dark-brown"] {
+  --canvas: #241c16;
+  --chrome: #30251e;
+  --raised: #3b2f25;
+  --border: #584638;
+  --text: #f2e8dc;
+  --muted: #c6b3a0;
+  --skeleton: #33271f;
+  --accent: #efbe84;
+  --accent-foreground: #302013;
+  --success: #83cf90;
+  --warning: #f0ce72;
+  --danger: #ff9680;
+  --label-red: #ff7965;
+  --label-orange: #ffab57;
+  --label-yellow: #f0d26a;
+  --label-green: #79d58b;
+  --label-blue: #79b5f5;
+  --label-purple: #c4a0ed;
+  --label-gray: #a99b8c;
+}
+
+:root[data-theme="beige"] {
+  color-scheme: light;
+  --canvas: #ece5d8;
+  --chrome: #f6f1e7;
+  --raised: #fffcf5;
+  --border: #d8cebd;
+  --text: #29251f;
+  --muted: #655d50;
+  --skeleton: #e2dacd;
+  --accent: #805016;
+  --accent-foreground: #ffffff;
+  --success: #286c3d;
+  --warning: #755800;
+  --danger: #aa3022;
+  --label-red: #c53b32;
+  --label-orange: #b85d00;
+  --label-yellow: #927700;
+  --label-green: #287a3a;
+  --label-blue: #2866bd;
+  --label-purple: #7843ad;
+  --label-gray: #706c65;
+}
+
+:root[data-theme="light-brown"] {
+  color-scheme: light;
+  --canvas: #e5d4bf;
+  --chrome: #f2e4d0;
+  --raised: #fff6e8;
+  --border: #d2bda3;
+  --text: #302319;
+  --muted: #67513d;
+  --skeleton: #ddc9b1;
+  --accent: #754319;
+  --accent-foreground: #ffffff;
+  --success: #2b7040;
+  --warning: #705500;
+  --danger: #a42d1e;
+  --label-red: #c2382c;
+  --label-orange: #ae5700;
+  --label-yellow: #887000;
+  --label-green: #28723a;
+  --label-blue: #275fae;
+  --label-purple: #75409f;
+  --label-gray: #6f6254;
+}
+
+/*
+ * Motion (ADR-0014, docs/shared/DESIGN-SYSTEM.md "Motion and effects"): only responses
+ * to user actions on portalled chrome (menus, dialogs), never on tiles or
+ * the scrolling surface. Enter only; closing is instant.
+ */
+:root {
+  --motion-fast: 120ms;
+  --motion-ease: cubic-bezier(0.2, 0, 0, 1);
+}
+
+@theme inline {
+  --color-canvas: var(--canvas);
+  --color-chrome: var(--chrome);
+  --color-raised: var(--raised);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-skeleton: var(--skeleton);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, Ubuntu, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  body {
+    margin: 0;
+    background: var(--chrome);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    -webkit-font-smoothing: antialiased;
+    user-select: none;
+    overflow: hidden;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .motion-pop[data-state="open"] {
+      animation: fv-pop var(--motion-fast) var(--motion-ease);
+    }
+    .motion-fade[data-state="open"] {
+      animation: fv-fade var(--motion-fast) var(--motion-ease);
+    }
+  }
+
+  @keyframes fv-pop {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+  }
+
+  @keyframes fv-fade {
+    from {
+      opacity: 0;
+    }
+  }
+
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-foreground);
+  }
+}

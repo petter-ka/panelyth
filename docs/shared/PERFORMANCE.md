@@ -116,7 +116,7 @@ app-view and switch rows were added with ADR-0031 and get calibrated in Stages P
 | Cold start → window shown | < 1.0 s |
 | Cold start → sidecar `hello` | < 500 ms |
 | Idle memory, all processes, one app view (the other never opened) | < 400 MB absolute **and** < 60 MB over an empty Electron window |
-| Idle memory, both app views created | < 150 MB over an empty Electron window |
+| Idle memory, both app views created | < 160 MB over an empty Electron window (recalibrated in Stage C00: one more renderer process measures ≈ 97 MB; ADR-0031) |
 | App switch to an existing app view → visible and focused | ≤ 1 frame (16 ms), plus the target's listing budget if the folder changes |
 | First app switch (the app view is created) → interactive | < 800 ms |
 | `system.ping` round trip renderer → Go → renderer | p95 < 3 ms |
@@ -129,7 +129,7 @@ documents above; the switch and shared-state budgets are in `docs/shared/APP-SWI
 
 ## Benchmark results
 
-Result files go to `bench/results/stage-<id>-<date>-<host>-<kind>.<ext>` and are never overwritten
+Result files go to `shared/bench/results/stage-<id>-<date>-<host>-<kind>.<ext>` and are never overwritten
 (`scripts/results.mjs`). `<id>` is the stage ID: viewer numbers (`03`, `08.6`), platform `P01`…, commander `C00`….
 `BENCH_STAGE` accepts two digits today; Stage P01 extends it to the other forms.
 

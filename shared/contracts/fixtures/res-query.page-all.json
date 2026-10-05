@@ -1,0 +1,61 @@
+{
+  "id": 59,
+  "ok": true,
+  "r": {
+    "items": [
+      {
+        "ext": "",
+        "favorite": false,
+        "id": 3,
+        "kind": "dir",
+        "label": 0,
+        "modifiedMs": 1704067200000,
+        "name": "folder 1",
+        "rating": 0,
+        "sizeBytes": 0,
+        "thumb": null
+      },
+      {
+        "ext": "",
+        "favorite": false,
+        "id": 8,
+        "kind": "dir",
+        "label": 0,
+        "modifiedMs": 1704067200000,
+        "name": "folder 1 (2)",
+        "rating": 0,
+        "sizeBytes": 0,
+        "thumb": null
+      },
+      {
+        "ext": "png",
+        "favorite": false,
+        "id": 5,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704075119000,
+        "name": "IMG_1.png",
+        "rating": 0,
+        "sizeBytes": 1,
+        "thumb": null
+      },
+      {
+        "ext": "jpg",
+        "favorite": false,
+        "id": 6,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704083038000,
+        "name": "IMG_2.JPG",
+        "rating": 0,
+        "sizeBytes": 2,
+        "thumb": null
+      }
+    ],
+    "offset": 0,
+    "queryId": 4,
+    "total": 7,
+    "version": 1
+  },
+  "t": "res"
+}

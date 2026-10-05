@@ -1,5 +1,5 @@
 // Builds the Go sidecar for the host platform into
-// apps/desktop/resources/bin/<platform>-<arch>/, where Electron main finds it.
+// shared/desktop/resources/bin/<platform>-<arch>/, where Electron main finds it.
 import { execFileSync } from "node:child_process"
 import { mkdirSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url"
 import { goBinary } from "./go.mjs"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
-const goRoot = join(root, "native", "fastview-go")
+const goRoot = join(root, "shared", "sidecar")
 
 const goos = { win32: "windows", darwin: "darwin", linux: "linux" }[process.platform]
 const goarch = { x64: "amd64", arm64: "arm64" }[process.arch]
@@ -15,7 +15,7 @@ if (!goos || !goarch) throw new Error(`unsupported host ${process.platform}-${pr
 
 const outDir = join(
   root,
-  "apps",
+  "shared",
   "desktop",
   "resources",
   "bin",

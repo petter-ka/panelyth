@@ -1,7 +1,8 @@
 # App Switching and Shared State
 
-Status: **Planned**. Decided by ADR-0031 (accepted 2026-10-05). Delivered in Stages P01, P02 and C00–C03 (see
-"Delivery").
+Status: **In progress**. Decided by ADR-0031 (accepted 2026-10-05). The switch and shared appearance work
+(Stage C00, 2026-10-05: 92 ms first switch, 4–6 ms after); carrying the folder, file and selection over comes in
+Stages C01–C02 (see "Delivery").
 
 The viewer and the commander are two apps of one product. For now they meet in the UI at one point: **an icon at the
 top of each app switches to the other**. Behind the switch, both apps share state: the folder you are in (and so the
@@ -175,7 +176,7 @@ shown app calls `context.get`, navigates if needed, then `selection.fromContext`
 | First switch (the app view is created) → interactive | < 800 ms |
 | Selection carry-over of 10,000 entries | < 100 ms |
 | Idle memory, one app (the other never opened) | unchanged: < 60 MB over an empty Electron window |
-| Idle memory, both app views created | < 150 MB over an empty Electron window |
+| Idle memory, both app views created | < 160 MB over an empty Electron window (recalibrated 2026-10-05, ADR-0031) |
 | A hidden app | no requests, no long tasks |
 
 ## Tests

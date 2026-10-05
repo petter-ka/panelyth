@@ -9,9 +9,9 @@ covers what is specific to the commander.
 ## Processes and packages
 
 ```text
-apps/desktop                the shell: preload/commander and the commander capability profile in main
-apps/commander-renderer     React app (packages/ui, packages/renderer-core, later packages/media-ui)
-native/fastview-go          the shared sidecar: all-entries scope, jobs v2, find, archives, compare
+shared/desktop                the shell: preload/commander and the commander capability profile in main
+commander/renderer     React app (shared/ui, shared/renderer-core, later shared/media-ui)
+shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare
 ```
 
 ## Renderer composition
@@ -20,7 +20,8 @@ native/fastview-go          the shared sidecar: all-entries scope, jobs v2, find
 AppShell
  ├── AppBar: the app switch icon (to the viewer), later the C10 toolbar
  ├── PanelPair: left and right Panel, resizable divider (ADR-0028)
- │    └── Panel: drive/tab bar · path bar · column header · list (Full | Brief | Thumbnails) · status line
+ │    └── Panel: drive/tab bar · path bar · view · status line
+ │         view: Full (TanStack Table + Virtual) | Brief (react-virtual list) | Thumbnails (react-virtual tiles)
  ├── CommandLine (Stage C10)
  ├── FunctionKeyBar
  ├── QueuePanel (jobs, Stage C04) and dialogs (copy/move, conflict, delete, new folder, find, rename, sync)
@@ -29,7 +30,7 @@ AppShell
 features/
  panels      panel and tab state, active panel, layout
  listing     session lifecycle per visible tab (open, page, invalidate, close)
- cursor      cursor, anchor and marks per tab (selection algebra from packages/renderer-core)
+ cursor      cursor, anchor and marks per tab (selection algebra from shared/renderer-core)
  quicksearch type-ahead over the session (query.locate)
  drives · hotlist · history
  jobs        queue, dialogs, conflict resolution (extends the shared job store)
@@ -102,7 +103,7 @@ Enter on a folder
 
 ## Quick view and lister
 
-- Images and videos use the shared `ImageViewer` and `VideoPlayer` (moved to `packages/media-ui` in Stage C05) with
+- Images and videos use the shared `ImageViewer` and `VideoPlayer` (moved to `shared/media-ui` in Stage C05) with
   the shared preview cache and token protocol.
 - Text and hex read **byte windows** through the token protocol with HTTP Range (ADR-0027). The scroll position maps
   to a byte offset, and lines are found inside the loaded window, so a multi-GB file opens instantly with bounded
@@ -146,7 +147,10 @@ table (with groups), and recent locations are shared with the viewer. Theme and 
 
 ## Commander rules
 
-- Lists use fixed row heights and fixed column widths; nothing is measured while scrolling (ADR-0028).
+- The Full (table) view uses TanStack Table for columns, headers and column sizing, with manual sorting (Go sorts)
+  and a row model of the visible window only, virtualized with TanStack Virtual. The Brief (list) and Thumbnails
+  (tile) views use `@tanstack/react-virtual` alone (ADR-0028).
+- Fixed row heights and column widths from the table model; nothing is measured while scrolling.
 - One session per visible tab; one watch per visible panel (ADR-0026).
 - Actions take ids, descriptors or panel locations, never renderer-supplied paths (ADR-0027).
 - Nothing runs without an explicit user command; programs ask first by default.

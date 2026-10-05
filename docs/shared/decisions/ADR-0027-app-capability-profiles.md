@@ -2,8 +2,9 @@
 
 ## Status
 
-Proposed (2026-10-05). The per-view allowlists are decided in Stage P01, launching files in Stage C05 and the command
-line in Stage C10. Revised the same day by ADR-0031: both apps run in one shell, so the profile belongs to each app
+Proposed (2026-10-05). **The per-view allowlists are accepted (P01, 2026-10-05):** main maps the calling frame's
+origin to its app and checks `APP_METHODS[app]`. Launching files is decided in Stage C05 and the command line in Stage
+C10. Revised the same day by ADR-0031: both apps run in one shell, so the profile belongs to each app
 view (web contents), not to a separate app process.
 
 ## Context
@@ -65,6 +66,6 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
 ## Consequences
 
 - Router and e2e tests are per app view. Each view's e2e asserts its exact preload surface (the
-  `tests/e2e/specs/foundation.spec.ts` pattern), and a commander-only method called from the viewer view is rejected.
+  `shared/e2e/specs/viewer/foundation.spec.ts` pattern), and a commander-only method called from the viewer view is rejected.
 - The command line is the most sensitive feature, so it comes last in the commander plan (Stage C10) and gets a
   security review.

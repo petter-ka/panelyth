@@ -1,0 +1,17 @@
+{
+  "ch": "index.progress",
+  "p": {
+    "dirId": 1,
+    "dirsListed": 1,
+    "dirsPending": 0,
+    "elapsedMs": 1,
+    "entries": 6,
+    "errors": 0,
+    "recursive": false,
+    "scanId": 1,
+    "skipped": 1,
+    "state": "completed"
+  },
+  "seq": 1,
+  "t": "evt"
+}

@@ -1,0 +1,16 @@
+{"at":"2026-10-05T07:17:42.773Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":2,"coldJumpMs":702}
+{"at":"2026-10-05T07:17:46.738Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1366,"oneToOneToOriginalMs":109,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T07:27:14.021Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":3,"prefetchedMaxMs":4,"coldJumpMs":633}
+{"at":"2026-10-05T07:27:17.976Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1342,"oneToOneToOriginalMs":104,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T12:34:22.926Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":3,"coldJumpMs":654}
+{"at":"2026-10-05T12:34:29.056Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1380,"oneToOneToOriginalMs":95,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T13:07:38.676Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":4,"coldJumpMs":634}
+{"at":"2026-10-05T13:07:42.532Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1344,"oneToOneToOriginalMs":92,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T13:42:32.581Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":3,"coldJumpMs":549}
+{"at":"2026-10-05T13:42:36.650Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1367,"oneToOneToOriginalMs":108,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T13:48:21.193Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":3,"coldJumpMs":639}
+{"at":"2026-10-05T13:48:25.134Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1383,"oneToOneToOriginalMs":92,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T14:02:59.861Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":3,"prefetchedMaxMs":3,"coldJumpMs":636}
+{"at":"2026-10-05T14:03:03.771Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1360,"oneToOneToOriginalMs":100,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T14:05:09.589Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":3,"coldJumpMs":565}
+{"at":"2026-10-05T14:05:13.742Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1358,"oneToOneToOriginalMs":109,"longTasks":0,"longTaskMaxMs":0}

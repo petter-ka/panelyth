@@ -10,7 +10,8 @@ commander starts being useful.
 
 ## Decisions applied
 
-- **ADR-0028** (proposed; this stage decides it): dual panels, fixed-geometry virtualized lists.
+- **ADR-0028** (proposed; this stage decides it): dual panels; the Full view on TanStack Table with TanStack
+  Virtual.
 - ADR-0026 (all-entries scope), ADR-0017 (sessions), ADR-0020 (watching per visible panel), ADR-0011 (page store).
 - ADR-0031 and `docs/shared/APP-SWITCHING.md`: the shared context, first part (folder and focus).
 
@@ -20,8 +21,10 @@ commander starts being useful.
   go up, with the cursor landing on the folder just left.
 - Listing: `dir.open` and `query.open` with the all-entries scope; a page store per session; refetch on
   `query.invalidated`; the folder of each visible panel is watched.
-- Full view: `@tanstack/react-virtual` rows of fixed height; columns Name, Ext, Size, Date, Attr in a CSS grid with
-  fixed widths (resizable, persisted); type glyphs; `<DIR>` for folders; hidden entries muted; the synthetic `..` row.
+- Full view: `@tanstack/react-table` for columns, headers and column sizing (resizable, persisted), with manual
+  sorting (Go sorts) and a row model fed only the visible window from the page store; `@tanstack/react-virtual` rows
+  of fixed height for the body. Columns Name, Ext, Size, Date, Attr; type glyphs; `<DIR>` for folders; hidden entries
+  muted; the synthetic `..` row.
 - Sorting: column-header click (again reverses) and Ctrl+F3 / F4 / F5 / F6; folders first; persisted per panel.
 - Hidden and system files: Ctrl+H toggles `showHidden` (no rescan).
 - Path bar: the current path; Alt+D or click edits it; Enter navigates; errors are shown inline.
@@ -48,7 +51,8 @@ commander starts being useful.
 
 ## Tests
 
-- Renderer: row geometry is fixed per interface size; columns resize and persist; header sort; status-line text.
+- Renderer: row geometry is fixed per interface size; columns resize and persist; a header click changes the
+  session sort (never a browser sort); the table's row model holds only the visible window; status-line text.
 - E2E: scenarios 1–4 and the error states of 16 (`docs/commander/TESTING.md`).
 - E2E (switch): folder and focus carried both ways; same-folder switch keeps state; a non-media cursor entry selects
   nothing in the viewer; a folder deleted between switches; restart opens the last app and folder.
@@ -56,7 +60,8 @@ commander starts being useful.
 ## Benchmarks
 
 `BENCH_STAGE=C01`: enter a 1k folder (cached and uncached) and a 100k folder; 100k scroll in each panel (mounted rows,
-long tasks, p95 frame); sort change on 100k; a switch with a folder change in each direction.
+long tasks, p95 frame); sort change on 100k; a switch with a folder change in each direction; the commander bundle
+size with `@tanstack/react-table`.
 
 ## Acceptance criteria
 

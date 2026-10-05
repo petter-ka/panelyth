@@ -49,9 +49,9 @@ Enable power-user file operations and metadata-based organization.
 
 | Result | File | Numbers |
 |---|---|---|
-| Go query benchmarks | `bench/results/stage-07-2026-10-01-petter-go-bench-6.txt` | 100k files, 10k annotated: sort by rating 141 ms, by tags 144 ms (were ~75 s); filter favorites 55 ms, tag 50 ms (were ~50 s). Search 100k unchanged: 27–40 ms, facets 44 ms |
+| Go query benchmarks | `shared/bench/results/stage-07-2026-10-01-petter-go-bench-6.txt` | 100k files, 10k annotated: sort by rating 141 ms, by tags 144 ms (were ~75 s); filter favorites 55 ms, tag 50 ms (were ~50 s). Search 100k unchanged: 27–40 ms, facets 44 ms |
 | Go job benchmarks | `…-go-bench-5.txt` | favorite 100k items 305 ms; 10k-item favorite job 82 ms; small-file copy ≈ 12.4 MB/s, one file at a time (ADR-0021; Stage P05 candidate) |
-| e2e | `bench/results/stage-07-2026-10-01-e2e-jobs.jsonl` | favorite over 90,000 selected files: 1.37 s, 1 `jobs.start` call, 5 progress events, 0 long tasks; copy/rename/delete with a failing item: index consistent |
+| e2e | `shared/bench/results/stage-07-2026-10-01-e2e-jobs.jsonl` | favorite over 90,000 selected files: 1.37 s, 1 `jobs.start` call, 5 progress events, 0 long tasks; copy/rename/delete with a failing item: index consistent |
 
 `go-bench` files 1–5 contain failures from the SQLite fault described below. They are kept as evidence.
 

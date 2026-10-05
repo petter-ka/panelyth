@@ -2,9 +2,9 @@ pnpm-lock.yaml
 dist/
 node_modules/
 coverage/
-native/
-bench/results/
-packages/contracts/fixtures/
-tests/e2e/test-results/
-tests/e2e/playwright-report/
+shared/sidecar/
+shared/bench/results/
+shared/contracts/fixtures/
+shared/e2e/test-results/
+shared/e2e/playwright-report/
 *.md

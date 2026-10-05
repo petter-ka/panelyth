@@ -1,6 +1,7 @@
 # Stage C00 — Commander Foundation and the App Switch
 
-Status: **Planned**. Track: commander. Depends on: P01. Unblocks: C01.
+Status: **Complete** (2026-10-05). Track: commander.
+Depends on: P01 (the minimal part done the same day). Unblocks: C01.
 
 ## Objective
 
@@ -17,7 +18,7 @@ day one, and the viewer stays as fast as before.
 
 ## Scope
 
-- **Commander app view:** `apps/commander-renderer` and `apps/desktop/src/preload/commander.ts`; the commander's
+- **Commander app view:** `commander/renderer` and `shared/desktop/src/preload/commander.ts`; the commander's
   capability profile in main; the view is created on the first switch and then kept alive hidden
   (`docs/shared/APP-SWITCHING.md`).
 - **Commander UI:**
@@ -50,7 +51,7 @@ day one, and the viewer stays as fast as before.
 
 - Renderer: the commander AppShell renders two panels; Tab moves the active panel; the divider persists; the switch
   button shows the other app's glyph, tooltip and shortcut.
-- E2E (`tests/e2e/specs/commander/foundation.spec.ts`, `tests/e2e/specs/switch.spec.ts`):
+- E2E (`shared/e2e/specs/commander/foundation.spec.ts`, `shared/e2e/specs/switch.spec.ts`):
   - switch viewer → commander → viewer by icon and by key; the commander view is created once; titles and focus
     follow;
   - a theme or interface-size change in one app shows in the other;
@@ -67,7 +68,7 @@ commander (view creation → interactive); later switches; idle memory with both
 ## Acceptance criteria
 
 - The switch budgets in `docs/shared/APP-SWITCHING.md` pass: first switch < 800 ms, later switches ≤ 1 frame, both
-  views < 150 MB idle over empty Electron.
+  views < 160 MB idle over empty Electron (recalibrated from 150 MB after measuring; ADR-0031).
 - The viewer's startup and idle memory are unchanged while the commander has never been opened.
 
 ## Risks
@@ -75,10 +76,54 @@ commander (view creation → interactive); later switches; idle memory with both
 - Keyboard focus can stay in the hidden view after a switch. Covered by e2e: the next key press must reach the visible
   app.
 
+## Results (2026-10-05)
+
+Built:
+
+- `commander/renderer` (`@fastview/commander`): app bar with the switch, two panels (header, active marking, empty
+  state), the resizable divider persisted as `commander.layout`, the function-key bar (Exit works; the file commands
+  are disabled with a tooltip), and a status bar (backend state, theme).
+- `shared/desktop`: the commander's preload (`commander.cjs`), the `app://commander` origin, the shell switch
+  (`shell.ts`), the feature flag `FASTVIEW_COMMANDER=1` (on in `pnpm dev`) and `FASTVIEW_START_APP` for tests.
+- The viewer: the switch icon first in the navigation toolbar and the `app.switch` keymap action
+  (Ctrl/Cmd+Shift+M, also while typing), both only while the commander is enabled.
+- `shared/ui`: the switch button, and theme and interface size shared through `shared.appearance` (migrated from the
+  viewer's local values on first start; live in both apps through the `settings.changed` event).
+
+Deviations from the scope above:
+
+- The commander has a theme toggle in its status bar instead of the shared settings dialog, and its Ctrl/Cmd+Shift+M
+  is fixed rather than remappable. Both need the keymap engine and dialogs in `shared/renderer-core` (the open part of
+  P01).
+
+Tests: contracts 49, desktop 88 (per-view allowlists, `app.switch` validation, shared-setting broadcast), `shared/ui`
+26, commander 6, viewer 151 + 2 failing (the theme-label tests that already failed), Go all. E2E 48 of 50: the new
+`specs/commander/foundation.spec.ts` (2) and `specs/switch.spec.ts` (3) pass; the 2 failures are the existing
+`theme.spec.ts` label tests.
+
+Measurements (reference machine; `shared/bench/results/stage-C00-2026-10-05-*`):
+
+| Metric | Result | Budget |
+|---|---|---|
+| First switch to the commander (view created) → panels visible | 92 ms | < 800 ms |
+| Later switches (key press → app shown) | 4–6 ms | ≤ 1 frame |
+| Viewer ready-to-show p50 / sidecar ready p50 (commander disabled) | 229 / 134 ms | < 1000 / < 500 ms |
+| Commander view, idle | +97 MB (one renderer process) | — |
+| Both views, idle, over an empty Electron window | ≈ 153 MB | < 160 MB (recalibrated from 150 MB) |
+
+Budget decision (owner, 2026-10-05): keep the hidden view alive and recalibrate the both-views budget to 160 MB
+(ADR-0031 open point resolved).
+
+Found while measuring, not caused by this stage: the startup benchmark's idle memory now reads 152.6 MB over empty
+Electron (Stage 08: 52.9 MB). Electron's processes are unchanged (±7 MB); the sidecar went from 14 MB to 97 MB because
+since Stage 08.5 a fresh profile opens the Home folder at start (folder covers decode images), so the benchmark no
+longer measures an empty app. A sidecar started without a folder idles at 1 MB of heap. The benchmark should start
+without a folder again (Stage P05).
+
 ## Exit checklist
 
-- [ ] implementation complete
-- [ ] tests complete
-- [ ] benchmark complete
-- [ ] performance regression reviewed
-- [ ] docs/ADR updated
+- [x] implementation complete
+- [x] tests complete
+- [x] benchmark complete
+- [x] performance regression reviewed (both-views budget recalibrated to 160 MB)
+- [x] docs/ADR updated

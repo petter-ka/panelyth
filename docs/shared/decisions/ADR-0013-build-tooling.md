@@ -4,24 +4,25 @@
 
 Accepted (Stage 00)
 
-Amended 2026-10-05 (ADR-0031): Stage P01 renames `apps/renderer` to `apps/viewer-renderer` and extracts `packages/ui`
-and `packages/renderer-core`; `apps/desktop` stays the single shell, with one preload per app; Stage C00 adds
-`apps/commander-renderer`.
+Amended 2026-10-05 (ADR-0031): the code moved into `shared/` (`desktop`, `contracts`, `sidecar`, `e2e`, `bench`),
+`viewer/` (`renderer`) and `commander/`; package names were kept. Stage P01 extracts `shared/ui` and
+`shared/renderer-core`; `shared/desktop` stays the single shell, with one preload per app; Stage C00 adds
+`commander/renderer`. Paths below use the new layout.
 
 ## Decision
 
-- **pnpm workspace** with packages `apps/desktop`, `apps/renderer`, `packages/contracts`, `tests/e2e`
-  and `bench`. `native/fastview-go` is a single Go module outside the JS workspace.
+- **pnpm workspace** with packages `shared/desktop`, `viewer/renderer`, `shared/contracts`, `shared/e2e`
+  and `shared/bench`. `shared/sidecar` is a single Go module outside the JS workspace.
 - **Vite for all three JS bundles**:
-  - renderer: a standard Vite React app (`apps/renderer/dist`), served in production from `app://fastview/`
+  - renderer: a standard Vite React app (`viewer/renderer/dist`), served in production from `app://fastview/`
   - main: Vite library mode, a single CommonJS bundle (`dist/main/main.cjs`), with `electron` and Node builtins external
   - preload: Vite library mode, a **single self-contained CommonJS file** (`dist/preload/preload.cjs`) that
     may require only `electron`, as the Electron sandbox requires
-  - `packages/contracts` ships TypeScript source and is bundled into each consumer. It has no build step.
+  - `shared/contracts` ships TypeScript source and is bundled into each consumer. It has no build step.
 - `electron-vite` is not used, because it assumes main, preload and renderer share one package. That conflicts with the
-  separate `apps/desktop` and `apps/renderer` packages that Stage 00 prescribes.
+  separate `shared/desktop` and `viewer/renderer` packages that Stage 00 prescribes.
 - **Go sidecar** builds with `CGO_ENABLED=0 go build -trimpath` for the host into
-  `apps/desktop/resources/bin/<platform>-<arch>/fastview-sidecar[.exe]` (`pnpm build:sidecar`). Packaged
+  `shared/desktop/resources/bin/<platform>-<arch>/fastview-sidecar[.exe]` (`pnpm build:sidecar`). Packaged
   builds read it from `resources/bin`. The packager choice is deferred to Stage P04.
 - **TypeScript is pinned to 6.0.x**, because `typescript-eslint` 8.x supports `<6.1`. Move to TypeScript 7 (the
   native compiler) once the lint toolchain supports it.

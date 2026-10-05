@@ -8,15 +8,15 @@ coverage/
 Thumbs.db
 
 # built sidecar binaries
-apps/desktop/resources/bin/
-native/fastview-go/bin/
+shared/desktop/resources/bin/
+shared/sidecar/bin/
 
 # playwright
-tests/e2e/test-results/
-tests/e2e/playwright-report/
+shared/e2e/test-results/
+shared/e2e/playwright-report/
 
 # go
 *.test
 *.prof
 *.out
-!bench/results/**
+!shared/bench/results/**

@@ -26,7 +26,7 @@ the shared platform. App-specific architecture:
                                           │ async framed RPC over stdio (ADR-0012)
                                           ▼
 ┌───────────────────────────────────────────────────────────────────────────────────┐
-│ Go sidecar (native/fastview-go), one for both apps                                │
+│ Go sidecar (shared/sidecar), one for both apps                                │
 │                                                                                   │
 │  Scanner ──► Index store (SQLite; all entries, scope per query: ADR-0026)         │
 │      │                 │                                                          │
@@ -45,8 +45,8 @@ the shared platform. App-specific architecture:
 
 | | Viewer | Commander |
 |---|---|---|
-| Renderer | `apps/viewer-renderer` (today `apps/renderer`) | `apps/commander-renderer` (Stage C00) |
-| App view | `preload/viewer` in `apps/desktop` | `preload/commander` in `apps/desktop` |
+| Renderer | `viewer/renderer` | `commander/renderer` (Stage C00) |
+| App view | `preload/viewer` in `shared/desktop` | `preload/commander` in `shared/desktop` |
 | Index scope per query | `media`: folders and supported media (ADR-0015) | `all`: every entry, with attributes (ADR-0026) |
 | Capabilities | open folders and media only; no commands (ADR-0027) | open any file on a user action; programs after confirmation; command line (ADR-0027) |
 | Content surface | tiles only (ADR-0004) | detailed and brief lists, thumbnails later (ADR-0028) |
@@ -54,13 +54,13 @@ the shared platform. App-specific architecture:
 
 Shared code:
 
-- `apps/desktop`: the shell (main process and one preload per app);
-- `packages/contracts`: wire types, guards, golden fixtures (ADR-0012);
-- `packages/ui` (Stage P01): design tokens, Tailwind theme, primitives (menus, dialogs, buttons, icons), notices, the
+- `shared/desktop`: the shell (main process and one preload per app);
+- `shared/contracts`: wire types, guards, golden fixtures (ADR-0012);
+- `shared/ui` (Stage P01): design tokens, Tailwind theme, primitives (menus, dialogs, buttons, icons), notices, the
   app switch button;
-- `packages/renderer-core` (Stage P01): bridge, page store, selection algebra, keymap, theme, settings and sidecar
+- `shared/renderer-core` (Stage P01): bridge, page store, selection algebra, keymap, theme, settings and sidecar
   stores;
-- later `packages/media-ui`: image viewer and video player (Stage C05), and the tile components (Stage C10).
+- later `shared/media-ui`: image viewer and video player (Stage C05), and the tile components (Stage C10).
 
 ## Responsibility boundaries
 
@@ -224,7 +224,7 @@ The renderer uses normal `<img>` elements so Chromium performs image loading and
 SQLite is the source of truth for the local index.
 
 > Superseded in detail by ADR-0015 (directory-centric `entries` table), ADR-0016 (`index.db` vs `library.db`)
-> and ADR-0017 (query sessions). The implemented schema is `native/fastview-go/internal/index/schema.go`.
+> and ADR-0017 (query sessions). The implemented schema is `shared/sidecar/internal/index/schema.go`.
 > The conceptual tables below are kept for history.
 
 Conceptual tables:
