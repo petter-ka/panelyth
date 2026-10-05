@@ -56,7 +56,7 @@ Use current stable releases at implementation time. Do not hardcode obsolete ver
 - use memoization only when profiling shows it helps
 - prefer batched updates over per-file React updates
 - renderer must remain responsive while indexing or decoding
-- use `@tanstack/react-virtual` for the image grid
+- use `@tanstack/react-virtual` for the tile view (tiles left to right, fixed size, more per row on wider windows; no list/table views)
 - use fixed or predictably measurable tile geometry where possible
 - keep scrolling independent from data fetching
 
@@ -142,4 +142,4 @@ When a stage is completed, update:
 
 ## Product UX additions
 
-The product includes a resizable three-pane workspace, drive/sidebar navigation, indexed search/sort/filter, large/medium/small thumbnail modes, compact/detailed lists, image zoom and local video playback, context menus, file properties, multi-selection and asynchronous batch operations. Tailwind + shadcn/ui form the visual system; effects must be performance-aware.
+The product includes a resizable three-pane workspace, drive/sidebar navigation, indexed search/sort/filter, a responsive tile view (small/medium/large tiles flowing left to right; no list or table views), image zoom and local video playback, context menus, file properties, multi-selection and asynchronous batch operations. Tailwind + shadcn/ui form the visual system; effects must be performance-aware.

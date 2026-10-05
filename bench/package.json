@@ -1,0 +1,17 @@
+{
+  "name": "@fastview/bench",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "startup": "tsx scripts/startup.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@fastview/contracts": "workspace:*",
+    "@types/node": "24.19.0",
+    "electron": "44.5.1",
+    "playwright": "1.63.0",
+    "tsx": "4.23.15"
+  }
+}

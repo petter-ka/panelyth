@@ -1,0 +1,13 @@
+{
+  "e": {
+    "code": "INVALID_ARGUMENT",
+    "details": {
+      "reason": "INVALID_NAME"
+    },
+    "message": "The name can't contain / or \\.",
+    "retryable": false
+  },
+  "id": 54,
+  "ok": false,
+  "t": "res"
+}

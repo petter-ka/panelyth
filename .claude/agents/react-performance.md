@@ -8,7 +8,7 @@ You are the React performance agent.
 
 Focus:
 
-- virtualized grid
+- virtualized tile view (fixed-size tiles left to right; tiles per row from width; no list/table views)
 - infinite scrolling
 - selection/navigation
 - thumbnail priority

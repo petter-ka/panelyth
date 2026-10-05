@@ -1,0 +1,137 @@
+import type { MediaOpenResult, MediaResolveResult } from "@fastview/contracts"
+import { protocol } from "electron"
+import { randomBytes } from "node:crypto"
+import { createReadStream } from "node:fs"
+import { stat } from "node:fs/promises"
+import { Readable } from "node:stream"
+
+export const MEDIA_SCHEME = "fastview-media"
+
+interface MediaTarget {
+  path: string
+  mime: string
+}
+
+/**
+ * Opaque tokens for originals (ADR-0009, ARCHITECTURE-ANALYSIS §8). The
+ * renderer only ever holds fastview-media://m/<token>; tokens map to paths
+ * the sidecar validated, and the map is a bounded LRU.
+ */
+export class MediaTokens {
+  private readonly map = new Map<string, MediaTarget>()
+
+  constructor(private readonly capacity = 64) {}
+
+  mint(target: MediaTarget): string {
+    const token = randomBytes(16).toString("hex")
+    this.map.set(token, target)
+    while (this.map.size > this.capacity) this.map.delete(this.map.keys().next().value!)
+    return token
+  }
+
+  get(token: string): MediaTarget | undefined {
+    const target = this.map.get(token)
+    if (target) {
+      // Refresh LRU position: the open item stays valid while in use.
+      this.map.delete(token)
+      this.map.set(token, target)
+    }
+    return target
+  }
+
+  get size(): number {
+    return this.map.size
+  }
+}
+
+const URL_PATTERN = /^fastview-media:\/\/m\/([0-9a-f]{32})$/
+
+/** Extracts the token from a fastview-media URL, or null for anything else. */
+export function parseMediaUrl(url: string): string | null {
+  return URL_PATTERN.exec(url)?.[1] ?? null
+}
+
+export interface ByteRange {
+  start: number
+  end: number // inclusive
+}
+
+/**
+ * Parses a single "bytes=a-b" / "bytes=a-" / "bytes=-n" range. Returns null
+ * for no range, "invalid" for unsatisfiable or multi-range requests.
+ */
+export function parseRange(header: string | null, size: number): ByteRange | null | "invalid" {
+  if (!header) return null
+  const m = /^bytes=(\d*)-(\d*)$/.exec(header.trim())
+  if (!m || (m[1] === "" && m[2] === "")) return "invalid"
+  let start: number
+  let end: number
+  if (m[1] === "") {
+    const suffix = Number(m[2])
+    if (suffix === 0) return "invalid"
+    start = Math.max(0, size - suffix)
+    end = size - 1
+  } else {
+    start = Number(m[1])
+    end = m[2] === "" ? size - 1 : Math.min(Number(m[2]), size - 1)
+  }
+  if (start >= size || start > end) return "invalid"
+  return { start, end }
+}
+
+export function mintMediaUrl(tokens: MediaTokens, target: MediaTarget): string {
+  return `${MEDIA_SCHEME}://m/${tokens.mint(target)}`
+}
+
+/**
+ * media.open: what the renderer gets for a resolved entry. Never the path;
+ * a token URL only when the original may be loaded (displayable images,
+ * every video; Chromium decides whether it can play it).
+ */
+export function toMediaOpenResult(r: MediaResolveResult, tokens: MediaTokens): MediaOpenResult {
+  return {
+    url: r.original ? mintMediaUrl(tokens, { path: r.path, mime: r.mime }) : null,
+    kind: r.kind,
+    mime: r.mime,
+    width: r.width,
+    height: r.height,
+    durationMs: r.durationMs,
+    videoCodec: r.videoCodec,
+    audioCodec: r.audioCodec,
+  }
+}
+
+/** Serves token URLs with Range support (video seeking needs 206 responses). */
+export function handleMediaProtocol(tokens: MediaTokens): void {
+  protocol.handle(MEDIA_SCHEME, async (request) => {
+    const token = parseMediaUrl(request.url)
+    const target = token ? tokens.get(token) : undefined
+    if (!target) return new Response(null, { status: 404 })
+    let size: number
+    try {
+      size = (await stat(target.path)).size
+    } catch {
+      return new Response(null, { status: 404 })
+    }
+    const range = parseRange(request.headers.get("Range"), size)
+    if (range === "invalid") {
+      return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } })
+    }
+    const { start, end } = range ?? { start: 0, end: size - 1 }
+    const body =
+      size === 0
+        ? null
+        : (Readable.toWeb(createReadStream(target.path, { start, end })) as ReadableStream)
+    return new Response(body, {
+      status: range ? 206 : 200,
+      headers: {
+        "Content-Type": target.mime || "application/octet-stream",
+        "Content-Length": String(size === 0 ? 0 : end - start + 1),
+        "Accept-Ranges": "bytes",
+        ...(range ? { "Content-Range": `bytes ${start}-${end}/${size}` } : {}),
+        "Cache-Control": "no-store",
+        "X-Content-Type-Options": "nosniff",
+      },
+    })
+  })
+}

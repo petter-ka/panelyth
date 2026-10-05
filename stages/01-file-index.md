@@ -1,35 +1,144 @@
 # Stage 01 — File Index
 
+Status: **Complete** (2026-09-30)
+
 ## Objective
 
-Incrementally index image files into SQLite.
+Incrementally index image and video files into SQLite, and serve them to the renderer in batches without
+freezing it.
 
-## Work
+## Decisions taken at the start of this stage
 
-- folder normalization
-- recursive scan
-- supported-image detector
-- SQLite schema
-- batch inserts
-- deterministic sorting
-- offset/limit API
-- scan generation
-- cancellation
-- change detection foundation
-- file watcher integration
+Stage 01 depended on open questions C1–C4 and C6 in `docs/ARCHITECTURE-ANALYSIS.md`. They were accepted
+**by default** (the recommended option, adopted without objection when the stage was started) and written up
+as ADRs, so each can be revisited on its own:
 
-## Acceptance
+| ADR | Decision |
+|---|---|
+| ADR-0015 | Directory-centric index. Opening a folder lists only its children; recursive indexing is opt-in; per-directory generations; hidden files and symlinks skipped |
+| ADR-0016 | `index.db` in the OS cache (disposable) and `library.db` in the config dir (user data, created in Stage 05) |
+| ADR-0017 | Query sessions (ordered id lists in Go, constant-cost paging, throttled invalidation); selection descriptors specified |
+| ADR-0019 | `CGO_ENABLED=0`: modernc SQLite, fsnotify, x/text |
+| ADR-0020 | Watch only the open folder, non-recursively; debounced re-listing |
 
-- index 100k synthetic entries without browser freeze
-- browser receives results in batches
-- scanner can be cancelled
-- repeat open reuses existing index information
+## Scope delivered
 
-## Performance checks
+| Item from the stage plan | Where |
+|---|---|
+| folder normalization | `internal/pathkey`: NFC, '/' separators, platform case folding, subtree ranges |
+| recursive scan | `internal/scan`: bounded workers (4), depth-first frontier, opt-in from the UI ("Include subfolders") |
+| supported-image detector | `internal/media`: by extension (images and videos, BRS §6) |
+| SQLite schema | `internal/index/schema.go`: `entries`, `dir_state`, `scans`, `meta` (versioned; recreated if corrupt or incompatible) |
+| batch inserts | one writer per scan; transactions of ≤ 2000 rows or 40 ms; prepared upserts |
+| deterministic sorting | directories first, then sort keys, then natural name and id; precomputed natural-sort key (`internal/natsort`) |
+| offset/limit API | `query.open/page/close` sessions, `limit ≤ 1000` |
+| scan generation | per-directory reconcile on completion only; cancelled or failed listings delete nothing |
+| cancellation | `dir.cancelScan`; a new foreground scan cancels the previous one |
+| change detection foundation | size and mtime change resets `meta_state`/dimensions for Stage 02 |
+| file watcher integration | `internal/watch`: current folder only; bursts become one re-listing (300 ms quiet, 2 s max) |
 
-Record:
+Renderer: an "Open folder…" button (native dialog), folder header, live indexing summary with **Stop**,
+sort field and direction, "Include subfolders", error and empty states, and **a bounded first page (100 rows)**.
+The virtualized tile view replaces the first-page table in Stage 03 (no list/table views, ADR-0004). Events are coalesced in Go (50 ms, latest wins
+per scan or session), validated in main, and applied to a small Zustand store.
 
-- files/sec
-- DB write batch latency
-- first page latency
-- memory growth
+## APIs/contracts
+
+- Methods: `dialog.openFolder` (main), `dir.open`, `dir.cancelScan`, `query.open`, `query.page`, `query.close`
+- Events: `index.progress` and `query.invalidated`, forwarded by main after shape validation
+- Contracts in `packages/contracts/src/rpc.ts` and `events.ts`. Golden fixtures cover every new method, the
+  expired-session error and the progress event.
+
+## Non-goals (kept out)
+
+Thumbnails and metadata decoding (Stage 02), the virtualized tile view (Stage 03), search, drives, the folder tree,
+bookmarks and recent folders (Stage 05), drag-and-drop opening (Stage 05), and `library.db` (Stage 05).
+
+## Tests
+
+| Suite | Count | New in this stage |
+|---|---|---|
+| Go | 14 packages | pathkey, media, natsort, index store (reconcile, cancel safety, subtree, cascade, relink, corrupt recreate, generations across reopen), scanner (shallow, recursive, rescan, cancel keeps rows, unreadable dir, foreground cancel, goroutine leak), sessions (follow scan, throttle, page cap, recursive invalidation, eviction), coalescer, watcher (burst → 1 re-list, max wait, switching folders), golden frames |
+| Contracts | 19 | guards for new results and events; malformed payload rejection |
+| Desktop | 42 | validators for every new method (injection-style sort fields, relative paths, NUL, limits), main-local dialog, event forwarding drops unknown or malformed events |
+| Renderer | 42 | open via dialog, cancelled dialog, bounded rows for 100k, errors, progress, stale and foreign invalidations ignored, stop, early completion event, expired session reopen, sort and recursive reopen, out-of-order opens |
+| E2E | 13 | 100k folder without freezing, stop a recursive scan, reuse index across restarts, watcher picks up new files, missing folder error |
+
+## Benchmarks
+
+Environment: Windows 11, i9-13900K, 64 GB, NVMe, Go 1.27.0, modernc SQLite 3.53. Fixtures are generated by
+`cmd/fixturegen`: `flat-100k` (90,000 media + 10,000 .txt in one folder) and `tree-50k` (259 folders, 46,620
+media). Results: `bench/results/stage-01-2026-09-30-petter-{index.json,startup.json}` and `…-e2e-renderer.jsonl`.
+
+### Index pipeline (`pnpm bench:index`)
+
+| Metric | flat-100k | tree-50k (recursive) |
+|---|---|---|
+| Scan throughput, empty index | 30–45k entries/s (2.0–3.0 s) | 39–50k entries/s |
+| Rescan throughput, warm index | 20–25k entries/s | 35–41k entries/s |
+| Time to first committed rows | 27 ms | 41–126 ms |
+| Write batch latency (avg / max) | ≈ 40 / 150–206 ms | ≈ 35 / 94–131 ms |
+| `query.open` materialization p50 | 52 ms (name), 81 ms (modified), 90 ms (type) | 36 ms |
+| `query.page(256)` p95 at offset 0 / middle / last | ≤ 1.5 ms at every offset | ≤ 1.5 ms |
+| Go memory: before, peak, after GC | 11.6 MB, 34 MB, 34 MB | |
+
+Ranges come from the two benchmark runs. The retained 23 MB after GC is SQLite's page cache, which is now bounded to
+32 MB in total (writer 16 MB plus 4 × 4 MB readers). Before, the bound was 80 MB, and the benchmark exposed that.
+
+### Renderer during a 100k index (e2e, production build, 5 runs)
+
+| Metric | Result | Budget |
+|---|---|---|
+| Click → first rows painted | 124–127 ms | < 500 ms (e2e gate) |
+| Long tasks (> 50 ms) while indexing | **0** in every run | none |
+| Worst rAF frame gap | 8–119 ms (no long task behind any of them) | < 250 ms (e2e gate) |
+| `index.progress` events for 90,000 rows | 12–131 | < 200 |
+| `query.invalidated` events | 5–19 | < 100 |
+| Mounted rows | 101 (header + one page) | bounded |
+| Complete (all 90,000 indexed) | 1.7–3.7 s; **one run 13.4 s** (see risks) | — |
+
+### Startup regression check (`pnpm bench:startup`)
+
+Startup and memory budgets still pass. Sidecar `hello` is p50 112 ms (Stage 00: 83 ms), because `index.db` is opened
+before the handshake. Idle is 337 MB, +41 MB over empty Electron (budget +60). Ping p95 is 0.2 ms, and sidecar exit
+on quit is p95 18 ms.
+
+### Optimizations made from measurements
+
+1. **First rows 355 → 125 ms.** An empty session now refreshes after 25 ms instead of the 250 ms throttle
+   (`query/sessions.go`). The first e2e figure (907 ms) was mostly Playwright's polling back-off, so time to first
+   rows is now measured inside the page.
+2. **Page-cache bound 80 → 32 MB** (see above).
+3. **`LoadItems` chunking.** The benchmark hit SQLite's bound-variable limit with 100k ids; the store now
+   chunks internally.
+
+## Acceptance criteria
+
+- [x] index 100k synthetic entries without browser freeze (0 long tasks, bounded DOM)
+- [x] browser receives results in batches (≤ 131 progress events and ≤ 19 invalidations for 90k rows)
+- [x] scanner can be cancelled (Stop in the UI; cancelled listings keep existing rows)
+- [x] repeat open reuses existing index information (`listedBefore`, full total before the rescan finishes)
+
+## Risks and follow-ups
+
+- **One of five e2e runs took 13.4 s to finish indexing** (others 1.7–3.7 s), with the renderer still
+  responsive. The cause is not established; candidates are antivirus metadata scanning and WAL checkpoint stalls. Stage 10 profiles it
+  with a scan trace. It is not hidden by the budgets, because completion time has no budget yet.
+- Warm rescans are about 40% slower than cold scans, because every row is rewritten to bump `seen_gen`. Stage 10
+  candidate: track seen ids in memory and delete the complement.
+- The sidecar handshake includes opening the index (+30 ms). The store could open lazily after `hello` if
+  startup budgets tighten.
+- `path_key` folding uses the platform default (case-insensitive on Windows and macOS). Per-volume detection is Stage 09.
+- The watcher covers the open folder only. Changes deep inside a recursive view need a refresh (ADR-0020).
+- The Stage 01 index JSON was later overwritten by the Stage 02 regression run (fixed for good in Stage 02:
+  benchmark writers never overwrite). The numbers above are the Stage 01 record.
+- The Stage 00 startup JSON was accidentally overwritten by this stage's run before the harness was fixed to
+  file results per stage. The Stage 00 numbers remain in `stages/00-foundation.md`.
+
+## Exit checklist
+
+- [x] implementation complete
+- [x] tests complete
+- [x] benchmark complete
+- [x] performance regression reviewed
+- [x] docs/ADR updated (ADR-0015, 0016, 0017, 0019, 0020)

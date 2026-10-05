@@ -1,0 +1,476 @@
+import type { SidecarStatus } from "@fastview/contracts"
+import type { IpcMainInvokeEvent } from "electron"
+import { describe, expect, it, vi } from "vitest"
+import {
+  createInvokeHandler,
+  forwardableEvent,
+  type MainHandlers,
+  type SidecarPort,
+} from "../src/main/ipc/router"
+import { RpcError } from "../src/main/sidecar/RpcClient"
+
+vi.mock("electron", () => ({}))
+
+const ORIGIN = "app://fastview"
+const status: SidecarStatus = {
+  state: "ready",
+  pid: 1,
+  protocol: 1,
+  version: "v",
+  restarts: 0,
+  lastError: null,
+  since: 0,
+}
+
+function eventFrom(url: string, parent: object | null = null): IpcMainInvokeEvent {
+  return { senderFrame: { url, parent } } as unknown as IpcMainInvokeEvent
+}
+
+const mainHandlers = (): MainHandlers => ({
+  "app.exit": vi.fn(async () => ({ ok: true })),
+  "sidecar.getStatus": vi.fn(() => status),
+  "dialog.openFolder": vi.fn(async () => ({ path: "/picked" })),
+  "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
+    url: `fastview-media://m/${String(p.entryId).padStart(32, "0")}`,
+    kind: "image" as const,
+    mime: "image/jpeg",
+    width: 10,
+    height: 10,
+    durationMs: 0,
+    videoCodec: "",
+    audioCodec: "",
+  })),
+  "places.list": vi.fn(async () => ({ places: [] })),
+  "shell.open": vi.fn(async () => ({ ok: true })),
+  "shell.reveal": vi.fn(async () => ({ ok: true })),
+  "shell.revealPath": vi.fn(async () => ({ ok: true })),
+  "clipboard.copyPaths": vi.fn(async () => ({ count: 1, truncated: false })),
+  "clipboard.copyText": vi.fn(async () => ({ ok: true })),
+  "clipboard.copyImage": vi.fn(async () => ({ width: 1, height: 1 })),
+})
+
+function setup(devMethods = false) {
+  const sidecar: SidecarPort = {
+    call: vi.fn(async (method: string) => ({ echoed: method })),
+    getStatus: vi.fn(() => status),
+  }
+  const main = mainHandlers()
+  const handler = createInvokeHandler({ sidecar, main, trustedOrigin: ORIGIN, devMethods })
+  return { sidecar, main, handler, ok: eventFrom(`${ORIGIN}/index.html`) }
+}
+
+describe("invoke router", () => {
+  it("forwards allowed sidecar methods", async () => {
+    const { handler, sidecar, ok } = setup()
+    await expect(handler(ok, "system.ping", {})).resolves.toEqual({
+      ok: true,
+      r: { echoed: "system.ping" },
+    })
+    expect(sidecar.call).toHaveBeenCalledWith("system.ping", {})
+  })
+
+  it("answers main-local methods without the sidecar", async () => {
+    const { handler, sidecar, main, ok } = setup()
+    await expect(handler(ok, "sidecar.getStatus", {})).resolves.toEqual({ ok: true, r: status })
+    await expect(handler(ok, "dialog.openFolder", {})).resolves.toEqual({
+      ok: true,
+      r: { path: "/picked" },
+    })
+    expect(main["dialog.openFolder"]).toHaveBeenCalledWith(ok, {})
+    await expect(handler(ok, "media.open", { entryId: 7 })).resolves.toMatchObject({
+      ok: true,
+      r: { kind: "image" },
+    })
+    expect(main["media.open"]).toHaveBeenCalledWith(ok, { entryId: 7 })
+    const sel = { queryId: 1, version: 1, ranges: [], include: [], exclude: [] }
+    for (const [m, p] of [
+      ["places.list", {}],
+      ["shell.open", { entryId: 3 }],
+      ["shell.reveal", { entryId: 3 }],
+      ["shell.revealPath", { path: process.platform === "win32" ? "C:\\x" : "/x" }],
+      ["clipboard.copyPaths", { selection: sel }],
+      ["clipboard.copyImage", { entryId: 7 }],
+      ["clipboard.copyText", { text: "C:\\x" }],
+    ] as const) {
+      expect(await handler(ok, m, p), m).toMatchObject({ ok: true })
+      expect(main[m]).toHaveBeenCalledWith(ok, p)
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("forwards valid index calls to the sidecar", async () => {
+    const { handler, sidecar, ok } = setup()
+    const sel = { queryId: 1, version: 2, ranges: [[0, 10]], include: [12], exclude: [3] }
+    const abs = process.platform === "win32" ? "C:\\Photos" : "/photos"
+    const calls: [string, unknown][] = [
+      ["dir.open", { path: abs, recursive: false }],
+      ["dir.openEntry", { entryId: 2, recursive: false }],
+      ["dir.cancelScan", { scanId: 3 }],
+      [
+        "query.open",
+        {
+          dirId: 1,
+          recursive: true,
+          sort: [
+            { field: "created", direction: "desc" },
+            { field: "dimensions", direction: "asc" },
+          ],
+          kinds: ["image"],
+          search: "beach 2024",
+          exts: ["jpg", "mp4"],
+          favorite: true,
+          minRating: 3,
+          tags: ["Holiday", "family"],
+        },
+      ],
+      ["query.facets", { queryId: 1 }],
+      ["selection.info", { selection: sel }],
+      ["selection.rebase", { selection: sel }],
+      ["props.get", { entryId: 4 }],
+      ["fs.volumes", {}],
+      ["fs.listDirs", { path: abs }],
+      ["library.get", {}],
+      ["library.setSetting", { key: "workspace", value: { panes: [20, 60, 20], tileSize: "md" } }],
+      ["library.addBookmark", { path: abs, label: "" }],
+      ["library.removeBookmark", { id: 3 }],
+      ["query.page", { queryId: 1, offset: 0, limit: 1000, thumbProfile: "grid-md" }],
+      ["query.page", { queryId: 2, offset: 5, limit: 10, thumbProfile: null }],
+      [
+        "preview.ensure",
+        { lane: "grid", epoch: 3, profile: "grid-sm", items: [{ id: 1, priority: 0 }], force: [1] },
+      ],
+      [
+        "folder.covers",
+        { lane: "covers", epoch: 2, profile: "grid-md", items: [{ id: 7, priority: 1 }] },
+      ],
+      ["query.close", { queryId: 1 }],
+      [
+        "jobs.start",
+        { kind: "copy", source: { selection: sel }, destination: abs, conflict: "keepBoth" },
+      ],
+      [
+        "jobs.start",
+        { kind: "move", source: { selection: sel }, destination: abs, conflict: "skip" },
+      ],
+      ["jobs.start", { kind: "trash", source: { selection: sel } }],
+      ["jobs.start", { kind: "delete", source: { selection: sel } }],
+      [
+        "jobs.start",
+        { kind: "rename", source: { selection: sel }, pattern: "{name} {n:000}", start: 1 },
+      ],
+      ["jobs.start", { kind: "favorite", source: { selection: sel }, favorite: true }],
+      ["jobs.start", { kind: "rating", source: { selection: sel }, rating: 0 }],
+      ["jobs.start", { kind: "tag", source: { selection: sel }, tag: "Holiday", add: false }],
+      ["jobs.cancel", { jobId: 1 }],
+      ["jobs.errors", { jobId: 1, offset: 0, limit: 500 }],
+      ["jobs.list", {}],
+      ["clip.set", { selection: sel, mode: "cut" }],
+      ["clip.get", {}],
+      ["clip.paste", { destination: abs, conflict: "replace" }],
+      ["entry.rename", { entryId: 4, name: "Beach day.jpg" }],
+      ["library.tags", {}],
+      ["library.deleteTag", { id: 2 }],
+    ]
+    for (const [m, p] of calls) {
+      expect(await handler(ok, m, p), m).toMatchObject({ ok: true })
+    }
+    expect(sidecar.call).toHaveBeenCalledTimes(calls.length)
+  })
+
+  it("accepts the dev server origin when configured", async () => {
+    const sidecar: SidecarPort = { call: vi.fn(async () => ({})), getStatus: () => status }
+    const handler = createInvokeHandler({
+      sidecar,
+      main: mainHandlers(),
+      trustedOrigin: "http://localhost:5173",
+      devMethods: false,
+    })
+    expect(await handler(eventFrom("http://localhost:5173/"), "system.ping", {})).toMatchObject({
+      ok: true,
+    })
+    expect(await handler(eventFrom("http://localhost:5174/"), "system.ping", {})).toMatchObject({
+      ok: false,
+    })
+  })
+
+  it.each([
+    ["foreign origin", eventFrom("https://evil.example/")],
+    ["lookalike host", eventFrom("app://fastview.evil/index.html")],
+    ["file origin", eventFrom("file:///C:/x.html")],
+    ["subframe", eventFrom(`${ORIGIN}/index.html`, {})],
+  ])("rejects untrusted sender: %s", async (_name, event) => {
+    const { handler, sidecar } = setup()
+    const res = await handler(event, "system.ping", {})
+    expect(res).toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    "system.shutdown",
+    "media.resolve",
+    "entry.path",
+    "selection.paths",
+    "nope",
+    42,
+    undefined,
+  ])("rejects non-allowlisted method %s", async (m) => {
+    const { handler, sidecar, ok } = setup()
+    expect(await handler(ok, m, {})).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("gates dev methods", async () => {
+    const off = setup(false)
+    expect(await off.handler(off.ok, "system.echo", { payload: "x" })).toMatchObject({
+      e: { code: "METHOD_NOT_FOUND" },
+    })
+    const on = setup(true)
+    expect(await on.handler(on.ok, "system.echo", { payload: "x" })).toMatchObject({ ok: true })
+  })
+
+  it("validates params", async () => {
+    const { handler, ok } = setup(true)
+    const q = {
+      dirId: 1,
+      recursive: false,
+      sort: [],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+    }
+    const sel = { queryId: 1, version: 1, ranges: [], include: [], exclude: [] }
+    for (const [m, p] of [
+      ["system.ping", { extra: 1 }],
+      ["system.ping", []],
+      ["system.echo", { payload: 1 }],
+      ["system.echo", { payload: "x", more: 1 }],
+      ["system.echo", { payload: "x".repeat(1024 * 1024 + 1) }],
+      ["dir.open", { path: "relative/dir", recursive: false }],
+      ["dir.open", { path: "", recursive: false }],
+      ["dir.open", { path: "/x\u0000y", recursive: false }],
+      ["dir.open", { path: "/x", recursive: "yes" }],
+      ["dir.open", { path: "/x", recursive: false, extra: 1 }],
+      ["dir.openEntry", { entryId: 0, recursive: false }],
+      ["dir.openEntry", { entryId: 2 }],
+      ["dir.cancelScan", { scanId: 0 }],
+      ["dir.cancelScan", { scanId: 1.5 }],
+      [
+        "query.open",
+        {
+          dirId: 1,
+          recursive: false,
+          sort: [{ field: "name; DROP TABLE", direction: "asc" }],
+          kinds: [],
+          search: "",
+          exts: [],
+          favorite: false,
+          minRating: 0,
+          tags: [],
+        },
+      ],
+      [
+        "query.open",
+        {
+          dirId: 1,
+          recursive: false,
+          sort: [{ field: "name", direction: "up" }],
+          kinds: [],
+          search: "",
+          exts: [],
+          favorite: false,
+          minRating: 0,
+          tags: [],
+        },
+      ],
+      ["query.open", { ...q, kinds: ["file"] }],
+      ["query.open", { dirId: 1, recursive: false, sort: [], kinds: [] }],
+      ["query.open", { ...q, search: "x".repeat(257) }],
+      ["query.open", { ...q, search: 5 }],
+      ["query.open", { ...q, exts: [".jpg"] }],
+      ["query.open", { ...q, exts: ["JPG"] }],
+      ["query.open", { ...q, exts: Array(33).fill("jpg") }],
+      [
+        "query.open",
+        {
+          dirId: 1,
+          recursive: false,
+          sort: Array(5).fill({ field: "name", direction: "asc" }),
+          kinds: [],
+          search: "",
+          exts: [],
+          favorite: false,
+          minRating: 0,
+          tags: [],
+        },
+      ],
+      ["query.open", { ...q, dirId: -1 }],
+      ["query.open", { dirId: 1, recursive: false, sort: [], kinds: [], search: "", exts: [] }],
+      ["query.open", { ...q, favorite: 1 }],
+      ["query.open", { ...q, minRating: 6 }],
+      ["query.open", { ...q, minRating: -1 }],
+      ["query.open", { ...q, tags: [""] }],
+      ["query.open", { ...q, tags: ["t".repeat(65)] }],
+      ["query.open", { ...q, tags: Array(17).fill("t") }],
+      ["query.page", { queryId: 1, offset: -1, limit: 10, thumbProfile: null }],
+      ["query.page", { queryId: 1, offset: 0, limit: 0, thumbProfile: null }],
+      ["query.page", { queryId: 1, offset: 0, limit: 1001, thumbProfile: null }],
+      ["query.page", { queryId: 1, offset: 0, limit: 10 }],
+      ["query.page", { queryId: 1, offset: 0, limit: 10, thumbProfile: "huge" }],
+      ["preview.ensure", { lane: "", epoch: 1, profile: "grid-sm", items: [], force: [] }],
+      ["preview.ensure", { lane: "grid", epoch: -1, profile: "grid-sm", items: [], force: [] }],
+      ["preview.ensure", { lane: "grid", epoch: 1, profile: "poster", items: [], force: [] }],
+      [
+        "preview.ensure",
+        { lane: "grid", epoch: 1, profile: "grid-sm", items: [{ id: 1, priority: 9 }], force: [] },
+      ],
+      [
+        "preview.ensure",
+        { lane: "grid", epoch: 1, profile: "grid-sm", items: [{ id: 1 }], force: [] },
+      ],
+      [
+        "preview.ensure",
+        {
+          lane: "grid",
+          epoch: 1,
+          profile: "grid-sm",
+          items: Array(501).fill({ id: 1, priority: 0 }),
+          force: [],
+        },
+      ],
+      ["preview.ensure", { lane: "grid", epoch: 1, profile: "grid-sm", items: [], force: ["1"] }],
+      ["folder.covers", { lane: "covers", epoch: 1, profile: "grid-sm", items: [], force: [] }],
+      ["folder.covers", { lane: "covers", epoch: 1, profile: "poster", items: [] }],
+      [
+        "folder.covers",
+        {
+          lane: "covers",
+          epoch: 1,
+          profile: "grid-sm",
+          items: Array(201).fill({ id: 1, priority: 0 }),
+        },
+      ],
+      ["query.close", {}],
+      ["media.open", { entryId: 0 }],
+      ["media.open", { entryId: 1, path: "/etc/passwd" }],
+      ["query.facets", { queryId: 0 }],
+      ["selection.info", { selection: { ...sel, ranges: [[5, 2]] } }],
+      ["selection.info", { selection: { ...sel, ranges: [[-1, 2]] } }],
+      ["selection.info", { selection: { ...sel, ranges: [[0, 1, 2]] } }],
+      ["selection.info", { selection: { ...sel, include: ["7"] } }],
+      ["selection.info", { selection: { ...sel, exclude: Array(50_001).fill(1) } }],
+      ["selection.info", { selection: { ...sel, ids: [1, 2, 3] } }],
+      ["selection.info", { ...sel }],
+      ["selection.rebase", { selection: { ...sel, version: 0 } }],
+      ["props.get", { entryId: "1" }],
+      ["fs.volumes", { all: true }],
+      ["fs.listDirs", { path: "relative" }],
+      ["fs.listDirs", { path: "/x", depth: 5 }],
+      ["library.setSetting", { key: "", value: 1 }],
+      ["library.setSetting", { key: "k".repeat(129), value: 1 }],
+      ["library.setSetting", { key: "k", value: undefined }],
+      ["library.setSetting", { key: "k", value: "x".repeat(64 * 1024 + 1) }],
+      ["library.addBookmark", { path: "relative", label: "" }],
+      ["library.addBookmark", { path: "/x", label: "l".repeat(257) }],
+      ["library.removeBookmark", { id: 0 }],
+      ["shell.open", { path: "/usr/bin/evil" }],
+      ["shell.reveal", { entryId: -1 }],
+      ["shell.revealPath", { path: "relative" }],
+      ["clipboard.copyPaths", { selection: { ...sel, queryId: 0 } }],
+      ["clipboard.copyText", { text: "x".repeat(64 * 1024 + 1) }],
+      ["clipboard.copyImage", { entryId: 0 }],
+      ["clipboard.copyImage", { entryId: 1.5 }],
+      ["jobs.start", { kind: "explode", source: { selection: sel } }],
+      ["jobs.start", { kind: "trash", ids: [1, 2, 3] }],
+      ["jobs.start", { kind: "trash", source: { selection: sel }, destination: "/x" }],
+      ["jobs.start", { kind: "trash", source: { selection: { ...sel, queryId: 0 } } }],
+      [
+        "jobs.start",
+        { kind: "copy", source: { selection: sel }, destination: "relative", conflict: "skip" },
+      ],
+      [
+        "jobs.start",
+        { kind: "copy", source: { selection: sel }, destination: "/x", conflict: "ask" },
+      ],
+      ["jobs.start", { kind: "move", source: { selection: sel }, destination: "/x" }],
+      ["jobs.start", { kind: "rename", source: { selection: sel }, pattern: "", start: 1 }],
+      [
+        "jobs.start",
+        { kind: "rename", source: { selection: sel }, pattern: "x".repeat(256), start: 1 },
+      ],
+      ["jobs.start", { kind: "rename", source: { selection: sel }, pattern: "{n}", start: -1 }],
+      ["jobs.start", { kind: "favorite", source: { selection: sel }, favorite: "yes" }],
+      ["jobs.start", { kind: "rating", source: { selection: sel }, rating: 6 }],
+      ["jobs.start", { kind: "rating", source: { selection: sel }, rating: 2.5 }],
+      ["jobs.start", { kind: "tag", source: { selection: sel }, tag: "  ", add: true }],
+      ["jobs.start", { kind: "tag", source: { selection: sel }, tag: "t".repeat(65), add: true }],
+      ["jobs.cancel", { jobId: 0 }],
+      ["jobs.errors", { jobId: 1, offset: 0, limit: 501 }],
+      ["jobs.errors", { jobId: 1, offset: -1, limit: 10 }],
+      ["jobs.list", { all: true }],
+      ["clip.set", { selection: sel, mode: "move" }],
+      ["clip.set", { selection: { ...sel, ranges: [[3, 1]] }, mode: "copy" }],
+      ["clip.paste", { destination: "relative", conflict: "keepBoth" }],
+      ["clip.paste", { destination: "/x", conflict: "ask" }],
+      ["entry.rename", { entryId: 1, name: "" }],
+      ["entry.rename", { entryId: 1, name: "n".repeat(256) }],
+      ["entry.rename", { entryId: 1, name: "a\u0000b.jpg" }],
+      ["entry.rename", { entryId: 1, path: "/etc/x" }],
+      ["library.deleteTag", { id: -1 }],
+    ] as const) {
+      expect(await handler(ok, m, p), `${m} ${JSON.stringify(p).slice(0, 40)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+  })
+
+  it("converts sidecar errors to envelopes", async () => {
+    const { handler, sidecar, ok } = setup()
+    vi.mocked(sidecar.call).mockRejectedValueOnce(new RpcError("SIDECAR_UNAVAILABLE", "gone", true))
+    expect(await handler(ok, "system.info", {})).toEqual({
+      ok: false,
+      e: { code: "SIDECAR_UNAVAILABLE", message: "gone", retryable: true },
+    })
+  })
+})
+
+describe("sidecar event forwarding", () => {
+  const progress = {
+    scanId: 1,
+    dirId: 1,
+    recursive: false,
+    state: "running",
+    dirsListed: 0,
+    dirsPending: 1,
+    entries: 10,
+    skipped: 0,
+    errors: 0,
+    elapsedMs: 5,
+  }
+
+  it("forwards known channels with valid payloads", () => {
+    expect(forwardableEvent({ t: "evt", ch: "index.progress", seq: 1, p: progress })).toEqual({
+      ch: "index.progress",
+      p: progress,
+    })
+    expect(
+      forwardableEvent({
+        t: "evt",
+        ch: "query.invalidated",
+        seq: 2,
+        p: { queryId: 1, version: 2, total: 5 },
+      }),
+    ).not.toBeNull()
+  })
+
+  it("drops unknown channels, main-owned channels and malformed payloads", () => {
+    expect(forwardableEvent({ t: "evt", ch: "nope", seq: 1, p: {} })).toBeNull()
+    expect(forwardableEvent({ t: "evt", ch: "sidecar.status", seq: 1, p: status })).toBeNull()
+    expect(
+      forwardableEvent({ t: "evt", ch: "index.progress", seq: 1, p: { ...progress, state: "?" } }),
+    ).toBeNull()
+  })
+})

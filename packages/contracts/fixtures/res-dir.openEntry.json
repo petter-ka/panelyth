@@ -1,0 +1,24 @@
+{
+  "id": 16,
+  "ok": true,
+  "r": {
+    "crumbs": [
+      {
+        "name": "/",
+        "path": "/"
+      },
+      {
+        "name": "golden",
+        "path": "/fixtures/golden"
+      }
+    ],
+    "dirId": 2,
+    "lastListedAt": null,
+    "listedBefore": false,
+    "name": "folder 1",
+    "path": "/fixtures/golden",
+    "recursive": false,
+    "scanId": 2
+  },
+  "t": "res"
+}

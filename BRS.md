@@ -32,9 +32,7 @@ The media/decoder layer must be extensible without changing the React data model
 
 The content area is virtualized.
 
-Only visible rows plus bounded overscan are mounted.
-
-This applies to thumbnail, compact-list and detailed-list views where practical.
+Content is shown as tiles (FR-11). Only the rows of tiles in view plus a bounded overscan are mounted.
 
 ### FR-04 — Infinite paging
 
@@ -57,7 +55,7 @@ Default desktop layout:
 │ Sidebar       │ Content                          │ Preview          │
 │               │                                  │                  │
 │ Drives        │ Current folder                   │ Selected image   │
-│ Bookmarks     │ grid/list                        │ or video player  │
+│ Bookmarks     │ tiles, left to right             │ or video player  │
 │ Folder tree   │ search/sort/filter               │ metadata         │
 │ Recent        │                                  │                  │
 └───────────────┴──────────────────────────────────┴──────────────────┘
@@ -146,17 +144,20 @@ Current-folder content can be sorted by:
 
 Sorting supports ascending/descending and secondary sort keys.
 
-### FR-11 — View modes
+### FR-11 — Tile view
 
-Content pane supports:
+The content pane shows every item (folder, image, video) as a **tile**. Tiles are placed next to each other
+**left to right** and wrap onto the next line.
 
-- large thumbnails
-- medium thumbnails
-- small thumbnails
-- compact list
-- detailed list/table
+- **Responsive:** tiles have a fixed size, so a wider window or higher resolution fits **more tiles per row**.
+  Tiles do not stretch to fill a row; spare space stays at the right edge.
+- **Tile sizes:** small, medium (default) and large. The size changes the tile, not the layout rule.
+- Each tile shows a thumbnail (or a folder/video/unsupported symbol) and the file name.
+- There are **no list or table views** (product decision 2026-09-30). Details such as size and dates appear in the
+  tile tooltip and in the preview/properties pane.
 
-Thumbnail sizes are profile-driven and map to cache profiles.
+Tile sizes are profile-driven: the thumbnail resolution follows tile size × screen density and maps to cache
+profiles.
 
 ### FR-12 — Selection
 
@@ -355,7 +356,7 @@ Primary workflows are fully usable with keyboard:
 - selection
 - opening
 - search
-- sorting/view modes
+- sorting/tile size
 - context menus where possible
 - preview controls
 
@@ -364,7 +365,7 @@ Primary workflows are fully usable with keyboard:
 Persist:
 
 - pane dimensions/collapse state
-- view mode
+- tile size
 - sorting
 - recent locations
 - bookmarks
@@ -387,7 +388,7 @@ Hot-path changes require a benchmark or before/after trace.
 
 Engineering targets:
 
-- visible grid stays fluid during normal scroll
+- the tile view stays fluid during normal scroll
 - mounted tiles stay bounded
 - search/sort scale through indexed paging
 - visible thumbnails have priority
@@ -441,7 +442,7 @@ Toolbar should expose:
 - search
 - sort
 - filter
-- view mode
+- tile size
 
 ### Preview
 
@@ -485,7 +486,7 @@ Architecture should allow:
 - duplicate detection
 - perceptual search
 - richer video information
-- custom metadata columns
+- custom metadata on tiles and in properties
 - compare view
 - slideshow
 - fullscreen gallery

@@ -3,6 +3,11 @@
 Status: **Proposal — pending review.** Nothing here overrides an accepted ADR until it is written up as one.
 The decisions this document asks for are listed in §11–§12.
 
+Update after Stage 00: M6, M7, M8 and M15 were accepted as ADR-0011 to ADR-0014.
+Update after Stage 01: C1, C2, C3/C4 and C6 were accepted by default as ADR-0015, ADR-0016, ADR-0017 and
+ADR-0019, and M1 as ADR-0020. The memory budget in §10.4 was recalibrated against a measured empty-Electron floor.
+Update after Stage 06: C5 was accepted as ADR-0018 (ffmpeg/ffprobe subprocesses), and the Stage 06 half of C7 was merged.
+
 Inputs read: `CLAUDE.md`, `BRS.md`, `README.md`, `docs/*` (ARCHITECTURE, PERFORMANCE, CACHE-DESIGN, UX-DESIGN,
 DOMAIN-API, TESTING, FEATURE-MATRIX, PRODUCT-PRINCIPLES), `decisions/ADR-0001…0010`, `ROADMAP.md`,
 `DEVELOPMENT-STAGES.md`, `stages/*`, `.claude/agents/*`, `.claude/commands/*`.
@@ -408,9 +413,9 @@ This fixes contradiction C11. Profiles are defined in **device pixels on the lon
 
 | id | long edge | use |
 |---|---|---|
-| `grid-sm` | 192 | small tiles, list icons |
-| `grid-md` | 384 | medium tiles |
-| `grid-lg` | 768 | large tiles / HiDPI medium |
+| `grid-sm` | 192 | small and medium tiles at 1× |
+| `grid-md` | 384 | small and medium tiles at 2×, large tiles at 1× |
+| `grid-lg` | 768 | large tiles at 2× |
 | `viewer-fit` | 2560 (cap) | preview pane when the original is not browser-displayable or is huge |
 | `poster` | 768 | video poster frame |
 
@@ -452,22 +457,23 @@ cleanup deleted a file that is still referenced, the `<img>` gets a 404, and the
 
 ---
 
-## 6. Virtualized grid architecture
+## 6. Virtualized tile view architecture
+
+> Revised 2026-09-30 by product decision (ADR-0004): **tiles only**, flowing left to right with a **fixed tile
+> size**; a wider window fits more tiles per row. No list or table views. Spec: `stages/03-tile-view.md`.
 
 ```text
 ContentPane
- └─ ContentView (mode switch)
-     ├─ ThumbnailGrid     useVirtualizer, count = ceil(total / cols), estimateSize = rowHeight (fixed)
-     │    └─ GridRow (memo, index) ── positioned by translateY
-     │         └─ Tile (memo, itemIndex) ── useSyncExternalStore(pageStore.item(i)), selection.isSelected(id)
-     ├─ CompactList       1-D virtualizer, fixed 28 px rows
-     └─ DetailsTable      1-D virtualizer, sticky header, column widths in layout store
+ └─ TileView          useVirtualizer, count = ceil(total / perRow), estimateSize = rowHeight (fixed per size)
+      └─ TileRow (memo, rowIndex) ── positioned by translateY, tiles left-aligned (flex, fixed widths)
+           └─ Tile (memo, itemIndex) ── useSyncExternalStore(pageStore.item(i)), selection.isSelected(id)
 ```
 
-- **Geometry**: `cols = max(1, floor((width + gap) / (minTile + gap)))`. Tiles are square with `object-fit: contain`, and
-  `rowHeight = tile + labelHeight`. The width comes from one `ResizeObserver`, and cols and tile size recompute only when a breakpoint is crossed.
-  Tile width is CSS (`grid-template-columns: repeat(cols, 1fr)`), so pane dragging costs no React render per pixel.
-- **Scroll anchoring**: when cols change, the first visible **item index** is preserved, not the pixel offset.
+- **Geometry**: `perRow = max(1, floor((width − 32 + gap) / (tile + gap)))` with fixed `tile` per size (120 / 180 / 260
+  CSS px) and `gap` (8 / 12 / 16). Tiles keep their width; spare width stays at the right edge. `rowHeight = tile +
+  nameLine + gap`. The width comes from one `ResizeObserver`; rows re-render only when `perRow` changes, so pane
+  dragging costs no React work per pixel.
+- **Scroll anchoring**: when `perRow` changes, the first visible **item index** is preserved, not the pixel offset.
 - **Data outside React state**: `PageStore` is a plain module object with a bounded LRU of pages (page size 256, about
   24 pages kept). Tiles subscribe to their own index. A page arrival notifies only subscribers of that page. React never holds the list.
 - **Page loading**: a range change from the virtualizer requests any missing pages in `[first − 1 page, last + 1 page]`. Requests are
@@ -479,8 +485,9 @@ ContentPane
 - **Selection model**: `SelectionStore` holds an anchor plus either an explicit `Set<id>` or ranges in query-index space
   (`Ctrl+A` = `[0, total)`). Tiles read `isSelected(id)` through a selector. Batch operations send a `SelectionDescriptor`
   `{ queryId, version, ranges, include[], exclude[] }` that Go resolves. The renderer never sends 100k ids (C4).
-- **Keyboard**: a roving active index, `aria-activedescendant`, and `scrollToIndex` that turns item index into row. The grid has
-  `role="grid"`, `aria-rowcount` and `aria-rowindex`, so virtualization remains accessible.
+- **Keyboard**: a roving active index (←/→ ±1, ↑/↓ ±perRow), `aria-activedescendant`, and `scrollToIndex` that turns item
+  index into row. For assistive technology the tile view uses the ARIA `grid` pattern (`aria-rowcount`,
+  `aria-rowindex`), because two-dimensional arrow-key navigation needs it. Visually it is a tile flow, not a table.
 - React 19 + TanStack Virtual: `useFlushSync: false`, and backend events are applied inside `startTransition`.
 
 ---
@@ -603,7 +610,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
 |---|---|
 | Cold start → window shown | < 1.0 s |
 | Cold start → sidecar `hello` | < 500 ms |
-| Idle memory, all processes, empty app | < 250 MB |
+| Idle memory, all processes, empty app | < 400 MB absolute **and** < 60 MB over an empty Electron window (recalibrated in Stage 00: Electron 44 alone idles at ~300 MB on Windows) |
 | `system.ping` round trip renderer→Go→renderer | p95 < 3 ms |
 | `query.page(256)` at any offset, 100k folder | p95 < 25 ms |
 | Open cached 100k folder → first page painted | < 300 ms |
@@ -622,30 +629,30 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   model assumes a scan root. The product, however, is an explorer: it has back/up navigation, folders as content items, a lazy tree and a
   recursive-search *option*. Recursively scanning `C:\` because a user opened it would violate FR-07 and NFR-02.
   **Proposal**: a directory-centric index (§4.2). Opening a folder performs a **shallow** listing. Recursive indexing of a subtree
-  runs only when recursive search is enabled or the user opts into background indexing, bounded and cancellable. → ADR-0011.
+  runs only when recursive search is enabled or the user opts into background indexing, bounded and cancellable. → ADR-0015 (proposed).
 - **C2 — User data stored in a disposable cache.** CACHE-DESIGN puts `db/` under the OS cache root ("cache can be safely
   deleted"), and the OS may purge `~/Library/Caches`. Favorites, ratings, tags, bookmarks, recent items and settings (FR-18, NFR-09) would be
-  lost. **Proposal**: split `index.db` (cache) from `library.db` (config dir), keyed by `path_key` (§4.1). → ADR-0012.
+  lost. **Proposal**: split `index.db` (cache) from `library.db` (config dir), keyed by `path_key` (§4.1). → ADR-0016 (proposed).
 - **C3 — Offset paging vs live scans vs stable selection.** Offset/limit over a table that grows while scanning shifts
   rows under the user, and SQLite `OFFSET` is O(n) at depth. **Proposal**: query sessions with a materialized ordered id list
-  plus versioned invalidation (§4.4). → ADR-0013.
+  plus versioned invalidation (§4.4). → ADR-0017 (proposed).
 - **C4 — Batch APIs take `ids[]`.** DOMAIN-API's `batch.copy(ids, …)` conflicts with invariant 9 (large payloads) for
-  Ctrl+A on 100k items. **Proposal**: a `SelectionDescriptor` that Go resolves (§6, §9). This belongs in ADR-0013.
+  Ctrl+A on 100k items. **Proposal**: a `SelectionDescriptor` that Go resolves (§6, §9). This belongs in ADR-0017.
 - **C5 — Video posters and metadata have no mechanism.** ADR-0009 gives poster generation to Go, and Go cannot decode video.
-  **Proposal**: bundle an ffmpeg/ffprobe subprocess with graceful degradation. → ADR-0014, which covers licensing and packaging size.
+  **Proposal**: bundle an ffmpeg/ffprobe subprocess with graceful degradation. → ADR-0018 (proposed), which covers licensing and packaging size.
 - **C6 — Native dependency / cgo policy is missing.** CACHE-DESIGN wants WebP output, but Go has no stdlib WebP *encoder*.
   Stdlib JPEG has no DCT-scaled decode, which is slow for 24 MP+ sources, and it ignores EXIF orientation. The SQLite driver choice (cgo `mattn` vs
   pure-Go `modernc`) depends on the same policy. **Proposal**: MVP is **pure Go, CGO_ENABLED=0**, using `modernc.org/sqlite`, stdlib and
   `golang.org/x/image` decoders, JPEG output for opaque images and PNG for alpha. WebP output and libjpeg-turbo/libvips are deferred to
-  Stage 10 behind the decoder/encoder interfaces and adopted only with benchmark evidence. → ADR-0015, which also amends CACHE-DESIGN.
+  Stage 10 behind the decoder/encoder interfaces and adopted only with benchmark evidence. → ADR-0019 (proposed), which also amends CACHE-DESIGN.
 
 ### Stage-plan inconsistencies
 
 - **C7 — Duplicate stage documents.** `05-filesystem-ux.md` and `05-navigation-search.md` are near-duplicates.
   So are `06-media-playback.md` and `06-video-playback.md`. Three stub files say "Stage moved". **Proposal**: keep one canonical file per stage
-  and delete or merge the rest.
+  and delete or merge the rest. *(Stage 05: merged into `05-filesystem-ux.md`. Stage 06: merged into `06-media-playback.md`.)*
 - **C8 — Scope overlaps between stages:**
-  - View modes: Roadmap Phase 3 and DEVELOPMENT-STAGES ("content views") include lists. The Stage 03 document covers only the grid, and Stage 05 repeats all view modes.
+  - View modes: Roadmap Phase 3 and DEVELOPMENT-STAGES ("content views") include lists. The Stage 03 document covers only the grid, and Stage 05 repeats all view modes. *(Resolved 2026-09-30: list and table views were removed from the product; Stage 03 is the tile view, ADR-0004.)*
   - Image zoom/pan appears in both Stage 04 and Stage 06.
   - Video posters: DEVELOPMENT-STAGES lists them in Stage 02 ("thumbnail + poster pipeline"). The Stage 02 document covers images only, and Stage 06 has them.
   - Video detection: Roadmap Phase 1 includes it, while the Stage 01 document says "image files".
@@ -656,7 +663,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   **Proposal**:
   - Stage 01 indexes images and videos (sniffing only, no video probing). Drives move to Stage 05.
   - Stage 02 builds the pipeline for images, with the poster hook stubbed. Stage 06 adds the ffmpeg-backed posters.
-  - Stage 03 covers the grid with three sizes. Lists move to Stage 05.
+  - Stage 03 covers the tile view with three sizes. ~~Lists move to Stage 05.~~ Lists and tables were removed (ADR-0004).
   - Stage 04 builds the reusable `ImageViewer` (fit/1:1/zoom/pan). Stage 06 only embeds it in the pane and adds video.
   - Tailwind tokens arrive in Stage 00. shadcn primitives arrive per stage. Stage 08 refines.
   - The benchmark harness is added to Stage 00.
@@ -694,7 +701,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   mirrors it by hand, and golden JSON fixtures produced by Go tests are type-checked or validated in TS. There is also a protocol version in `hello`.
 - **M8 — Build and packaging tooling.** This covers Vite for main and preload, the packager choice (electron-builder vs Forge, a Stage 09 decision),
   and the sidecar location in `resources/bin/<os>-<arch>/`.
-- **M9 — What the viewer displays.** Proposal: originals through `fastview-media:` for browser-native formats up to a pixel cap of
+- **M9 — What the viewer displays.** *(Implemented in Stage 04 as proposed; see `stages/04-viewer.md`.)* Proposal: originals through `fastview-media:` for browser-native formats up to a pixel cap of
   about 50 MP, with Go's `viewer-fit` for TIFF, huge images and future formats. The viewer shows the cached grid thumbnail instantly and swaps after `img.decode()`.
 - **M10 — Sort semantics.** "Sort by tags" is undefined (proposal: the first tag alphabetically, untagged last). Created and accessed times are
   unreliable on some platforms and filesystems, and the UI shows "—".

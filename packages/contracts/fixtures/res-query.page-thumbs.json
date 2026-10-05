@@ -1,0 +1,45 @@
+{
+  "id": 24,
+  "ok": true,
+  "r": {
+    "items": [
+      {
+        "ext": "jpg",
+        "favorite": false,
+        "id": 12,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704067200000,
+        "name": "photo_0000.jpg",
+        "rating": 0,
+        "sizeBytes": 1013,
+        "thumb": {
+          "height": 48,
+          "url": "fastview-thumb://t/\u003ckey\u003e.jpg",
+          "width": 64
+        }
+      },
+      {
+        "ext": "jpg",
+        "favorite": false,
+        "id": 13,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704067200000,
+        "name": "photo_0001.jpg",
+        "rating": 0,
+        "sizeBytes": 1279,
+        "thumb": {
+          "height": 48,
+          "url": "fastview-thumb://t/\u003ckey\u003e.jpg",
+          "width": 64
+        }
+      }
+    ],
+    "offset": 0,
+    "queryId": 4,
+    "total": 2,
+    "version": 1
+  },
+  "t": "res"
+}

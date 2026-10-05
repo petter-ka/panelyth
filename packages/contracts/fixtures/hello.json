@@ -1,0 +1,10 @@
+{
+  "cacheRoot": "/cache/FastView/v1",
+  "configRoot": "/config/FastView",
+  "goVersion": "go1.x",
+  "pid": 1234,
+  "protocol": 1,
+  "t": "hello",
+  "thumbnailRoot": "/cache/FastView/v1/thumbnails",
+  "version": "test"
+}

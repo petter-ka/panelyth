@@ -1,0 +1,34 @@
+PASS
+ok  	fastview/sidecar/cmd/fastview-sidecar	0.320s
+PASS
+ok  	fastview/sidecar/internal/app	0.318s
+?   	fastview/sidecar/internal/logging	[no test files]
+PASS
+ok  	fastview/sidecar/internal/platform	0.265s
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/rpc
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkFrameRoundTrip-32    	37762923	        29.81 ns/op	1442.68 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFrameRoundTrip-32    	41620420	        29.78 ns/op	1444.16 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFrameRoundTrip-32    	40939282	        31.10 ns/op	1382.63 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFrameRoundTrip-32    	40170052	        30.43 ns/op	1413.10 MB/s	      48 B/op	       1 allocs/op
+BenchmarkFrameRoundTrip-32    	40677966	        31.95 ns/op	1345.87 MB/s	      48 B/op	       1 allocs/op
+BenchmarkDispatchPing-32      	  246238	      5584 ns/op	    1225 B/op	      18 allocs/op
+BenchmarkDispatchPing-32      	  236311	      5111 ns/op	    1226 B/op	      18 allocs/op
+BenchmarkDispatchPing-32      	  240355	      5078 ns/op	    1225 B/op	      18 allocs/op
+BenchmarkDispatchPing-32      	  245934	      5066 ns/op	    1225 B/op	      18 allocs/op
+BenchmarkDispatchPing-32      	  240850	      5171 ns/op	    1226 B/op	      18 allocs/op
+PASS
+ok  	fastview/sidecar/internal/rpc	12.797s
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/workpool
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkSubmit-32    	 4776583	       254.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSubmit-32    	 4959734	       243.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSubmit-32    	 5081563	       239.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSubmit-32    	 4936764	       231.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSubmit-32    	 4678695	       250.8 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	fastview/sidecar/internal/workpool	6.066s

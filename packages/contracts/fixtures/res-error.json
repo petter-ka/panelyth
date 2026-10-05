@@ -1,0 +1,10 @@
+{
+  "e": {
+    "code": "METHOD_NOT_FOUND",
+    "message": "unknown method no.such.method",
+    "retryable": false
+  },
+  "id": 4,
+  "ok": false,
+  "t": "res"
+}

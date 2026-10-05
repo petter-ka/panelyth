@@ -1,0 +1,9 @@
+{
+  "id": 36,
+  "ok": true,
+  "r": {
+    "kind": "image",
+    "path": "/fixtures/golden"
+  },
+  "t": "res"
+}

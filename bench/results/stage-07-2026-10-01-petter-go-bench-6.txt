@@ -1,0 +1,30 @@
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/index
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkSearch100k/common-32         	      27	  40508115 ns/op	 1676269 B/op	   55816 allocs/op
+BenchmarkSearch100k/common-32         	      28	  39933421 ns/op	 1676096 B/op	   55811 allocs/op
+BenchmarkSearch100k/common-32         	      28	  40503971 ns/op	 1676082 B/op	   55811 allocs/op
+BenchmarkSearch100k/rare-32           	      39	  29555067 ns/op	  295796 B/op	    5885 allocs/op
+BenchmarkSearch100k/rare-32           	      40	  29671602 ns/op	  295790 B/op	    5885 allocs/op
+BenchmarkSearch100k/rare-32           	      39	  29846092 ns/op	  295784 B/op	    5885 allocs/op
+BenchmarkSearch100k/none-32           	      44	  27079323 ns/op	  295605 B/op	    5864 allocs/op
+BenchmarkSearch100k/none-32           	      44	  26656005 ns/op	  295602 B/op	    5864 allocs/op
+BenchmarkSearch100k/none-32           	      44	  26902745 ns/op	  295601 B/op	    5864 allocs/op
+BenchmarkSearch100k/facets-32         	      26	  43882881 ns/op	  251593 B/op	    5251 allocs/op
+BenchmarkSearch100k/facets-32         	      25	  44671432 ns/op	  251481 B/op	    5249 allocs/op
+BenchmarkSearch100k/facets-32         	      26	  44188462 ns/op	  251481 B/op	    5249 allocs/op
+BenchmarkUserSort100k/sort-rating-32  	       8	 142340688 ns/op	15851927 B/op	  307576 allocs/op
+BenchmarkUserSort100k/sort-rating-32  	       8	 138705325 ns/op	15845922 B/op	  307493 allocs/op
+BenchmarkUserSort100k/sort-rating-32  	       8	 142056612 ns/op	15845968 B/op	  307493 allocs/op
+BenchmarkUserSort100k/sort-tags-32    	       7	 144675014 ns/op	15846352 B/op	  307506 allocs/op
+BenchmarkUserSort100k/sort-tags-32    	       8	 143527800 ns/op	15846366 B/op	  307506 allocs/op
+BenchmarkUserSort100k/sort-tags-32    	       8	 142392475 ns/op	15846320 B/op	  307506 allocs/op
+BenchmarkUserSort100k/filter-favorites-32         	      21	  54705300 ns/op	 9298448 B/op	  113764 allocs/op
+BenchmarkUserSort100k/filter-favorites-32         	      20	  54393920 ns/op	 8487290 B/op	  113777 allocs/op
+BenchmarkUserSort100k/filter-favorites-32         	      21	  54546438 ns/op	 9049481 B/op	  113781 allocs/op
+BenchmarkUserSort100k/filter-tag-32               	      24	  49924158 ns/op	 8802453 B/op	  109494 allocs/op
+BenchmarkUserSort100k/filter-tag-32               	      24	  50281754 ns/op	 8584033 B/op	  109493 allocs/op
+BenchmarkUserSort100k/filter-tag-32               	      24	  50334625 ns/op	 9021257 B/op	  109496 allocs/op
+PASS
+ok  	fastview/sidecar/internal/index	30.027s

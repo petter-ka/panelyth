@@ -14,7 +14,7 @@ Focus on:
 - scanner benchmarks
 - SQLite benchmarks
 - thumbnail benchmarks
-- virtualized grid behavior
+- virtualized tile view behavior (tiles per row vs width, bounded mounted tiles)
 - Electron smoke tests
 
 Never accept a performance claim without a measurement.

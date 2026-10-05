@@ -14,6 +14,10 @@ navigate.refresh()
 
 ## Content
 
+> Implemented in Stage 01 as query sessions (ADR-0017): `query.open(descriptor) → { queryId, version, total }`,
+> `query.page({ queryId, offset, limit ≤ 1000 })`, `query.close(queryId)`, plus the `query.invalidated` event.
+> Folders are opened with `dir.open({ path, recursive })`. Contracts: `packages/contracts/src/rpc.ts`.
+
 ```ts
 content.page({
   folderId,

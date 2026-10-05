@@ -1,0 +1,114 @@
+{
+  "stage": "02",
+  "benchmark": "previews",
+  "date": "2026-09-30T17:37:23+02:00",
+  "env": {
+    "arch": "amd64",
+    "cpus": 32,
+    "go": "go1.27.0",
+    "os": "windows"
+  },
+  "fixture": {
+    "dir": "C:\\Users\\hunki\\AppData\\Local\\Temp\\fastview-fixtures\\images-12mp-120",
+    "sourceMP": 12,
+    "spec": {
+      "Count": 120,
+      "Width": 4000,
+      "Height": 3000,
+      "PNGAlphaEvery": 0,
+      "RotatedEvery": 0
+    }
+  },
+  "profile": "grid-md",
+  "cold": [
+    {
+      "workers": 1,
+      "images": 120,
+      "wallMs": 8864.344,
+      "imagesPerSec": 13.54,
+      "latencyMs": {
+        "n": 120,
+        "p50": 4510.37,
+        "p95": 8494.24,
+        "max": 8864.34
+      },
+      "cpuUtilizationOfAllCores": 0.03,
+      "cpuCoresBusy": 1.07,
+      "diskWriteMBps": 0.21,
+      "bytesWritten": 1969712,
+      "avgPreviewBytes": 16414
+    },
+    {
+      "workers": 2,
+      "images": 120,
+      "wallMs": 4471.291,
+      "imagesPerSec": 26.84,
+      "latencyMs": {
+        "n": 120,
+        "p50": 2301.25,
+        "p95": 4316.54,
+        "max": 4471.29
+      },
+      "cpuUtilizationOfAllCores": 0.06,
+      "cpuCoresBusy": 2.05,
+      "diskWriteMBps": 0.42,
+      "bytesWritten": 1969712,
+      "avgPreviewBytes": 16414
+    },
+    {
+      "workers": 4,
+      "images": 120,
+      "wallMs": 2467.393,
+      "imagesPerSec": 48.63,
+      "latencyMs": {
+        "n": 120,
+        "p50": 1266.16,
+        "p95": 2364.96,
+        "max": 2467.39
+      },
+      "cpuUtilizationOfAllCores": 0.13,
+      "cpuCoresBusy": 4.16,
+      "diskWriteMBps": 0.76,
+      "bytesWritten": 1969712,
+      "avgPreviewBytes": 16414
+    },
+    {
+      "workers": 8,
+      "images": 120,
+      "wallMs": 1521.858,
+      "imagesPerSec": 78.85,
+      "latencyMs": {
+        "n": 120,
+        "p50": 820.94,
+        "p95": 1446.4,
+        "max": 1521.86
+      },
+      "cpuUtilizationOfAllCores": 0.24,
+      "cpuCoresBusy": 7.63,
+      "diskWriteMBps": 1.23,
+      "bytesWritten": 1969712,
+      "avgPreviewBytes": 16414
+    }
+  ],
+  "cacheHitEnsureMsPer100": {
+    "n": 50,
+    "p50": 0.51,
+    "p95": 1,
+    "max": 1.35
+  },
+  "cacheHitMsPerItemP50": 0.01,
+  "coalescing": {
+    "cacheBytes": 328005,
+    "distinctImages": 20,
+    "joined": 180,
+    "readyEvents": 20,
+    "requests": 200
+  },
+  "pageThumbLookupMsPer100": {
+    "n": 50,
+    "p50": 0,
+    "p95": 0.54,
+    "max": 1.11
+  },
+  "pixelBudget": "250M pixels (default)"
+}

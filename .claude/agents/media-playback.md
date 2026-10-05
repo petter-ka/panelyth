@@ -8,7 +8,7 @@ Focus on image viewer and local video preview.
 
 Rules:
 - no full media files in React state
-- separate grid previews from viewer media
+- separate tile thumbnails from viewer media
 - use cached posters
 - use browser/Electron media primitives where appropriate
 - test codec/container capability per target platform

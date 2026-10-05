@@ -1,0 +1,11 @@
+{
+  "id": 33,
+  "ok": true,
+  "r": {
+    "paths": [
+      "/fixtures/golden/file"
+    ],
+    "truncated": false
+  },
+  "t": "res"
+}

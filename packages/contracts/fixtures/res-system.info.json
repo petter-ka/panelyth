@@ -1,0 +1,16 @@
+{
+  "id": 2,
+  "ok": true,
+  "r": {
+    "goVersion": "go1.x",
+    "goroutines": 1,
+    "heapBytes": 1,
+    "numCpu": 1,
+    "pid": 1234,
+    "protocol": 1,
+    "runtimeMemBytes": 1,
+    "uptimeMs": 1,
+    "version": "test"
+  },
+  "t": "res"
+}

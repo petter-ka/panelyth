@@ -1,0 +1,25 @@
+{
+  "id": 35,
+  "ok": true,
+  "r": {
+    "accessedMs": 1,
+    "childFolders": null,
+    "childMedia": null,
+    "createdMs": 1,
+    "exists": true,
+    "ext": "jpg",
+    "favorite": false,
+    "height": null,
+    "id": 3,
+    "kind": "image",
+    "label": 0,
+    "modifiedMs": 1704067200000,
+    "name": "IMG_0.jpg",
+    "path": "/fixtures/golden",
+    "rating": 0,
+    "sizeBytes": 0,
+    "tags": [],
+    "width": null
+  },
+  "t": "res"
+}

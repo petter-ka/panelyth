@@ -1,0 +1,6 @@
+{"at":"2026-10-01T07:30:52.553Z","test":"file-ops","items":13,"consistent":true}
+{"at":"2026-10-01T08:52:14.154Z","test":"file-ops","items":13,"consistent":true}
+{"at":"2026-10-01T09:01:59.546Z","test":"favorite-90k","jobMs":1366,"progressEvents":5,"progressSpanMs":1101,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-01T09:02:01.826Z","test":"file-ops","items":13,"consistent":true}
+{"at":"2026-10-01T09:29:11.250Z","test":"favorite-90k","jobMs":867,"progressEvents":4,"progressSpanMs":629,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-01T09:29:13.825Z","test":"file-ops","items":13,"consistent":true}

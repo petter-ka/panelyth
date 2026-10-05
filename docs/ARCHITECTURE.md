@@ -17,9 +17,9 @@
 │   └── typed, minimal API                                     │
 │                                                             │
 │  React Renderer                                              │
-│   ├── resizable 3-panel workspace                            │
+│   ├── resizable 2-column workspace with stacked preview       │
 │   ├── filesystem sidebar + lazy tree                         │
-│   ├── virtualized grid/list                                  │
+│   ├── virtualized tile view (left-to-right, responsive)       │
 │   ├── search/sort/filter controls                            │
 │   ├── image/video preview pane                               │
 │   ├── selection/navigation                                   │
@@ -51,11 +51,11 @@ Owns:
 
 - visual state
 - current folder view state
-- three-panel layout state
+- nested workspace pane layout
 - selection and multi-selection
-- view mode
+- tile size
 - sort/filter/search state
-- grid dimensions
+- tile layout (tiles per row, from content width)
 - keyboard interactions
 - zoom/playback UI state
 - theme
@@ -107,28 +107,24 @@ Owns:
 
 ## Workspace layout
 
-The UI uses three primary panes:
+The workspace uses two columns and three content areas:
 
-1. `SidebarPane`
+1. Left column, with `SidebarPane` above `PreviewPane`
    - drives/volumes
    - bookmarks
    - recent locations
    - lazy folder tree
+   - selected image/video preview, zoom/fit controls and metadata
 
-2. `ContentPane`
+2. `ContentPane` on the right
    - toolbar
    - breadcrumb/navigation
    - search
-   - sort/filter/view mode
-   - virtualized file/folder content
+   - sort/filter/tile size
+   - virtualized tile view of folders and media (no list/table views, ADR-0004)
 
-3. `PreviewPane`
-   - image viewer or video element
-   - zoom/fit controls
-   - item metadata
-   - batch-independent selection context
-
-Pane resize state is persisted locally and managed entirely in React/UI state.
+The outer divider sizes the left column and content. A nested divider sizes the folder tree and preview. Both layouts are
+persisted with the workspace and managed entirely in React/UI state.
 
 ## Domain services
 
@@ -224,6 +220,10 @@ The renderer uses normal `<img>` elements so Chromium performs image loading and
 ## Database
 
 SQLite is the source of truth for the local index.
+
+> Superseded in detail by ADR-0015 (directory-centric `entries` table), ADR-0016 (`index.db` vs `library.db`)
+> and ADR-0017 (query sessions). The implemented schema is `native/fastview-go/internal/index/schema.go`.
+> The conceptual tables below are kept for history.
 
 Conceptual tables:
 

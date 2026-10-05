@@ -1,0 +1,16 @@
+{
+  "id": 37,
+  "ok": true,
+  "r": {
+    "dirs": [
+      {
+        "hasChildren": false,
+        "name": "folder 1",
+        "path": "/fixtures/golden"
+      }
+    ],
+    "path": "/fixtures/golden",
+    "truncated": false
+  },
+  "t": "res"
+}

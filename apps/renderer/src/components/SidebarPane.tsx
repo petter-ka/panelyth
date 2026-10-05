@@ -1,0 +1,458 @@
+import type { PlaceId } from "@fastview/contracts"
+import { useVirtualizer } from "@tanstack/react-virtual"
+import {
+  memo,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react"
+import { bridge } from "../bridge"
+import {
+  askDropTransfer,
+  canAcceptSelectionDrop,
+  SELECTION_DRAG_TYPE,
+} from "../features/jobs/jobsStore"
+import { openFolder, useFolderStore } from "../features/folder/folderStore"
+import { INTERFACE_SIZE_SCALE, useInterfaceSizeStore } from "../features/theme/interfaceSizeStore"
+import {
+  isBookmarked,
+  removeBookmark,
+  RECENT_SHOWN,
+  toggleBookmark,
+  useLibraryStore,
+} from "../features/library/libraryStore"
+import {
+  collapse,
+  expand,
+  flatten,
+  getNode,
+  nodeKey,
+  refreshNode,
+  toggle,
+  useTreeStore,
+} from "../features/tree/treeStore"
+import { ChevronRightIcon, ClockIcon, DriveIcon, FolderIcon, HomeIcon, StarIcon } from "./ui/icons"
+import {
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuRoot,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "./ui/menu"
+
+const ROW_HEIGHT = 26
+const INDENT = 14
+
+type SidebarRow =
+  | { type: "header"; id: string; label: string }
+  | {
+      type: "link"
+      id: string
+      label: string
+      path: string
+      icon: ReactNode
+      bookmarkId?: number
+    }
+  | { type: "tree"; id: string; key: string; depth: number; expanded: boolean }
+  | { type: "note"; id: string; label: string; depth: number }
+
+const PLACE_ICON: Record<PlaceId, ReactNode> = {
+  home: <HomeIcon size={14} />,
+  desktop: <FolderIcon size={14} />,
+  documents: <FolderIcon size={14} />,
+  downloads: <FolderIcon size={14} />,
+  pictures: <FolderIcon size={14} />,
+  videos: <FolderIcon size={14} />,
+}
+
+/** Display name for a recent/bookmarked path (display only; never used for I/O). */
+function baseName(path: string): string {
+  const parts = path.split(/[\\/]+/).filter(Boolean)
+  return parts.at(-1) ?? path
+}
+
+function useRows(): SidebarRow[] {
+  const places = useLibraryStore((s) => s.places)
+  const bookmarks = useLibraryStore((s) => s.bookmarks)
+  const recent = useLibraryStore((s) => s.recent)
+  const roots = useTreeStore((s) => s.roots)
+  const expanded = useTreeStore((s) => s.expanded)
+  const version = useTreeStore((s) => s.version)
+
+  return useMemo(() => {
+    const rows: SidebarRow[] = []
+    if (places.length > 0) {
+      rows.push({ type: "header", id: "h-places", label: "Quick access" })
+      for (const p of places) {
+        rows.push({
+          type: "link",
+          id: `place-${p.id}`,
+          label: p.label,
+          path: p.path,
+          icon: PLACE_ICON[p.id],
+        })
+      }
+    }
+    if (bookmarks.length > 0) {
+      rows.push({ type: "header", id: "h-bookmarks", label: "Bookmarks" })
+      for (const b of bookmarks) {
+        rows.push({
+          type: "link",
+          id: `bookmark-${b.id}`,
+          label: b.label,
+          path: b.path,
+          icon: <StarIcon size={14} />,
+          bookmarkId: b.id,
+        })
+      }
+    }
+    if (recent.length > 0) {
+      rows.push({ type: "header", id: "h-recent", label: "Recent" })
+      for (const r of recent.slice(0, RECENT_SHOWN)) {
+        rows.push({
+          type: "link",
+          id: `recent-${r.path}`,
+          label: baseName(r.path),
+          path: r.path,
+          icon: <ClockIcon size={14} />,
+        })
+      }
+    }
+    rows.push({ type: "header", id: "h-folders", label: "Folders" })
+    for (const t of flatten(roots, expanded)) {
+      rows.push({
+        type: "tree",
+        id: `tree-${t.key}`,
+        key: t.key,
+        depth: t.depth,
+        expanded: t.expanded,
+      })
+      if (t.expanded && t.node.children?.length === 0 && !t.node.loading) {
+        rows.push({
+          type: "note",
+          id: `note-${t.key}`,
+          label: t.node.error ?? "No subfolders",
+          depth: t.depth + 1,
+        })
+      }
+      if (t.expanded && t.node.truncated) {
+        rows.push({
+          type: "note",
+          id: `more-${t.key}`,
+          label: "Only the first 20,000 folders are shown",
+          depth: t.depth + 1,
+        })
+      }
+    }
+    return rows
+    // version: node contents changed (listing arrived, loading flag)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [places, bookmarks, recent, roots, expanded, version])
+}
+
+const rowPath = (row: SidebarRow): string | null =>
+  row.type === "link" ? row.path : row.type === "tree" ? (getNode(row.key)?.path ?? null) : null
+
+const isNavigable = (row: SidebarRow | undefined): boolean =>
+  row?.type === "link" || row?.type === "tree"
+
+interface RowViewProps {
+  row: SidebarRow
+  active: boolean
+  focused: boolean
+  interfaceScale: number
+  onOpen(path: string): void
+  onDropTransfer(path: string, folderName: string, payload: string): void
+  onMenu(row: SidebarRow): void
+  onFocusRow(id: string): void
+}
+
+const RowView = memo(function RowView({
+  row,
+  active,
+  focused,
+  interfaceScale,
+  onOpen,
+  onDropTransfer,
+  onMenu,
+  onFocusRow,
+}: RowViewProps) {
+  const [dragOver, setDragOver] = useState(false)
+  if (row.type === "header") {
+    return (
+      <div className="flex h-full items-end px-3 pb-1 text-[0.6875rem] font-medium text-muted">
+        {row.label}
+      </div>
+    )
+  }
+  if (row.type === "note") {
+    return (
+      <div
+        className="flex h-full items-center truncate pr-2 text-[0.6875rem] text-muted"
+        style={{ paddingLeft: (26 + row.depth * INDENT) * interfaceScale }}
+      >
+        {row.label}
+      </div>
+    )
+  }
+  const node = row.type === "tree" ? getNode(row.key) : undefined
+  const label = row.type === "tree" ? (node?.name ?? "") : row.label
+  const path = rowPath(row)
+  const depth = row.type === "tree" ? row.depth : 0
+  return (
+    <div
+      id={`sidebar-${row.id}`}
+      role="treeitem"
+      aria-level={depth + 1}
+      aria-selected={active}
+      aria-expanded={row.type === "tree" && node?.hasChildren ? row.expanded : undefined}
+      aria-label={label}
+      title={path ?? undefined}
+      data-testid={row.type === "tree" ? "tree-node" : "sidebar-link"}
+      data-path={path ?? undefined}
+      className={[
+        "mx-1.5 flex h-full cursor-default items-center gap-1.5 rounded-md pr-2 text-xs",
+        active ? "bg-raised text-text" : "text-text hover:bg-raised/60",
+        dragOver ? "outline-1 -outline-offset-1 outline-accent bg-accent/15" : "",
+        focused ? "outline-1 -outline-offset-1 outline-accent/70" : "",
+      ].join(" ")}
+      style={{ paddingLeft: (6 + depth * INDENT) * interfaceScale }}
+      onMouseDown={() => onFocusRow(row.id)}
+      onClick={() => path && onOpen(path)}
+      onDragOver={(e) => {
+        if (!path || !canAcceptSelectionDrop(e.dataTransfer)) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = "copy"
+        setDragOver(true)
+      }}
+      onDragLeave={(e) => {
+        if (e.relatedTarget instanceof Node && e.currentTarget.contains(e.relatedTarget)) return
+        setDragOver(false)
+      }}
+      onDrop={(e) => {
+        if (!path) return
+        const payload = e.dataTransfer.getData(SELECTION_DRAG_TYPE)
+        if (!payload) return
+        e.preventDefault()
+        e.stopPropagation()
+        setDragOver(false)
+        onDropTransfer(path, label, payload)
+      }}
+      onContextMenu={() => onMenu(row)}
+    >
+      {row.type === "tree" ? (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-label={row.expanded ? `Collapse ${label}` : `Expand ${label}`}
+          className={`grid size-4 shrink-0 place-items-center rounded text-muted hover:text-text ${node?.hasChildren ? "" : "invisible"}`}
+          onClick={(e) => {
+            e.stopPropagation()
+            toggle(row.key)
+          }}
+        >
+          <span
+            className={`grid transition-transform duration-[var(--motion-fast)] ease-[var(--motion-ease)] motion-reduce:transition-none ${row.expanded ? "rotate-90" : ""}`}
+          >
+            <ChevronRightIcon size={12} />
+          </span>
+        </button>
+      ) : null}
+      <span className={`shrink-0 ${active ? "text-accent" : "text-muted"}`}>
+        {row.type === "tree" ? (
+          depth === 0 ? (
+            <DriveIcon size={14} />
+          ) : (
+            <FolderIcon size={14} />
+          )
+        ) : (
+          row.icon
+        )}
+      </span>
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+      {node?.loading && <span className="text-[0.625rem] text-muted">…</span>}
+    </div>
+  )
+})
+
+/**
+ * Sidebar: quick access, bookmarks, recent folders and the lazy folder tree
+ * in one virtualized list, so a folder with 10k subfolders expands without
+ * mounting 10k rows. Keyboard: ↑/↓ move, → expands or enters, ← collapses
+ * or goes to the parent, Enter opens.
+ */
+export function SidebarPane() {
+  const rows = useRows()
+  const folderPath = useFolderStore((s) => s.folder?.path ?? null)
+  const bookmarks = useLibraryStore((s) => s.bookmarks)
+  const revealToken = useTreeStore((s) => s.revealToken)
+  const activeKey = useTreeStore((s) => s.activeKey)
+  const interfaceScale = INTERFACE_SIZE_SCALE[useInterfaceSizeStore((s) => s.size)]
+  const rowHeight = ROW_HEIGHT * interfaceScale
+  const [focusId, setFocusId] = useState<string | null>(null)
+  const [menuRow, setMenuRow] = useState<SidebarRow | null>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const activeFolderKey = folderPath === null ? null : nodeKey(folderPath)
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => scrollRef.current,
+    estimateSize: () => rowHeight,
+    overscan: 8,
+    useFlushSync: false,
+  })
+
+  useEffect(() => {
+    virtualizer.measure()
+  }, [virtualizer, rowHeight])
+
+  // Scroll the revealed (open) folder into view in the tree.
+  useEffect(() => {
+    if (revealToken === 0 || !activeKey) return
+    const index = rows.findIndex((r) => r.type === "tree" && r.key === activeKey)
+    if (index >= 0) virtualizer.scrollToIndex(index, { align: "auto" })
+    // rows are read at reveal time; only the token triggers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [revealToken, activeKey, virtualizer])
+
+  const focusIndex = rows.findIndex((r) => r.id === focusId)
+  const moveFocus = (from: number, step: 1 | -1): void => {
+    for (let i = from + step; i >= 0 && i < rows.length; i += step) {
+      if (isNavigable(rows[i])) {
+        setFocusId(rows[i]!.id)
+        virtualizer.scrollToIndex(i, { align: "auto" })
+        return
+      }
+    }
+  }
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
+    const row = rows[focusIndex]
+    const actions: Record<string, () => void> = {
+      ArrowDown: () => moveFocus(focusIndex, 1),
+      ArrowUp: () => moveFocus(focusIndex < 0 ? rows.length : focusIndex, -1),
+      Home: () => moveFocus(-1, 1),
+      End: () => moveFocus(rows.length, -1),
+      Enter: () => {
+        const path = row && rowPath(row)
+        if (path) void openFolder(path)
+      },
+      ArrowRight: () => {
+        if (row?.type !== "tree") return
+        if (!row.expanded) void expand(row.key)
+        else moveFocus(focusIndex, 1)
+      },
+      ArrowLeft: () => {
+        if (row?.type !== "tree") return
+        if (row.expanded) {
+          collapse(row.key)
+          return
+        }
+        for (let i = focusIndex - 1; i >= 0; i--) {
+          const r = rows[i]!
+          if (r.type === "tree" && r.depth < row.depth) {
+            setFocusId(r.id)
+            virtualizer.scrollToIndex(i, { align: "auto" })
+            return
+          }
+        }
+      },
+    }
+    const action = actions[e.key]
+    if (!action) return
+    e.preventDefault()
+    action()
+  }
+
+  const menuPath = menuRow ? rowPath(menuRow) : null
+  const menuBookmarked = menuPath !== null && isBookmarked(bookmarks, menuPath)
+
+  return (
+    <nav aria-label="Locations" className="flex h-full min-h-0 flex-col bg-chrome">
+      <div className="flex h-11 shrink-0 items-center border-b border-border px-4 text-[0.8125rem] font-semibold">
+        FastView
+      </div>
+      <ContextMenuRoot onOpenChange={(open) => !open && setMenuRow(null)}>
+        {/* Rows record the target in onContextMenu (bubbles before the trigger opens). */}
+        <ContextMenuTrigger asChild>
+          <div
+            ref={scrollRef}
+            role="tree"
+            aria-label="Folders"
+            tabIndex={0}
+            aria-activedescendant={focusIndex >= 0 ? `sidebar-${rows[focusIndex]!.id}` : undefined}
+            onKeyDown={onKeyDown}
+            onFocus={() => {
+              // Keep a row the mouse just pressed; otherwise start at the open
+              // folder (or the first row). Never scrolls: the list stays where it is.
+              const fallback =
+                rows.find((r) => r.type === "tree" && r.key === activeKey) ?? rows.find(isNavigable)
+              setFocusId((current) => current ?? fallback?.id ?? null)
+            }}
+            className="min-h-0 flex-1 overflow-y-auto py-1 outline-none"
+            data-testid="sidebar-list"
+          >
+            <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
+              {virtualizer.getVirtualItems().map((v) => {
+                const row = rows[v.index]!
+                const active =
+                  activeFolderKey !== null &&
+                  ((row.type === "tree" && row.key === activeFolderKey) ||
+                    (row.type === "link" &&
+                      nodeKey(row.path) === activeFolderKey &&
+                      row.id.startsWith("place")))
+                return (
+                  <div
+                    key={row.id}
+                    className="absolute top-0 left-0 w-full"
+                    style={{ height: rowHeight, transform: `translateY(${v.start}px)` }}
+                  >
+                    <RowView
+                      row={row}
+                      active={active}
+                      focused={row.id === focusId}
+                      interfaceScale={interfaceScale}
+                      onOpen={(p) => void openFolder(p)}
+                      onDropTransfer={(path, name, payload) => askDropTransfer(payload, path, name)}
+                      onMenu={setMenuRow}
+                      onFocusRow={setFocusId}
+                    />
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </ContextMenuTrigger>
+        {menuPath && menuRow && (
+          <ContextMenuContent>
+            <ContextMenuItem onSelect={() => void openFolder(menuPath)}>Open</ContextMenuItem>
+            <ContextMenuItem
+              onSelect={() => void bridge.revealPath(menuPath).catch(() => undefined)}
+            >
+              Show in file manager
+            </ContextMenuItem>
+            <ContextMenuItem onSelect={() => void bridge.copyText(menuPath).catch(() => undefined)}>
+              Copy path
+            </ContextMenuItem>
+            <ContextMenuSeparator />
+            {menuRow.type === "link" && menuRow.bookmarkId !== undefined ? (
+              <ContextMenuItem onSelect={() => void removeBookmark(menuRow.bookmarkId!)}>
+                Remove bookmark
+              </ContextMenuItem>
+            ) : (
+              <ContextMenuItem onSelect={() => void toggleBookmark(menuPath)}>
+                {menuBookmarked ? "Remove bookmark" : "Add bookmark"}
+              </ContextMenuItem>
+            )}
+            {menuRow.type === "tree" && (
+              <ContextMenuItem onSelect={() => void refreshNode(menuPath)}>Refresh</ContextMenuItem>
+            )}
+          </ContextMenuContent>
+        )}
+      </ContextMenuRoot>
+    </nav>
+  )
+}

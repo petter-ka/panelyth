@@ -1,5 +1,16 @@
 # Preview Cache Design
 
+> **Implemented in Stage 02** (`native/fastview-go/internal/preview`, `internal/imaging`,
+> `apps/desktop/src/main/thumbProtocol.ts`). Deviations from this document:
+> - Alpha previews are **PNG**, not WebP (no pure-Go WebP encoder, ADR-0019).
+> - The key also includes the JPEG quality; the URL is `fastview-thumb://t/<key>.<jpg|png>`, resolved by Electron
+>   main under the `thumbnailRoot` announced in the sidecar's `hello`.
+> - Cache hits are not `stat`-verified per request; a broken file is reported by the renderer's `<img>` error
+>   and regenerated with `preview.ensure({ force })`.
+> - Failures: corrupt/unsupported are permanent for a key (a replaced file gets a new key); permission,
+>   missing-file and cache errors retry after 5 min / 1 min / 30 s.
+> - Cleanup: LRU to 90 % of a 2 GB default ceiling (`FASTVIEW_CACHE_MAX_BYTES`), orphan sweep 16 shards per pass.
+
 ## Goal
 
 Keep generated grid previews on the user's drive so that:
@@ -83,6 +94,12 @@ Do not optimize for theoretical compression ratio at the expense of decode/scrol
 
 The encoder policy is isolated so it can be benchmarked and changed later.
 
+Video posters (Stage 06, ADR-0018) use the same profiles, keys, cache and encoder policy. ffmpeg extracts and scales
+one frame, and Go encodes it like an image preview.
+
+Folder covers (Stage 08.6, ADR-0024) also use the same keys and cache. They are generated for at most four files per
+visible folder, without index rows (`previews.entry_id = 0`), so opening the folder later finds them as hits.
+
 ## Cache tiers
 
 ### Tier 1 — persistent disk
@@ -141,6 +158,9 @@ A failed preview generation:
 - falls back to a generic placeholder in the UI
 
 Corrupt cache files can be deleted and regenerated.
+
+If ffmpeg/ffprobe are missing, video previews fail without a recorded failure, so posters appear once the tools are
+installed (ADR-0018).
 
 ## Cleanup
 

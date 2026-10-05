@@ -1,0 +1,10 @@
+{"at":"2026-09-30T18:49:39.900Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":1,"prefetchedMaxMs":4,"coldJumpMs":554}
+{"at":"2026-09-30T18:49:45.525Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1332,"oneToOneToOriginalMs":83,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-09-30T18:52:00.418Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":1,"prefetchedMaxMs":2,"coldJumpMs":608}
+{"at":"2026-09-30T18:52:05.401Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1328,"oneToOneToOriginalMs":89,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-09-30T18:53:29.902Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":1,"prefetchedMaxMs":2,"coldJumpMs":642}
+{"at":"2026-09-30T18:53:33.931Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1338,"oneToOneToOriginalMs":92,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-09-30T19:39:25.155Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":2,"coldJumpMs":616}
+{"at":"2026-09-30T19:39:32.622Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1354,"oneToOneToOriginalMs":110,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-09-30T19:50:48.695Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":1,"prefetchedMaxMs":2,"coldJumpMs":634}
+{"at":"2026-09-30T19:50:52.857Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1371,"oneToOneToOriginalMs":93,"longTasks":0,"longTaskMaxMs":0}

@@ -1,0 +1,10 @@
+{
+  "id": 40,
+  "ok": true,
+  "r": {
+    "id": 1,
+    "label": "golden",
+    "path": "/fixtures/golden"
+  },
+  "t": "res"
+}

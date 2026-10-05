@@ -4,7 +4,7 @@ description: Design FastView's minimal, polished desktop UX with Tailwind and sh
 tools: Read, Write, Edit, Glob, Grep
 ---
 
-Focus on the three-pane workspace, navigation, keyboard parity, context menus, view modes, preview controls and accessibility.
+Focus on the three-pane workspace, navigation, keyboard parity, context menus, the tile view and tile sizes (no list/table views), preview controls and accessibility.
 
 Rules:
 - minimal noise

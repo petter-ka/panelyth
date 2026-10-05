@@ -1,0 +1,25 @@
+{
+  "id": 41,
+  "ok": true,
+  "r": {
+    "bookmarks": [
+      {
+        "id": 1,
+        "label": "golden",
+        "path": "/fixtures/golden"
+      }
+    ],
+    "recent": [
+      {
+        "lastOpenedAt": 1,
+        "path": "/fixtures/golden"
+      }
+    ],
+    "settings": {
+      "workspace": {
+        "tileSize": "large"
+      }
+    }
+  },
+  "t": "res"
+}

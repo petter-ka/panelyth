@@ -1,0 +1,34 @@
+{
+  "name": "fastview",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "pnpm build:sidecar && pnpm -r --filter @fastview/renderer --filter @fastview/desktop build",
+    "build:sidecar": "node scripts/build-sidecar.mjs",
+    "start": "node scripts/start.mjs",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "eslint . && prettier --check . && node scripts/go.mjs fmt-check && node scripts/go.mjs vet",
+    "format": "prettier --write . && node scripts/go.mjs fmt",
+    "test": "pnpm build:sidecar && pnpm -r --filter !@fastview/e2e test && pnpm test:go",
+    "test:go": "node scripts/go.mjs test",
+    "test:e2e": "pnpm build && pnpm --filter @fastview/e2e test",
+    "bench:go": "node scripts/go.mjs bench",
+    "bench:startup": "pnpm build && pnpm --filter @fastview/bench startup",
+    "bench:index": "node scripts/go.mjs indexbench",
+    "bench:previews": "node scripts/go.mjs thumbbench"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.11.0",
+    "eslint-plugin-react-hooks": "7.1.1",
+    "globals": "17.12.0",
+    "prettier": "3.9.9",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.71.0"
+  }
+}

@@ -1,0 +1,18 @@
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/video
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkProbe1080p-32              	      20	  31367425 ns/op
+BenchmarkProbe1080p-32              	      20	  31027915 ns/op
+BenchmarkProbe1080p-32              	      20	  31537825 ns/op
+BenchmarkPoster1080pGridMd-32       	      20	  79481955 ns/op
+BenchmarkPoster1080pGridMd-32       	      20	  80057755 ns/op
+BenchmarkPoster1080pGridMd-32       	      20	  79837350 ns/op
+BenchmarkPoster1080pViewerFit-32    	      20	 103521090 ns/op
+BenchmarkPoster1080pViewerFit-32    	      20	 100895050 ns/op
+BenchmarkPoster1080pViewerFit-32    	      20	 101276625 ns/op
+BenchmarkPoster4KGridMd-32          	      20	 196843365 ns/op
+BenchmarkPoster4KGridMd-32          	      20	 196308015 ns/op
+BenchmarkPoster4KGridMd-32          	      20	 196239855 ns/op
+PASS
+ok  	fastview/sidecar/internal/video	30.350s

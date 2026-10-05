@@ -1,0 +1,4 @@
+{"at":"2026-10-05T07:17:42.773Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":2,"prefetchedMaxMs":2,"coldJumpMs":702}
+{"at":"2026-10-05T07:17:46.738Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1366,"oneToOneToOriginalMs":109,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-05T07:27:14.021Z","test":"step-latency","source":"12 MP JPEG","prefetchedP50Ms":3,"prefetchedMaxMs":4,"coldJumpMs":633}
+{"at":"2026-10-05T07:27:17.976Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1342,"oneToOneToOriginalMs":104,"longTasks":0,"longTaskMaxMs":0}

@@ -1,0 +1,10 @@
+{
+  "e": {
+    "code": "NOT_FOUND",
+    "message": "folder is not in the index",
+    "retryable": false
+  },
+  "id": 17,
+  "ok": false,
+  "t": "res"
+}

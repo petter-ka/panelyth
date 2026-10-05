@@ -1,0 +1,41 @@
+{
+  "id": 49,
+  "ok": true,
+  "r": {
+    "jobs": [
+      {
+        "bytesDone": 0,
+        "bytesTotal": 0,
+        "current": "",
+        "destination": "",
+        "done": 1,
+        "error": "",
+        "failed": 0,
+        "finishedMs": 1,
+        "jobId": 1,
+        "kind": "favorite",
+        "skipped": 1,
+        "startedMs": 1,
+        "state": "completed",
+        "total": 2
+      },
+      {
+        "bytesDone": 0,
+        "bytesTotal": 0,
+        "current": "",
+        "destination": "",
+        "done": 1,
+        "error": "",
+        "failed": 0,
+        "finishedMs": 1,
+        "jobId": 2,
+        "kind": "tag",
+        "skipped": 1,
+        "startedMs": 1,
+        "state": "completed",
+        "total": 2
+      }
+    ]
+  },
+  "t": "res"
+}

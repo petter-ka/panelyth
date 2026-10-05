@@ -1,0 +1,17 @@
+{
+  "id": 44,
+  "ok": true,
+  "r": {
+    "audioCodec": "",
+    "durationMs": 0,
+    "height": 0,
+    "kind": "video",
+    "mime": "video/mp4",
+    "original": true,
+    "path": "/fixtures/golden",
+    "sizeBytes": 16,
+    "videoCodec": "",
+    "width": 0
+  },
+  "t": "res"
+}

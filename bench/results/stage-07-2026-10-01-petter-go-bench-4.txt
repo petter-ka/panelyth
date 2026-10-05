@@ -1,0 +1,17 @@
+--- FAIL: BenchmarkSearch100k
+    query_test.go:207: upsert "IMG_071485_city.jpg": database disk image is malformed (11)
+--- FAIL: BenchmarkUserSort100k
+    query_test.go:247: upsert "IMG_040329.jpg": database disk image is malformed (11)
+FAIL
+exit status 1
+FAIL	fastview/sidecar/internal/index	1.607s
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/library
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkFavorite100k-32    	       6	 310165917 ns/op	 7716369 B/op	   14580 allocs/op
+BenchmarkFavorite100k-32    	       4	 308958475 ns/op	 7728180 B/op	   14629 allocs/op
+BenchmarkFavorite100k-32    	       6	 307939400 ns/op	 7891560 B/op	   14588 allocs/op
+PASS
+ok  	fastview/sidecar/internal/library	6.161s
+FAIL

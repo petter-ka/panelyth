@@ -1,0 +1,22 @@
+node_modules/
+dist/
+out/
+coverage/
+*.log
+.vite/
+.DS_Store
+Thumbs.db
+
+# built sidecar binaries
+apps/desktop/resources/bin/
+native/fastview-go/bin/
+
+# playwright
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+
+# go
+*.test
+*.prof
+*.out
+!bench/results/**

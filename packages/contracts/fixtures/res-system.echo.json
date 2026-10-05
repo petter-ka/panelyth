@@ -1,0 +1,8 @@
+{
+  "id": 3,
+  "ok": true,
+  "r": {
+    "payload": "abc"
+  },
+  "t": "res"
+}

@@ -1,0 +1,10 @@
+pnpm-lock.yaml
+dist/
+node_modules/
+coverage/
+native/
+bench/results/
+packages/contracts/fixtures/
+tests/e2e/test-results/
+tests/e2e/playwright-report/
+*.md

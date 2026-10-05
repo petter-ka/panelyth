@@ -1,0 +1,14 @@
+{
+  "id": 38,
+  "ok": true,
+  "r": {
+    "volumes": [
+      {
+        "kind": "fixed",
+        "label": "",
+        "path": "/"
+      }
+    ]
+  },
+  "t": "res"
+}

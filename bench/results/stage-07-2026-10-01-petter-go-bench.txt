@@ -1,0 +1,36 @@
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/jobs
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkCopySmallFiles-32    	       1	1059428700 ns/op	  12.37 MB/s	211463608 B/op	   15340 allocs/op
+BenchmarkCopySmallFiles-32    	       1	1036306200 ns/op	  12.65 MB/s	211336456 B/op	   15235 allocs/op
+BenchmarkCopySmallFiles-32    	       1	1054315300 ns/op	  12.43 MB/s	211408656 B/op	   15245 allocs/op
+BenchmarkCopySmallFiles-32    	       1	1015467200 ns/op	  12.91 MB/s	211392624 B/op	   15221 allocs/op
+BenchmarkCopySmallFiles-32    	       1	1195618600 ns/op	  10.96 MB/s	211420216 B/op	   15327 allocs/op
+BenchmarkFavorite10k-32       	      16	  79332931 ns/op	19352543 B/op	  243993 allocs/op
+BenchmarkFavorite10k-32       	      15	  84753593 ns/op	20030206 B/op	  243971 allocs/op
+BenchmarkFavorite10k-32       	      20	  85300400 ns/op	20072971 B/op	  243971 allocs/op
+BenchmarkFavorite10k-32       	      18	  83719228 ns/op	20062956 B/op	  243994 allocs/op
+BenchmarkFavorite10k-32       	      14	  84211864 ns/op	20032677 B/op	  243949 allocs/op
+PASS
+ok  	fastview/sidecar/internal/jobs	21.764s
+goos: windows
+goarch: amd64
+pkg: fastview/sidecar/internal/library
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkFavorite100k-32    	       6	 306219550 ns/op	 7872632 B/op	   14609 allocs/op
+BenchmarkFavorite100k-32    	       6	 307867183 ns/op	 7711265 B/op	   14562 allocs/op
+BenchmarkFavorite100k-32    	       6	 312915983 ns/op	 7785084 B/op	   14560 allocs/op
+BenchmarkFavorite100k-32    	       6	 307834600 ns/op	 7783068 B/op	   14552 allocs/op
+BenchmarkFavorite100k-32    	--- FAIL: BenchmarkFavorite100k-32
+    meta_test.go:205: database disk image is malformed (779)
+PASS
+ok  	fastview/sidecar/internal/library	10.705s
+--- FAIL: BenchmarkSearch100k
+    query_test.go:207: upsert "IMG_017989_city.jpg": database disk image is malformed (11)
+--- FAIL: BenchmarkUserSort100k
+    query_test.go:247: upsert "IMG_015788.jpg": database disk image is malformed (11)
+FAIL
+exit status 1
+FAIL	fastview/sidecar/internal/index	0.840s
+FAIL

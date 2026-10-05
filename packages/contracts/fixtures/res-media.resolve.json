@@ -1,0 +1,17 @@
+{
+  "id": 25,
+  "ok": true,
+  "r": {
+    "audioCodec": "",
+    "durationMs": 0,
+    "height": 48,
+    "kind": "image",
+    "mime": "image/jpeg",
+    "original": true,
+    "path": "/fixtures/golden",
+    "sizeBytes": 1013,
+    "videoCodec": "",
+    "width": 64
+  },
+  "t": "res"
+}

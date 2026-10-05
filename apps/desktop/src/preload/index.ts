@@ -1,0 +1,200 @@
+// Sandboxed preload: bundled into a single CommonJS file with no local
+// requires. Exposes a narrow typed API; ipcRenderer itself never leaves here.
+import { contextBridge, ipcRenderer } from "electron"
+import {
+  DEV_METHODS_ARG,
+  EVENT_CHANNELS,
+  IPC_EVENT,
+  IPC_INVOKE,
+  type EventChannel,
+  type EventMessage,
+  type FastViewApi,
+  type JobStartParams,
+  type RendererMethod,
+  type RpcEnvelope,
+  type SelectionDescriptor,
+} from "@fastview/contracts"
+
+const invoke = <R>(method: RendererMethod, params?: unknown): Promise<RpcEnvelope<R>> =>
+  ipcRenderer.invoke(IPC_INVOKE, method, params) as Promise<RpcEnvelope<R>>
+
+// Rebuilt field by field: only the contract's fields cross IPC.
+const selection = ({
+  queryId,
+  version,
+  ranges,
+  include,
+  exclude,
+}: SelectionDescriptor): SelectionDescriptor => ({
+  queryId,
+  version,
+  ranges: ranges.map(([a, b]): [number, number] => [a, b]),
+  include: [...include],
+  exclude: [...exclude],
+})
+
+const source = (s: { selection: SelectionDescriptor }) => ({ selection: selection(s.selection) })
+
+function jobParams(p: JobStartParams): JobStartParams {
+  switch (p.kind) {
+    case "copy":
+    case "move":
+      return {
+        kind: p.kind,
+        source: source(p.source),
+        destination: p.destination,
+        conflict: p.conflict,
+      }
+    case "trash":
+    case "delete":
+      return { kind: p.kind, source: source(p.source) }
+    case "rename":
+      return { kind: p.kind, source: source(p.source), pattern: p.pattern, start: p.start }
+    case "favorite":
+      return { kind: p.kind, source: source(p.source), favorite: p.favorite }
+    case "rating":
+      return { kind: p.kind, source: source(p.source), rating: p.rating }
+    case "label":
+      return { kind: p.kind, source: source(p.source), label: p.label }
+    case "tag":
+      return { kind: p.kind, source: source(p.source), tag: p.tag, add: p.add }
+  }
+}
+
+// One ipcRenderer listener fans out to subscribers per channel.
+const knownChannels: ReadonlySet<string> = new Set(EVENT_CHANNELS)
+const subscribers = new Map<EventChannel, Set<(payload: never) => void>>()
+
+ipcRenderer.on(IPC_EVENT, (_event, message: EventMessage) => {
+  subscribers.get(message.ch)?.forEach((listener) => {
+    try {
+      listener(message.p as never)
+    } catch (error) {
+      console.error("fastview event listener failed", error)
+    }
+  })
+})
+
+const api: FastViewApi = {
+  app: {
+    exit: () => invoke("app.exit", {}),
+  },
+  system: {
+    ping: () => invoke("system.ping", {}),
+    info: () => invoke("system.info", {}),
+  },
+  sidecar: {
+    getStatus: () => invoke("sidecar.getStatus", {}),
+  },
+  dialog: {
+    openFolder: () => invoke("dialog.openFolder", {}),
+  },
+  // Arguments are rebuilt field by field so only the contract's fields cross IPC.
+  dir: {
+    open: ({ path, recursive }) => invoke("dir.open", { path, recursive }),
+    openEntry: ({ entryId, recursive }) => invoke("dir.openEntry", { entryId, recursive }),
+    cancelScan: (scanId) => invoke("dir.cancelScan", { scanId }),
+  },
+  media: {
+    open: (entryId) => invoke("media.open", { entryId }),
+  },
+  preview: {
+    ensure: ({ lane, epoch, profile, items, force }) =>
+      invoke("preview.ensure", {
+        lane,
+        epoch,
+        profile,
+        items: items.map(({ id, priority }) => ({ id, priority })),
+        force: [...force],
+      }),
+  },
+  folder: {
+    covers: ({ lane, epoch, profile, items }) =>
+      invoke("folder.covers", {
+        lane,
+        epoch,
+        profile,
+        items: items.map(({ id, priority }) => ({ id, priority })),
+      }),
+  },
+  query: {
+    open: ({ dirId, recursive, sort, kinds, search, exts, favorite, minRating, tags }) =>
+      invoke("query.open", {
+        dirId,
+        recursive,
+        sort: sort.map(({ field, direction }) => ({ field, direction })),
+        kinds: [...kinds],
+        search,
+        exts: [...exts],
+        favorite,
+        minRating,
+        tags: [...tags],
+      }),
+    page: ({ queryId, offset, limit, thumbProfile }) =>
+      invoke("query.page", { queryId, offset, limit, thumbProfile }),
+    close: (queryId) => invoke("query.close", { queryId }),
+    facets: (queryId) => invoke("query.facets", { queryId }),
+  },
+  selection: {
+    info: (sel) => invoke("selection.info", { selection: selection(sel) }),
+    rebase: (sel) => invoke("selection.rebase", { selection: selection(sel) }),
+  },
+  props: {
+    get: (entryId) => invoke("props.get", { entryId }),
+  },
+  fs: {
+    volumes: () => invoke("fs.volumes", {}),
+    listDirs: (path) => invoke("fs.listDirs", { path }),
+  },
+  places: {
+    list: () => invoke("places.list", {}),
+  },
+  library: {
+    get: () => invoke("library.get", {}),
+    setSetting: (key, value) => invoke("library.setSetting", { key, value }),
+    addBookmark: (path, label) => invoke("library.addBookmark", { path, label }),
+    removeBookmark: (id) => invoke("library.removeBookmark", { id }),
+    tags: () => invoke("library.tags", {}),
+    deleteTag: (id) => invoke("library.deleteTag", { id }),
+  },
+  jobs: {
+    start: (params) => invoke("jobs.start", jobParams(params)),
+    cancel: (jobId) => invoke("jobs.cancel", { jobId }),
+    errors: (jobId, offset, limit) => invoke("jobs.errors", { jobId, offset, limit }),
+    list: () => invoke("jobs.list", {}),
+  },
+  clip: {
+    set: (sel, mode) => invoke("clip.set", { selection: selection(sel), mode }),
+    get: () => invoke("clip.get", {}),
+    paste: (destination, conflict) => invoke("clip.paste", { destination, conflict }),
+  },
+  entry: {
+    rename: (entryId, name) => invoke("entry.rename", { entryId, name }),
+  },
+  shell: {
+    open: (entryId) => invoke("shell.open", { entryId }),
+    reveal: (entryId) => invoke("shell.reveal", { entryId }),
+    revealPath: (path) => invoke("shell.revealPath", { path }),
+  },
+  clipboard: {
+    copyPaths: (sel) => invoke("clipboard.copyPaths", { selection: selection(sel) }),
+    copyText: (text) => invoke("clipboard.copyText", { text }),
+    copyImage: (entryId) => invoke("clipboard.copyImage", { entryId }),
+  },
+  onEvent(channel, listener) {
+    if (!knownChannels.has(channel)) throw new Error(`unknown event channel: ${String(channel)}`)
+    let set = subscribers.get(channel)
+    if (!set) subscribers.set(channel, (set = new Set()))
+    const fn = listener as (payload: never) => void
+    set.add(fn)
+    return () => {
+      set.delete(fn)
+    }
+  },
+}
+
+if (process.argv.includes(DEV_METHODS_ARG)) {
+  api.dev = { echo: (payload) => invoke("system.echo", { payload }) }
+}
+
+contextBridge.exposeInMainWorld("fastview", api)

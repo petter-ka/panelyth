@@ -1,0 +1,9 @@
+packages:
+  - apps/*
+  - packages/*
+  - tests/e2e
+  - bench
+
+onlyBuiltDependencies:
+  - electron
+  - esbuild

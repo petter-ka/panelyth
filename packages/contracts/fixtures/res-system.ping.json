@@ -1,0 +1,9 @@
+{
+  "id": 1,
+  "ok": true,
+  "r": {
+    "pong": true,
+    "serverTimeNs": 1
+  },
+  "t": "res"
+}

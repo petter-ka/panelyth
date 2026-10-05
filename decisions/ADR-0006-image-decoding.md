@@ -19,6 +19,13 @@ type Decoder interface {
 }
 ```
 
+## Implementation note (Stage 02)
+
+The interface is realized as `imaging.Decoder` (`CanDecode`, `Config`, `Decode`) behind an `imaging.Registry`,
+with a two-step pipeline: `ProbeFile` (header, EXIF orientation, used for memory budgeting) and `Render`
+(decode, box + Catmull-Rom downscale, orient, encode). Metadata extraction beyond dimensions/orientation is
+deferred to Stage 05/07.
+
 ## MVP
 
 Implement the simplest reliable decoder path for the core formats required by the stage.

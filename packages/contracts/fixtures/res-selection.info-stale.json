@@ -1,0 +1,10 @@
+{
+  "e": {
+    "code": "INVALID_ARGUMENT",
+    "message": "selection refers to an outdated version of the folder",
+    "retryable": false
+  },
+  "id": 34,
+  "ok": false,
+  "t": "res"
+}

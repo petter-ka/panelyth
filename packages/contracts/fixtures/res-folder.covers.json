@@ -1,0 +1,23 @@
+{
+  "id": 18,
+  "ok": true,
+  "r": {
+    "items": [
+      {
+        "dirId": 2,
+        "slots": [
+          {
+            "pending": true
+          },
+          {
+            "pending": true
+          },
+          {
+            "pending": true
+          }
+        ]
+      }
+    ]
+  },
+  "t": "res"
+}
