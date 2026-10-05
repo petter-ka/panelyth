@@ -273,6 +273,18 @@ export const validators: Record<RendererMethod, Validator> = {
     return null
   },
   "query.close": (p) => (shape(p, ["queryId"]) && isId(p.queryId) ? null : "expected { queryId }"),
+  "query.indexOf": (p) =>
+    shape(p, ["queryId", "entryId"]) && isId(p.queryId) && isId(p.entryId)
+      ? null
+      : "expected { queryId, entryId }",
+  "context.publish": (p) =>
+    shape(p, ["app", "dirId", "focusId"]) &&
+    (p.app === "viewer" || p.app === "commander") &&
+    isId(p.dirId) &&
+    (p.focusId === null || isId(p.focusId))
+      ? null
+      : "expected { app, dirId, focusId }",
+  "context.get": empty,
   "query.facets": (p) => (shape(p, ["queryId"]) && isId(p.queryId) ? null : "expected { queryId }"),
   "selection.info": selectionParams,
   "selection.rebase": selectionParams,

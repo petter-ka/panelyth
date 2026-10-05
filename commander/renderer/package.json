@@ -13,6 +13,8 @@
   "dependencies": {
     "@fastview/renderer-core": "workspace:*",
     "@fastview/ui": "workspace:*",
+    "@tanstack/react-table": "9.2.6",
+    "@tanstack/react-virtual": "3.14.13",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-resizable-panels": "4.14.1",

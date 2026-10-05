@@ -22,6 +22,13 @@ navigate.refresh()
 > Implemented in Stage 01 as query sessions (ADR-0017): `query.open(descriptor) → { queryId, version, total }`,
 > `query.page({ queryId, offset, limit ≤ 1000 })`, `query.close(queryId)`, plus the `query.invalidated` event.
 > Folders are opened with `dir.open({ path, recursive })`. Contracts: `shared/contracts/src/rpc.ts`.
+>
+> Stage C01 added `query.indexOf({ queryId, entryId }) → { index, version }` (−1 when absent): where an entry sits in
+> a session, for the cursor on the folder just left and for a carried-over focus. `dir.open` now reads one name of
+> the folder, so a folder the user cannot list fails with `PERMISSION_DENIED` instead of listing empty; a volume that
+> is there but unreadable fails with `INVALID_PATH`, `retryable: true` and `details.reason` `"notReady"` (empty card
+> reader, removed device) or `"network"` (unreachable share) (CFR-28). `fs.volumes` reports `freeBytes` and
+> `totalBytes` for fixed and removable volumes.
 
 ```ts
 content.page({
@@ -99,8 +106,8 @@ Both apps (ADR-0031, `docs/shared/APP-SWITCHING.md`):
 ```ts
 app.switch({ to: "viewer" | "commander" })            // renderer → main: show the other app view
 onAppVisibility({ app, visible })                     // main → renderer
-context.publish({ app, dirId, focusId?, selection? }) // the app being left; selection is a descriptor
-context.get()                                         // the app being shown: folder, focus, selection count
+context.publish({ app, dirId, focusId })             // C01: the visible app, as itself (main checks both); selection in C02
+context.get()                                         // { version, app, dirId, path, focusId }; version 0 = from the last run
 selection.fromContext({ version, queryId, queryVersion }) // carried selection as ranges of the new session
 ```
 

@@ -1,6 +1,6 @@
 # Commander Architecture
 
-Status: **planned** (Stages C00–C11). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
+Status: **in progress** (C00 done, C01 implemented; Stages C02–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
 an app view in the FastView shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
 shares the viewer's sidecar, index (queried with the `all` scope, ADR-0026), preview cache, jobs, clipboard and
 `library.db`. Switching between the apps and the state they share: `docs/shared/APP-SWITCHING.md`. This document
@@ -116,9 +116,9 @@ Enter on a folder
 |---|---|
 | P01 | `app.switch`, `app.visibility` (main; used by both apps from C00) |
 | P02 | all-entries scope; descriptor `showHidden`, `nameMask`; sort `ext`, `attrs` |
-| C01 | `context.publish`, `context.get` (both apps) |
+| C01 | `context.publish`, `context.get` (both apps); `query.indexOf`; volumes with free and total space; `dir.open` error reasons (`notReady`, `network`) |
 | C02 | `query.locate`; folder-size jobs; `selection.fromContext` (both apps) |
-| C03 | volumes with free and total space; hotlist and history in `library.db` |
+| C03 | hotlist and history in `library.db` |
 | P03 / C04 | jobs v2: `jobs.pause`, `jobs.resume`, `jobs.resolve`, `job.conflict` |
 | C05 | token protocol for any file kind (lister, quick view); `shell.open` with confirmation for programs |
 | C06 | `find.start`, `find.cancel` (a session source); branch listings (recursive, all scope) |

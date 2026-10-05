@@ -33,6 +33,8 @@ import type {
   QueryPageParams,
   QueryPageResult,
   QuerySnapshot,
+  QueryIndexOfResult,
+  SharedContext,
   ErrorCode,
   EventChannel,
   EventMap,
@@ -113,6 +115,17 @@ export const bridge = {
   closeQuery: (queryId: number): Promise<QueryCloseResult> =>
     unwrap(() => api().query.close(queryId)),
   queryFacets: (queryId: number): Promise<QueryFacets> => unwrap(() => api().query.facets(queryId)),
+  indexOf: (queryId: number, entryId: number): Promise<QueryIndexOfResult> =>
+    unwrap(() => api().query.indexOf(queryId, entryId)),
+  /** The shared context (ADR-0031); only while the commander is enabled. */
+  publishContext: async (dirId: number, focusId: number | null): Promise<void> => {
+    const context = api().context
+    if (context) await unwrap(() => context.publish(dirId, focusId))
+  },
+  getContext: async (): Promise<SharedContext | null> => {
+    const context = api().context
+    return context ? unwrap(() => context.get()) : null
+  },
   selectionInfo: (selection: SelectionDescriptor): Promise<SelectionInfo> =>
     unwrap(() => api().selection.info(selection)),
   rebaseSelection: (selection: SelectionDescriptor): Promise<SelectionDescriptor> =>

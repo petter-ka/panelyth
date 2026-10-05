@@ -26,6 +26,7 @@ export interface CommanderView {
 export class AppShell {
   private commander: WebContentsView | null = null
   private active: AppId = "viewer"
+  private switchedByUser = false
 
   constructor(
     private readonly window: BrowserWindow,
@@ -48,6 +49,17 @@ export class AppShell {
 
   get activeApp(): AppId {
     return this.active
+  }
+
+  /** True once an app.switch request came from an app (not the start-up choice). */
+  get switched(): boolean {
+    return this.switchedByUser
+  }
+
+  /** app.switch from a renderer. */
+  requestSwitch(to: AppId): void {
+    this.switchedByUser = true
+    this.switchTo(to)
   }
 
   webContentsOf(app: AppId): WebContents | null {

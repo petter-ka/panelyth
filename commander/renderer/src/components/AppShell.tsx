@@ -2,6 +2,7 @@ import { AppSwitchButton } from "@fastview/ui"
 import { useEffect, useRef } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
+import { switchToViewer as switchWithContext } from "../features/carry"
 import {
   resetSplit,
   setActivePanel,
@@ -11,13 +12,14 @@ import {
   type Side,
 } from "../features/panels"
 import { FunctionKeyBar } from "./FunctionKeyBar"
-import { Panel } from "./Panel"
+import { Panel, type PanelHandle } from "./Panel"
 import { StatusBar } from "./StatusBar"
 
 const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.platform)
 export const SWITCH_SHORTCUT = IS_MAC ? "⌘⇧M" : "Ctrl+Shift+M"
 
-const switchToViewer = (): void => void bridge.switchTo("viewer").catch(() => undefined)
+/** Publishes the active panel's folder and cursor entry, then shows the viewer (C01). */
+const switchToViewer = (): void => void switchWithContext().catch(() => undefined)
 
 /** Ctrl/Cmd+Shift+M, as in the viewer (docs/shared/APP-SWITCHING.md). */
 const isSwitchKey = (e: KeyboardEvent): boolean =>
@@ -34,7 +36,7 @@ export function AppShell() {
   const active = usePanelsStore((s) => s.active)
   const split = usePanelsStore((s) => s.split)
   const layoutToken = usePanelsStore((s) => s.layoutToken)
-  const lists = useRef<Record<Side, HTMLDivElement | null>>({ left: null, right: null })
+  const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
 
   // The active panel's list holds keyboard focus.
   useEffect(() => {

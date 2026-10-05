@@ -49,7 +49,7 @@ A stage is complete only when:
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
 | P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | in progress (minimal part done) |
-| P02 | Index scope: all entries, filtered per query | P01 | planned |
+| P02 | Index scope: all entries, filtered per query | P01 | partly done (query core in code; session budgets and visible-app watching open) |
 | P03 | File-operation engine v2 | P02 | planned |
 | P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | planned |
 | P05 | Performance hardening (formerly 10) | P04 | planned |
@@ -59,8 +59,8 @@ A stage is complete only when:
 
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
-| C00 | Foundation and the app switch | P01 | **active**: implementation done; memory budget decision open |
-| C01 | Panels and listing | C00, P02 | planned |
+| C00 | Foundation and the app switch | P01 | done (2026-10-05) |
+| C01 | Panels and listing | C00, P02 | **active**: implementation done; cold-cache 100k timings and the rest of P02 open |
 | C02 | Keyboard, marks and quick search | C01 | planned |
 | C03 | Drives, tabs, hotlist, history and session | C02 | planned |
 | C04 | File operations | C03, P03 | planned |
@@ -85,14 +85,17 @@ A stage is complete only when:
 | 06 — Video playback + media preview | 2026-10-01 | `docs/viewer/stages/06-media-playback.md`, `shared/bench/results/stage-06-*` |
 | 07 — Batch operations + metadata foundations | 2026-10-01 | `docs/viewer/stages/07-batch-and-metadata.md`, `shared/bench/results/stage-07-*` |
 | 08.6 — UI polish v2 | 2026-10-05 | `docs/viewer/stages/08.6-ui-polish-v2.md`, `shared/bench/results/stage-08.6-*` |
+| C00 — Commander foundation and the app switch | 2026-10-05 | `docs/commander/stages/C00-foundation.md`, `shared/bench/results/stage-C00-*` |
 
 ## Active stage
 
-`C00 — Commander foundation and the app switch` (`docs/commander/stages/C00-foundation.md`), started 2026-10-05
-together with the minimal part of `P01` (`docs/shared/stages/P01-multi-app-platform.md`), as agreed with the owner.
-The commander runs as a second app view behind the `FASTVIEW_COMMANDER=1` flag; the switch works both ways (92 ms
-the first time, 4–6 ms after). Open: the memory budget with both views (≈ 153 MB vs 150 MB), then the rest of P01
-(`shared/renderer-core`) before C01.
+`C01 — Panels and listing` (`docs/commander/stages/C01-panels-and-listing.md`), started 2026-10-05 at the owner's
+request, after C00 closed (the both-views budget recalibrated to 160 MB) and before the rest of P01 and P02. The
+commander lists every entry in both panels (Full view on TanStack Table + Virtual), sorts in Go, persists its panels,
+and carries the folder and the entry under the cursor over on the switch both ways; the last used app opens at the
+next start. Warm runs pass every listing budget (100k first rows 144–151 ms, sort 95–102 ms); open: the cold-cache
+first run (470 / 366 ms), and the rest of P02 (per-app session budgets, visible-app watching). P01's
+`shared/renderer-core` extraction is still partial (the page store only).
 
 The Stage 08 and 08.5 gates are still open: their implementation is done (2026-10-01), but their automated coverage
 was never added (`docs/viewer/stages/08-product-polish.md`, `docs/viewer/stages/08.5-viewer-settings.md`).

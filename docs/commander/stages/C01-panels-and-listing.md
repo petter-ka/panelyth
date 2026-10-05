@@ -1,6 +1,10 @@
 # Stage C01 — Panels and Listing
 
-Status: **Planned**. Track: commander. Depends on: C00, P02. Unblocks: C02.
+Status: **Implementation done** (2026-10-05); the gate waits on the items under "Open". Track: commander. Depends
+on: C00, P02. Unblocks: C02.
+
+Started at the owner's request before P02 closed: the P02 query core it needs (the `all` scope, `showHidden`,
+`nameMask`, sort by `type` and `attrs`, `attrs` in rows) was already in the code; the rest of P02 stays open.
 
 ## Objective
 
@@ -75,10 +79,96 @@ size with `@tanstack/react-table`.
 - Attribute and size reads on slow volumes. Mitigation: rows render with what the listing has; missing fields fill in
   through invalidation.
 
+## Results (2026-10-05)
+
+Built:
+
+- **Sidecar:** `context.publish` / `context.get` (`internal/app/sharedctx.go`; in memory, persisted as `shared.context`
+  one second after the last publish and on shutdown); `query.indexOf` (18 µs on 100k ids); `fs.volumes` reports
+  `freeBytes` / `totalBytes` for fixed and removable volumes; `dir.open` reads one name of the folder, so an
+  unlistable folder is `PERMISSION_DENIED`, and an unready drive or an unreachable share is `INVALID_PATH` with
+  `details.reason` `notReady` / `network` (CFR-28; Windows, Linux and macOS error numbers).
+- **Main and contracts:** the commander profile gains the listing methods, `fs.volumes`, `places.list` and the
+  context methods; both preloads expose the context (the viewer's only while the commander is enabled) and
+  `query.indexOf`. Main accepts `context.publish` only from the visible app and only with its own app id, and rejects
+  `scope: "all"` from the viewer (ADR-0027). At start, main reads `shared.context` (waiting at most 400 ms) and shows
+  the commander first when it was the last used app.
+- **Commander:** per panel a query session in the `all` scope and a `shared/renderer-core` page store
+  (`features/listing.ts`). The Full view (`components/FullView.tsx`): TanStack Table v9 for columns, header sort
+  indicators and column sizing, its row model fed only the visible window's row indexes; rows of fixed height
+  (S 20 / M 22 / L 26 px) virtualized with TanStack Virtual, each reading its entry from the page store; column widths
+  are CSS variables, so a resize never re-renders rows. Columns Name, Ext, Size, Date, Attr (`rhsa` on Windows, `rwx`
+  elsewhere); type glyphs; `<DIR>`; hidden and system entries muted; the synthetic `..` row. A header click and
+  Ctrl+F3 / F4 / F5 / F6 sort in Go (again reverses); Ctrl+H toggles hidden entries without a rescan; Ctrl+R
+  refreshes; Enter, Backspace and Ctrl+PgUp navigate (up lands on the folder just left); arrows, PgUp/PgDn and
+  Home/End move the cursor, which follows its entry when the listing changes. Path bar (click or Alt+D, inline
+  errors), status line (count, "Listing… n entries so far" with Stop, free space), the CFR-28 states (empty, not
+  found, permission denied, drive not ready, network unavailable; Retry, Back, Home folder). Folders, sorts, hidden
+  toggles, column widths and the active panel persist as `commander.panels`.
+- **Shared context, part 1:** the commander (`features/carry.ts`) and the viewer (`features/workspace/appSwitch.ts`)
+  publish on the switch (with the cursor entry or the focused tile), when shown, and when their folder changes while
+  visible. When shown, each applies a newer context of the other app: it opens the folder and puts the cursor or the
+  selection on the entry if it can show it; nothing moves when it already shows that folder.
+
+Deviations from the scope above:
+
+- `shared.context` stores `{ v, app, path, pathKey }` without `focusPathKey`: the restart rule needs only the app and
+  the folder, and each app restores its own cursor and selection (`docs/shared/APP-SWITCHING.md` updated).
+- A viewer showing a recursive view or search results publishes its folder; a focused entry outside that folder's
+  direct children is not in the commander's session, so the cursor stays at the top. The containing-folder rule needs
+  the entry's parent and comes with the C02 carry-over work.
+- The status line shows free space from `fs.volumes`, moved forward from Stage C03 (a per-path call stays C03's, if
+  needed).
+- The hidden commander keeps invalidations aside and refetches when shown, but does not re-list on show: the sidecar
+  still watches every opened folder (P02's visible-app watching is open).
+
+Tests: Go all (new: shared context round trip and persistence, `query.indexOf`, volume space, unavailable-volume
+error numbers, golden fixtures for the three new results); contracts 52; desktop 92 (new: commander listing allowed,
+the viewer kept to the media scope, `context.publish` only from the visible app as itself); commander 26 (new: 20 in
+`listing.test.tsx`: home on first run, fixed row heights per interface size, a 100k folder mounts and pages only the
+window, cursor keys, Enter/Backspace with the cursor on the folder just left, header and Ctrl+F-key sorting in Go,
+Ctrl+H without a rescan, column resize persisted, restore, status line, the four error states with inline path
+errors, empty folder, attribute formatting, the carry-over rules); viewer 155 + 2 failing (the theme-label tests that
+already failed; new: 5 carry-over tests). E2E 56 of 59: `specs/commander/listing.spec.ts` (8, new) passes and the
+commander foundation spec's surface check was updated; the 2 failing `theme.spec.ts` tests already failed, and
+`tiles.spec.ts › wider windows fit more tiles per row` is flaky on this machine at HEAD too (1 of 3 runs fails at
+HEAD, 2 of 3 here).
+
+Measurements (reference machine; `shared/bench/results/stage-C01-2026-10-05-e2e-listing.jsonl`; 4 runs, the first
+right after a build, with a cold file cache):
+
+| Metric | Result | Budget |
+|---|---|---|
+| Enter a cached 1k folder → rows painted | p95 8–13 ms | p95 < 50 ms |
+| Enter an uncached 1k folder → first rows painted | 110–116 ms | p95 < 150 ms |
+| Enter an uncached 100k folder → first rows painted | 144–151 ms (cold first run: 470 ms) | < 300 ms |
+| Keys in the other panel while 100k entries list | p95 7 ms, 0 long tasks | ≤ 1 frame |
+| 100k scroll, each panel | p95 frame 7 ms, 0 long tasks, ≤ 56 rows mounted (32 visible + 2 × 12) | no long tasks; ≤ visible + 2 × overscan |
+| Sort change on 100k → first page | 95–102 ms (cold first run: 366 ms) | < 300 ms |
+| Switch with a folder change, commander → viewer (tile selected) | 43–44 ms | 1 frame + the viewer's cached-folder budget |
+| Switch with a folder change, viewer → commander (cursor placed) | 18–25 ms | 1 frame + 50 ms |
+| Commander bundle, JS minified / gzip | 364.3 / 112.8 KB; C00: 270.9 / 85.2 KB (+93.4 / +27.6 KB for `@tanstack/react-table`, `@tanstack/react-virtual` and C01's code) | not budgeted |
+
+The cold first runs (470 / 366 ms) miss the 100k budgets; every warm run passes.
+
+Viewer regression check: the viewer's unit and e2e suites are unchanged apart from the known failures above. Its
+uncached 100k index measurement was noisy on this machine today in both trees (HEAD: first rows 124–625 ms, complete
+2.0–12.8 s, 2 of 4 runs failing; this stage: first rows 10–225 ms, complete 1.9–4.6 s); runs with the `dir.open`
+readability probe disabled landed in the same range, so no difference is attributable to C01. The viewer's start-up
+path is unchanged while the commander is disabled (main reads the context only when the commander is enabled and no
+start app is forced).
+
+## Open
+
+- **P02 rest:** per-app session budgets (the one 8-session budget now serves the viewer and both panels), watching
+  only the visible app's folders, and P02's regression runs and benchmarks.
+- **Cold-cache 100k numbers:** the first run after a build missed the first-rows and sort budgets (470 / 366 ms);
+  re-measure on the reference and the low-end machine (Stage P05 at the latest).
+
 ## Exit checklist
 
-- [ ] implementation complete
-- [ ] tests complete
-- [ ] benchmark complete
-- [ ] performance regression reviewed
-- [ ] docs/ADR updated
+- [x] implementation complete
+- [x] tests complete
+- [x] benchmark complete
+- [ ] performance regression reviewed (cold-cache 100k runs over budget; the viewer comparison was noisy)
+- [x] docs/ADR updated

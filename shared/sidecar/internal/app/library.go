@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"io"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -54,6 +55,7 @@ type indexService struct {
 	meta    *meta.Extractor
 	clip    clipboard
 	clipImg *clipImager
+	context *sharedContext
 	stopBg  context.CancelFunc
 	// lib is set before libReady closes; nil when library.db could not be
 	// opened (user-data methods then fail, browsing keeps working).
@@ -75,6 +77,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 	}
 	svc := &indexService{log: log, store: store, disk: disk, events: events.New(emit, 50*time.Millisecond),
 		libReady: make(chan struct{}), video: tools, clipImg: newClipImager(cacheRoot)}
+	svc.context = &sharedContext{svc: svc}
 	svc.preview = preview.NewService(store, disk, log, preview.Options{Video: tools}, func(it preview.Item) {
 		svc.events.Append(evPreviewReady, it)
 	})
@@ -252,6 +255,7 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerMedia(srv)
 	s.registerWorkspace(srv)
 	s.registerJobs(srv)
+	s.registerContext(srv)
 	rpc.Register(srv, "query.close", func(_ context.Context, p queryCloseParams) (queryCloseResult, error) {
 		return queryCloseResult{Closed: s.queries.Close(p.QueryID)}, nil
 	})
@@ -263,15 +267,16 @@ func (s *indexService) dirOpen(ctx context.Context, p dirOpenParams) (dirOpenRes
 		return dirOpenResult{}, rpc.NewError(rpc.CodeInvalidPath, "folder path must be absolute")
 	}
 	fi, err := os.Stat(clean)
-	switch {
-	case errors.Is(err, fs.ErrNotExist):
-		return dirOpenResult{}, rpc.NewError(rpc.CodeNotFound, "folder does not exist")
-	case errors.Is(err, fs.ErrPermission):
-		return dirOpenResult{}, rpc.NewError(rpc.CodePermissionDenied, "no permission to open this folder")
-	case err != nil:
-		return dirOpenResult{}, rpc.NewError(rpc.CodeInvalidPath, err.Error())
-	case !fi.IsDir():
+	if err == nil && !fi.IsDir() {
 		return dirOpenResult{}, rpc.NewError(rpc.CodeInvalidPath, "path is not a folder")
+	}
+	if err == nil {
+		// Windows stats folders the user cannot list: read one name so a
+		// denied folder is an error here, not an empty listing (CFR-28).
+		err = probeDir(clean)
+	}
+	if err != nil {
+		return dirOpenResult{}, openError(err)
 	}
 	info, err := s.store.EnsureDir(ctx, clean)
 	if err != nil {
@@ -399,6 +404,42 @@ func (s *indexService) queryPage(ctx context.Context, p queryPageParams) (queryP
 		}
 	}
 	return queryPageResult{QueryID: page.QueryID, Version: page.Version, Total: page.Total, Offset: page.Offset, Items: items}, nil
+}
+
+// probeDir reads the first name of a folder.
+func probeDir(path string) error {
+	f, err := os.Open(path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if _, err := f.Readdirnames(1); err != nil && !errors.Is(err, io.EOF) {
+		return err
+	}
+	return nil
+}
+
+// openError maps a folder that cannot be opened to the protocol. Volumes
+// that are there but unreadable right now carry details.reason "notReady"
+// or "network" (CFR-28).
+func openError(err error) error {
+	switch {
+	case errors.Is(err, fs.ErrNotExist):
+		return rpc.NewError(rpc.CodeNotFound, "folder does not exist")
+	case errors.Is(err, fs.ErrPermission):
+		return rpc.NewError(rpc.CodePermissionDenied, "no permission to open this folder")
+	}
+	switch reason := fsx.Unavailable(err); reason {
+	case "notReady":
+		e := rpc.NewError(rpc.CodeInvalidPath, "the drive is not ready")
+		e.Retryable, e.Details = true, map[string]string{"reason": reason}
+		return e
+	case "network":
+		e := rpc.NewError(rpc.CodeInvalidPath, "the network location is unavailable")
+		e.Retryable, e.Details = true, map[string]string{"reason": reason}
+		return e
+	}
+	return rpc.NewError(rpc.CodeInvalidPath, err.Error())
 }
 
 func dbError(err error) error {

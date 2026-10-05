@@ -137,6 +137,7 @@ const api: FastViewApi = {
       invoke("query.page", { queryId, offset, limit, thumbProfile }),
     close: (queryId) => invoke("query.close", { queryId }),
     facets: (queryId) => invoke("query.facets", { queryId }),
+    indexOf: (queryId, entryId) => invoke("query.indexOf", { queryId, entryId }),
   },
   selection: {
     info: (sel) => invoke("selection.info", { selection: selection(sel) }),
@@ -197,8 +198,13 @@ const api: FastViewApi = {
 }
 
 // The app switch exists only while the commander is enabled (ADR-0031).
+// The app switch and the shared context exist only while the commander is enabled (ADR-0031).
 if (process.argv.includes(COMMANDER_ENABLED_ARG)) {
   api.app.switch = (to) => invoke("app.switch", { to })
+  api.context = {
+    publish: (dirId, focusId) => invoke("context.publish", { app: "viewer", dirId, focusId }),
+    get: () => invoke("context.get", {}),
+  }
 }
 
 if (process.argv.includes(DEV_METHODS_ARG)) {

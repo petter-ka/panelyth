@@ -191,6 +191,9 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
         }),
       ),
       close: vi.fn(async () => ok({ closed: true })),
+      indexOf: vi.fn(async (_queryId: number, entryId: number) =>
+        ok({ index: backend.items.findIndex((i) => i.id === entryId), version: backend.version }),
+      ),
       facets: vi.fn(async () =>
         ok({
           folders: backend.items.filter((i) => i.kind === "dir").length,

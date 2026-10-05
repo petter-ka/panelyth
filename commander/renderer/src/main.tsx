@@ -3,6 +3,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { bridge, isBridgeAvailable } from "./bridge"
 import { AppShell } from "./components/AppShell"
+import { startPanels } from "./features/carry"
 import { loadLayout } from "./features/panels"
 import { startSidecarMonitoring } from "./features/sidecar"
 import "./styles.css"
@@ -18,6 +19,8 @@ if (isBridgeAvailable()) {
     onSettingChanged: (listener) => bridge.on("settings.changed", (e) => listener(e.key, e.value)),
   })
   void loadLayout().catch(() => undefined)
+  // Panel listings, events and the shared context (Stage C01).
+  void startPanels().catch(() => undefined)
 }
 
 const root = document.getElementById("root")

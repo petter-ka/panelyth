@@ -53,11 +53,16 @@ const devMethods = !app.isPackaged && process.env.FASTVIEW_DEV_METHODS === "1"
 
 // The commander stays hidden behind a feature flag until Stage C11 (ADR-0031).
 const commanderEnabled = process.env.FASTVIEW_COMMANDER === "1"
-// Tests and benchmarks may start with the commander shown. Unpackaged only.
-const startApp: AppId =
-  !app.isPackaged && commanderEnabled && process.env.FASTVIEW_START_APP === "commander"
-    ? "commander"
-    : "viewer"
+// Tests and benchmarks may choose the app shown at start. Unpackaged only;
+// otherwise the last used app opens (shared.context, ADR-0031).
+const envStartApp = app.isPackaged ? undefined : process.env.FASTVIEW_START_APP
+const forcedStartApp: AppId | null = !commanderEnabled
+  ? "viewer"
+  : envStartApp === "commander" || envStartApp === "viewer"
+    ? envStartApp
+    : null
+// The window does not wait longer than this for the last used app.
+const START_APP_WAIT_MS = 400
 
 // Tests and benchmarks run each launch with a fresh profile (localStorage,
 // logs) so stored preferences cannot leak between runs. Unpackaged only.
@@ -108,8 +113,28 @@ function openWindow(): BrowserWindow {
         }
       : null,
   )
-  if (startApp === "commander") appShell.switchTo("commander")
+  const shell = appShell
+  if (forcedStartApp === "commander") shell.switchTo("commander")
+  else if (forcedStartApp === null)
+    void lastUsedApp().then((last) => {
+      // Only before the user did anything: a late answer never moves them.
+      if (last === "commander" && shell.activeApp === "viewer" && !shell.switched) {
+        shell.switchTo("commander")
+      }
+    })
   return win
+}
+
+/** The app the previous run ended in, from the shared context. */
+async function lastUsedApp(): Promise<AppId | null> {
+  if (!sidecar) return null
+  const sc = sidecar
+  const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), START_APP_WAIT_MS))
+  const read = sc
+    .call("context.get", {})
+    .then((r) => ((r as { app?: unknown }).app === "commander" ? "commander" : "viewer") as AppId)
+    .catch(() => null)
+  return Promise.race([read, timeout])
 }
 
 // Test hook (main process only): which app is shown and whether the commander view exists.
@@ -191,7 +216,7 @@ async function boot(): Promise<void> {
     },
     "app.switch": (_event, { to }) => {
       if (!appShell?.enabled) throw new Error("the commander is not enabled")
-      appShell.switchTo(to)
+      appShell.requestSwitch(to)
       return { ok: true }
     },
     ...workspaceHandlers(workspaceDeps),
@@ -215,6 +240,7 @@ async function boot(): Promise<void> {
     main,
     origins: { viewer: trustedOrigin(devUrl), commander: commanderOrigin() },
     devMethods,
+    activeApp: () => appShell?.activeApp ?? "viewer",
     // Shared settings (theme, interface size) reach the other app at once (ADR-0031).
     onSharedSetting: (key, value) =>
       broadcast(webContents.getAllWebContents(), "settings.changed", { key, value }),

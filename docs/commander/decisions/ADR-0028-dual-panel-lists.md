@@ -2,8 +2,15 @@
 
 ## Status
 
-Proposed (2026-10-05). Decided in Stage C01. Revised 2026-10-05 (owner direction): the Full (table) view uses
+Accepted (2026-10-05, Stage C01). Proposed and revised the same day (owner direction): the Full (table) view uses
 TanStack Table with TanStack Virtual; the Brief (list) and Thumbnails (tile) views use `@tanstack/react-virtual`.
+
+Stage C01 built the Full view this way and measured it: 100k-entry folders scroll with 0 long tasks and a 7 ms p95
+frame, with at most 56 rows mounted; a header click sorts in Go (95–102 ms to the first page on 100k). The commander
+bundle grew by 93.4 KB minified (27.6 KB gzip) with `@tanstack/react-table` v9, `@tanstack/react-virtual` and the
+stage's code (`docs/commander/stages/C01-panels-and-listing.md`). Implementation notes: the table's `data` is the
+visible window's row indexes, rows read their entries from the page store, and column widths are CSS variables on the
+grid, so a resize re-renders the header only.
 
 ## Context
 

@@ -1,8 +1,8 @@
 # App Switching and Shared State
 
 Status: **In progress**. Decided by ADR-0031 (accepted 2026-10-05). The switch and shared appearance work
-(Stage C00, 2026-10-05: 92 ms first switch, 4–6 ms after); carrying the folder, file and selection over comes in
-Stages C01–C02 (see "Delivery").
+(Stage C00, 2026-10-05: 92 ms first switch, 4–6 ms after). The folder and the entry under the cursor carry over, and
+the next start opens the last used app (Stage C01, 2026-10-05); the selection follows in Stage C02 (see "Delivery").
 
 The viewer and the commander are two apps of one product. For now they meet in the UI at one point: **an icon at the
 top of each app switches to the other**. Behind the switch, both apps share state: the folder you are in (and so the
@@ -133,12 +133,19 @@ A hidden app keeps its state and sessions but does no work:
 - when shown again, it re-lists its visible folders (served from the index first, ADR-0015), applies the carried-over
   context, and carries on.
 
+Where this stands (Stage C01): the hidden commander keeps `query.invalidated` aside and refetches pages only when
+shown; it does not re-list on show, because the sidecar still watches every opened folder (bounded, ADR-0020). The
+viewer does not pause yet. Watching only the visible app's folders is part of Stage P02.
+
 ## Persistence: the shared storage
 
 Everything shared lives in the existing `library.db` (`<UserConfigDir>/FastView/library.db`, ADR-0016):
 
-- settings `shared.context` (`{ v: 1, app, path, pathKey, focusPathKey }`, written on switch and on exit; the
-  selection is never persisted), `shared.appearance` (theme, interface size), `shared.switch` (carry-over options,
+- settings `shared.context` (`{ v: 1, app, path, pathKey }`; the selection is never persisted). The visible app
+  publishes its context when it is shown, when its folder changes and on the switch (with the focused entry); Go
+  writes the setting one second after the last publish and on shutdown. At start, main reads it (waiting at most
+  400 ms) and shows the commander first when it was the last used app. The focused entry is not persisted: each app
+  restores its own cursor and selection (Stage C01)., `shared.appearance` (theme, interface size), `shared.switch` (carry-over options,
   start-with) and `shared.shortcuts` (the `shell` scope);
 - the `bookmarks` and `recent` tables, used by both apps (Stage C03 adds bookmark groups for the hotlist);
 - per-app settings under their own keys: the viewer's existing keys (`workspace`, `player`, `shortcuts`, …) keep their
@@ -153,8 +160,8 @@ The disposable `index.db` and the preview cache are shared too (one sidecar), so
 |---|---|---|
 | `app.switch({ to })` | renderer → main | show the other app view, creating it on demand |
 | `app.visibility { app, visible }` | main → renderer | this app view was shown or hidden |
-| `context.publish({ app, dirId, focusId?, selection? })` | renderer → sidecar | the leaving app's context; Go resolves the selection to an id list (≤ 10,000) and keeps it in memory |
-| `context.get()` | renderer → sidecar | `{ version, app, dirId, path, volume, focusId, selectionCount }` for the app being shown |
+| `context.publish({ app, dirId, focusId })` | renderer → sidecar | the visible app's context (C01); main accepts it only from the visible app's view and only with that app's own id. C02 adds the selection: Go resolves it to an id list (≤ 10,000) and keeps it in memory |
+| `context.get()` | renderer → sidecar (and main at start) | `{ version, app, dirId, path, focusId }` (C01; C02 adds `selectionCount`); `version` 0 = nothing published in this run, `app` and `path` then come from the last run |
 | `selection.fromContext({ version, queryId, queryVersion })` | renderer → sidecar | the carried selection as ranges of the target's session, like `selection.rebase` (ADR-0017) |
 
 Context carries entry ids and descriptors; display paths are never used for actions (ADR-0027). The switch sequence:

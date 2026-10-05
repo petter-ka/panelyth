@@ -17,7 +17,7 @@ import { initTheme } from "./features/theme/themeStore"
 import { initInterfaceSize } from "./features/theme/interfaceSizeStore"
 import { startTreeMonitoring } from "./features/tree/treeStore"
 import { startWorkspacePersistence } from "./features/workspace/workspace"
-import { startAppearanceSync } from "./features/workspace/appSwitch"
+import { startAppearanceSync, startContextSync } from "./features/workspace/appSwitch"
 import "./styles/index.css"
 
 initTheme()
@@ -37,6 +37,7 @@ startVideoPrefsPersistence()
 startViewerSettingsPersistence()
 startStartupFolder()
 startAppearanceSync()
+startContextSync()
 
 const root = document.getElementById("root")
 if (!root) throw new Error("#root missing")

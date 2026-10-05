@@ -21,7 +21,7 @@ func FileTimes(fi fs.FileInfo) Times {
 func Volumes() ([]Volume, error) {
 	ents, err := os.ReadDir("/Volumes")
 	if err != nil {
-		return []Volume{{Path: "/", Label: "Macintosh HD", Kind: "fixed"}}, nil
+		return withSpace([]Volume{{Path: "/", Label: "Macintosh HD", Kind: "fixed"}}), nil
 	}
 	out := []Volume{}
 	for _, e := range ents {
@@ -35,5 +35,5 @@ func Volumes() ([]Volume, error) {
 		}
 		out = append(out, v)
 	}
-	return out, nil
+	return withSpace(out), nil
 }

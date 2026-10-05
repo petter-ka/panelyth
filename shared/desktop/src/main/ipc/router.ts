@@ -47,6 +47,8 @@ export interface RouterOptions {
   devMethods: boolean
   /** Called after a successful library.setSetting of a shared.* key, so the other app can apply it. */
   onSharedSetting?: (key: string, value: unknown) => void
+  /** The visible app; only it may publish the shared context (ADR-0031). Absent = any app. */
+  activeApp?: () => AppId
 }
 
 type InvokeHandler = (
@@ -94,6 +96,12 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
     }
     const invalid = validators[method as RendererMethod](params)
     if (invalid) return fail("INVALID_ARGUMENT", invalid)
+    const denied = profileProblem(app, method, params)
+    if (denied) return fail("PERMISSION_DENIED", denied)
+    // A hidden app's publish is dropped: the visible app owns the context.
+    if (method === "context.publish" && options.activeApp && options.activeApp() !== app) {
+      return { ok: true, r: { ok: false } }
+    }
     invokeCounts.set(method, (invokeCounts.get(method) ?? 0) + 1)
 
     try {
@@ -115,6 +123,20 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
       return fail("INTERNAL", String(error))
     }
   }
+}
+
+/**
+ * Per-app parameter rules on top of the allowlist (ADR-0027): an app
+ * publishes the shared context only as itself, and the viewer lists media
+ * only (the `all` scope is the commander's, ADR-0026).
+ */
+function profileProblem(app: AppId, method: string, params: unknown): string | null {
+  const p = params as Record<string, unknown>
+  if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
+  if (app === "viewer" && method === "query.open" && p.scope === "all") {
+    return "the viewer lists media only"
+  }
+  return null
 }
 
 export interface IpcMainLike {

@@ -1,6 +1,18 @@
 # Stage P02 — Index Scope: All Entries, Filtered per Query
 
-Status: **Planned**. Track: platform. Depends on: P01. Unblocks: C01.
+Status: **Partly done** (no stage record yet). Track: platform. Depends on: P01. Unblocks: C01.
+
+## Progress (2026-10-05, found while starting Stage C01)
+
+In the code, with tests (`internal/scan/allentries_test.go`, `internal/index/scope_test.go`, golden fixtures
+`res-query.open-all.json`, `res-query.page-all.json`): the schema with `file` and `link` kinds and `attrs`, the
+scanner storing every entry, and the query descriptor's `scope`, `showHidden`, `nameMask` and sort by `attrs`.
+The kind checks exist too: main's `shell.open` refuses `file` and `link` entries (`shared/desktop/test/workspace.test.ts`),
+and `media.resolve` serves only images and videos. Stage C01 added the main-process check that keeps the viewer on
+the `media` scope.
+
+Still open: per-app session budgets, watching only the visible app's folders, the regression and benchmark runs
+below, and accepting ADR-0026.
 
 ## Objective
 

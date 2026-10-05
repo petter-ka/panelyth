@@ -337,6 +337,10 @@ func TestGoldenFrames(t *testing.T) {
 	vp, _ := json.Marshal(map[string]any{"t": "req", "id": 29, "m": "query.page", "p": map[string]any{"queryId": vqid, "offset": 0, "limit": 1}})
 	clipID := call(29, string(vp)).(map[string]any)["r"].(map[string]any)["items"].([]any)[0].(map[string]any)["id"]
 	golden["res-media.resolve-video.json"] = call(44, byID(44, "media.resolve", map[string]any{"entryId": clipID}))
+	// Stage C01: the shared context and query.indexOf.
+	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage}))
+	golden["res-context.get.json"] = call(62, `{"t":"req","id":62,"m":"context.get","p":{}}`)
+	golden["res-query.indexOf.json"] = call(63, byID(63, "query.indexOf", map[string]any{"queryId": qid, "entryId": firstImage}))
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)

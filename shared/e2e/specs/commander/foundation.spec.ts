@@ -44,15 +44,29 @@ test.describe("commander foundation (Stage C00)", () => {
           apiKeys: Object.keys(api).sort(),
           app: Object.keys(api.app ?? {}).sort(),
           library: Object.keys(api.library ?? {}).sort(),
+          query: Object.keys(api.query ?? {}).sort(),
         }
       })
       expect(probe).toEqual({
         require: "undefined",
         process: "undefined",
         ipcRenderer: "undefined",
-        apiKeys: ["app", "library", "onEvent", "sidecar", "system"],
+        // Stage C01 added listing, free space, home and the shared context.
+        apiKeys: [
+          "app",
+          "context",
+          "dir",
+          "fs",
+          "library",
+          "onEvent",
+          "places",
+          "query",
+          "sidecar",
+          "system",
+        ],
         app: ["exit", "switch"],
         library: ["get", "setSetting"],
+        query: ["close", "indexOf", "open", "page"],
       })
     } finally {
       await app.close()

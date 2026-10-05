@@ -40,6 +40,8 @@ import type {
   QueryPageParams,
   QueryPageResult,
   QuerySnapshot,
+  QueryIndexOfResult,
+  SharedContext,
   SidecarStatus,
   SystemInfo,
   AppId,
@@ -98,6 +100,7 @@ export interface FastViewApi {
     page(params: QueryPageParams): Promise<RpcEnvelope<QueryPageResult>>
     close(queryId: number): Promise<RpcEnvelope<QueryCloseResult>>
     facets(queryId: number): Promise<RpcEnvelope<QueryFacets>>
+    indexOf(queryId: number, entryId: number): Promise<RpcEnvelope<QueryIndexOfResult>>
   }
   selection: {
     /** Count and total size, resolved in Go. */
@@ -149,6 +152,11 @@ export interface FastViewApi {
     copyText(text: string): Promise<RpcEnvelope<OkResult>>
     copyImage(entryId: number): Promise<RpcEnvelope<CopyImageResult>>
   }
+  /** The shared context (present only while the commander is enabled; ADR-0031). */
+  context?: {
+    publish(dirId: number, focusId: number | null): Promise<RpcEnvelope<OkResult>>
+    get(): Promise<RpcEnvelope<SharedContext>>
+  }
   /** Present only when dev methods are enabled (benchmarks, development). */
   dev?: {
     echo(payload: string): Promise<RpcEnvelope<EchoResult>>
@@ -175,6 +183,28 @@ export interface CommanderApi {
   library: {
     get(): Promise<RpcEnvelope<LibraryState>>
     setSetting(key: string, value: unknown): Promise<RpcEnvelope<OkResult>>
+  }
+  /** Listing (Stage C01): the all-entries scope, one session per visible panel. */
+  dir: {
+    open(params: DirOpenParams): Promise<RpcEnvelope<DirOpenResult>>
+    openEntry(params: DirOpenEntryParams): Promise<RpcEnvelope<DirOpenResult>>
+    cancelScan(scanId: number): Promise<RpcEnvelope<CancelScanResult>>
+  }
+  query: {
+    open(descriptor: QueryDescriptor): Promise<RpcEnvelope<QuerySnapshot>>
+    page(params: QueryPageParams): Promise<RpcEnvelope<QueryPageResult>>
+    close(queryId: number): Promise<RpcEnvelope<QueryCloseResult>>
+    indexOf(queryId: number, entryId: number): Promise<RpcEnvelope<QueryIndexOfResult>>
+  }
+  fs: {
+    volumes(): Promise<RpcEnvelope<VolumesResult>>
+  }
+  places: {
+    list(): Promise<RpcEnvelope<PlacesResult>>
+  }
+  context: {
+    publish(dirId: number, focusId: number | null): Promise<RpcEnvelope<OkResult>>
+    get(): Promise<RpcEnvelope<SharedContext>>
   }
   onEvent<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void
 }

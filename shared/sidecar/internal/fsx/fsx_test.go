@@ -153,6 +153,23 @@ func TestVolumesIncludeSomething(t *testing.T) {
 	}
 }
 
+// Local volumes report their space; the test runs where "/" or C:\ exists.
+func TestVolumesSpace(t *testing.T) {
+	vs, err := Volumes()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, v := range vs {
+		if v.Kind == "fixed" && v.TotalBytes > 0 {
+			if v.FreeBytes < 0 || v.FreeBytes > v.TotalBytes {
+				t.Fatalf("%s: free %d of %d", v.Path, v.FreeBytes, v.TotalBytes)
+			}
+			return
+		}
+	}
+	t.Fatalf("no fixed volume with space in %v", vs)
+}
+
 func TestParseMountInfo(t *testing.T) {
 	text := `22 1 8:2 / / rw,relatime shared:1 - ext4 /dev/sda2 rw
 23 22 0:5 / /proc rw - proc proc rw
@@ -163,10 +180,10 @@ func TestParseMountInfo(t *testing.T) {
 44 22 8:17 / /media/petter/My\040Disk rw - exfat /dev/sdb1 rw`
 	got := ParseMountInfo(text)
 	want := []Volume{
-		{"/", "/", "fixed"},
-		{"/media/petter/My Disk", "My Disk", "removable"},
-		{"/mnt/nas", "nas", "network"},
-		{"/run/media/p/CARD", "CARD", "removable"},
+		{Path: "/", Label: "/", Kind: "fixed"},
+		{Path: "/media/petter/My Disk", Label: "My Disk", Kind: "removable"},
+		{Path: "/mnt/nas", Label: "nas", Kind: "network"},
+		{Path: "/run/media/p/CARD", Label: "CARD", Kind: "removable"},
 	}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("got %v\nwant %v", got, want)

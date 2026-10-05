@@ -50,6 +50,8 @@ import {
   type QueryCloseResult,
   type QueryPageResult,
   type QuerySnapshot,
+  type QueryIndexOfResult,
+  type SharedContext,
   type ShutdownResult,
   type SidecarMethodMap,
   type SidecarStatus,
@@ -100,7 +102,13 @@ const isCrumb = (v: unknown): v is Crumb => isRec(v) && isStr(v.name) && isStr(v
 const isDirChild = (v: unknown): v is DirChild =>
   isRec(v) && isStr(v.name) && isStr(v.path) && isBool(v.hasChildren)
 const isVolume = (v: unknown): v is Volume =>
-  isRec(v) && isStr(v.path) && isStr(v.label) && isStr(v.kind) && volumeKinds.has(v.kind)
+  isRec(v) &&
+  isStr(v.path) &&
+  isStr(v.label) &&
+  isStr(v.kind) &&
+  volumeKinds.has(v.kind) &&
+  (v.freeBytes === undefined || isCount(v.freeBytes)) &&
+  (v.totalBytes === undefined || isCount(v.totalBytes))
 const isBookmark = (v: unknown): v is Bookmark =>
   isRec(v) && isInt(v.id) && isStr(v.path) && isStr(v.label)
 const isRecent = (v: unknown): v is RecentFolder =>
@@ -298,6 +306,16 @@ export const sidecarResultGuards: ResultGuards = {
     Array.isArray(v.items) &&
     v.items.every(isContentItem),
   "query.close": (v): v is QueryCloseResult => isRec(v) && isBool(v.closed),
+  "query.indexOf": (v): v is QueryIndexOfResult =>
+    isRec(v) && isInt(v.index) && v.index >= -1 && isInt(v.version),
+  "context.publish": isOk,
+  "context.get": (v): v is SharedContext =>
+    isRec(v) &&
+    isCount(v.version) &&
+    (v.app === "" || v.app === "viewer" || v.app === "commander") &&
+    isCount(v.dirId) &&
+    isStr(v.path) &&
+    intOrNull(v.focusId),
   // Only images and videos are ever served (ADR-0026, ADR-0027).
   "media.resolve": (v): v is MediaResolveResult =>
     isRec(v) &&

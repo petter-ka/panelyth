@@ -19,9 +19,9 @@ Only one stage is active at a time. Default order:
 |---|---|---|---|
 | 1 | 08.6 — UI polish v2 | viewer | done 2026-10-05 |
 | 2 | P01 — Multi-app platform: one shell, app views | platform | everything after it builds on app views and shared packages |
-| 3 | P02 — Index scope: all entries, filtered per query | platform | the commander lists every file |
-| 4 | C00 — Commander foundation and the app switch | commander | active (started with the minimal part of P01) |
-| 5 | C01 — Panels and listing | commander | first useful version; folder and focus carried over on switch |
+| 3 | P02 — Index scope: all entries, filtered per query | platform | the commander lists every file (query core done; the rest open) |
+| 4 | C00 — Commander foundation and the app switch | commander | done 2026-10-05 (with the minimal part of P01) |
+| 5 | C01 — Panels and listing | commander | active: first useful version; folder and focus carried over on switch |
 | 6 | C02 — Keyboard, marks and quick search | commander | the Total Commander interaction model; selection carried over |
 | 7 | C03 — Drives, tabs, hotlist, history, session | commander | navigation complete; shared bookmarks and recent |
 | 8 | P03 — File-operation engine v2 | platform | queue, conflicts, throughput (the viewer gains speed too) |
@@ -128,12 +128,12 @@ Signing, notarization, update strategy, installers, migrations, notices and rele
 
 ## Commander track
 
-### C00 — Foundation and the app switch
+### C00 — Foundation and the app switch ✅ (2026-10-05)
 
 The commander as the second app view: dual-panel shell, function-key bar; the switch icon and Ctrl/Cmd+Shift+M in both
 apps; shared appearance.
 
-### C01 — Panels and listing
+### C01 — Panels and listing (active; implementation done 2026-10-05)
 
 Two panels with the Full view: every entry, columns, sorting, path bar, status line, hidden-files toggle. Switching
 carries the folder and the entry under the cursor over.

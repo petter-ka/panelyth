@@ -76,6 +76,8 @@ func Run(ctx context.Context, cfg Config) error {
 	}()
 	defer func() {
 		<-svc.libReady
+		// The last shared context reaches library.db before it closes.
+		svc.context.flush()
 		if svc.lib != nil {
 			_ = svc.lib.Close()
 		}

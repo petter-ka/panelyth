@@ -242,3 +242,36 @@ func TestUserDataAndMaterializedHooks(t *testing.T) {
 		t.Errorf("dropped %d, want 2 (close + eviction)", dropped)
 	}
 }
+
+func TestIndexOf(t *testing.T) {
+	e := setup(t, 300)
+	e.scan(t, false)
+	ctx := context.Background()
+	snap, _ := e.mgr.Open(ctx, index.Descriptor{DirID: e.root.ID})
+	p, _ := e.mgr.Page(ctx, snap.QueryID, 250, 1)
+	at, version, err := e.mgr.IndexOf(snap.QueryID, p.Items[0].ID)
+	if err != nil || at != 250 || version != snap.Version {
+		t.Fatalf("IndexOf = %d v%d %v, want 250 v%d", at, version, err, snap.Version)
+	}
+	if at, _, _ := e.mgr.IndexOf(snap.QueryID, 999_999); at != -1 {
+		t.Fatalf("absent entry at %d", at)
+	}
+	if _, _, err := e.mgr.IndexOf(999, 1); !errors.Is(err, ErrUnknownSession) {
+		t.Fatalf("unknown session: %v", err)
+	}
+}
+
+// 100k ids: the scan behind query.indexOf (cursor on the folder just left,
+// carried-over focus).
+func BenchmarkIndexOf100k(b *testing.B) {
+	ids := make([]int64, 100_000)
+	for i := range ids {
+		ids[i] = int64(i + 1)
+	}
+	m := &Manager{sessions: map[int64]*session{1: {id: 1, ids: ids, version: 1}}}
+	for b.Loop() {
+		if at, _, _ := m.IndexOf(1, 100_000); at != 99_999 {
+			b.Fatal(at)
+		}
+	}
+}

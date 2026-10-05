@@ -55,5 +55,17 @@ func Volumes() ([]Volume, error) {
 		}
 		out = append(out, v)
 	}
-	return out, nil
+	return withSpace(out), nil
+}
+
+func diskSpace(root string) (free, total int64, ok bool) {
+	p, err := windows.UTF16PtrFromString(root)
+	if err != nil {
+		return 0, 0, false
+	}
+	var avail, size, totalFree uint64
+	if windows.GetDiskFreeSpaceEx(p, &avail, &size, &totalFree) != nil {
+		return 0, 0, false
+	}
+	return int64(avail), int64(size), true
 }

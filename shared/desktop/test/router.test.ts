@@ -51,7 +51,7 @@ const mainHandlers = (): MainHandlers => ({
   "clipboard.copyImage": vi.fn(async () => ({ width: 1, height: 1 })),
 })
 
-function setup(devMethods = false) {
+function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
   const sidecar: SidecarPort = {
     call: vi.fn(async (method: string) => ({ echoed: method })),
     getStatus: vi.fn(() => status),
@@ -64,6 +64,7 @@ function setup(devMethods = false) {
     origins: { viewer: ORIGIN, commander: COMMANDER },
     devMethods,
     onSharedSetting,
+    ...(activeApp && { activeApp }),
   })
   return {
     sidecar,
@@ -84,11 +85,86 @@ describe("invoke router", () => {
       r: { ok: true },
     })
     expect(main["app.switch"]).toHaveBeenCalledWith(commander, { to: "viewer" })
-    for (const m of ["query.open", "dir.open", "shell.open", "media.open", "jobs.start"]) {
+    for (const m of [
+      "shell.open",
+      "media.open",
+      "jobs.start",
+      "preview.ensure",
+      "selection.info",
+    ]) {
       const res = await handler(commander, m, {})
       expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     }
     expect(sidecar.call).toHaveBeenCalledTimes(1)
+  })
+
+  it("lets the commander list folders in the all scope (Stage C01)", async () => {
+    const { handler, sidecar, commander } = setup()
+    const descriptor = {
+      dirId: 1,
+      recursive: false,
+      sort: [{ field: "attrs", direction: "desc" }],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+      scope: "all",
+      showHidden: true,
+    }
+    await expect(handler(commander, "query.open", descriptor)).resolves.toMatchObject({ ok: true })
+    await expect(
+      handler(commander, "query.indexOf", { queryId: 1, entryId: 7 }),
+    ).resolves.toMatchObject({ ok: true })
+    await expect(handler(commander, "fs.volumes", {})).resolves.toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenCalledWith("query.open", descriptor)
+  })
+
+  it("keeps the viewer on the media scope", async () => {
+    const { handler, sidecar, ok } = setup()
+    const base = {
+      dirId: 1,
+      recursive: false,
+      sort: [],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+    }
+    await expect(handler(ok, "query.open", { ...base, scope: "all" })).resolves.toMatchObject({
+      ok: false,
+      e: { code: "PERMISSION_DENIED" },
+    })
+    await expect(handler(ok, "query.open", base)).resolves.toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenCalledTimes(1)
+  })
+
+  it("accepts context.publish only from the visible app, as itself", async () => {
+    let active: "viewer" | "commander" = "viewer"
+    const { handler, sidecar, ok, commander } = setup(false, () => active)
+    const params = (app: string) => ({ app, dirId: 3, focusId: null })
+    await expect(handler(ok, "context.publish", params("commander"))).resolves.toMatchObject({
+      ok: false,
+      e: { code: "PERMISSION_DENIED" },
+    })
+    await expect(handler(commander, "context.publish", params("commander"))).resolves.toEqual({
+      ok: true,
+      r: { ok: false },
+    })
+    expect(sidecar.call).not.toHaveBeenCalled()
+    await expect(handler(ok, "context.publish", params("viewer"))).resolves.toMatchObject({
+      ok: true,
+    })
+    active = "commander"
+    await handler(commander, "context.publish", { app: "commander", dirId: 3, focusId: 9 })
+    expect(sidecar.call).toHaveBeenCalledTimes(2)
+    await expect(handler(commander, "context.get", {})).resolves.toMatchObject({ ok: true })
+    await expect(
+      handler(commander, "context.publish", { app: "commander", dirId: 0, focusId: null }),
+    ).resolves.toMatchObject({ ok: false, e: { code: "INVALID_ARGUMENT" } })
   })
 
   it("validates app.switch", async () => {
@@ -182,8 +258,8 @@ describe("invoke router", () => {
           favorite: false,
           minRating: 0,
           tags: [],
-          scope: "all",
-          showHidden: true,
+          // The all scope is the commander's (tested above); masks work in both.
+          scope: "media",
           nameMask: "*.txt;*.md|*.bak",
         },
       ],

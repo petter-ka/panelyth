@@ -185,6 +185,24 @@ type Volume struct {
 	Label string `json:"label"`
 	// Kind is fixed, removable, network, optical or other.
 	Kind string `json:"kind"`
+	// FreeBytes (available to this user) and TotalBytes are read for fixed
+	// and removable volumes only; 0 (omitted) means unknown. Network shares
+	// are skipped: a disconnected one can stall for seconds.
+	FreeBytes  int64 `json:"freeBytes,omitempty"`
+	TotalBytes int64 `json:"totalBytes,omitempty"`
+}
+
+// withSpace fills FreeBytes and TotalBytes of local volumes.
+func withSpace(vs []Volume) []Volume {
+	for i := range vs {
+		if vs[i].Kind != "fixed" && vs[i].Kind != "removable" {
+			continue
+		}
+		if free, total, ok := diskSpace(vs[i].Path); ok {
+			vs[i].FreeBytes, vs[i].TotalBytes = free, total
+		}
+	}
+	return vs
 }
 
 // Times holds the platform file times the index does not store; zero means

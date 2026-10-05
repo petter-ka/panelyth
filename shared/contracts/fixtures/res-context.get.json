@@ -1,0 +1,12 @@
+{
+  "id": 62,
+  "ok": true,
+  "r": {
+    "app": "viewer",
+    "dirId": 14,
+    "focusId": 16,
+    "path": "/fixtures/golden",
+    "version": 1
+  },
+  "t": "res"
+}

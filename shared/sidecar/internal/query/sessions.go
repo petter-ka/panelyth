@@ -231,6 +231,17 @@ func (m *Manager) Current(id int64) ([]int64, int64, error) {
 	return s.ids, s.version, nil
 }
 
+// IndexOf returns the position of entryID in the session's current list
+// (-1 when absent) and the version it belongs to. The list is immutable, so
+// the scan runs outside the lock; 100k ids take well under a millisecond.
+func (m *Manager) IndexOf(id, entryID int64) (int, int64, error) {
+	ids, version, err := m.Current(id)
+	if err != nil {
+		return -1, 0, err
+	}
+	return slices.Index(ids, entryID), version, nil
+}
+
 // Facets counts filter choices for the session's folder scope and search.
 func (m *Manager) Facets(ctx context.Context, id int64) (index.Facets, error) {
 	m.mu.Lock()

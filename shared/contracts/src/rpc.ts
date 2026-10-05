@@ -322,6 +322,18 @@ export interface QueryPageResult extends QuerySnapshot {
   items: ContentItem[]
 }
 
+/** Where an entry sits in a session (cursor on the folder just left, carried-over focus). */
+export interface QueryIndexOfParams {
+  queryId: number
+  entryId: number
+}
+
+export interface QueryIndexOfResult {
+  /** -1 when the entry is not in the session. */
+  index: number
+  version: number
+}
+
 export interface QueryCloseParams {
   queryId: number
 }
@@ -471,6 +483,12 @@ export interface Volume {
   path: string
   label: string
   kind: VolumeKind
+  /**
+   * Bytes available to the user and the volume size (Stage C01); read for
+   * fixed and removable volumes only, omitted when unknown.
+   */
+  freeBytes?: number
+  totalBytes?: number
 }
 
 export interface VolumesResult {
@@ -756,6 +774,29 @@ export interface TagsResult {
 export interface TagIdParams {
   id: number
 }
+// Shared context (Stage C01, ADR-0031, docs/shared/APP-SWITCHING.md) --------
+
+export interface ContextPublishParams {
+  /** The calling app; main rejects any other value. */
+  app: AppId
+  dirId: number
+  /** The focused tile or the cursor entry; null when there is none. */
+  focusId: number | null
+}
+
+export interface SharedContext {
+  /**
+   * Publishes so far in this run. 0 = none yet: `app` and `path` then come
+   * from the previous run (the last used app; "" when there was none) and
+   * `dirId` is 0.
+   */
+  version: number
+  app: AppId | ""
+  dirId: number
+  path: string
+  focusId: number | null
+}
+
 export const MAX_SETTING_KEY_CHARS = 128
 export const MAX_SETTING_JSON_CHARS = 64 * 1024
 
@@ -772,6 +813,11 @@ export interface SidecarMethodMap {
   "query.open": { params: QueryDescriptor; result: QuerySnapshot }
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
+  "query.indexOf": { params: QueryIndexOfParams; result: QueryIndexOfResult }
+  /** The app being left: its folder and focused entry (only from the visible app). */
+  "context.publish": { params: ContextPublishParams; result: OkResult }
+  /** The app being shown (and main at startup): the latest context. */
+  "context.get": { params: EmptyParams; result: SharedContext }
   "preview.ensure": { params: PreviewEnsureParams; result: PreviewEnsureResult }
   "folder.covers": { params: FolderCoversParams; result: FolderCoversResult }
   /** Electron main only (not in RENDERER_METHODS). */
@@ -880,6 +926,9 @@ export const RENDERER_METHODS = [
   "query.open",
   "query.page",
   "query.close",
+  "query.indexOf",
+  "context.publish",
+  "context.get",
   "preview.ensure",
   "folder.covers",
   "media.open",
@@ -930,9 +979,21 @@ export const COMMANDER_METHODS = [
   "sidecar.getStatus",
   "library.get",
   "library.setSetting",
+  // Stage C01: listing (all-entries scope), free space, home, the shared context.
+  "dir.open",
+  "dir.openEntry",
+  "dir.cancelScan",
+  "query.open",
+  "query.page",
+  "query.close",
+  "query.indexOf",
+  "fs.volumes",
+  "places.list",
+  "context.publish",
+  "context.get",
 ] as const satisfies readonly RendererMethod[]
 
-/** Each app view's allowlist. The viewer keeps the full list it always had. */
+/** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */
 export const APP_METHODS: Record<AppId, readonly RendererMethod[]> = {
   viewer: RENDERER_METHODS,
   commander: COMMANDER_METHODS,
