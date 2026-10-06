@@ -69,7 +69,7 @@ persisted with the workspace and managed entirely in React/UI state.
 
 ## Switching to the commander
 
-- The switch icon (top left of the navigation toolbar) and Ctrl/Cmd+Shift+M show the commander in the same window
+- The left app switcher rail and Ctrl/Cmd+Shift+M show the commander in the same window
   (ADR-0031, `docs/shared/APP-SWITCHING.md`).
 - On switch, the viewer publishes its context: the open folder (or, for recursive views and search results, the folder
   of the selected entry), the selected entry and the selection (`context.publish`).

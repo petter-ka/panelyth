@@ -1,5 +1,5 @@
 import { chordAllowedWhileTyping, eventChord } from "@fastview/renderer-core"
-import { AppSwitchButton, ShortcutsDialog } from "@fastview/ui"
+import { AppSwitcher, ShortcutsDialog } from "@fastview/ui"
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
@@ -43,9 +43,8 @@ const switchToViewer = (): void => void switchWithContext().catch(() => undefine
 const FUNCTION_KEYS = new Set(["F3", "F4", "F5", "F6", "F7", "F8"])
 
 /**
- * The commander's shell (Stage C00, ADR-0028): app bar with the switch to the
- * viewer, two panels with a resizable divider, the function-key bar and the
- * status bar.
+ * The commander's shell (Stage C00, ADR-0028): app switcher rail, two panels
+ * with a resizable divider, the function-key bar and the status bar.
  */
 export function AppShell() {
   const active = usePanelsStore((s) => s.active)
@@ -142,14 +141,8 @@ export function AppShell() {
   }, [])
 
   return (
-    <div className="grid h-full grid-rows-[auto_minmax(0,1fr)_auto_auto_auto]">
-      <div
-        role="toolbar"
-        aria-label="App bar"
-        className="flex h-10 items-center gap-1.5 border-b border-border bg-chrome px-2"
-      >
-        <AppSwitchButton target="viewer" shortcut={SWITCH_SHORTCUT} onSwitch={switchToViewer} />
-      </div>
+    <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto_auto_auto]">
+      <AppSwitcher current="commander" shortcut={SWITCH_SHORTCUT} onSwitch={switchToViewer} />
       <Group
         key={layoutToken}
         id="panels"

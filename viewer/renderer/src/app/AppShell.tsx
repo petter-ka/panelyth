@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react"
+import { AppSwitcher } from "@fastview/ui"
 import { Group, Panel, Separator, type PanelImperativeHandle } from "react-resizable-panels"
-import { bridge } from "../bridge"
+import { bridge, canSwitchApps } from "../bridge"
 import { ContentPane } from "../components/ContentPane"
 import { JobDialogs } from "../components/jobs/JobDialogs"
 import { PropertiesDialog } from "../components/PropertiesDialog"
@@ -18,6 +19,8 @@ import { DialogWindow } from "../components/ui/dialog"
 import { Button } from "../components/ui/button"
 import { useSettingsStore } from "../features/settings/settingsStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
+import { useShortcutHint } from "../features/shortcuts/shortcutStore"
+import { switchToCommander } from "../features/workspace/appSwitch"
 
 const separator =
   "relative w-px bg-border outline-none after:absolute after:inset-y-0 after:-left-1 after:w-2 data-[separator=active]:bg-accent data-[separator=hover]:bg-muted focus-visible:bg-accent"
@@ -52,6 +55,8 @@ export function AppShell() {
   const sidebar = useRef<PanelImperativeHandle>(null)
   const preview = useRef<PanelImperativeHandle>(null)
   const [confirmExit, setConfirmExit] = useState(false)
+  const commanderEnabled = canSwitchApps()
+  const appSwitchShortcut = useShortcutHint("app.switch")
   useGlobalShortcuts()
 
   const requestExit = useCallback(() => {
@@ -95,7 +100,16 @@ export function AppShell() {
   )
 
   return (
-    <div className="grid h-full grid-rows-[minmax(0,1fr)_auto]">
+    <div
+      className={`grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[minmax(0,1fr)_auto]`}
+    >
+      {commanderEnabled && (
+        <AppSwitcher
+          current="viewer"
+          shortcut={appSwitchShortcut ?? "Ctrl+Shift+M"}
+          onSwitch={switchToCommander}
+        />
+      )}
       {/* A layout applied from library.db (or reset) remounts the group with it. */}
       <Group
         key={applyToken}

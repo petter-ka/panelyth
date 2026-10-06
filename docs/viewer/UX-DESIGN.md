@@ -23,17 +23,18 @@ Minimal, polished, desktop-native and power-user friendly.
 └────────────────────────────┴───────────────────────────────────────┘
 ```
 
-The left column sits beside the content pane. Its folder tree is above the preview. Drag the vertical divider to resize
+The app switcher rail sits at the far left; the workspace begins beside it. The workspace's left column sits beside the
+content pane. Its folder tree is above the preview. Drag the vertical divider to resize
 the columns and the horizontal divider in the left column to resize the tree and preview. Both sizes persist with the
 workspace.
 
-## App switch
+## App switcher rail
 
-The first control of the navigation toolbar, at the top left: the commander glyph (two panels side by side), tooltip
-"Switch to Commander (Ctrl+Shift+M)". It shows the commander in the same window. The commander's active panel opens
-the viewer's folder with the cursor on the selected tile, and the selection becomes its marks. Coming back, the viewer
-opens the commander's folder and selects the cursor entry if it is a folder, image or video. Bookmarks, recent
-locations, theme, interface size and the file clipboard are shared. Rules and options: `docs/shared/APP-SWITCHING.md`.
+The left rail shows Viewer above Commander, with Viewer highlighted here. Selecting Commander switches to it in the
+same window. The commander's active panel opens the viewer's folder with the cursor on the selected tile, and the
+selection becomes its marks. Coming back, the viewer opens the commander's folder and selects the cursor entry if it
+is a folder, image or video. Bookmarks, recent locations, theme, interface size and the file clipboard are shared.
+Rules and options: `docs/shared/APP-SWITCHING.md`.
 
 ## Sidebar
 

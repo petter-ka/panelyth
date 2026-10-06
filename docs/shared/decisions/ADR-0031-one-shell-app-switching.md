@@ -2,9 +2,10 @@
 
 ## Status
 
-Accepted (2026-10-05). Product direction from the owner: the two apps connect in the UI. For now that is one icon at
-the top that switches between the commander and the viewer, and the apps share state such as the current folder and
-the selected file. Specification: `docs/shared/APP-SWITCHING.md`.
+Accepted (2026-10-05). Product direction from the owner: the two apps connect in the UI and share state such as the
+current folder and the selected file. Amended (2026-10-06, owner direction): the app switch is a shared left rail
+with both app icons, the current app highlighted and the other app directly selectable. Specification:
+`docs/shared/APP-SWITCHING.md`.
 
 It supersedes ADR-0025's process model: separate Electron apps, one sidecar per app, separate data per app,
 capabilities per app process, and the `apps/*-desktop` and `packages/desktop-core` parts of its code layout. ADR-0025's
@@ -15,7 +16,7 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 
 - ADR-0025 made the viewer and the commander separate Electron apps with separate data. It named "one app with two
   modes" as the option to revisit if users work with both apps together.
-- The owner now wants exactly that: switch between the apps from an icon, and find the same folder, file and selection
+- The owner wants to switch between the apps directly and find the same folder, file and selection
   in the other app. With separate apps:
   - the switch launches or focuses another program (a cold start the first time, two windows in the taskbar);
   - two sidecars index the same folders twice and keep two preview caches;
@@ -46,8 +47,9 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 
 ### The switch and the shared context
 
-- Each app shows one switch icon at the top left (the other app's glyph); **Ctrl/Cmd+Shift+M** does the same (action
-  `app.switch`, `shell` keymap scope, remappable).
+- Each app shows the same vertical rail at the left with Viewer and Commander icons; the current app is highlighted
+  and the other can be selected directly. The entire rail is hidden while the commander is not released. **Ctrl/Cmd+Shift+M**
+  also switches apps (action `app.switch`, `shell` keymap scope, remappable).
 - The app being left publishes its **context** (folder, focused entry, selection) to the sidecar; the app being shown
   applies it. Context uses entry ids and selection descriptors of the shared index, so a large selection carries over
   as ranges, never as a path list.
@@ -66,7 +68,7 @@ shared/                   used by both apps
   sidecar/                the Go sidecar for both apps (module fastview/sidecar)
   e2e/                    Playwright harness; specs/viewer/, later specs/commander/ (@fastview/e2e)
   bench/                  startup benchmark, empty-Electron baseline, results/ (@fastview/bench)
-  ui/                     (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, switch button
+  ui/                     (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, app switcher rail
   renderer-core/          (Stage P01) bridge, page store, selection algebra, keymap, theme, settings, sidecar store
   media-ui/               (Stage C05) image viewer, video player; tile components (Stage C10)
 viewer/
@@ -83,7 +85,7 @@ A separate `desktop-core` package (ADR-0025) is not needed: there is one main pr
 
 ### Packaging
 
-One product, one installer per OS. The commander stays hidden behind a feature flag (the switch icon doesn't appear)
+One product, one installer per OS. The commander stays hidden behind a feature flag (the app switcher rail doesn't appear)
 until Stage C11 enables it.
 
 ## Why

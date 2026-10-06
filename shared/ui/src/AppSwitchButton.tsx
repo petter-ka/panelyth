@@ -35,7 +35,7 @@ export interface AppSwitchButtonProps {
 
 /**
  * The connection point between the apps (ADR-0031, docs/shared/APP-SWITCHING.md):
- * one icon button at the top left of each app, showing the other app.
+ * one icon button, showing the other app.
  */
 export function AppSwitchButton({ target, shortcut, onSwitch }: AppSwitchButtonProps) {
   const label = `Switch to ${TITLES[target]}`

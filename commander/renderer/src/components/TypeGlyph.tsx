@@ -1,33 +1,70 @@
 import type { Glyph } from "../features/format"
 
-// One 12 px outline glyph per entry type (UX-DESIGN "Rows"); no OS icons.
-const PATHS: Record<Glyph | "up", string> = {
-  up: "M6 9.5V3M3.5 5.5 6 3l2.5 2.5",
-  folder: "M1.5 3.5v6h9v-5H5.5l-1-1z",
-  image: "M1.5 2.5h9v7h-9zM2.5 8.5l2.5-3 2 2 1-1 1.5 2",
-  video: "M1.5 3h6.5v6H1.5zM8 5.5l2.5-1.5v4L8 6.5",
-  archive: "M2 2.5h8v7H2zM6 2.5v2M6 5.5v1M6 7.5v1",
-  text: "M2.5 1.5h5l2 2v7h-7zM4 5.5h4M4 7.5h4",
-  program: "M1.5 2.5h9v7h-9zM1.5 4.5h9M3 6.5l1.5 1L3 8.5",
-  link: "M5 7l2-2M4.5 5.5 3.5 6.5a1.4 1.4 0 0 0 2 2l1-1M7.5 6.5l1-1a1.4 1.4 0 0 0-2-2l-1 1",
-  other: "M2.5 1.5h5l2 2v7h-7z",
+// Small, color-coded outline glyphs; keep the list legible without platform icons.
+const PATHS: Record<Glyph | "up", string[]> = {
+  up: ["M8 13V3M4.5 6.5 8 3l3.5 3.5"],
+  folder: ["M2 4.5h4.3l1.4 1.6H14v7H2z"],
+  image: [
+    "M2 3h12v10H2z",
+    "M3.5 11 6.4 7.5l2.1 2 1.3-1.4 2.7 2.9",
+    "M11.1 5.5h.01",
+  ],
+  video: ["M2 4h8v8H2z", "m10 6.2 4-2v7.6l-4-2z"],
+  archive: ["M2.5 3h11v10h-11z", "M2.5 5.3h11", "M8 3v2.3m0 1.3v1.2m0 1.3v1.2"],
+  text: ["M4 2h5l3 3v9H4z", "M9 2v3h3", "M6 8h4m-4 2.5h4"],
+  program: ["M2 3h12v10H2z", "M2 5.5h12", "m4 7.5 2 1.5-2 1.5", "M8 10.5h2"],
+  link: [
+    "m6.5 10.5-1 1a2.1 2.1 0 0 1-3-3l2.2-2.2a2.1 2.1 0 0 1 3 0",
+    "m9.5 5.5 1-1a2.1 2.1 0 0 1 3 3l-2.2 2.2a2.1 2.1 0 0 1-3 0",
+    "m6 10 4-4",
+  ],
+  other: ["M4 2h5l3 3v9H4z", "M9 2v3h3"],
 }
 
-export function TypeGlyph({ glyph }: { glyph: Glyph | "up" }) {
+const COLORS: Record<Glyph, string> = {
+  folder: "var(--label-yellow)",
+  image: "var(--label-purple)",
+  video: "var(--label-red)",
+  archive: "var(--label-orange)",
+  text: "var(--label-blue)",
+  program: "var(--label-green)",
+  link: "var(--label-gray)",
+  other: "var(--text)",
+}
+
+export function TypeGlyph({
+  glyph,
+  muted = false,
+  marked = false,
+}: {
+  glyph: Glyph | "up"
+  muted?: boolean
+  marked?: boolean
+}) {
+  const color = marked
+    ? "var(--accent)"
+    : glyph === "up" || muted
+      ? "var(--muted)"
+      : COLORS[glyph]
+
   return (
     <svg
-      width="12"
-      height="12"
-      viewBox="0 0 12 12"
+      width="16"
+      height="16"
+      viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
       className="shrink-0"
       data-glyph={glyph}
+      style={{ color }}
     >
-      <path d={PATHS[glyph]} />
+      {PATHS[glyph].map((path) => (
+        <path key={path} d={path} />
+      ))}
     </svg>
   )
 }

@@ -18,7 +18,7 @@ shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, ar
 
 ```text
 AppShell
- ├── AppBar: the app switch icon (to the viewer), later the C10 toolbar
+ ├── AppSwitcher: left rail with Viewer and Commander icons (ADR-0031)
  ├── PanelPair: left and right Panel, resizable divider (ADR-0028)
  │    └── Panel: drive/tab bar · path bar · view · status line
  │         view: Full (TanStack Table + Virtual) | Brief (react-virtual list) | Thumbnails (react-virtual tiles)

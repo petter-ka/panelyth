@@ -1,8 +1,7 @@
 import type { Crumb, EntryKind, SortDirection, SortField, Tag } from "@fastview/contracts"
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react"
 import { SEARCH_INPUT_ID } from "../app/shortcuts"
-import { AppSwitchButton } from "@fastview/ui"
-import { bridge, canSwitchApps } from "../bridge"
+import { bridge } from "../bridge"
 import {
   canGoBack,
   canGoForward,
@@ -30,7 +29,6 @@ import { useSidecarStore } from "../features/system/sidecarStore"
 import type { ActionId } from "../features/shortcuts/keymap"
 import { useShortcutHint } from "../features/shortcuts/shortcutStore"
 import { togglePane } from "../features/workspace/paneControls"
-import { switchToCommander } from "../features/workspace/appSwitch"
 import { formatCount } from "../lib/format"
 import { TileSizeControl } from "./tiles/TileSizeControl"
 import {
@@ -241,22 +239,6 @@ function SearchBox({ disabled }: { disabled: boolean }) {
   )
 }
 
-/** The switch to the commander: first in the toolbar, hidden while the commander is disabled. */
-function CommanderSwitch() {
-  const shortcut = useShortcutHint("app.switch")
-  if (!canSwitchApps()) return null
-  return (
-    <>
-      <AppSwitchButton
-        target="commander"
-        shortcut={shortcut ?? "Ctrl+Shift+M"}
-        onSwitch={switchToCommander}
-      />
-      <span aria-hidden="true" className="mx-1 h-5 w-px bg-border" />
-    </>
-  )
-}
-
 function NavBar() {
   const ready = useSidecarStore((s) => s.status?.state === "ready")
   const opening = useFolderStore((s) => s.opening)
@@ -270,7 +252,6 @@ function NavBar() {
       aria-label="Navigation"
       className="flex h-11 shrink-0 items-center gap-1 border-b border-border bg-chrome px-2"
     >
-      <CommanderSwitch />
       <IconButton label="Show or hide sidebar" onClick={() => togglePane("sidebar")}>
         <PanelLeftIcon />
       </IconButton>

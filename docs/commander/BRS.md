@@ -1,7 +1,7 @@
 # BRS — FastView Commander Business Requirements Specification
 
 FastView Commander (working title) is the second app of the FastView product (ADR-0025). It runs next to the viewer
-in the same shell and window, and an icon at the top switches between them with shared state (ADR-0031,
+in the same shell and window, and a left app rail switches between them with shared state (ADR-0031,
 `docs/shared/APP-SWITCHING.md`). Requirements shared with the viewer (FR-20 design system, FR-21 packaging, FR-22 app
 switch and shared state, NFR-01–NFR-14) are in `docs/shared/REQUIREMENTS.md` and apply here. IDs in this document:
 `CFR-nn` (functional) and `CNFR-nn` (non-functional). Each requirement names the stage that delivers it
@@ -208,8 +208,8 @@ archive unreadable, operation failed per item, queue busy, and listing in progre
 
 ### CFR-29 — Switch to the viewer (C00, C01, C02)
 
-- An icon at the top left of the commander's app bar, and Ctrl/Cmd+Shift+M, switch to the viewer in the same window
-  (FR-22).
+- A left app rail highlights the Commander icon; selecting Viewer, or pressing Ctrl/Cmd+Shift+M, switches to the
+  viewer in the same window (FR-22).
 - The viewer opens the active panel's folder, selects the cursor entry if it can show it, and takes over the marks it
   can show. Coming back, the active panel opens the viewer's folder with the cursor on its selected tile.
 - Rules, options and budgets: `docs/shared/APP-SWITCHING.md`.

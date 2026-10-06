@@ -20,8 +20,8 @@ settings. The command line is the most sensitive feature and gets a security rev
 - **User commands and external tools:** a command, its parameters (`%P` path, `%N` cursor name, `%S` marked names,
   `%L` a list file of marked paths, `%T` the other panel's path) and a working folder; reachable from the toolbar, the
   keymap and the context menu.
-- **Toolbar:** customizable buttons (icon, label, command) in the app bar, after the switch icon (which stays first
-  and can't be removed); the function-key bar can be hidden.
+- **Toolbar:** customizable buttons (icon, label, command) in a top app toolbar, independent of the left app switcher
+  rail; the function-key bar can be hidden.
 - **Thumbnails view (Ctrl+Shift+F1):** `@tanstack/react-virtual` tiles (ADR-0028); the viewer's tile components move
   to `shared/media-ui`; the panel shows tiles
   on the shared preview cache with the same cursor and marks. The viewer's tile budgets apply, and the viewer's suites

@@ -1,6 +1,6 @@
 # Roadmap
 
-The product has two apps in one shell, with a switch icon and shared state between them (ADR-0025, ADR-0031,
+The product has two apps in one shell, with a left app switcher rail and shared state between them (ADR-0025, ADR-0031,
 `docs/shared/APP-SWITCHING.md`), and three tracks:
 
 - **Viewer**: FastView, the photo and video viewer. Phases 0–8.6 are its delivery history; they also built most of
@@ -130,7 +130,7 @@ Signing, notarization, update strategy, installers, migrations, notices and rele
 
 ### C00 — Foundation and the app switch ✅ (2026-10-05)
 
-The commander as the second app view: dual-panel shell, function-key bar; the switch icon and Ctrl/Cmd+Shift+M in both
+The commander as the second app view: dual-panel shell, function-key bar; app switching by icon and Ctrl/Cmd+Shift+M in both
 apps; shared appearance.
 
 ### C01 — Panels and listing (implementation done 2026-10-05; gate open)

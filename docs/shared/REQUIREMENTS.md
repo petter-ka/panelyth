@@ -40,8 +40,8 @@ shell with both apps and the sidecar (ADR-0031); a feature flag keeps the comman
 
 The two apps connect in the UI (ADR-0031, `docs/shared/APP-SWITCHING.md`):
 
-- an icon at the top of each app, and Ctrl/Cmd+Shift+M, switch to the other app in the same window, instantly after
-  the first time;
+- a left app rail shows both app icons, and selecting the other app or pressing Ctrl/Cmd+Shift+M switches in the
+  same window, instantly after the first time;
 - the app being shown opens where the user was: the same folder (and so the same drive), the same entry under the
   cursor, and the same selection (up to 10,000 entries); each part can be turned off;
 - shared between the apps: the last used app, theme and interface size, bookmarks (the commander's hotlist), recent

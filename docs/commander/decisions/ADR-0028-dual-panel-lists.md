@@ -26,8 +26,8 @@ grid, so a resize re-renders the header only.
 
 - Two panels side by side (left and right) with a resizable divider: 50/50 by default, double-click resets, and the
   split is persisted. One panel is active at a time; Tab switches.
-- Above the panels: the app bar with the switch icon to the viewer (ADR-0031). Under the panels: the command line
-  and the function-key bar. Each panel has a drive and tab bar, a path bar, the view (a table with a column header, a list or tiles) and a status line
+- At the left: the shared app switcher rail (ADR-0031). Under the panels: the command line and the function-key bar.
+  Each panel has a drive and tab bar, a path bar, the view (a table with a column header, a list or tiles) and a status line
   (`docs/commander/UX-DESIGN.md`).
 
 ### Views per panel

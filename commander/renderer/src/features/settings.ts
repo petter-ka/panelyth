@@ -10,7 +10,7 @@ export const MAX_EDITOR_CHARS = 1024
 
 /** Size column: bytes with separators (Total Commander's default) or KB/MB/GB. */
 export type SizeFormat = "bytes" | "units"
-/** Date column: the locale's short date and time, or ISO (2026-10-06 14:05). */
+/** Configured date format for Quick View and Commander lists in `configured` mode. */
 export type DateFormat = "locale" | "iso"
 /** Where typed letters go: quick search, or quick search with Alt (plain letters free for the C10 command line). */
 export type LettersMode = "quickSearch" | "altLetters"

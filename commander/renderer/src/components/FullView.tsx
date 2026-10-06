@@ -24,7 +24,14 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from "react"
-import { baseName, formatAttrs, formatDate, formatSize, glyphOf, isMuted } from "../features/format"
+import {
+  baseName,
+  formatAttrs,
+  formatListDate,
+  formatSize,
+  glyphOf,
+  isMuted,
+} from "../features/format"
 import {
   COLUMN_LIMITS,
   COLUMN_SORT,
@@ -82,9 +89,13 @@ const CELL: Record<ColumnId, CSSProperties> = {
   attr: { width: "var(--col-attr)" },
 }
 const RIGHT = new Set<ColumnId>(["size"])
+const SECONDARY = new Set<ColumnId>(["size", "date", "attr"])
 
-const cellClass = (id: ColumnId): string =>
-  `shrink-0 truncate px-1.5 ${RIGHT.has(id) ? "text-right" : ""}`
+const cellClass = (id: ColumnId, marked = false): string => {
+  const alignment = RIGHT.has(id) ? " text-right" : ""
+  const secondary = SECONDARY.has(id) ? (marked ? "text-accent" : "text-muted") : ""
+  return `shrink-0 truncate px-1.5${alignment}${secondary ? ` ${secondary}` : ""}`
+}
 
 export interface FullViewHandle {
   focus(): void
@@ -296,7 +307,7 @@ interface RowProps {
 
 // Marked rows: accent text and a • in the gutter, so marks never rely on color alone.
 const rowClass =
-  "absolute left-0 flex w-full items-center data-[marked=true]:text-accent data-[cursor=true]:outline data-[cursor=true]:outline-1 " +
+  "absolute left-0 flex w-full items-center hover:bg-raised data-[marked=true]:text-accent data-[cursor=true]:outline data-[cursor=true]:outline-1 " +
   "data-[cursor=true]:-outline-offset-1 data-[cursor=true]:outline-muted/60 " +
   "group-data-[active=true]:data-[cursor=true]:bg-raised group-data-[active=true]:data-[cursor=true]:outline-accent"
 
@@ -362,11 +373,11 @@ const EntryRow = memo(function EntryRow({
       </span>
       {item && renaming ? (
         <span role="gridcell" style={CELL.name} className="flex items-center gap-1.5 px-1.5">
-          <TypeGlyph glyph={glyphOf(item)} />
+          <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} marked={marked} />
           <RenameField onDone={() => focusGrid(side)} />
         </span>
       ) : item ? (
-        <Cells item={item} />
+        <Cells item={item} marked={marked} />
       ) : (
         <Placeholder />
       )}
@@ -378,24 +389,24 @@ const EntryRow = memo(function EntryRow({
 export const focusGrid = (side: Side): void =>
   document.querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)?.focus()
 
-function Cells({ item }: { item: ContentItem }) {
+function Cells({ item, marked }: { item: ContentItem; marked: boolean }) {
   const { sizeFormat, dateFormat } = useSettingsStore((s) => s.settings)
   return (
     <>
       <span role="gridcell" style={CELL.name} className="flex items-center gap-1.5 px-1.5">
-        <TypeGlyph glyph={glyphOf(item)} />
+        <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} marked={marked} />
         <span className="truncate">{baseName(item)}</span>
       </span>
       <span role="gridcell" style={CELL.ext} className={cellClass("ext")}>
         {item.kind === "dir" ? "" : item.ext}
       </span>
-      <span role="gridcell" style={CELL.size} className={cellClass("size")}>
+      <span role="gridcell" style={CELL.size} className={cellClass("size", marked)}>
         {formatSize(item, sizeFormat)}
       </span>
-      <span role="gridcell" style={CELL.date} className={cellClass("date")}>
-        {formatDate(item.modifiedMs, dateFormat)}
+      <span role="gridcell" style={CELL.date} className={cellClass("date", marked)}>
+        {formatListDate(item.modifiedMs, dateFormat)}
       </span>
-      <span role="gridcell" style={CELL.attr} className={`${cellClass("attr")} font-mono`}>
+      <span role="gridcell" style={CELL.attr} className={`${cellClass("attr", marked)} font-mono`}>
         {formatAttrs(item.attrs)}
       </span>
     </>

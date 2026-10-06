@@ -5,9 +5,10 @@ Status: **In progress**. Decided by ADR-0031 (accepted 2026-10-05). The switch a
 the next start opens the last used app (Stage C01, 2026-10-05); the selection carries over too, and Settings → General
 holds the carry-over options and "Start with" (Stage C02, 2026-10-05; see "Delivery").
 
-The viewer and the commander are two apps of one product. For now they meet in the UI at one point: **an icon at the
-top of each app switches to the other**. Behind the switch, both apps share state: the folder you are in (and so the
-drive), the file you are on, what you selected, your bookmarks, your clipboard and your appearance settings.
+The viewer and the commander are two apps of one product. They meet in the UI in a **left app rail** with both app
+icons; the current app is highlighted and the other icon switches to it. Behind the switch, both apps share state:
+the folder you are in (and so the drive), the file you are on, what you selected, your bookmarks, your clipboard and
+your appearance settings.
 
 ## Goal
 
@@ -41,36 +42,34 @@ drive), the file you are on, what you selected, your bookmarks, your clipboard a
 - Each app view has its own renderer bundle, preload and capability profile (ADR-0027). The viewer never gains the
   commander's powers, even though both share one main process.
 
-## The switch control
+## App switcher rail
 
 ### Placement and look
 
-- **Viewer:** the first control of the navigation toolbar (top left), before the sidebar toggle, followed by a
-  separator.
-- **Commander:** the first control of a slim app bar above both panels (top left). The bar has the height of the
-  viewer's navigation toolbar, so the icon sits on the same spot in both apps: clicking twice goes there and back.
-  Stage C10's customizable toolbar joins this bar later.
-- One icon button (28 × 28 px; `chrome`, hover `raised`, `accent` focus ring; `docs/shared/DESIGN-SYSTEM.md`) that
-  shows the **other** app:
+- **Both apps:** a 44 px wide vertical rail on the left edge, spanning the app view. It shows the same two icons in
+  the same order in both apps: Viewer, then Commander. This keeps switching in one predictable place without taking
+  space from the navigation toolbar or Commander panels.
+- Each app has an 18 px glyph in a 36 × 36 px button. The current app is highlighted on `raised` with the `accent`
+  color and marked current; the other app is muted until hover and switches on click:
 
-  | In | Icon | Tooltip |
-  |---|---|---|
-  | Viewer | commander glyph (two panels side by side) | Switch to Commander (Ctrl+Shift+M) |
-  | Commander | viewer glyph (2 × 2 picture tiles) | Switch to Viewer (Ctrl+Shift+M) |
+- In Viewer, its picture-tile glyph is selected and the Commander panels glyph switches to Commander.
+- In Commander, its panels glyph is selected and the Viewer picture-tile glyph switches to Viewer.
+- The inactive app's tooltip shows its switch action and the current keymap chord; the selected app is labeled as the
+  current app.
 
-- Accessible name "Switch to Commander" / "Switch to Viewer", with `aria-keyshortcuts`.
-- While the commander is not released, the icon is hidden (feature flag), so the viewer looks exactly as it does
-  today.
+- The inactive app has accessible name "Switch to Commander" / "Switch to Viewer", with `aria-keyshortcuts`; the
+  selected app has `aria-current="page"` and is disabled.
+- While the commander is not released, the whole rail is hidden (feature flag), so the viewer has no empty gutter.
 
 ### Behavior
 
-- Click the icon, or press **Ctrl/Cmd+Shift+M** (action `app.switch` in the `shell` keymap scope; remappable). It also
+- Click the other app's icon, or press **Ctrl/Cmd+Shift+M** (action `app.switch` in the `shell` keymap scope; remappable). It also
   works while a text field has focus, such as the viewer's search box or the commander's command line, because it is
   a Ctrl/Cmd chord (ADR-0022 "while typing" rule).
 - The switch is instant, with no animation. The window title changes to the visible app ("FastView — Pictures",
   "FastView Commander — Pictures").
 - Focus lands on the target's main surface: the viewer's tile view, or the commander's active panel.
-- While a modal dialog is open, the switch is unavailable: the icon sits behind the dialog's backdrop and the key does
+- While a modal dialog is open, the switch is unavailable: the rail sits behind the dialog's backdrop and the key does
   nothing.
 - Running jobs continue during and after a switch, and both apps show them.
 

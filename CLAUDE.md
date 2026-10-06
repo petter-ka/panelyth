@@ -3,8 +3,8 @@
 ## Mission
 
 Build the FastView product family: high-performance local desktop apps for Windows, macOS and Linux on one shared
-platform, hosted by one shell in one window (ADR-0025, ADR-0031). An icon at the top of each app switches to the
-other, and the apps share state: the current folder, the selected file, the selection, bookmarks, recent locations,
+platform, hosted by one shell in one window (ADR-0025, ADR-0031). A left app rail switches between them, and the apps
+share state: the current folder, the selected file, the selection, bookmarks, recent locations,
 appearance and the file clipboard (`docs/shared/APP-SWITCHING.md`).
 
 - **FastView** (the viewer): a photo and video viewer.
@@ -179,5 +179,5 @@ When a stage is completed, update:
 
 - **Viewer:** a resizable two-column workspace (folder tree above the preview, content on the right; ADR-0023), drive/sidebar navigation, indexed search/sort/filter, a responsive tile view (small/medium/large tiles flowing left to right; no list or table views), image zoom and local video playback, context menus, file properties, multi-selection and asynchronous batch operations.
 - **Commander:** two panels with Full, Brief and Thumbnails views, the Total Commander keyboard model, a background operation queue, quick view and lister, find files, archives, compare and synchronize, multi-rename and a command line (`docs/commander/UX-DESIGN.md`).
-- **Between them:** one switch icon at the top left of each app (Ctrl/Cmd+Shift+M) and shared state: the folder, the entry under the cursor and the selection carry over on switch; bookmarks, recent locations, appearance and the file clipboard are shared (`docs/shared/APP-SWITCHING.md`).
+- **Between them:** a left rail with both app icons and Ctrl/Cmd+Shift+M switches apps; the folder, the entry under the cursor and the selection carry over, and bookmarks, recent locations, appearance and the file clipboard are shared (`docs/shared/APP-SWITCHING.md`).
 - Tailwind + shadcn/ui form the shared visual system (`docs/shared/DESIGN-SYSTEM.md`); effects must be performance-aware.

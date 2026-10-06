@@ -8,7 +8,7 @@ Fast, local-first desktop apps for Windows, macOS and Linux, built on one platfo
 - **FastView Commander** (working title, planned) — a keyboard-first, dual-panel file manager in the style of Total
   Commander: two folders side by side, background file operations, find, archives, compare and multi-rename.
 
-The two apps live in one window. An icon at the top of each app switches to the other, and the other app opens
+The two apps live in one window. A left rail switches between them, and the other app opens
 where you are: same folder, same file, same selection. Bookmarks, recent folders, appearance and the file clipboard
 are shared (`docs/shared/APP-SWITCHING.md`).
 
@@ -65,7 +65,7 @@ docs/
     CACHE-DESIGN.md            preview cache contract
     PERFORMANCE.md             strategy and platform budgets
     TESTING.md                 layers, harness, fixtures, benchmarks
-    DESIGN-SYSTEM.md           tokens, themes, typography, motion, keyboard foundation, switch control
+    DESIGN-SYSTEM.md           tokens, themes, typography, motion, keyboard foundation, app switch rail
     APP-SWITCHING.md           the switch between the apps and the state they share
     decisions/                 shared ADRs
     stages/                    platform stages P01…P06

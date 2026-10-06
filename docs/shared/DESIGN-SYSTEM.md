@@ -104,16 +104,16 @@ virtualizer). Theme and interface size are shared by both apps (`shared.appearan
 app view keeps a local mirror so the value applies before the first render, and a change in one app reaches the
 other at once.
 
-## App switch control
+## App switch rail
 
-The one connection point between the apps for now (ADR-0031, `docs/shared/APP-SWITCHING.md`). A shared component in
-`shared/ui`, so it looks and behaves the same in both apps:
+The apps meet in a shared left rail (ADR-0031, `docs/shared/APP-SWITCHING.md`). The same `shared/ui` component keeps
+its placement and behavior consistent in both apps:
 
-- an icon button, 28 × 28 px, at the top left of the app's top bar, on the same spot in both apps (the commander's app
-  bar matches the height of the viewer's navigation toolbar);
-- `chrome` surface, `raised` on hover, the 2 px `accent` focus ring; a 16 px glyph of the **other** app: the
-  commander glyph (two panels side by side) in the viewer, the viewer glyph (2 × 2 picture tiles) in the commander;
-- tooltip "Switch to Commander (Ctrl+Shift+M)" or "Switch to Viewer (Ctrl+Shift+M)", showing the current chord from
-  the keymap; accessible name without the key, plus `aria-keyshortcuts`;
-- no transition: the other app appears in the same frame;
-- hidden while the commander isn't released (feature flag); unavailable behind a modal dialog's backdrop.
+- 44 px wide, full height, with Viewer above Commander; each gets an 18 px glyph in a 36 × 36 px button;
+- `chrome` surface with a border; the current app uses `raised` and `accent`, while the other app is muted and uses
+  `raised` on hover; the global 2 px `accent` focus ring applies;
+- the inactive app's tooltip shows "Switch to Commander (Ctrl+Shift+M)" or "Switch to Viewer (Ctrl+Shift+M)" with
+  the current keymap chord; its accessible name omits the key and `aria-keyshortcuts` exposes it;
+- the selected app has `aria-current="page"` and is disabled; switching apps has no transition;
+- the whole rail is hidden while the commander isn't released (feature flag); it is unavailable behind a modal
+  dialog's backdrop.

@@ -176,7 +176,7 @@ interface ItemProps {
 }
 
 const itemClass =
-  "absolute flex items-center gap-1.5 truncate pr-2 pl-1 data-[marked=true]:text-accent data-[cursor=true]:outline data-[cursor=true]:outline-1 " +
+  "absolute flex items-center gap-1.5 truncate pr-2 pl-1 hover:bg-raised data-[marked=true]:text-accent data-[cursor=true]:outline data-[cursor=true]:outline-1 " +
   "data-[cursor=true]:-outline-offset-1 data-[cursor=true]:outline-muted/60 " +
   "group-data-[active=true]:data-[cursor=true]:bg-raised group-data-[active=true]:data-[cursor=true]:outline-accent"
 
@@ -218,12 +218,12 @@ const BriefItem = memo(function BriefItem({
         </>
       ) : shown && renaming ? (
         <>
-          <TypeGlyph glyph={glyphOf(shown)} />
+          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} marked={marked} />
           <RenameField onDone={() => focusGrid(side)} />
         </>
       ) : shown ? (
         <>
-          <TypeGlyph glyph={glyphOf(shown)} />
+          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} marked={marked} />
           <span className="truncate">{shown.kind === "dir" ? `[${shown.name}]` : shown.name}</span>
         </>
       ) : (

@@ -1,4 +1,5 @@
 import { ENTRY_ATTRS, type ContentItem } from "@fastview/contracts"
+import { formatRelative } from "date-fns"
 import type { DateFormat, SizeFormat } from "./settings"
 
 const IS_WINDOWS = typeof navigator !== "undefined" && /win/i.test(navigator.platform)
@@ -18,12 +19,28 @@ export function formatSize(item: ContentItem, format: SizeFormat = "bytes"): str
 
 const pad = (n: number): string => String(n).padStart(2, "0")
 
-/** Date column: the locale's short date and time, or ISO "2026-10-06 14:05" (local time). */
+/** Configured date format for Quick View and Commander lists in `configured` mode. */
 export function formatDate(ms: number, format: DateFormat = "locale"): string {
   if (ms <= 0) return ""
   if (format === "locale") return dateTime.format(ms)
   const d = new Date(ms)
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+/** Switch to `configured` to use the existing locale/ISO date setting in Commander lists. */
+export type ListDateMode = "relative" | "configured"
+export const COMMANDER_LIST_DATE_MODE: ListDateMode = "relative"
+
+/** Commander list dates use relative labels by default; Quick View keeps the configured formatter. */
+export function formatListDate(
+  ms: number,
+  configuredFormat: DateFormat,
+  mode: ListDateMode = COMMANDER_LIST_DATE_MODE,
+): string {
+  if (ms <= 0) return ""
+  return mode === "relative"
+    ? formatRelative(new Date(ms), new Date())
+    : formatDate(ms, configuredFormat)
 }
 
 export function formatCount(n: number): string {

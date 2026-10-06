@@ -371,7 +371,7 @@ Core actions must work without mouse.
 
 ### App switch
 
-An icon at the top left of the navigation toolbar (and Ctrl/Cmd+Shift+M) switches to the commander, with the folder,
+The left app rail highlights Viewer; selecting Commander or pressing Ctrl/Cmd+Shift+M switches to it, with the folder,
 the selected file and the selection carried over (FR-22, `docs/shared/APP-SWITCHING.md`).
 
 ### Visual direction

@@ -57,7 +57,7 @@ Shared code:
 - `shared/desktop`: the shell (main process and one preload per app);
 - `shared/contracts`: wire types, guards, golden fixtures (ADR-0012);
 - `shared/ui` (Stage P01): design tokens, Tailwind theme, primitives (menus, dialogs, buttons, icons), notices, the
-  app switch button;
+  app switcher rail;
 - `shared/renderer-core` (Stage P01): bridge, page store, selection algebra, keymap, theme, settings and sidecar
   stores;
 - `shared/media-ui` (Stage C05): `ImageViewer`, `VideoPlayer`, their request logic (viewer-fit previews, original

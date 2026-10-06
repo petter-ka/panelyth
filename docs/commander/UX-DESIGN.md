@@ -11,38 +11,31 @@ for. People coming from Total Commander find their keys where they expect them.
 ## Layout
 
 ```text
-┌ [▦] ─────────────────────────────────────── app bar ─────────────────────────────────┐
-├ [C:] [D:] [E:]  412 GB free ───────────────┬ [C:] [D:]  1.2 TB free ─────────────────┤
-│ Photos │ Work │ +                           │ Backup │ +                              │
-│ C:\Users\me\Pictures                 *.*    │ D:\Backup                       *.*    │
-│ Name ↑               Ext   Size  Date   Attr│ Name ↑               Ext   Size  Date   │
-│ ..                                          │ ..                                     │
-│ ▸ Trip 2026                <DIR> 10-04 ----│ ▸ 2025                     <DIR> 09-30 │
-│ • IMG_0001           jpg  2.1 MB 10-04 -a--│   notes              txt   4 KB  09-12 │
-│ • IMG_0002           jpg  2.3 MB 10-04 -a--│                                        │
-│   video_01           mp4   88 MB 10-03 -a--│                                        │
-│ 2 of 1,204 marked · 4.4 MB of 2.4 GB        │ 0 of 87 marked                         │
-├─────────────────────────────────────────────┴────────────────────────────────────────┤
-│ Copying 1,204 files to D:\Backup — 2.1 of 6.3 GB · 412 MB/s · 0:12 left  [Pause] [×] │
-│ C:\Users\me\Pictures> _                                                               │
-│ F3 View   F4 Edit   F5 Copy   F6 Move   F7 New folder   F8 Delete   Alt+F4 Exit       │
-└───────────────────────────────────────────────────────────────────────────────────────┘
++------+----------------------------------------------------------------+
+| [V]  | [C:] [D:] [E:]  412 GB free  |  [C:] [D:]  1.2 TB free             |
+| [C]  | Photos | Work | +             |  Backup | +                        |
+|      | C:\Users\me\Pictures          |  D:\Backup                         |
+|      | Name               Ext Size     |  Name          Ext Size            |
+|      | ..                            |  ..                                  |
+|      | Trip 2026           <DIR>      |  2025          <DIR>               |
+|      | IMG_0001.jpg        2.1 MB     |  notes.txt     4 KB                |
+|      | IMG_0002.jpg        2.3 MB     |                                      |
+|      | video_01.mp4        88 MB      |                                      |
+|      | 2 of 1,204 marked              |  0 of 87 marked                     |
+|      | Copying 1,204 files... [Pause]  |                                      |
+|      | F3 View  F4 Edit  F5 Copy...    |                                      |
++------+----------------------------------------------------------------+
 ```
 
-- The app bar on top holds the switch icon (`[▦]`, the viewer glyph) at the top left; it switches to the viewer
-  (`docs/shared/APP-SWITCHING.md`). Stage C10's toolbar joins this bar later.
+- The left app rail shows both app icons, Viewer above Commander, with Commander selected. The other icon switches apps; Ctrl/Cmd+Shift+M does the same (`docs/shared/APP-SWITCHING.md`).
 - Two panels share the width (50/50 by default). Drag the divider to resize; double-click resets it.
 - The queue strip appears only while jobs exist. The command line and the function-key bar can be hidden.
 
-## App bar and the switch to the viewer
+## App switcher rail
 
-- A slim bar on `chrome` above both panels, as tall as the viewer's navigation toolbar, so the switch icon sits on the
-  same spot in both apps.
-- For now it holds only the switch icon: the viewer glyph (2 × 2 picture tiles), tooltip "Switch to Viewer
-  (Ctrl+Shift+M)". The viewer opens the active panel's folder with the cursor entry selected (if it can show it) and
-  the marks it can show (`docs/shared/APP-SWITCHING.md`).
-- Coming back from the viewer, the active panel opens the viewer's folder with the cursor on its selected tile; the
-  inactive panel doesn't change.
+- A narrow full-height bar on the left, shared with the viewer. Viewer is first, Commander second; the current app is highlighted and the other app's icon switches to it. The switch tooltip includes the current keymap chord.
+- Selecting Viewer opens the active panel's folder with the cursor entry selected (if it can show it) and the marks it can show (`docs/shared/APP-SWITCHING.md`).
+- Coming back from the viewer, the active panel opens the viewer's folder with the cursor on its selected tile; the inactive panel doesn't change.
 
 ## Panels
 
@@ -56,11 +49,15 @@ for. People coming from Total Commander find their keys where they expect them.
   ↑ or ↓; clicking a header sorts in Go, never in the browser. Columns resize by dragging their edge and persist per
   panel; hiding and reordering columns can come later from the same table model.
 - **Rows:** fixed height per interface size (S 20 px, M 22 px, L 26 px).
-  - a type glyph (folder, image, video, archive, text, program, link, other; no per-file OS icons in the first
-    release);
+  - a compact type glyph (folder, image, video, archive, text, program, link, other), color-coded with the shared
+    label palette; marked entries use the selection accent, and hidden or system entries use muted glyphs (no
+    per-file OS icons in the first release);
+  - a subtle `raised` surface on hover; the cursor keeps its outline and marked entries keep their accent;
   - name and extension in separate columns; folders show `<DIR>` in Size until calculated;
-  - size in bytes with thousands separators (a setting switches to KB/MB/GB); date as a locale short date and time;
-    attributes as `rhsa` on Windows and permissions (`rwxr-xr-x`) on Unix; numbers use tabular numerals;
+  - size, date and attributes use muted secondary text; size is in bytes with thousands separators (a setting switches
+    to KB/MB/GB); dates use relative labels such as "today" and "yesterday" by default (switchable in code to the
+    configured locale or ISO format); attributes are `rhsa` on Windows and permissions (`rwxr-xr-x`) on Unix;
+    numbers use tabular numerals;
   - hidden and system entries in `muted` text; links with a link glyph.
 - **Cursor and marks:** the cursor is a `raised` bar with an `accent` outline; marked entries use `accent` text and a
   `•` in the gutter, so marks never rely on color alone. The cursor and the marks are independent (ADR-0028).

@@ -1,5 +1,6 @@
 export * from "./appearance"
 export * from "./AppSwitchButton"
+export * from "./AppSwitcher"
 export * from "./button"
 export * from "./dialog"
 export * from "./ShortcutsDialog"
