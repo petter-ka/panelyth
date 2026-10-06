@@ -75,7 +75,7 @@ function PropertiesBlock({ item }: { item: ContentItem }) {
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-muted">{k}</dt>
-          <dd className="truncate text-text" title={v}>
+          <dd className={`truncate text-text ${k === "Name" ? "" : "font-mono"}`} title={v}>
             {v}
           </dd>
         </div>

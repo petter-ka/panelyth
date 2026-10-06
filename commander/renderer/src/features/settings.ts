@@ -8,7 +8,7 @@ import { bridge, isBridgeAvailable } from "../bridge"
 export const SETTINGS_KEY = "commander.settings"
 export const MAX_EDITOR_CHARS = 1024
 
-/** Size column: bytes with separators (Total Commander's default) or KB/MB/GB. */
+/** Size column: readable units by default, or exact bytes with separators. */
 export type SizeFormat = "bytes" | "units"
 /** Configured date format for Quick View and Commander lists in `configured` mode. */
 export type DateFormat = "locale" | "iso"
@@ -29,7 +29,7 @@ export interface PanelSettings {
 }
 
 export const DEFAULT_SETTINGS: PanelSettings = {
-  sizeFormat: "bytes",
+  sizeFormat: "units",
   dateFormat: "locale",
   showHidden: false,
   letters: "quickSearch",
@@ -49,9 +49,10 @@ export const useSettingsStore = create<SettingsState>(() => ({
 
 /** Validated; unknown values fall back to the defaults. */
 export function readSettings(value: unknown): PanelSettings {
-  const v = (value ?? {}) as Partial<Record<keyof PanelSettings, unknown>>
+  const v = (value ?? {}) as Partial<Record<keyof PanelSettings, unknown>> & { v?: unknown }
+  const oldDefaultUsesBytes = v.v === 1
   return {
-    sizeFormat: v.sizeFormat === "units" ? "units" : "bytes",
+    sizeFormat: v.sizeFormat === "bytes" && !oldDefaultUsesBytes ? "bytes" : "units",
     dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
     showHidden: v.showHidden === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
@@ -64,7 +65,7 @@ export function updateSettings(change: Partial<PanelSettings>): void {
   const settings = { ...useSettingsStore.getState().settings, ...change }
   useSettingsStore.setState({ settings })
   if (isBridgeAvailable())
-    void bridge.setSetting(SETTINGS_KEY, { v: 1, ...settings }).catch(() => undefined)
+    void bridge.setSetting(SETTINGS_KEY, { v: 2, ...settings }).catch(() => undefined)
 }
 
 export const setSettingsOpen = (open: boolean): void => useSettingsStore.setState({ open })

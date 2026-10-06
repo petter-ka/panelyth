@@ -55,7 +55,7 @@ function Body() {
         action={
           <button
             type="button"
-            className="h-8 rounded-md bg-accent px-3 text-xs font-medium text-accent-foreground"
+            className="h-8 rounded-md bg-accent px-3 text-xs text-accent-foreground"
             disabled={opening}
             onClick={() => void openFolderDialog()}
           >

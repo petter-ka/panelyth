@@ -72,7 +72,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
           onBlur={() => {
             if (!error) setEditing(false)
           }}
-          className="h-6 w-full rounded border border-accent bg-canvas px-1.5 text-text outline-none"
+          className="h-6 w-full rounded border border-accent bg-canvas px-1.5 font-mono font-normal text-text outline-none"
         />
       ) : (
         <button
@@ -82,7 +82,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
           onClick={edit}
           data-testid={`path-${side}`}
           aria-busy={loading}
-          className={`h-6 w-full truncate rounded px-1.5 text-left hover:bg-raised ${active ? "text-text" : "text-muted"}`}
+          className={`h-6 w-full truncate rounded px-1.5 text-left font-mono font-normal hover:bg-raised ${active ? "text-text" : "text-muted"}`}
         >
           {path || "No folder open"}
         </button>

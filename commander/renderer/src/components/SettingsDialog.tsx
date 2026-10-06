@@ -82,8 +82,8 @@ export function SettingsDialog() {
           setting="sizeFormat"
           label="Sizes"
           options={[
+            { value: "units", label: "Units (1.5 KB)" },
             { value: "bytes", label: "Bytes (1,234,567)" },
-            { value: "units", label: "Units (1.2 MB)" },
           ]}
         />
         <Radios

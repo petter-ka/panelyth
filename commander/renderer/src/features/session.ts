@@ -6,6 +6,9 @@ import {
   openHome,
   openPath,
   patch,
+  readColumnOrder,
+  readColumnPinning,
+  readColumnVisibility,
   readColumns,
   readSort,
   setFolderChangeHook,
@@ -13,6 +16,7 @@ import {
   SIDES,
   useListingStore,
   type ColumnWidths,
+  type ColumnLayout,
   type ViewMode,
 } from "./listing"
 import { usePanelsStore, type Side } from "./panels"
@@ -41,6 +45,9 @@ export interface StoredPanel {
   tabs: StoredTab[]
   active: number
   columns: ColumnWidths
+  columnOrder: ColumnLayout["order"]
+  columnVisibility: ColumnLayout["visibility"]
+  columnPinning: ColumnLayout["pinning"]
 }
 
 export interface StoredPanels {
@@ -83,7 +90,16 @@ export function readStoredPanels(value: unknown): StoredPanels {
     const p = (v[side] ?? {}) as Record<string, unknown>
     if (v.v === 1) {
       const tab = readTab({ ...p, history: [], view: "full" })
-      if (tab) out[side] = { tabs: [tab], active: 0, columns: readColumns(p.columns) }
+      if (tab) {
+        out[side] = {
+          tabs: [tab],
+          active: 0,
+          columns: readColumns(p.columns),
+          columnOrder: readColumnOrder(p.columnOrder),
+          columnVisibility: readColumnVisibility(p.columnVisibility),
+          columnPinning: readColumnPinning(p.columnPinning),
+        }
+      }
       continue
     }
     if (v.v !== 2 || !Array.isArray(p.tabs)) continue
@@ -97,6 +113,9 @@ export function readStoredPanels(value: unknown): StoredPanels {
       tabs,
       active: Math.max(0, Math.min(active, tabs.length - 1)),
       columns: readColumns(p.columns),
+      columnOrder: readColumnOrder(p.columnOrder),
+      columnVisibility: readColumnVisibility(p.columnVisibility),
+      columnPinning: readColumnPinning(p.columnPinning),
     }
   }
   return out
@@ -126,6 +145,9 @@ export function storedPanels(): StoredPanels {
       tabs: kept.map(storedTab),
       active: Math.max(0, kept.indexOf(tabs[active]!)),
       columns: useListingStore.getState()[side].columns,
+      columnOrder: useListingStore.getState()[side].columnOrder,
+      columnVisibility: useListingStore.getState()[side].columnVisibility,
+      columnPinning: useListingStore.getState()[side].columnPinning,
     }
   }
   return out
@@ -166,6 +188,10 @@ export async function restorePanels(
       const tab = saved?.tabs[saved.active]
       patch(side, {
         columns: saved?.columns ?? useListingStore.getState()[side].columns,
+        columnOrder: saved?.columnOrder ?? useListingStore.getState()[side].columnOrder,
+        columnVisibility:
+          saved?.columnVisibility ?? useListingStore.getState()[side].columnVisibility,
+        columnPinning: saved?.columnPinning ?? useListingStore.getState()[side].columnPinning,
         sort: tab?.sort ?? useListingStore.getState()[side].sort,
         showHidden: tab ? tab.showHidden : showHidden,
         view: tab?.view ?? "full",

@@ -71,9 +71,11 @@ themes. The optional palettes keep those contrast targets while adding their sur
 
 ### Typography
 
-- System UI font stack only. There are no web fonts (local-first, strict CSP, zero font-loading cost).
-- Base 13px. 12px for secondary text and 11px for the status bar. Weights: 400 body, 500 headings and labels,
-  600 for the app name only.
+- Inter and JetBrains Mono are bundled locally in `shared/ui/src/fonts`; the renderer makes no external font
+  requests. Their SIL Open Font Licenses are included beside the font files.
+- Inter Regular (400) is the default for normal text, Inter Medium (500) is used for navigation, and Inter SemiBold
+  (600) is used for the app title and buttons. JetBrains Mono is used for paths, IDs, code and numeric values.
+- Base 13px. 12px for secondary text and 11px for the status bar.
 - Sentence case everywhere. No all-caps section labels.
 - Tabular numerals for numbers that update or align (ping, sizes, dimensions, counts).
 

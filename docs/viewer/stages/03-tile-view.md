@@ -37,9 +37,10 @@ name   name   name   name   name              name   name   name   name
 3. **Tiles per row** = `max(1, floor((availableWidth + gap) / (tileWidth + gap)))`, where
    `availableWidth` = content-area width minus 16 px padding on each side. Rows are left-aligned, and spare space
    stays at the right edge. For example, with medium tiles: 1000 px → 5 per row, 1600 px → 8, 2400 px → 12.
-4. **Tile anatomy:** a square thumbnail box on the canvas color (image `object-fit: contain`, never cropped), then one line
-   of filename (ellipsis, full name in a tooltip). The tile height is fixed per size, so row heights are known without
-   measuring.
+4. **Tile anatomy:** each tile keeps a fixed square slot. Image and video previews preserve their aspect ratio
+   (`object-fit: contain`, never cropped), leave unused space transparent, and draw selection/focus outlines to their
+   fitted bounds. Folder covers fill the square; glyph fallbacks and loading placeholders keep a square frame. The tile
+   height is fixed per size, so row heights are known without measuring.
 5. **Resizing** the window or a pane recomputes tiles per row only when a tile boundary is crossed. The first visible
    item stays in view, so the scroll position is anchored to the item, not the pixel offset.
 6. **Thumbnail resolution** follows the displayed size and screen density. The preview profile is the smallest one whose long
@@ -105,7 +106,7 @@ Also added: a main-process IPC call counter (`globalThis.__fastviewIpcCounts`, m
 ## Found and fixed while measuring
 
 1. **The first thumbnail was held back by ~230 ms in most runs.** The first `preview.ready` arrived 420–430 ms after the click instead of ~190 ms, and the timing was bimodal. Aligning the sidecar log with in-page timestamps showed the renderer sending `preview.ensure` 230 ms after the tiles mounted. Two **no-op programmatic scrolls on mount** caused it: the "back to top" reset (`scrollToOffset(0)` while already at 0) and scroll anchoring reacting to tiles per row jumping from the placeholder value 1 to the first real measurement. Each flags TanStack's `isScrolling` for ~150 ms, and the thumbnail request waits for scrolling to settle. Both now skip when there is nothing to scroll; the settle pause applies only after real user scrolling. An e2e test guards it (mount → first ready < 200 ms).
-2. **The selection outline was clipped to its bottom edge**, because the tile's paint containment clips anything painted outside it. Outlines are now drawn inside the thumbnail box (negative offset), and containment stays on.
+2. **The selection outline was clipped to its bottom edge**, because the tile's paint containment clips anything painted outside it. Outlines are drawn inside their frame (negative offset), and containment stays on.
 3. **Page-store tests timed out** because of jsdom's ~4 ms clamping of nested `setTimeout(0)`. The runaway loop then leaked requests into the next test. The tests now drain microtasks instead.
 
 ## Tests

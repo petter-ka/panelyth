@@ -214,7 +214,7 @@ const RowView = memo(function RowView({
       data-testid={row.type === "tree" ? "tree-node" : "sidebar-link"}
       data-path={path ?? undefined}
       className={[
-        "mx-1.5 flex h-full cursor-default items-center gap-1.5 rounded-md pr-2 text-xs",
+        "mx-1.5 flex h-full cursor-default items-center gap-1.5 rounded-md pr-2 text-xs font-medium",
         active ? "bg-raised text-text" : "text-text hover:bg-raised/60",
         dragOver ? "outline-1 -outline-offset-1 outline-accent bg-accent/15" : "",
         focused ? "outline-1 -outline-offset-1 outline-accent/70" : "",

@@ -9,8 +9,8 @@ Stage C01 built the Full view this way and measured it: 100k-entry folders scrol
 frame, with at most 56 rows mounted; a header click sorts in Go (95–102 ms to the first page on 100k). The commander
 bundle grew by 93.4 KB minified (27.6 KB gzip) with `@tanstack/react-table` v9, `@tanstack/react-virtual` and the
 stage's code (`docs/commander/stages/C01-panels-and-listing.md`). Implementation notes: the table's `data` is the
-visible window's row indexes, rows read their entries from the page store, and column widths are CSS variables on the
-grid, so a resize re-renders the header only.
+visible window's row indexes, and rows read their entries from the page store. Column geometry comes from TanStack
+sizes and only the bounded mounted window is rendered while the user resizes or changes layout.
 
 ## Context
 
@@ -42,18 +42,21 @@ grid, so a resize re-renders the header only.
 
 ### Full view: TanStack Table with virtual scrolling
 
-- **`@tanstack/react-table`** (headless) owns the table model: column definitions (Name, Ext, Size, Date, Attr; more
-  columns later), header rendering, the sort state shown in the headers, column sizing (drag to resize, persisted;
-  Name takes the remaining width) and, later, column visibility and order. It renders into our own markup with design
-  tokens; no table styles come with it.
+- **`@tanstack/react-table`** (headless) owns the table model: column definitions (Name, Ext, Size, Date, Attr),
+  header rendering, sort state, sizing, visibility, order and pinning. Every column can be resized; Name fills the
+  remaining width until the user sets a width. Header drag reorders columns, double-clicking a resize edge fits the
+  header and currently virtualized cells, and the header context menu exposes sorting, visibility, movement, pinning
+  and width reset. Layout and widths persist per panel. It renders into our own markup with design tokens; no table
+  styles come with it.
 - **Sorting and filtering stay in Go** (ADR-0008, ADR-0017): the table runs with `manualSorting` and
   `manualFiltering`. A header click changes the session's sort descriptor; it never sorts rows in the browser.
 - **The table never holds the whole listing.** Its row model gets only the rows of the visible window plus overscan,
   read from the page store; unloaded rows render as placeholders. A 100k-entry folder costs the same as a 100-entry
   one.
 - **Virtual scrolling:** `@tanstack/react-virtual` (`useVirtualizer`, fixed row height, bounded overscan) virtualizes
-  the table body; the header stays outside the scrolling body. Cell widths come from the table's column sizes as CSS
-  widths, so nothing is measured while scrolling or moving the cursor.
+  the table body. The header is sticky inside the shared scroll viewport, so it stays aligned during horizontal
+  scrolling and works with pinned columns. Cell widths come from the table's column sizes as CSS widths; fit-to-content
+  measures only mounted virtual rows, never the full listing.
 
 ### Brief and Thumbnails views: `@tanstack/react-virtual`
 
@@ -81,7 +84,7 @@ grid, so a resize re-renders the header only.
 ## Why
 
 - Fixed row geometry keeps scrolling and cursor movement constant-cost at any folder size.
-- TanStack Table gives the table view proper columns (sizing, header sort indicators, later visibility and order)
+- TanStack Table gives the table view proper columns (sizing, sorting, visibility, ordering and pinning)
   without writing a table engine, and it is headless, so it costs nothing in styling and fits the design system. It
   comes from the same family as TanStack Virtual, which both apps already use. A list or tile layout has no columns,
   so the Brief and Thumbnails views don't need it.

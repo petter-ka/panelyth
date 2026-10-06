@@ -22,9 +22,25 @@ export const SIDES: readonly Side[] = ["left", "right"]
 
 /** The Full view's columns; Name takes the remaining width. */
 export type ColumnId = "name" | "ext" | "size" | "date" | "attr"
-export type ColumnWidths = Record<Exclude<ColumnId, "name">, number>
+export type ColumnWidths = Record<Exclude<ColumnId, "name">, number> & { name?: number }
+export type ColumnOrder = ColumnId[]
+export type ColumnVisibility = Record<ColumnId, boolean>
+export interface ColumnPinning {
+  start: ColumnId[]
+  end: ColumnId[]
+}
+export interface ColumnLayout {
+  order: ColumnOrder
+  visibility: ColumnVisibility
+  pinning: ColumnPinning
+}
 export const DEFAULT_COLUMNS: ColumnWidths = { ext: 64, size: 112, date: 136, attr: 56 }
-export const COLUMN_LIMITS = { min: 36, max: 480 }
+export const DEFAULT_COLUMN_LAYOUT: ColumnLayout = {
+  order: ["name", "ext", "size", "date", "attr"],
+  visibility: { name: true, ext: true, size: true, date: true, attr: true },
+  pinning: { start: [], end: [] },
+}
+export const COLUMN_LIMITS = { min: 36, max: 480, nameMin: 120, nameMax: 1600 }
 
 /** The sort field behind each column (Go sorts, ADR-0028). */
 export const COLUMN_SORT: Record<ColumnId, SortField> = {
@@ -67,6 +83,9 @@ export interface PanelState {
   /** Row index in the view; row 0 is ".." when the folder has a parent. */
   cursor: number
   columns: ColumnWidths
+  columnOrder: ColumnOrder
+  columnVisibility: ColumnVisibility
+  columnPinning: ColumnPinning
   /** Increments when the view should bring the cursor into view. */
   revealToken: number
   /** Visited folders of this panel (Alt+← / Alt+→); `historyIndex` is the current one. */
@@ -90,7 +109,10 @@ const emptyPanel = (): PanelState => ({
   showHidden: false,
   view: "full",
   cursor: 0,
-  columns: DEFAULT_COLUMNS,
+  columns: { ...DEFAULT_COLUMNS },
+  columnOrder: [...DEFAULT_COLUMN_LAYOUT.order],
+  columnVisibility: { ...DEFAULT_COLUMN_LAYOUT.visibility },
+  columnPinning: { start: [], end: [] },
   revealToken: 0,
   history: [],
   historyIndex: -1,
@@ -571,6 +593,16 @@ export function setColumns(side: Side, columns: ColumnWidths): void {
   schedulePersist()
 }
 
+/** Persists the table's visual layout alongside its widths for this panel. */
+export function setColumnLayout(side: Side, layout: ColumnLayout): void {
+  patch(side, {
+    columnOrder: layout.order,
+    columnVisibility: layout.visibility,
+    columnPinning: layout.pinning,
+  })
+  schedulePersist()
+}
+
 /** Moves the cursor, clamped to the rows (arrows, PgUp/PgDn, Home/End, click). */
 export function moveCursor(side: Side, index: number): void {
   const p = getPanel(side)
@@ -755,7 +787,40 @@ export function readColumns(v: unknown): ColumnWidths {
     const w = c[key]
     if (typeof w === "number" && w >= COLUMN_LIMITS.min && w <= COLUMN_LIMITS.max) out[key] = w
   }
+  const name = c.name
+  if (typeof name === "number" && name >= COLUMN_LIMITS.nameMin && name <= COLUMN_LIMITS.nameMax) {
+    out.name = name
+  }
   return out
+}
+
+const COLUMN_IDS: readonly ColumnId[] = ["name", "ext", "size", "date", "attr"]
+const isColumnId = (id: unknown): id is ColumnId => COLUMN_IDS.includes(id as ColumnId)
+
+export function readColumnOrder(v: unknown): ColumnOrder {
+  const value = Array.isArray(v) ? v.filter(isColumnId) : []
+  return [...new Set(value), ...DEFAULT_COLUMN_LAYOUT.order.filter((id) => !value.includes(id))]
+}
+
+export function readColumnVisibility(v: unknown): ColumnVisibility {
+  const value = (v ?? {}) as Record<string, unknown>
+  return {
+    name: true,
+    ext: typeof value.ext === "boolean" ? value.ext : true,
+    size: typeof value.size === "boolean" ? value.size : true,
+    date: typeof value.date === "boolean" ? value.date : true,
+    attr: typeof value.attr === "boolean" ? value.attr : true,
+  }
+}
+
+export function readColumnPinning(v: unknown): ColumnPinning {
+  const value = (v ?? {}) as Record<string, unknown>
+  const start = Array.isArray(value.start) ? value.start.filter(isColumnId) : []
+  const used = new Set(start)
+  const end = (Array.isArray(value.end) ? value.end.filter(isColumnId) : []).filter(
+    (id) => !used.has(id),
+  )
+  return { start: [...new Set(start)], end: [...new Set(end)] }
 }
 
 /** Tests: back to the initial state. */

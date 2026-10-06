@@ -33,7 +33,8 @@ an explicit command.
 - Every entry is listed: folders, files of any type, links (shown, not followed), and hidden/system entries when
   enabled (ADR-0026).
 - A `..` row leads to the parent folder.
-- Columns in the Full view: Name, Ext, Size, Date (modified), Attr. Column widths are resizable and persisted.
+- Columns in the Full view: Name, Ext, Size, Date (modified), Attr. Every column can be resized and reordered; users
+  can fit widths to visible cells, hide/show columns, and pin columns to either side. The layout persists per panel.
 - Folders come first. A folder's size shows `<DIR>` until calculated (CFR-14).
 - Each panel has a status line: marked count and size of the total, and free space on the volume.
 

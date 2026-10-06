@@ -46,17 +46,20 @@ for. People coming from Total Commander find their keys where they expect them.
 - **Path bar:** the full path and the active mask (`*.*`, or the quick filter). Click it or press Alt+D (as in Explorer) to edit;
   Enter navigates; Esc cancels.
 - **Column header:** Name, Ext, Size, Date, Attr (the Full view is a TanStack Table, ADR-0028). The sort column shows
-  ↑ or ↓; clicking a header sorts in Go, never in the browser. Columns resize by dragging their edge and persist per
-  panel; hiding and reordering columns can come later from the same table model.
+  ↑ or ↓; clicking a header sorts in Go, never in the browser. Widths and layouts persist per panel. Drag a column
+  header to reorder it, or drag its edge to resize it. Double-click the edge to fit the header and
+  currently virtualized cells. Right-click a header to sort, move, hide or show columns, reset widths and pin columns
+  to the logical start or end. Name always stays visible.
 - **Rows:** fixed height per interface size (S 20 px, M 22 px, L 26 px).
   - a compact type glyph (folder, image, video, archive, text, program, link, other), color-coded with the shared
     label palette; marked entries use the selection accent, and hidden or system entries use muted glyphs (no
     per-file OS icons in the first release);
   - a subtle `raised` surface on hover; the cursor keeps its outline and marked entries keep their accent;
   - name and extension in separate columns; folders show `<DIR>` in Size until calculated;
-  - size, date and attributes use muted secondary text; size is in bytes with thousands separators (a setting switches
-    to KB/MB/GB); dates use relative labels such as "today" and "yesterday" by default (switchable in code to the
-    configured locale or ISO format); attributes are `rhsa` on Windows and permissions (`rwxr-xr-x`) on Unix;
+  - size, date and attributes use muted secondary text; sizes use B/KB/MB/GB units by default, with a setting to
+    switch to exact bytes with thousands separators. Dates use relative labels such as "today" and "yesterday" by
+    default (switchable in code to the configured locale or ISO format); attributes are `rhsa` on Windows and
+    permissions (`rwxr-xr-x`) on Unix;
     numbers use tabular numerals;
   - hidden and system entries in `muted` text; links with a link glyph.
 - **Cursor and marks:** the cursor is a `raised` bar with an `accent` outline; marked entries use `accent` text and a

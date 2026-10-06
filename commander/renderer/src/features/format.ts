@@ -8,10 +8,10 @@ const integer = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" })
 
 /**
- * Size column: bytes with thousands separators, or KB/MB/GB (Settings →
- * Panels); folders show <DIR> until calculated (UX-DESIGN "Rows").
+ * Size column: readable units by default, or bytes with thousands separators
+ * (Settings → Panels); folders show <DIR> until calculated (UX-DESIGN "Rows").
  */
-export function formatSize(item: ContentItem, format: SizeFormat = "bytes"): string {
+export function formatSize(item: ContentItem, format: SizeFormat = "units"): string {
   const bytes = item.kind === "dir" ? item.dirSizeBytes : item.sizeBytes
   if (bytes === undefined) return "<DIR>"
   return format === "units" ? formatBytes(bytes) : integer.format(bytes)
@@ -49,7 +49,7 @@ export function formatCount(n: number): string {
 
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]
 
-/** Status line sizes: 1 decimal from KB up. */
+/** Human-readable binary units: bytes below 1 KB, then one decimal place. */
 export function formatBytes(bytes: number): string {
   let value = bytes
   let unit = 0

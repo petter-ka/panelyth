@@ -72,7 +72,7 @@ export function TabBar({ side }: { side: Side }) {
               e.preventDefault()
               setMenu(index)
             }}
-            className={`group/tab flex h-6 max-w-40 min-w-0 cursor-default items-center gap-1 rounded-t border border-b-0 px-2 ${selected ? "border-border bg-canvas text-text" : "border-transparent text-muted hover:bg-raised hover:text-text"}`}
+            className={`group/tab flex h-6 max-w-40 min-w-0 cursor-default items-center gap-1 rounded-t border border-b-0 px-2 font-medium ${selected ? "border-border bg-canvas text-text" : "border-transparent text-muted hover:bg-raised hover:text-text"}`}
           >
             {tab.locked && (
               <span aria-label="Locked" className="text-muted">

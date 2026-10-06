@@ -41,21 +41,66 @@ function tooltip(item: ContentItem): string {
   return `${item.name}\n${KIND_LABEL[item.kind]} (${item.ext}), ${formatBytes(item.sizeBytes)}\nModified ${formatDate(item.modifiedMs)}`
 }
 
-/**
- * A folder shows up to four of its media files (Stage 08.6): one fills the
- * box, more form a 2×2 mosaic. The folder symbol stays until the first cover
- * is ready, and a small folder badge keeps the tile readable as a folder.
- */
-function FolderThumb({ id, box }: { id: number; box: number }) {
-  const cover = useCover(id)
+/** Visual state shared by each fixed tile slot and its fitted preview frame. */
+interface TileVisualState {
+  selected: boolean
+  focused: boolean
+  dragOver: boolean
+}
+
+function frameClass({ selected, focused, dragOver }: TileVisualState): string {
+  return [
+    dragOver || selected ? "outline-2 -outline-offset-2 outline-accent" : "",
+    focused && !selected ? "outline-1 -outline-offset-1 outline-dashed outline-accent/70" : "",
+  ].join(" ")
+}
+
+function fallbackFrameClass(visual: TileVisualState): string {
+  const surface = visual.dragOver ? "bg-accent/20" : "bg-skeleton/60"
+  return [
+    "relative flex size-full items-center justify-center overflow-hidden rounded-[3px] text-muted",
+    surface,
+    frameClass(visual),
+  ].join(" ")
+}
+
+function fittedPreviewSize(
+  box: number,
+  width: number,
+  height: number,
+): { width: number; height: number } {
+  if (width <= 0 || height <= 0) return { width: box, height: box }
+  const scale = Math.min(box / width, box / height)
+  return { width: width * scale, height: height * scale }
+}
+
+/** A folder shows one square cover or a mosaic, with its folder glyph until a cover is ready. */
+function FolderThumb({
+  item,
+  box,
+  visual,
+}: {
+  item: ContentItem
+  box: number
+  visual: TileVisualState
+}) {
+  const cover = useCover(item.id)
   const glyph = Math.round(box * 0.36)
-  if (!cover?.some((c) => typeof c === "object")) return <FolderGlyph size={glyph} />
+  if (!cover?.some((c) => typeof c === "object")) {
+    return (
+      <div className={fallbackFrameClass(visual)}>
+        <FolderGlyph size={glyph} />
+        <UserBadge item={item} />
+      </div>
+    )
+  }
   const single = cover.length === 1
   return (
     <div
-      className={`relative grid size-full gap-px ${single ? "" : "grid-cols-2 grid-rows-2"}`}
+      className={`relative grid size-full gap-px overflow-hidden rounded-[3px] ${single ? "" : "grid-cols-2 grid-rows-2"} ${frameClass(visual)}`}
       data-testid="folder-cover"
       data-covers={cover.length}
+      data-preview-frame
     >
       {cover.map((c, slot) =>
         typeof c === "object" ? (
@@ -66,7 +111,7 @@ function FolderThumb({ id, box }: { id: number; box: number }) {
             decoding="async"
             draggable={false}
             className="size-full min-h-0 min-w-0 object-cover"
-            onError={() => reportBrokenCover(id, slot)}
+            onError={() => reportBrokenCover(item.id, slot)}
           />
         ) : (
           <span key={slot} className="bg-skeleton" />
@@ -79,6 +124,7 @@ function FolderThumb({ id, box }: { id: number; box: number }) {
       >
         <FolderGlyph size={Math.max(12, Math.round(box * 0.11))} />
       </span>
+      <UserBadge item={item} />
     </div>
   )
 }
@@ -91,33 +137,72 @@ let pendingCollapse: {
   exclude: SelectionState["exclude"]
 } | null = null
 
-/** The picture inside the square box: thumbnail, symbol, or nothing while loading. */
-function TileThumb({ item, box }: { item: ContentItem; box: number }) {
-  if (item.kind === "dir") return <FolderThumb id={item.id} box={box} />
-  return <MediaThumb item={item} box={box} />
+/** The preview or fallback inside the tile's fixed square slot. */
+function TileThumb({
+  item,
+  box,
+  visual,
+}: {
+  item: ContentItem
+  box: number
+  visual: TileVisualState
+}) {
+  if (item.kind === "dir") return <FolderThumb item={item} box={box} visual={visual} />
+  return <MediaThumb item={item} box={box} visual={visual} />
 }
 
-function MediaThumb({ item, box }: { item: ContentItem; box: number }) {
+function MediaThumb({
+  item,
+  box,
+  visual,
+}: {
+  item: ContentItem
+  box: number
+  visual: TileVisualState
+}) {
   const state = useThumb(item.id)
   const glyph = Math.round(box * 0.36)
-  if (item.kind === "video" && state?.status !== "ready") return <VideoGlyph size={glyph} />
+  if (item.kind === "video" && state?.status !== "ready") {
+    return (
+      <div className={fallbackFrameClass(visual)}>
+        <VideoGlyph size={glyph} />
+        <UserBadge item={item} />
+      </div>
+    )
+  }
   if (state?.status === "ready") {
+    const previewSize = fittedPreviewSize(box, state.thumb.width, state.thumb.height)
     const img = (
       <img
         src={state.thumb.url}
         alt=""
-        width={box}
-        height={box}
+        width={state.thumb.width}
+        height={state.thumb.height}
         decoding="async"
         draggable={false}
         className="size-full object-contain"
         onError={() => reportBroken(item.id)}
       />
     )
-    if (item.kind !== "video") return img
+    if (item.kind !== "video") {
+      return (
+        <div
+          className={`relative shrink-0 overflow-hidden rounded-[3px] ${frameClass(visual)}`}
+          style={previewSize}
+          data-preview-frame
+        >
+          {img}
+          <UserBadge item={item} />
+        </div>
+      )
+    }
     // Video posters carry a small play badge so they never read as photos.
     return (
-      <div className="relative size-full">
+      <div
+        className={`relative shrink-0 overflow-hidden rounded-[3px] ${frameClass(visual)}`}
+        style={previewSize}
+        data-preview-frame
+      >
         {img}
         <span
           className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome/85 p-0.5 text-text"
@@ -126,14 +211,27 @@ function MediaThumb({ item, box }: { item: ContentItem; box: number }) {
         >
           <PlayIcon size={Math.max(10, Math.round(box * 0.09))} />
         </span>
+        <UserBadge item={item} />
       </div>
     )
   }
-  if (state?.status === "failed") return <UnavailableGlyph size={glyph} />
-  return null
+  if (state?.status === "failed") {
+    return (
+      <div className={fallbackFrameClass(visual)}>
+        <UnavailableGlyph size={glyph} />
+        <UserBadge item={item} />
+      </div>
+    )
+  }
+  if (item.kind === "image") {
+    return (
+      <div className={fallbackFrameClass(visual)} data-testid="thumb-loading" />
+    )
+  }
+  return <div className={fallbackFrameClass(visual)} />
 }
 
-/** Label, favorite and rating, drawn inside the box so tile geometry never changes. */
+/** Label, favorite and rating, drawn inside the thumbnail frame. */
 function UserBadge({ item }: { item: ContentItem }) {
   if (!item.favorite && item.rating === 0 && item.label === 0) return null
   const color = labelColor(item.label)
@@ -148,7 +246,7 @@ function UserBadge({ item }: { item: ContentItem }) {
     <span
       role="img"
       aria-label={label}
-      className="absolute top-1 left-1 flex items-center gap-0.5 rounded-sm bg-chrome/85 px-1 text-[0.625rem] leading-4 text-text"
+      className="absolute top-1 left-1 flex max-w-full items-center gap-0.5 truncate rounded-sm bg-chrome/85 px-1 text-[0.625rem] leading-4 text-text"
       data-testid="user-badge"
     >
       {color && (
@@ -185,18 +283,13 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
   const isFolderDropTarget = item?.kind === "dir"
   const nameSize = size === "small" ? "h-[1.125rem] text-[0.75rem]" : "h-[1.25rem] text-[0.8125rem]"
 
-  const box = [
-    "relative flex items-center justify-center overflow-hidden rounded-[3px] text-muted",
-    item ? "bg-skeleton/60" : "bg-skeleton",
-    // Drawn inside the box: the tile uses paint containment, which clips
-    // anything painted outside its bounds.
-    dragOver
-      ? "outline-2 -outline-offset-2 outline-accent bg-accent/20"
-      : selected
-        ? "outline-2 -outline-offset-2 outline-accent"
-        : "",
-    focused && !selected ? "outline-1 -outline-offset-1 outline-dashed outline-accent/70" : "",
-  ].join(" ")
+  const visual = { selected, focused, dragOver }
+  const thumbBoxClass = item
+    ? "relative flex items-center justify-center overflow-hidden rounded-[3px]"
+    : [
+        "relative flex items-center justify-center overflow-hidden rounded-[3px] bg-skeleton",
+        frameClass(visual),
+      ].join(" ")
 
   return (
     <div
@@ -266,9 +359,8 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
         else if (item?.kind === "video") playInPane(index, { fullscreen: true })
       }}
     >
-      <div className={box} style={{ width: m.tile, height: m.tile }} data-thumb-box>
-        {item && <TileThumb item={item} box={m.tile} />}
-        {item && <UserBadge item={item} />}
+      <div className={thumbBoxClass} style={{ width: m.tile, height: m.tile }} data-thumb-box>
+        {item && <TileThumb item={item} box={m.tile} visual={visual} />}
       </div>
       <div
         draggable={draggable}

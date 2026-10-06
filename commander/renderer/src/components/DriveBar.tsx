@@ -66,7 +66,7 @@ export function DriveBar({ side }: { side: Side }) {
         aria-label="Drive menu"
         title={`Drive menu (${side === "left" ? "Alt+F1" : "Alt+F2"})`}
         onClick={() => (menuOpen ? closeDriveMenu() : openDriveMenu(side))}
-        className="mr-1 flex h-5 items-center gap-1 rounded px-1.5 text-text hover:bg-raised"
+        className="mr-1 flex h-5 items-center gap-1 rounded px-1.5 font-medium text-text hover:bg-raised"
       >
         {current ? driveName(current) : "Drives"}
         <span aria-hidden="true" className="text-muted">
@@ -85,7 +85,7 @@ export function DriveBar({ side }: { side: Side }) {
             data-not-ready={v.notReady || undefined}
             onClick={() => void openDrive(side, v.path)}
             {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
-            className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
+            className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
           >
             {driveName(v)}
           </button>

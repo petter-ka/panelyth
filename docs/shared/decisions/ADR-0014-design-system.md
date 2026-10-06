@@ -7,6 +7,8 @@ Accepted (Stage 00). Amended after Stage 00: theme design (neutral surround, dar
 Amended 2026-10-05: the system applies to both apps (ADR-0025). Its specification moved to
 `docs/shared/DESIGN-SYSTEM.md`, and Stage P01 moves the tokens and primitives into `shared/ui`.
 
+Amended 2026-10-06: local Inter and JetBrains Mono fonts replace the system-only typography stack.
+
 ## Context
 
 FR-20 (`docs/shared/REQUIREMENTS.md`, formerly in the BRS) mandates Tailwind CSS and shadcn/ui, and CLAUDE.md
@@ -38,8 +40,11 @@ Stage 05 needs resizable panes, context menus and dialogs, so waiting until Stag
   portalled and mounted only while open. The ADR-0007 resize trace was run: 0 long tasks. Cost: about 100 KB minified
   JS; the idle renderer's JS heap stays at 3.7 MB.
 - Stage 08 refines tokens, motion and accessibility. It does not introduce the system or the themes.
+- Typography uses locally bundled Inter and JetBrains Mono WOFF2 files in `shared/ui/src/fonts`. Inter is the UI
+  sans family; JetBrains Mono is used for paths, IDs, code and numeric values. Their SIL Open Font Licenses are
+  included with the assets, and the renderers make no external font requests.
 
 ## Rules
 
 - No animations, `backdrop-filter` or per-tile transitions on the scrolling surface without a measured trace.
-- System font stack only. No web-font download (local-first, strict CSP).
+- Fonts must remain locally bundled; do not fetch fonts from a remote service at runtime (local-first, strict CSP).

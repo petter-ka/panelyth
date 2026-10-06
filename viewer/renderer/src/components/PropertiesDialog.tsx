@@ -18,11 +18,19 @@ type Loaded =
   | { kind: "selection"; info: SelectionInfo }
   | { kind: "error"; message: string }
 
-function Row({ label, children }: { label: string; children: ReactNode }) {
+function Row({
+  label,
+  children,
+  mono = false,
+}: {
+  label: string
+  children: ReactNode
+  mono?: boolean
+}) {
   return (
     <>
       <dt className="text-muted">{label}</dt>
-      <dd className="min-w-0 break-words select-text">{children}</dd>
+      <dd className={`min-w-0 break-words select-text ${mono ? "font-mono" : ""}`}>{children}</dd>
     </>
   )
 }
@@ -32,23 +40,29 @@ function EntryRows({ p }: { p: Properties }) {
   return (
     <>
       <Row label="Type">
-        {p.kind === "dir" ? "Folder" : `${KIND[p.kind]} (${p.ext.toUpperCase()})`}
+        {p.kind === "dir" ? (
+          "Folder"
+        ) : (
+          <>
+            {KIND[p.kind]} (<span className="font-mono">{p.ext.toUpperCase()}</span>)
+          </>
+        )}
       </Row>
-      <Row label="Location">
+      <Row label="Location" mono>
         <span data-testid="props-path">{p.path}</span>
       </Row>
       {p.kind !== "dir" && (
-        <Row label="Size">
+        <Row label="Size" mono>
           {formatBytes(p.sizeBytes)} ({formatCount(p.sizeBytes)} bytes)
         </Row>
       )}
       {p.width !== null && p.height !== null && (
-        <Row label="Dimensions">
+        <Row label="Dimensions" mono>
           {formatCount(p.width)} × {formatCount(p.height)}
         </Row>
       )}
       {p.kind === "dir" && (
-        <Row label="Contains">
+        <Row label="Contains" mono>
           {p.childFolders === null || p.childMedia === null
             ? "Not listed yet"
             : `${plural(p.childFolders, "folder", "folders")}, ${plural(p.childMedia, "image or video", "images and videos")}`}
@@ -75,9 +89,9 @@ function EntryRows({ p }: { p: Properties }) {
           <Row label="Tags">{p.tags.length > 0 ? p.tags.join(", ") : "None"}</Row>
         </>
       )}
-      <Row label="Created">{date(p.createdMs)}</Row>
-      <Row label="Modified">{formatDate(p.modifiedMs)}</Row>
-      <Row label="Accessed">{date(p.accessedMs)}</Row>
+      <Row label="Created" mono>{date(p.createdMs)}</Row>
+      <Row label="Modified" mono>{formatDate(p.modifiedMs)}</Row>
+      <Row label="Accessed" mono>{date(p.accessedMs)}</Row>
       {!p.exists && <Row label="Status">The file was moved or deleted since it was indexed.</Row>}
     </>
   )
@@ -91,8 +105,8 @@ function SelectionRows({ info }: { info: SelectionInfo }) {
   ].filter(Boolean)
   return (
     <>
-      <Row label="Selected">{parts.join(", ") || "Nothing"}</Row>
-      <Row label="Total size">
+      <Row label="Selected" mono>{parts.join(", ") || "Nothing"}</Row>
+      <Row label="Total size" mono>
         {formatBytes(info.bytes)} ({formatCount(info.bytes)} bytes)
       </Row>
       {info.folders > 0 && <Row label="Note">Folder sizes are not included.</Row>}

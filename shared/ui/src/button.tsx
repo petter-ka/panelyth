@@ -9,9 +9,9 @@ export type ButtonSize = "md" | "sm" | "icon"
 const base = "rounded-md text-xs disabled:opacity-50"
 
 const variants: Record<ButtonVariant, string> = {
-  primary: "bg-accent font-medium text-accent-foreground",
+  primary: "bg-accent text-accent-foreground",
   secondary: "border border-border hover:border-muted",
-  danger: "border border-danger font-medium text-danger hover:bg-raised",
+  danger: "border border-danger text-danger hover:bg-raised",
   // Raised controls in toolbars; aria-pressed marks toggles.
   toolbar:
     "border border-border bg-raised enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent",
@@ -55,7 +55,7 @@ export function Button({
 /** A key cap, for shortcut references. */
 export function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-raised px-1 font-sans text-[0.6875rem] text-text tabular-nums">
+    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-raised px-1 font-mono text-[0.6875rem] text-text tabular-nums">
       {children}
     </kbd>
   )

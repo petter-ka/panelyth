@@ -167,7 +167,7 @@ function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
                 data-testid={last ? "folder-name" : undefined}
                 disabled={last}
                 onClick={() => void openFolder(c.path)}
-                className={`truncate rounded px-1.5 py-0.5 text-xs ${last ? "font-medium text-text" : "text-muted hover:bg-raised hover:text-text"}`}
+                className={`truncate rounded px-1.5 py-0.5 font-mono font-normal text-xs ${last ? "text-text" : "text-muted hover:bg-raised hover:text-text"}`}
               >
                 {c.name}
               </button>

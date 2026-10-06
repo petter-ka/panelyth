@@ -30,7 +30,7 @@ export function FunctionKeyBar() {
           onClick={() => action && runPanelAction(usePanelsStore.getState().active, action)}
           className="flex flex-1 items-center justify-center gap-1.5 border-r border-border text-text hover:bg-raised disabled:text-muted disabled:hover:bg-transparent"
         >
-          <kbd className="font-sans">{key}</kbd> {label}
+          <kbd className="font-mono">{key}</kbd> {label}
         </button>
       ))}
       <button
@@ -40,7 +40,7 @@ export function FunctionKeyBar() {
         title="Exit (Alt+F4)"
         className="flex flex-1 items-center justify-center gap-1.5 text-text hover:bg-raised"
       >
-        <kbd className="font-sans">Alt+F4</kbd> Exit
+        <kbd className="font-mono">Alt+F4</kbd> Exit
       </button>
     </nav>
   )

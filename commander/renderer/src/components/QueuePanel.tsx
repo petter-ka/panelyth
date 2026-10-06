@@ -238,7 +238,7 @@ function Side({
         {name}
       </span>
       <span className="text-muted tabular-nums">
-        {side.isDir ? "Folder" : `${formatCount(side.size)} bytes`}
+        {side.isDir ? "Folder" : formatBytes(side.size)}
       </span>
       <span className="text-muted tabular-nums">
         {formatDate(side.modifiedMs)}

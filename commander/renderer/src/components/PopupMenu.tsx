@@ -1,4 +1,12 @@
-import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react"
 
 export interface MenuEntry {
   id: string
@@ -7,11 +15,17 @@ export interface MenuEntry {
   detail?: ReactNode
   /** A section heading; not selectable. */
   heading?: boolean
+  /** A thin divider between sections. */
+  separator?: boolean
   disabled?: boolean
   /** A key that selects the entry at once (a drive letter). */
   accessKey?: string
   /** The entry is the current one (pressed drive, current folder). */
   current?: boolean
+  /** Render as a checked menu item. */
+  checked?: boolean
+  /** Keep the menu open after selecting (useful for multiple visibility toggles). */
+  keepOpen?: boolean
   onSelect?: () => void
 }
 
@@ -23,16 +37,26 @@ interface PopupMenuProps {
   /** Extra content under the entries ("Updating…"). */
   footer?: ReactNode
   className?: string
+  style?: CSSProperties
 }
 
-const selectable = (e: MenuEntry | undefined): boolean => !!e && !e.heading && !e.disabled
+const selectable = (e: MenuEntry | undefined): boolean =>
+  !!e && !e.heading && !e.separator && !e.disabled
 
 /**
  * A keyboard-first menu inside a panel (drive menu, hotlist, history, tab
  * menu): ↑/↓ move, Enter selects, an access key selects its entry, Esc or a
  * click elsewhere closes. Keys never reach the panel behind it.
  */
-export function PopupMenu({ label, entries, onClose, testId, footer, className }: PopupMenuProps) {
+export function PopupMenu({
+  label,
+  entries,
+  onClose,
+  testId,
+  footer,
+  className,
+  style,
+}: PopupMenuProps) {
   const list = useRef<HTMLDivElement>(null)
   const firstSelectable = useMemo(() => {
     const current = entries.findIndex((e) => e.current && selectable(e))
@@ -80,7 +104,7 @@ export function PopupMenu({ label, entries, onClose, testId, footer, className }
   const choose = (index: number): void => {
     const entry = entries[index]
     if (!selectable(entry)) return
-    onClose()
+    if (!entry!.keepOpen) onClose()
     entry!.onSelect?.()
   }
 
@@ -119,10 +143,13 @@ export function PopupMenu({ label, entries, onClose, testId, footer, className }
       tabIndex={-1}
       data-testid={testId}
       onKeyDown={onKeyDown}
+      style={style}
       className={`absolute z-20 max-h-[min(28rem,80%)] min-w-64 overflow-y-auto rounded-md border border-border bg-raised py-1 text-xs shadow-xl shadow-black/30 outline-none ${className ?? "top-1 left-2"}`}
     >
       {entries.map((entry, index) =>
-        entry.heading ? (
+        entry.separator ? (
+          <div key={entry.id} role="separator" className="my-1 border-t border-border" />
+        ) : entry.heading ? (
           <div
             key={entry.id}
             role="presentation"
@@ -134,9 +161,10 @@ export function PopupMenu({ label, entries, onClose, testId, footer, className }
           <div
             key={entry.id}
             id={`${testId ?? "menu"}-item-${index}`}
-            role="menuitem"
+            role={entry.checked === undefined ? "menuitem" : "menuitemcheckbox"}
             aria-disabled={entry.disabled || undefined}
             aria-current={entry.current || undefined}
+            aria-checked={entry.checked}
             data-index={index}
             data-focused={index === shown}
             onMouseEnter={() => selectable(entry) && setFocus(index)}
@@ -144,7 +172,7 @@ export function PopupMenu({ label, entries, onClose, testId, footer, className }
             className={`flex h-7 cursor-default items-center gap-3 px-3 ${entry.disabled ? "text-muted" : "text-text"} data-[focused=true]:bg-accent/20`}
           >
             <span className="w-3 shrink-0 text-accent" aria-hidden="true">
-              {entry.current ? "•" : ""}
+              {entry.checked === true ? "✓" : entry.current ? "•" : ""}
             </span>
             <span className="min-w-0 flex-1 truncate">{entry.label}</span>
             {entry.detail !== undefined && (

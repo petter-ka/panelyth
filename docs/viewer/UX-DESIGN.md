@@ -121,11 +121,13 @@ name   name   name                name   name   name   name   name   name
 
   Tiles per row = `max(1, floor((width − 32 + gap) / (tile + gap)))`. With medium tiles: 1000 px → 5,
   1600 px → 8, 2400 px → 12. The content area has 16 px padding on each side.
-- **Tile anatomy:** a square thumbnail box on the `canvas` color with the image fitted (`contain`, never cropped),
-  then one line of name, ellipsized, with the full name, size and date in the tooltip. Folder, video and
-  unsupported tiles use a symbol in the same box. Loading tiles show the `skeleton` color, with no shimmer animation.
-- **Focus and selection:** a 2 px `accent` (amber) outline around the thumbnail box, with the name in `text` on a
-  subtle selected background. Keyboard focus and selection are distinguishable (focus ring vs filled selection).
+- **Tile anatomy:** every tile keeps a fixed square slot. Image and video previews preserve their aspect ratio
+  (`contain`, never cropped) and leave unused space transparent; folder covers fill the square. Folder and unsupported
+  tiles use a symbol in the same slot. Loading tiles show the `skeleton` color, with no shimmer animation. The name is
+  one ellipsized line, with the full name, size and date in the tooltip.
+- **Focus and selection:** a 2 px `accent` (amber) outline follows the fitted image or video preview; glyph fallbacks
+  and folder covers use the square slot. The name uses `text` on a subtle selected background. Keyboard focus and
+  selection are distinguishable (focus ring vs filled selection).
 - **Keyboard:** ←/→ move one tile, ↑/↓ one row, Home/End, Page Up/Down, Enter opens, Space selects.
 - **Tile size control:** a three-state segmented control (S / M / L) at the end of the content toolbar, with
   tooltips. Ctrl/Cmd + scroll wheel steps through sizes.
