@@ -2,6 +2,7 @@
   "id": 40,
   "ok": true,
   "r": {
+    "group": "",
     "id": 1,
     "label": "golden",
     "path": "/fixtures/golden"

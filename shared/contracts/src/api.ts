@@ -22,6 +22,7 @@ import type {
   QueryFacets,
   SelectionDescriptor,
   SelectionInfo,
+  UpdateBookmarkParams,
   VolumesResult,
   CancelScanResult,
   DirOpenEntryParams,
@@ -41,6 +42,9 @@ import type {
   QueryPageResult,
   QuerySnapshot,
   QueryIndexOfResult,
+  QueryLocateParams,
+  QueryLocateResult,
+  QueryMatchResult,
   SharedContext,
   SidecarStatus,
   SystemInfo,
@@ -121,8 +125,10 @@ export interface FastViewApi {
   library: {
     get(): Promise<RpcEnvelope<LibraryState>>
     setSetting(key: string, value: unknown): Promise<RpcEnvelope<OkResult>>
-    addBookmark(path: string, label: string): Promise<RpcEnvelope<Bookmark>>
+    addBookmark(path: string, label: string, group?: string): Promise<RpcEnvelope<Bookmark>>
     removeBookmark(id: number): Promise<RpcEnvelope<OkResult>>
+    updateBookmark(params: UpdateBookmarkParams): Promise<RpcEnvelope<Bookmark>>
+    reorderBookmarks(ids: number[]): Promise<RpcEnvelope<OkResult>>
     tags(): Promise<RpcEnvelope<TagsResult>>
     deleteTag(id: number): Promise<RpcEnvelope<OkResult>>
   }
@@ -154,8 +160,14 @@ export interface FastViewApi {
   }
   /** The shared context (present only while the commander is enabled; ADR-0031). */
   context?: {
-    publish(dirId: number, focusId: number | null): Promise<RpcEnvelope<OkResult>>
+    publish(
+      dirId: number,
+      focusId: number | null,
+      selection?: SelectionDescriptor | null,
+    ): Promise<RpcEnvelope<OkResult>>
     get(): Promise<RpcEnvelope<SharedContext>>
+    /** The carried selection as ranges of this session (Stage C02). */
+    selection(version: number, queryId: number): Promise<RpcEnvelope<SelectionDescriptor>>
   }
   /** Present only when dev methods are enabled (benchmarks, development). */
   dev?: {
@@ -183,6 +195,11 @@ export interface CommanderApi {
   library: {
     get(): Promise<RpcEnvelope<LibraryState>>
     setSetting(key: string, value: unknown): Promise<RpcEnvelope<OkResult>>
+    /** The directory hotlist: the bookmarks shared with the viewer (Stage C03). */
+    addBookmark(path: string, label: string, group?: string): Promise<RpcEnvelope<Bookmark>>
+    removeBookmark(id: number): Promise<RpcEnvelope<OkResult>>
+    updateBookmark(params: UpdateBookmarkParams): Promise<RpcEnvelope<Bookmark>>
+    reorderBookmarks(ids: number[]): Promise<RpcEnvelope<OkResult>>
   }
   /** Listing (Stage C01): the all-entries scope, one session per visible panel. */
   dir: {
@@ -195,6 +212,19 @@ export interface CommanderApi {
     page(params: QueryPageParams): Promise<RpcEnvelope<QueryPageResult>>
     close(queryId: number): Promise<RpcEnvelope<QueryCloseResult>>
     indexOf(queryId: number, entryId: number): Promise<RpcEnvelope<QueryIndexOfResult>>
+    /** Quick search (Stage C02). */
+    locate(params: QueryLocateParams): Promise<RpcEnvelope<QueryLocateResult>>
+    /** Marking by mask (Stage C02). */
+    match(queryId: number, mask: string): Promise<RpcEnvelope<QueryMatchResult>>
+  }
+  selection: {
+    info(selection: SelectionDescriptor): Promise<RpcEnvelope<SelectionInfo>>
+    rebase(selection: SelectionDescriptor): Promise<RpcEnvelope<SelectionDescriptor>>
+  }
+  /** Stage C02: folder sizes only; file operations arrive in C04. */
+  jobs: {
+    dirSize(selection: SelectionDescriptor): Promise<RpcEnvelope<JobSnapshot>>
+    cancel(jobId: number): Promise<RpcEnvelope<JobCancelResult>>
   }
   fs: {
     volumes(): Promise<RpcEnvelope<VolumesResult>>
@@ -203,8 +233,13 @@ export interface CommanderApi {
     list(): Promise<RpcEnvelope<PlacesResult>>
   }
   context: {
-    publish(dirId: number, focusId: number | null): Promise<RpcEnvelope<OkResult>>
+    publish(
+      dirId: number,
+      focusId: number | null,
+      selection?: SelectionDescriptor | null,
+    ): Promise<RpcEnvelope<OkResult>>
     get(): Promise<RpcEnvelope<SharedContext>>
+    selection(version: number, queryId: number): Promise<RpcEnvelope<SelectionDescriptor>>
   }
   onEvent<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void
 }

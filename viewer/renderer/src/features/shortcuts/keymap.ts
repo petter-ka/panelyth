@@ -12,19 +12,11 @@
 // names; letters are lowercase, "+" is "Plus". Shift is not part of a chord
 // for symbol keys, because the symbol already depends on it ("+" vs "=").
 
+import * as core from "@fastview/renderer-core"
+
 export type Scope = "global" | "viewer"
 
-export interface ActionDef {
-  id: string
-  scope: Scope
-  label: string
-  group: string
-  defaults: readonly string[]
-  /** Extra defaults on macOS only. */
-  macDefaults?: readonly string[]
-  /** May fire while a text field has focus (only chords with Mod/Alt or a function key do). */
-  whileTyping?: boolean
-}
+export type ActionDef = core.ActionDef<Scope>
 
 export const ACTIONS = [
   // Global
@@ -211,64 +203,19 @@ export function actionDef(id: ActionId): ActionDef {
   return byId.get(id)!
 }
 
-export const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.platform)
-
-const MODIFIER_KEYS = new Set(["Control", "Meta", "Alt", "Shift", "AltGraph", "CapsLock"])
-const isFunctionKey = (key: string): boolean => /^F([1-9]|1[0-9]|2[0-4])$/.test(key)
-const isLetter = (key: string): boolean => /^[a-z]$/.test(key)
-
-function normalizeKey(key: string): string {
-  if (key === "+") return "Plus"
-  if (key === " ") return "Space"
-  return key.length === 1 ? key.toLowerCase() : key
-}
-
-/** The chord for a key event, or null for a bare modifier. */
-export function eventChord(
-  e: Pick<KeyboardEvent, "key" | "ctrlKey" | "metaKey" | "altKey" | "shiftKey">,
-): string | null {
-  if (MODIFIER_KEYS.has(e.key)) return null
-  const key = normalizeKey(e.key)
-  const parts: string[] = []
-  if (e.ctrlKey || e.metaKey) parts.push("Mod")
-  if (e.altKey) parts.push("Alt")
-  // Shift counts for letters and named keys; symbols already encode it.
-  if (e.shiftKey && (key.length > 1 || isLetter(key)) && key !== "Plus") parts.push("Shift")
-  parts.push(key)
-  return parts.join("+")
-}
-
-/** Canonical form of a chord string, or null when it is not valid. */
-export function parseChord(chord: string): string | null {
-  if (typeof chord !== "string" || chord.length === 0 || chord.length > 40) return null
-  const parts = chord.split("+")
-  // "Mod++" style is not used: the plus key is spelled "Plus".
-  if (parts.some((p) => p === "")) return null
-  const key = parts.pop()!
-  const mods = new Set(parts)
-  if (
-    mods.size !== parts.length ||
-    [...mods].some((m) => m !== "Mod" && m !== "Alt" && m !== "Shift")
-  ) {
-    return null
-  }
-  if (MODIFIER_KEYS.has(key)) return null
-  const k = key.length === 1 ? key.toLowerCase() : key
-  if (k.length > 1 && !/^[A-Z][A-Za-z0-9]*$/.test(k)) return null
-  return [...(["Mod", "Alt", "Shift"] as const).filter((m) => mods.has(m)), k].join("+")
-}
-
-/** True when the chord may fire while a text field has focus. */
-export function chordAllowedWhileTyping(chord: string): boolean {
-  const parts = chord.split("+")
-  const key = parts[parts.length - 1]!
-  return parts.includes("Mod") || parts.includes("Alt") || isFunctionKey(key)
-}
-
-// Overrides ----------------------------------------------------------------
+// The engine (chords, overrides, resolution, display) is shared with the
+// commander (shared/renderer-core, ADR-0031); the viewer keeps its registry.
+export {
+  chordAllowedWhileTyping,
+  defaultChords,
+  eventChord,
+  formatChord,
+  IS_MAC,
+  MAX_CHORDS_PER_ACTION,
+  parseChord,
+} from "@fastview/renderer-core"
 
 export const SHORTCUTS_KEY = "shortcuts"
-export const MAX_CHORDS_PER_ACTION = 4
 
 export interface ShortcutOverrides {
   v: 1
@@ -280,19 +227,8 @@ export const NO_OVERRIDES: ShortcutOverrides = { v: 1, bindings: {} }
 
 /** Validates untrusted persisted data; unknown actions and bad chords are dropped. */
 export function parseOverrides(value: unknown): ShortcutOverrides {
-  if (typeof value !== "object" || value === null) return NO_OVERRIDES
-  const v = value as Record<string, unknown>
-  if (v.v !== 1 || typeof v.bindings !== "object" || v.bindings === null) return NO_OVERRIDES
-  const bindings: ShortcutOverrides["bindings"] = {}
-  for (const [id, chords] of Object.entries(v.bindings as Record<string, unknown>)) {
-    if (!byId.has(id) || !Array.isArray(chords)) continue
-    const valid = [...new Set(chords.map((c) => parseChord(c as string)).filter((c) => c !== null))]
-    bindings[id as ActionId] = valid.slice(0, MAX_CHORDS_PER_ACTION)
-  }
-  return { v: 1, bindings }
+  return core.parseOverrides(ACTIONS, value) as ShortcutOverrides
 }
-
-// Resolution ---------------------------------------------------------------
 
 export interface Keymap {
   /** scope -> chord -> action */
@@ -301,58 +237,14 @@ export interface Keymap {
   readonly chords: Readonly<Record<ActionId, readonly string[]>>
 }
 
-export function defaultChords(def: ActionDef, mac = IS_MAC): string[] {
-  return [...def.defaults, ...(mac && def.macDefaults ? def.macDefaults : [])]
-}
+const SCOPES: readonly Scope[] = ["global", "viewer"]
 
 /** Overrides first (they win conflicts), then defaults in registry order. */
-export function resolveKeymap(overrides: ShortcutOverrides, mac = IS_MAC): Keymap {
-  const lookup: Record<Scope, Map<string, ActionId>> = { global: new Map(), viewer: new Map() }
-  const chords = {} as Record<ActionId, string[]>
-  const claim = (def: ActionDef, list: readonly string[]): void => {
-    const own: string[] = []
-    for (const chord of list) {
-      if (lookup[def.scope].has(chord)) continue
-      lookup[def.scope].set(chord, def.id as ActionId)
-      own.push(chord)
-    }
-    chords[def.id as ActionId] = own
-  }
-  for (const def of ACTIONS) {
-    const o = overrides.bindings[def.id]
-    if (o) claim(def, o)
-  }
-  for (const def of ACTIONS) {
-    if (!overrides.bindings[def.id]) claim(def, defaultChords(def, mac))
-  }
-  return { lookup, chords }
-}
-
-// Display ------------------------------------------------------------------
-
-const KEY_NAMES: Record<string, string> = {
-  ArrowLeft: "←",
-  ArrowRight: "→",
-  ArrowUp: "↑",
-  ArrowDown: "↓",
-  Delete: "Del",
-  Escape: "Esc",
-  PageUp: "PgUp",
-  PageDown: "PgDn",
-  Plus: "+",
-  Space: "Space",
-}
-
-/** "Mod+Shift+Delete" -> "Ctrl+Shift+Del" (or "⌘⇧Del" on macOS). */
-export function formatChord(chord: string, mac = IS_MAC): string {
-  const parts = chord.split("+")
-  const key = parts.pop()!
-  const name = KEY_NAMES[key] ?? (key.length === 1 ? key.toUpperCase() : key)
-  if (mac) {
-    const sym: Record<string, string> = { Mod: "⌘", Alt: "⌥", Shift: "⇧" }
-    return (
-      parts.map((p) => sym[p]).join("") + (name === "Del" ? "⌦" : name === "Backspace" ? "⌫" : name)
-    )
-  }
-  return [...parts.map((p) => (p === "Mod" ? "Ctrl" : p)), name].join("+")
+export function resolveKeymap(overrides: ShortcutOverrides, mac = core.IS_MAC): Keymap {
+  return core.resolveKeymap<Scope>(
+    ACTIONS,
+    SCOPES,
+    overrides as core.ShortcutOverrides,
+    mac,
+  ) as unknown as Keymap
 }

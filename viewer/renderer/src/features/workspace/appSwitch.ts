@@ -1,9 +1,17 @@
 import type { SharedContext } from "@fastview/contracts"
+import { startSwitchSettingsSync, useSwitchSettings } from "@fastview/renderer-core"
 import { startSharedAppearanceSync } from "@fastview/ui"
 import { bridge, canSwitchApps, isBridgeAvailable } from "../../bridge"
 import { openFolderEntry, useFolderStore } from "../folder/folderStore"
+import { notify } from "../clipboard/clipboard"
 import { getItem } from "../tiles/pageStore"
-import { focusSelectAndReveal, useSelectionStore } from "../tiles/selectionStore"
+import {
+  focusSelectAndReveal,
+  selectIndexRanges,
+  selectionCount,
+  toDescriptor,
+  useSelectionStore,
+} from "../tiles/selectionStore"
 
 /**
  * The connection point to the commander (ADR-0031, docs/shared/APP-SWITCHING.md).
@@ -18,14 +26,25 @@ export function switchToCommander(): void {
   })().catch(() => undefined)
 }
 
-/** Theme and interface size are shared with the commander through library.db. */
+/**
+ * Theme and interface size, and what carries over on a switch, are shared
+ * with the commander through library.db.
+ */
 export function startAppearanceSync(): () => void {
   if (!isBridgeAvailable()) return () => undefined
-  return startSharedAppearanceSync({
+  const port = {
     loadSettings: () => bridge.library().then((l) => l.settings),
-    saveSetting: (key, value) => void bridge.setSetting(key, value).catch(() => undefined),
-    onSettingChanged: (listener) => bridge.on("settings.changed", (e) => listener(e.key, e.value)),
-  })
+    saveSetting: (key: string, value: unknown) =>
+      void bridge.setSetting(key, value).catch(() => undefined),
+    onSettingChanged: (listener: (key: string, value: unknown) => void) =>
+      bridge.on("settings.changed", (e) => listener(e.key, e.value)),
+  }
+  const offAppearance = startSharedAppearanceSync(port)
+  const offSwitch = startSwitchSettingsSync(port)
+  return () => {
+    offAppearance()
+    offSwitch()
+  }
 }
 
 // The shared context, part 1 (Stage C01) ----------------------------------------
@@ -34,11 +53,22 @@ export function startAppearanceSync(): () => void {
 let seenVersion = 0
 let visible = true
 
-async function publishContext(withFocus: boolean): Promise<void> {
-  const folder = useFolderStore.getState().folder
+/**
+ * The folder becomes the context; on a switch also the focused tile and a
+ * multi-selection (a single selected tile is the focus already; Stage C02).
+ */
+async function publishContext(onSwitch: boolean): Promise<void> {
+  const { folder, query } = useFolderStore.getState()
   if (!folder) return
-  const focusId = withFocus ? (getItem(useSelectionStore.getState().focusIndex)?.id ?? null) : null
-  await bridge.publishContext(folder.dirId, focusId)
+  const sel = useSelectionStore.getState()
+  const focusId = onSwitch ? (getItem(sel.focusIndex)?.id ?? null) : null
+  // Omitted when only the folder changed; null on a switch without a multi-selection.
+  const selection = !onSwitch
+    ? undefined
+    : query && selectionCount(sel) > 1
+      ? toDescriptor(sel, query.queryId, query.version)
+      : null
+  await bridge.publishContext(folder.dirId, focusId, selection)
 }
 
 const isFromCommander = (ctx: SharedContext | null): ctx is SharedContext =>
@@ -53,15 +83,46 @@ export async function applyCommanderContext(): Promise<void> {
   const ctx = await bridge.getContext().catch(() => null)
   if (isFromCommander(ctx)) {
     seenVersion = ctx.version
-    if (useFolderStore.getState().folder?.dirId !== ctx.dirId) {
+    const { carry } = useSwitchSettings.getState()
+    if (carry.folder && useFolderStore.getState().folder?.dirId !== ctx.dirId) {
       // A folder deleted in between shows the usual "not found" state.
       await openFolderEntry(ctx.dirId)
-      if (ctx.focusId !== null) await selectEntry(ctx.focusId)
+      if (carry.focus && ctx.focusId !== null) await selectEntry(ctx.focusId)
+      await applySelection(ctx)
       return // the folder change publishes the context
     }
+    if (useFolderStore.getState().folder?.dirId === ctx.dirId) await applySelection(ctx)
   }
   // This app is visible now, so the context names it (the next start opens it).
   await publishContext(false).catch(() => undefined)
+}
+
+/**
+ * The commander's marks become the selection, minus entries the viewer does
+ * not show (Go maps them onto this session; Stage C02).
+ */
+async function applySelection(ctx: SharedContext): Promise<void> {
+  if (ctx.selectionTooLarge) {
+    notify("The selection is too large to carry over")
+    return
+  }
+  const query = useFolderStore.getState().query
+  if (!query || ctx.selectionCount === 0 || !useSwitchSettings.getState().carry.selection) return
+  const d = await bridge.contextSelection(ctx.version, query.queryId).catch(() => null)
+  if (!d || d.ranges.length === 0 || useFolderStore.getState().query?.queryId !== query.queryId) {
+    return
+  }
+  const first = d.ranges[0]![0]
+  const sel = useSelectionStore.getState()
+  // The focus stays on the carried cursor entry when it is among the marks.
+  const focusIndex = d.ranges.some(([a, b]) => sel.focusIndex >= a && sel.focusIndex < b)
+    ? sel.focusIndex
+    : first
+  selectIndexRanges(d.ranges, {
+    anchorIndex: focusIndex,
+    focusIndex,
+    focusId: getItem(focusIndex)?.id ?? null,
+  })
 }
 
 async function selectEntry(entryId: number): Promise<void> {

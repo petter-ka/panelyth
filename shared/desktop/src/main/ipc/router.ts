@@ -136,6 +136,10 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
   if (app === "viewer" && method === "query.open" && p.scope === "all") {
     return "the viewer lists media only"
   }
+  // The commander's file operations arrive in Stage C04; until then only folder sizes.
+  if (app === "commander" && method === "jobs.start" && p.kind !== "dirSize") {
+    return "the commander can only calculate folder sizes yet"
+  }
   return null
 }
 

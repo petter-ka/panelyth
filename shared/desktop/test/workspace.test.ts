@@ -71,7 +71,10 @@ describe("workspace handlers", () => {
   it("never opens other files, such as executables (ADR-0026, ADR-0027)", async () => {
     for (const kind of ["file", "link"]) {
       const { h, deps } = setup({
-        call: (async () => ({ path: join(tmpdir(), "tool.exe"), kind })) as unknown as WorkspaceDeps["call"],
+        call: (async () => ({
+          path: join(tmpdir(), "tool.exe"),
+          kind,
+        })) as unknown as WorkspaceDeps["call"],
       })
       await expect(h["shell.open"](ev, { entryId: 9 })).rejects.toThrow("cannot be opened")
       expect(deps.openPath).not.toHaveBeenCalled()

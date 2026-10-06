@@ -1,5 +1,5 @@
 import { WebContentsView, type BrowserWindow, type WebContents } from "electron"
-import type { AppId } from "@fastview/contracts"
+import { readSwitchSettings, SHARED_SWITCH_KEY, type AppId } from "@fastview/contracts"
 import { broadcast } from "./ipc/router"
 import { perfMark } from "./perf"
 import { hardenWebContents } from "./security"
@@ -8,6 +8,17 @@ import { securePreferences } from "./window"
 export const APP_TITLES: Record<AppId, string> = {
   viewer: "FastView",
   commander: "FastView Commander",
+}
+
+/**
+ * The app shown at start (ADR-0031): Settings → General "Start with", or on
+ * "last used app" the app named by the persisted shared context.
+ */
+export function startAppFrom(settings: Record<string, unknown>): AppId {
+  const { startWith } = readSwitchSettings(settings[SHARED_SWITCH_KEY])
+  if (startWith !== "last") return startWith
+  const context = settings["shared.context"] as { app?: unknown } | undefined
+  return context?.app === "commander" ? "commander" : "viewer"
 }
 
 export interface CommanderView {

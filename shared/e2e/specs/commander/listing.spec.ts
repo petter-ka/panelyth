@@ -1,163 +1,28 @@
-import { execFileSync } from "node:child_process"
-import {
-  appendFileSync,
-  mkdirSync,
-  mkdtempSync,
-  readdirSync,
-  rmSync,
-  statSync,
-  writeFileSync,
-} from "node:fs"
+import { appendFileSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
-import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
+import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { commanderPage, launchApp, repoRoot, shellState, waitForReady } from "../../launch"
+import { repoRoot, shellState } from "../../launch"
+import {
+  commanderOf,
+  cursorTo,
+  folderOf,
+  goTo,
+  launch,
+  mixedFolder,
+  scrollPanel,
+  visibleRows,
+} from "./helpers"
 
 // Stage C01: panels and listing, and the shared context part 1
 // (docs/commander/stages/C01-panels-and-listing.md; scenarios 1-4, 16 and 18
 // of docs/commander/TESTING.md). Measurements go to stage-C01-…-e2e-listing.
 
-type Side = "left" | "right"
-
 function writeResult(result: object): void {
   const date = new Date().toISOString().slice(0, 10)
   const file = join(repoRoot, "shared", "bench", "results", `stage-C01-${date}-e2e-listing.jsonl`)
   appendFileSync(file, JSON.stringify({ at: new Date().toISOString(), ...result }) + "\n")
-}
-
-/** A small mixed folder: two subfolders, images, a text file and a hidden file. */
-function mixedFolder(): string {
-  const root = mkdtempSync(join(tmpdir(), "fastview-c01-"))
-  mkdirSync(join(root, "alpha"))
-  mkdirSync(join(root, "beta"))
-  writeFileSync(join(root, "alpha", "inner.txt"), "x")
-  for (const name of ["a1.jpg", "a2.jpg", "a3.png"]) writeFileSync(join(root, name), "")
-  writeFileSync(join(root, "notes.txt"), "hello")
-  const hidden = join(root, process.platform === "win32" ? "secret.txt" : ".secret.txt")
-  writeFileSync(hidden, "")
-  if (process.platform === "win32") execFileSync("attrib", ["+h", hidden])
-  return root
-}
-
-function folderOf(files: number): string {
-  const root = mkdtempSync(join(tmpdir(), `fastview-c01-${files}-`))
-  for (let i = 0; i < files; i++)
-    writeFileSync(join(root, `f${String(i).padStart(5, "0")}.txt`), "")
-  return root
-}
-
-/** Launches with the commander enabled; reuses profile dirs when given. */
-async function launch(start: "viewer" | "commander" | "", dirs: Record<string, string> = {}) {
-  const launched = await launchApp({
-    FASTVIEW_COMMANDER: "1",
-    FASTVIEW_START_APP: start,
-    ...dirs,
-  })
-  await waitForReady(launched.page)
-  return launched
-}
-
-/**
- * Navigates a panel through its path bar and returns the time from Enter
- * to the first entry row painted with the new folder (in-page clock).
- */
-async function goTo(c: Page, side: Side, path: string): Promise<number> {
-  await c.getByTestId(`path-${side}`).click()
-  await c.getByRole("textbox", { name: "Path" }).fill(path)
-  return c.evaluate(
-    ({ side, path }) => {
-      const input = document.querySelector<HTMLInputElement>('input[aria-label="Path"]')!
-      const t0 = performance.now()
-      input.dispatchEvent(new KeyboardEvent("keydown", { key: "Enter", bubbles: true }))
-      return new Promise<number>((resolve, reject) => {
-        const tick = (): void => {
-          const shown = document.querySelector(`[data-testid="path-${side}"]`)?.textContent ?? ""
-          const grid = document.querySelector(`[data-testid="grid-${side}"]`)
-          if (shown.toLowerCase() === path.toLowerCase() && grid?.querySelector("[data-id]")) {
-            resolve(performance.now() - t0)
-          } else if (performance.now() - t0 > 30_000) reject(new Error(`no rows for ${path}`))
-          else requestAnimationFrame(tick)
-        }
-        requestAnimationFrame(tick)
-      })
-    },
-    { side, path },
-  )
-}
-
-/** Puts the cursor on the row whose name cell starts with `name`. */
-async function cursorTo(c: Page, side: Side, name: string): Promise<void> {
-  const grid = c.getByTestId(`grid-${side}`)
-  await grid.locator("[data-id]", { hasText: name }).first().click()
-  await expect(grid.locator("[data-cursor=true]")).toContainText(name)
-}
-
-interface ScrollResult {
-  frames: number
-  p95FrameMs: number
-  maxFrameGapMs: number
-  longTasks: number
-  longTaskMaxMs: number
-  maxMountedRows: number
-}
-
-/** Scrolls a panel's body for `ms`, counting frames, long tasks and mounted rows. */
-function scrollPanel(c: Page, side: Side, ms: number, pxPerFrame: number): Promise<ScrollResult> {
-  return c.evaluate(
-    async ({ side, ms, pxPerFrame }) => {
-      const grid = document.querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)!
-      const body = grid.children[1] as HTMLElement
-      const long: number[] = []
-      const po = new PerformanceObserver((l) =>
-        l.getEntries().forEach((e) => long.push(e.duration)),
-      )
-      po.observe({ type: "longtask" })
-      const gaps: number[] = []
-      let maxRows = 0
-      await new Promise<void>((resolve) => {
-        const start = performance.now()
-        let last = start
-        const tick = (t: number): void => {
-          gaps.push(t - last)
-          last = t
-          maxRows = Math.max(maxRows, grid.querySelectorAll("[data-row]").length)
-          body.scrollTop += pxPerFrame
-          if (t - start < ms) requestAnimationFrame(tick)
-          else resolve()
-        }
-        requestAnimationFrame(tick)
-      })
-      await new Promise((r) => setTimeout(r, 300))
-      po.disconnect()
-      const sorted = gaps.slice(1).sort((a, b) => a - b)
-      return {
-        frames: sorted.length,
-        p95FrameMs: Math.round(sorted[Math.floor(sorted.length * 0.95)] ?? 0),
-        maxFrameGapMs: Math.round(sorted.at(-1) ?? 0),
-        longTasks: long.length,
-        longTaskMaxMs: Math.round(Math.max(0, ...long)),
-        maxMountedRows: maxRows,
-      }
-    },
-    { side, ms, pxPerFrame },
-  )
-}
-
-const visibleRows = (c: Page, side: Side) =>
-  c.evaluate((side) => {
-    const grid = document.querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)!
-    const body = grid.children[1] as HTMLElement
-    const row = grid.querySelector<HTMLElement>("[data-row]")
-    return Math.ceil(body.clientHeight / (row?.offsetHeight || 22))
-  }, side)
-
-async function commanderOf(app: ElectronApplication): Promise<Page> {
-  const c = await commanderPage(app)
-  await expect(c.getByTestId("sidecar-status")).toHaveAttribute("data-state", "ready", {
-    timeout: 15_000,
-  })
-  return c
 }
 
 test.describe("commander listing (Stage C01)", () => {

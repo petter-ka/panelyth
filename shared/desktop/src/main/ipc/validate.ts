@@ -61,6 +61,9 @@ const empty: Validator = (p) =>
   p === undefined || (isPlainObject(p) && Object.keys(p).length === 0) ? null : "expected no params"
 
 const MAX_ECHO_CHARS = 1024 * 1024
+const MAX_BOOKMARKS = 500 // library.MaxBookmarks
+const MAX_GROUP_CHARS = 128 // library.MaxGroupLen (bytes; checked again in Go)
+const isGroup = (v: unknown): v is string => typeof v === "string" && v.length <= MAX_GROUP_CHARS
 const MAX_PATH_CHARS = 32_767 // Windows extended-length limit
 const sortFields: ReadonlySet<unknown> = new Set(SORT_FIELDS)
 const kinds: ReadonlySet<unknown> = new Set(ENTRY_KINDS)
@@ -123,6 +126,7 @@ function jobStartProblem(p: unknown): string | null {
       return pathProblem(p.destination) ?? sourceProblem(p.source)
     case "trash":
     case "delete":
+    case "dirSize":
       return shape(p, ["kind", "source"]) ? sourceProblem(p.source) : "expected { kind, source }"
     case "rename":
       if (!shape(p, ["kind", "source", "pattern", "start"]))
@@ -277,13 +281,37 @@ export const validators: Record<RendererMethod, Validator> = {
     shape(p, ["queryId", "entryId"]) && isId(p.queryId) && isId(p.entryId)
       ? null
       : "expected { queryId, entryId }",
-  "context.publish": (p) =>
-    shape(p, ["app", "dirId", "focusId"]) &&
-    (p.app === "viewer" || p.app === "commander") &&
-    isId(p.dirId) &&
-    (p.focusId === null || isId(p.focusId))
+  "context.publish": (p) => {
+    if (
+      !shapeWithOptional(p, ["app", "dirId", "focusId"], ["selection"]) ||
+      (p.app !== "viewer" && p.app !== "commander") ||
+      !isId(p.dirId) ||
+      (p.focusId !== null && !isId(p.focusId))
+    )
+      return "expected { app, dirId, focusId, selection? }"
+    return p.selection === undefined || p.selection === null ? null : selectionProblem(p.selection)
+  },
+  "selection.fromContext": (p) =>
+    shape(p, ["version", "queryId"]) && isId(p.version) && isId(p.queryId)
       ? null
-      : "expected { app, dirId, focusId }",
+      : "expected { version, queryId }",
+  "query.locate": (p) =>
+    shape(p, ["queryId", "pattern", "from", "direction"]) &&
+    isId(p.queryId) &&
+    typeof p.pattern === "string" &&
+    p.pattern.length <= MAX_SEARCH_CHARS &&
+    Number.isSafeInteger(p.from) &&
+    (p.direction === "forward" || p.direction === "backward")
+      ? null
+      : "expected { queryId, pattern, from, direction }",
+  "query.match": (p) =>
+    shape(p, ["queryId", "mask"]) &&
+    isId(p.queryId) &&
+    typeof p.mask === "string" &&
+    p.mask.length > 0 &&
+    p.mask.length <= MAX_NAME_MASK_CHARS
+      ? null
+      : "expected { queryId, mask }",
   "context.get": empty,
   "query.facets": (p) => (shape(p, ["queryId"]) && isId(p.queryId) ? null : "expected { queryId }"),
   "selection.info": selectionParams,
@@ -306,11 +334,24 @@ export const validators: Record<RendererMethod, Validator> = {
     return json.length > MAX_SETTING_JSON_CHARS ? "value too large" : null
   },
   "library.addBookmark": (p) => {
-    if (!shape(p, ["path", "label"])) return "expected { path, label }"
+    if (!shapeWithOptional(p, ["path", "label"], ["group"]))
+      return "expected { path, label, group? }"
     if (typeof p.label !== "string" || p.label.length > 256) return "invalid label"
+    if (p.group !== undefined && !isGroup(p.group)) return "invalid group"
     return pathProblem(p.path)
   },
   "library.removeBookmark": (p) => (shape(p, ["id"]) && isId(p.id) ? null : "expected { id }"),
+  "library.updateBookmark": (p) => {
+    if (!shape(p, ["id", "path", "label", "group"])) return "expected { id, path, label, group }"
+    if (!isId(p.id)) return "invalid id"
+    if (typeof p.label !== "string" || p.label.length > 256) return "invalid label"
+    if (!isGroup(p.group)) return "invalid group"
+    return pathProblem(p.path)
+  },
+  "library.reorderBookmarks": (p) =>
+    shape(p, ["ids"]) && Array.isArray(p.ids) && p.ids.length <= MAX_BOOKMARKS && p.ids.every(isId)
+      ? null
+      : "expected { ids } (at most 500)",
   "places.list": empty,
   "shell.open": entryParams,
   "shell.reveal": entryParams,

@@ -33,6 +33,12 @@ scrolling surface.
 - Tile-view navigation (arrows, Enter, Ctrl+A, type-to-select) stays fixed in the foundation.
 - The shortcuts dialog (F1, Ctrl+/, or the keyboard button in the status bar) lists every action and can record a
   new chord or reset to the default.
+- **Shared engine (Stage C02, 2026-10-05):** the engine (chords, override validation, resolution per scope, display)
+  lives in `shared/renderer-core/src/keymap.ts` and the dialog in `shared/ui` (`ShortcutsDialog`); each app keeps its
+  own registry and scopes (viewer: `global`, `viewer`, setting `shortcuts`; commander: `shell`, `panels`, setting
+  `commander.shortcuts`). Numeric-keypad keys are their own chords — `Num+`, `Num-`, `Num*`, told apart by
+  `KeyboardEvent.code` — so the commander's Total Commander keys (Num+ mark by mask, Num* invert) never collide with
+  `Plus`, `-` or `*` on the main keyboard.
 
 ### Color labels (`library.db` migration 3)
 

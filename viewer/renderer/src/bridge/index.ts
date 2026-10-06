@@ -118,9 +118,22 @@ export const bridge = {
   indexOf: (queryId: number, entryId: number): Promise<QueryIndexOfResult> =>
     unwrap(() => api().query.indexOf(queryId, entryId)),
   /** The shared context (ADR-0031); only while the commander is enabled. */
-  publishContext: async (dirId: number, focusId: number | null): Promise<void> => {
+  publishContext: async (
+    dirId: number,
+    focusId: number | null,
+    /** Omitted when only the folder changed (the carried selection stays readable). */
+    selection?: SelectionDescriptor | null,
+  ): Promise<void> => {
     const context = api().context
-    if (context) await unwrap(() => context.publish(dirId, focusId))
+    if (context) await unwrap(() => context.publish(dirId, focusId, selection))
+  },
+  /** The carried selection as ranges of this session (Stage C02). */
+  contextSelection: async (
+    version: number,
+    queryId: number,
+  ): Promise<SelectionDescriptor | null> => {
+    const context = api().context
+    return context ? unwrap(() => context.selection(version, queryId)) : null
   },
   getContext: async (): Promise<SharedContext | null> => {
     const context = api().context

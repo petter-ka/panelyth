@@ -7,15 +7,9 @@ import { AppShell } from "./components/AppShell"
 import { OVERSCAN, ROW_HEIGHT } from "./components/FullView"
 import { applyContext, resetCarry, startPanels } from "./features/carry"
 import { formatAttrs } from "./features/format"
-import {
-  DEFAULT_COLUMNS,
-  PANELS_KEY,
-  pageStoreOf,
-  readStoredPanels,
-  resetListing,
-  useListingStore,
-} from "./features/listing"
+import { DEFAULT_COLUMNS, pageStoreOf, resetListing, useListingStore } from "./features/listing"
 import { usePanelsStore } from "./features/panels"
+import { PANELS_KEY, readStoredPanels } from "./features/session"
 import { folder, installFakeCommander, item, type FakeOptions } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
 
@@ -38,7 +32,7 @@ let stop: (() => void) | null = null
 
 async function start(options: Partial<FakeOptions> = {}) {
   const fake = installFakeCommander({
-    folders: [home(), pics(), big()],
+    folders: [home(), pics()],
     home: HOME.path,
     volumes: [
       {
@@ -114,6 +108,7 @@ describe("listing (Stage C01)", () => {
 
   it("mounts and pages only the visible window of a 100k folder", async () => {
     const fake = await start({
+      folders: [home(), pics(), big()],
       settings: { [PANELS_KEY]: { v: 1, active: "left", left: { path: BIG.path } } },
     })
     await waitFor(() => expect(within(grid("left")).getByText("file000000")).toBeInTheDocument())
@@ -222,12 +217,12 @@ describe("listing (Stage C01)", () => {
     })
     const stored = readStoredPanels(fake.settings[PANELS_KEY])
     expect(stored.left).toMatchObject({
-      path: HOME.path,
+      tabs: [{ path: HOME.path }],
       columns: { ext: DEFAULT_COLUMNS.ext + 40 },
     })
   })
 
-  it("restores the persisted folders, sorts and active panel", async () => {
+  it("restores the folders, sorts and active panel stored before tabs (v1)", async () => {
     const fake = await start({
       settings: {
         [PANELS_KEY]: {
@@ -245,7 +240,10 @@ describe("listing (Stage C01)", () => {
     expect(right.showHidden).toBe(true)
     // Invalid widths fall back to the defaults.
     expect(right.columns).toEqual({ ...DEFAULT_COLUMNS, ext: 90 })
-    expect(fake.api.places.list).not.toHaveBeenCalled()
+    // No home lookup: both panels had a folder.
+    expect(fake.api.dir.open.mock.calls.map(([p]) => p.path).sort()).toEqual(
+      [HOME.path, PICS.path].sort(),
+    )
   })
 
   it("shows the status line: count, listing progress with Stop, free space", async () => {
@@ -329,7 +327,15 @@ describe("listing (Stage C01)", () => {
 describe("the shared context, part 1 (Stage C01)", () => {
   it("opens the viewer's folder in the active panel with the cursor on its focused tile", async () => {
     const fake = await start({
-      context: { version: 3, app: "viewer", dirId: 10, path: HOME.path, focusId: 10_000_003 },
+      context: {
+        version: 3,
+        app: "viewer",
+        dirId: 10,
+        path: HOME.path,
+        focusId: 10_000_003,
+        selectionCount: 0,
+        selectionTooLarge: false,
+      },
       settings: {
         [PANELS_KEY]: {
           v: 1,
@@ -373,7 +379,7 @@ describe("the shared context, part 1 (Stage C01)", () => {
     fake.api.context.publish.mockClear()
     fireEvent.click(screen.getByRole("button", { name: "Switch to Viewer" }))
     await waitFor(() => expect(fake.api.app.switch).toHaveBeenCalledWith("viewer"))
-    expect(fake.api.context.publish).toHaveBeenCalledWith(10, 10_000_001)
+    expect(fake.api.context.publish).toHaveBeenCalledWith(10, 10_000_001, null)
     expect(fake.api.context.publish.mock.invocationCallOrder[0]!).toBeLessThan(
       fake.api.app.switch.mock.invocationCallOrder[0]!,
     )
@@ -381,7 +387,7 @@ describe("the shared context, part 1 (Stage C01)", () => {
 
   it("names this app in the context when its active folder changes while visible", async () => {
     const fake = await start()
-    await waitFor(() => expect(fake.api.context.publish).toHaveBeenCalledWith(10, null))
+    await waitFor(() => expect(fake.api.context.publish).toHaveBeenCalledWith(10, null, undefined))
     await act(async () => fake.emit("app.visibility", { app: "commander", visible: false }))
     fake.api.context.publish.mockClear()
     const { openPath } = await import("./features/listing")

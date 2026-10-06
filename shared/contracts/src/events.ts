@@ -1,10 +1,12 @@
 import type {
   AppId,
+  Bookmark,
   FolderCoverItem,
   JobSnapshot,
   PreviewItem,
   QuerySnapshot,
   SidecarStatus,
+  Volume,
 } from "./rpc"
 
 export type ScanState = "running" | "completed" | "cancelled" | "failed"
@@ -45,6 +47,10 @@ export interface EventMap {
   "app.visibility": { app: AppId; visible: boolean }
   /** From main: a shared.* setting changed, so the other app can apply it (ADR-0031). */
   "settings.changed": { key: string; value: unknown }
+  /** Drives came or went (Stage C03): the new list, coalesced. */
+  "volumes.changed": { volumes: Volume[] }
+  /** The shared bookmarks (the hotlist) changed in either app: the whole list (Stage C03). */
+  "bookmarks.changed": { bookmarks: Bookmark[] }
 }
 
 export type EventChannel = keyof EventMap
@@ -58,6 +64,8 @@ export const EVENT_CHANNELS = [
   "job.progress",
   "app.visibility",
   "settings.changed",
+  "volumes.changed",
+  "bookmarks.changed",
 ] as const satisfies readonly EventChannel[]
 
 /** Channels produced by the Go sidecar and forwarded by main unchanged. */
@@ -67,6 +75,8 @@ export const SIDECAR_EVENT_CHANNELS = [
   "preview.ready",
   "folder.covers",
   "job.progress",
+  "volumes.changed",
+  "bookmarks.changed",
 ] as const satisfies readonly EventChannel[]
 
 /** Payload of the single Electron push channel (IPC_EVENT). */

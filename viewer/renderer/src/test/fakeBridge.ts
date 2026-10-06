@@ -66,7 +66,7 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
       ["/photos", ["Trip", "Family"]],
     ]),
     settings: {} as Record<string, unknown>,
-    bookmarks: [] as { id: number; path: string; label: string }[],
+    bookmarks: [] as { id: number; path: string; label: string; group: string }[],
     recent: [] as { path: string; lastOpenedAt: number }[],
     clip: { mode: "", count: 0 } as ClipState,
     nextJob: 1,
@@ -279,6 +279,7 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
           id: backend.bookmarks.length + 1,
           path,
           label: label || path.split("/").pop() || path,
+          group: "",
         }
         backend.bookmarks.push(b)
         return ok(b)

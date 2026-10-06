@@ -1,0 +1,15 @@
+{
+  "id": 66,
+  "ok": true,
+  "r": {
+    "count": 1,
+    "ranges": [
+      [
+        1,
+        2
+      ]
+    ],
+    "version": 1
+  },
+  "t": "res"
+}

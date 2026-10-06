@@ -8,6 +8,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
     "@fastview/contracts": "workspace:*",
     "@playwright/test": "1.63.0",
     "@types/node": "24.19.0",

@@ -78,6 +78,9 @@ var migrations = []string{
 		PRIMARY KEY (collection_id, path_key)
 	) WITHOUT ROWID;
 	CREATE INDEX collection_items_by_key ON collection_items(path_key);`,
+	// 4: bookmark groups (Stage C03): the commander's hotlist groups the
+	// shared bookmarks; "" is no group (the viewer shows a flat list).
+	`ALTER TABLE bookmarks ADD COLUMN group_name TEXT NOT NULL DEFAULT '';`,
 }
 
 // Limits keep user-controlled data bounded.
@@ -186,16 +189,22 @@ func (l *Library) SetSetting(ctx context.Context, key string, value json.RawMess
 	return err
 }
 
-// Bookmark is a pinned folder.
+// Bookmark is a pinned folder: the viewer's bookmarks and the commander's
+// directory hotlist are this one list (ADR-0031).
 type Bookmark struct {
 	ID    int64  `json:"id"`
 	Path  string `json:"path"`
 	Label string `json:"label"`
+	// Group is the hotlist group ("" = none; Stage C03).
+	Group string `json:"group"`
 }
+
+// MaxGroupLen bounds a group name (bytes).
+const MaxGroupLen = 128
 
 // Bookmarks returns bookmarks in display order.
 func (l *Library) Bookmarks(ctx context.Context) ([]Bookmark, error) {
-	rows, err := l.db.QueryContext(ctx, `SELECT id, path, label FROM bookmarks ORDER BY position, id`)
+	rows, err := l.db.QueryContext(ctx, `SELECT id, path, label, group_name FROM bookmarks ORDER BY position, id`)
 	if err != nil {
 		return nil, err
 	}
@@ -203,7 +212,7 @@ func (l *Library) Bookmarks(ctx context.Context) ([]Bookmark, error) {
 	out := []Bookmark{}
 	for rows.Next() {
 		var b Bookmark
-		if err := rows.Scan(&b.ID, &b.Path, &b.Label); err != nil {
+		if err := rows.Scan(&b.ID, &b.Path, &b.Label, &b.Group); err != nil {
 			return nil, err
 		}
 		out = append(out, b)
@@ -211,9 +220,14 @@ func (l *Library) Bookmarks(ctx context.Context) ([]Bookmark, error) {
 	return out, rows.Err()
 }
 
-// AddBookmark appends a folder (idempotent per path).
-func (l *Library) AddBookmark(ctx context.Context, path, label string) (Bookmark, error) {
-	if path == "" || len(path) > 32767 || len(label) > 256 {
+func validBookmark(path, label, group string) bool {
+	return path != "" && len(path) <= 32767 && len(label) <= 256 && len(group) <= MaxGroupLen
+}
+
+// AddBookmark appends a folder (idempotent per path: an existing bookmark
+// is returned unchanged).
+func (l *Library) AddBookmark(ctx context.Context, path, label, group string) (Bookmark, error) {
+	if !validBookmark(path, label, group) {
 		return Bookmark{}, ErrInvalid
 	}
 	if label == "" {
@@ -224,7 +238,8 @@ func (l *Library) AddBookmark(ctx context.Context, path, label string) (Bookmark
 		return Bookmark{}, err
 	}
 	var existing Bookmark
-	err := l.db.QueryRowContext(ctx, `SELECT id, path, label FROM bookmarks WHERE path = ?`, path).Scan(&existing.ID, &existing.Path, &existing.Label)
+	err := l.db.QueryRowContext(ctx, `SELECT id, path, label, group_name FROM bookmarks WHERE path = ?`, path).
+		Scan(&existing.ID, &existing.Path, &existing.Label, &existing.Group)
 	if err == nil {
 		return existing, nil
 	}
@@ -234,13 +249,89 @@ func (l *Library) AddBookmark(ctx context.Context, path, label string) (Bookmark
 	if n >= MaxBookmarks {
 		return Bookmark{}, ErrTooManyItems
 	}
-	res, err := l.db.ExecContext(ctx, `INSERT INTO bookmarks (path, label, position, created_at)
-		VALUES (?, ?, COALESCE((SELECT MAX(position) FROM bookmarks), 0) + 1, ?)`, path, label, time.Now().UnixMilli())
+	res, err := l.db.ExecContext(ctx, `INSERT INTO bookmarks (path, label, group_name, position, created_at)
+		VALUES (?, ?, ?, COALESCE((SELECT MAX(position) FROM bookmarks), 0) + 1, ?)`, path, label, group, time.Now().UnixMilli())
 	if err != nil {
 		return Bookmark{}, err
 	}
 	id, _ := res.LastInsertId()
-	return Bookmark{ID: id, Path: path, Label: label}, nil
+	return Bookmark{ID: id, Path: path, Label: label, Group: group}, nil
+}
+
+// ErrDuplicate is returned when an edit would give two bookmarks one path.
+var ErrDuplicate = errors.New("library: another bookmark has this path")
+
+// UpdateBookmark changes a bookmark's path, label and group (hotlist edit).
+func (l *Library) UpdateBookmark(ctx context.Context, b Bookmark) (Bookmark, error) {
+	if !validBookmark(b.Path, b.Label, b.Group) {
+		return Bookmark{}, ErrInvalid
+	}
+	if b.Label == "" {
+		b.Label = filepath.Base(b.Path)
+	}
+	var other int64
+	err := l.db.QueryRowContext(ctx, `SELECT id FROM bookmarks WHERE path = ? AND id <> ?`, b.Path, b.ID).Scan(&other)
+	if err == nil {
+		return Bookmark{}, ErrDuplicate
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return Bookmark{}, err
+	}
+	res, err := l.db.ExecContext(ctx, `UPDATE bookmarks SET path = ?, label = ?, group_name = ? WHERE id = ?`,
+		b.Path, b.Label, b.Group, b.ID)
+	if err != nil {
+		return Bookmark{}, err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return Bookmark{}, ErrNotFound
+	}
+	return b, nil
+}
+
+// ReorderBookmarks puts the listed bookmarks first, in the given order;
+// bookmarks not listed keep their relative order after them. Unknown ids
+// are ignored.
+func (l *Library) ReorderBookmarks(ctx context.Context, ids []int64) error {
+	if len(ids) > MaxBookmarks {
+		return ErrInvalid
+	}
+	current, err := l.Bookmarks(ctx)
+	if err != nil {
+		return err
+	}
+	order := make([]int64, 0, len(current))
+	listed := make(map[int64]bool, len(ids))
+	known := make(map[int64]bool, len(current))
+	for _, b := range current {
+		known[b.ID] = true
+	}
+	for _, id := range ids {
+		if known[id] && !listed[id] {
+			listed[id] = true
+			order = append(order, id)
+		}
+	}
+	for _, b := range current {
+		if !listed[b.ID] {
+			order = append(order, b.ID)
+		}
+	}
+	tx, err := l.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	stmt, err := tx.PrepareContext(ctx, `UPDATE bookmarks SET position = ? WHERE id = ?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for i, id := range order {
+		if _, err := stmt.ExecContext(ctx, i+1, id); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // RemoveBookmark deletes one bookmark; ErrNotFound if it did not exist.

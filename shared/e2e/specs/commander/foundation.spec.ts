@@ -45,28 +45,40 @@ test.describe("commander foundation (Stage C00)", () => {
           app: Object.keys(api.app ?? {}).sort(),
           library: Object.keys(api.library ?? {}).sort(),
           query: Object.keys(api.query ?? {}).sort(),
+          jobs: Object.keys(api.jobs ?? {}).sort(),
         }
       })
       expect(probe).toEqual({
         require: "undefined",
         process: "undefined",
         ipcRenderer: "undefined",
-        // Stage C01 added listing, free space, home and the shared context.
+        // Stage C01 added listing, free space, home and the shared context;
+        // C02 marks (selection) and folder sizes (jobs).
         apiKeys: [
           "app",
           "context",
           "dir",
           "fs",
+          "jobs",
           "library",
           "onEvent",
           "places",
           "query",
+          "selection",
           "sidecar",
           "system",
         ],
         app: ["exit", "switch"],
-        library: ["get", "setSetting"],
-        query: ["close", "indexOf", "open", "page"],
+        library: [
+          "addBookmark",
+          "get",
+          "removeBookmark",
+          "reorderBookmarks",
+          "setSetting",
+          "updateBookmark",
+        ],
+        query: ["close", "indexOf", "locate", "match", "open", "page"],
+        jobs: ["cancel", "dirSize"],
       })
     } finally {
       await app.close()

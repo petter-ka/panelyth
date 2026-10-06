@@ -29,7 +29,7 @@ func validate(s Spec) error {
 		if s.Conflict != ConflictKeepBoth && s.Conflict != ConflictSkip && s.Conflict != ConflictReplace {
 			return fmt.Errorf("%w: unknown conflict policy %q", ErrInvalid, s.Conflict)
 		}
-	case KindTrash, KindDelete, KindFavorite:
+	case KindTrash, KindDelete, KindFavorite, KindDirSize:
 	case KindRename:
 		if _, err := ParsePattern(s.Pattern); err != nil {
 			return fmt.Errorf("%w: the pattern needs {name} or {n} and only those tokens", ErrInvalid)
@@ -118,6 +118,8 @@ func (m *Manager) execute(j *job) (State, string) {
 		err = m.rename(j, a)
 	case KindFavorite, KindRating, KindTag, KindLabel:
 		msg, err = m.annotate(j, a)
+	case KindDirSize:
+		err = m.dirSizes(j)
 	}
 	a.flush()
 	switch {

@@ -17,7 +17,8 @@ func idsJSON(ids []int64) (string, error) {
 }
 
 // Summary aggregates a set of entries (selection count and size). Folder
-// sizes are not recursive: folders count, their contents do not.
+// sizes are not recursive: folders count, their contents only once a folder
+// size was calculated (Stage C02, dirSize jobs).
 type Summary struct {
 	Count  int   `json:"count"`
 	Bytes  int64 `json:"bytes"`
@@ -36,7 +37,7 @@ func (s *Store) Summarize(ctx context.Context, ids []int64) (Summary, error) {
 	if err != nil {
 		return sum, err
 	}
-	rows, err := s.r.QueryContext(ctx, `SELECT kind, COUNT(*), COALESCE(SUM(size_bytes), 0) FROM entries
+	rows, err := s.r.QueryContext(ctx, `SELECT kind, COUNT(*), COALESCE(SUM(CASE kind WHEN 0 THEN COALESCE(dir_size_bytes, 0) ELSE size_bytes END), 0) FROM entries
 		WHERE id IN (SELECT value FROM json_each(?)) GROUP BY kind`, js)
 	if err != nil {
 		return sum, err

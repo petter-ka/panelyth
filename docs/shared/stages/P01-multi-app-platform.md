@@ -21,8 +21,12 @@ Done, because Stage C00 needs it:
   the theme and interface-size stores (now synced through `shared.appearance`) and the app switch button. The viewer
   re-exports them, so its imports did not change.
 
-Still open: the rest of scope 2 (`shared/renderer-core`: bridge core, page store, selection algebra, the keymap
-engine, settings and sidecar stores; the remaining UI primitives) and its bundle-size check.
+Moved since, by the commander stages that needed them (2026-10-05): the page store (C01), the selection algebra, the
+keymap engine and the switch-settings store (`shared/renderer-core`, C02), and `Button`, `Kbd`, `DialogWindow` and the
+shortcuts dialog (`shared/ui`, C02); the viewer re-exports or wraps them, so its imports and behavior did not change.
+
+Still open: the rest of scope 2 (`shared/renderer-core`: bridge core, settings and sidecar stores; the remaining UI
+primitives: menus, icons) and its bundle-size check.
 
 ## Objective
 

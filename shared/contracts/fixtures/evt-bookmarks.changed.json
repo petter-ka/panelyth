@@ -1,0 +1,15 @@
+{
+  "ch": "bookmarks.changed",
+  "p": {
+    "bookmarks": [
+      {
+        "group": "Work",
+        "id": 1,
+        "label": "Golden",
+        "path": "/fixtures/golden"
+      }
+    ]
+  },
+  "seq": 1,
+  "t": "evt"
+}

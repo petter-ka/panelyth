@@ -313,6 +313,8 @@ export interface ContentItem {
   label: number
   /** ENTRY_ATTRS bits; omitted when 0. */
   attrs?: number
+  /** Folders: the calculated size of everything below (Stage C02 dirSize jobs); omitted until calculated. */
+  dirSizeBytes?: number
   /** Cached thumbnail for the page's thumbProfile, or null. */
   thumb: Thumb | null
 }
@@ -332,6 +334,35 @@ export interface QueryIndexOfResult {
   /** -1 when the entry is not in the session. */
   index: number
   version: number
+}
+
+/** Quick search (Stage C02): the next name match at or after `from` (before it, backward), wrapping. */
+export interface QueryLocateParams {
+  queryId: number
+  /** Prefix matches win over substring matches; "*" and "?" are wildcards. */
+  pattern: string
+  from: number
+  direction: "forward" | "backward"
+}
+
+export interface QueryLocateResult {
+  /** -1 when nothing matches. */
+  index: number
+  version: number
+}
+
+/** Marking by mask (Stage C02): the files (never folders) matching a name mask. */
+export interface QueryMatchParams {
+  queryId: number
+  /** The nameMask syntax: "*.jpg;*.png|*_small.*". */
+  mask: string
+}
+
+export interface QueryMatchResult {
+  version: number
+  /** [start, end) indexes into the session at `version`. */
+  ranges: [number, number][]
+  count: number
 }
 
 export interface QueryCloseParams {
@@ -489,6 +520,11 @@ export interface Volume {
    */
   freeBytes?: number
   totalBytes?: number
+  /**
+   * A drive without media, a disconnected share, or one that did not answer
+   * within its timeout (Stage C03); its space is then unknown.
+   */
+  notReady?: boolean
 }
 
 export interface VolumesResult {
@@ -513,10 +549,13 @@ export interface ListDirsResult {
   truncated: boolean
 }
 
+/** The viewer's bookmarks are the commander's directory hotlist: one list (ADR-0031). */
 export interface Bookmark {
   id: number
   path: string
   label: string
+  /** Hotlist group (Stage C03); "" = none. The viewer shows a flat list. */
+  group: string
 }
 
 export interface RecentFolder {
@@ -545,6 +584,22 @@ export interface AddBookmarkParams {
   path: string
   /** "" = the folder name. */
   label: string
+  /** Hotlist group; omitted or "" = none (Stage C03). */
+  group?: string
+}
+
+/** Hotlist edit (Stage C03); another bookmark with the path fails with reason "duplicate". */
+export interface UpdateBookmarkParams {
+  id: number
+  path: string
+  /** "" = the folder name. */
+  label: string
+  group: string
+}
+
+/** The listed bookmarks first, in this order; the rest keep their order after them. */
+export interface ReorderBookmarksParams {
+  ids: number[]
 }
 
 export interface RemoveBookmarkParams {
@@ -598,7 +653,16 @@ export const MAX_COPY_TEXT_CHARS = 64 * 1024
 // Batch jobs and user metadata (Stage 07, ADR-0021) -------------------------
 
 export type JobKind =
-  "copy" | "move" | "trash" | "delete" | "rename" | "favorite" | "rating" | "label" | "tag"
+  | "copy"
+  | "move"
+  | "trash"
+  | "delete"
+  | "rename"
+  | "favorite"
+  | "rating"
+  | "label"
+  | "tag"
+  | "dirSize"
 export const JOB_KINDS = [
   "copy",
   "move",
@@ -609,6 +673,7 @@ export const JOB_KINDS = [
   "rating",
   "label",
   "tag",
+  "dirSize",
 ] as const satisfies readonly JobKind[]
 
 export type JobState = "queued" | "running" | "completed" | "cancelled" | "failed"
@@ -642,6 +707,8 @@ export type JobStartParams =
       conflict: ConflictPolicy
     }
   | { kind: "trash" | "delete"; source: JobSource }
+  /** Folder sizes (Stage C02): results go to the index as ContentItem.dirSizeBytes. */
+  | { kind: "dirSize"; source: JobSource }
   | {
       kind: "rename"
       source: JobSource
@@ -782,6 +849,22 @@ export interface ContextPublishParams {
   dirId: number
   /** The focused tile or the cursor entry; null when there is none. */
   focusId: number | null
+  /**
+   * The selection or the marks (Stage C02); Go keeps at most
+   * MAX_CONTEXT_SELECTION ids. Sent on the switch (null = nothing selected);
+   * omitted when only the folder changed, which keeps the carried selection
+   * readable for the app being shown.
+   */
+  selection?: SelectionDescriptor | null
+}
+
+export const MAX_CONTEXT_SELECTION = 10_000
+
+/** The carried selection as ranges of the shown app's session (`selection.fromContext`). */
+export interface SelectionFromContextParams {
+  /** The SharedContext.version the selection belongs to. */
+  version: number
+  queryId: number
 }
 
 export interface SharedContext {
@@ -795,6 +878,40 @@ export interface SharedContext {
   dirId: number
   path: string
   focusId: number | null
+  /** Carried entries (0 = none). */
+  selectionCount: number
+  /** The selection had more than MAX_CONTEXT_SELECTION entries and was not carried. */
+  selectionTooLarge: boolean
+}
+
+/** Settings → General: what carries over on a switch, and the app shown at start (`shared.switch`). */
+export interface SharedSwitchSettings {
+  v: 1
+  carry: { folder: boolean; focus: boolean; selection: boolean }
+  startWith: "last" | AppId
+}
+
+export const SHARED_SWITCH_KEY = "shared.switch"
+export const DEFAULT_SWITCH_SETTINGS: SharedSwitchSettings = {
+  v: 1,
+  carry: { folder: true, focus: true, selection: true },
+  startWith: "last",
+}
+
+/** Validated shared.switch; unknown shapes fall back to the defaults. */
+export function readSwitchSettings(value: unknown): SharedSwitchSettings {
+  const v = value as Partial<SharedSwitchSettings> | null | undefined
+  if (v?.v !== 1) return DEFAULT_SWITCH_SETTINGS
+  const c = (v.carry ?? {}) as Partial<SharedSwitchSettings["carry"]>
+  return {
+    v: 1,
+    carry: {
+      folder: c.folder !== false,
+      focus: c.focus !== false,
+      selection: c.selection !== false,
+    },
+    startWith: v.startWith === "viewer" || v.startWith === "commander" ? v.startWith : "last",
+  }
 }
 
 export const MAX_SETTING_KEY_CHARS = 128
@@ -814,6 +931,9 @@ export interface SidecarMethodMap {
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
   "query.indexOf": { params: QueryIndexOfParams; result: QueryIndexOfResult }
+  "query.locate": { params: QueryLocateParams; result: QueryLocateResult }
+  "query.match": { params: QueryMatchParams; result: QueryMatchResult }
+  "selection.fromContext": { params: SelectionFromContextParams; result: SelectionDescriptor }
   /** The app being left: its folder and focused entry (only from the visible app). */
   "context.publish": { params: ContextPublishParams; result: OkResult }
   /** The app being shown (and main at startup): the latest context. */
@@ -839,6 +959,8 @@ export interface SidecarMethodMap {
   "library.setSetting": { params: SetSettingParams; result: OkResult }
   "library.addBookmark": { params: AddBookmarkParams; result: Bookmark }
   "library.removeBookmark": { params: RemoveBookmarkParams; result: OkResult }
+  "library.updateBookmark": { params: UpdateBookmarkParams; result: Bookmark }
+  "library.reorderBookmarks": { params: ReorderBookmarksParams; result: OkResult }
   "jobs.start": { params: JobStartParams; result: JobSnapshot }
   "jobs.cancel": { params: JobIdParams; result: JobCancelResult }
   "jobs.errors": { params: JobErrorsParams; result: JobErrorsResult }
@@ -927,8 +1049,11 @@ export const RENDERER_METHODS = [
   "query.page",
   "query.close",
   "query.indexOf",
+  "query.locate",
+  "query.match",
   "context.publish",
   "context.get",
+  "selection.fromContext",
   "preview.ensure",
   "folder.covers",
   "media.open",
@@ -942,6 +1067,8 @@ export const RENDERER_METHODS = [
   "library.setSetting",
   "library.addBookmark",
   "library.removeBookmark",
+  "library.updateBookmark",
+  "library.reorderBookmarks",
   "places.list",
   "shell.open",
   "shell.reveal",
@@ -991,6 +1118,19 @@ export const COMMANDER_METHODS = [
   "places.list",
   "context.publish",
   "context.get",
+  // Stage C02: marks, quick search, folder sizes (main allows only dirSize jobs until C04).
+  "query.locate",
+  "query.match",
+  "selection.info",
+  "selection.rebase",
+  "selection.fromContext",
+  "jobs.start",
+  "jobs.cancel",
+  // Stage C03: the directory hotlist (the shared bookmarks).
+  "library.addBookmark",
+  "library.removeBookmark",
+  "library.updateBookmark",
+  "library.reorderBookmarks",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */

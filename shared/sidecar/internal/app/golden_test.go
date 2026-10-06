@@ -13,6 +13,7 @@ import (
 	"testing"
 
 	"fastview/sidecar/internal/fixture"
+	"fastview/sidecar/internal/fsx"
 	"fastview/sidecar/internal/rpc"
 )
 
@@ -169,6 +170,25 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-fs.volumes.json"] = call(38, `{"t":"req","id":38,"m":"fs.volumes","p":{}}`)
 	golden["res-library.setSetting.json"] = call(39, `{"t":"req","id":39,"m":"library.setSetting","p":{"key":"workspace","value":{"tileSize":"large"}}}`)
 	golden["res-library.addBookmark.json"] = call(40, byID(40, "library.addBookmark", map[string]any{"path": fixtureDir, "label": ""}))
+	// Stage C03: hotlist edits on the shared bookmarks.
+	golden["res-library.updateBookmark.json"] = call(140, byID(140, "library.updateBookmark", map[string]any{"id": 1, "path": fixtureDir, "label": "Golden", "group": "Work"}))
+	golden["res-library.reorderBookmarks.json"] = call(141, `{"t":"req","id":141,"m":"library.reorderBookmarks","p":{"ids":[1]}}`)
+	// The last bookmarks.changed carries the edited list (edits coalesce).
+	for {
+		var last map[string]any
+		for _, e := range events {
+			if e["ch"] == "bookmarks.changed" {
+				last = e
+			}
+		}
+		p, _ := last["p"].(map[string]any)
+		if bs, _ := p["bookmarks"].([]any); len(bs) == 1 && bs[0].(map[string]any)["group"] == "Work" {
+			last["seq"] = float64(1) // how many edits coalesced varies
+			golden["evt-bookmarks.changed.json"] = last
+			break
+		}
+		events = append(events, read().(map[string]any))
+	}
 	golden["res-library.get.json"] = call(41, `{"t":"req","id":41,"m":"library.get","p":{}}`)
 	golden["res-library.removeBookmark.json"] = call(42, `{"t":"req","id":42,"m":"library.removeBookmark","p":{"id":1}}`)
 	golden["res-query.open-search.json"] = call(43, `{"t":"req","id":43,"m":"query.open","p":{"dirId":1,"recursive":false,"sort":[{"field":"dimensions","direction":"desc"},{"field":"created","direction":"asc"}],"kinds":["image"],"search":"img","exts":["jpg","png"]}}`)
@@ -338,9 +358,22 @@ func TestGoldenFrames(t *testing.T) {
 	clipID := call(29, string(vp)).(map[string]any)["r"].(map[string]any)["items"].([]any)[0].(map[string]any)["id"]
 	golden["res-media.resolve-video.json"] = call(44, byID(44, "media.resolve", map[string]any{"entryId": clipID}))
 	// Stage C01: the shared context and query.indexOf.
-	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage}))
+	imgSel := map[string]any{"queryId": qid, "version": 1, "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
+	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage, "selection": imgSel}))
 	golden["res-context.get.json"] = call(62, `{"t":"req","id":62,"m":"context.get","p":{}}`)
 	golden["res-query.indexOf.json"] = call(63, byID(63, "query.indexOf", map[string]any{"queryId": qid, "entryId": firstImage}))
+	// Stage C02: the carried selection, quick search and marking by mask.
+	ctxVersion := golden["res-context.get.json"].(map[string]any)["r"].(map[string]any)["version"]
+	golden["res-selection.fromContext.json"] = call(64, byID(64, "selection.fromContext", map[string]any{"version": ctxVersion, "queryId": qid}))
+	golden["res-query.locate.json"] = call(65, byID(65, "query.locate", map[string]any{"queryId": qid, "pattern": "PHOTO_0001", "from": 0, "direction": "forward"}))
+	golden["res-query.match.json"] = call(66, byID(66, "query.match", map[string]any{"queryId": qid, "mask": "photo_*.jpg|*0000.jpg"}))
+	// Stage C03: volumes.changed comes from the volume monitor's polling,
+	// which a test cannot trigger; its payload is the fs.volumes result type.
+	golden["evt-volumes.changed.json"] = eventFrame(t, evVolumesChanged, fsVolumesResult{Volumes: []fsx.Volume{
+		{Path: "C:\\", Label: "System", Kind: "fixed", FreeBytes: 1 << 30, TotalBytes: 1 << 40},
+		{Path: "E:\\", Kind: "removable", NotReady: true},
+		{Path: "Z:\\", Kind: "network", NotReady: true},
+	}})
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)
@@ -364,4 +397,19 @@ func TestGoldenFrames(t *testing.T) {
 			t.Errorf("%s drifted from golden fixture; if intentional, update TS contracts and rerun with -update\nwant:\n%s\ngot:\n%s", name, want, got)
 		}
 	}
+}
+
+// eventFrame builds an event frame as the sidecar writes it, for channels
+// the golden run cannot trigger.
+func eventFrame(t *testing.T, ch string, payload any) map[string]any {
+	t.Helper()
+	b, err := json.Marshal(payload)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var p any
+	if err := json.Unmarshal(b, &p); err != nil {
+		t.Fatal(err)
+	}
+	return map[string]any{"t": "evt", "ch": ch, "seq": float64(1), "p": p}
 }

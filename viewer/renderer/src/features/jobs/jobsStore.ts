@@ -123,6 +123,7 @@ const KIND_LABEL: Record<JobKind, string> = {
   rating: "Rating",
   label: "Labeling",
   tag: "Tagging",
+  dirSize: "Calculating folder sizes",
 }
 
 export function jobLabel(s: JobsState, job: JobSnapshot): string {

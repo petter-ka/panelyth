@@ -10,3 +10,6 @@
 {"at":"2026-10-05T16:56:45.704Z","test":"switch-with-folder-change","commanderToViewerMs":44,"viewerToCommanderMs":18}
 {"at":"2026-10-05T16:56:47.311Z","test":"switch-with-folder-change","commanderToViewerMs":44,"viewerToCommanderMs":18}
 {"at":"2026-10-05T16:56:49.327Z","test":"switch-with-folder-change","commanderToViewerMs":43,"viewerToCommanderMs":20}
+{"at":"2026-10-05T18:51:18.302Z","test":"listing-100k","uncached1kMs":135,"cached1kP95Ms":21,"cached1kMedianMs":21,"enter100k_firstRowsMs":155,"enter100k_keyP95Ms":18,"enter100k_keyMaxMs":18,"enter100k_longTasks":0,"enter100k_longTaskMaxMs":0,"scrollLeft":{"frames":151,"p95FrameMs":17,"maxFrameGapMs":17,"longTasks":0,"longTaskMaxMs":0,"maxMountedRows":56},"scrollRight":{"frames":150,"p95FrameMs":17,"maxFrameGapMs":17,"longTasks":0,"longTaskMaxMs":0,"maxMountedRows":56},"visibleRows":31,"sort100kMs":102}
+{"at":"2026-10-05T18:51:19.797Z","test":"switch-with-folder-change","commanderToViewerMs":56,"viewerToCommanderMs":40}
+{"at":"2026-10-05T18:51:23.289Z","test":"bundle","jsFiles":1,"jsBytes":424800}

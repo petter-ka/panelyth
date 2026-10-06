@@ -17,11 +17,11 @@ func FileTimes(fi fs.FileInfo) Times {
 	return Times{}
 }
 
-// Volumes lists /Volumes; the boot volume (a symlink to "/") maps to "/".
-func Volumes() ([]Volume, error) {
+// listVolumes lists /Volumes; the boot volume (a symlink to "/") maps to "/".
+func listVolumes() ([]Volume, error) {
 	ents, err := os.ReadDir("/Volumes")
 	if err != nil {
-		return withSpace([]Volume{{Path: "/", Label: "Macintosh HD", Kind: "fixed"}}), nil
+		return []Volume{{Path: "/", Label: "Macintosh HD", Kind: "fixed"}}, nil
 	}
 	out := []Volume{}
 	for _, e := range ents {
@@ -35,5 +35,5 @@ func Volumes() ([]Volume, error) {
 		}
 		out = append(out, v)
 	}
-	return withSpace(out), nil
+	return out, nil
 }

@@ -1,0 +1,28 @@
+{
+  "ch": "volumes.changed",
+  "p": {
+    "volumes": [
+      {
+        "freeBytes": 1073741824,
+        "kind": "fixed",
+        "label": "System",
+        "path": "C:\\",
+        "totalBytes": 1099511627776
+      },
+      {
+        "kind": "removable",
+        "label": "",
+        "notReady": true,
+        "path": "E:\\"
+      },
+      {
+        "kind": "network",
+        "label": "",
+        "notReady": true,
+        "path": "Z:\\"
+      }
+    ]
+  },
+  "seq": 1,
+  "t": "evt"
+}

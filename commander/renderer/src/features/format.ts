@@ -1,17 +1,29 @@
 import { ENTRY_ATTRS, type ContentItem } from "@fastview/contracts"
+import type { DateFormat, SizeFormat } from "./settings"
 
 const IS_WINDOWS = typeof navigator !== "undefined" && /win/i.test(navigator.platform)
 
 const integer = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
 const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" })
 
-/** Size column: bytes with thousands separators; folders show <DIR> (UX-DESIGN "Rows"). */
-export function formatSize(item: ContentItem): string {
-  return item.kind === "dir" ? "<DIR>" : integer.format(item.sizeBytes)
+/**
+ * Size column: bytes with thousands separators, or KB/MB/GB (Settings →
+ * Panels); folders show <DIR> until calculated (UX-DESIGN "Rows").
+ */
+export function formatSize(item: ContentItem, format: SizeFormat = "bytes"): string {
+  const bytes = item.kind === "dir" ? item.dirSizeBytes : item.sizeBytes
+  if (bytes === undefined) return "<DIR>"
+  return format === "units" ? formatBytes(bytes) : integer.format(bytes)
 }
 
-export function formatDate(ms: number): string {
-  return ms > 0 ? dateTime.format(ms) : ""
+const pad = (n: number): string => String(n).padStart(2, "0")
+
+/** Date column: the locale's short date and time, or ISO "2026-10-06 14:05" (local time). */
+export function formatDate(ms: number, format: DateFormat = "locale"): string {
+  if (ms <= 0) return ""
+  if (format === "locale") return dateTime.format(ms)
+  const d = new Date(ms)
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
 export function formatCount(n: number): string {

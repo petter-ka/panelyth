@@ -38,7 +38,7 @@ import {
   originOf,
   trustedOrigin,
 } from "./security"
-import { AppShell } from "./shell"
+import { AppShell, startAppFrom } from "./shell"
 import { COMMANDER_ENABLED_ARG, type AppId } from "@fastview/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
@@ -125,14 +125,14 @@ function openWindow(): BrowserWindow {
   return win
 }
 
-/** The app the previous run ended in, from the shared context. */
+/** Settings → General "Start with", else the app the previous run ended in. */
 async function lastUsedApp(): Promise<AppId | null> {
   if (!sidecar) return null
   const sc = sidecar
   const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), START_APP_WAIT_MS))
   const read = sc
-    .call("context.get", {})
-    .then((r) => ((r as { app?: unknown }).app === "commander" ? "commander" : "viewer") as AppId)
+    .call("library.get", {})
+    .then((r) => startAppFrom((r as { settings?: Record<string, unknown> }).settings ?? {}))
     .catch(() => null)
   return Promise.race([read, timeout])
 }

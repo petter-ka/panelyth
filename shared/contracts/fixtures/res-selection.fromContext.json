@@ -1,0 +1,17 @@
+{
+  "id": 64,
+  "ok": true,
+  "r": {
+    "exclude": [],
+    "include": [],
+    "queryId": 5,
+    "ranges": [
+      [
+        0,
+        2
+      ]
+    ],
+    "version": 1
+  },
+  "t": "res"
+}

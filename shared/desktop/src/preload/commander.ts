@@ -10,7 +10,17 @@ import {
   type EventMessage,
   type RendererMethod,
   type RpcEnvelope,
+  type SelectionDescriptor,
 } from "@fastview/contracts"
+
+/** Only the descriptor's known fields cross the bridge. */
+const copySelection = (s: SelectionDescriptor): SelectionDescriptor => ({
+  queryId: s.queryId,
+  version: s.version,
+  ranges: s.ranges.map(([a, b]) => [a, b] as [number, number]),
+  include: [...s.include],
+  exclude: [...s.exclude],
+})
 
 const invoke = <R>(method: RendererMethod, params?: unknown): Promise<RpcEnvelope<R>> =>
   ipcRenderer.invoke(IPC_INVOKE, method, params) as Promise<RpcEnvelope<R>>
@@ -23,6 +33,8 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "job.progress",
   "query.invalidated",
   "index.progress",
+  "volumes.changed",
+  "bookmarks.changed",
 ])
 const subscribers = new Map<EventChannel, Set<(payload: never) => void>>()
 
@@ -51,6 +63,12 @@ const api: CommanderApi = {
   library: {
     get: () => invoke("library.get", {}),
     setSetting: (key, value) => invoke("library.setSetting", { key, value }),
+    addBookmark: (path, label, group) =>
+      invoke("library.addBookmark", { path, label, ...(group !== undefined && { group }) }),
+    removeBookmark: (id) => invoke("library.removeBookmark", { id }),
+    updateBookmark: ({ id, path, label, group }) =>
+      invoke("library.updateBookmark", { id, path, label, group }),
+    reorderBookmarks: (ids) => invoke("library.reorderBookmarks", { ids: [...ids] }),
   },
   dir: {
     open: ({ path, recursive }) => invoke("dir.open", { path, recursive }),
@@ -78,6 +96,18 @@ const api: CommanderApi = {
       invoke("query.page", { queryId, offset, limit, thumbProfile }),
     close: (queryId) => invoke("query.close", { queryId }),
     indexOf: (queryId, entryId) => invoke("query.indexOf", { queryId, entryId }),
+    locate: ({ queryId, pattern, from, direction }) =>
+      invoke("query.locate", { queryId, pattern, from, direction }),
+    match: (queryId, mask) => invoke("query.match", { queryId, mask }),
+  },
+  selection: {
+    info: (selection) => invoke("selection.info", { selection: copySelection(selection) }),
+    rebase: (selection) => invoke("selection.rebase", { selection: copySelection(selection) }),
+  },
+  jobs: {
+    dirSize: (selection) =>
+      invoke("jobs.start", { kind: "dirSize", source: { selection: copySelection(selection) } }),
+    cancel: (jobId) => invoke("jobs.cancel", { jobId }),
   },
   fs: {
     volumes: () => invoke("fs.volumes", {}),
@@ -86,8 +116,15 @@ const api: CommanderApi = {
     list: () => invoke("places.list", {}),
   },
   context: {
-    publish: (dirId, focusId) => invoke("context.publish", { app: "commander", dirId, focusId }),
+    publish: (dirId, focusId, selection) =>
+      invoke("context.publish", {
+        app: "commander",
+        dirId,
+        focusId,
+        selection: selection && copySelection(selection),
+      }),
     get: () => invoke("context.get", {}),
+    selection: (version, queryId) => invoke("selection.fromContext", { version, queryId }),
   },
   onEvent(channel, listener) {
     if (!channels.has(channel)) throw new Error(`unknown event channel: ${String(channel)}`)

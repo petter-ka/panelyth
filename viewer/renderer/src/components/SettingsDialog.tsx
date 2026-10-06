@@ -1,5 +1,6 @@
 import { useId, useState, type KeyboardEvent } from "react"
-import { bridge } from "../bridge"
+import { setSwitchSettings, useSwitchSettings } from "@fastview/renderer-core"
+import { bridge, canSwitchApps } from "../bridge"
 import { useLibraryStore } from "../features/library/libraryStore"
 import { openShortcutHelp } from "../features/shortcuts/shortcutStore"
 import {
@@ -12,13 +13,18 @@ import { useInterfaceSizeStore, type InterfaceSize } from "../features/theme/int
 import { Button } from "./ui/button"
 import { DialogWindow } from "./ui/dialog"
 
-type SettingsTab = "viewer" | "appearance" | "shortcuts"
+type SettingsTab = "general" | "viewer" | "appearance" | "shortcuts"
 
-const TABS: readonly { id: SettingsTab; label: string }[] = [
+const ALL_TABS: readonly { id: SettingsTab; label: string }[] = [
+  { id: "general", label: "General" },
   { id: "viewer", label: "Viewer" },
   { id: "appearance", label: "Appearance" },
   { id: "shortcuts", label: "Shortcuts" },
 ]
+
+/** General holds the app-switch settings, so it exists only while the commander is enabled. */
+const tabs = (): readonly { id: SettingsTab; label: string }[] =>
+  canSwitchApps() ? ALL_TABS : ALL_TABS.filter((t) => t.id !== "general")
 
 const tabButton =
   "h-8 rounded-md px-3 text-xs text-muted hover:bg-raised hover:text-text aria-selected:bg-raised aria-selected:text-text aria-selected:shadow-sm"
@@ -271,10 +277,60 @@ function ShortcutsSettings() {
   )
 }
 
+/** Settings → General: the app switch (docs/shared/APP-SWITCHING.md), shared with the commander. */
+function GeneralSettings() {
+  const carry = useSwitchSettings((s) => s.carry)
+  const startWith = useSwitchSettings((s) => s.startWith)
+  const libraryLoaded = useLibraryStore((s) => s.loaded)
+  const setCarry = (part: keyof typeof carry, value: boolean): void =>
+    setSwitchSettings({ carry: { ...carry, [part]: value } })
+  return (
+    <section aria-label="Switching apps" data-testid="settings-general">
+      <h3 className="pb-1 text-[0.6875rem] font-medium text-muted">
+        When switching apps, carry over
+      </h3>
+      <SwitchRow
+        label="The folder"
+        description="The other app opens the folder you are in."
+        checked={carry.folder}
+        disabled={!libraryLoaded}
+        onChange={(v) => setCarry("folder", v)}
+      />
+      <SwitchRow
+        label="The entry under the cursor"
+        description="The cursor or the selected tile lands on the same file."
+        checked={carry.focus}
+        disabled={!libraryLoaded}
+        onChange={(v) => setCarry("focus", v)}
+      />
+      <SwitchRow
+        label="The selection"
+        description="Marked files stay selected, up to 10,000; files the viewer doesn't show are left out."
+        checked={carry.selection}
+        disabled={!libraryLoaded}
+        onChange={(v) => setCarry("selection", v)}
+      />
+      <h3 className="pt-4 pb-2 text-[0.6875rem] font-medium text-muted">Start with</h3>
+      <ChoiceGroup
+        label="Start with"
+        value={startWith}
+        options={[
+          { value: "last", label: "Last used app" },
+          { value: "viewer", label: "Viewer" },
+          { value: "commander", label: "Commander" },
+        ]}
+        disabled={!libraryLoaded}
+        onChange={(value) => setSwitchSettings({ startWith: value })}
+      />
+    </section>
+  )
+}
+
 export function SettingsDialog() {
   const open = useSettingsStore((s) => s.open)
   const closeSettings = useSettingsStore((s) => s.closeSettings)
   const [tab, setTab] = useState<SettingsTab>("viewer")
+  const TABS = tabs()
 
   const selectAdjacentTab = (e: KeyboardEvent<HTMLDivElement>): void => {
     const index = TABS.findIndex((item) => item.id === tab)
@@ -328,6 +384,7 @@ export function SettingsDialog() {
           tabIndex={0}
           className="max-h-[65vh] overflow-y-auto p-4 outline-none"
         >
+          {tab === "general" && <GeneralSettings />}
           {tab === "viewer" && <ViewerSettings />}
           {tab === "appearance" && <AppearanceSettings />}
           {tab === "shortcuts" && <ShortcutsSettings />}

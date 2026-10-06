@@ -88,3 +88,55 @@ func TestSharedContext(t *testing.T) {
 		t.Fatalf("next run %+v", got)
 	}
 }
+
+func TestToRanges(t *testing.T) {
+	got := toRanges([]int{0, 1, 2, 5, 7, 8})
+	want := [][2]int{{0, 3}, {5, 6}, {7, 9}}
+	if len(got) != len(want) {
+		t.Fatalf("%v", got)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Fatalf("%v", got)
+		}
+	}
+	if r := toRanges(nil); len(r) != 0 {
+		t.Fatalf("%v", r)
+	}
+}
+
+// A navigation publish (no selection field) keeps the carried selection for
+// the version that carried it; context.get reports it only for that version.
+func TestContextSelectionSurvivesNavigation(t *testing.T) {
+	ctx := context.Background()
+	svc := newContextService(t, t.TempDir())
+	dir, err := svc.store.EnsureDir(ctx, t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	c := svc.context
+	c.mu.Lock()
+	c.sel, c.selVersion, c.selCount = []int64{5, 6}, 1, 2
+	c.cur = contextGetResult{Version: 1, App: "commander", DirID: dir.ID, SelectionCount: 2}
+	c.loaded = true
+	c.mu.Unlock()
+	if _, err := c.publish(ctx, contextPublishParams{App: "viewer", DirID: dir.ID}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := c.get(ctx)
+	if got.Version != 2 || got.SelectionCount != 0 {
+		t.Fatalf("navigation publish %+v", got)
+	}
+	c.mu.Lock()
+	if c.selVersion != 1 || len(c.sel) != 2 {
+		t.Fatalf("selection lost: v%d %v", c.selVersion, c.sel)
+	}
+	c.mu.Unlock()
+	// A switch with nothing selected clears it.
+	if _, err := c.publish(ctx, contextPublishParams{App: "viewer", DirID: dir.ID, Selection: json.RawMessage("null")}); err != nil {
+		t.Fatal(err)
+	}
+	if c.selVersion != 3 || c.sel != nil {
+		t.Fatalf("not cleared: v%d %v", c.selVersion, c.sel)
+	}
+}

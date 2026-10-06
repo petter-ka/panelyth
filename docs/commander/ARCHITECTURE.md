@@ -1,6 +1,6 @@
 # Commander Architecture
 
-Status: **in progress** (C00 done, C01 implemented; Stages C02–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
+Status: **in progress** (C00 done, C01–C03 implemented; Stages C04–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
 an app view in the FastView shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
 shares the viewer's sidecar, index (queried with the `all` scope, ADR-0026), preview cache, jobs, clipboard and
 `library.db`. Switching between the apps and the state they share: `docs/shared/APP-SWITCHING.md`. This document
@@ -71,6 +71,12 @@ interface PanelState {
 
 - Only the **visible tab** of each panel holds a query session. Switching tabs opens the new session (rows are served
   from the index immediately, ADR-0015) and closes the old one after a short grace period.
+- As built (Stage C03, `features/tabs.ts`, `features/listing.ts`): the visible tab's live state is the panel's listing
+  state; other tabs are small records (path, name, sort, `showHidden`, `view: "full" | "brief"`, `locked`, history,
+  the cursor entry id). A tab being left **parks** its session for 3 s (`TAB_GRACE_MS`): switching back within that
+  time reuses it (no `query.open`; the folder is re-listed in the background), and invalidations keep the parked
+  snapshot current; then it closes. Ctrl+T's new tab takes over the visible session (same folder). A locked tab keeps
+  its folder: a navigation from it branches into a new tab. History is per tab (50 entries).
 - Per tab, the cursor index, the anchor and the marks (a selection descriptor) live in the cursor store. After
   `query.invalidated`, marks are rebased with `selection.rebase` (ADR-0017), and the cursor follows its entry id.
 
@@ -117,8 +123,8 @@ Enter on a folder
 | P01 | `app.switch`, `app.visibility` (main; used by both apps from C00) |
 | P02 | all-entries scope; descriptor `showHidden`, `nameMask`; sort `ext`, `attrs` |
 | C01 | `context.publish`, `context.get` (both apps); `query.indexOf`; volumes with free and total space; `dir.open` error reasons (`notReady`, `network`) |
-| C02 | `query.locate`; folder-size jobs; `selection.fromContext` (both apps) |
-| C03 | hotlist and history in `library.db` |
+| C02 | `query.locate`, `query.match`; `dirSize` jobs (`ContentItem.dirSizeBytes`); the selection in `context.publish` and `selection.fromContext` (both apps); `shared.switch` |
+| C03 | `library.updateBookmark`, `library.reorderBookmarks` (bookmark groups); events `volumes.changed`, `bookmarks.changed`; `Volume.notReady`, space read per volume with a timeout |
 | P03 / C04 | jobs v2: `jobs.pause`, `jobs.resume`, `jobs.resolve`, `job.conflict` |
 | C05 | token protocol for any file kind (lister, quick view); `shell.open` with confirmation for programs |
 | C06 | `find.start`, `find.cancel` (a session source); branch listings (recursive, all scope) |
@@ -132,7 +138,10 @@ Every method is batch-oriented, cancellable where it runs long, and validated in
 ## Persistence
 
 The shared `library.db` (ADR-0016, ADR-0031): the commander's own settings under `commander.*` (`layout`, `panels`
-with tabs, `columns`, `confirmations`, `editor`, `shortcuts`, per-panel history); the hotlist is the shared bookmarks
+with tabs, `columns`, `confirmations`, `editor`, `shortcuts`, per-panel history). As of Stage C03:
+`commander.panels` `{ v: 2, active, left/right: { tabs: [{ path, name, sort, showHidden, view, locked, history,
+historyIndex, cursorId }], active, columns } }` (v1 from C01–C02 is still read) and `commander.settings`
+(Settings → Panels: size and date format, hidden files in new panels, where letters go); the hotlist is the shared bookmarks
 table (with groups), and recent locations are shared with the viewer. Theme and interface size come from
 `shared.appearance`. Settings are written debounced and flushed on exit, as in the viewer.
 

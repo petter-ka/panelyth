@@ -1,4 +1,5 @@
-import type { SharedContext } from "@fastview/contracts"
+import { DEFAULT_SWITCH_SETTINGS, type SharedContext } from "@fastview/contracts"
+import { useSwitchSettings } from "@fastview/renderer-core"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { useGlobalShortcuts } from "../../app/shortcuts"
@@ -7,7 +8,13 @@ import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
 import { openFolder, resetFolderStore, useFolderStore } from "../folder/folderStore"
 import { startSidecarMonitoring, useSidecarStore } from "../system/sidecarStore"
-import { focusAndSelect, useSelectionStore } from "../tiles/selectionStore"
+import { useNoticeStore } from "../clipboard/clipboard"
+import {
+  focusAndSelect,
+  selectionCount,
+  selectRangeTo,
+  useSelectionStore,
+} from "../tiles/selectionStore"
 import { resetContextSync, startContextSync } from "./appSwitch"
 
 // The connection point to the commander (ADR-0031, docs/shared/APP-SWITCHING.md).
@@ -80,6 +87,17 @@ describe("the shared context (Stage C01)", () => {
     const context = {
       publish: vi.fn(async () => ({ ok: true as const, r: { ok: true } })),
       get: vi.fn(async () => ({ ok: true as const, r: current })),
+      // The carried selection: entries 2..5 of whatever session asks.
+      selection: vi.fn(async (_version: number, queryId: number) => ({
+        ok: true as const,
+        r: {
+          queryId,
+          version: 1,
+          ranges: [[2, 5]] as [number, number][],
+          include: [],
+          exclude: [],
+        },
+      })),
     }
     ;(window.fastview as unknown as { context: typeof context }).context = context
     stop.push(startContextSync())
@@ -91,19 +109,30 @@ describe("the shared context (Stage C01)", () => {
       },
     }
   }
-  const none: SharedContext = { version: 0, app: "", dirId: 0, path: "", focusId: null }
+  const none: SharedContext = {
+    version: 0,
+    app: "",
+    dirId: 0,
+    path: "",
+    focusId: null,
+    selectionCount: 0,
+    selectionTooLarge: false,
+  }
 
-  beforeEach(() => resetContextSync())
+  beforeEach(() => {
+    resetContextSync()
+    useSwitchSettings.setState(DEFAULT_SWITCH_SETTINGS)
+  })
 
   it("publishes the folder and the focused tile, then switches", async () => {
     const { bridge, context, switchApp } = withContext(none)
     bridge.backend.items = makeItems(10)
     await act(async () => openFolder("/photos"))
-    await waitFor(() => expect(context.publish).toHaveBeenCalledWith(1, null))
+    await waitFor(() => expect(context.publish).toHaveBeenCalledWith(1, null, undefined))
     await act(async () => focusAndSelect(3, bridge.backend.items[3]!.id))
     fireEvent.click(screen.getByRole("button", { name: "Switch to Commander" }))
     await waitFor(() => expect(switchApp).toHaveBeenCalledWith("commander"))
-    expect(context.publish).toHaveBeenLastCalledWith(1, bridge.backend.items[3]!.id)
+    expect(context.publish).toHaveBeenLastCalledWith(1, bridge.backend.items[3]!.id, null)
     expect(context.publish.mock.invocationCallOrder.at(-1)!).toBeLessThan(
       switchApp.mock.invocationCallOrder[0]!,
     )
@@ -113,7 +142,15 @@ describe("the shared context (Stage C01)", () => {
     const { bridge, set } = withContext(none)
     bridge.backend.items = makeItems(10, 2)
     const target = bridge.backend.items[4]!
-    set({ version: 2, app: "commander", dirId: 7, path: "/x", focusId: target.id })
+    set({
+      version: 2,
+      app: "commander",
+      dirId: 7,
+      path: "/x",
+      focusId: target.id,
+      selectionCount: 0,
+      selectionTooLarge: false,
+    })
     await act(async () => bridge.push("app.visibility", { app: "viewer", visible: true }))
     await waitFor(() =>
       expect(bridge.api.dir.openEntry).toHaveBeenCalledWith({ entryId: 7, recursive: false }),
@@ -125,7 +162,15 @@ describe("the shared context (Stage C01)", () => {
   it("selects nothing for a cursor entry the viewer can't show", async () => {
     const { bridge, set } = withContext(none)
     bridge.backend.items = makeItems(10)
-    set({ version: 1, app: "commander", dirId: 7, path: "/x", focusId: 424242 })
+    set({
+      version: 1,
+      app: "commander",
+      dirId: 7,
+      path: "/x",
+      focusId: 424242,
+      selectionCount: 0,
+      selectionTooLarge: false,
+    })
     await act(async () => bridge.push("app.visibility", { app: "viewer", visible: true }))
     await waitFor(() => expect(bridge.api.query.indexOf).toHaveBeenCalled())
     expect(useFolderStore.getState().folder?.dirId).toBe(7)
@@ -138,6 +183,7 @@ describe("the shared context (Stage C01)", () => {
     await act(async () => openFolder("/photos"))
     await act(async () => focusAndSelect(2, bridge.backend.items[2]!.id))
     set({
+      ...none,
       version: 3,
       app: "commander",
       dirId: 1,
@@ -148,9 +194,62 @@ describe("the shared context (Stage C01)", () => {
     await waitFor(() => expect(context.get).toHaveBeenCalled())
     expect(bridge.api.dir.openEntry).not.toHaveBeenCalled()
     expect(useSelectionStore.getState().focusIndex).toBe(2)
-    set({ version: 4, app: "viewer", dirId: 9, path: "/y", focusId: null })
+    set({
+      version: 4,
+      app: "viewer",
+      dirId: 9,
+      path: "/y",
+      focusId: null,
+      selectionCount: 0,
+      selectionTooLarge: false,
+    })
     await act(async () => bridge.push("app.visibility", { app: "viewer", visible: true }))
     expect(bridge.api.dir.openEntry).not.toHaveBeenCalled()
+  })
+
+  it("publishes a multi-selection with the switch", async () => {
+    const { bridge, context, switchApp } = withContext(none)
+    bridge.backend.items = makeItems(10)
+    await act(async () => openFolder("/photos"))
+    await act(async () => focusAndSelect(1, bridge.backend.items[1]!.id))
+    await act(async () => selectRangeTo(4, bridge.backend.items[4]!.id))
+    fireEvent.click(screen.getByRole("button", { name: "Switch to Commander" }))
+    await waitFor(() => expect(switchApp).toHaveBeenCalled())
+    expect(context.publish).toHaveBeenLastCalledWith(
+      1,
+      bridge.backend.items[4]!.id,
+      expect.objectContaining({ ranges: [[1, 5]], include: [], exclude: [] }),
+    )
+  })
+
+  it("turns the commander's marks into the selection", async () => {
+    const { bridge, context, set } = withContext(none)
+    bridge.backend.items = makeItems(10)
+    set({ ...none, version: 2, app: "commander", dirId: 7, path: "/x", selectionCount: 3 })
+    await act(async () => bridge.push("app.visibility", { app: "viewer", visible: true }))
+    await waitFor(() => expect(context.selection).toHaveBeenCalledWith(2, expect.any(Number)))
+    await waitFor(() => expect(selectionCount(useSelectionStore.getState())).toBe(3))
+    expect(useSelectionStore.getState().ranges).toEqual([[2, 5]])
+  })
+
+  it("says so when the selection was too large, and honours the carry-over settings", async () => {
+    const { bridge, context, set } = withContext(none)
+    bridge.backend.items = makeItems(10)
+    set({ ...none, version: 2, app: "commander", dirId: 7, path: "/x", selectionTooLarge: true })
+    await act(async () => bridge.push("app.visibility", { app: "viewer", visible: true }))
+    await waitFor(() =>
+      expect(useNoticeStore.getState().notice?.text).toBe(
+        "The selection is too large to carry over",
+      ),
+    )
+    expect(context.selection).not.toHaveBeenCalled()
+    // Folder off: the viewer stays where it is.
+    useSwitchSettings.setState({ carry: { folder: false, focus: true, selection: true } })
+    const opens = bridge.api.dir.openEntry.mock.calls.length
+    set({ ...none, version: 3, app: "commander", dirId: 8, path: "/y", selectionCount: 2 })
+    await act(async () => bridge.push("app.visibility", { app: "viewer", visible: true }))
+    await waitFor(() => expect(context.get).toHaveBeenCalledTimes(2))
+    expect(bridge.api.dir.openEntry.mock.calls.length).toBe(opens)
   })
 
   it("does not publish while hidden", async () => {

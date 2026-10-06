@@ -28,7 +28,13 @@ import { HeartIcon, PlayIcon } from "../ui/icons"
 import { formatBytes, formatDate } from "../../lib/format"
 import { FolderGlyph, UnavailableGlyph, VideoGlyph } from "./glyphs"
 
-const KIND_LABEL = { dir: "Folder", image: "Image", video: "Video", file: "File", link: "Link" } as const
+const KIND_LABEL = {
+  dir: "Folder",
+  image: "Image",
+  video: "Video",
+  file: "File",
+  link: "Link",
+} as const
 
 function tooltip(item: ContentItem): string {
   if (item.kind === "dir") return `${item.name}\nFolder`

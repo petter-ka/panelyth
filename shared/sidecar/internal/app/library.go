@@ -57,6 +57,8 @@ type indexService struct {
 	clipImg *clipImager
 	context *sharedContext
 	stopBg  context.CancelFunc
+	bg      context.Context
+	volumes volumeMonitor
 	// lib is set before libReady closes; nil when library.db could not be
 	// opened (user-data methods then fail, browsing keeps working).
 	lib      *library.Library
@@ -85,7 +87,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 		svc.events.Append(evFolderCovers, it)
 	})
 	bg, stop := context.WithCancel(context.Background())
-	svc.stopBg = stop
+	svc.stopBg, svc.bg = stop, bg
 	preview.NewCleaner(store, disk, log, cacheMaxBytes).Start(bg, 30*time.Second, 30*time.Minute)
 	// Dimensions and duration are extracted lazily, only for sessions
 	// sorted by them (ADR-0021).
@@ -194,8 +196,10 @@ type (
 		Rating     int    `json:"rating"`
 		Label      int    `json:"label"`
 		// Attrs is the fsx.Attr* bit set; sent only in the all scope.
-		Attrs int    `json:"attrs,omitempty"`
-		Thumb *thumb `json:"thumb"`
+		Attrs int `json:"attrs,omitempty"`
+		// DirSizeBytes is a folder's calculated size (Stage C02); omitted until calculated.
+		DirSizeBytes *int64 `json:"dirSizeBytes,omitempty"`
+		Thumb        *thumb `json:"thumb"`
 	}
 	thumb struct {
 		URL    string `json:"url"`
@@ -399,6 +403,9 @@ func (s *indexService) queryPage(ctx context.Context, p queryPageParams) (queryP
 		items[i] = contentItem{ID: it.ID, Kind: it.Kind.String(), Name: it.Name, Ext: it.Ext,
 			SizeBytes: it.Size, ModifiedMs: it.MtimeNs / int64(time.Millisecond), Favorite: a.Favorite, Rating: a.Rating, Label: a.Label,
 			Attrs: it.Attrs}
+		if it.DirSize >= 0 {
+			items[i].DirSizeBytes = &it.DirSize
+		}
 		if t, ok := thumbs[it.ID]; ok {
 			items[i].Thumb = &thumb{URL: t.URL, Width: t.Width, Height: t.Height}
 		}

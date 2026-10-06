@@ -1,52 +1,87 @@
 import type { SharedContext } from "@fastview/contracts"
+import { useSwitchSettings } from "@fastview/renderer-core"
+import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import {
   cursorEntryId,
   isCommanderVisible,
   onActiveFolderChanged,
   openFolderEntry,
-  restorePanels,
   startListingEvents,
   useListingStore,
 } from "./listing"
-import { usePanelsStore } from "./panels"
+import { applyMarks, marksDescriptor } from "./marks"
+import { usePanelsStore, type Side } from "./panels"
+import { restorePanels } from "./session"
 
-// The shared context, part 1 (Stage C01, docs/shared/APP-SWITCHING.md): the
-// folder and the entry under the cursor carry over between the apps.
+// The shared context (docs/shared/APP-SWITCHING.md): the folder, the entry
+// under the cursor (Stage C01) and the marks (Stage C02) carry over between
+// the apps, each part as Settings → General allows.
 
 /** The newest context this app has applied or published; older ones are ignored. */
 let seenVersion = 0
 
+/** A short message in the status bar (the too-large-selection notice). */
+export const useCarryNotice = create<{ message: string | null }>(() => ({ message: null }))
+let noticeTimer: ReturnType<typeof setTimeout> | null = null
+function notice(message: string): void {
+  useCarryNotice.setState({ message })
+  if (noticeTimer) clearTimeout(noticeTimer)
+  noticeTimer = setTimeout(() => useCarryNotice.setState({ message: null }), 6000)
+}
+
 const isFromViewer = (ctx: SharedContext): boolean =>
   ctx.version > seenVersion && ctx.app === "viewer" && ctx.dirId > 0
 
-/** The active panel's folder (and, on a switch, the cursor entry) becomes the context. */
-export async function publishContext(withFocus: boolean): Promise<void> {
+/**
+ * The active panel's folder becomes the context; on a switch also the entry
+ * under the cursor and the marks.
+ */
+export async function publishContext(onSwitch: boolean): Promise<void> {
   const side = usePanelsStore.getState().active
   const { dirId } = useListingStore.getState()[side]
   if (dirId === null) return
-  await bridge.publishContext(dirId, withFocus ? cursorEntryId(side) : null)
+  await bridge.publishContext(
+    dirId,
+    onSwitch ? cursorEntryId(side) : null,
+    onSwitch ? marksDescriptor(side) : undefined,
+  )
+}
+
+/** The carried selection becomes the panel's marks (entries it lists, at most 10,000). */
+async function applySelection(side: Side, ctx: SharedContext): Promise<void> {
+  if (ctx.selectionTooLarge) {
+    notice("The selection is too large to carry over")
+    return
+  }
+  const query = useListingStore.getState()[side].query
+  if (!query || ctx.selectionCount === 0 || !useSwitchSettings.getState().carry.selection) return
+  const d = await bridge.contextSelection(ctx.version, query.queryId).catch(() => null)
+  if (d) applyMarks(side, d)
 }
 
 /**
  * Shown again: the active panel opens the viewer's folder with the cursor on
- * its selected tile, unless it already shows that folder (then nothing moves).
+ * its selected tile, and the viewer's selection becomes its marks. Nothing
+ * moves when the panel already shows that folder; the marks still carry.
  */
 export async function applyContext(): Promise<void> {
   const ctx = await bridge.getContext().catch(() => null)
   const side = usePanelsStore.getState().active
   if (ctx && isFromViewer(ctx)) {
     seenVersion = ctx.version
-    if (useListingStore.getState()[side].dirId !== ctx.dirId) {
+    const { carry } = useSwitchSettings.getState()
+    if (carry.folder && useListingStore.getState()[side].dirId !== ctx.dirId) {
       // Publishes itself once the folder is open (onActiveFolderChanged).
-      return openFolderEntry(side, ctx.dirId, { focusId: ctx.focusId })
+      await openFolderEntry(side, ctx.dirId, { focusId: carry.focus ? ctx.focusId : null })
     }
+    if (useListingStore.getState()[side].dirId === ctx.dirId) await applySelection(side, ctx)
   }
   // This app is visible now, so the context names it (the next start opens it).
   await publishContext(false).catch(() => undefined)
 }
 
-/** The switch: publish the active panel's folder and cursor entry, then show the viewer. */
+/** The switch: publish the active panel's folder, cursor entry and marks, then show the viewer. */
 export async function switchToViewer(): Promise<void> {
   await publishContext(true).catch(() => undefined)
   await bridge.switchTo("viewer")
@@ -68,10 +103,14 @@ export async function startPanels(): Promise<() => void> {
     }
   })
   const ctx = await bridge.getContext().catch(() => null)
-  const carried = ctx && isFromViewer(ctx) ? ctx : null
-  if (carried) seenVersion = carried.version
+  const carry = useSwitchSettings.getState().carry
+  const carried = ctx && isFromViewer(ctx) && carry.folder ? ctx : null
+  if (ctx && isFromViewer(ctx)) seenVersion = ctx.version
   // The active panel publishes the context once its folder is open.
-  await restorePanels(carried && { dirId: carried.dirId, focusId: carried.focusId })
+  await restorePanels(
+    carried && { dirId: carried.dirId, focusId: carry.focus ? carried.focusId : null },
+  )
+  if (carried) await applySelection(usePanelsStore.getState().active, carried)
   return () => {
     offEvents()
     offFolder()
@@ -82,4 +121,5 @@ export async function startPanels(): Promise<() => void> {
 /** Tests. */
 export function resetCarry(): void {
   seenVersion = 0
+  useCarryNotice.setState({ message: null })
 }

@@ -13,6 +13,8 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastview/renderer-core": "workspace:*",
+    "@radix-ui/react-dialog": "1.1.23",
     "zustand": "5.0.15"
   },
   "peerDependencies": {

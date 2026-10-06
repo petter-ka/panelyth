@@ -1,5 +1,6 @@
 import type { SidecarState } from "@fastview/contracts"
 import { THEME_OPTIONS, useThemeStore } from "@fastview/ui"
+import { useCarryNotice } from "../features/carry"
 import { useSidecarStore } from "../features/sidecar"
 
 const LABEL: Record<SidecarState, string> = {
@@ -25,12 +26,18 @@ export function StatusBar() {
   const theme = useThemeStore((s) => s.preference)
   const cycle = useThemeStore((s) => s.cycle)
   const themeLabel = THEME_OPTIONS.find((o) => o.value === theme)?.label ?? theme
+  const notice = useCarryNotice((s) => s.message)
   return (
     <footer className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
       <span className="flex items-center gap-1.5" data-testid="sidecar-status" data-state={state}>
         <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT[state]}`} />
         {LABEL[state]}
       </span>
+      {notice && (
+        <span role="status" data-testid="carry-notice" className="text-warning">
+          {notice}
+        </span>
+      )}
       <span className="flex-1" />
       <button
         type="button"

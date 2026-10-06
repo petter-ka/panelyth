@@ -13,11 +13,11 @@ func FileTimes(fi fs.FileInfo) Times {
 	return Times{AccessNs: accessNs(fi)}
 }
 
-// Volumes lists "/" plus user-visible mounts from /proc/self/mountinfo.
-func Volumes() ([]Volume, error) {
+// listVolumes lists "/" plus user-visible mounts from /proc/self/mountinfo.
+func listVolumes() ([]Volume, error) {
 	data, err := os.ReadFile("/proc/self/mountinfo")
 	if err != nil {
-		return withSpace([]Volume{{Path: "/", Label: "/", Kind: "fixed"}}), nil
+		return []Volume{{Path: "/", Label: "/", Kind: "fixed"}}, nil
 	}
-	return withSpace(ParseMountInfo(string(data))), nil
+	return ParseMountInfo(string(data)), nil
 }

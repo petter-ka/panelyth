@@ -6,6 +6,8 @@
     "dirId": 14,
     "focusId": 16,
     "path": "/fixtures/golden",
+    "selectionCount": 2,
+    "selectionTooLarge": false,
     "version": 1
   },
   "t": "res"

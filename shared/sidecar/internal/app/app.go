@@ -10,8 +10,10 @@ import (
 	"runtime"
 	"runtime/metrics"
 	"strconv"
+	"strings"
 	"time"
 
+	"fastview/sidecar/internal/fsx"
 	"fastview/sidecar/internal/library"
 	"fastview/sidecar/internal/platform"
 	"fastview/sidecar/internal/rpc"
@@ -56,6 +58,15 @@ func Run(ctx context.Context, cfg Config) error {
 	}
 	// Video posters and probing (ADR-0018); absent tools degrade gracefully.
 	tools := video.Locate(cfg.Getenv)
+	// Benchmarks only (dev mode): a network drive whose space read hangs,
+	// "path=ms" (Stage C03 drive-menu benchmark).
+	if cfg.Getenv("FASTVIEW_DEV_METHODS") == "1" {
+		if path, ms, ok := strings.Cut(cfg.Getenv("FASTVIEW_DEV_SLOW_VOLUME"), "="); ok {
+			if d, perr := strconv.Atoi(ms); perr == nil && path != "" {
+				fsx.SimulateSlowVolume(path, time.Duration(d)*time.Millisecond)
+			}
+		}
+	}
 	svc, err := newIndexService(dirs.CacheRoot, maxBytes, cfg.Logger, srv.Emit, tools)
 	if err != nil {
 		return err

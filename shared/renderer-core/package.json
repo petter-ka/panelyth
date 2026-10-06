@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "Renderer logic shared by the viewer and the commander: query-session page stores (ADR-0031)",
+  "description": "Renderer logic shared by the viewer and the commander: page stores, the selection algebra, the keymap engine, switch settings (ADR-0031)",
   "exports": {
     ".": "./src/index.ts"
   },
@@ -12,7 +12,8 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastview/contracts": "workspace:*"
+    "@fastview/contracts": "workspace:*",
+    "zustand": "5.0.15"
   },
   "peerDependencies": {
     "react": "19.3.0"

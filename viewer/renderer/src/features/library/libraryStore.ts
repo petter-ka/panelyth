@@ -84,7 +84,12 @@ export async function toggleBookmark(path: string): Promise<void> {
   else await addBookmark(path)
 }
 
-/** Loads the library whenever the sidecar becomes ready (start or restart). */
+/**
+ * Loads the library whenever the sidecar becomes ready (start or restart),
+ * follows bookmark changes from either app (the commander's hotlist is this
+ * list, Stage C03), and re-reads recent locations when the viewer is shown
+ * again, since the commander adds to them too.
+ */
 export function startLibraryMonitoring(): () => void {
   let pid: number | null = null
   const check = (status: SidecarStatus | null): void => {
@@ -93,5 +98,18 @@ export function startLibraryMonitoring(): () => void {
     void loadLibrary()
   }
   check(useSidecarStore.getState().status)
-  return useSidecarStore.subscribe((s) => check(s.status))
+  const offStatus = useSidecarStore.subscribe((s) => check(s.status))
+  const offBookmarks = bridge.on("bookmarks.changed", ({ bookmarks }) => set({ bookmarks }))
+  const offShown = bridge.on("app.visibility", ({ app, visible }) => {
+    if (app !== "viewer" || !visible) return
+    void bridge
+      .library()
+      .then((l) => set({ recent: l.recent, bookmarks: l.bookmarks }))
+      .catch(() => undefined)
+  })
+  return () => {
+    offStatus()
+    offBookmarks()
+    offShown()
+  }
 }

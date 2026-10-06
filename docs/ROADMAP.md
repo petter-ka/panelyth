@@ -21,9 +21,9 @@ Only one stage is active at a time. Default order:
 | 2 | P01 — Multi-app platform: one shell, app views | platform | everything after it builds on app views and shared packages |
 | 3 | P02 — Index scope: all entries, filtered per query | platform | the commander lists every file (query core done; the rest open) |
 | 4 | C00 — Commander foundation and the app switch | commander | done 2026-10-05 (with the minimal part of P01) |
-| 5 | C01 — Panels and listing | commander | active: first useful version; folder and focus carried over on switch |
-| 6 | C02 — Keyboard, marks and quick search | commander | the Total Commander interaction model; selection carried over |
-| 7 | C03 — Drives, tabs, hotlist, history, session | commander | navigation complete; shared bookmarks and recent |
+| 5 | C01 — Panels and listing | commander | implemented: first useful version; folder and focus carried over on switch |
+| 6 | C02 — Keyboard, marks and quick search | commander | implementation done: the Total Commander interaction model; selection carried over |
+| 7 | C03 — Drives, tabs, hotlist, history, session | commander | active (implementation done 2026-10-06): navigation complete; shared bookmarks and recent |
 | 8 | P03 — File-operation engine v2 | platform | queue, conflicts, throughput (the viewer gains speed too) |
 | 9 | C04 — File operations | commander | F5 / F6 / F7 / F8 |
 | 10 | C05 — Quick view, lister, open and edit | commander | shared media components |
@@ -133,17 +133,17 @@ Signing, notarization, update strategy, installers, migrations, notices and rele
 The commander as the second app view: dual-panel shell, function-key bar; the switch icon and Ctrl/Cmd+Shift+M in both
 apps; shared appearance.
 
-### C01 — Panels and listing (active; implementation done 2026-10-05)
+### C01 — Panels and listing (implementation done 2026-10-05; gate open)
 
 Two panels with the Full view: every entry, columns, sorting, path bar, status line, hidden-files toggle. Switching
 carries the folder and the entry under the cursor over.
 
-### C02 — Keyboard, marks and quick search
+### C02 — Keyboard, marks and quick search (implementation done 2026-10-05)
 
 Cursor and marks, marking by mask, quick search, swap panels, history, folder sizes. Switching carries the selection
 over.
 
-### C03 — Drives, tabs, hotlist, history and session
+### C03 — Drives, tabs, hotlist, history and session (active; implementation done 2026-10-06)
 
 Drive bar and menus, folder tabs, directory hotlist (= the shared bookmarks), shared recent locations, history, Brief
 view, full session restore.

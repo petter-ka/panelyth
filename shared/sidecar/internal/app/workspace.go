@@ -75,6 +75,19 @@ type (
 	addBookmarkParams struct {
 		Path  string `json:"path"`
 		Label string `json:"label"`
+		Group string `json:"group"`
+	}
+	updateBookmarkParams struct {
+		ID    int64  `json:"id"`
+		Path  string `json:"path"`
+		Label string `json:"label"`
+		Group string `json:"group"`
+	}
+	reorderBookmarksParams struct {
+		IDs []int64 `json:"ids"`
+	}
+	bookmarksEvent struct {
+		Bookmarks []library.Bookmark `json:"bookmarks"`
 	}
 	removeBookmarkParams struct {
 		ID int64 `json:"id"`
@@ -116,6 +129,8 @@ type (
 
 func (s *indexService) registerWorkspace(srv *rpc.Server) {
 	rpc.Register(srv, "fs.volumes", func(context.Context, emptyParams) (fsVolumesResult, error) {
+		// The first call starts the monitor behind volumes.changed.
+		s.volumes.start(s.bg, s.emitVolumes, s.log)
 		v, err := fsx.Volumes()
 		if err != nil {
 			return fsVolumesResult{}, rpc.NewError(rpc.CodeInternal, err.Error())
@@ -182,16 +197,61 @@ func (s *indexService) registerWorkspace(srv *rpc.Server) {
 		if err != nil {
 			return library.Bookmark{}, rpc.NewError(rpc.CodeInvalidPath, "bookmark path must be absolute")
 		}
-		b, err := lib.AddBookmark(ctx, clean, p.Label)
+		b, err := lib.AddBookmark(ctx, clean, p.Label, p.Group)
+		if err == nil {
+			s.bookmarksChanged(ctx, lib)
+		}
 		return b, libError(err)
+	})
+	rpc.Register(srv, "library.updateBookmark", func(ctx context.Context, p updateBookmarkParams) (library.Bookmark, error) {
+		lib, err := s.library(ctx)
+		if err != nil {
+			return library.Bookmark{}, err
+		}
+		clean, err := pathkey.Clean(p.Path)
+		if err != nil {
+			return library.Bookmark{}, rpc.NewError(rpc.CodeInvalidPath, "bookmark path must be absolute")
+		}
+		b, err := lib.UpdateBookmark(ctx, library.Bookmark{ID: p.ID, Path: clean, Label: p.Label, Group: p.Group})
+		if err == nil {
+			s.bookmarksChanged(ctx, lib)
+		}
+		return b, libError(err)
+	})
+	rpc.Register(srv, "library.reorderBookmarks", func(ctx context.Context, p reorderBookmarksParams) (okResult, error) {
+		lib, err := s.library(ctx)
+		if err != nil {
+			return okResult{}, err
+		}
+		if err := lib.ReorderBookmarks(ctx, p.IDs); err != nil {
+			return okResult{}, libError(err)
+		}
+		s.bookmarksChanged(ctx, lib)
+		return okResult{OK: true}, nil
 	})
 	rpc.Register(srv, "library.removeBookmark", func(ctx context.Context, p removeBookmarkParams) (okResult, error) {
 		lib, err := s.library(ctx)
 		if err != nil {
 			return okResult{}, err
 		}
-		return okResult{OK: true}, libError(lib.RemoveBookmark(ctx, p.ID))
+		if err := lib.RemoveBookmark(ctx, p.ID); err != nil {
+			return okResult{}, libError(err)
+		}
+		s.bookmarksChanged(ctx, lib)
+		return okResult{OK: true}, nil
 	})
+}
+
+// bookmarksChanged sends the whole list (at most MaxBookmarks small rows)
+// to both apps, so the viewer's bookmarks and the commander's hotlist stay
+// one list (ADR-0031). Coalesced: a burst of edits sends the last list.
+func (s *indexService) bookmarksChanged(ctx context.Context, lib *library.Library) {
+	list, err := lib.Bookmarks(ctx)
+	if err != nil {
+		s.log.Warn("bookmarks changed", "err", err)
+		return
+	}
+	s.events.Post(evBookmarksChanged, "", bookmarksEvent{Bookmarks: list})
 }
 
 // library waits for library.db to finish opening (tens of milliseconds
@@ -216,6 +276,10 @@ func libError(err error) error {
 		return rpc.NewError(rpc.CodeInvalidArgument, err.Error())
 	case errors.Is(err, library.ErrNotFound):
 		return rpc.NewError(rpc.CodeNotFound, err.Error())
+	case errors.Is(err, library.ErrDuplicate):
+		e := rpc.NewError(rpc.CodeInvalidArgument, err.Error())
+		e.Details = map[string]string{"reason": "duplicate"}
+		return e
 	case errors.Is(err, library.ErrTooManyItems):
 		return rpc.NewError(rpc.CodeInvalidArgument, err.Error())
 	}

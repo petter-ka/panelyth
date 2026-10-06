@@ -1,0 +1,11 @@
+{
+  "id": 140,
+  "ok": true,
+  "r": {
+    "group": "Work",
+    "id": 1,
+    "label": "Golden",
+    "path": "/fixtures/golden"
+  },
+  "t": "res"
+}

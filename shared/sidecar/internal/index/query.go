@@ -182,6 +182,8 @@ type Item struct {
 	Size    int64
 	MtimeNs int64
 	Attrs   int
+	// DirSize is a folder's calculated size (Stage C02); -1 until calculated.
+	DirSize int64
 }
 
 // FoldName is the search form of a name: NFC, lowercased. The same fold is
@@ -510,7 +512,7 @@ func (s *Store) LoadItems(ctx context.Context, ids []int64) ([]Item, error) {
 		args[i] = id
 	}
 	rows, err := s.r.QueryContext(ctx,
-		`SELECT id, kind, name, ext, size_bytes, mtime_ns, path_key, attrs FROM entries WHERE id IN (`+ph[:len(ph)-1]+`)`, args...)
+		`SELECT id, kind, name, ext, size_bytes, mtime_ns, path_key, attrs, COALESCE(dir_size_bytes, -1) FROM entries WHERE id IN (`+ph[:len(ph)-1]+`)`, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -519,7 +521,7 @@ func (s *Store) LoadItems(ctx context.Context, ids []int64) ([]Item, error) {
 	for rows.Next() {
 		var it Item
 		var kind int
-		if err := rows.Scan(&it.ID, &kind, &it.Name, &it.Ext, &it.Size, &it.MtimeNs, &it.PathKey, &it.Attrs); err != nil {
+		if err := rows.Scan(&it.ID, &kind, &it.Name, &it.Ext, &it.Size, &it.MtimeNs, &it.PathKey, &it.Attrs, &it.DirSize); err != nil {
 			return nil, err
 		}
 		it.Kind = media.Kind(kind)

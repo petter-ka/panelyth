@@ -106,9 +106,30 @@ Both apps (ADR-0031, `docs/shared/APP-SWITCHING.md`):
 ```ts
 app.switch({ to: "viewer" | "commander" })            // renderer → main: show the other app view
 onAppVisibility({ app, visible })                     // main → renderer
-context.publish({ app, dirId, focusId })             // C01: the visible app, as itself (main checks both); selection in C02
-context.get()                                         // { version, app, dirId, path, focusId }; version 0 = from the last run
-selection.fromContext({ version, queryId, queryVersion }) // carried selection as ranges of the new session
+context.publish({ app, dirId, focusId, selection? })  // the visible app, as itself (main checks both); selection on the switch only
+context.get()                                         // { version, app, dirId, path, focusId, selectionCount, selectionTooLarge }
+selection.fromContext({ version, queryId })           // C02: the carried selection as ranges of this session
+```
+
+Commander listing extras (Stage C02):
+
+```ts
+query.locate({ queryId, pattern, from, direction })  // quick search: next match (prefix, then substring; * and ?), -1 when none
+query.match({ queryId, mask })                        // mark by mask: { version, ranges, count } of the matching files
+jobs.start({ kind: "dirSize", source })              // folder sizes → ContentItem.dirSizeBytes (and selection.info bytes)
+```
+
+Drives, the hotlist and recent locations (Stage C03; the bookmark methods in both apps' profiles):
+
+```ts
+fs.volumes()                                   // { volumes: { path, label, kind, freeBytes?, totalBytes?, notReady? }[] }
+                                               //   space read per volume with a timeout (0.5 s local, 1.5 s network)
+onVolumesChanged({ volumes })                  // volumes.changed: drives came or went (polled every 2 s, coalesced)
+library.addBookmark({ path, label, group? })   // bookmarks = the commander's hotlist; group "" = none
+library.updateBookmark({ id, path, label, group })  // INVALID_ARGUMENT, details.reason "duplicate" for a taken path
+library.reorderBookmarks({ ids })              // listed first in this order; the rest keep their order
+library.removeBookmark({ id })
+onBookmarksChanged({ bookmarks })              // bookmarks.changed: the whole list after any change, either app
 ```
 
 ## Rules

@@ -7,7 +7,6 @@ import {
   type SortDirection,
   type SortField,
   type SortKey,
-  type Volume,
 } from "@fastview/contracts"
 import { createPageStore, type PageStore } from "@fastview/renderer-core"
 import { create } from "zustand"
@@ -37,6 +36,9 @@ export const COLUMN_SORT: Record<ColumnId, SortField> = {
 
 export const DEFAULT_SORT: SortKey = { field: "name", direction: "asc" }
 
+/** Full (table, Ctrl+F2) or Brief (names in columns, Ctrl+F1); per tab (ADR-0028). */
+export type ViewMode = "full" | "brief"
+
 export type PanelErrorKind = "notFound" | "denied" | "notReady" | "network" | "other"
 
 export interface PanelError {
@@ -60,12 +62,18 @@ export interface PanelState {
   query: QuerySnapshot | null
   sort: SortKey
   showHidden: boolean
+  view: ViewMode
   /** Row index in the view; row 0 is ".." when the folder has a parent. */
   cursor: number
   columns: ColumnWidths
   /** Increments when the view should bring the cursor into view. */
   revealToken: number
+  /** Visited folders of this panel (Alt+← / Alt+→); `historyIndex` is the current one. */
+  history: string[]
+  historyIndex: number
 }
+
+const MAX_HISTORY = 50
 
 const emptyPanel = (): PanelState => ({
   dirId: null,
@@ -79,9 +87,12 @@ const emptyPanel = (): PanelState => ({
   query: null,
   sort: DEFAULT_SORT,
   showHidden: false,
+  view: "full",
   cursor: 0,
   columns: DEFAULT_COLUMNS,
   revealToken: 0,
+  history: [],
+  historyIndex: -1,
 })
 
 export const useListingStore = create<Record<Side, PanelState>>(() => ({
@@ -91,7 +102,7 @@ export const useListingStore = create<Record<Side, PanelState>>(() => ({
 
 const getPanel = (side: Side): PanelState => useListingStore.getState()[side]
 
-function patch(side: Side, value: Partial<PanelState>): void {
+export function patch(side: Side, value: Partial<PanelState>): void {
   useListingStore.setState((s) => ({ [side]: { ...s[side], ...value } }))
 }
 
@@ -107,10 +118,13 @@ const stores: Record<Side, PageStore> = { left: makeStore(), right: makeStore() 
 
 export const pageStoreOf = (side: Side): PageStore => stores[side]
 
-for (const side of SIDES) {
-  // The session was evicted or the sidecar restarted: reopen it in place.
-  stores[side].setExpiredHandler(() => void reopenQuery(side))
+function bindExpired(): void {
+  for (const side of SIDES) {
+    // The session was evicted or the sidecar restarted: reopen it in place.
+    stores[side].setExpiredHandler(() => void reopenQuery(side))
+  }
 }
+bindExpired()
 
 // Rows ------------------------------------------------------------------------
 
@@ -171,6 +185,17 @@ interface NavigateOptions {
   focusId?: number | null
   /** Throw instead of showing the error state (the path bar shows it inline). */
   inline?: boolean
+  /** Back/forward move within the history instead of adding to it. */
+  historyIndex?: number
+  /** A tab being shown (tabs.ts): never branches off a locked tab. */
+  tabLoad?: boolean
+}
+
+function recordHistory(p: PanelState, path: string, jump?: number) {
+  if (jump !== undefined) return { historyIndex: jump }
+  if (p.history[p.historyIndex] === path) return {}
+  const history = [...p.history.slice(0, p.historyIndex + 1), path].slice(-MAX_HISTORY)
+  return { history, historyIndex: history.length - 1 }
 }
 
 /** dir.open → query.open → cursor; stale answers are dropped per panel. */
@@ -199,11 +224,22 @@ async function navigate(
       }
       if (at && at.index >= 0) cursor = at.index + parent
     }
+    const before = getPanel(side)
+    // A locked tab keeps its folder: the new one opens in a new tab (tabs.ts).
+    if (
+      before.dirId !== null &&
+      before.dirId !== dir.dirId &&
+      options.historyIndex === undefined &&
+      !options.tabLoad
+    ) {
+      folderChangeHook?.(side)
+    }
     const previous = getPanel(side).query
-    if (previous && previous.queryId !== snapshot.queryId) {
+    if (previous && previous.queryId !== snapshot.queryId && !isParked(previous.queryId)) {
       void bridge.closeQuery(previous.queryId).catch(() => undefined)
     }
     stores[side].reset(snapshot)
+    sessionChanged(side, { kind: "reset" })
     const p = getPanel(side)
     patch(side, {
       dirId: dir.dirId,
@@ -217,6 +253,7 @@ async function navigate(
       query: snapshot,
       cursor,
       revealToken: p.revealToken + 1,
+      ...recordHistory(p, dir.path, options.historyIndex),
     })
     schedulePersist()
     if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
@@ -255,6 +292,62 @@ export function goUp(side: Side): Promise<void> {
   const parent = p.crumbs.at(-2)
   if (!parent || p.dirId === null) return Promise.resolve()
   return openPath(side, parent.path, { focusId: p.dirId })
+}
+
+/** Alt+← / Alt+→: the panel's previous or next folder. */
+export function goHistory(side: Side, step: -1 | 1): Promise<void> {
+  return jumpHistory(side, getPanel(side).historyIndex + step)
+}
+
+/** The history menu (Alt+↓): any folder of the tab's history, keeping the history. */
+export function jumpHistory(side: Side, index: number): Promise<void> {
+  const p = getPanel(side)
+  const path = p.history[index]
+  if (path === undefined || index === p.historyIndex) return Promise.resolve()
+  return openPath(side, path, { historyIndex: index })
+}
+
+/** Ctrl+\: the root of the panel's drive or file system. */
+export function goRoot(side: Side): Promise<void> {
+  const root = getPanel(side).crumbs[0]
+  return root && getPanel(side).crumbs.length > 1 ? openPath(side, root.path) : Promise.resolve()
+}
+
+/**
+ * Ctrl+← / Ctrl+→: the folder under the active panel's cursor (".." is the
+ * parent; a file means the panel's own folder) opens in the left or right
+ * panel.
+ */
+export function openIn(target: Side, from: Side): Promise<void> {
+  const p = getPanel(from)
+  if (p.dirId === null) return Promise.resolve()
+  const index = p.cursor - parentRows(p)
+  if (index < 0) {
+    const parent = p.crumbs.at(-2)
+    return parent ? openPath(target, parent.path) : Promise.resolve()
+  }
+  const item = stores[from].getItem(index)
+  if (item?.kind === "dir") return openFolderEntry(target, item.id)
+  return target === from ? Promise.resolve() : openFolderEntry(target, p.dirId)
+}
+
+/**
+ * Ctrl+U: the panels trade places: folders, sessions, sorts, cursors and
+ * history (marks follow in marks.ts). In-flight navigations are dropped.
+ */
+export function swapPanels(): void {
+  seqs.left++
+  seqs.right++
+  ;[stores.left, stores.right] = [stores.right, stores.left]
+  ;[failed.left, failed.right] = [failed.right, failed.left]
+  bindExpired()
+  const { left, right } = useListingStore.getState()
+  useListingStore.setState({
+    left: { ...right, revealToken: right.revealToken + 1 },
+    right: { ...left, revealToken: left.revealToken + 1 },
+  })
+  schedulePersist()
+  listeners.forEach((l) => l(usePanelsStore.getState().active))
 }
 
 /** Enter: folders open; files wait for Stage C05 (open, lister). */
@@ -304,10 +397,11 @@ async function reopenQuery(side: Side): Promise<void> {
       return
     }
     const previous = getPanel(side).query
-    if (previous && previous.queryId !== snapshot.queryId) {
+    if (previous && previous.queryId !== snapshot.queryId && !isParked(previous.queryId)) {
       void bridge.closeQuery(previous.queryId).catch(() => undefined)
     }
     stores[side].reset(snapshot)
+    sessionChanged(side, { kind: "reset" })
     patch(side, {
       query: snapshot,
       cursor: cursor >= 0 ? cursor : 0,
@@ -316,6 +410,124 @@ async function reopenQuery(side: Side): Promise<void> {
   } catch (error) {
     if (seq === seqs[side]) patch(side, { error: toPanelError(error) })
   }
+}
+
+// Tab sessions (Stage C03, ADR-0028) ------------------------------------------------
+// Only the visible tab holds a session. A tab being left parks its session
+// for a short grace period, so switching back and forth reuses it; then it
+// closes. Invalidations keep a parked snapshot current.
+
+export const TAB_GRACE_MS = 3000
+
+interface ParkedSession {
+  dirId: number
+  path: string
+  name: string
+  crumbs: Crumb[]
+  query: QuerySnapshot
+  timer: ReturnType<typeof setTimeout>
+}
+
+const parked = new Map<number, ParkedSession>()
+
+const isParked = (queryId: number): boolean =>
+  [...parked.values()].some((s) => s.query.queryId === queryId)
+
+/** Tests and benchmarks: the parked sessions' query ids. */
+export const parkedQueryIds = (): number[] => [...parked.values()].map((s) => s.query.queryId)
+
+/** Closes a parked session now (its tab closed, or the grace period ended). */
+export function dropParked(tabId: number): void {
+  const s = parked.get(tabId)
+  if (!s) return
+  clearTimeout(s.timer)
+  parked.delete(tabId)
+  // Still on screen behind a failed navigation: the next navigation closes it.
+  if (SIDES.some((side) => getPanel(side).query?.queryId === s.query.queryId)) return
+  void bridge.closeQuery(s.query.queryId).catch(() => undefined)
+}
+
+/** A tab is being left: its session stays open for TAB_GRACE_MS. */
+export function parkSession(side: Side, tabId: number): void {
+  const p = getPanel(side)
+  dropParked(tabId)
+  if (!p.query || p.dirId === null) return
+  parked.set(tabId, {
+    dirId: p.dirId,
+    path: p.path,
+    name: p.name,
+    crumbs: p.crumbs,
+    query: p.query,
+    timer: setTimeout(() => dropParked(tabId), TAB_GRACE_MS),
+  })
+}
+
+/** Drops in-flight navigations of a panel (a tab switch supersedes them). */
+export function cancelNavigation(side: Side): void {
+  seqs[side]++
+  failed[side] = null
+}
+
+/**
+ * Shows a tab's parked session again, if it is still open: rows come from
+ * the session at once, the cursor goes back to its entry, and the folder is
+ * re-listed in the background. False when nothing was parked.
+ */
+export function adoptSession(side: Side, tabId: number, focusId: number | null): boolean {
+  const s = parked.get(tabId)
+  if (!s) return false
+  clearTimeout(s.timer)
+  parked.delete(tabId)
+  const seq = ++seqs[side]
+  const previous = getPanel(side).query
+  if (previous && previous.queryId !== s.query.queryId && !isParked(previous.queryId)) {
+    void bridge.closeQuery(previous.queryId).catch(() => undefined)
+  }
+  stores[side].reset(s.query)
+  sessionChanged(side, { kind: "reset" })
+  const p = getPanel(side)
+  patch(side, {
+    dirId: s.dirId,
+    path: s.path,
+    name: s.name,
+    crumbs: s.crumbs,
+    scanId: 0,
+    progress: null,
+    loading: false,
+    error: null,
+    query: s.query,
+    cursor: 0,
+    revealToken: p.revealToken + 1,
+  })
+  if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
+  void (async () => {
+    if (focusId !== null) {
+      const at = await bridge.indexOf(s.query.queryId, focusId).catch(() => null)
+      if (seq !== seqs[side]) return
+      if (at && at.index >= 0) {
+        patch(side, {
+          cursor: at.index + parentRows(getPanel(side)),
+          revealToken: getPanel(side).revealToken + 1,
+        })
+      }
+    }
+    if (seq === seqs[side]) await refresh(side)
+  })()
+  return true
+}
+
+let folderChangeHook: ((side: Side) => void) | null = null
+
+/** tabs.ts: called before a panel shows another folder (a locked tab branches off). */
+export function setFolderChangeHook(hook: ((side: Side) => void) | null): void {
+  folderChangeHook = hook
+}
+
+/** Ctrl+F1 / Ctrl+F2: the Brief or the Full view. */
+export function setView(side: Side, view: ViewMode): void {
+  if (getPanel(side).view === view) return
+  patch(side, { view, revealToken: getPanel(side).revealToken + 1 })
+  schedulePersist()
 }
 
 /** A header click or Ctrl+F3…F6: that column ascending, or reversed when it already sorts. */
@@ -359,6 +571,23 @@ export function stopListing(side: Side): void {
   if (scanId) void bridge.cancelScan(scanId).catch(() => undefined)
 }
 
+/**
+ * A panel's session changed: "reset" for a new session (navigation, sort,
+ * hidden toggle), "invalidated" when the same session got a new version
+ * (marks are rebased, marks.ts).
+ */
+export type SessionChange =
+  { kind: "reset" } | { kind: "invalidated"; queryId: number; from: number; to: number }
+const sessionListeners = new Set<(side: Side, change: SessionChange) => void>()
+export function onSessionChanged(
+  listener: (side: Side, change: SessionChange) => void,
+): () => void {
+  sessionListeners.add(listener)
+  return () => sessionListeners.delete(listener)
+}
+const sessionChanged = (side: Side, change: SessionChange): void =>
+  sessionListeners.forEach((l) => l(side, change))
+
 // The active panel changed folder: the shared context follows (carry.ts).
 const listeners = new Set<(side: Side) => void>()
 export function onActiveFolderChanged(listener: (side: Side) => void): () => void {
@@ -379,8 +608,15 @@ async function applyInvalidation(side: Side, snapshot: QuerySnapshot): Promise<v
   if (p.query?.queryId !== snapshot.queryId || snapshot.version <= p.query.version) return
   // The cursor follows its entry when rows move (inserted or removed above it).
   const focusId = cursorEntryId(side)
+  const from = p.query.version
   stores[side].invalidate(snapshot)
   patch(side, { query: snapshot })
+  sessionChanged(side, {
+    kind: "invalidated",
+    queryId: snapshot.queryId,
+    from,
+    to: snapshot.version,
+  })
   if (focusId === null) {
     moveCursor(side, getPanel(side).cursor)
     return
@@ -397,6 +633,11 @@ export function startListingEvents(onShown: () => void): () => void {
   if (!isBridgeAvailable()) return () => undefined
   const offs = [
     bridge.on("query.invalidated", (snapshot) => {
+      for (const s of parked.values()) {
+        if (s.query.queryId === snapshot.queryId && snapshot.version > s.query.version) {
+          s.query = snapshot
+        }
+      }
       for (const side of SIDES) {
         if (getPanel(side).query?.queryId !== snapshot.queryId) continue
         // A hidden app makes no page requests (docs/shared/APP-SWITCHING.md).
@@ -436,46 +677,16 @@ export function startListingEvents(onShown: () => void): () => void {
   }
 }
 
-// Free space ------------------------------------------------------------------------
+// Persistence: session.ts writes commander.panels ---------------------------------------
 
-const VOLUMES_TTL_MS = 10_000
-let volumes: { at: number; list: Promise<Volume[]> } | null = null
-
-/** The volume holding the folder: the deepest crumb that is a volume root. */
-export async function volumeOf(crumbs: readonly Crumb[]): Promise<Volume | null> {
-  if (!volumes || Date.now() - volumes.at > VOLUMES_TTL_MS) {
-    volumes = { at: Date.now(), list: bridge.volumes().catch(() => []) }
-  }
-  const list = await volumes.list
-  const fold = (s: string): string => s.toLowerCase()
-  for (let i = crumbs.length - 1; i >= 0; i--) {
-    const path = fold(crumbs[i]!.path)
-    const hit = list.find((v) => fold(v.path) === path)
-    if (hit) return hit
-  }
-  return null
-}
-
-// Persistence: commander.panels -------------------------------------------------------
-
-export const PANELS_KEY = "commander.panels"
 const PERSIST_DELAY_MS = 400
-
-interface StoredPanel {
-  path: string
-  sort: SortKey
-  showHidden: boolean
-  columns: ColumnWidths
-}
-
-export interface StoredPanels {
-  v: 1
-  active: Side
-  left?: StoredPanel
-  right?: StoredPanel
-}
-
 let persistTimer: ReturnType<typeof setTimeout> | null = null
+let persistHandler: (() => void) | null = null
+
+/** session.ts: writes the panels, their tabs and views. */
+export function setPersistHandler(handler: (() => void) | null): void {
+  persistHandler = handler
+}
 
 export function schedulePersist(): void {
   if (!isBridgeAvailable()) return
@@ -486,26 +697,19 @@ export function schedulePersist(): void {
 export function flushPersist(): void {
   if (persistTimer) clearTimeout(persistTimer)
   persistTimer = null
-  if (!isBridgeAvailable()) return
-  const stored: StoredPanels = { v: 1, active: usePanelsStore.getState().active }
-  for (const side of SIDES) {
-    const p = getPanel(side)
-    if (p.path)
-      stored[side] = { path: p.path, sort: p.sort, showHidden: p.showHidden, columns: p.columns }
-  }
-  void bridge.setSetting(PANELS_KEY, stored).catch(() => undefined)
+  if (isBridgeAvailable()) persistHandler?.()
 }
 
 const SORT_FIELDS_OK: ReadonlySet<unknown> = new Set(Object.values(COLUMN_SORT))
 
-function readSort(v: unknown): SortKey {
+export function readSort(v: unknown): SortKey {
   const s = v as Partial<SortKey> | undefined
   return SORT_FIELDS_OK.has(s?.field) && (s?.direction === "asc" || s?.direction === "desc")
     ? { field: s.field as SortField, direction: s.direction }
     : DEFAULT_SORT
 }
 
-function readColumns(v: unknown): ColumnWidths {
+export function readColumns(v: unknown): ColumnWidths {
   const out = { ...DEFAULT_COLUMNS }
   const c = (v ?? {}) as Record<string, unknown>
   for (const key of Object.keys(out) as (keyof ColumnWidths)[]) {
@@ -515,49 +719,6 @@ function readColumns(v: unknown): ColumnWidths {
   return out
 }
 
-/** Validated stored panels; unknown shapes fall back to defaults. */
-export function readStoredPanels(value: unknown): StoredPanels {
-  const v = value as Partial<StoredPanels> | undefined
-  const out: StoredPanels = { v: 1, active: v?.active === "right" ? "right" : "left" }
-  if (v?.v !== 1) return out
-  for (const side of SIDES) {
-    const p = v[side] as Partial<StoredPanel> | undefined
-    if (typeof p?.path !== "string" || p.path === "") continue
-    out[side] = {
-      path: p.path,
-      sort: readSort(p.sort),
-      showHidden: p.showHidden === true,
-      columns: readColumns(p.columns),
-    }
-  }
-  return out
-}
-
-/**
- * Start: each panel opens its persisted folder (home on first run). A
- * folder carried over from the viewer replaces the active panel's.
- */
-export async function restorePanels(carried: { dirId: number; focusId: number | null } | null) {
-  const { settings } = await bridge.library()
-  const stored = readStoredPanels(settings[PANELS_KEY])
-  usePanelsStore.setState({ active: stored.active })
-  let home: Promise<string | null> | null = null
-  await Promise.all(
-    SIDES.map(async (side) => {
-      const saved = stored[side]
-      if (saved)
-        patch(side, { sort: saved.sort, showHidden: saved.showHidden, columns: saved.columns })
-      if (carried && side === stored.active) {
-        return openFolderEntry(side, carried.dirId, { focusId: carried.focusId })
-      }
-      if (saved) return openPath(side, saved.path)
-      home ??= bridge.homePath().catch(() => null)
-      const path = await home
-      if (path) return openPath(side, path)
-    }),
-  )
-}
-
 /** Tests: back to the initial state. */
 export function resetListing(): void {
   seqs.left = seqs.right = 0
@@ -565,8 +726,10 @@ export function resetListing(): void {
   progressByScan.clear()
   pendingInvalidation.left = pendingInvalidation.right = null
   visible = true
-  volumes = null
   listeners.clear()
+  for (const s of parked.values()) clearTimeout(s.timer)
+  parked.clear()
+  folderChangeHook = null
   if (persistTimer) clearTimeout(persistTimer)
   persistTimer = null
   for (const side of SIDES) stores[side].reset(null)

@@ -60,9 +60,9 @@ A stage is complete only when:
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
 | C00 | Foundation and the app switch | P01 | done (2026-10-05) |
-| C01 | Panels and listing | C00, P02 | **active**: implementation done; cold-cache 100k timings and the rest of P02 open |
-| C02 | Keyboard, marks and quick search | C01 | planned |
-| C03 | Drives, tabs, hotlist, history and session | C02 | planned |
+| C01 | Panels and listing | C00, P02 | implementation done; cold-cache 100k timings and the rest of P02 open |
+| C02 | Keyboard, marks and quick search | C01 | implementation done; the NVDA pass and the C01 open items remain |
+| C03 | Drives, tabs, hotlist, history and session | C02 | **active**: implementation done (2026-10-06); the NVDA pass remains |
 | C04 | File operations | C03, P03 | planned |
 | C05 | Quick view, lister, open and edit | C04 | planned |
 | C06 | Find files, branch view and quick filter | C05 | planned |
@@ -89,13 +89,21 @@ A stage is complete only when:
 
 ## Active stage
 
-`C01 — Panels and listing` (`docs/commander/stages/C01-panels-and-listing.md`), started 2026-10-05 at the owner's
-request, after C00 closed (the both-views budget recalibrated to 160 MB) and before the rest of P01 and P02. The
-commander lists every entry in both panels (Full view on TanStack Table + Virtual), sorts in Go, persists its panels,
-and carries the folder and the entry under the cursor over on the switch both ways; the last used app opens at the
-next start. Warm runs pass every listing budget (100k first rows 144–151 ms, sort 95–102 ms); open: the cold-cache
-first run (470 / 366 ms), and the rest of P02 (per-app session budgets, visible-app watching). P01's
-`shared/renderer-core` extraction is still partial (the page store only).
+`C03 — Drives, tabs, hotlist, history and session` (`docs/commander/stages/C03-drives-tabs-hotlist.md`), started
+2026-10-06 at the owner's request while the C01 and C02 gates were still open. The commander has folder tabs per panel
+(only the visible tab holds a session; a tab left keeps it for a 3 s grace period), the drive bar and drive menus
+with per-volume timeouts in Go, the directory hotlist as the bookmarks shared with the viewer (with groups, live in
+both apps through `bookmarks.changed`), the history menu with the recent locations of both apps, the Brief view, a
+full session restore (`commander.panels` v2) and Settings → Panels. Open from C03: an NVDA pass over the Brief view
+and the menus (with C02's).
+
+Open from C01: the cold-cache 100k timings (470 / 366 ms on the first run after a build) and the rest of P02
+(per-app session budgets, visible-app watching). Open from C02: the manual NVDA pass. P01's shared-package
+extraction moved on with C02 (selection algebra, keymap engine, dialogs) but is not complete.
+
+Test runs on the reference machine hit intermittent native crashes of Node and Electron processes (access violations
+in vitest workers, Playwright and pnpm itself) at random points since 2026-10-05; reruns pass. Together with the Stage
+07 SQLite heap fault this points at the machine; see the C02 stage record.
 
 The Stage 08 and 08.5 gates are still open: their implementation is done (2026-10-01), but their automated coverage
 was never added (`docs/viewer/stages/08-product-polish.md`, `docs/viewer/stages/08.5-viewer-settings.md`).

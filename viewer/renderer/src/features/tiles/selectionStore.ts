@@ -1,4 +1,10 @@
 import type { SelectionDescriptor } from "@fastview/contracts"
+import {
+  inRanges,
+  markCount,
+  normalize,
+  toDescriptor as marksToDescriptor,
+} from "@fastview/renderer-core"
 import { create } from "zustand"
 
 /**
@@ -60,47 +66,13 @@ export const useSelectionStore = create<SelectionState>(initial)
 const set = useSelectionStore.setState
 const get = useSelectionStore.getState
 
-function inRanges(ranges: readonly [number, number][], index: number): boolean {
-  // Binary search: ranges are sorted and disjoint.
-  let lo = 0
-  let hi = ranges.length - 1
-  while (lo <= hi) {
-    const mid = (lo + hi) >> 1
-    const [a, b] = ranges[mid]!
-    if (index < a) hi = mid - 1
-    else if (index >= b) lo = mid + 1
-    else return true
-  }
-  return false
-}
-
 export function isSelected(s: SelectionState, index: number, id: number | undefined): boolean {
   if (id !== undefined && s.include.has(id)) return true
   return inRanges(s.ranges, index) && (id === undefined || !s.exclude.has(id))
 }
 
-/** Merges ranges and moves explicit ids that the ranges now cover. */
-function normalize(
-  ranges: [number, number][],
-  include: Map<number, number>,
-  exclude: Map<number, number>,
-): Pick<SelectionState, "ranges" | "include" | "exclude"> {
-  const sorted = ranges.filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0])
-  const merged: [number, number][] = []
-  for (const r of sorted) {
-    const last = merged.at(-1)
-    if (last && r[0] <= last[1]) last[1] = Math.max(last[1], r[1])
-    else merged.push([r[0], r[1]])
-  }
-  const inc = new Map([...include].filter(([, i]) => !inRanges(merged, i)))
-  const exc = new Map([...exclude].filter(([, i]) => inRanges(merged, i)))
-  return { ranges: merged, include: inc, exclude: exc }
-}
-
 export function selectionCount(s: SelectionState): number {
-  let n = 0
-  for (const [a, b] of s.ranges) n += b - a
-  return n - s.exclude.size + s.include.size
+  return markCount(s)
 }
 
 /** Plain click: select only this tile. */
@@ -222,13 +194,7 @@ export function toDescriptor(
   queryId: number,
   version: number,
 ): SelectionDescriptor {
-  return {
-    queryId,
-    version,
-    ranges: s.ranges.map(([a, b]) => [a, b]),
-    include: [...s.include.keys()],
-    exclude: [...s.exclude.keys()],
-  }
+  return marksToDescriptor(s, queryId, version)
 }
 
 /** Applies a descriptor that Go rebased onto a new session version (ranges only). */

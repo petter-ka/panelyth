@@ -17,9 +17,9 @@ func FileTimes(fi fs.FileInfo) Times {
 	return Times{}
 }
 
-// Volumes lists drive letters. Labels are read only for local drives:
+// listVolumes lists drive letters. Labels are read only for local drives:
 // querying a disconnected network share can stall for seconds.
-func Volumes() ([]Volume, error) {
+func listVolumes() ([]Volume, error) {
 	mask, err := windows.GetLogicalDrives()
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func Volumes() ([]Volume, error) {
 		}
 		out = append(out, v)
 	}
-	return withSpace(out), nil
+	return out, nil
 }
 
 func diskSpace(root string) (free, total int64, ok bool) {
@@ -63,6 +63,8 @@ func diskSpace(root string) (free, total int64, ok bool) {
 	if err != nil {
 		return 0, 0, false
 	}
+	old := windows.SetErrorMode(windows.SEM_FAILCRITICALERRORS | windows.SEM_NOOPENFILEERRORBOX)
+	defer windows.SetErrorMode(old)
 	var avail, size, totalFree uint64
 	if windows.GetDiskFreeSpaceEx(p, &avail, &size, &totalFree) != nil {
 		return 0, 0, false

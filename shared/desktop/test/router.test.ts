@@ -85,13 +85,7 @@ describe("invoke router", () => {
       r: { ok: true },
     })
     expect(main["app.switch"]).toHaveBeenCalledWith(commander, { to: "viewer" })
-    for (const m of [
-      "shell.open",
-      "media.open",
-      "jobs.start",
-      "preview.ensure",
-      "selection.info",
-    ]) {
+    for (const m of ["shell.open", "media.open", "preview.ensure", "clip.set", "entry.rename"]) {
       const res = await handler(commander, m, {})
       expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     }
@@ -119,6 +113,85 @@ describe("invoke router", () => {
     ).resolves.toMatchObject({ ok: true })
     await expect(handler(commander, "fs.volumes", {})).resolves.toMatchObject({ ok: true })
     expect(sidecar.call).toHaveBeenCalledWith("query.open", descriptor)
+  })
+
+  it("lets the commander calculate folder sizes, but no other job before Stage C04", async () => {
+    const { handler, sidecar, commander } = setup()
+    const sel = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    await expect(
+      handler(commander, "jobs.start", { kind: "dirSize", source: { selection: sel } }),
+    ).resolves.toMatchObject({ ok: true })
+    for (const kind of ["trash", "delete"]) {
+      await expect(
+        handler(commander, "jobs.start", { kind, source: { selection: sel } }),
+      ).resolves.toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    }
+    expect(sidecar.call).toHaveBeenCalledTimes(1)
+  })
+
+  it("validates quick search, mask marking and the carried selection (Stage C02)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const sel = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    const good: [string, unknown][] = [
+      ["query.locate", { queryId: 1, pattern: "ab*", from: 0, direction: "forward" }],
+      ["query.match", { queryId: 1, mask: "*.jpg|*.tmp" }],
+      ["selection.fromContext", { version: 2, queryId: 1 }],
+      ["context.publish", { app: "commander", dirId: 3, focusId: null, selection: sel }],
+      ["context.publish", { app: "commander", dirId: 3, focusId: 4, selection: null }],
+    ]
+    for (const [m, p] of good) {
+      expect(await handler(commander, m, p), m).toMatchObject({ ok: true })
+    }
+    const bad: [string, unknown][] = [
+      ["query.locate", { queryId: 1, pattern: "ab", from: 0, direction: "up" }],
+      ["query.locate", { queryId: 1, pattern: "x".repeat(300), from: 0, direction: "forward" }],
+      ["query.match", { queryId: 1, mask: "" }],
+      ["selection.fromContext", { version: 0, queryId: 1 }],
+      ["context.publish", { app: "commander", dirId: 3, focusId: null, selection: { queryId: 1 } }],
+    ]
+    for (const [m, p] of bad) {
+      expect(await handler(commander, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer reads the carried selection too.
+    expect(await handler(ok, "selection.fromContext", { version: 1, queryId: 1 })).toMatchObject({
+      ok: true,
+    })
+    expect(sidecar.call).toHaveBeenCalledTimes(good.length + 1)
+  })
+
+  it("lets both apps edit the shared bookmarks, validated (Stage C03)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const path = process.platform === "win32" ? "C:\\photos" : "/photos"
+    const good: [string, unknown][] = [
+      ["library.addBookmark", { path, label: "" }],
+      ["library.addBookmark", { path, label: "Photos", group: "Work" }],
+      ["library.updateBookmark", { id: 1, path, label: "P", group: "" }],
+      ["library.reorderBookmarks", { ids: [3, 1, 2] }],
+      ["library.removeBookmark", { id: 1 }],
+    ]
+    for (const [m, p] of good) {
+      expect(await handler(commander, m, p), m).toMatchObject({ ok: true })
+    }
+    const bad: [string, unknown][] = [
+      ["library.addBookmark", { path, label: "", group: 5 }],
+      ["library.addBookmark", { path, label: "", group: "g".repeat(129) }],
+      ["library.addBookmark", { path: "relative", label: "" }],
+      ["library.updateBookmark", { id: 0, path, label: "", group: "" }],
+      ["library.updateBookmark", { id: 1, path, label: "" }],
+      ["library.reorderBookmarks", { ids: [1, -2] }],
+      ["library.reorderBookmarks", { ids: Array.from({ length: 501 }, (_, i) => i + 1) }],
+    ]
+    for (const [m, p] of bad) {
+      expect(await handler(commander, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    expect(await handler(ok, "library.reorderBookmarks", { ids: [1] })).toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenCalledTimes(good.length + 1)
   })
 
   it("keeps the viewer on the media scope", async () => {
@@ -610,6 +683,25 @@ describe("sidecar event forwarding", () => {
         p: { queryId: 1, version: 2, total: 5 },
       }),
     ).not.toBeNull()
+  })
+
+  it("forwards drive and bookmark changes (Stage C03)", () => {
+    const volumes = [{ path: "E:\\", label: "", kind: "removable", notReady: true }]
+    expect(
+      forwardableEvent({ t: "evt", ch: "volumes.changed", seq: 1, p: { volumes } }),
+    ).not.toBeNull()
+    const bookmarks = [{ id: 1, path: "/a", label: "a", group: "" }]
+    expect(
+      forwardableEvent({ t: "evt", ch: "bookmarks.changed", seq: 1, p: { bookmarks } }),
+    ).not.toBeNull()
+    expect(
+      forwardableEvent({
+        t: "evt",
+        ch: "bookmarks.changed",
+        seq: 1,
+        p: { bookmarks: [{ id: 1, path: "/a", label: "a" }] },
+      }),
+    ).toBeNull()
   })
 
   it("drops unknown channels, main-owned channels and malformed payloads", () => {

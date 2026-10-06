@@ -51,6 +51,8 @@ import {
   type QueryPageResult,
   type QuerySnapshot,
   type QueryIndexOfResult,
+  type QueryLocateResult,
+  type QueryMatchResult,
   type SharedContext,
   type ShutdownResult,
   type SidecarMethodMap,
@@ -108,9 +110,10 @@ const isVolume = (v: unknown): v is Volume =>
   isStr(v.kind) &&
   volumeKinds.has(v.kind) &&
   (v.freeBytes === undefined || isCount(v.freeBytes)) &&
-  (v.totalBytes === undefined || isCount(v.totalBytes))
+  (v.totalBytes === undefined || isCount(v.totalBytes)) &&
+  (v.notReady === undefined || isBool(v.notReady))
 const isBookmark = (v: unknown): v is Bookmark =>
-  isRec(v) && isInt(v.id) && isStr(v.path) && isStr(v.label)
+  isRec(v) && isInt(v.id) && isStr(v.path) && isStr(v.label) && isStr(v.group)
 const isRecent = (v: unknown): v is RecentFolder =>
   isRec(v) && isStr(v.path) && isInt(v.lastOpenedAt)
 const isOk = (v: unknown): v is OkResult => isRec(v) && isBool(v.ok)
@@ -222,6 +225,7 @@ export function isContentItem(v: unknown): v is ContentItem {
     isRating(v.rating) &&
     isLabel(v.label) &&
     (v.attrs === undefined || (isCount(v.attrs) && v.attrs < 64)) &&
+    (v.dirSizeBytes === undefined || isCount(v.dirSizeBytes)) &&
     (v.thumb === null || isThumb(v.thumb))
   )
 }
@@ -315,7 +319,14 @@ export const sidecarResultGuards: ResultGuards = {
     (v.app === "" || v.app === "viewer" || v.app === "commander") &&
     isCount(v.dirId) &&
     isStr(v.path) &&
-    intOrNull(v.focusId),
+    intOrNull(v.focusId) &&
+    isCount(v.selectionCount) &&
+    isBool(v.selectionTooLarge),
+  "query.locate": (v): v is QueryLocateResult =>
+    isRec(v) && isInt(v.index) && v.index >= -1 && isInt(v.version),
+  "query.match": (v): v is QueryMatchResult =>
+    isRec(v) && isInt(v.version) && isCount(v.count) && arrayOf(v.ranges, isRange),
+  "selection.fromContext": (v): v is SelectionDescriptor => isSelectionDescriptor(v),
   // Only images and videos are ever served (ADR-0026, ADR-0027).
   "media.resolve": (v): v is MediaResolveResult =>
     isRec(v) &&
@@ -402,6 +413,8 @@ export const sidecarResultGuards: ResultGuards = {
     arrayOf(v.recent, isRecent),
   "library.setSetting": isOk,
   "library.addBookmark": isBookmark,
+  "library.updateBookmark": isBookmark,
+  "library.reorderBookmarks": isOk,
   "library.removeBookmark": isOk,
   "jobs.start": isJobSnapshot,
   "jobs.cancel": (v): v is JobCancelResult => isRec(v) && isBool(v.cancelled),
@@ -432,4 +445,11 @@ export const eventGuards: EventGuards = {
     isRec(v) && (v.app === "viewer" || v.app === "commander") && typeof v.visible === "boolean",
   "settings.changed": (v): v is EventMap["settings.changed"] =>
     isRec(v) && isStr(v.key) && v.key.startsWith("shared."),
+  "volumes.changed": (v): v is EventMap["volumes.changed"] =>
+    isRec(v) && Array.isArray(v.volumes) && v.volumes.length <= 256 && v.volumes.every(isVolume),
+  "bookmarks.changed": (v): v is EventMap["bookmarks.changed"] =>
+    isRec(v) &&
+    Array.isArray(v.bookmarks) &&
+    v.bookmarks.length <= 500 &&
+    v.bookmarks.every(isBookmark),
 }

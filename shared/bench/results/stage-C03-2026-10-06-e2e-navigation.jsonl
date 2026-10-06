@@ -1,0 +1,16 @@
+{"at":"2026-10-06T06:23:26.892Z","test":"tab-switch-1k","warmP95Ms":12.2,"warmMedianMs":5.7,"coldMedianMs":39.4,"coldP95Ms":46.4,"budgetP95Ms":50}
+{"at":"2026-10-06T06:23:29.058Z","test":"drive-menu-dead-share","menuOpenMs":4,"otherPanelCursorMs":1,"deadShareListedAfterMs":1330,"shareDelayMs":8000}
+{"at":"2026-10-06T06:25:03.636Z","test":"tab-switch-1k","warmP95Ms":12,"warmMedianMs":5.6,"coldMedianMs":31.3,"coldP95Ms":41.2,"budgetP95Ms":50}
+{"at":"2026-10-06T06:27:34.029Z","test":"tab-switch-1k","warmP95Ms":11.8,"warmMedianMs":5.6,"coldMedianMs":33.9,"coldP95Ms":38.9,"budgetP95Ms":50}
+{"at":"2026-10-06T06:40:30.269Z","test":"tab-switch-1k","warmP95Ms":12.2,"warmMedianMs":5.6,"coldMedianMs":13.3,"coldP95Ms":14.3,"budgetP95Ms":50}
+{"at":"2026-10-06T06:41:03.969Z","test":"session-restore","restoreMs":336,"budgetMs":1300}
+{"at":"2026-10-06T06:41:26.075Z","test":"tab-switch-1k","warmP95Ms":11.8,"warmMedianMs":5.5,"coldMedianMs":11.8,"coldP95Ms":24.8,"budgetP95Ms":50}
+{"at":"2026-10-06T06:44:55.605Z","test":"session-restore","restoreMs":312,"budgetMs":1300}
+{"at":"2026-10-06T06:45:17.774Z","test":"tab-switch-1k","warmP95Ms":12.1,"warmMedianMs":6.2,"coldMedianMs":12.3,"coldP95Ms":15.6,"budgetP95Ms":50}
+{"at":"2026-10-06T06:45:19.734Z","test":"drive-menu-dead-share","menuOpenMs":5,"otherPanelCursorMs":3,"deadShareListedAfterMs":1323,"shareDelayMs":8000}
+{"at":"2026-10-06T06:48:00.734Z","test":"session-restore","restoreMs":310,"budgetMs":1300}
+{"at":"2026-10-06T06:48:22.818Z","test":"tab-switch-1k","warmP95Ms":12.1,"warmMedianMs":5.9,"coldMedianMs":13.2,"coldP95Ms":17.5,"budgetP95Ms":50}
+{"at":"2026-10-06T06:48:24.981Z","test":"drive-menu-dead-share","menuOpenMs":4,"otherPanelCursorMs":2,"deadShareListedAfterMs":1325,"shareDelayMs":8000}
+{"at":"2026-10-06T06:52:54.194Z","test":"session-restore","restoreMs":315,"budgetMs":1300}
+{"at":"2026-10-06T06:53:16.407Z","test":"tab-switch-1k","warmP95Ms":11.8,"warmMedianMs":5.8,"coldMedianMs":11.5,"coldP95Ms":14.2,"budgetP95Ms":50}
+{"at":"2026-10-06T06:53:18.420Z","test":"drive-menu-dead-share","menuOpenMs":4,"otherPanelCursorMs":3,"deadShareListedAfterMs":1342,"shareDelayMs":8000}

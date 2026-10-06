@@ -4,8 +4,9 @@
   "r": {
     "bookmarks": [
       {
+        "group": "Work",
         "id": 1,
-        "label": "golden",
+        "label": "Golden",
         "path": "/fixtures/golden"
       }
     ],

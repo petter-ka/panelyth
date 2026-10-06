@@ -10,3 +10,40 @@ export {
   type PageStoreOptions,
   type PageStoreStats,
 } from "./pageStore"
+export {
+  addRanges,
+  fromRanges,
+  hasMarks,
+  inRanges,
+  invert,
+  isMarked,
+  markCount,
+  NO_MARKS,
+  normalize,
+  removeRanges,
+  setMarked,
+  toDescriptor,
+  toggle,
+  type Marks,
+} from "./selection"
+export {
+  chordAllowedWhileTyping,
+  defaultChords,
+  eventChord,
+  formatChord,
+  IS_MAC,
+  MAX_CHORDS_PER_ACTION,
+  NO_OVERRIDES,
+  parseChord,
+  parseOverrides,
+  resolveKeymap,
+  type ActionDef,
+  type Keymap,
+  type ShortcutOverrides,
+} from "./keymap"
+export {
+  setSwitchSettings,
+  startSwitchSettingsSync,
+  useSwitchSettings,
+  type SwitchSettingsPort,
+} from "./switchSettings"

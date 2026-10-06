@@ -1,5 +1,5 @@
 import type { ContentItem } from "@fastview/contracts"
-import { usePageItem } from "@fastview/renderer-core"
+import { isMarked, usePageItem, type PageStore } from "@fastview/renderer-core"
 import { useInterfaceSizeStore, type InterfaceSize } from "@fastview/ui"
 import {
   columnResizingFeature,
@@ -29,20 +29,21 @@ import {
   COLUMN_LIMITS,
   COLUMN_SORT,
   enter,
-  goUp,
   moveCursor,
   pageStoreOf,
   parentRows,
-  refresh,
   rowCount,
   setColumns,
-  toggleHidden,
   toggleSort,
   useListingStore,
   type ColumnId,
   type ColumnWidths,
 } from "../features/listing"
+import { dropAnchor, extendTo, toggleRow, useMarksStore } from "../features/marks"
+import { onPanelKey } from "../features/panelKeys"
 import type { Side } from "../features/panels"
+import { closeQuickSearch } from "../features/quicksearch"
+import { useSettingsStore } from "../features/settings"
 import { TypeGlyph } from "./TypeGlyph"
 
 /** Fixed row height per interface size, so no row is ever measured (ADR-0028). */
@@ -108,6 +109,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   const { sort, columns, cursor, revealToken, query } = panel
   const parent = parentRows(panel)
   const count = rowCount(panel)
+  const store = pageStoreOf(side)
 
   const virtualizer = useVirtualizer({
     count,
@@ -166,35 +168,19 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   })
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
-    const ctrl = e.ctrlKey || e.metaKey
     const viewport = body.current?.getBoundingClientRect().height ?? 0
-    const pageRows = Math.max(1, Math.floor(viewport / rowHeight) - 1)
-    const sortKeys: Record<string, ColumnId> = { F3: "name", F4: "ext", F5: "date", F6: "size" }
-    let handled = true
-    if (ctrl && !e.altKey && !e.shiftKey && sortKeys[e.key]) {
-      toggleSort(side, COLUMN_SORT[sortKeys[e.key]!])
-    } else if (ctrl && e.key === "PageUp") void goUp(side)
-    else if (ctrl && !e.shiftKey && e.key.toLowerCase() === "h") toggleHidden(side)
-    else if (ctrl && !e.shiftKey && e.key.toLowerCase() === "r") void refresh(side)
-    else if (e.altKey || ctrl || e.shiftKey) handled = false
-    else if (e.key === "ArrowDown") moveCursor(side, cursor + 1)
-    else if (e.key === "ArrowUp") moveCursor(side, cursor - 1)
-    else if (e.key === "PageDown") moveCursor(side, cursor + pageRows)
-    else if (e.key === "PageUp") moveCursor(side, cursor - pageRows)
-    else if (e.key === "Home") moveCursor(side, 0)
-    else if (e.key === "End") moveCursor(side, count - 1)
-    else if (e.key === "Enter") void enter(side)
-    else if (e.key === "Backspace") void goUp(side)
-    else handled = false
-    if (handled) {
-      e.preventDefault()
-      e.stopPropagation()
-    }
+    const page = Math.max(1, Math.floor(viewport / rowHeight) - 1)
+    onPanelKey(side, e, { count, cursor, page, column: 0 })
   }
 
   const rowAt = (e: MouseEvent): number | null => {
     const el = (e.target as HTMLElement).closest<HTMLElement>("[data-row]")
     return el ? Number(el.dataset.row) : null
+  }
+
+  const onMouseDown = (e: MouseEvent): void => {
+    const row = rowAt(e)
+    if (row !== null && e.button === 0) clickRow(side, cursor, row, e)
   }
 
   const style = {
@@ -211,6 +197,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       role="grid"
       aria-label={label}
       aria-rowcount={count + 1}
+      aria-multiselectable="true"
       aria-activedescendant={count > 0 ? `${side}-row-${cursor}` : undefined}
       data-active={active}
       data-testid={`grid-${side}`}
@@ -222,6 +209,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
         role="row"
         className="flex h-6 shrink-0 select-none border-b border-border bg-chrome text-muted"
       >
+        <div aria-hidden="true" className="w-2.5 shrink-0" />
         {table.getHeaderGroups()[0]?.headers.map((header) => {
           const id = header.column.id as ColumnId
           const sorted = header.column.getIsSorted()
@@ -259,10 +247,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       <div
         ref={body}
         className="relative min-h-0 flex-1 overflow-auto tabular-nums"
-        onMouseDown={(e) => {
-          const index = rowAt(e)
-          if (index !== null) moveCursor(side, index)
-        }}
+        onMouseDown={onMouseDown}
         onDoubleClick={(e) => {
           if (rowAt(e) !== null) void enter(side)
         }}
@@ -271,11 +256,19 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
           {table.getRowModel().rows.map((row) => {
             const { index, start } = row.original
             return index < parent ? (
-              <ParentRow key={index} side={side} index={index} top={start} height={rowHeight} />
+              <ParentRow
+                key={index}
+                side={side}
+                store={store}
+                index={index}
+                top={start}
+                height={rowHeight}
+              />
             ) : (
               <EntryRow
                 key={index}
                 side={side}
+                store={store}
                 index={index}
                 entry={index - parent}
                 top={start}
@@ -291,13 +284,16 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
 
 interface RowProps {
   side: Side
+  /** The panel's page store; it changes when the panels swap (Ctrl+U). */
+  store: PageStore
   index: number
   top: number
   height: number
 }
 
+// Marked rows: accent text and a • in the gutter, so marks never rely on color alone.
 const rowClass =
-  "absolute left-0 flex w-full items-center data-[cursor=true]:outline data-[cursor=true]:outline-1 " +
+  "absolute left-0 flex w-full items-center data-[marked=true]:text-accent data-[cursor=true]:outline data-[cursor=true]:outline-1 " +
   "data-[cursor=true]:-outline-offset-1 data-[cursor=true]:outline-muted/60 " +
   "group-data-[active=true]:data-[cursor=true]:bg-raised group-data-[active=true]:data-[cursor=true]:outline-accent"
 
@@ -306,6 +302,7 @@ const useIsCursor = (side: Side, index: number): boolean =>
 
 /** The synthetic ".." row; never part of the session. */
 const ParentRow = memo(function ParentRow({ side, index, top, height }: RowProps) {
+  // Keeps the columns aligned with the marked rows' gutter.
   const isCursor = useIsCursor(side, index)
   return (
     <div
@@ -313,10 +310,11 @@ const ParentRow = memo(function ParentRow({ side, index, top, height }: RowProps
       id={`${side}-row-${index}`}
       data-row={index}
       data-cursor={isCursor}
-      aria-selected={isCursor}
+      aria-selected={false}
       className={rowClass}
       style={{ top, height }}
     >
+      <span aria-hidden="true" className="w-2.5 shrink-0" />
       <span role="gridcell" style={CELL.name} className="flex items-center gap-1.5 truncate px-1.5">
         <TypeGlyph glyph="up" />
         ..
@@ -337,26 +335,33 @@ const EntryRow = memo(function EntryRow({
   entry,
   top,
   height,
+  store,
 }: RowProps & { entry: number }) {
-  const item = usePageItem(pageStoreOf(side), entry)
+  const item = usePageItem(store, entry)
   const isCursor = useIsCursor(side, index)
+  const marked = useMarksStore((s) => isMarked(s[side], entry, item?.id))
   return (
     <div
       role="row"
       id={`${side}-row-${index}`}
       data-row={index}
       data-cursor={isCursor}
+      data-marked={marked}
       data-id={item?.id}
-      aria-selected={isCursor}
+      aria-selected={marked}
       className={`${rowClass} ${item && isMuted(item) ? "text-muted" : "text-text"}`}
       style={{ top, height }}
     >
+      <span aria-hidden="true" className="w-2.5 shrink-0 text-center">
+        {marked ? "•" : ""}
+      </span>
       {item ? <Cells item={item} /> : <Placeholder />}
     </div>
   )
 })
 
 function Cells({ item }: { item: ContentItem }) {
+  const { sizeFormat, dateFormat } = useSettingsStore((s) => s.settings)
   return (
     <>
       <span role="gridcell" style={CELL.name} className="flex items-center gap-1.5 px-1.5">
@@ -367,10 +372,10 @@ function Cells({ item }: { item: ContentItem }) {
         {item.kind === "dir" ? "" : item.ext}
       </span>
       <span role="gridcell" style={CELL.size} className={cellClass("size")}>
-        {formatSize(item)}
+        {formatSize(item, sizeFormat)}
       </span>
       <span role="gridcell" style={CELL.date} className={cellClass("date")}>
-        {formatDate(item.modifiedMs)}
+        {formatDate(item.modifiedMs, dateFormat)}
       </span>
       <span role="gridcell" style={CELL.attr} className={`${cellClass("attr")} font-mono`}>
         {formatAttrs(item.attrs)}
@@ -385,4 +390,18 @@ function Placeholder() {
       <span className="block h-2 w-32 rounded-sm bg-skeleton" />
     </span>
   )
+}
+
+/** Click moves the cursor; Ctrl+click toggles a mark; Shift+click marks a range (both views). */
+export function clickRow(
+  side: Side,
+  cursor: number,
+  row: number,
+  e: Pick<MouseEvent, "ctrlKey" | "metaKey" | "shiftKey">,
+): void {
+  closeQuickSearch()
+  if (e.ctrlKey || e.metaKey) void toggleRow(side, row)
+  else if (e.shiftKey) extendTo(side, cursor, row)
+  else dropAnchor(side)
+  moveCursor(side, row)
 }

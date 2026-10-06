@@ -48,6 +48,7 @@ function jobParams(p: JobStartParams): JobStartParams {
       }
     case "trash":
     case "delete":
+    case "dirSize":
       return { kind: p.kind, source: source(p.source) }
     case "rename":
       return { kind: p.kind, source: source(p.source), pattern: p.pattern, start: p.start }
@@ -156,8 +157,12 @@ const api: FastViewApi = {
   library: {
     get: () => invoke("library.get", {}),
     setSetting: (key, value) => invoke("library.setSetting", { key, value }),
-    addBookmark: (path, label) => invoke("library.addBookmark", { path, label }),
+    addBookmark: (path, label, group) =>
+      invoke("library.addBookmark", { path, label, ...(group !== undefined && { group }) }),
     removeBookmark: (id) => invoke("library.removeBookmark", { id }),
+    updateBookmark: ({ id, path, label, group }) =>
+      invoke("library.updateBookmark", { id, path, label, group }),
+    reorderBookmarks: (ids) => invoke("library.reorderBookmarks", { ids: [...ids] }),
     tags: () => invoke("library.tags", {}),
     deleteTag: (id) => invoke("library.deleteTag", { id }),
   },
@@ -202,8 +207,15 @@ const api: FastViewApi = {
 if (process.argv.includes(COMMANDER_ENABLED_ARG)) {
   api.app.switch = (to) => invoke("app.switch", { to })
   api.context = {
-    publish: (dirId, focusId) => invoke("context.publish", { app: "viewer", dirId, focusId }),
+    publish: (dirId, focusId, sel) =>
+      invoke("context.publish", {
+        app: "viewer",
+        dirId,
+        focusId,
+        selection: sel && selection(sel),
+      }),
     get: () => invoke("context.get", {}),
+    selection: (version, queryId) => invoke("selection.fromContext", { version, queryId }),
   }
 }
 

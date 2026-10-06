@@ -87,6 +87,9 @@ type Manager struct {
 	sessions map[int64]*session
 	nextID   int64
 	closed   bool
+
+	// lk holds the name lookups of sessions used for search and marking.
+	lk lookups
 }
 
 // NewManager creates a manager; invalidated is called (from a timer

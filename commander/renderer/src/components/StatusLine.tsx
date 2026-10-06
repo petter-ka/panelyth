@@ -1,31 +1,65 @@
-import type { Volume } from "@fastview/contracts"
+import type { SelectionInfo } from "@fastview/contracts"
+import { hasMarks, markCount } from "@fastview/renderer-core"
 import { useEffect, useState } from "react"
+import { bridge, isBridgeAvailable } from "../bridge"
 import { formatBytes, formatCount } from "../features/format"
-import { stopListing, useListingStore, volumeOf } from "../features/listing"
+import { stopListing, useListingStore } from "../features/listing"
+import { marksDescriptor, useMarksStore } from "../features/marks"
 import type { Side } from "../features/panels"
+import { isRunning, stopSizes, useSizeJobs } from "../features/sizes"
+import { usePanelVolume } from "./DriveBar"
+
+/** Marked sizes are asked of Go at most this often while marks change. */
+const INFO_DELAY_MS = 150
 
 /**
- * "1,204 entries · 120.5 GB free of 931.5 GB"; while the folder is listed:
- * "Listing… 12,400 entries so far" with Stop. Marked counts arrive in C02.
+ * "2 of 1,204 marked · 4.4 MB of 2.4 GB" plus free space; while the folder
+ * is listed: "Listing… 12,400 entries so far" with Stop; while folder sizes
+ * are calculated: "Calculating folder sizes…" with Stop.
  */
 export function StatusLine({ side }: { side: Side }) {
   const total = useListingStore((s) => s[side].query?.total ?? 0)
-  const crumbs = useListingStore((s) => s[side].crumbs)
+  const query = useListingStore((s) => s[side].query)
   const progress = useListingStore((s) => s[side].progress)
-  // The volume found for these crumbs; a stale answer for other crumbs is ignored.
-  const [found, setFound] = useState<{ crumbs: unknown; volume: Volume | null } | null>(null)
-  const volume = found?.crumbs === crumbs ? found.volume : null
+  const marks = useMarksStore((s) => s[side])
+  const sizeJob = useSizeJobs((s) => s[side])
 
+  const volume = usePanelVolume(side)
+
+  // Sizes of the marks and of the whole listing, from Go (debounced).
+  const [sizes, setSizes] = useState<{
+    key: unknown
+    marked: SelectionInfo | null
+    all: number
+  } | null>(null)
   useEffect(() => {
-    if (crumbs.length === 0) return
+    if (!query || !isBridgeAvailable() || query.total === 0) return
     let live = true
-    void volumeOf(crumbs).then((v) => live && setFound({ crumbs, volume: v }))
+    const timer = setTimeout(() => {
+      const all = {
+        queryId: query.queryId,
+        version: query.version,
+        ranges: [[0, query.total]] as [number, number][],
+        include: [],
+        exclude: [],
+      }
+      const d = marksDescriptor(side)
+      void Promise.all([
+        bridge.selectionInfo(all),
+        d ? bridge.selectionInfo(d) : Promise.resolve(null),
+      ])
+        .then(([a, m]) => live && setSizes({ key: marks, marked: m, all: a.bytes }))
+        .catch(() => undefined)
+    }, INFO_DELAY_MS)
     return () => {
       live = false
+      clearTimeout(timer)
     }
-  }, [crumbs])
+  }, [query, marks, side])
+  const shown = sizes?.key === marks ? sizes : null
 
   const listing = progress?.state === "running"
+  const marked = hasMarks(marks) ? markCount(marks) : 0
   return (
     <div
       className="flex h-6 shrink-0 items-center gap-2 border-t border-border bg-chrome px-2 text-[0.6875rem] text-muted tabular-nums"
@@ -44,10 +78,29 @@ export function StatusLine({ side }: { side: Side }) {
             Stop
           </button>
         </>
+      ) : marked > 0 ? (
+        <span data-testid={`marked-${side}`}>
+          {formatCount(marked)} of {formatCount(total)} marked
+          {shown?.marked && ` · ${formatBytes(shown.marked.bytes)} of ${formatBytes(shown.all)}`}
+        </span>
       ) : (
         <span>
           {formatCount(total)} {total === 1 ? "entry" : "entries"}
+          {shown && total > 0 && ` · ${formatBytes(shown.all)}`}
         </span>
+      )}
+      {isRunning(sizeJob) && (
+        <>
+          <span>· Calculating folder sizes…</span>
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => stopSizes(side)}
+            className="rounded px-1 text-text hover:bg-raised"
+          >
+            Stop
+          </button>
+        </>
       )}
       <span className="flex-1" />
       {volume?.freeBytes !== undefined && (
