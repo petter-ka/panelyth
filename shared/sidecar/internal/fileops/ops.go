@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/fs"
 	"os"
 	"path/filepath"
@@ -67,108 +66,12 @@ func Code(err error) string {
 	return CodeIO
 }
 
+// renameItem is os.Rename; tests make it fail like a rename across volumes.
+var renameItem = os.Rename
+
 // PartialName is the in-progress name for a copy into dir.
 func PartialName(dir, name string) string {
 	return filepath.Join(dir, "."+name+PartialSuffix)
-}
-
-// copyChunk is the cancellation and progress granularity of copies.
-const copyChunk = 4 << 20
-
-// Progress receives bytes copied since the previous call.
-type Progress func(n int64)
-
-func copyData(ctx context.Context, dst io.Writer, src io.Reader, progress Progress) error {
-	buf := make([]byte, 1<<20)
-	var sinceCheck int64
-	for {
-		n, rerr := src.Read(buf)
-		if n > 0 {
-			if _, werr := dst.Write(buf[:n]); werr != nil {
-				return werr
-			}
-			if progress != nil {
-				progress(int64(n))
-			}
-			sinceCheck += int64(n)
-			if sinceCheck >= copyChunk {
-				sinceCheck = 0
-				if err := ctx.Err(); err != nil {
-					return err
-				}
-			}
-		}
-		if rerr == io.EOF {
-			return nil
-		}
-		if rerr != nil {
-			return rerr
-		}
-	}
-}
-
-// copyFileTo copies a regular file's bytes and mtime to target, which is
-// created exclusively.
-func copyFileTo(ctx context.Context, src, target string, progress Progress) (err error) {
-	in, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer in.Close()
-	fi, err := in.Stat()
-	if err != nil {
-		return err
-	}
-	if !fi.Mode().IsRegular() {
-		return Errorf(CodeSkippedLink, "%s is not a regular file", filepath.Base(src))
-	}
-	out, err := os.OpenFile(target, os.O_WRONLY|os.O_CREATE|os.O_EXCL, fi.Mode().Perm()|0o200)
-	if err != nil {
-		return err
-	}
-	if err = copyData(ctx, out, in, progress); err != nil {
-		_ = out.Close()
-		return err
-	}
-	if err = out.Close(); err != nil {
-		return err
-	}
-	return os.Chtimes(target, fi.ModTime(), fi.ModTime())
-}
-
-// CopyFile copies src to dst through a partial file, renamed into place when
-// complete. With replace=false an existing dst is an ALREADY_EXISTS error.
-// On any failure (including cancellation) the partial file is removed.
-func CopyFile(ctx context.Context, src, dst string, replace bool, progress Progress) error {
-	partial := PartialName(filepath.Dir(dst), filepath.Base(dst))
-	_ = os.Remove(partial) // leftover of an interrupted run
-	if err := copyFileTo(ctx, src, partial, progress); err != nil {
-		_ = os.Remove(partial)
-		return err
-	}
-	return commit(partial, dst, replace, false)
-}
-
-func commit(partial, dst string, replace, isDir bool) error {
-	if !replace {
-		if _, err := os.Lstat(dst); err == nil {
-			removePartial(partial, isDir)
-			return Errorf(CodeExists, "%s already exists", filepath.Base(dst))
-		}
-	}
-	if err := os.Rename(partial, dst); err != nil {
-		removePartial(partial, isDir)
-		return err
-	}
-	return nil
-}
-
-func removePartial(p string, isDir bool) {
-	if isDir {
-		_ = os.RemoveAll(p)
-	} else {
-		_ = os.Remove(p)
-	}
 }
 
 // TreeSize sums the regular files under dir (symlinks are not followed).
@@ -191,86 +94,54 @@ func TreeSize(ctx context.Context, dir string) (int64, error) {
 	return total, err
 }
 
-// CopyTree copies the folder src to dst through a partial folder renamed
-// into place at the end. Symbolic links and other non-regular files are
-// skipped and reported through skipped; they are never followed.
-func CopyTree(ctx context.Context, src, dst string, progress Progress, skipped func(path string)) error {
-	partial := PartialName(filepath.Dir(dst), filepath.Base(dst))
-	_ = os.RemoveAll(partial)
-	if err := copyDir(ctx, src, partial, progress, skipped); err != nil {
-		_ = os.RemoveAll(partial)
+// Move renames src to dst. Across volumes it copies (with o), checks the
+// size, and removes the source. dst must not exist unless replace is set
+// (files and links only).
+func Move(ctx context.Context, src, dst string, isDir, replace bool, o *CopyOptions) error {
+	if err := o.validName(filepath.Base(dst)); err != nil {
 		return err
 	}
-	return commit(partial, dst, false, true)
-}
-
-func copyDir(ctx context.Context, src, dst string, progress Progress, skipped func(string)) error {
-	fi, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	if err := os.Mkdir(dst, fi.Mode().Perm()|0o700); err != nil {
-		return err
-	}
-	entries, err := os.ReadDir(src)
-	if err != nil {
-		return err
-	}
-	for _, e := range entries {
-		if err := ctx.Err(); err != nil {
-			return err
-		}
-		s, d := filepath.Join(src, e.Name()), filepath.Join(dst, e.Name())
-		switch {
-		case e.IsDir():
-			err = copyDir(ctx, s, d, progress, skipped)
-		case e.Type().IsRegular():
-			err = copyFileTo(ctx, s, d, progress)
-		default:
-			if skipped != nil {
-				skipped(s)
-			}
-		}
-		if err != nil {
-			return err
-		}
-	}
-	return os.Chtimes(dst, fi.ModTime(), fi.ModTime())
-}
-
-// Move renames src to dst. Across volumes it copies, checks the size, and
-// removes the source. dst must not exist unless replace is set (files only).
-func Move(ctx context.Context, src, dst string, isDir, replace bool, progress Progress, skipped func(string)) error {
 	if !replace || isDir {
 		if _, err := os.Lstat(dst); err == nil && !sameFile(src, dst) {
 			return Errorf(CodeExists, "%s already exists", filepath.Base(dst))
 		}
+	} else {
+		clearReadOnly(dst)
 	}
-	err := os.Rename(src, dst)
+	err := renameItem(src, dst)
 	if err == nil || !isCrossDevice(err) {
 		return err
 	}
-	if isDir {
-		if err := CopyTree(ctx, src, dst, progress, skipped); err != nil {
+	srcInfo, err := os.Lstat(src)
+	if err != nil {
+		return err
+	}
+	switch {
+	case srcInfo.Mode()&fs.ModeSymlink != 0:
+		if replace {
+			_ = forceRemove(dst)
+		}
+		if err := CopyLink(src, dst); err != nil {
+			return err
+		}
+	case isDir:
+		if err := CopyTree(ctx, src, dst, o); err != nil {
 			return err
 		}
 		if err := os.RemoveAll(src); err != nil {
 			return Errorf(CodeIO, "copied, but the original couldn't be removed: %v", err)
 		}
 		return nil
+	default:
+		if err := CopyFile(ctx, src, dst, replace, o); err != nil {
+			return err
+		}
+		if dstInfo, err := os.Stat(dst); err != nil || dstInfo.Size() != srcInfo.Size() {
+			_ = forceRemove(dst)
+			return Errorf(CodeIO, "the copy on the other drive is incomplete")
+		}
 	}
-	srcInfo, err := os.Stat(src)
-	if err != nil {
-		return err
-	}
-	if err := CopyFile(ctx, src, dst, replace, progress); err != nil {
-		return err
-	}
-	if dstInfo, err := os.Stat(dst); err != nil || dstInfo.Size() != srcInfo.Size() {
-		_ = os.Remove(dst)
-		return Errorf(CodeIO, "the copy on the other drive is incomplete")
-	}
-	if err := os.Remove(src); err != nil {
+	if err := forceRemove(src); err != nil {
 		return Errorf(CodeIO, "copied, but the original couldn't be removed: %v", err)
 	}
 	return nil

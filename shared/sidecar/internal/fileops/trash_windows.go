@@ -47,6 +47,10 @@ func canTrash(path string) bool {
 	return windows.GetDriveType(root) == windows.DRIVE_FIXED
 }
 
+// CanTrash reports whether items in dir can go to the Recycle Bin (fixed
+// drives only, ADR-0021).
+func CanTrash(dir string) bool { return canTrash(dir) }
+
 // Trash moves path to the Recycle Bin.
 func Trash(path string) error {
 	if _, err := os.Lstat(path); err != nil {
@@ -85,4 +89,47 @@ func Trash(path string) error {
 		return Errorf(CodeIO, "the item is still there after moving it to the Recycle Bin")
 	}
 	return nil
+}
+
+// TrashMany moves paths to the Recycle Bin with one shell call per batch
+// (Stage P03: one call per item cost ~28 ms each), then checks every path:
+// an item still there is retried alone, which reports its own error. The
+// result has one entry per path (nil = trashed).
+func TrashMany(paths []string) []error {
+	errs := make([]error, len(paths))
+	var from []uint16
+	var batch []int
+	for i, p := range paths {
+		if _, err := os.Lstat(p); err != nil {
+			errs[i] = err
+			continue
+		}
+		if !canTrash(p) {
+			errs[i] = Errorf(CodeTrashUnavailable, "this drive has no Recycle Bin")
+			continue
+		}
+		u, err := windows.UTF16FromString(p)
+		if err != nil {
+			errs[i] = Errorf(CodeInvalidName, "invalid path")
+			continue
+		}
+		from = append(from, u...) // u ends with its NUL
+		batch = append(batch, i)
+	}
+	if len(batch) == 0 {
+		return errs
+	}
+	from = append(from, 0)
+	op := shFileOp{
+		wFunc:  foDelete,
+		pFrom:  &from[0],
+		fFlags: fofAllowUndo | fofNoConfirmation | fofSilent | fofNoErrorUI,
+	}
+	_, _, _ = procSHFileOperationW.Call(uintptr(unsafe.Pointer(&op)))
+	for _, i := range batch {
+		if _, err := os.Lstat(paths[i]); err == nil {
+			errs[i] = Trash(paths[i])
+		}
+	}
+	return errs
 }

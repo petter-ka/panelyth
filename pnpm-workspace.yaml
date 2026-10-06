@@ -5,6 +5,7 @@ packages:
   - shared/bench
   - shared/ui
   - shared/renderer-core
+  - shared/media-ui
   - viewer/renderer
   - commander/renderer
 

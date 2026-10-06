@@ -2,9 +2,16 @@ import { describe, expect, it, vi } from "vitest"
 
 vi.mock("electron", () => ({ protocol: {} }))
 
-const { MediaTokens, mintMediaUrl, parseMediaUrl, parseRange, toMediaOpenResult } =
-  await import("../src/main/mediaProtocol")
-const { allowPermission } = await import("../src/main/security")
+const {
+  MediaTokens,
+  corsHeaders,
+  mintMediaUrl,
+  parseMediaUrl,
+  parseRange,
+  toFileOpenResult,
+  toMediaOpenResult,
+} = await import("../src/main/mediaProtocol")
+const { allowPermission, contentSecurityPolicy } = await import("../src/main/security")
 
 const resolved = {
   path: "/videos/clip.mp4",
@@ -100,5 +107,64 @@ describe("byte ranges", () => {
     ["items=0-1", "invalid"],
   ] as const)("%s", (header, expected) => {
     expect(parseRange(header, 1000)).toEqual(expected)
+  })
+})
+
+describe("file tokens for the commander (Stage C05, ADR-0027)", () => {
+  const resolved = {
+    path: "/logs/big.log",
+    kind: "file" as const,
+    mime: "application/octet-stream",
+    sizeBytes: 9,
+  }
+
+  it("mints a token bound to the commander's origin, never exposing the path", () => {
+    const tokens = new MediaTokens()
+    const r = toFileOpenResult(resolved, tokens, "app://commander")
+    expect(r).toMatchObject({ kind: "file", mime: "application/octet-stream", sizeBytes: 9 })
+    expect(JSON.stringify(r)).not.toContain("/logs")
+    const token = parseMediaUrl(r.url)!
+    expect(tokens.get(token)).toEqual({
+      path: "/logs/big.log",
+      mime: "application/octet-stream",
+      fetchOrigin: "app://commander",
+    })
+  })
+
+  it("allows fetch() only from the minting origin; element loads carry no Origin", () => {
+    const fileTarget = {
+      path: "/a",
+      mime: "application/octet-stream",
+      fetchOrigin: "app://commander",
+    }
+    expect(corsHeaders(fileTarget, null)).toEqual({})
+    expect(corsHeaders(fileTarget, "app://commander")).toMatchObject({
+      "Access-Control-Allow-Origin": "app://commander",
+    })
+    expect(corsHeaders(fileTarget, "app://fastview")).toBe("denied")
+    expect(corsHeaders(fileTarget, "null")).toBe("denied")
+    // The viewer's media tokens are never fetch()able.
+    const mediaTarget = { path: "/a.jpg", mime: "image/jpeg" }
+    expect(corsHeaders(mediaTarget, "app://fastview")).toBe("denied")
+    expect(corsHeaders(mediaTarget, null)).toEqual({})
+  })
+})
+
+describe("token fetch is the commander's only (Stage C05, ADR-0027)", () => {
+  it("gives fetch() access to token URLs in the commander's CSP alone", () => {
+    const connect = (csp: string) => csp.split("; ").find((d) => d.startsWith("connect-src"))
+    expect(connect(contentSecurityPolicy(null))).toBe("connect-src 'self'")
+    expect(connect(contentSecurityPolicy(null, true))).toBe("connect-src 'self' fastview-media:")
+    expect(connect(contentSecurityPolicy("http://localhost:5173"))).toBe(
+      "connect-src 'self' ws://localhost:5173",
+    )
+    expect(connect(contentSecurityPolicy("http://localhost:5174", true))).toBe(
+      "connect-src 'self' fastview-media: ws://localhost:5174",
+    )
+    // Both apps still show images and play videos from tokens.
+    for (const csp of [contentSecurityPolicy(null), contentSecurityPolicy(null, true)]) {
+      expect(csp).toContain("img-src 'self' data: fastview-thumb: fastview-media:")
+      expect(csp).toContain("media-src fastview-media:")
+    }
   })
 })

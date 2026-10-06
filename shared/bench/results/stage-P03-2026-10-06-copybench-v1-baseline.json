@@ -1,0 +1,114 @@
+{
+  "stage": "P03",
+  "benchmark": "copy",
+  "date": "2026-10-06T09:56:33+02:00",
+  "goos": "windows",
+  "cpus": 32,
+  "work": "C:/Users/hunki/AppData/Local/Temp/fastview-copybench-v1",
+  "dest": "D:/fastview-copybench-v1",
+  "largeMB": 4096,
+  "runs": [
+    {
+      "workload": "small-10k-10KB",
+      "engine": "fastview",
+      "files": 10000,
+      "bytes": 102400000,
+      "ms": 10664.872,
+      "mbPerSec": 9.156813384590954,
+      "peakHeapMB": 6.0625
+    },
+    {
+      "workload": "small-10k-10KB",
+      "engine": "robocopy",
+      "files": 10000,
+      "bytes": 102400000,
+      "ms": 3461.216,
+      "mbPerSec": 28.214428180703045
+    },
+    {
+      "workload": "small-10k-10KB",
+      "engine": "robocopy /MT:8",
+      "files": 10000,
+      "bytes": 102400000,
+      "ms": 2080.237,
+      "mbPerSec": 46.94475539982762
+    },
+    {
+      "workload": "medium-1k-1MB",
+      "engine": "fastview",
+      "files": 1000,
+      "bytes": 1048576000,
+      "ms": 1979.222,
+      "mbPerSec": 505.2489556125151,
+      "peakHeapMB": 6.0234375
+    },
+    {
+      "workload": "medium-1k-1MB",
+      "engine": "robocopy",
+      "files": 1000,
+      "bytes": 1048576000,
+      "ms": 4463.318,
+      "mbPerSec": 224.04855150034896
+    },
+    {
+      "workload": "medium-1k-1MB",
+      "engine": "robocopy /MT:8",
+      "files": 1000,
+      "bytes": 1048576000,
+      "ms": 530.722,
+      "mbPerSec": 1884.224929727831
+    },
+    {
+      "workload": "large-same-volume",
+      "engine": "fastview",
+      "files": 1,
+      "bytes": 4294967296,
+      "ms": 79655.9,
+      "mbPerSec": 51.42117507217331,
+      "peakHeapMB": 9.9375
+    },
+    {
+      "workload": "large-same-volume",
+      "engine": "robocopy",
+      "files": 1,
+      "bytes": 4294967296,
+      "ms": 42666.894,
+      "mbPerSec": 95.99948647774694
+    },
+    {
+      "workload": "large-cross-volume",
+      "engine": "fastview",
+      "files": 1,
+      "bytes": 4294967296,
+      "ms": 28628.984,
+      "mbPerSec": 143.0717904624209,
+      "peakHeapMB": 3.9453125
+    },
+    {
+      "workload": "large-cross-volume",
+      "engine": "robocopy",
+      "files": 1,
+      "bytes": 4294967296,
+      "ms": 37625.108,
+      "mbPerSec": 108.86347489022491
+    },
+    {
+      "workload": "delete-10k-delete",
+      "engine": "fastview",
+      "files": 10000,
+      "bytes": 10240000,
+      "ms": 1751.602,
+      "mbPerSec": 5.575252760015944,
+      "peakHeapMB": 4.515625
+    },
+    {
+      "workload": "delete-10k-trash",
+      "engine": "fastview",
+      "files": 10000,
+      "bytes": 10240000,
+      "ms": 281738.404,
+      "mbPerSec": 0.034662029885009146,
+      "peakHeapMB": 3.9765625
+    }
+  ]
+}

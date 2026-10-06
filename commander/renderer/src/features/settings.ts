@@ -6,6 +6,7 @@ import { bridge, isBridgeAvailable } from "../bridge"
 // size are shared with the viewer and live under shared.*.
 
 export const SETTINGS_KEY = "commander.settings"
+export const MAX_EDITOR_CHARS = 1024
 
 /** Size column: bytes with separators (Total Commander's default) or KB/MB/GB. */
 export type SizeFormat = "bytes" | "units"
@@ -13,6 +14,8 @@ export type SizeFormat = "bytes" | "units"
 export type DateFormat = "locale" | "iso"
 /** Where typed letters go: quick search, or quick search with Alt (plain letters free for the C10 command line). */
 export type LettersMode = "quickSearch" | "altLetters"
+/** "Run programs with Enter" (ADR-0027, Stage C05): ask first (default), always, never. */
+export type RunPrograms = "ask" | "always" | "never"
 
 export interface PanelSettings {
   sizeFormat: SizeFormat
@@ -20,6 +23,9 @@ export interface PanelSettings {
   /** Hidden and system entries shown in panels that have no stored state yet. */
   showHidden: boolean
   letters: LettersMode
+  runPrograms: RunPrograms
+  /** F4's editor: an absolute program path; "" = the system's text editor. Main reads it from library.db. */
+  editor: string
 }
 
 export const DEFAULT_SETTINGS: PanelSettings = {
@@ -27,6 +33,8 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   dateFormat: "locale",
   showHidden: false,
   letters: "quickSearch",
+  runPrograms: "ask",
+  editor: "",
 }
 
 interface SettingsState {
@@ -47,6 +55,8 @@ export function readSettings(value: unknown): PanelSettings {
     dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
     showHidden: v.showHidden === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
+    runPrograms: v.runPrograms === "always" || v.runPrograms === "never" ? v.runPrograms : "ask",
+    editor: typeof v.editor === "string" ? v.editor.slice(0, MAX_EDITOR_CHARS) : "",
   }
 }
 

@@ -17,6 +17,9 @@ import { CloseIcon } from "../ui/icons"
 const STATE_TEXT = {
   queued: "Waiting",
   running: "",
+  // Engine v2 states (Stage P03); the viewer never pauses or asks itself.
+  paused: "Paused",
+  asking: "Waiting for an answer",
   completed: "Done",
   cancelled: "Cancelled",
   failed: "Failed",

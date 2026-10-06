@@ -47,7 +47,7 @@ Built by `shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached und
 | `mixed-100k` | 100k entries: media, documents, executables, hidden and system files, links | P02, C01, C02 |
 | `tree-500k` | a deep tree with 500k mixed entries | C06, C09 |
 | `copy-small-10k`, `copy-large-4g` | copy throughput sets | P03, C04 |
-| `text-2g`, `encodings` | lister files: huge log, UTF-8/16, Latin-1, binary | C05 |
+| `text-2g`, `encodings` | lister files: huge log, UTF-8/16, Latin-1, binary (as built: one folder, `fixturegen -text-log-bytes 2147483648 -encodings`: `big.log`, UTF-8 with and without BOM, UTF-16 LE/BE, Windows-1252, binary, a 100 KB line, empty, `tool.cmd`, `tool.sh`) | C05 |
 | `archives` | zip (ZIP64, UTF-8 names), tar.gz, zip-slip and zip-bomb samples | C07 |
 | `sync-pair` | two trees with known differences (newer, missing, size, content) | C08 |
 | `links` | symlinks, junctions, a cycle | P02, C06 |

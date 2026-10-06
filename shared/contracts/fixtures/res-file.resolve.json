@@ -1,0 +1,11 @@
+{
+  "id": 81,
+  "ok": true,
+  "r": {
+    "kind": "video",
+    "mime": "video/mp4",
+    "path": "/fixtures/golden",
+    "sizeBytes": 16
+  },
+  "t": "res"
+}

@@ -31,11 +31,15 @@ export interface SidecarPort {
 
 type MainMethod = keyof MainMethodMap
 
-/** Handlers for methods answered in main (dialogs, status). */
+/**
+ * Handlers for methods answered in main (dialogs, status). `app` is the
+ * calling app view, so a handler can apply that app's profile (ADR-0027).
+ */
 export type MainHandlers = {
   [M in MainMethod]: (
     event: IpcMainInvokeEvent,
     params: MainMethodMap[M]["params"],
+    app: AppId,
   ) => Promise<MainMethodMap[M]["result"]> | MainMethodMap[M]["result"]
 }
 
@@ -109,10 +113,14 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
         const handler = options.main[method as MainMethod] as (
           e: IpcMainInvokeEvent,
           p: unknown,
+          a: AppId,
         ) => unknown
-        return { ok: true, r: await handler(event, params ?? {}) }
+        return { ok: true, r: await handler(event, params ?? {}, app) }
       }
-      const r = await options.sidecar.call(method as SidecarMethod, params ?? {})
+      const r = await options.sidecar.call(
+        method as SidecarMethod,
+        profileParams(app, method, params),
+      )
       if (method === "library.setSetting") {
         const { key, value } = params as { key: string; value: unknown }
         if (key.startsWith("shared.")) options.onSharedSetting?.(key, value)
@@ -130,17 +138,57 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
  * publishes the shared context only as itself, and the viewer lists media
  * only (the `all` scope is the commander's, ADR-0026).
  */
+const COMMANDER_JOB_KINDS: ReadonlySet<unknown> = new Set([
+  "copy",
+  "move",
+  "trash",
+  "delete",
+  "dirSize",
+])
+
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
   const p = params as Record<string, unknown>
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
   if (app === "viewer" && method === "query.open" && p.scope === "all") {
     return "the viewer lists media only"
   }
-  // The commander's file operations arrive in Stage C04; until then only folder sizes.
-  if (app === "commander" && method === "jobs.start" && p.kind !== "dirSize") {
-    return "the commander can only calculate folder sizes yet"
+  // The commander's settings include the F4 editor that main starts (Stage C05):
+  // only the commander's own view may write them.
+  if (
+    app === "viewer" &&
+    method === "library.setSetting" &&
+    typeof p.key === "string" &&
+    p.key.startsWith("commander.")
+  ) {
+    return "commander settings are the commander's"
+  }
+  if (app === "commander") {
+    // Stage C04: its jobs are file operations, and destinations are folder
+    // ids resolved in Go, never paths from the renderer (ADR-0027).
+    if (method === "jobs.start" && !COMMANDER_JOB_KINDS.has(p.kind)) {
+      return "the commander starts copy, move, trash, delete and folder-size jobs only"
+    }
+    if ((method === "jobs.start" || method === "clip.paste") && p.destination !== undefined) {
+      return "the commander names destinations by folder id"
+    }
   }
   return null
+}
+
+/**
+ * Per-app job options added by main, never by a renderer (ADR-0027,
+ * ADR-0029): the commander copies links as links; the viewer skips them.
+ */
+export function profileParams(app: AppId, method: string, params: unknown): unknown {
+  if (app !== "commander" || !params || typeof params !== "object") return params ?? {}
+  const p = params as Record<string, unknown>
+  if (
+    method === "clip.paste" ||
+    (method === "jobs.start" && (p.kind === "copy" || p.kind === "move"))
+  ) {
+    return { ...p, copyLinks: true }
+  }
+  return params
 }
 
 export interface IpcMainLike {

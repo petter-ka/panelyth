@@ -1,7 +1,7 @@
 import { net, protocol } from "electron"
 import { extname, join, normalize, relative, isAbsolute } from "node:path"
 import { pathToFileURL } from "node:url"
-import { APP_SCHEME, contentSecurityPolicy } from "./security"
+import { APP_SCHEME, COMMANDER_HOST, contentSecurityPolicy } from "./security"
 import { MEDIA_SCHEME } from "./mediaProtocol"
 import { THUMB_SCHEME } from "./thumbProtocol"
 
@@ -25,7 +25,14 @@ export function registerAppScheme(): void {
     // Originals (and videos in Stage 06): streamed, range-capable.
     {
       scheme: MEDIA_SCHEME,
-      privileges: { standard: true, secure: true, stream: true, supportFetchAPI: true },
+      // corsEnabled: the commander's lister fetch()es byte windows (Stage C05).
+      privileges: {
+        standard: true,
+        secure: true,
+        stream: true,
+        supportFetchAPI: true,
+        corsEnabled: true,
+      },
     },
   ])
 }
@@ -52,6 +59,8 @@ export function resolveInside(root: string, pathname: string): string | null {
  */
 export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): void {
   const csp = contentSecurityPolicy(null)
+  // The commander's lister fetch()es token URLs; the viewer never may (ADR-0027).
+  const commanderCsp = contentSecurityPolicy(null, true)
   protocol.handle(APP_SCHEME, async (request) => {
     const url = new URL(request.url)
     const root = Object.hasOwn(distDirs, url.host) ? distDirs[url.host] : undefined
@@ -63,7 +72,7 @@ export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): v
       status: 200,
       headers: {
         "Content-Type": MIME[extname(file).toLowerCase()] ?? "application/octet-stream",
-        "Content-Security-Policy": csp,
+        "Content-Security-Policy": url.host === COMMANDER_HOST ? commanderCsp : csp,
         "X-Content-Type-Options": "nosniff",
       },
     })

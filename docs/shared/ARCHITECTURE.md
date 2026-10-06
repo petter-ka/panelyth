@@ -60,7 +60,10 @@ Shared code:
   app switch button;
 - `shared/renderer-core` (Stage P01): bridge, page store, selection algebra, keymap, theme, settings and sidecar
   stores;
-- later `shared/media-ui`: image viewer and video player (Stage C05), and the tile components (Stage C10).
+- `shared/media-ui` (Stage C05): `ImageViewer`, `VideoPlayer`, their request logic (viewer-fit previews, original
+  URLs, video preferences) and zoom/transform math, behind a small port (`configureMedia`) that each app sets up with
+  its own bridge; preview lanes are per app, so the two apps never drop each other's queued work. Later the tile
+  components (Stage C10).
 
 ## Responsibility boundaries
 
@@ -360,9 +363,11 @@ React action
 batch API
    │
    ▼
-Go job manager
-   ├── worker queue
-   ├── progress events
+Go job manager (ADR-0021, ADR-0029)
+   ├── queue: lanes per (source, destination) volume, 4 running, 256 queued, start now
+   ├── pause / resume, conflict questions (ask → job.conflict → jobs.resolve)
+   ├── engine: OS fast paths, pooled buffers, small files in flight on SSD lanes, verify
+   ├── progress events (4 Hz, coalesced; speed and ETA)
    └── cancellation
 ```
 

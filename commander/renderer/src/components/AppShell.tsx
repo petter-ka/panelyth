@@ -1,6 +1,6 @@
 import { chordAllowedWhileTyping, eventChord } from "@fastview/renderer-core"
 import { AppSwitchButton, ShortcutsDialog } from "@fastview/ui"
-import { useEffect, useMemo, useRef } from "react"
+import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { switchToViewer as switchWithContext } from "../features/carry"
@@ -18,6 +18,15 @@ import {
 import { useDrivesStore } from "../features/drives"
 import { useHotlistStore } from "../features/hotlist"
 import { useSettingsStore } from "../features/settings"
+import { useFilesStore } from "../features/files"
+import { useOpenStore } from "../features/open"
+import { useQueueStore } from "../features/queue"
+import { quickTarget, useViewersStore } from "../features/viewers"
+import { CopyDialog, DeleteDialog, MkdirDialog } from "./FileDialogs"
+import { Lister } from "./Lister"
+import { NewFileDialog, ProgramDialog } from "./OpenDialogs"
+import { QuickView } from "./QuickView"
+import { ConflictDialog, JobDetailsDialog, QueuePanel } from "./QueuePanel"
 import { FunctionKeyBar } from "./FunctionKeyBar"
 import { HotlistDialog } from "./HotlistDialog"
 import { MaskDialog } from "./MaskDialog"
@@ -42,6 +51,7 @@ export function AppShell() {
   const active = usePanelsStore((s) => s.active)
   const split = usePanelsStore((s) => s.split)
   const layoutToken = usePanelsStore((s) => s.layoutToken)
+  const quick = useViewersStore(quickTarget)
   const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
 
   // The active panel's list holds keyboard focus (unless a menu just took it:
@@ -94,12 +104,32 @@ export function AppShell() {
     const offSettings = useSettingsStore.subscribe((s, prev) => {
       if (prev.open && !s.open) focusActive()
     })
+    // The file-operation dialogs (Stage C04).
+    const offFiles = useFilesStore.subscribe((s, prev) => {
+      const was = prev.copy ?? prev.remove ?? prev.mkdir
+      if (was && !(s.copy ?? s.remove ?? s.mkdir)) focusActive()
+    })
+    const offQueue = useQueueStore.subscribe((s, prev) => {
+      if ((prev.answering !== null && s.answering === null) || (prev.details && !s.details))
+        focusActive()
+    })
+    // Stage C05: the lister closed, Tab out of quick view, the open dialogs.
+    const offViewers = useViewersStore.subscribe((s, prev) => {
+      if (s.panelFocus !== prev.panelFocus) focusActive()
+    })
+    const offOpen = useOpenStore.subscribe((s, prev) => {
+      if ((prev.program && !s.program) || (prev.newFile && !s.newFile)) focusActive()
+    })
     return () => {
       offMask()
       offHelp()
       offDrives()
       offHotlist()
       offSettings()
+      offFiles()
+      offQueue()
+      offViewers()
+      offOpen()
     }
   }, [])
 
@@ -112,7 +142,7 @@ export function AppShell() {
   }, [])
 
   return (
-    <div className="grid h-full grid-rows-[auto_minmax(0,1fr)_auto_auto]">
+    <div className="grid h-full grid-rows-[auto_minmax(0,1fr)_auto_auto_auto]">
       <div
         role="toolbar"
         aria-label="App bar"
@@ -132,14 +162,16 @@ export function AppShell() {
         className="min-h-0"
       >
         <ResizablePanel id="left" minSize="10%">
-          <Panel
-            side="left"
-            active={active === "left"}
-            onActivate={() => setActivePanel("left")}
-            ref={(el) => {
-              lists.current.left = el
-            }}
-          />
+          <PanelSlot side="left" quick={quick === "left"}>
+            <Panel
+              side="left"
+              active={active === "left"}
+              onActivate={() => setActivePanel("left")}
+              ref={(el) => {
+                lists.current.left = el
+              }}
+            />
+          </PanelSlot>
         </ResizablePanel>
         <Separator
           id="panels-separator"
@@ -148,22 +180,52 @@ export function AppShell() {
           onDoubleClick={resetSplit}
         />
         <ResizablePanel id="right" minSize="10%">
-          <Panel
-            side="right"
-            active={active === "right"}
-            onActivate={() => setActivePanel("right")}
-            ref={(el) => {
-              lists.current.right = el
-            }}
-          />
+          <PanelSlot side="right" quick={quick === "right"}>
+            <Panel
+              side="right"
+              active={active === "right"}
+              onActivate={() => setActivePanel("right")}
+              ref={(el) => {
+                lists.current.right = el
+              }}
+            />
+          </PanelSlot>
         </ResizablePanel>
       </Group>
+      <QueuePanel />
       <FunctionKeyBar />
       <StatusBar />
       <CommanderShortcuts />
       <MaskDialog />
       <HotlistDialog />
+      <CopyDialog />
+      <DeleteDialog />
+      <MkdirDialog />
+      <ConflictDialog />
+      <JobDetailsDialog />
       <SettingsDialog />
+      <ProgramDialog />
+      <NewFileDialog />
+      <Lister />
+    </div>
+  )
+}
+
+/**
+ * A panel, or quick view in its place (Stage C05). The panel stays mounted
+ * underneath (its listing, scroll and cursor are kept) but inert.
+ */
+function PanelSlot({ side, quick, children }: { side: Side; quick: boolean; children: ReactNode }) {
+  return (
+    <div className="relative h-full" data-slot={side}>
+      <div className={quick ? "invisible h-full" : "h-full"} inert={quick}>
+        {children}
+      </div>
+      {quick && (
+        <div className="absolute inset-0">
+          <QuickView />
+        </div>
+      )}
     </div>
   )
 }

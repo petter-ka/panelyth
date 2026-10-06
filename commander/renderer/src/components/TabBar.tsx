@@ -9,6 +9,8 @@ import {
   toggleLock,
   useTabsStore,
 } from "../features/tabs"
+import { tabTarget } from "../features/files"
+import { dropTarget } from "./panelDnd"
 import { PopupMenu } from "./PopupMenu"
 
 /**
@@ -33,6 +35,7 @@ export function TabBar({ side }: { side: Side }) {
       {tabs.map((tab, index) => {
         const selected = index === active
         const name = (selected ? liveName : tab.name) || tab.path || "New tab"
+        const files = dropTarget(side, () => tabTarget(side, index))
         return (
           <div
             key={tab.id}
@@ -48,10 +51,12 @@ export function TabBar({ side }: { side: Side }) {
             }}
             onDragOver={(e) => {
               if (dragFrom !== null) e.preventDefault()
+              else files.onDragOver(e) // panel items dropped on a tab: its folder
             }}
             onDrop={(e) => {
+              if (dragFrom === null) return files.onDrop(e)
               e.preventDefault()
-              if (dragFrom !== null) moveTab(side, dragFrom, index)
+              moveTab(side, dragFrom, index)
               setDragFrom(null)
             }}
             onDragEnd={() => setDragFrom(null)}

@@ -36,7 +36,9 @@ describe("commander shell (Stage C00)", () => {
     expect(screen.getByTestId("panel-left")).toHaveAttribute("data-active", "true")
     expect(screen.getByTestId("panel-right")).toHaveAttribute("data-active", "false")
     expect(screen.getByRole("button", { name: "Switch to Viewer" })).toBeInTheDocument()
-    expect(screen.getByRole("button", { name: /F5 Copy/ })).toBeDisabled()
+    expect(screen.getByRole("button", { name: /F5 Copy/ })).toBeEnabled()
+    expect(screen.getByRole("button", { name: /F3 View/ })).toBeEnabled()
+    expect(screen.getByRole("button", { name: /F4 Edit/ })).toBeEnabled()
     expect(screen.getByRole("button", { name: /Exit/ })).toBeEnabled()
   })
 

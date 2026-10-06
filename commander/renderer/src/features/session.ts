@@ -1,6 +1,7 @@
 import type { SortKey } from "@fastview/contracts"
 import { bridge } from "../bridge"
 import {
+  hasNavigated,
   openFolderEntry,
   openHome,
   openPath,
@@ -156,6 +157,9 @@ export async function restorePanels(
   let home: Promise<string | null> | null = null
   await Promise.all(
     SIDES.map(async (side) => {
+      // A folder opened while library.db was read (the user, a carried
+      // context) wins over the stored session.
+      if (hasNavigated(side)) return
       const saved = stored[side]
       if (saved) setTabs(side, saved.tabs, saved.active)
       else setTabs(side, [], 0)

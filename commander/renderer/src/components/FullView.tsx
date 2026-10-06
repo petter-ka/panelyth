@@ -44,6 +44,8 @@ import { onPanelKey } from "../features/panelKeys"
 import type { Side } from "../features/panels"
 import { closeQuickSearch } from "../features/quicksearch"
 import { useSettingsStore } from "../features/settings"
+import { panelDnd } from "./panelDnd"
+import { RenameField, useRenaming } from "./RenameField"
 import { TypeGlyph } from "./TypeGlyph"
 
 /** Fixed row height per interface size, so no row is ever measured (ADR-0028). */
@@ -251,6 +253,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
         onDoubleClick={(e) => {
           if (rowAt(e) !== null) void enter(side)
         }}
+        {...panelDnd(side)}
       >
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {table.getRowModel().rows.map((row) => {
@@ -340,6 +343,7 @@ const EntryRow = memo(function EntryRow({
   const item = usePageItem(store, entry)
   const isCursor = useIsCursor(side, index)
   const marked = useMarksStore((s) => isMarked(s[side], entry, item?.id))
+  const renaming = useRenaming(side, index)
   return (
     <div
       role="row"
@@ -349,16 +353,30 @@ const EntryRow = memo(function EntryRow({
       data-marked={marked}
       data-id={item?.id}
       aria-selected={marked}
+      draggable={!renaming && item !== undefined}
       className={`${rowClass} ${item && isMuted(item) ? "text-muted" : "text-text"}`}
       style={{ top, height }}
     >
       <span aria-hidden="true" className="w-2.5 shrink-0 text-center">
         {marked ? "•" : ""}
       </span>
-      {item ? <Cells item={item} /> : <Placeholder />}
+      {item && renaming ? (
+        <span role="gridcell" style={CELL.name} className="flex items-center gap-1.5 px-1.5">
+          <TypeGlyph glyph={glyphOf(item)} />
+          <RenameField onDone={() => focusGrid(side)} />
+        </span>
+      ) : item ? (
+        <Cells item={item} />
+      ) : (
+        <Placeholder />
+      )}
     </div>
   )
 })
+
+/** Keys go back to the panel after an inline edit. */
+export const focusGrid = (side: Side): void =>
+  document.querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)?.focus()
 
 function Cells({ item }: { item: ContentItem }) {
   const { sizeFormat, dateFormat } = useSettingsStore((s) => s.settings)

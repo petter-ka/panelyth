@@ -1,4 +1,9 @@
-import type { MediaOpenResult, MediaResolveResult } from "@fastview/contracts"
+import type {
+  FileOpenResult,
+  FileResolveResult,
+  MediaOpenResult,
+  MediaResolveResult,
+} from "@fastview/contracts"
 import { protocol } from "electron"
 import { randomBytes } from "node:crypto"
 import { createReadStream } from "node:fs"
@@ -10,6 +15,11 @@ export const MEDIA_SCHEME = "fastview-media"
 interface MediaTarget {
   path: string
   mime: string
+  /**
+   * The app origin allowed to fetch() it (Stage C05: the commander's lister
+   * reads byte windows). Absent: element loads only (<img>, <video>).
+   */
+  fetchOrigin?: string
 }
 
 /**
@@ -101,12 +111,62 @@ export function toMediaOpenResult(r: MediaResolveResult, tokens: MediaTokens): M
   }
 }
 
+/**
+ * file.open (commander, Stage C05): a read-only token for any file. Files
+ * that are not media are served as application/octet-stream with nosniff,
+ * so nothing a file contains is ever interpreted by the renderer.
+ */
+export function toFileOpenResult(
+  r: FileResolveResult,
+  tokens: MediaTokens,
+  fetchOrigin: string,
+): FileOpenResult {
+  return {
+    url: mintMediaUrl(tokens, { path: r.path, mime: r.mime, fetchOrigin }),
+    kind: r.kind,
+    mime: r.mime,
+    sizeBytes: r.sizeBytes,
+  }
+}
+
+/**
+ * CORS for fetch() from the app view that minted the token. A request
+ * carrying another Origin is refused; element loads carry none.
+ */
+export function corsHeaders(
+  target: MediaTarget,
+  origin: string | null,
+): Record<string, string> | "denied" {
+  if (origin === null) return {}
+  if (!target.fetchOrigin || origin !== target.fetchOrigin) return "denied"
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Expose-Headers": "Content-Range, Content-Length",
+    Vary: "Origin",
+  }
+}
+
 /** Serves token URLs with Range support (video seeking needs 206 responses). */
 export function handleMediaProtocol(tokens: MediaTokens): void {
   protocol.handle(MEDIA_SCHEME, async (request) => {
     const token = parseMediaUrl(request.url)
     const target = token ? tokens.get(token) : undefined
     if (!target) return new Response(null, { status: 404 })
+    const cors = corsHeaders(target, request.headers.get("Origin"))
+    if (cors === "denied") return new Response(null, { status: 403 })
+    if (request.method === "OPTIONS") {
+      return new Response(null, {
+        status: 204,
+        headers: {
+          ...cors,
+          "Access-Control-Allow-Methods": "GET",
+          "Access-Control-Allow-Headers": "Range",
+        },
+      })
+    }
+    if (request.method !== "GET" && request.method !== "HEAD") {
+      return new Response(null, { status: 405 })
+    }
     let size: number
     try {
       size = (await stat(target.path)).size
@@ -115,16 +175,20 @@ export function handleMediaProtocol(tokens: MediaTokens): void {
     }
     const range = parseRange(request.headers.get("Range"), size)
     if (range === "invalid") {
-      return new Response(null, { status: 416, headers: { "Content-Range": `bytes */${size}` } })
+      return new Response(null, {
+        status: 416,
+        headers: { ...cors, "Content-Range": `bytes */${size}` },
+      })
     }
     const { start, end } = range ?? { start: 0, end: size - 1 }
     const body =
-      size === 0
+      size === 0 || request.method === "HEAD"
         ? null
         : (Readable.toWeb(createReadStream(target.path, { start, end })) as ReadableStream)
     return new Response(body, {
       status: range ? 206 : 200,
       headers: {
+        ...cors,
         "Content-Type": target.mime || "application/octet-stream",
         "Content-Length": String(size === 0 ? 0 : end - start + 1),
         "Accept-Ranges": "bytes",

@@ -17,7 +17,9 @@ import { enter, pageStoreOf, parentRows, rowCount, useListingStore } from "../fe
 import { useMarksStore } from "../features/marks"
 import { onPanelKey } from "../features/panelKeys"
 import type { Side } from "../features/panels"
-import { clickRow, ROW_HEIGHT, type FullViewHandle } from "./FullView"
+import { clickRow, focusGrid, ROW_HEIGHT, type FullViewHandle } from "./FullView"
+import { panelDnd } from "./panelDnd"
+import { RenameField, useRenaming } from "./RenameField"
 import { TypeGlyph } from "./TypeGlyph"
 
 /** Fixed column width per interface size; nothing is measured per name (ADR-0028). */
@@ -131,6 +133,7 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
       onDoubleClick={(e) => {
         if (rowAt(e) !== null) void enter(side)
       }}
+      {...panelDnd(side)}
       className="group relative min-h-0 flex-1 overflow-x-auto overflow-y-hidden bg-canvas text-xs outline-none"
     >
       <div style={{ width: virtualizer.getTotalSize(), height: "100%", position: "relative" }}>
@@ -191,9 +194,11 @@ const BriefItem = memo(function BriefItem({
   const shown = entry < 0 ? undefined : item
   const isCursor = useListingStore((s) => s[side].cursor === index)
   const marked = useMarksStore((s) => entry >= 0 && isMarked(s[side], entry, shown?.id))
+  const renaming = useRenaming(side, index)
   return (
     <div
       role="option"
+      draggable={!renaming && shown !== undefined}
       id={`${side}-row-${index}`}
       data-row={index}
       data-cursor={isCursor}
@@ -210,6 +215,11 @@ const BriefItem = memo(function BriefItem({
         <>
           <TypeGlyph glyph="up" />
           ..
+        </>
+      ) : shown && renaming ? (
+        <>
+          <TypeGlyph glyph={glyphOf(shown)} />
+          <RenameField onDone={() => focusGrid(side)} />
         </>
       ) : shown ? (
         <>

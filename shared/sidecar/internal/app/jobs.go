@@ -17,7 +17,11 @@ import (
 // Stage 07 methods (ADR-0021): batch jobs, the internal clipboard, single
 // rename and tags. Wire types mirror shared/contracts/src/rpc.ts.
 
-const evJobProgress = "job.progress"
+const (
+	evJobProgress = "job.progress"
+	// evJobConflict asks about an item whose name is taken (ADR-0029).
+	evJobConflict = "job.conflict"
+)
 
 // Limits of job requests.
 const (
@@ -35,7 +39,20 @@ type (
 		Source jobSourceWire `json:"source"`
 		// Copy, move: absolute folder path and conflict policy.
 		Destination string `json:"destination"`
-		Conflict    string `json:"conflict"`
+		// DestinationDirID names the destination by its folder id (the
+		// commander, Stage C04); it wins over Destination.
+		DestinationDirID int64  `json:"destinationDirId"`
+		Conflict         string `json:"conflict"`
+		// Mask limits the copy to matching files; Name renames a single item.
+		Mask string `json:"mask"`
+		Name string `json:"name"`
+		// Verify hashes source and copy; Now starts the job ahead of its
+		// lane (Stage P03).
+		Verify bool `json:"verify"`
+		Now    bool `json:"now"`
+		// CopyLinks is set by Electron main from the calling app's profile
+		// (the commander copies links as links), never by a renderer.
+		CopyLinks bool `json:"copyLinks"`
 		// Rename.
 		Pattern string `json:"pattern"`
 		Start   int    `json:"start"`
@@ -48,6 +65,15 @@ type (
 	}
 	jobIDParams struct {
 		JobID int64 `json:"jobId"`
+	}
+	jobResolveParams struct {
+		JobID      int64  `json:"jobId"`
+		Decision   string `json:"decision"`
+		ApplyToAll bool   `json:"applyToAll"`
+	}
+	jobConflictEvent struct {
+		JobID    int64         `json:"jobId"`
+		Conflict jobs.Conflict `json:"conflict"`
 	}
 	jobCancelResult struct {
 		Cancelled bool `json:"cancelled"`
@@ -74,8 +100,10 @@ type (
 		Count int    `json:"count"`
 	}
 	clipPasteParams struct {
-		Destination string `json:"destination"`
-		Conflict    string `json:"conflict"`
+		Destination      string `json:"destination"`
+		DestinationDirID int64  `json:"destinationDirId"`
+		Conflict         string `json:"conflict"`
+		CopyLinks        bool   `json:"copyLinks"`
 	}
 	entryRenameParams struct {
 		EntryID int64  `json:"entryId"`
@@ -136,10 +164,37 @@ func (s *indexService) emitJob(snap jobs.Snapshot) {
 	s.events.Post(evJobProgress, strconv.FormatInt(snap.JobID, 10), snap)
 }
 
+// askJob publishes a job's conflict question (one per job at a time).
+func (s *indexService) askJob(jobID int64, c jobs.Conflict) {
+	s.events.Post(evJobConflict, strconv.FormatInt(jobID, 10), jobConflictEvent{JobID: jobID, Conflict: c})
+}
+
 func (s *indexService) registerJobs(srv *rpc.Server) {
 	rpc.Register(srv, "jobs.start", s.jobsStart)
 	rpc.Register(srv, "jobs.cancel", func(_ context.Context, p jobIDParams) (jobCancelResult, error) {
 		return jobCancelResult{Cancelled: s.jobs.Cancel(p.JobID)}, nil
+	})
+	// Stage P03 (ADR-0029): pause, resume, start now, answer a conflict.
+	rpc.Register(srv, "jobs.pause", func(_ context.Context, p jobIDParams) (okResult, error) {
+		return okResult{OK: s.jobs.Pause(p.JobID)}, nil
+	})
+	rpc.Register(srv, "jobs.resume", func(_ context.Context, p jobIDParams) (okResult, error) {
+		return okResult{OK: s.jobs.Resume(p.JobID)}, nil
+	})
+	rpc.Register(srv, "jobs.startNow", func(_ context.Context, p jobIDParams) (okResult, error) {
+		return okResult{OK: s.jobs.StartNow(p.JobID)}, nil
+	})
+	rpc.Register(srv, "jobs.resolve", func(_ context.Context, p jobResolveParams) (okResult, error) {
+		err := s.jobs.Resolve(p.JobID, p.Decision, p.ApplyToAll)
+		switch {
+		case errors.Is(err, jobs.ErrInvalid):
+			return okResult{}, rpc.NewError(rpc.CodeInvalidArgument, "unknown decision")
+		case errors.Is(err, jobs.ErrUnknownJob):
+			return okResult{}, rpc.NewError(rpc.CodeNotFound, "the job is no longer running")
+		case errors.Is(err, jobs.ErrNotAsking):
+			return okResult{OK: false}, nil
+		}
+		return okResult{OK: err == nil}, err
 	})
 	rpc.Register(srv, "jobs.errors", func(_ context.Context, p jobErrorsParams) (jobErrorsResult, error) {
 		if p.Offset < 0 || p.Limit < 1 || p.Limit > MaxJobErrorsPage {
@@ -157,6 +212,7 @@ func (s *indexService) registerJobs(srv *rpc.Server) {
 	rpc.Register(srv, "jobs.list", func(context.Context, emptyParams) (jobListResult, error) {
 		return jobListResult{Jobs: s.jobs.List()}, nil
 	})
+	s.registerFsOps(srv)
 	rpc.Register(srv, "clip.set", s.clipSet)
 	rpc.Register(srv, "clip.get", func(context.Context, emptyParams) (clipState, error) {
 		return s.clip.state(), nil
@@ -183,14 +239,15 @@ func (s *indexService) registerJobs(srv *rpc.Server) {
 	})
 }
 
-func (s *indexService) jobsStart(_ context.Context, p jobStartParams) (jobs.Snapshot, error) {
+func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Snapshot, error) {
 	spec := jobs.Spec{Kind: jobs.Kind(p.Kind), Conflict: p.Conflict, Pattern: p.Pattern, Start: p.Start,
-		Favorite: p.Favorite, Rating: p.Rating, Label: p.Label, Tag: p.Tag, Add: p.Add}
+		Favorite: p.Favorite, Rating: p.Rating, Label: p.Label, Tag: p.Tag, Add: p.Add,
+		Verify: p.Verify, Now: p.Now, CopyLinks: p.CopyLinks, Mask: p.Mask, Name: p.Name}
 	if len(p.Pattern) > MaxPatternBytes {
 		return jobs.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "the pattern is too long")
 	}
 	if spec.Kind == jobs.KindCopy || spec.Kind == jobs.KindMove {
-		dest, err := destination(p.Destination)
+		dest, err := s.jobDestination(ctx, p.DestinationDirID, p.Destination)
 		if err != nil {
 			return jobs.Snapshot{}, err
 		}
@@ -202,6 +259,14 @@ func (s *indexService) jobsStart(_ context.Context, p jobStartParams) (jobs.Snap
 	}
 	spec.IDs = ids
 	return s.startJob(spec)
+}
+
+// jobDestination resolves a folder id (preferred) or an absolute path.
+func (s *indexService) jobDestination(ctx context.Context, dirID int64, path string) (string, error) {
+	if dirID > 0 {
+		return s.dirPath(ctx, dirID)
+	}
+	return destination(path)
 }
 
 func destination(p string) (string, error) {
@@ -241,8 +306,8 @@ func (s *indexService) clipSet(_ context.Context, p clipSetParams) (clipState, e
 }
 
 // clipPaste copies or moves the clipboard into a folder.
-func (s *indexService) clipPaste(_ context.Context, p clipPasteParams) (jobs.Snapshot, error) {
-	dest, err := destination(p.Destination)
+func (s *indexService) clipPaste(ctx context.Context, p clipPasteParams) (jobs.Snapshot, error) {
+	dest, err := s.jobDestination(ctx, p.DestinationDirID, p.Destination)
 	if err != nil {
 		return jobs.Snapshot{}, err
 	}
@@ -258,7 +323,7 @@ func (s *indexService) clipPaste(_ context.Context, p clipPasteParams) (jobs.Sna
 	}
 	// The lock is not held across Start: the manager may emit (and so call
 	// jobDone) from inside it.
-	snap, err := s.startJob(jobs.Spec{Kind: kind, IDs: ids, Destination: dest, Conflict: p.Conflict})
+	snap, err := s.startJob(jobs.Spec{Kind: kind, IDs: ids, Destination: dest, Conflict: p.Conflict, CopyLinks: p.CopyLinks})
 	if err != nil || !cut {
 		return snap, err
 	}

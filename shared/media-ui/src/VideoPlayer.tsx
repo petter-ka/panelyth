@@ -1,6 +1,5 @@
 import type { Thumb } from "@fastview/contracts"
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
-import { bridge } from "../../bridge"
 import {
   formatTime,
   problemFromCode,
@@ -12,17 +11,18 @@ import {
   useVideoPrefs,
   VOLUME_STEP,
   type VideoProblem,
-} from "../../features/media/video"
-import { retry, useViewerImage } from "../../features/viewer/viewerImages"
+} from "./video"
+import { retry, useViewerImage, type FitLane } from "./viewerImages"
 import {
   ExitFullscreenIcon,
   FullscreenIcon,
   MuteIcon,
   PauseIcon,
   PlayIcon,
+  VideoGlyph,
   VolumeIcon,
-} from "../ui/icons"
-import { VideoGlyph } from "../tiles/glyphs"
+} from "./icons"
+import { mediaPort } from "./port"
 
 interface VideoPlayerProps {
   entryId: number
@@ -33,6 +33,8 @@ interface VideoPlayerProps {
   playToken: number | null
   /** With playToken: also enter full screen (double-click on the tile). */
   playFullscreen?: boolean
+  /** Preview lane for Try again (the viewer's preview pane by default). */
+  lane?: FitLane
 }
 
 const control =
@@ -53,6 +55,7 @@ export function VideoPlayer({
   placeholder,
   playToken,
   playFullscreen = false,
+  lane = "pane",
 }: VideoPlayerProps) {
   const { fit, media } = useViewerImage(entryId)
   const { volume, muted } = useVideoPrefs()
@@ -245,10 +248,14 @@ export function VideoPlayer({
           <ProblemView
             problem={problem}
             detail={unsupportedDetail(info?.videoCodec ?? "", info?.audioCodec ?? "")}
-            onOpen={() => void bridge.openWithSystem(entryId).catch(() => undefined)}
+            onOpen={() =>
+              void mediaPort()
+                .openWithSystem(entryId)
+                .catch(() => undefined)
+            }
             onRetry={() => {
               setMediaProblem(null)
-              retry(entryId, "pane")
+              retry(entryId, lane)
             }}
           />
         )}

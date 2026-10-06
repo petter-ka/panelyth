@@ -1,4 +1,5 @@
 import {
+  type ContentItem,
   type Crumb,
   type DirOpenResult,
   type IndexProgress,
@@ -240,6 +241,7 @@ async function navigate(
     }
     stores[side].reset(snapshot)
     sessionChanged(side, { kind: "reset" })
+    pendingFocus[side] = null
     const p = getPanel(side)
     patch(side, {
       dirId: dir.dirId,
@@ -265,6 +267,9 @@ async function navigate(
     patch(side, { error: toPanelError(error) })
   }
 }
+
+/** True once the panel was asked to open a folder (the startup restore leaves it alone then). */
+export const hasNavigated = (side: Side): boolean => seqs[side] > 0
 
 /** Retry on the error state: the navigation that failed, again. */
 export function retry(side: Side): Promise<void> {
@@ -350,13 +355,22 @@ export function swapPanels(): void {
   listeners.forEach((l) => l(usePanelsStore.getState().active))
 }
 
-/** Enter: folders open; files wait for Stage C05 (open, lister). */
+type FileOpener = (side: Side, item: ContentItem) => Promise<void>
+let fileOpener: FileOpener | null = null
+
+/** Enter on a file (Stage C05, features/open.ts): opens it with its default app. */
+export function setFileOpener(opener: FileOpener | null): void {
+  fileOpener = opener
+}
+
+/** Enter and double-click: folders open in the panel; files open with their default app. */
 export function enter(side: Side): Promise<void> {
   const p = getPanel(side)
   const index = p.cursor - parentRows(p)
   if (index < 0) return goUp(side)
   const item = stores[side].getItem(index)
   if (item?.kind === "dir") return openFolderEntry(side, item.id)
+  if (item && fileOpener) return fileOpener(side, item)
   return Promise.resolve()
 }
 
@@ -603,11 +617,31 @@ const pendingInvalidation: Record<Side, QuerySnapshot | null> = { left: null, ri
 
 export const isCommanderVisible = (): boolean => visible
 
+// After a file operation (Stage C04) the cursor goes to an entry that may
+// not be in the session yet: the new folder, the renamed entry, the entry
+// after the deleted ones. It is placed when an invalidation brings it in.
+const pendingFocus: Record<Side, number | null> = { left: null, right: null }
+
+/** Puts the cursor on the entry now if the session has it, else after the next invalidation that does. */
+export async function focusEntry(side: Side, entryId: number): Promise<void> {
+  const query = getPanel(side).query
+  if (!query) return
+  pendingFocus[side] = entryId
+  const at = await bridge.indexOf(query.queryId, entryId).catch(() => null)
+  if (!at || at.index < 0 || getPanel(side).query?.queryId !== query.queryId) return
+  if (pendingFocus[side] !== entryId) return // a later request won
+  pendingFocus[side] = null
+  const p = getPanel(side)
+  patch(side, { cursor: at.index + parentRows(p), revealToken: p.revealToken + 1 })
+}
+
 async function applyInvalidation(side: Side, snapshot: QuerySnapshot): Promise<void> {
   const p = getPanel(side)
   if (p.query?.queryId !== snapshot.queryId || snapshot.version <= p.query.version) return
-  // The cursor follows its entry when rows move (inserted or removed above it).
-  const focusId = cursorEntryId(side)
+  // The cursor follows its entry when rows move (inserted or removed above
+  // it), or goes to the entry a file operation asked for.
+  const pending = pendingFocus[side]
+  const focusId = pending ?? cursorEntryId(side)
   const from = p.query.version
   stores[side].invalidate(snapshot)
   patch(side, { query: snapshot })
@@ -624,8 +658,13 @@ async function applyInvalidation(side: Side, snapshot: QuerySnapshot): Promise<v
   const at = await bridge.indexOf(snapshot.queryId, focusId).catch(() => null)
   const now = getPanel(side)
   if (!at || now.query?.queryId !== snapshot.queryId) return
-  if (at.index >= 0) moveCursor(side, at.index + parentRows(now))
-  else moveCursor(side, now.cursor)
+  if (at.index >= 0) {
+    if (pending !== null && pendingFocus[side] === pending) {
+      pendingFocus[side] = null
+      patch(side, { revealToken: now.revealToken + 1 })
+    }
+    moveCursor(side, at.index + parentRows(now))
+  } else moveCursor(side, now.cursor)
 }
 
 /** Subscribes the panels to sidecar events; returns the unsubscribe. */
@@ -725,6 +764,7 @@ export function resetListing(): void {
   failed.left = failed.right = null
   progressByScan.clear()
   pendingInvalidation.left = pendingInvalidation.right = null
+  pendingFocus.left = pendingFocus.right = null
   visible = true
   listeners.clear()
   for (const s of parked.values()) clearTimeout(s.timer)

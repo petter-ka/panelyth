@@ -3,8 +3,8 @@
   "ok": true,
   "r": {
     "app": "viewer",
-    "dirId": 14,
-    "focusId": 16,
+    "dirId": 18,
+    "focusId": 20,
     "path": "/fixtures/golden",
     "selectionCount": 2,
     "selectionTooLarge": false,

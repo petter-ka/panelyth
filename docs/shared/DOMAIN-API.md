@@ -82,11 +82,40 @@ batch.rate(ids, rating)
 batch.cancel(jobId)
 ```
 
+> As built (ADR-0021, ADR-0029): every batch is `jobs.start({ kind, source: { selection }, … })`, with copy/move options
+> `destination`, `conflict` (`ask`, `keepBoth`, `skip`, `replace`, `replaceOlder`, `replaceIfDifferentSize`,
+> `renameNew`, `renameExisting`), `verify?` and `now?`. Stage C04 added `destinationDirId` (instead of `destination`; the
+> commander must use it), `mask?` and `name?` (a single item under a new name), the same `destinationDirId` for
+> `clip.paste`, `fs.mkdir({ parentDirId, path }) → { entryId, created }`, `fs.canTrash({ dirId }) → { trash }` and
+> `clipboard.copyPaths({ selection, namesOnly? })`. Stage P03 added `jobs.pause`, `jobs.resume`, `jobs.startNow`
+> and `jobs.resolve({ jobId, decision, applyToAll })`, the `job.conflict { jobId, conflict }` event, the states `paused`
+> and `asking`, and `bytesPerSec`, `etaMs` and `conflict` on the snapshot. Main adds `copyLinks` for the commander.
+
 ## Properties
 
 ```ts
 properties.get(fileId)
 ```
+
+## View, open and edit (Stage C05)
+
+```ts
+media.open({ entryId })            // images and videos: token URL, size, codecs (both apps)
+file.open({ entryId })             // commander: any file → { url, kind, mime, sizeBytes }; bytes by HTTP Range
+shell.open({ entryId, allowProgram? })   // the default app; kinds per app profile (ADR-0027)
+shell.edit({ entryId })            // commander, F4: the editor from commander.settings.editor, else the OS text editor
+fs.mkfile({ parentDirId, name })   // commander, Shift+F4 → { entryId, created }
+```
+
+> As built (Stage C05, ADR-0027): `file.open` mints a read-only `fastview-media://m/<token>` for any file kind (a
+> folder is refused); files that are not media are served as `application/octet-stream` with `nosniff`. The token is
+> bound to the commander's origin, and only the commander's CSP allows `fetch()` of token URLs (`connect-src`), so the
+> viewer can never read a token's bytes. Main resolves entries through the main-only sidecar methods `file.resolve`
+> and `entry.path` (which reports `program`: executables, scripts, installers, shortcuts, app bundles). `shell.open`
+> from the viewer opens folders and media only, never a program; from the commander it opens any kind, and a program
+> only with `allowProgram` (otherwise `PERMISSION_DENIED` with `details.reason: "program"`, which the commander answers
+> per its "Run programs with Enter" setting). `shell.edit` starts the editor without a shell; under
+> `FASTVIEW_TEST_SHELL=record` both are recorded instead.
 
 ## Events
 

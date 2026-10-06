@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"time"
 
 	"fastview/sidecar/internal/fileops"
@@ -26,8 +27,19 @@ func validate(s Spec) error {
 		if s.Destination == "" {
 			return fmt.Errorf("%w: destination is required", ErrInvalid)
 		}
-		if s.Conflict != ConflictKeepBoth && s.Conflict != ConflictSkip && s.Conflict != ConflictReplace {
+		if !slices.Contains(policies, s.Conflict) {
 			return fmt.Errorf("%w: unknown conflict policy %q", ErrInvalid, s.Conflict)
+		}
+		if s.Name != "" {
+			if len(s.IDs) != 1 {
+				return fmt.Errorf("%w: a new name needs exactly one item", ErrInvalid)
+			}
+			if err := fileops.ValidateName(s.Name); err != nil {
+				return fmt.Errorf("%w: %s", ErrInvalid, err.Error())
+			}
+		}
+		if len(s.Mask) > index.MaxMaskLen {
+			return fmt.Errorf("%w: the mask is too long", ErrInvalid)
 		}
 	case KindTrash, KindDelete, KindFavorite, KindDirSize:
 	case KindRename:
@@ -84,7 +96,7 @@ func (m *Manager) eachTarget(j *job, fn func(t index.Target) error) error {
 			j.fail("", fileops.CodeNotFound, "An item was removed before the job reached it.")
 		}
 		for _, t := range targets {
-			if err := j.ctx.Err(); err != nil {
+			if err := j.gate(j.ctx); err != nil { // pause point between items
 				return err
 			}
 			j.update(func(s *Snapshot) { s.Current = truncate(t.Name) })
@@ -112,8 +124,12 @@ func (m *Manager) execute(j *job) (State, string) {
 	switch j.spec.Kind {
 	case KindCopy, KindMove:
 		msg, err = m.transfer(j, a)
-	case KindTrash, KindDelete:
-		err = m.eachTarget(j, func(t index.Target) error { return m.removeOne(j, a, t) })
+	case KindDelete:
+		err = m.eachTarget(j, func(t index.Target) error {
+			return m.removeOne(j, a, t, fileops.Delete(t.Path, t.Kind == media.KindDir))
+		})
+	case KindTrash:
+		err = m.trash(j, a)
 	case KindRename:
 		err = m.rename(j, a)
 	case KindFavorite, KindRating, KindTag, KindLabel:
@@ -169,6 +185,8 @@ func message(err error) string {
 		return "The item is open in another program."
 	case fileops.CodeTrashUnavailable:
 		return "This drive has no trash. Delete permanently instead (Shift+Delete)."
+	case fileops.CodeVerify:
+		return "The copy differs from the original (verification failed); it was removed."
 	}
 	var e *fileops.Error
 	if errors.As(err, &e) {
@@ -188,112 +206,6 @@ func message(err error) string {
 func exists(path string) bool {
 	_, err := os.Lstat(path)
 	return err == nil
-}
-
-// transfer copies or moves every target into the destination folder.
-func (m *Manager) transfer(j *job, a *applier) (string, error) {
-	dest := j.spec.Destination
-	if fi, err := os.Stat(dest); err != nil || !fi.IsDir() {
-		return "The destination folder doesn't exist any more.", nil
-	}
-	destKey := pathkey.DirKey(dest)
-	destDir, derr := m.deps.Store.DirByPath(j.ctx, dest)
-	indexed := derr == nil
-	if sum, err := m.deps.Store.Summarize(j.ctx, j.spec.IDs); err == nil {
-		j.update(func(s *Snapshot) { s.BytesTotal = sum.Bytes })
-	}
-	lib := m.library(j.ctx)
-	return "", m.eachTarget(j, func(t index.Target) error {
-		isDir := t.Kind == media.KindDir
-		srcKey := pathkey.DirKey(filepath.Dir(t.Path))
-		sameFolder := srcKey == destKey
-		if isDir && fileops.IsWithin(dest, t.Path) {
-			j.fail(t.Name, fileops.CodeIntoItself, "A folder can't be copied or moved into itself.")
-			return nil
-		}
-		if j.spec.Kind == KindMove && sameFolder {
-			j.update(func(s *Snapshot) { s.Skipped++; s.BytesDone += t.Size })
-			return nil
-		}
-		policy := j.spec.Conflict
-		if j.spec.Kind == KindCopy && sameFolder {
-			policy = ConflictKeepBoth // pasting into the source folder duplicates
-		}
-		name, replace := t.Name, false
-		if exists(filepath.Join(dest, name)) {
-			switch {
-			case policy == ConflictSkip:
-				j.update(func(s *Snapshot) { s.Skipped++; s.BytesDone += t.Size })
-				return nil
-			case policy == ConflictReplace && !isDir:
-				replace = true
-			default: // keepBoth; folders are never replaced
-				n, ok := fileops.UniqueName(name, isDir, func(c string) bool { return exists(filepath.Join(dest, c)) })
-				if !ok {
-					j.fail(t.Name, fileops.CodeExists, "No free name was found in the destination.")
-					return nil
-				}
-				name = n
-			}
-		}
-		target := filepath.Join(dest, name)
-		progress := func(n int64) {
-			j.update(func(s *Snapshot) { s.BytesDone += n })
-			m.emit(j, false)
-		}
-		skipped := func(p string) {
-			rel, _ := filepath.Rel(filepath.Dir(t.Path), p)
-			j.fail(rel, fileops.CodeSkippedLink, "Links and special files are not copied.")
-		}
-		var err error
-		before := j.snapshot().BytesDone
-		switch {
-		case j.spec.Kind == KindCopy && isDir:
-			if size, serr := fileops.TreeSize(j.ctx, t.Path); serr == nil {
-				j.update(func(s *Snapshot) { s.BytesTotal += size })
-			}
-			err = fileops.CopyTree(j.ctx, t.Path, target, progress, skipped)
-		case j.spec.Kind == KindCopy:
-			err = fileops.CopyFile(j.ctx, t.Path, target, replace, progress)
-		default:
-			err = fileops.Move(j.ctx, t.Path, target, isDir, replace, progress, skipped)
-		}
-		if err != nil {
-			// Bytes of a failed item don't count as done.
-			j.update(func(s *Snapshot) { s.BytesDone = before })
-			return m.itemFailed(j, t.Name, err)
-		}
-		newKey := pathkey.ChildKey(destKey, name, isDir)
-		j.update(func(s *Snapshot) {
-			s.Done++
-			if s.BytesDone == before && !isDir { // same-volume move: no bytes copied
-				s.BytesDone += t.Size
-			}
-		})
-		if j.spec.Kind == KindCopy {
-			if indexed {
-				a.add(rowFor(destDir, t, name, newKey, target))
-				a.touch(destDir.ID, destDir.Key)
-				a.count()
-			}
-			return nil
-		}
-		if lib != nil {
-			if err := lib.Rekey(context.WithoutCancel(j.ctx), t.Key, newKey); err != nil {
-				m.deps.Log.Warn("move user metadata", "err", err)
-			}
-		}
-		if indexed {
-			a.move(index.Moved{ID: t.ID, ParentID: destDir.ID, Kind: t.Kind, Name: name, Ext: extOf(name, isDir),
-				OldKey: t.Key, NewKey: newKey, OldPath: t.Path, NewPath: target})
-			a.touch(destDir.ID, destDir.Key)
-		} else {
-			a.remove(t.ID)
-		}
-		a.touch(t.ParentID, srcKey)
-		a.count()
-		return nil
-	})
 }
 
 func extOf(name string, isDir bool) string {
@@ -319,14 +231,7 @@ func rowFor(dest index.DirInfo, t index.Target, name, key, path string) index.Ro
 
 // removeOne trashes or deletes one target. An item that is already gone
 // counts as removed: the goal is reached and its row must go.
-func (m *Manager) removeOne(j *job, a *applier, t index.Target) error {
-	isDir := t.Kind == media.KindDir
-	var err error
-	if j.spec.Kind == KindTrash {
-		err = fileops.Trash(t.Path)
-	} else {
-		err = fileops.Delete(t.Path, isDir)
-	}
+func (m *Manager) removeOne(j *job, a *applier, t index.Target, err error) error {
 	if err != nil && fileops.Code(err) != fileops.CodeNotFound {
 		return m.itemFailed(j, t.Name, err)
 	}
@@ -338,6 +243,44 @@ func (m *Manager) removeOne(j *job, a *applier, t index.Target) error {
 	a.touch(t.ParentID, pathkey.DirKey(filepath.Dir(t.Path)))
 	a.count()
 	return nil
+}
+
+// trashBatch is how many items one Recycle Bin call takes (Stage P03).
+const trashBatch = 200
+
+// trash moves the targets to the trash in batches; each item still gets its
+// own result.
+func (m *Manager) trash(j *job, a *applier) error {
+	var batch []index.Target
+	flush := func() error {
+		if len(batch) == 0 {
+			return nil
+		}
+		paths := make([]string, len(batch))
+		for i, t := range batch {
+			paths[i] = t.Path
+		}
+		errs := fileops.TrashMany(paths)
+		for i, t := range batch {
+			if err := m.removeOne(j, a, t, errs[i]); err != nil {
+				return err
+			}
+		}
+		batch = batch[:0]
+		m.emit(j, false)
+		return j.gate(j.ctx)
+	}
+	err := m.eachTarget(j, func(t index.Target) error {
+		batch = append(batch, t)
+		if len(batch) >= trashBatch {
+			return flush()
+		}
+		return nil
+	})
+	if err == nil {
+		err = flush()
+	}
+	return err
 }
 
 type renameItem struct {

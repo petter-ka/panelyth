@@ -1,0 +1,6 @@
+{"at":"2026-10-06T10:24:14.184Z","test":"tree-expand-10k","expandMs":65,"longTasks":0,"longTaskMaxMs":0,"mountedRows":34}
+{"at":"2026-10-06T10:24:18.175Z","test":"search-100k","samplesMs":[220,226,222,220],"p50Ms":222,"debounceMs":200}
+{"at":"2026-10-06T10:24:19.593Z","test":"pane-resize","steps":30,"longTasks":0,"longTaskMaxMs":0,"perRowBefore":6,"perRowAfter":4}
+{"at":"2026-10-06T12:27:27.750Z","test":"tree-expand-10k","expandMs":70,"longTasks":0,"longTaskMaxMs":0,"mountedRows":34}
+{"at":"2026-10-06T12:27:33.132Z","test":"search-100k","samplesMs":[210,223,216,213],"p50Ms":216,"debounceMs":200}
+{"at":"2026-10-06T12:27:34.986Z","test":"pane-resize","steps":30,"longTasks":0,"longTaskMaxMs":0,"perRowBefore":6,"perRowAfter":4}

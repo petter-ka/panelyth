@@ -18,6 +18,8 @@ export interface FixtureSpec {
     pngAlphaEvery?: number
     rotatedEvery?: number
   }
+  /** Lister fixtures (Stage C05): a numbered log of this size and the encoding samples. */
+  text?: { logBytes: number; encodings: boolean }
   files: number
   depth?: number
   fanout?: number
@@ -49,6 +51,13 @@ export function ensureFixture(
       String(spec.fanout ?? 0),
       "-non-media-every",
       String(spec.nonMediaEvery ?? 10),
+      ...(spec.text
+        ? [
+            "-text-log-bytes",
+            String(spec.text.logBytes),
+            ...(spec.text.encodings ? ["-encodings"] : []),
+          ]
+        : []),
       ...(spec.images
         ? [
             "-images",

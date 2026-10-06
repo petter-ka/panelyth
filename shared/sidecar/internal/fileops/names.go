@@ -71,6 +71,10 @@ func validateName(name string, windows bool) error {
 	return nil
 }
 
+// ValidateWindowsName applies Windows naming rules on any platform (a FAT,
+// exFAT or NTFS destination).
+func ValidateWindowsName(name string) error { return validateName(name, true) }
+
 // SplitExt splits "a.b.jpg" into "a.b" and ".jpg". Names starting with a dot
 // and names without an extension return ext "". Folders never have one.
 func SplitExt(name string, isDir bool) (stem, ext string) {

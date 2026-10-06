@@ -39,7 +39,7 @@ IDs, and the shared packages `packages/ui` and `packages/renderer-core`.
 - They share the Go sidecar binary, `packages/contracts` and the shared packages that Stage P01 extracts: Electron
   main building blocks, the design system and UI primitives, and the renderer core (bridge, sidecar/theme/keymap/settings
   stores). Media components (image viewer, video player) move to a shared package when the commander needs them
-  (Stage C05).
+  (Stage C05; done 2026-10-06: `shared/media-ui`).
 - **One sidecar binary, one sidecar process per app.** The app is chosen at start (`--app viewer|commander`). The
   sidecar's `hello` reports it, and main refuses a sidecar started for the other app. The profile selects the data
   directories, the index scope (ADR-0026) and the enabled method groups (ADR-0027).

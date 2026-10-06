@@ -99,6 +99,9 @@ type (
 	entryPathResult struct {
 		Path string `json:"path"`
 		Kind string `json:"kind"`
+		// Program: opening it may run code (fsx.IsProgram); the commander
+		// asks first (ADR-0027).
+		Program bool `json:"program"`
 	}
 	queryFacetsParams struct {
 		QueryID int64 `json:"queryId"`
@@ -334,10 +337,11 @@ func (s *indexService) entryPath(ctx context.Context, p entryParams) (entryPathR
 	if len(paths) == 0 {
 		return entryPathResult{}, rpc.NewError(rpc.CodeNotFound, "not in the index")
 	}
-	if _, err := os.Stat(paths[0].Path); err != nil {
+	fi, err := os.Stat(paths[0].Path)
+	if err != nil {
 		return entryPathResult{}, statError(err, "file")
 	}
-	return entryPathResult{Path: paths[0].Path, Kind: paths[0].Kind.String()}, nil
+	return entryPathResult{Path: paths[0].Path, Kind: paths[0].Kind.String(), Program: fsx.IsProgram(paths[0].Path, fi)}, nil
 }
 
 func msPtr(ns int64) *int64 {

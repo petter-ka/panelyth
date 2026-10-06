@@ -28,10 +28,23 @@ import {
   marksOf,
 } from "./marks"
 import { isMarked } from "@fastview/renderer-core"
-import { toggleActivePanel, type Side } from "./panels"
+import { toggleActivePanel, usePanelsStore, type Side } from "./panels"
+import { editCursor, openNewFile } from "./open"
+import { focusPanel, openLister, toggleQuickView, useViewersStore } from "./viewers"
 import { closeQuickSearch } from "./quicksearch"
 import { calculateSizes, swapSizeJobs } from "./sizes"
 import { openDriveMenu } from "./drives"
+import {
+  clipboardPaste,
+  clipboardSet,
+  copyAsText,
+  openCopy,
+  openCopyHere,
+  openDelete,
+  openMkdir,
+  startRename,
+} from "./files"
+import { toggleQueue } from "./queue"
 import { openHistoryMenu, openHotlist } from "./hotlist"
 import { setSettingsOpen } from "./settings"
 import { closeOtherTabs, closeTab, cycleTab, newTab, swapTabs, toggleLock } from "./tabs"
@@ -128,6 +141,61 @@ export function runPanelAction(side: Side, id: ActionId): void {
     case "tab.closeOthers":
       closeOtherTabs(side)
       break
+    case "files.copy":
+      closeQuickSearch()
+      void openCopy(side, "copy")
+      break
+    case "files.move":
+      closeQuickSearch()
+      void openCopy(side, "move")
+      break
+    case "files.copyHere":
+      closeQuickSearch()
+      openCopyHere(side)
+      break
+    case "files.rename":
+      closeQuickSearch()
+      startRename(side)
+      break
+    case "files.mkdir":
+      closeQuickSearch()
+      openMkdir(side)
+      break
+    case "files.view":
+      closeQuickSearch()
+      openLister(side)
+      break
+    case "files.edit":
+      closeQuickSearch()
+      void editCursor(side)
+      break
+    case "files.newText":
+      closeQuickSearch()
+      openNewFile(side)
+      break
+    case "files.trash":
+      closeQuickSearch()
+      void openDelete(side, false)
+      break
+    case "files.delete":
+      closeQuickSearch()
+      void openDelete(side, true)
+      break
+    case "clip.copy":
+      void clipboardSet(side, "copy")
+      break
+    case "clip.cut":
+      void clipboardSet(side, "cut")
+      break
+    case "clip.paste":
+      void clipboardPaste(side)
+      break
+    case "copy.paths":
+      void copyAsText(side, false)
+      break
+    case "copy.names":
+      void copyAsText(side, true)
+      break
     case "view.brief":
       setView(side, "brief")
       break
@@ -198,6 +266,16 @@ export function runPanelAction(side: Side, id: ActionId): void {
   }
 }
 
+function toggleQuickViewFocus(): void {
+  const quick = document.getElementById("quick-view")
+  if (!quick || quick.contains(document.activeElement)) {
+    focusPanel()
+    return
+  }
+  const body = quick.querySelector<HTMLElement>("[tabindex='0']")
+  ;(body ?? quick).focus()
+}
+
 export function runShellAction(id: ActionId): void {
   switch (id) {
     case "app.switch":
@@ -208,10 +286,19 @@ export function runShellAction(id: ActionId): void {
       break
     case "panel.other":
       closeQuickSearch()
-      toggleActivePanel()
+      // With quick view open, Tab moves between the panel and the quick view (C05).
+      if (useViewersStore.getState().quick !== null) toggleQuickViewFocus()
+      else toggleActivePanel()
+      break
+    case "view.quick":
+      closeQuickSearch()
+      toggleQuickView(usePanelsStore.getState().active)
       break
     case "app.settings":
       setSettingsOpen(true)
+      break
+    case "queue.toggle":
+      toggleQueue()
       break
   }
 }

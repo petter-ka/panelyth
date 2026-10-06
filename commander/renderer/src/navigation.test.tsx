@@ -11,7 +11,13 @@ import { resetDrives, startDrives } from "./features/drives"
 import { formatDate, formatSize } from "./features/format"
 import { resetHotlist, startHotlist } from "./features/hotlist"
 import { resetKeymap } from "./features/keymap"
-import { parkedQueryIds, resetListing, TAB_GRACE_MS, useListingStore } from "./features/listing"
+import {
+  openPath,
+  parkedQueryIds,
+  resetListing,
+  TAB_GRACE_MS,
+  useListingStore,
+} from "./features/listing"
 import { resetMarks } from "./features/marks"
 import { usePanelsStore } from "./features/panels"
 import { PANELS_KEY, readStoredPanels } from "./features/session"
@@ -286,6 +292,32 @@ describe("session restore", () => {
       [HOME.path, "full", 10_000_000],
       [HOME.path, "brief", 10_000_000],
     ])
+  })
+
+  it("a folder opened while library.db is still read wins over the stored session", async () => {
+    let release!: () => void
+    const libraryDelay = new Promise<void>((r) => (release = r))
+    installFakeCommander({
+      folders: folders(),
+      home: HOME.path,
+      libraryDelay,
+      settings: { [PANELS_KEY]: { v: 2, active: "left", left: { tabs: [{ path: HOME.path }] } } },
+    })
+    render(<AppShell />)
+    let started!: Promise<() => void>
+    await act(async () => {
+      started = startPanels()
+    })
+    // The user types a path before the restore could run.
+    await act(async () => {
+      await openPath("left", WORK.path)
+    })
+    await act(async () => {
+      release()
+      stops.push(await started)
+    })
+    await waitFor(() => expect(path("left")).toHaveTextContent(WORK.path))
+    expect(useListingStore.getState().left.path).toBe(WORK.path)
   })
 
   it("starts panels with hidden files shown when Settings → Panels says so", async () => {

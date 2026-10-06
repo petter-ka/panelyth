@@ -3,7 +3,8 @@
   "ok": true,
   "r": {
     "kind": "image",
-    "path": "/fixtures/golden"
+    "path": "/fixtures/golden",
+    "program": false
   },
   "t": "res"
 }

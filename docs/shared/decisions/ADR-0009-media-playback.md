@@ -31,6 +31,13 @@ image originals; Stage 06 adds video. `media.open` (renderer) returns only the t
 - Full screen is element full screen on the player. The session permission handler allows only `fullscreen`, and only
   for the app's own origin; everything else is still denied.
 
+## Implementation note (Stage C05)
+
+`file.open` (commander only) mints tokens for any file kind, bound to the commander's origin; the scheme is
+registered with `corsEnabled`, answers `OPTIONS` preflights for `Range`, and only the commander's CSP may `fetch()`
+it. The lister and quick view read 64 KiB chunks with Range (a 4 MiB LRU per open file). `ImageViewer` and
+`VideoPlayer` moved to `shared/media-ui` and serve both apps (ADR-0025).
+
 ## Rules
 
 - video bytes do not flow through normal RPC

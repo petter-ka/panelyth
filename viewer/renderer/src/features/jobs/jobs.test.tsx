@@ -55,6 +55,8 @@ function snap(p: Partial<JobSnapshot>): JobSnapshot {
     error: "",
     startedMs: 1,
     finishedMs: 0,
+    bytesPerSec: 0,
+    etaMs: 0,
     ...p,
   }
 }

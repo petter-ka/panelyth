@@ -1,0 +1,23 @@
+{
+  "id": 72,
+  "ok": true,
+  "r": {
+    "bytesDone": 0,
+    "bytesPerSec": 0,
+    "bytesTotal": 0,
+    "current": "",
+    "destination": "conflict-dst",
+    "done": 0,
+    "error": "",
+    "etaMs": 0,
+    "failed": 0,
+    "finishedMs": 1,
+    "jobId": 4,
+    "kind": "copy",
+    "skipped": 0,
+    "startedMs": 1,
+    "state": "queued",
+    "total": 1
+  },
+  "t": "res"
+}

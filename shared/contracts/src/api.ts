@@ -3,6 +3,13 @@ import type { EventChannel, EventMap } from "./events"
 import type {
   ClipMode,
   ClipState,
+  ConflictDecision,
+  FsCanTrashResult,
+  FsMkdirResult,
+  FsMkfileResult,
+  FileOpenResult,
+  PreviewEnsureParams as CommanderPreviewParams,
+  CommanderJobParams,
   ConflictPolicy,
   EntryRenameResult,
   JobCancelResult,
@@ -138,6 +145,15 @@ export interface FastViewApi {
     cancel(jobId: number): Promise<RpcEnvelope<JobCancelResult>>
     errors(jobId: number, offset: number, limit: number): Promise<RpcEnvelope<JobErrorsResult>>
     list(): Promise<RpcEnvelope<JobListResult>>
+    /** Stage P03 (ADR-0029). */
+    pause(jobId: number): Promise<RpcEnvelope<OkResult>>
+    resume(jobId: number): Promise<RpcEnvelope<OkResult>>
+    startNow(jobId: number): Promise<RpcEnvelope<OkResult>>
+    resolve(
+      jobId: number,
+      decision: ConflictDecision,
+      applyToAll: boolean,
+    ): Promise<RpcEnvelope<OkResult>>
   }
   /** The internal file clipboard (Ctrl+C / Ctrl+X / Ctrl+V), held in Go. */
   clip: {
@@ -228,9 +244,61 @@ export interface CommanderApi {
   }
   fs: {
     volumes(): Promise<RpcEnvelope<VolumesResult>>
+    /** Stage C04: F7 and the delete dialog. */
+    mkdir(parentDirId: number, path: string): Promise<RpcEnvelope<FsMkdirResult>>
+    canTrash(dirId: number): Promise<RpcEnvelope<FsCanTrashResult>>
+    /** Stage C05: Shift+F4's new text file. */
+    mkfile(parentDirId: number, name: string): Promise<RpcEnvelope<FsMkfileResult>>
+  }
+  /** Stage C05: quick view and lister (shared media components, ADR-0025). */
+  media: {
+    open(entryId: number): Promise<RpcEnvelope<MediaOpenResult>>
+  }
+  preview: {
+    ensure(params: CommanderPreviewParams): Promise<RpcEnvelope<PreviewEnsureResult>>
+  }
+  props: {
+    get(entryId: number): Promise<RpcEnvelope<Properties>>
+  }
+  /** Stage C05: any file's bytes through a read-only token URL (ADR-0027). */
+  file: {
+    open(entryId: number): Promise<RpcEnvelope<FileOpenResult>>
+  }
+  /** Stage C05: open with the default app (programs need allowProgram) and edit (F4). */
+  shell: {
+    open(entryId: number, allowProgram?: boolean): Promise<RpcEnvelope<OkResult>>
+    edit(entryId: number): Promise<RpcEnvelope<OkResult>>
   }
   places: {
     list(): Promise<RpcEnvelope<PlacesResult>>
+  }
+  /** Stage C04: file operations on the engine v2 queue (ADR-0029). */
+  files: {
+    start(params: CommanderJobParams): Promise<RpcEnvelope<JobSnapshot>>
+    pause(jobId: number): Promise<RpcEnvelope<OkResult>>
+    resume(jobId: number): Promise<RpcEnvelope<OkResult>>
+    startNow(jobId: number): Promise<RpcEnvelope<OkResult>>
+    resolve(
+      jobId: number,
+      decision: ConflictDecision,
+      applyToAll: boolean,
+    ): Promise<RpcEnvelope<OkResult>>
+    errors(jobId: number, offset: number, limit: number): Promise<RpcEnvelope<JobErrorsResult>>
+    list(): Promise<RpcEnvelope<JobListResult>>
+    rename(entryId: number, name: string): Promise<RpcEnvelope<EntryRenameResult>>
+  }
+  /** The internal file clipboard, shared with the viewer (ADR-0021, ADR-0031). */
+  clip: {
+    set(selection: SelectionDescriptor, mode: ClipMode): Promise<RpcEnvelope<ClipState>>
+    get(): Promise<RpcEnvelope<ClipState>>
+    paste(destinationDirId: number, conflict: ConflictPolicy): Promise<RpcEnvelope<JobSnapshot>>
+  }
+  clipboard: {
+    copyPaths(
+      selection: SelectionDescriptor,
+      namesOnly?: boolean,
+    ): Promise<RpcEnvelope<CopyPathsResult>>
+    copyText(text: string): Promise<RpcEnvelope<OkResult>>
   }
   context: {
     publish(

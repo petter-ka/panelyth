@@ -1,0 +1,8 @@
+{"at":"2026-10-06T10:08:46.746Z","test":"favorite-90k","jobMs":864,"progressEvents":4,"progressSpanMs":648,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-06T10:08:49.274Z","test":"file-ops","items":13,"consistent":true}
+{"at":"2026-10-06T10:13:24.834Z","test":"favorite-90k","jobMs":885,"progressEvents":4,"progressSpanMs":644,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-06T10:13:27.322Z","test":"file-ops","items":13,"consistent":true}
+{"at":"2026-10-06T11:30:40.331Z","test":"favorite-90k","jobMs":849,"progressEvents":4,"progressSpanMs":679,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-06T11:30:42.813Z","test":"file-ops","items":13,"consistent":true}
+{"at":"2026-10-06T12:25:43.493Z","test":"favorite-90k","jobMs":1358,"progressEvents":6,"progressSpanMs":1247,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-06T12:25:45.885Z","test":"file-ops","items":13,"consistent":true}

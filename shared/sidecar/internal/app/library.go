@@ -113,7 +113,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 	}, nil)
 	svc.watcher = watch.New(log, svc.scans.Relist, 300*time.Millisecond, 2*time.Second)
 	svc.jobs = jobs.NewManager(jobs.Deps{Store: store, Library: svc.library, Changed: svc.queries.Changed,
-		Emit: svc.emitJob, Log: log})
+		Emit: svc.emitJob, Ask: svc.askJob, Log: log})
 	return svc, nil
 }
 

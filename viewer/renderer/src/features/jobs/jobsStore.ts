@@ -82,7 +82,7 @@ export function resetJobsStore(): void {
 }
 
 export function isActive(job: JobSnapshot): boolean {
-  return job.state === "queued" || job.state === "running"
+  return job.state !== "completed" && job.state !== "cancelled" && job.state !== "failed"
 }
 
 /** Jobs the panel shows: active ones and finished ones not yet dismissed. */

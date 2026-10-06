@@ -18,19 +18,8 @@ export function FolderGlyph({ size }: GlyphProps) {
   )
 }
 
-export function VideoGlyph({ size }: GlyphProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.25" />
-      <path
-        d="M10 9.2v5.6l4.8-2.8L10 9.2Z"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
+// The video glyph lives with the shared VideoPlayer (Stage C05).
+export { VideoGlyph } from "@fastview/media-ui"
 
 export function UnavailableGlyph({ size }: GlyphProps) {
   return (

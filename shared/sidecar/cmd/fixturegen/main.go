@@ -3,6 +3,7 @@
 //
 //	go run ./cmd/fixturegen -out /tmp/fv-flat-100k -files 100000
 //	go run ./cmd/fixturegen -out /tmp/fv-images -images 300 -width 1600 -height 1200
+//	go run ./cmd/fixturegen -out /tmp/fv-text-2g -text-log-bytes 2147483648 -encodings
 package main
 
 import (
@@ -29,6 +30,9 @@ func main() {
 	flag.IntVar(&img.Height, "height", 1200, "image height")
 	flag.IntVar(&img.PNGAlphaEvery, "png-alpha-every", 0, "every n-th image is a PNG with alpha")
 	flag.IntVar(&img.RotatedEvery, "rotated-every", 0, "every n-th JPEG has EXIF orientation 6")
+	var text fixture.TextSpec
+	flag.Int64Var(&text.LogBytes, "text-log-bytes", 0, "write big.log with numbered lines up to this size (lister fixtures)")
+	flag.BoolVar(&text.Encodings, "encodings", false, "write the encoding samples (lister fixtures)")
 	flag.Parse()
 	if *out == "" {
 		fmt.Fprintln(os.Stderr, "-out is required")
@@ -36,7 +40,14 @@ func main() {
 	}
 	start := time.Now()
 	result := map[string]any{"root": *out}
-	if img.Count > 0 {
+	if text.LogBytes > 0 || text.Encodings {
+		if err := fixture.GenerateText(*out, text); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		result["text"] = text
+		result["expected"] = fixture.Expected{}
+	} else if img.Count > 0 {
 		if err := fixture.GenerateImages(*out, img); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

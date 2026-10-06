@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"slices"
 	"testing"
+	"time"
 
 	"fastview/sidecar/internal/fixture"
 	"fastview/sidecar/internal/fsx"
@@ -226,6 +227,67 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-entry.rename.json"] = call(55, byID(55, "entry.rename", map[string]any{"entryId": fileID, "name": "renamed " + fileName}))
 	golden["res-clip.paste.json"] = call(56, byID(56, "clip.paste", map[string]any{"destination": fixtureDir, "conflict": "keepBoth"}))
 	jobDone(golden["res-clip.paste.json"].(map[string]any)["r"].(map[string]any)["jobId"])
+	// Stage P03 (ADR-0029): a copy that asks about a conflict; pause,
+	// resume, the answer, start-now of a finished job.
+	conflictSrc := filepath.Join(t.TempDir(), "conflict-src")
+	conflictDst := filepath.Join(t.TempDir(), "conflict-dst")
+	for _, d := range []string{conflictSrc, conflictDst} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(d, "x.jpg"), []byte("not decoded here"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		fixed := time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)
+		if err := os.Chtimes(filepath.Join(d, "x.jpg"), fixed, fixed); err != nil {
+			t.Fatal(err)
+		}
+	}
+	cDir := call(70, byID(70, "dir.open", map[string]any{"path": conflictSrc, "recursive": false})).(map[string]any)["r"].(map[string]any)
+	for done := false; !done; {
+		for _, e := range events {
+			p, _ := e["p"].(map[string]any)
+			if e["ch"] == "index.progress" && p["state"] == "completed" && p["dirId"] == cDir["dirId"] {
+				done = true
+			}
+		}
+		if !done {
+			events = append(events, read().(map[string]any))
+		}
+	}
+	cq := call(71, byID(71, "query.open", map[string]any{"dirId": cDir["dirId"], "recursive": false, "sort": []any{}, "kinds": []any{}})).(map[string]any)["r"].(map[string]any)
+	cSel := map[string]any{"queryId": cq["queryId"], "version": cq["version"], "ranges": []any{[]int{0, 1}}, "include": []any{}, "exclude": []any{}}
+	golden["res-jobs.start-ask.json"] = call(72, byID(72, "jobs.start", map[string]any{"kind": "copy", "source": map[string]any{"selection": cSel},
+		"destination": conflictDst, "conflict": "ask", "verify": true, "now": false, "copyLinks": false}))
+	askJob := golden["res-jobs.start-ask.json"].(map[string]any)["r"].(map[string]any)["jobId"]
+	for found := false; !found; {
+		for i, e := range events {
+			p, _ := e["p"].(map[string]any)
+			if e["ch"] == "job.conflict" && p["jobId"] == askJob {
+				e["seq"] = float64(1)
+				golden["evt-job.conflict.json"] = e
+				events = append(events[:i], events[i+1:]...)
+				found = true
+				break
+			}
+		}
+		if !found {
+			events = append(events, read().(map[string]any))
+		}
+	}
+	golden["res-jobs.pause.json"] = call(73, byID(73, "jobs.pause", map[string]any{"jobId": askJob}))
+	golden["res-jobs.resume.json"] = call(74, byID(74, "jobs.resume", map[string]any{"jobId": askJob}))
+	golden["res-jobs.resolve-invalid.json"] = call(75, byID(75, "jobs.resolve", map[string]any{"jobId": askJob, "decision": "ask", "applyToAll": false}))
+	golden["res-jobs.resolve.json"] = call(76, byID(76, "jobs.resolve", map[string]any{"jobId": askJob, "decision": "renameNew", "applyToAll": true}))
+	jobDone(askJob)
+	golden["res-jobs.startNow.json"] = call(77, byID(77, "jobs.startNow", map[string]any{"jobId": askJob}))
+	// Stage C04: a nested new folder, the trash question, a copy into a folder named by id.
+	golden["res-fs.mkdir.json"] = call(78, byID(78, "fs.mkdir", map[string]any{"parentDirId": cDir["dirId"], "path": "new/nested"}))
+	golden["res-fs.canTrash.json"] = call(79, byID(79, "fs.canTrash", map[string]any{"dirId": cDir["dirId"]}))
+	newDir := golden["res-fs.mkdir.json"].(map[string]any)["r"].(map[string]any)["entryId"]
+	golden["res-jobs.start-dirid.json"] = call(80, byID(80, "jobs.start", map[string]any{"kind": "copy", "source": map[string]any{"selection": cSel},
+		"destinationDirId": newDir, "conflict": "keepBoth", "mask": "*.jpg", "copyLinks": true}))
+	jobDone(golden["res-jobs.start-dirid.json"].(map[string]any)["r"].(map[string]any)["jobId"])
 	golden["res-library.deleteTag.json"] = call(57, `{"t":"req","id":57,"m":"library.deleteTag","p":{"id":1}}`)
 	// Stage P02 (ADR-0026): the commander's scope lists every entry.
 	golden["res-query.open-all.json"] = call(58, `{"t":"req","id":58,"m":"query.open","p":{"dirId":1,"recursive":false,"sort":[{"field":"name","direction":"asc"}],"kinds":[],"scope":"all","showHidden":true,"nameMask":"*|*.tmp;.fastview*"}}`)
@@ -357,6 +419,9 @@ func TestGoldenFrames(t *testing.T) {
 	vp, _ := json.Marshal(map[string]any{"t": "req", "id": 29, "m": "query.page", "p": map[string]any{"queryId": vqid, "offset": 0, "limit": 1}})
 	clipID := call(29, string(vp)).(map[string]any)["r"].(map[string]any)["items"].([]any)[0].(map[string]any)["id"]
 	golden["res-media.resolve-video.json"] = call(44, byID(44, "media.resolve", map[string]any{"entryId": clipID}))
+	// Stage C05: any file for the commander's lister (main-only), and Shift+F4's new file.
+	golden["res-file.resolve.json"] = call(81, byID(81, "file.resolve", map[string]any{"entryId": clipID}))
+	golden["res-fs.mkfile.json"] = call(82, byID(82, "fs.mkfile", map[string]any{"parentDirId": vDir["dirId"], "name": "notes.txt"}))
 	// Stage C01: the shared context and query.indexOf.
 	imgSel := map[string]any{"queryId": qid, "version": 1, "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
 	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage, "selection": imgSel}))

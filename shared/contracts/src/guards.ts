@@ -12,7 +12,12 @@ import {
   PREVIEW_PROFILES,
   type ClipState,
   type EntryRenameResult,
+  type FsCanTrashResult,
+  type FsMkdirResult,
+  type FsMkfileResult,
+  type FileResolveResult,
   type JobCancelResult,
+  type JobConflict,
   type JobErrorsResult,
   type JobItemError,
   type JobListResult,
@@ -95,6 +100,7 @@ const jobItemCodes: ReadonlySet<string> = new Set([
   "INTO_ITSELF",
   "SKIPPED_LINK",
   "IO_ERROR",
+  "VERIFY_FAILED",
 ])
 const intOrNull = (v: unknown): boolean => v === null || isInt(v)
 const arrayOf = <T>(v: unknown, item: (x: unknown) => x is T): v is T[] =>
@@ -141,8 +147,18 @@ export function isJobSnapshot(v: unknown): v is JobSnapshot {
     isStr(v.destination) &&
     isStr(v.error) &&
     isCount(v.startedMs) &&
-    isCount(v.finishedMs)
+    isCount(v.finishedMs) &&
+    isCount(v.bytesPerSec) &&
+    isCount(v.etaMs) &&
+    (v.conflict === undefined || isJobConflict(v.conflict))
   )
+}
+
+const isConflictSide = (v: unknown): boolean =>
+  isRec(v) && isCount(v.id) && isCount(v.size) && isInt(v.modifiedMs) && isBool(v.isDir)
+
+export function isJobConflict(v: unknown): v is JobConflict {
+  return isRec(v) && isStr(v.name) && isConflictSide(v.source) && isConflictSide(v.target)
 }
 
 const isRange = (v: unknown): v is [number, number] =>
@@ -379,7 +395,14 @@ export const sidecarResultGuards: ResultGuards = {
   "selection.paths": (v): v is SelectionPathsResult =>
     isRec(v) && arrayOf(v.paths, isStr) && isBool(v.truncated),
   "entry.path": (v): v is EntryPathResult =>
-    isRec(v) && isStr(v.path) && isStr(v.kind) && entryKinds.has(v.kind),
+    isRec(v) && isStr(v.path) && isStr(v.kind) && entryKinds.has(v.kind) && isBool(v.program),
+  "file.resolve": (v): v is FileResolveResult =>
+    isRec(v) &&
+    isStr(v.path) &&
+    isStr(v.kind) &&
+    entryKinds.has(v.kind) &&
+    isStr(v.mime) &&
+    isCount(v.sizeBytes),
   "clipboard.image": (v): v is ClipboardImageResult =>
     isRec(v) && isStr(v.file) && isCount(v.width) && isCount(v.height),
   "props.get": (v): v is Properties =>
@@ -404,6 +427,9 @@ export const sidecarResultGuards: ResultGuards = {
     isLabel(v.label) &&
     arrayOf(v.tags, isStr),
   "fs.volumes": (v): v is VolumesResult => isRec(v) && arrayOf(v.volumes, isVolume),
+  "fs.mkdir": (v): v is FsMkdirResult => isRec(v) && isInt(v.entryId) && isBool(v.created),
+  "fs.mkfile": (v): v is FsMkfileResult => isRec(v) && isInt(v.entryId) && isBool(v.created),
+  "fs.canTrash": (v): v is FsCanTrashResult => isRec(v) && isBool(v.trash),
   "fs.listDirs": (v): v is ListDirsResult =>
     isRec(v) && isStr(v.path) && arrayOf(v.dirs, isDirChild) && isBool(v.truncated),
   "library.get": (v): v is LibraryState =>
@@ -421,6 +447,10 @@ export const sidecarResultGuards: ResultGuards = {
   "jobs.errors": (v): v is JobErrorsResult =>
     isRec(v) && arrayOf(v.errors, isJobItemError) && isCount(v.total),
   "jobs.list": (v): v is JobListResult => isRec(v) && arrayOf(v.jobs, isJobSnapshot),
+  "jobs.pause": isOk,
+  "jobs.resume": isOk,
+  "jobs.startNow": isOk,
+  "jobs.resolve": isOk,
   "clip.set": isClipState,
   "clip.get": isClipState,
   "clip.paste": isJobSnapshot,
@@ -441,6 +471,8 @@ export const eventGuards: EventGuards = {
   "folder.covers": (v): v is EventMap["folder.covers"] =>
     isRec(v) && Array.isArray(v.items) && v.items.length <= 500 && v.items.every(isFolderCoverItem),
   "job.progress": isJobSnapshot,
+  "job.conflict": (v): v is EventMap["job.conflict"] =>
+    isRec(v) && isInt(v.jobId) && isJobConflict(v.conflict),
   "app.visibility": (v): v is EventMap["app.visibility"] =>
     isRec(v) && (v.app === "viewer" || v.app === "commander") && typeof v.visible === "boolean",
   "settings.changed": (v): v is EventMap["settings.changed"] =>

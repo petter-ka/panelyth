@@ -1,14 +1,17 @@
 import type { ContentItem } from "@fastview/contracts"
 import { useCallback, useRef, useState, type KeyboardEvent, type RefObject } from "react"
-import { formatTime } from "../features/media/video"
+import {
+  formatTime,
+  ImageViewer,
+  useViewerImage,
+  VideoPlayer,
+  type ImageViewerController,
+} from "../features/media/mediaUi"
 import { usePreviewStore } from "../features/preview/previewStore"
 import { useThumb } from "../features/previews/thumbStore"
-import { useViewerImage } from "../features/viewer/viewerImages"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { formatBytes, formatCount } from "../lib/format"
 import { EmptyState } from "./EmptyState"
-import { VideoPlayer } from "./media/VideoPlayer"
-import { ImageViewer, type ImageViewerController } from "./viewer/ImageViewer"
 
 const zoomButton =
   "h-6 rounded-md border border-border bg-raised px-2 text-[0.6875rem] enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"

@@ -7,9 +7,11 @@ import { actionFor, useShortcutHint } from "../../features/shortcuts/shortcutSto
 import {
   flipHorizontal,
   IDENTITY,
+  ImageViewer,
+  type ImageViewerController,
   rotateBy,
   type ViewTransform,
-} from "../../features/viewer/transform"
+} from "../../features/media/mediaUi"
 import { closeViewer, jump, step, useViewerStore } from "../../features/viewer/viewerStore"
 import { formatCount } from "../../lib/format"
 import { bridge } from "../../bridge"
@@ -22,7 +24,6 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "../ui/menu"
-import { ImageViewer, type ImageViewerController } from "./ImageViewer"
 
 const button =
   "h-7 rounded-md border border-border bg-raised px-2.5 text-xs enabled:hover:border-muted disabled:text-muted aria-pressed:border-accent aria-pressed:text-accent"

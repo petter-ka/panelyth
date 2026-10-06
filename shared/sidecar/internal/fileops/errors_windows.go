@@ -19,3 +19,6 @@ func isInUse(err error) bool {
 func isCrossDevice(err error) bool {
 	return errors.Is(err, windows.ERROR_NOT_SAME_DEVICE)
 }
+
+// errCrossDevice is what a rename across volumes fails with (tests).
+var errCrossDevice error = windows.ERROR_NOT_SAME_DEVICE

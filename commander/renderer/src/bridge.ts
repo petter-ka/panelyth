@@ -1,6 +1,20 @@
 import type {
   AppId,
   Bookmark,
+  ClipMode,
+  ClipState,
+  CommanderJobParams,
+  ConflictDecision,
+  ConflictPolicy,
+  CopyPathsResult,
+  FsMkdirResult,
+  FsMkfileResult,
+  FileOpenResult,
+  MediaOpenResult,
+  PreviewEnsureParams,
+  PreviewEnsureResult,
+  Properties,
+  JobErrorsResult,
   CommanderApi,
   DirOpenResult,
   ErrorCode,
@@ -135,9 +149,60 @@ export const bridge = {
     unwrap(() => api().selection.rebase(selection)),
   dirSize: (selection: SelectionDescriptor): Promise<JobSnapshot> =>
     unwrap(() => api().jobs.dirSize(selection)),
+  // Stage C04: file operations on the engine v2 queue.
+  startJob: (p: CommanderJobParams): Promise<JobSnapshot> => unwrap(() => api().files.start(p)),
+  pauseJob: async (jobId: number): Promise<void> => {
+    await unwrap(() => api().files.pause(jobId))
+  },
+  resumeJob: async (jobId: number): Promise<void> => {
+    await unwrap(() => api().files.resume(jobId))
+  },
+  startJobNow: async (jobId: number): Promise<void> => {
+    await unwrap(() => api().files.startNow(jobId))
+  },
+  resolveJob: async (
+    jobId: number,
+    decision: ConflictDecision,
+    applyToAll: boolean,
+  ): Promise<boolean> => (await unwrap(() => api().files.resolve(jobId, decision, applyToAll))).ok,
+  jobErrors: (jobId: number, offset: number, limit: number): Promise<JobErrorsResult> =>
+    unwrap(() => api().files.errors(jobId, offset, limit)),
+  listJobs: async (): Promise<JobSnapshot[]> => (await unwrap(() => api().files.list())).jobs,
+  rename: async (entryId: number, name: string): Promise<string> =>
+    (await unwrap(() => api().files.rename(entryId, name))).name,
+  mkdir: (parentDirId: number, path: string): Promise<FsMkdirResult> =>
+    unwrap(() => api().fs.mkdir(parentDirId, path)),
+  canTrash: async (dirId: number): Promise<boolean> =>
+    (await unwrap(() => api().fs.canTrash(dirId))).trash,
+  clipSet: (selection: SelectionDescriptor, mode: ClipMode): Promise<ClipState> =>
+    unwrap(() => api().clip.set(selection, mode)),
+  clipGet: (): Promise<ClipState> => unwrap(() => api().clip.get()),
+  clipPaste: (destinationDirId: number, conflict: ConflictPolicy): Promise<JobSnapshot> =>
+    unwrap(() => api().clip.paste(destinationDirId, conflict)),
+  copyPaths: (selection: SelectionDescriptor, namesOnly = false): Promise<CopyPathsResult> =>
+    unwrap(() => api().clipboard.copyPaths(selection, namesOnly)),
+  copyText: async (text: string): Promise<void> => {
+    await unwrap(() => api().clipboard.copyText(text))
+  },
   cancelJob: async (jobId: number): Promise<void> => {
     await unwrap(() => api().jobs.cancel(jobId))
   },
+  // Stage C05: quick view, lister, open and edit.
+  openMedia: (entryId: number): Promise<MediaOpenResult> => unwrap(() => api().media.open(entryId)),
+  ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
+    unwrap(() => api().preview.ensure(params)),
+  properties: (entryId: number): Promise<Properties> => unwrap(() => api().props.get(entryId)),
+  /** A read-only token URL for any file; its bytes are read with HTTP Range. */
+  openFile: (entryId: number): Promise<FileOpenResult> => unwrap(() => api().file.open(entryId)),
+  /** Opens with the default app; a program needs allowProgram (PERMISSION_DENIED, reason "program"). */
+  shellOpen: async (entryId: number, allowProgram?: boolean): Promise<void> => {
+    await unwrap(() => api().shell.open(entryId, allowProgram))
+  },
+  shellEdit: async (entryId: number): Promise<void> => {
+    await unwrap(() => api().shell.edit(entryId))
+  },
+  mkfile: (parentDirId: number, name: string): Promise<FsMkfileResult> =>
+    unwrap(() => api().fs.mkfile(parentDirId, name)),
   on: <C extends EventChannel>(
     channel: C,
     listener: (payload: EventMap[C]) => void,

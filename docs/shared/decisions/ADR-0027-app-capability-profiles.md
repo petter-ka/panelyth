@@ -3,8 +3,9 @@
 ## Status
 
 Proposed (2026-10-05). **The per-view allowlists are accepted (P01, 2026-10-05):** main maps the calling frame's
-origin to its app and checks `APP_METHODS[app]`. Launching files is decided in Stage C05 and the command line in Stage
-C10. Revised the same day by ADR-0031: both apps run in one shell, so the profile belongs to each app
+origin to its app and checks `APP_METHODS[app]`. **The launching part is accepted (Stage C05, 2026-10-06):** open,
+programs after confirmation, the editor and file bytes through tokens, as built below. The command line is decided in
+Stage C10. Revised the same day by ADR-0031: both apps run in one shell, so the profile belongs to each app
 view (web contents), not to a separate app process.
 
 ## Context
@@ -56,6 +57,28 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
 - Actions take entry ids or selection descriptors, never paths from the renderer. Display paths are fine. The shared
   context carries ids and descriptors only.
 - No Node in the renderer, no raw `ipcRenderer`, and context isolation and the sandbox stay on for every app view.
+
+## Implementation note (Stage C05)
+
+- **Profiles in code:** `VIEWER_METHODS` (the viewer's list), `COMMANDER_ONLY_METHODS` (`file.open`, `shell.edit`,
+  `fs.mkfile`) and `COMMANDER_METHODS`; main handlers receive the calling app, so `shell.open` applies the profile in
+  one place (`shared/desktop/src/main/workspace.ts`).
+- **Programs:** the sidecar's `entry.path` reports `program` (`fsx.IsProgram`): on Windows executables, scripts,
+  installers, shortcuts and control panel items by extension; elsewhere the execute bit, scripts, packages and
+  `.desktop` files, and macOS app bundles (folders that `open` launches). The viewer's `shell.open` refuses programs
+  even among folders. The commander's `shell.open` refuses them without `allowProgram` (`PERMISSION_DENIED`,
+  `details.reason: "program"`); the commander then asks (Cancel has the focus), refuses with a message ("never"), or
+  sends `allowProgram` up front ("always"). The setting lives in `commander.settings.runPrograms`.
+- **Editor (F4):** `shell.edit` takes an entry id only; main reads the editor path from `commander.settings.editor`
+  (absolute, an existing file) and starts it detached without a shell, with the file path as its only argument.
+  Without one: Notepad on Windows, `open -t` on macOS; on Linux `xdg-open` for documents, and an editor is required
+  for programs (`xdg-open` could run them). Main refuses `library.setSetting` of `commander.*` keys from the viewer's
+  view, so a compromised viewer cannot plant an editor for the commander to start.
+- **File bytes:** `file.open` → `file.resolve` (main-only; any regular file, links followed, folders refused) → a
+  token bound to the commander's origin. Non-media files are served as `application/octet-stream` with `nosniff`.
+  `fetch()` of token URLs is allowed by the commander's CSP only (`connect-src 'self' fastview-media:`); the viewer's
+  CSP keeps `connect-src 'self'`. A request whose `Origin` is not the minting app's gets 403. The e2e test shows the
+  viewer cannot read a commander token even when handed its URL.
 
 ## Why
 

@@ -140,9 +140,9 @@ Claude Code should read these files in this order:
 | 0024 | Folder covers | viewer | Accepted |
 | 0025 | Product family: two apps on one platform | shared | Accepted; process model and data superseded by 0031 |
 | 0026 | Index scope: all entries stored, filtered per query | shared | Proposed (Stage P02) |
-| 0027 | App capability profiles: allowlists, shell actions, launching | shared | Proposed (Stages P01, C05, C10) |
+| 0027 | App capability profiles: allowlists, shell actions, launching | shared | Allowlists accepted (P01), launching accepted (C05, 2026-10-06); the command line is decided in C10 |
 | 0028 | Commander panels: dual-panel layout, TanStack Table (table view) and virtualized lists | commander | Accepted (Stage C01) |
-| 0029 | File-operation engine v2 | shared | Proposed (Stage P03) |
+| 0029 | File-operation engine v2 | shared | Accepted (Stage P03, 2026-10-06) |
 | 0030 | Archives as folders | commander | Proposed (Stage C07) |
 | 0031 | One shell for both apps: app switching and shared state | shared | Accepted |
 

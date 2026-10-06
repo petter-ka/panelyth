@@ -2,6 +2,16 @@
 // inline (a handful of paths) rather than adding an icon library.
 import type { SVGProps } from "react"
 
+// The player icons live with the shared VideoPlayer (Stage C05).
+export {
+  ExitFullscreenIcon,
+  FullscreenIcon,
+  MuteIcon,
+  PauseIcon,
+  PlayIcon,
+  VolumeIcon,
+} from "@fastview/media-ui"
+
 type IconProps = SVGProps<SVGSVGElement> & { size?: number }
 
 function Icon({ size = 16, children, ...rest }: IconProps) {
@@ -127,38 +137,6 @@ export const PanelRightIcon = (p: IconProps) => (
 )
 // Media controls (Stage 06). Play/pause are filled: they read as the
 // primary control at 16 px.
-export const PlayIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M5 3.25v9.5L12.5 8 5 3.25Z" fill="currentColor" />
-  </Icon>
-)
-export const PauseIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M4.75 3.5h2v9h-2zM9.25 3.5h2v9h-2z" fill="currentColor" strokeWidth="0" />
-  </Icon>
-)
-export const VolumeIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M2.5 6.25h2.25L8 3.5v9L4.75 9.75H2.5v-3.5Z" />
-    <path d="M10.5 6a3 3 0 0 1 0 4M12.25 4.25a5.5 5.5 0 0 1 0 7.5" />
-  </Icon>
-)
-export const MuteIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M2.5 6.25h2.25L8 3.5v9L4.75 9.75H2.5v-3.5Z" />
-    <path d="m10.5 6 3 4M13.5 6l-3 4" />
-  </Icon>
-)
-export const FullscreenIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M2.75 6V2.75H6M10 2.75h3.25V6M13.25 10v3.25H10M6 13.25H2.75V10" />
-  </Icon>
-)
-export const ExitFullscreenIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M6 2.75V6H2.75M13.25 6H10V2.75M10 13.25V10h3.25M2.75 10H6v3.25" />
-  </Icon>
-)
 export const HeartIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M8 13.25S2.5 10.1 2.5 6.2A2.7 2.7 0 0 1 8 4.9a2.7 2.7 0 0 1 5.5 1.3c0 3.9-5.5 7.05-5.5 7.05Z" />

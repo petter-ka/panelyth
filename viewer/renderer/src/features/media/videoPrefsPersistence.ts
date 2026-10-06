@@ -1,6 +1,6 @@
 import { bridge } from "../../bridge"
 import { useLibraryStore } from "../library/libraryStore"
-import { useVideoPrefs } from "./video"
+import { useVideoPrefs } from "./mediaUi"
 
 // Volume and mute persist across restarts in library.db (setting "player";
 // Stage 08, a Stage 06 follow-up). Saves are debounced: the volume slider

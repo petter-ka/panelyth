@@ -15,3 +15,18 @@ func platformAttrs(_ string, info fs.FileInfo) int {
 	}
 	return a
 }
+
+// programExts open into running code through their default app on macOS
+// and Linux desktops (besides files with an execute bit).
+var programExts = map[string]bool{
+	"sh": true, "bash": true, "zsh": true, "command": true, "tool": true, "desktop": true,
+	"appimage": true, "run": true, "jar": true, "pkg": true, "mpkg": true, "deb": true, "rpm": true,
+}
+
+func platformProgram(ext string, info fs.FileInfo) bool {
+	if info.IsDir() {
+		// A macOS app bundle is a folder that "open" launches.
+		return ext == "app"
+	}
+	return programExts[ext] || (info.Mode().IsRegular() && info.Mode().Perm()&0o111 != 0)
+}

@@ -12,6 +12,7 @@ import {
 import { formatBytes } from "../features/format"
 import { useListingStore } from "../features/listing"
 import type { Side } from "../features/panels"
+import { dropTarget } from "./panelDnd"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
 
 const MARKERS: Partial<Record<VolumeKind, string>> = {
@@ -83,6 +84,7 @@ export function DriveBar({ side }: { side: Side }) {
             title={driveTitle(v)}
             data-not-ready={v.notReady || undefined}
             onClick={() => void openDrive(side, v.path)}
+            {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
             className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
           >
             {driveName(v)}

@@ -120,6 +120,11 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   settles.
 - **Lister (F3):** full window. Modes: Text (wrap toggle), Hex, Image, Video, chosen by type and switchable with 1–4.
   N / P show the next and previous file; Ctrl+F finds in text; Esc returns to the panels with the cursor unchanged.
+- As built (Stage C05): Tab moves into the quick view and back; quick view always shows in the inactive panel. The
+  lister's header has the modes (unavailable ones disabled), the encoding, Wrap (W), Find and Close; F3 / Shift+F3
+  find the next and previous match; its footer shows the position. Enter on a program asks "Run this program?" with
+  Cancel focused (Settings → "Run programs with Enter": ask, always, never); Settings → "Editor (F4)" names the
+  editor. Shift+F4 asks for a name (`new.txt`, the name selected without its extension).
 
 ## Default keyboard map
 
@@ -155,6 +160,7 @@ entry is remappable.
 | F7 | New folder | C04 |
 | F8, Delete / Shift+F8, Shift+Delete | Trash / delete permanently | C04 |
 | Ctrl+C / Ctrl+X / Ctrl+V | Internal file clipboard | C04 |
+| Ctrl+Shift+C / Ctrl+Alt+C | Copy full paths / names as text | C04 |
 | Ctrl+J | Queue panel | C04 |
 | Ctrl+Q | Quick view | C05 |
 | F3 / F4 / Shift+F4 | Lister / edit / new text file | C05 |

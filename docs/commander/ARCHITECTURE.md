@@ -1,6 +1,6 @@
 # Commander Architecture
 
-Status: **in progress** (C00 done, C01–C03 implemented; Stages C04–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
+Status: **in progress** (C00 done, C01–C05 implemented; Stages C06–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
 an app view in the FastView shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
 shares the viewer's sidecar, index (queried with the `all` scope, ADR-0026), preview cache, jobs, clipboard and
 `library.db`. Switching between the apps and the state they share: `docs/shared/APP-SWITCHING.md`. This document
@@ -10,7 +10,7 @@ covers what is specific to the commander.
 
 ```text
 shared/desktop                the shell: preload/commander and the commander capability profile in main
-commander/renderer     React app (shared/ui, shared/renderer-core, later shared/media-ui)
+commander/renderer     React app (shared/ui, shared/renderer-core, shared/media-ui)
 shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare
 ```
 
@@ -103,6 +103,10 @@ Enter on a folder
 
 - Dialogs build a job spec: `{ kind, source: descriptor | clipboard, destination: other panel's location, policy,
   mask, verify }`. The sidecar resolves the destination from the panel's `dirId`, never from a renderer path.
+- As built (Stage C04, `features/files.ts`, `features/queue.ts`): copy and move send `destinationDirId` (an edited
+  destination is first opened with `dir.open` to get its id); main refuses a path destination from the commander.
+  After F7, a rename or a delete, a pending focus (`focusEntry`) puts the cursor on the new folder, the renamed entry
+  or the entry after the deleted ones once the session's invalidation brings it in.
 - Jobs run in the ADR-0029 queue: lanes, pause and resume, `job.conflict` events answered with `jobs.resolve`. The
   queue panel subscribes to `job.progress` and `job.conflict`.
 - After a job, both panels' sessions refresh through the normal invalidation path (ADR-0021 index consistency).
@@ -115,6 +119,16 @@ Enter on a folder
   to a byte offset, and lines are found inside the loaded window, so a multi-GB file opens instantly with bounded
   memory. Encoding detection runs on the first window (BOM, UTF-8 validity, then a single-byte fallback).
 - Quick view follows the cursor after it settles (as the viewer's preview pane does, 150 ms).
+- As built (Stage C05; `features/bytes.ts`, `features/text.ts`, `features/viewers.ts`, `features/open.ts`,
+  `components/ByteViews.tsx`, `QuickView.tsx`, `Lister.tsx`): a `ByteSource` per open file reads 64 KiB chunks by
+  Range into a 4 MiB LRU (find reads 1 MiB windows uncached). Lines longer than 4 KiB show as 4 KiB segments, which
+  bounds every window; going up searches back 16 KiB for the line start (longer lines start approximately). The text
+  view's top is a byte offset; its scroll bar maps to it, and End is the start of the last screen. UTF-16 without a
+  mark is recognized too; zero or many control bytes mean binary (hex). Quick view replaces the other panel, which
+  stays mounted and inert, and follows the active panel; Tab moves into it and back. The lister is a full-window
+  dialog with its own keymap scope (`lister`: Esc, N / P, 1–4, W, Ctrl+F, F3 / Shift+F3). Images and videos use the
+  shared components with the commander's preview lanes (`cmd-quick`, `cmd-lister`). Enter on a file goes through
+  `listing.enter`'s file opener (`features/open.ts`).
 
 ## Methods and events by stage
 
@@ -125,8 +139,8 @@ Enter on a folder
 | C01 | `context.publish`, `context.get` (both apps); `query.indexOf`; volumes with free and total space; `dir.open` error reasons (`notReady`, `network`) |
 | C02 | `query.locate`, `query.match`; `dirSize` jobs (`ContentItem.dirSizeBytes`); the selection in `context.publish` and `selection.fromContext` (both apps); `shared.switch` |
 | C03 | `library.updateBookmark`, `library.reorderBookmarks` (bookmark groups); events `volumes.changed`, `bookmarks.changed`; `Volume.notReady`, space read per volume with a timeout |
-| P03 / C04 | jobs v2: `jobs.pause`, `jobs.resume`, `jobs.resolve`, `job.conflict` |
-| C05 | token protocol for any file kind (lister, quick view); `shell.open` with confirmation for programs |
+| P03 / C04 | jobs v2: `jobs.pause`, `jobs.resume`, `jobs.startNow`, `jobs.resolve`, `job.conflict`; copy and move by `destinationDirId` with `mask` and `name`; `fs.mkdir`, `fs.canTrash`; `clipboard.copyPaths` `namesOnly` |
+| C05 | `file.open` (token URL for any file kind; main-only `file.resolve`), `shell.open` with `allowProgram`, `shell.edit`, `fs.mkfile`; `media.open`, `preview.ensure`, `props.get` and the `preview.ready` event for the commander; `entry.path.program` |
 | C06 | `find.start`, `find.cancel` (a session source); branch listings (recursive, all scope) |
 | C07 | `archive.open`, `archive.close` (a session source); pack, unpack and test jobs |
 | C08 | `compare.dirs` (a diff session), sync jobs, `hash.create`, `hash.verify` jobs |
@@ -141,7 +155,8 @@ The shared `library.db` (ADR-0016, ADR-0031): the commander's own settings under
 with tabs, `columns`, `confirmations`, `editor`, `shortcuts`, per-panel history). As of Stage C03:
 `commander.panels` `{ v: 2, active, left/right: { tabs: [{ path, name, sort, showHidden, view, locked, history,
 historyIndex, cursorId }], active, columns } }` (v1 from C01–C02 is still read) and `commander.settings`
-(Settings → Panels: size and date format, hidden files in new panels, where letters go); the hotlist is the shared bookmarks
+(Settings: size and date format, hidden files in new panels, where letters go; from C05 `runPrograms` (ask, always,
+never) and `editor`, which main reads for F4); the hotlist is the shared bookmarks
 table (with groups), and recent locations are shared with the viewer. Theme and interface size come from
 `shared.appearance`. Settings are written debounced and flushed on exit, as in the viewer.
 

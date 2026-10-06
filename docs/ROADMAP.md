@@ -23,10 +23,10 @@ Only one stage is active at a time. Default order:
 | 4 | C00 — Commander foundation and the app switch | commander | done 2026-10-05 (with the minimal part of P01) |
 | 5 | C01 — Panels and listing | commander | implemented: first useful version; folder and focus carried over on switch |
 | 6 | C02 — Keyboard, marks and quick search | commander | implementation done: the Total Commander interaction model; selection carried over |
-| 7 | C03 — Drives, tabs, hotlist, history, session | commander | active (implementation done 2026-10-06): navigation complete; shared bookmarks and recent |
-| 8 | P03 — File-operation engine v2 | platform | queue, conflicts, throughput (the viewer gains speed too) |
-| 9 | C04 — File operations | commander | F5 / F6 / F7 / F8 |
-| 10 | C05 — Quick view, lister, open and edit | commander | shared media components |
+| 7 | C03 — Drives, tabs, hotlist, history, session | commander | implementation done (2026-10-06): navigation complete; shared bookmarks and recent |
+| 8 | P03 — File-operation engine v2 | platform | implementation done (2026-10-06): queue, conflicts, throughput (the viewer gains speed too) |
+| 9 | C04 — File operations | commander | implementation done (2026-10-06): F5 / F6 / F7 / F8 |
+| 10 | C05 — Quick view, lister, open and edit | commander | active (implementation done 2026-10-06): shared media components |
 | 11 | C06 — Find files, branch view, quick filter | commander | |
 | 12 | C07 — Archives | commander | |
 | 13 | C08 — Compare, synchronize, checksums | commander | |
@@ -109,7 +109,7 @@ The viewer is unchanged.
 The shared index stores every entry with attributes; the viewer queries the `media` scope and sees what it sees today,
 the commander queries `all` (ADR-0026).
 
-### P03 — File-operation engine v2
+### P03 — File-operation engine v2 (implementation done 2026-10-06)
 
 Queue lanes, per-item conflict questions, pause and resume, speed and ETA, OS fast paths, verification (ADR-0029).
 
@@ -143,16 +143,16 @@ carries the folder and the entry under the cursor over.
 Cursor and marks, marking by mask, quick search, swap panels, history, folder sizes. Switching carries the selection
 over.
 
-### C03 — Drives, tabs, hotlist, history and session (active; implementation done 2026-10-06)
+### C03 — Drives, tabs, hotlist, history and session (implementation done 2026-10-06)
 
 Drive bar and menus, folder tabs, directory hotlist (= the shared bookmarks), shared recent locations, history, Brief
 view, full session restore.
 
-### C04 — File operations
+### C04 — File operations (implementation done 2026-10-06)
 
 F5 copy, F6 move, rename, new folder, trash and permanent delete, queue panel, conflict dialog, drag and drop.
 
-### C05 — Quick view, lister, open and edit
+### C05 — Quick view, lister, open and edit (active; implementation done 2026-10-06)
 
 Quick view, F3 lister (text, hex, images, video), F4 editor, opening files with confirmation for programs.
 

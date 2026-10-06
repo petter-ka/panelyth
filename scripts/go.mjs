@@ -2,7 +2,7 @@
 import { execFileSync, spawnSync } from "node:child_process"
 import { existsSync } from "node:fs"
 import { homedir, tmpdir } from "node:os"
-import { dirname, join } from "node:path"
+import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { resultPath } from "./results.mjs"
 
@@ -37,7 +37,11 @@ const fixtureRoot = () => process.env.FASTVIEW_FIXTURES ?? join(tmpdir(), "fastv
 
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: goRoot, stdio: "inherit" })
 
-const task = process.argv[2]
+// Only when run as a script: the e2e fixtures import goBinary(), and an
+// import must not start a task (under Playwright, argv[2] is "test").
+const isMain =
+  process.argv[1] !== undefined && fileURLToPath(import.meta.url) === resolve(process.argv[1])
+const task = isMain ? process.argv[2] : undefined
 if (task) {
   switch (task) {
     case "fmt":

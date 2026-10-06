@@ -8,38 +8,47 @@ export const COMMANDER_HOST = "commander"
 export const COMMANDER_ORIGIN = `${APP_SCHEME}://${COMMANDER_HOST}`
 
 // Previews load from fastview-thumb: (Stage 02); originals and videos from
-// fastview-media: (Stages 04 and 06).
-const PROD_CSP = [
-  "default-src 'self'",
-  "script-src 'self'",
-  "style-src 'self'",
-  "img-src 'self' data: fastview-thumb: fastview-media:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "media-src fastview-media:",
-  "object-src 'none'",
-  "base-uri 'none'",
-  "form-action 'none'",
-  "frame-ancestors 'none'",
-].join("; ")
+// fastview-media: (Stages 04 and 06). Only the commander may also fetch()
+// token URLs: its lister reads byte windows (Stage C05, ADR-0027). The
+// viewer keeps connect-src 'self', so it can never read a token's bytes.
+const connectTokens = (fetchTokens: boolean): string => (fetchTokens ? " fastview-media:" : "")
+
+const prodCsp = (fetchTokens: boolean): string =>
+  [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self'",
+    "img-src 'self' data: fastview-thumb: fastview-media:",
+    "font-src 'self'",
+    `connect-src 'self'${connectTokens(fetchTokens)}`,
+    "media-src fastview-media:",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join("; ")
 
 // Vite's dev servers need inline preamble scripts and a websocket each for HMR.
-const devCsp = (origins: readonly string[]): string =>
+const devCsp = (origins: readonly string[], fetchTokens: boolean): string =>
   [
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: fastview-thumb: fastview-media:",
     "media-src fastview-media:",
-    `connect-src 'self' ${origins.map((o) => o.replace(/^http/, "ws")).join(" ")}`,
+    `connect-src 'self'${connectTokens(fetchTokens)} ${origins.map((o) => o.replace(/^http/, "ws")).join(" ")}`,
     "object-src 'none'",
     "base-uri 'none'",
   ].join("; ")
 
-export function contentSecurityPolicy(devOrigins: string | readonly string[] | null): string {
-  if (devOrigins === null) return PROD_CSP
+/** fetchTokens: the page may fetch() fastview-media: URLs (the commander's view only). */
+export function contentSecurityPolicy(
+  devOrigins: string | readonly string[] | null,
+  fetchTokens = false,
+): string {
+  if (devOrigins === null) return prodCsp(fetchTokens)
   const list = typeof devOrigins === "string" ? [devOrigins] : devOrigins
-  return list.length > 0 ? devCsp(list) : PROD_CSP
+  return list.length > 0 ? devCsp(list, fetchTokens) : prodCsp(fetchTokens)
 }
 
 /**
@@ -79,11 +88,15 @@ export function allowPermission(
   return permission === "fullscreen" && origin !== null && allowed.includes(origin)
 }
 
-/** devUrls: the dev-server URLs of the app views (unpackaged dev runs only). */
+/**
+ * devUrls: the dev-server URLs of the app views (unpackaged dev runs only);
+ * tokenFetchOrigins: the app origins whose pages may fetch() token URLs.
+ */
 export function hardenSession(
   session: Session,
   origins: readonly string[],
   devUrls: readonly string[],
+  tokenFetchOrigins: readonly string[] = [],
 ): void {
   session.setPermissionRequestHandler((_wc, permission, callback, details) =>
     callback(allowPermission(permission, details.requestingUrl, origins)),
@@ -94,8 +107,13 @@ export function hardenSession(
   const [devUrl] = devUrls
   if (devUrl) {
     // Production responses carry the CSP from the app:// protocol handler.
-    const csp = contentSecurityPolicy(devUrls.map((url) => new URL(url).origin))
+    const devOrigins = devUrls.map((url) => new URL(url).origin)
     session.webRequest.onHeadersReceived((details, callback) => {
+      const origin = originOf(details.url)
+      const csp = contentSecurityPolicy(
+        devOrigins,
+        origin !== null && tokenFetchOrigins.includes(origin),
+      )
       callback({
         responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": [csp] },
       })

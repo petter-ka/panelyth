@@ -21,7 +21,7 @@ function setup(overrides: Partial<WorkspaceDeps> = {}) {
   const deps: WorkspaceDeps = {
     call: vi.fn(async (method: string) =>
       method === "entry.path"
-        ? { path: join(dir, "a.jpg"), kind: "image" }
+        ? { path: join(dir, "a.jpg"), kind: "image", program: false }
         : { paths: [join(dir, "a.jpg"), join(dir, "b.jpg")], truncated: true },
     ) as unknown as WorkspaceDeps["call"],
     getPath: vi.fn((id) => (id === "videos" ? join(dir, "missing") : dir)),
@@ -29,6 +29,8 @@ function setup(overrides: Partial<WorkspaceDeps> = {}) {
     showItemInFolder: vi.fn(),
     writeClipboard: vi.fn(),
     writeClipboardImage: vi.fn(async () => undefined),
+    launch: vi.fn(async () => undefined),
+    platform: "linux",
     ...overrides,
   }
   return { deps, dir, h: workspaceHandlers(deps) }
@@ -37,7 +39,7 @@ function setup(overrides: Partial<WorkspaceDeps> = {}) {
 describe("workspace handlers", () => {
   it("lists only places that exist", async () => {
     const { h, dir } = setup()
-    const { places } = await h["places.list"](ev, {})
+    const { places } = await h["places.list"](ev, {}, "viewer")
     expect(places.map((p) => p.id)).toEqual([
       "home",
       "desktop",
@@ -55,16 +57,16 @@ describe("workspace handlers", () => {
         return tmpdir()
       },
     })
-    const { places } = await h["places.list"](ev, {})
+    const { places } = await h["places.list"](ev, {}, "viewer")
     expect(places.some((p) => p.id === "desktop")).toBe(false)
   })
 
   it("opens and reveals entries through sidecar-resolved paths", async () => {
     const { h, deps, dir } = setup()
-    await expect(h["shell.open"](ev, { entryId: 3 })).resolves.toEqual({ ok: true })
+    await expect(h["shell.open"](ev, { entryId: 3 }, "viewer")).resolves.toEqual({ ok: true })
     expect(deps.call).toHaveBeenCalledWith("entry.path", { entryId: 3 })
     expect(deps.openPath).toHaveBeenCalledWith(join(dir, "a.jpg"))
-    await h["shell.reveal"](ev, { entryId: 3 })
+    await h["shell.reveal"](ev, { entryId: 3 }, "viewer")
     expect(deps.showItemInFolder).toHaveBeenCalledWith(join(dir, "a.jpg"))
   })
 
@@ -74,28 +76,31 @@ describe("workspace handlers", () => {
         call: (async () => ({
           path: join(tmpdir(), "tool.exe"),
           kind,
+          program: kind === "file",
         })) as unknown as WorkspaceDeps["call"],
       })
-      await expect(h["shell.open"](ev, { entryId: 9 })).rejects.toThrow("cannot be opened")
+      await expect(h["shell.open"](ev, { entryId: 9 }, "viewer")).rejects.toThrow(
+        "cannot be opened",
+      )
       expect(deps.openPath).not.toHaveBeenCalled()
     }
   })
 
   it("reports a failed open", async () => {
     const { h } = setup({ openPath: async () => "No application is associated" })
-    await expect(h["shell.open"](ev, { entryId: 3 })).rejects.toThrow("No application")
+    await expect(h["shell.open"](ev, { entryId: 3 }, "viewer")).rejects.toThrow("No application")
   })
 
   it("reveals only existing folders by path", async () => {
     const { h, deps, dir } = setup()
-    await h["shell.revealPath"](ev, { path: dir })
+    await h["shell.revealPath"](ev, { path: dir }, "viewer")
     expect(deps.showItemInFolder).toHaveBeenCalledWith(dir)
-    await expect(h["shell.revealPath"](ev, { path: join(dir, "nope") })).rejects.toThrow()
+    await expect(h["shell.revealPath"](ev, { path: join(dir, "nope") }, "viewer")).rejects.toThrow()
   })
 
   it("copies selection paths one per line, reporting truncation", async () => {
     const { h, deps, dir } = setup()
-    await expect(h["clipboard.copyPaths"](ev, { selection: sel })).resolves.toEqual({
+    await expect(h["clipboard.copyPaths"](ev, { selection: sel }, "viewer")).resolves.toEqual({
       count: 2,
       truncated: true,
     })
@@ -109,7 +114,7 @@ describe("workspace handlers", () => {
     const { h, deps } = setup({
       call: (async () => ({ paths: [], truncated: false })) as unknown as WorkspaceDeps["call"],
     })
-    await expect(h["clipboard.copyPaths"](ev, { selection: sel })).resolves.toEqual({
+    await expect(h["clipboard.copyPaths"](ev, { selection: sel }, "viewer")).resolves.toEqual({
       count: 0,
       truncated: false,
     })
@@ -136,7 +141,10 @@ describe("workspace handlers", () => {
       })) as unknown as WorkspaceDeps["call"],
       writeClipboardImage: write,
     })
-    expect(await h["clipboard.copyImage"](ev, { entryId: 7 })).toEqual({ width: 640, height: 480 })
+    expect(await h["clipboard.copyImage"](ev, { entryId: 7 }, "viewer")).toEqual({
+      width: 640,
+      height: 480,
+    })
     expect(write).toHaveBeenCalledWith(png)
     expect(pngSize(png)).toBe("640x480")
     expect(existsSync(file)).toBe(false)
@@ -152,7 +160,95 @@ describe("workspace handlers", () => {
         throw new Error("clipboard busy")
       }),
     })
-    await expect(failing.h["clipboard.copyImage"](ev, { entryId: 7 })).rejects.toThrow("busy")
+    await expect(failing.h["clipboard.copyImage"](ev, { entryId: 7 }, "viewer")).rejects.toThrow(
+      "busy",
+    )
     expect(existsSync(file)).toBe(false)
+  })
+
+  describe("commander profile (Stage C05, ADR-0027)", () => {
+    const entry = (path: string, kind: string, program: boolean, settings = {}) =>
+      vi.fn(async (method: string) =>
+        method === "library.get" ? { settings } : { path, kind, program },
+      ) as unknown as WorkspaceDeps["call"]
+
+    it("opens any kind of file with the default app", async () => {
+      for (const kind of ["file", "link", "dir", "image"]) {
+        const { h, deps } = setup({ call: entry("/docs/report.pdf", kind, false) })
+        await expect(h["shell.open"](ev, { entryId: 4 }, "commander")).resolves.toEqual({
+          ok: true,
+        })
+        expect(deps.openPath).toHaveBeenCalledWith("/docs/report.pdf")
+      }
+    })
+
+    it("opens a program only with allowProgram, and the viewer never", async () => {
+      const { h, deps } = setup({ call: entry("/bin/tool.exe", "file", true) })
+      const denied = h["shell.open"](ev, { entryId: 4 }, "commander")
+      await expect(denied).rejects.toMatchObject({
+        code: "PERMISSION_DENIED",
+        details: { reason: "program" },
+      })
+      await expect(
+        h["shell.open"](ev, { entryId: 4, allowProgram: false }, "commander"),
+      ).rejects.toThrow("program")
+      expect(deps.openPath).not.toHaveBeenCalled()
+      await h["shell.open"](ev, { entryId: 4, allowProgram: true }, "commander")
+      expect(deps.openPath).toHaveBeenCalledWith("/bin/tool.exe")
+      // An app bundle is a folder; the viewer refuses it even when allowed.
+      const viewer = setup({ call: entry("/Applications/X.app", "dir", true) })
+      await expect(
+        viewer.h["shell.open"](ev, { entryId: 4, allowProgram: true }, "viewer"),
+      ).rejects.toThrow("cannot be opened")
+      expect(viewer.deps.openPath).not.toHaveBeenCalled()
+    })
+
+    it("edits with the editor from settings, never through a shell", async () => {
+      const dir = mkdtempSync(join(tmpdir(), "fv-ed-"))
+      const editor = join(dir, "editor.exe")
+      writeFileSync(editor, "")
+      const { h, deps } = setup({
+        call: entry("/logs/a b; rm -rf.txt", "file", false, {
+          "commander.settings": { editor: ` ${editor} ` },
+        }),
+      })
+      await h["shell.edit"](ev, { entryId: 5 }, "commander")
+      expect(deps.launch).toHaveBeenCalledWith(editor, ["/logs/a b; rm -rf.txt"])
+      expect(deps.openPath).not.toHaveBeenCalled()
+    })
+
+    it("refuses a missing or relative editor and folders", async () => {
+      for (const editor of ["notepad++.exe", join(tmpdir(), "no-such-editor.exe")]) {
+        const { h, deps } = setup({
+          call: entry("/a.txt", "file", false, { "commander.settings": { editor } }),
+        })
+        await expect(h["shell.edit"](ev, { entryId: 5 }, "commander")).rejects.toMatchObject({
+          details: { reason: "editor" },
+        })
+        expect(deps.launch).not.toHaveBeenCalled()
+      }
+      const folder = setup({ call: entry("/docs", "dir", false) })
+      await expect(folder.h["shell.edit"](ev, { entryId: 5 }, "commander")).rejects.toThrow(
+        "folder",
+      )
+    })
+
+    it("falls back to the platform's text editor", async () => {
+      const win = setup({ call: entry("C:\\a.bat", "file", true), platform: "win32" })
+      await win.h["shell.edit"](ev, { entryId: 5 }, "commander")
+      expect(win.deps.launch).toHaveBeenCalledWith("notepad.exe", ["C:\\a.bat"])
+      const mac = setup({ call: entry("/a.sh", "file", true), platform: "darwin" })
+      await mac.h["shell.edit"](ev, { entryId: 5 }, "commander")
+      expect(mac.deps.launch).toHaveBeenCalledWith("open", ["-t", "/a.sh"])
+      // Linux: xdg-open for text; a program would run, so it needs an editor.
+      const text = setup({ call: entry("/a.txt", "file", false), platform: "linux" })
+      await text.h["shell.edit"](ev, { entryId: 5 }, "commander")
+      expect(text.deps.openPath).toHaveBeenCalledWith("/a.txt")
+      const program = setup({ call: entry("/a.sh", "file", true), platform: "linux" })
+      await expect(program.h["shell.edit"](ev, { entryId: 5 }, "commander")).rejects.toThrow(
+        "editor",
+      )
+      expect(program.deps.openPath).not.toHaveBeenCalled()
+    })
   })
 })

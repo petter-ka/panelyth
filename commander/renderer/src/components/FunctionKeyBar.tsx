@@ -1,15 +1,18 @@
 import { bridge } from "../bridge"
+import { runPanelAction } from "../features/commands"
+import type { ActionId } from "../features/keymap"
+import { usePanelsStore } from "../features/panels"
 
-const KEYS = [
-  ["F3", "View"],
-  ["F4", "Edit"],
-  ["F5", "Copy"],
-  ["F6", "Move"],
-  ["F7", "New folder"],
-  ["F8", "Delete"],
-] as const
+const KEYS: readonly { key: string; label: string; action: ActionId | null }[] = [
+  { key: "F3", label: "View", action: "files.view" },
+  { key: "F4", label: "Edit", action: "files.edit" },
+  { key: "F5", label: "Copy", action: "files.copy" },
+  { key: "F6", label: "Move", action: "files.move" },
+  { key: "F7", label: "New folder", action: "files.mkdir" },
+  { key: "F8", label: "Delete", action: "files.trash" },
+]
 
-/** The function-key bar (CFR-25). Commands not built yet are disabled. */
+/** The function-key bar (CFR-25): every label is a button. */
 export function FunctionKeyBar() {
   return (
     <nav
@@ -17,19 +20,22 @@ export function FunctionKeyBar() {
       className="flex h-8 shrink-0 items-stretch border-t border-border bg-chrome text-xs"
       data-testid="function-keys"
     >
-      {KEYS.map(([key, label]) => (
+      {KEYS.map(({ key, label, action }) => (
         <button
           key={key}
           type="button"
-          disabled
-          title={`${label} (${key}) is not available yet`}
-          className="flex flex-1 items-center justify-center gap-1.5 border-r border-border text-muted"
+          tabIndex={-1}
+          disabled={action === null}
+          title={action ? `${label} (${key})` : `${label} (${key}) is not available yet`}
+          onClick={() => action && runPanelAction(usePanelsStore.getState().active, action)}
+          className="flex flex-1 items-center justify-center gap-1.5 border-r border-border text-text hover:bg-raised disabled:text-muted disabled:hover:bg-transparent"
         >
           <kbd className="font-sans">{key}</kbd> {label}
         </button>
       ))}
       <button
         type="button"
+        tabIndex={-1}
         onClick={() => void bridge.exit().catch(() => undefined)}
         title="Exit (Alt+F4)"
         className="flex flex-1 items-center justify-center gap-1.5 text-text hover:bg-raised"

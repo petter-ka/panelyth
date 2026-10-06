@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"path/filepath"
 
 	"fastview/sidecar/internal/imaging"
 	"fastview/sidecar/internal/media"
@@ -49,11 +50,52 @@ type (
 	}
 )
 
+// fileResolveResult is returned to Electron main only (Stage C05): the
+// commander's lister and quick view read any file's bytes through a token.
+type fileResolveResult struct {
+	Path      string `json:"path"`
+	Kind      string `json:"kind"`
+	Mime      string `json:"mime"`
+	SizeBytes int64  `json:"sizeBytes"`
+}
+
 func (s *indexService) registerMedia(srv *rpc.Server) {
 	reg := imaging.DefaultRegistry()
 	rpc.Register(srv, "media.resolve", func(ctx context.Context, p mediaResolveParams) (mediaResolveResult, error) {
 		return s.mediaResolve(ctx, reg, p)
 	})
+	rpc.Register(srv, "file.resolve", s.fileResolve)
+}
+
+// fileResolve validates that an indexed entry is a readable regular file
+// (any kind; a link counts when its target is a file) and returns what main
+// needs to serve it read-only. Folders are refused.
+func (s *indexService) fileResolve(ctx context.Context, p mediaResolveParams) (fileResolveResult, error) {
+	paths, err := s.store.EntryPaths(ctx, []int64{p.EntryID})
+	if err != nil {
+		return fileResolveResult{}, dbError(err)
+	}
+	if len(paths) == 0 || paths[0].Path == "" {
+		return fileResolveResult{}, rpc.NewError(rpc.CodeNotFound, "not in the index")
+	}
+	e := paths[0]
+	if e.Kind == media.KindDir {
+		return fileResolveResult{}, rpc.NewError(rpc.CodeInvalidArgument, "a folder has no contents to view")
+	}
+	fi, err := os.Stat(e.Path)
+	if err != nil {
+		return fileResolveResult{}, statError(err, "file")
+	}
+	if !fi.Mode().IsRegular() {
+		return fileResolveResult{}, rpc.NewError(rpc.CodeInvalidArgument, "not a regular file")
+	}
+	mime := "application/octet-stream"
+	if e.Kind.IsMedia() {
+		if m, ok := mimeByExt[media.Ext(filepath.Base(e.Path))]; ok {
+			mime = m
+		}
+	}
+	return fileResolveResult{Path: e.Path, Kind: e.Kind.String(), Mime: mime, SizeBytes: fi.Size()}, nil
 }
 
 // mediaResolve validates that the entry is an indexed image or video that

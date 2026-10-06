@@ -1,0 +1,11 @@
+{"at":"2026-10-06T11:11:17.249Z","test":"pause-latency","pauseMs":117,"finalState":"paused"}
+{"at":"2026-10-06T11:13:13.764Z","test":"copy-from-ui","small10k":{"copyMs":32278,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":507,"keyMaxMs":507},"large2GB":{"copyMs":1263,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":507,"keyMaxMs":507},"enter1kWhileCopyingMs":106}
+{"at":"2026-10-06T11:15:49.584Z","test":"copy-from-ui","small10k":{"copyMs":32271,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":507,"keyMaxMs":507},"large2GB":{"copyMs":1257,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":507,"keyMaxMs":507},"enter1kWhileCopyingMs":111}
+{"at":"2026-10-06T11:18:41.546Z","test":"copy-from-ui","small10k":{"copyMs":32171,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":755,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":500,"keyMaxMs":500},"enter1kWhileCopyingMs":106}
+{"at":"2026-10-06T11:19:35.990Z","test":"pause-latency","pauseMs":117,"finalState":"paused"}
+{"at":"2026-10-06T11:23:16.498Z","test":"copy-from-ui","small10k":{"copyMs":2145,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":764,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":500,"keyMaxMs":500},"enter1kWhileCopyingMs":106}
+{"at":"2026-10-06T11:24:20.253Z","test":"copy-from-ui","small10k":{"copyMs":3151,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":771,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":504,"keyMaxMs":504},"enter1kWhileCopyingMs":107}
+{"at":"2026-10-06T11:24:40.323Z","test":"pause-latency","pauseMs":118,"finalState":"paused"}
+{"at":"2026-10-06T11:25:45.676Z","test":"copy-from-ui","small10k":{"copyMs":2166,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":634,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"enter1kWhileCopyingMs":112}
+{"at":"2026-10-06T12:23:15.372Z","test":"copy-from-ui","small10k":{"copyMs":2157,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":625,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":107}
+{"at":"2026-10-06T12:27:58.214Z","test":"pause-latency","pauseMs":120,"finalState":"paused"}

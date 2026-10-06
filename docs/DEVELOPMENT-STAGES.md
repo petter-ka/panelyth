@@ -50,7 +50,7 @@ A stage is complete only when:
 |---|---|---|---|
 | P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | in progress (minimal part done) |
 | P02 | Index scope: all entries, filtered per query | P01 | partly done (query core in code; session budgets and visible-app watching open) |
-| P03 | File-operation engine v2 | P02 | planned |
+| P03 | File-operation engine v2 | P02 | implementation done (2026-10-06); Linux/macOS paths in P04 |
 | P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | planned |
 | P05 | Performance hardening (formerly 10) | P04 | planned |
 | P06 | Release engineering (formerly 11) | P05 | planned |
@@ -62,9 +62,9 @@ A stage is complete only when:
 | C00 | Foundation and the app switch | P01 | done (2026-10-05) |
 | C01 | Panels and listing | C00, P02 | implementation done; cold-cache 100k timings and the rest of P02 open |
 | C02 | Keyboard, marks and quick search | C01 | implementation done; the NVDA pass and the C01 open items remain |
-| C03 | Drives, tabs, hotlist, history and session | C02 | **active**: implementation done (2026-10-06); the NVDA pass remains |
-| C04 | File operations | C03, P03 | planned |
-| C05 | Quick view, lister, open and edit | C04 | planned |
+| C03 | Drives, tabs, hotlist, history and session | C02 | implementation done (2026-10-06); the NVDA pass remains |
+| C04 | File operations | C03, P03 | implementation done (2026-10-06); the NVDA pass remains |
+| C05 | Quick view, lister, open and edit | C04 | **active**: implementation done (2026-10-06); the NVDA pass remains |
 | C06 | Find files, branch view and quick filter | C05 | planned |
 | C07 | Archives | C06 | planned |
 | C08 | Compare, synchronize and checksums | C07 | planned |
@@ -89,13 +89,16 @@ A stage is complete only when:
 
 ## Active stage
 
-`C03 — Drives, tabs, hotlist, history and session` (`docs/commander/stages/C03-drives-tabs-hotlist.md`), started
-2026-10-06 at the owner's request while the C01 and C02 gates were still open. The commander has folder tabs per panel
-(only the visible tab holds a session; a tab left keeps it for a 3 s grace period), the drive bar and drive menus
-with per-volume timeouts in Go, the directory hotlist as the bookmarks shared with the viewer (with groups, live in
-both apps through `bookmarks.changed`), the history menu with the recent locations of both apps, the Brief view, a
-full session restore (`commander.panels` v2) and Settings → Panels. Open from C03: an NVDA pass over the Brief view
-and the menus (with C02's).
+`C05 — Quick view, lister, open and edit` (`docs/commander/stages/C05-quick-view-and-lister.md`), started 2026-10-06
+at the owner's request, right after C04 (file operations, implementation done). `ImageViewer`, `VideoPlayer` and their
+request logic moved to `shared/media-ui` and serve both apps. The commander shows quick view (Ctrl+Q) in place of the
+other panel, follows the cursor once it settles, and opens the lister (F3: text with encodings, wrap and find; hex;
+image; video; N / P; Esc) over byte windows read through the token protocol, so a 2 GB log opens in about 20 ms with
+bounded memory. Enter opens files with their default app and asks before programs; F4 edits, Shift+F4 creates a text
+file. ADR-0027's launching part is accepted; only the commander may read file bytes through tokens.
+
+Open from C02 to C05: the NVDA pass (grid, Brief view, menus, dialogs, queue panel, quick view, lister). Open from P03:
+the Linux and macOS fast paths (P04).
 
 Open from C01: the cold-cache 100k timings (470 / 366 ms on the first run after a build) and the rest of P02
 (per-app session budgets, visible-app watching). Open from C02: the manual NVDA pass. P01's shared-package

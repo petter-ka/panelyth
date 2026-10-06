@@ -5,8 +5,10 @@
 Accepted (Stage 07), by default: it adopts the proposals in `docs/shared/ARCHITECTURE-ANALYSIS.md` §9, M3 and M4, with the
 changes listed under "Deviations". It refines ADR-0010 and amends ADR-0016 (no ATTACH).
 
-Refined 2026-10-05 by ADR-0029 (proposed): queue lanes, per-item conflict questions, pause and resume, speed and ETA,
-and faster copies.
+Refined by ADR-0029 (accepted in Stage P03, 2026-10-06): queue lanes (4 running jobs, a queue of 256, "start now"),
+per-item conflict questions and more policies, pause and resume, speed and ETA, verification, links as links for the
+commander, and faster copies (OS fast paths, small files in flight). Where this ADR's numbers differ (2 running jobs, a
+queue of 32, one file at a time, three policies), ADR-0029 applies.
 
 ## Decision
 

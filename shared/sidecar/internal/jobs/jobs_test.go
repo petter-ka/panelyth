@@ -155,7 +155,7 @@ func (e *env) wait(id int64) Snapshot {
 	deadline := time.Now().Add(20 * time.Second)
 	for time.Now().Before(deadline) {
 		for _, s := range e.m.List() {
-			if s.JobID == id && s.State != StateQueued && s.State != StateRunning {
+			if s.JobID == id && !s.State.Active() {
 				return s
 			}
 		}

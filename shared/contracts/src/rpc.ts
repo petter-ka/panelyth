@@ -476,10 +476,43 @@ export interface EntryParams {
   entryId: number
 }
 
+/**
+ * shell.open (Stage C05, ADR-0027). The commander may open any kind; a
+ * program opens only with `allowProgram`, sent after the user confirmed (or
+ * with the "always" setting). The viewer's profile opens folders and media only.
+ */
+export interface ShellOpenParams {
+  entryId: number
+  allowProgram?: boolean
+}
+
 /** Sidecar -> main only (open / reveal in the system file manager). */
 export interface EntryPathResult {
   path: string
   kind: EntryKind
+  /** Opening it may run code (executables, scripts, installers, shortcuts, app bundles). */
+  program: boolean
+}
+
+/** Sidecar -> main only (Stage C05): any indexed file, for the commander's lister and quick view. */
+export interface FileResolveResult {
+  path: string
+  kind: EntryKind
+  /** The media type for images and videos; application/octet-stream for everything else. */
+  mime: string
+  sizeBytes: number
+}
+
+/**
+ * file.open (Stage C05, commander only): a read-only fastview-media token URL
+ * for any file. Text and hex views read byte windows with HTTP Range; no file
+ * bytes cross IPC (ADR-0027).
+ */
+export interface FileOpenResult {
+  url: string
+  kind: EntryKind
+  mime: string
+  sizeBytes: number
 }
 
 export interface Properties {
@@ -618,6 +651,12 @@ export interface PlacesResult {
   places: Place[]
 }
 
+export interface CopyPathsParams {
+  selection: SelectionDescriptor
+  /** Names instead of full paths (the commander, Stage C04). */
+  namesOnly?: boolean
+}
+
 export interface CopyPathsResult {
   count: number
   truncated: boolean
@@ -676,36 +715,78 @@ export const JOB_KINDS = [
   "dirSize",
 ] as const satisfies readonly JobKind[]
 
-export type JobState = "queued" | "running" | "completed" | "cancelled" | "failed"
+/**
+ * "paused": held by jobs.pause (a partial file is kept). "asking": waiting
+ * for jobs.resolve on its `conflict` (Stage P03, ADR-0029).
+ */
+export type JobState =
+  "queued" | "running" | "paused" | "asking" | "completed" | "cancelled" | "failed"
 export const JOB_STATES = [
   "queued",
   "running",
+  "paused",
+  "asking",
   "completed",
   "cancelled",
   "failed",
 ] as const satisfies readonly JobState[]
 
-/** What happens when the destination already has an item of that name. */
-export type ConflictPolicy = "keepBoth" | "skip" | "replace"
+/**
+ * What happens when the destination already has an item of that name
+ * (ADR-0029). "replace" and its variants merge a folder into an existing
+ * folder; a file never replaces a folder. "ask" asks per item (job.conflict).
+ */
+export type ConflictPolicy =
+  | "ask"
+  | "keepBoth"
+  | "skip"
+  | "replace"
+  | "replaceOlder"
+  | "replaceIfDifferentSize"
+  | "renameNew"
+  | "renameExisting"
 export const CONFLICT_POLICIES = [
+  "ask",
   "keepBoth",
   "skip",
   "replace",
+  "replaceOlder",
+  "replaceIfDifferentSize",
+  "renameNew",
+  "renameExisting",
 ] as const satisfies readonly ConflictPolicy[]
+
+/** An answer to a conflict: any policy but "ask". */
+export type ConflictDecision = Exclude<ConflictPolicy, "ask">
+export const CONFLICT_DECISIONS = CONFLICT_POLICIES.filter(
+  (p): p is ConflictDecision => p !== "ask",
+)
 
 /** Items are resolved in Go when the job starts; the renderer never sends id lists. */
 export interface JobSource {
   selection: SelectionDescriptor
 }
 
+/**
+ * Where a copy or move goes: an absolute folder path (the viewer), or an
+ * indexed folder's id, resolved in Go (the commander must use it, ADR-0027).
+ */
+export type JobDestination = { destination: string } | { destinationDirId: number }
+
 export type JobStartParams =
-  | {
+  | ({
       kind: "copy" | "move"
       source: JobSource
-      /** Absolute folder path. */
-      destination: string
       conflict: ConflictPolicy
-    }
+      /** Hash source and copy; a mismatch fails the item (Stage P03). */
+      verify?: boolean
+      /** Start right away instead of after the jobs of its lane (Stage P03). */
+      now?: boolean
+      /** Only files matching this name mask (folders are walked); Stage C04. */
+      mask?: string
+      /** A new name for a single item (Shift+F5); Stage C04. */
+      name?: string
+    } & JobDestination)
   | { kind: "trash" | "delete"; source: JobSource }
   /** Folder sizes (Stage C02): results go to the index as ContentItem.dirSizeBytes. */
   | { kind: "dirSize"; source: JobSource }
@@ -721,6 +802,20 @@ export type JobStartParams =
   | { kind: "rating"; source: JobSource; rating: number }
   | { kind: "label"; source: JobSource; label: number }
   | { kind: "tag"; source: JobSource; tag: string; add: boolean }
+
+/** The commander's jobs (Stage C04): copy and move name their destination by folder id. */
+export type CommanderJobParams =
+  | {
+      kind: "copy" | "move"
+      source: JobSource
+      destinationDirId: number
+      conflict: ConflictPolicy
+      verify?: boolean
+      now?: boolean
+      mask?: string
+      name?: string
+    }
+  | { kind: "trash" | "delete" | "dirSize"; source: JobSource }
 
 export const MAX_RENAME_PATTERN_CHARS = 255
 export const MAX_RENAME_START = 1_000_000_000
@@ -746,6 +841,35 @@ export interface JobSnapshot {
   startedMs: number
   /** 0 while queued or running. */
   finishedMs: number
+  /** Moving average over the last seconds; 0 while unknown, paused or finished (Stage P03). */
+  bytesPerSec: number
+  /** Estimated time left; 0 while unknown. */
+  etaMs: number
+  /** The question a job in state "asking" waits on. */
+  conflict?: JobConflict
+}
+
+export interface JobConflictSide {
+  /** The indexed entry (for a preview), or 0. */
+  id: number
+  size: number
+  modifiedMs: number
+  isDir: boolean
+}
+
+/** An item whose name is taken in the destination (Stage P03, ADR-0029). */
+export interface JobConflict {
+  /** The item's name, or its path inside a folder being merged. */
+  name: string
+  source: JobConflictSide
+  target: JobConflictSide
+}
+
+export interface JobResolveParams {
+  jobId: number
+  decision: ConflictDecision
+  /** The decision becomes the job's policy for the conflicts still to come. */
+  applyToAll: boolean
 }
 
 export type JobItemErrorCode =
@@ -759,6 +883,8 @@ export type JobItemErrorCode =
   | "INTO_ITSELF"
   | "SKIPPED_LINK"
   | "IO_ERROR"
+  /** The copy differed from the original (verify) and was removed. */
+  | "VERIFY_FAILED"
 
 export interface JobItemError {
   name: string
@@ -808,11 +934,44 @@ export interface ClipState {
   count: number
 }
 
-export interface ClipPasteParams {
-  /** Absolute folder path, usually the open folder. */
-  destination: string
-  conflict: ConflictPolicy
+/** Destination: an absolute folder path, or (the commander) an indexed folder's id. */
+export type ClipPasteParams = { conflict: ConflictPolicy } & JobDestination
+
+/** F7 (Stage C04): "a/b/c" creates the chain inside the folder. */
+export interface FsMkdirParams {
+  parentDirId: number
+  path: string
 }
+
+/** Shift+F4 (Stage C05): one name, no separators. */
+export interface FsMkfileParams {
+  parentDirId: number
+  name: string
+}
+
+export interface FsMkfileResult {
+  entryId: number
+  /** False when the file existed already (it is opened as it is). */
+  created: boolean
+}
+
+export interface FsMkdirResult {
+  /** The first component (the folder the panel lists). */
+  entryId: number
+  /** False when the whole chain existed already. */
+  created: boolean
+}
+
+export interface DirIdParams {
+  dirId: number
+}
+
+/** Whether items of the folder can go to the trash (else delete offers permanent delete). */
+export interface FsCanTrashResult {
+  trash: boolean
+}
+
+export const MAX_MKDIR_PATH_CHARS = 4096
 
 export interface EntryRenameParams {
   entryId: number
@@ -955,6 +1114,11 @@ export interface SidecarMethodMap {
   "props.get": { params: EntryParams; result: Properties }
   "fs.volumes": { params: EmptyParams; result: VolumesResult }
   "fs.listDirs": { params: ListDirsParams; result: ListDirsResult }
+  "fs.mkdir": { params: FsMkdirParams; result: FsMkdirResult }
+  "fs.mkfile": { params: FsMkfileParams; result: FsMkfileResult }
+  /** Electron main only (Stage C05): any file, for the commander's token URLs. */
+  "file.resolve": { params: MediaOpenParams; result: FileResolveResult }
+  "fs.canTrash": { params: DirIdParams; result: FsCanTrashResult }
   "library.get": { params: EmptyParams; result: LibraryState }
   "library.setSetting": { params: SetSettingParams; result: OkResult }
   "library.addBookmark": { params: AddBookmarkParams; result: Bookmark }
@@ -965,6 +1129,11 @@ export interface SidecarMethodMap {
   "jobs.cancel": { params: JobIdParams; result: JobCancelResult }
   "jobs.errors": { params: JobErrorsParams; result: JobErrorsResult }
   "jobs.list": { params: EmptyParams; result: JobListResult }
+  /** Stage P03 (ADR-0029): hold, continue, start ahead of the lane, answer a conflict. */
+  "jobs.pause": { params: JobIdParams; result: OkResult }
+  "jobs.resume": { params: JobIdParams; result: OkResult }
+  "jobs.startNow": { params: JobIdParams; result: OkResult }
+  "jobs.resolve": { params: JobResolveParams; result: OkResult }
   "clip.set": { params: ClipSetParams; result: ClipState }
   "clip.get": { params: EmptyParams; result: ClipState }
   /** Copies (or, after a cut, moves) the clipboard into a folder; a completed move clears it. */
@@ -1016,14 +1185,18 @@ export interface MainMethodMap {
   "media.open": { params: MediaOpenParams; result: MediaOpenResult }
   /** Home, Desktop, Documents, Downloads, Pictures, Videos (those that exist). */
   "places.list": { params: EmptyParams; result: PlacesResult }
-  /** Opens a file or folder with the system default application. */
-  "shell.open": { params: EntryParams; result: OkResult }
+  /** Opens a file or folder with the system default application (kinds per app profile). */
+  "shell.open": { params: ShellOpenParams; result: OkResult }
+  /** Commander (Stage C05): a read-only token URL for any file (lister, quick view). */
+  "file.open": { params: MediaOpenParams; result: FileOpenResult }
+  /** Commander (Stage C05, F4): opens a file in the editor from settings, else the OS text editor. */
+  "shell.edit": { params: EntryParams; result: OkResult }
   /** Shows an indexed entry in the system file manager. */
   "shell.reveal": { params: EntryParams; result: OkResult }
   /** Shows a folder from the sidebar or breadcrumb in the system file manager. */
   "shell.revealPath": { params: RevealPathParams; result: OkResult }
   /** Copies the selection's full paths, one per line (resolved in Go, never sent to the renderer). */
-  "clipboard.copyPaths": { params: SelectionParams; result: CopyPathsResult }
+  "clipboard.copyPaths": { params: CopyPathsParams; result: CopyPathsResult }
   "clipboard.copyText": { params: CopyTextParams; result: OkResult }
   /** Puts an indexed image on the OS clipboard as a picture (decoded in Go). */
   "clipboard.copyImage": { params: EntryParams; result: CopyImageResult }
@@ -1034,8 +1207,8 @@ export type Method = keyof MethodMap
 export type Params<M extends Method> = MethodMap[M]["params"]
 export type Result<M extends Method> = MethodMap[M]["result"]
 
-/** Methods the renderer may invoke. Main rejects everything else. */
-export const RENDERER_METHODS = [
+/** The viewer's app view (ADR-0027): main rejects everything else from it. */
+export const VIEWER_METHODS = [
   "app.exit",
   "app.switch",
   "system.ping",
@@ -1063,6 +1236,8 @@ export const RENDERER_METHODS = [
   "props.get",
   "fs.volumes",
   "fs.listDirs",
+  "fs.mkdir",
+  "fs.canTrash",
   "library.get",
   "library.setSetting",
   "library.addBookmark",
@@ -1080,6 +1255,10 @@ export const RENDERER_METHODS = [
   "jobs.cancel",
   "jobs.errors",
   "jobs.list",
+  "jobs.pause",
+  "jobs.resume",
+  "jobs.startNow",
+  "jobs.resolve",
   "clip.set",
   "clip.get",
   "clip.paste",
@@ -1087,6 +1266,12 @@ export const RENDERER_METHODS = [
   "library.tags",
   "library.deleteTag",
 ] as const
+
+/** Methods only the commander's profile has (ADR-0027): any file's bytes, the editor, new files. */
+export const COMMANDER_ONLY_METHODS = ["file.open", "shell.edit", "fs.mkfile"] as const
+
+/** Every method some renderer may invoke. Main rejects everything else. */
+export const RENDERER_METHODS = [...VIEWER_METHODS, ...COMMANDER_ONLY_METHODS] as const
 
 /** Additionally allowed when dev methods are enabled (never in packaged builds). */
 export const DEV_RENDERER_METHODS = ["system.echo"] as const
@@ -1126,16 +1311,40 @@ export const COMMANDER_METHODS = [
   "selection.fromContext",
   "jobs.start",
   "jobs.cancel",
+  // Stage C04: file operations (main requires folder ids as destinations).
+  "jobs.pause",
+  "jobs.resume",
+  "jobs.startNow",
+  "jobs.resolve",
+  "jobs.errors",
+  "jobs.list",
+  "clip.set",
+  "clip.get",
+  "clip.paste",
+  "entry.rename",
+  "fs.mkdir",
+  "fs.canTrash",
+  "clipboard.copyPaths",
+  "clipboard.copyText",
   // Stage C03: the directory hotlist (the shared bookmarks).
   "library.addBookmark",
   "library.removeBookmark",
   "library.updateBookmark",
   "library.reorderBookmarks",
+  // Stage C05: quick view and lister (shared media components, any file's
+  // bytes through tokens), open with the default app, the editor, new files.
+  "media.open",
+  "preview.ensure",
+  "props.get",
+  "file.open",
+  "shell.open",
+  "shell.edit",
+  "fs.mkfile",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */
 export const APP_METHODS: Record<AppId, readonly RendererMethod[]> = {
-  viewer: RENDERER_METHODS,
+  viewer: VIEWER_METHODS,
   commander: COMMANDER_METHODS,
 }
 
@@ -1145,8 +1354,10 @@ export const MAIN_METHODS = [
   "sidecar.getStatus",
   "dialog.openFolder",
   "media.open",
+  "file.open",
   "places.list",
   "shell.open",
+  "shell.edit",
   "shell.reveal",
   "shell.revealPath",
   "clipboard.copyPaths",

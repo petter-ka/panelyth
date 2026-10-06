@@ -88,6 +88,8 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
     error: "",
     startedMs: 1,
     finishedMs: 0,
+    bytesPerSec: 0,
+    etaMs: 0,
   })
   const count = (sel: { ranges: [number, number][]; include: number[]; exclude: number[] }) =>
     sel.ranges.reduce((n, [a, b]) => n + b - a, 0) + sel.include.length - sel.exclude.length

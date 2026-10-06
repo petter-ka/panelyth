@@ -31,10 +31,13 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "app.visibility",
   "settings.changed",
   "job.progress",
+  "job.conflict",
   "query.invalidated",
   "index.progress",
   "volumes.changed",
   "bookmarks.changed",
+  // Stage C05: quick view and lister images.
+  "preview.ready",
 ])
 const subscribers = new Map<EventChannel, Set<(payload: never) => void>>()
 
@@ -111,6 +114,72 @@ const api: CommanderApi = {
   },
   fs: {
     volumes: () => invoke("fs.volumes", {}),
+    mkdir: (parentDirId, path) => invoke("fs.mkdir", { parentDirId, path }),
+    canTrash: (dirId) => invoke("fs.canTrash", { dirId }),
+    mkfile: (parentDirId, name) => invoke("fs.mkfile", { parentDirId, name }),
+  },
+  media: {
+    open: (entryId) => invoke("media.open", { entryId }),
+  },
+  preview: {
+    ensure: ({ lane, epoch, profile, items, force }) =>
+      invoke("preview.ensure", {
+        lane,
+        epoch,
+        profile,
+        items: items.map(({ id, priority }) => ({ id, priority })),
+        force: [...force],
+      }),
+  },
+  props: {
+    get: (entryId) => invoke("props.get", { entryId }),
+  },
+  file: {
+    open: (entryId) => invoke("file.open", { entryId }),
+  },
+  shell: {
+    open: (entryId, allowProgram) =>
+      invoke("shell.open", { entryId, ...(allowProgram !== undefined && { allowProgram }) }),
+    edit: (entryId) => invoke("shell.edit", { entryId }),
+  },
+  files: {
+    start: (p) =>
+      invoke(
+        "jobs.start",
+        p.kind === "copy" || p.kind === "move"
+          ? {
+              kind: p.kind,
+              source: { selection: copySelection(p.source.selection) },
+              destinationDirId: p.destinationDirId,
+              conflict: p.conflict,
+              ...(p.verify !== undefined && { verify: p.verify }),
+              ...(p.now !== undefined && { now: p.now }),
+              ...(p.mask !== undefined && { mask: p.mask }),
+              ...(p.name !== undefined && { name: p.name }),
+            }
+          : { kind: p.kind, source: { selection: copySelection(p.source.selection) } },
+      ),
+    pause: (jobId) => invoke("jobs.pause", { jobId }),
+    resume: (jobId) => invoke("jobs.resume", { jobId }),
+    startNow: (jobId) => invoke("jobs.startNow", { jobId }),
+    resolve: (jobId, decision, applyToAll) =>
+      invoke("jobs.resolve", { jobId, decision, applyToAll }),
+    errors: (jobId, offset, limit) => invoke("jobs.errors", { jobId, offset, limit }),
+    list: () => invoke("jobs.list", {}),
+    rename: (entryId, name) => invoke("entry.rename", { entryId, name }),
+  },
+  clip: {
+    set: (selection, mode) => invoke("clip.set", { selection: copySelection(selection), mode }),
+    get: () => invoke("clip.get", {}),
+    paste: (destinationDirId, conflict) => invoke("clip.paste", { destinationDirId, conflict }),
+  },
+  clipboard: {
+    copyPaths: (selection, namesOnly) =>
+      invoke("clipboard.copyPaths", {
+        selection: copySelection(selection),
+        ...(namesOnly !== undefined && { namesOnly }),
+      }),
+    copyText: (text) => invoke("clipboard.copyText", { text }),
   },
   places: {
     list: () => invoke("places.list", {}),

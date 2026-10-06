@@ -3,6 +3,7 @@ package index
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"fastview/sidecar/internal/media"
@@ -292,3 +293,14 @@ func (s *Store) ParentDirs(ctx context.Context, ids []int64) (map[int64]string, 
 
 // KeyOf returns the path key for a child of a directory key.
 func KeyOf(dirKey, name string, isDir bool) string { return pathkey.ChildKey(dirKey, name, isDir) }
+
+// IDByKey returns the entry id indexed under key (0 when there is none):
+// the existing item of a copy conflict (its preview, a rename of it).
+func (s *Store) IDByKey(ctx context.Context, key string) (int64, error) {
+	var id int64
+	err := s.r.QueryRowContext(ctx, `SELECT id FROM entries WHERE path_key = ?`, key).Scan(&id)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, nil
+	}
+	return id, err
+}

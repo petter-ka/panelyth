@@ -1,11 +1,6 @@
 import type { Thumb } from "@fastview/contracts"
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react"
-import {
-  requestOriginal,
-  retry,
-  useViewerImage,
-  type FitLane,
-} from "../../features/viewer/viewerImages"
+import { requestOriginal, retry, useViewerImage, type FitLane } from "./viewerImages"
 import {
   clampOffset,
   clampZoom,
@@ -16,14 +11,8 @@ import {
   ZOOM_STEP,
   type Size,
   type ZoomState,
-} from "../../features/viewer/zoom"
-import {
-  cssTransform,
-  IDENTITY,
-  isIdentity,
-  orientedSize,
-  type ViewTransform,
-} from "../../features/viewer/transform"
+} from "./zoom"
+import { cssTransform, IDENTITY, isIdentity, orientedSize, type ViewTransform } from "./transform"
 
 export interface ImageViewerController {
   fit(): void

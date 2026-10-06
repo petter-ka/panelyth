@@ -7,17 +7,24 @@ import { startSwitchSettingsSync } from "@fastview/renderer-core"
 import { startPanels } from "./features/carry"
 import { startDrives } from "./features/drives"
 import { startHotlist } from "./features/hotlist"
+import { startQueue } from "./features/queue"
 import { loadShortcuts } from "./features/keymap"
 import { loadSettings } from "./features/settings"
 import { startMarks } from "./features/marks"
 import { startSizeJobs } from "./features/sizes"
 import { loadLayout } from "./features/panels"
 import { startSidecarMonitoring } from "./features/sidecar"
+import { startMedia } from "./features/media"
+import { startOpen } from "./features/open"
+import { startQuickView } from "./features/viewers"
 import "./styles.css"
 
 initTheme()
 initInterfaceSize()
 startSidecarMonitoring()
+// Stage C05: Enter on files, quick view following the cursor.
+startOpen()
+startQuickView()
 if (isBridgeAvailable()) {
   // Theme and interface size are shared with the viewer (ADR-0031).
   startSharedAppearanceSync({
@@ -37,10 +44,14 @@ if (isBridgeAvailable()) {
   // Drives, the hotlist (shared bookmarks) and recent locations (C03).
   startDrives()
   startHotlist()
+  // The shared operation queue (Stage C04).
+  startQueue()
   // Marks, folder sizes, panel listings, events and the shared context (C01, C02).
   startMarks()
   startSizeJobs()
   void startPanels().catch(() => undefined)
+  // Quick view and the lister: the shared media components on this bridge (C05).
+  startMedia()
 }
 
 const root = document.getElementById("root")

@@ -1,6 +1,7 @@
 import { DialogWindow } from "@fastview/ui"
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 import {
+  MAX_EDITOR_CHARS,
   setSettingsOpen,
   updateSettings,
   useSettingsStore,
@@ -38,16 +39,44 @@ const Section = ({ children }: { children: ReactNode }) => (
   <div className="flex flex-col gap-4 text-xs">{children}</div>
 )
 
+/** F4's editor: saved when the field is left (main reads it from library.db). */
+function EditorField() {
+  const stored = useSettingsStore((s) => s.settings.editor)
+  const [value, setValue] = useState(stored)
+  const save = (): void => {
+    if (value.trim() !== stored) updateSettings({ editor: value.trim() })
+  }
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-muted">Editor (F4)</span>
+      <input
+        aria-label="Editor program"
+        className="h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
+        value={value}
+        maxLength={MAX_EDITOR_CHARS}
+        spellCheck={false}
+        placeholder="The system's text editor"
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save()
+        }}
+      />
+      <span className="text-[0.6875rem] text-muted">The full path of a program, or empty.</span>
+    </label>
+  )
+}
+
 /**
- * The commander's settings (Stage C03: the Panels tab). Changes apply at
- * once and are stored under commander.settings. More tabs arrive with
- * Stage C10; theme and interface size are shared with the viewer.
+ * The commander's settings (Stage C03: Panels; Stage C05: Files). Changes
+ * apply at once and are stored under commander.settings. More tabs arrive
+ * with Stage C10; theme and interface size are shared with the viewer.
  */
 export function SettingsDialog() {
   const open = useSettingsStore((s) => s.open)
   const showHidden = useSettingsStore((s) => s.settings.showHidden)
   return (
-    <DialogWindow open={open} onOpenChange={setSettingsOpen} title="Settings — Panels">
+    <DialogWindow open={open} onOpenChange={setSettingsOpen} title="Settings">
       <Section>
         <Radios
           setting="sizeFormat"
@@ -84,6 +113,16 @@ export function SettingsDialog() {
             },
           ]}
         />
+        <Radios
+          setting="runPrograms"
+          label="Run programs with Enter"
+          options={[
+            { value: "ask", label: "Ask first" },
+            { value: "always", label: "Always" },
+            { value: "never", label: "Never" },
+          ]}
+        />
+        <EditorField />
       </Section>
     </DialogWindow>
   )

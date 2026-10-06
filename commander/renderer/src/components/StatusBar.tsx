@@ -1,6 +1,7 @@
 import type { SidecarState } from "@fastview/contracts"
 import { THEME_OPTIONS, useThemeStore } from "@fastview/ui"
 import { useCarryNotice } from "../features/carry"
+import { useFilesStore } from "../features/files"
 import { useSidecarStore } from "../features/sidecar"
 
 const LABEL: Record<SidecarState, string> = {
@@ -27,6 +28,7 @@ export function StatusBar() {
   const cycle = useThemeStore((s) => s.cycle)
   const themeLabel = THEME_OPTIONS.find((o) => o.value === theme)?.label ?? theme
   const notice = useCarryNotice((s) => s.message)
+  const filesNotice = useFilesStore((s) => s.notice)
   return (
     <footer className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
       <span className="flex items-center gap-1.5" data-testid="sidecar-status" data-state={state}>
@@ -36,6 +38,11 @@ export function StatusBar() {
       {notice && (
         <span role="status" data-testid="carry-notice" className="text-warning">
           {notice}
+        </span>
+      )}
+      {filesNotice && (
+        <span role="status" data-testid="files-notice" className="text-text">
+          {filesNotice}
         </span>
       )}
       <span className="flex-1" />

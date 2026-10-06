@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   createInvokeHandler,
   forwardableEvent,
+  profileParams,
   type MainHandlers,
   type SidecarPort,
 } from "../src/main/ipc/router"
@@ -32,6 +33,13 @@ const mainHandlers = (): MainHandlers => ({
   "app.switch": vi.fn(() => ({ ok: true })),
   "sidecar.getStatus": vi.fn(() => status),
   "dialog.openFolder": vi.fn(async () => ({ path: "/picked" })),
+  "file.open": vi.fn(async (_e, p: { entryId: number }) => ({
+    url: `fastview-media://m/${String(p.entryId).padStart(32, "1")}`,
+    kind: "file" as const,
+    mime: "application/octet-stream",
+    sizeBytes: 10,
+  })),
+  "shell.edit": vi.fn(async () => ({ ok: true })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
     url: `fastview-media://m/${String(p.entryId).padStart(32, "0")}`,
     kind: "image" as const,
@@ -84,12 +92,78 @@ describe("invoke router", () => {
       ok: true,
       r: { ok: true },
     })
-    expect(main["app.switch"]).toHaveBeenCalledWith(commander, { to: "viewer" })
-    for (const m of ["shell.open", "media.open", "preview.ensure", "clip.set", "entry.rename"]) {
+    expect(main["app.switch"]).toHaveBeenCalledWith(commander, { to: "viewer" }, "commander")
+    for (const m of [
+      "shell.reveal",
+      "shell.revealPath",
+      "dialog.openFolder",
+      "clipboard.copyImage",
+      "folder.covers",
+      "library.tags",
+    ]) {
       const res = await handler(commander, m, {})
       expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     }
     expect(sidecar.call).toHaveBeenCalledTimes(1)
+  })
+
+  it("gives the commander quick view, lister, open and edit; the viewer none of the new methods (Stage C05)", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    for (const [m, p] of [
+      ["file.open", { entryId: 3 }],
+      ["shell.open", { entryId: 3 }],
+      ["shell.open", { entryId: 3, allowProgram: true }],
+      ["shell.edit", { entryId: 3 }],
+      ["media.open", { entryId: 3 }],
+    ] as const) {
+      await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
+      expect(main[m]).toHaveBeenLastCalledWith(commander, p, "commander")
+    }
+    await expect(
+      handler(commander, "fs.mkfile", { parentDirId: 2, name: "new.txt" }),
+    ).resolves.toMatchObject({ ok: true })
+    await expect(handler(commander, "props.get", { entryId: 3 })).resolves.toMatchObject({
+      ok: true,
+    })
+    expect(sidecar.call).toHaveBeenCalledWith("fs.mkfile", { parentDirId: 2, name: "new.txt" })
+    // The viewer cannot plant the commander's settings (the F4 editor is started by main).
+    await expect(
+      handler(ok, "library.setSetting", {
+        key: "commander.settings",
+        value: { editor: "C:\\x.exe" },
+      }),
+    ).resolves.toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    await expect(
+      handler(commander, "library.setSetting", {
+        key: "commander.settings",
+        value: { editor: "" },
+      }),
+    ).resolves.toMatchObject({ ok: true })
+    // The viewer's profile has none of the commander-only methods.
+    for (const m of ["file.open", "shell.edit", "fs.mkfile"]) {
+      const res = await handler(ok, m, { entryId: 3 })
+      expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    }
+    // The viewer's shell.open still goes to main, which applies its profile.
+    await handler(ok, "shell.open", { entryId: 3 })
+    expect(main["shell.open"]).toHaveBeenLastCalledWith(ok, { entryId: 3 }, "viewer")
+    // Validation: ids, the flag, names; never a path.
+    for (const [m, p] of [
+      ["shell.open", { entryId: 3, allowProgram: "yes" }],
+      ["shell.open", { entryId: 3, path: "/bin/sh" }],
+      ["shell.edit", { entryId: 0 }],
+      ["shell.edit", { entryId: 3, editor: "/bin/sh" }],
+      ["file.open", { entryId: -1 }],
+      ["fs.mkfile", { parentDirId: 2, name: "" }],
+      ["fs.mkfile", { parentDirId: 2, name: "a\u0000b" }],
+      ["fs.mkfile", { parentDirId: 2 }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
   })
 
   it("lets the commander list folders in the all scope (Stage C01)", async () => {
@@ -115,18 +189,77 @@ describe("invoke router", () => {
     expect(sidecar.call).toHaveBeenCalledWith("query.open", descriptor)
   })
 
-  it("lets the commander calculate folder sizes, but no other job before Stage C04", async () => {
-    const { handler, sidecar, commander } = setup()
+  it("lets the commander run file operations with folder ids as destinations (Stage C04)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
     const sel = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
-    await expect(
-      handler(commander, "jobs.start", { kind: "dirSize", source: { selection: sel } }),
-    ).resolves.toMatchObject({ ok: true })
-    for (const kind of ["trash", "delete"]) {
-      await expect(
-        handler(commander, "jobs.start", { kind, source: { selection: sel } }),
-      ).resolves.toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    const source = { selection: sel }
+    const abs = process.platform === "win32" ? "C:\\dst" : "/dst"
+    const good: [string, unknown][] = [
+      ["jobs.start", { kind: "dirSize", source }],
+      ["jobs.start", { kind: "trash", source }],
+      ["jobs.start", { kind: "delete", source }],
+      [
+        "jobs.start",
+        { kind: "copy", source, destinationDirId: 7, conflict: "ask", verify: true, mask: "*.jpg" },
+      ],
+      [
+        "jobs.start",
+        { kind: "move", source, destinationDirId: 7, conflict: "skip", name: "b.jpg" },
+      ],
+      ["clip.paste", { destinationDirId: 7, conflict: "keepBoth" }],
+      ["fs.mkdir", { parentDirId: 7, path: "a/b/c" }],
+      ["fs.canTrash", { dirId: 7 }],
+      ["entry.rename", { entryId: 3, name: "x.jpg" }],
+    ]
+    for (const [m, p] of good) {
+      expect(await handler(commander, m, p), m).toMatchObject({ ok: true })
     }
-    expect(sidecar.call).toHaveBeenCalledTimes(1)
+    // copyLinks is added for the commander's copies and pastes.
+    expect(sidecar.call).toHaveBeenCalledWith("clip.paste", {
+      destinationDirId: 7,
+      conflict: "keepBoth",
+      copyLinks: true,
+    })
+    const denied: [string, unknown][] = [
+      ["jobs.start", { kind: "copy", source, destination: abs, conflict: "ask" }],
+      ["clip.paste", { destination: abs, conflict: "ask" }],
+      ["jobs.start", { kind: "favorite", source, favorite: true }],
+    ]
+    for (const [m, p] of denied) {
+      expect(await handler(commander, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "PERMISSION_DENIED" },
+      })
+    }
+    const invalid: [string, unknown][] = [
+      ["jobs.start", { kind: "copy", source, conflict: "ask" }],
+      [
+        "jobs.start",
+        { kind: "copy", source, destination: abs, destinationDirId: 7, conflict: "ask" },
+      ],
+      ["jobs.start", { kind: "copy", source, destinationDirId: 0, conflict: "ask" }],
+      [
+        "jobs.start",
+        { kind: "copy", source, destinationDirId: 7, conflict: "ask", mask: "x".repeat(300) },
+      ],
+      ["fs.mkdir", { parentDirId: 7, path: "  " }],
+      ["fs.canTrash", { dirId: -1 }],
+    ]
+    for (const [m, p] of invalid) {
+      expect(await handler(commander, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer keeps its path destinations.
+    expect(
+      await handler(ok, "jobs.start", {
+        kind: "copy",
+        source,
+        destination: abs,
+        conflict: "keepBoth",
+      }),
+    ).toMatchObject({ ok: true })
   })
 
   it("validates quick search, mask marking and the carried selection (Stage C02)", async () => {
@@ -192,6 +325,55 @@ describe("invoke router", () => {
     }
     expect(await handler(ok, "library.reorderBookmarks", { ids: [1] })).toMatchObject({ ok: true })
     expect(sidecar.call).toHaveBeenCalledTimes(good.length + 1)
+  })
+
+  it("validates the engine v2 job calls and adds copyLinks for the commander only (Stage P03)", async () => {
+    const { handler, sidecar, ok } = setup()
+    const sel = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    const abs = process.platform === "win32" ? "C:\\dst" : "/dst"
+    const copy = { kind: "copy", source: { selection: sel }, destination: abs, conflict: "ask" }
+    const good: [string, unknown][] = [
+      ["jobs.start", copy],
+      ["jobs.start", { ...copy, conflict: "replaceOlder", verify: true, now: false }],
+      ["jobs.pause", { jobId: 3 }],
+      ["jobs.resume", { jobId: 3 }],
+      ["jobs.startNow", { jobId: 3 }],
+      ["jobs.resolve", { jobId: 3, decision: "renameExisting", applyToAll: true }],
+    ]
+    for (const [m, p] of good) {
+      expect(await handler(ok, m, p), m).toMatchObject({ ok: true })
+    }
+    const bad: [string, unknown][] = [
+      ["jobs.start", { ...copy, copyLinks: true }],
+      ["jobs.start", { ...copy, verify: "yes" }],
+      ["jobs.pause", { jobId: 0 }],
+      ["jobs.resolve", { jobId: 3, decision: "ask", applyToAll: false }],
+      ["jobs.resolve", { jobId: 3, decision: "skip" }],
+    ]
+    for (const [m, p] of bad) {
+      expect(await handler(ok, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer's copy goes to Go as sent: links stay skipped.
+    expect(sidecar.call).toHaveBeenCalledWith("jobs.start", copy)
+    expect(profileParams("commander", "jobs.start", copy)).toEqual({ ...copy, copyLinks: true })
+    expect(profileParams("commander", "clip.paste", { destination: abs, conflict: "ask" })).toEqual(
+      {
+        destination: abs,
+        conflict: "ask",
+        copyLinks: true,
+      },
+    )
+    expect(profileParams("commander", "jobs.start", { kind: "dirSize", source: {} })).toEqual({
+      kind: "dirSize",
+      source: {},
+    })
+    expect(profileParams("viewer", "clip.paste", { destination: abs, conflict: "ask" })).toEqual({
+      destination: abs,
+      conflict: "ask",
+    })
   })
 
   it("keeps the viewer on the media scope", async () => {
@@ -272,12 +454,12 @@ describe("invoke router", () => {
       ok: true,
       r: { path: "/picked" },
     })
-    expect(main["dialog.openFolder"]).toHaveBeenCalledWith(ok, {})
+    expect(main["dialog.openFolder"]).toHaveBeenCalledWith(ok, {}, "viewer")
     await expect(handler(ok, "media.open", { entryId: 7 })).resolves.toMatchObject({
       ok: true,
       r: { kind: "image" },
     })
-    expect(main["media.open"]).toHaveBeenCalledWith(ok, { entryId: 7 })
+    expect(main["media.open"]).toHaveBeenCalledWith(ok, { entryId: 7 }, "viewer")
     const sel = { queryId: 1, version: 1, ranges: [], include: [], exclude: [] }
     for (const [m, p] of [
       ["places.list", {}],
@@ -289,7 +471,7 @@ describe("invoke router", () => {
       ["clipboard.copyText", { text: "C:\\x" }],
     ] as const) {
       expect(await handler(ok, m, p), m).toMatchObject({ ok: true })
-      expect(main[m]).toHaveBeenCalledWith(ok, p)
+      expect(main[m]).toHaveBeenCalledWith(ok, p, "viewer")
     }
     expect(sidecar.call).not.toHaveBeenCalled()
   })
@@ -611,7 +793,7 @@ describe("invoke router", () => {
       ],
       [
         "jobs.start",
-        { kind: "copy", source: { selection: sel }, destination: "/x", conflict: "ask" },
+        { kind: "copy", source: { selection: sel }, destination: "/x", conflict: "maybe" },
       ],
       ["jobs.start", { kind: "move", source: { selection: sel }, destination: "/x" }],
       ["jobs.start", { kind: "rename", source: { selection: sel }, pattern: "", start: 1 }],
@@ -632,7 +814,7 @@ describe("invoke router", () => {
       ["clip.set", { selection: sel, mode: "move" }],
       ["clip.set", { selection: { ...sel, ranges: [[3, 1]] }, mode: "copy" }],
       ["clip.paste", { destination: "relative", conflict: "keepBoth" }],
-      ["clip.paste", { destination: "/x", conflict: "ask" }],
+      ["clip.paste", { destination: "/x", conflict: "maybe" }],
       ["entry.rename", { entryId: 1, name: "" }],
       ["entry.rename", { entryId: 1, name: "n".repeat(256) }],
       ["entry.rename", { entryId: 1, name: "a\u0000b.jpg" }],

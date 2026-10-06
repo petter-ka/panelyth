@@ -46,6 +46,15 @@ test.describe("commander foundation (Stage C00)", () => {
           library: Object.keys(api.library ?? {}).sort(),
           query: Object.keys(api.query ?? {}).sort(),
           jobs: Object.keys(api.jobs ?? {}).sort(),
+          files: Object.keys(api.files ?? {}).sort(),
+          fs: Object.keys(api.fs ?? {}).sort(),
+          clip: Object.keys(api.clip ?? {}).sort(),
+          clipboard: Object.keys(api.clipboard ?? {}).sort(),
+          media: Object.keys(api.media ?? {}).sort(),
+          preview: Object.keys(api.preview ?? {}).sort(),
+          props: Object.keys(api.props ?? {}).sort(),
+          file: Object.keys(api.file ?? {}).sort(),
+          shell: Object.keys(api.shell ?? {}).sort(),
         }
       })
       expect(probe).toEqual({
@@ -53,18 +62,29 @@ test.describe("commander foundation (Stage C00)", () => {
         process: "undefined",
         ipcRenderer: "undefined",
         // Stage C01 added listing, free space, home and the shared context;
-        // C02 marks (selection) and folder sizes (jobs).
+        // C02 marks (selection) and folder sizes (jobs); C04 file
+        // operations (files, clip, clipboard, fs.mkdir, fs.canTrash); C05
+        // quick view, lister, open and edit (media, preview, props, file,
+        // shell, fs.mkfile).
         apiKeys: [
           "app",
+          "clip",
+          "clipboard",
           "context",
           "dir",
+          "file",
+          "files",
           "fs",
           "jobs",
           "library",
+          "media",
           "onEvent",
           "places",
+          "preview",
+          "props",
           "query",
           "selection",
+          "shell",
           "sidecar",
           "system",
         ],
@@ -79,6 +99,15 @@ test.describe("commander foundation (Stage C00)", () => {
         ],
         query: ["close", "indexOf", "locate", "match", "open", "page"],
         jobs: ["cancel", "dirSize"],
+        files: ["errors", "list", "pause", "rename", "resolve", "resume", "start", "startNow"],
+        fs: ["canTrash", "mkdir", "mkfile", "volumes"],
+        clip: ["get", "paste", "set"],
+        clipboard: ["copyPaths", "copyText"],
+        media: ["open"],
+        preview: ["ensure"],
+        props: ["get"],
+        file: ["open"],
+        shell: ["edit", "open"],
       })
     } finally {
       await app.close()

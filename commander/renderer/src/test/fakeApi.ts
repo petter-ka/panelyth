@@ -2,6 +2,8 @@ import {
   ENTRY_ATTRS,
   type Bookmark,
   type CommanderApi,
+  type CommanderJobParams,
+  type JobSnapshot,
   type ContentItem,
   type Crumb,
   type ErrorCode,
@@ -14,6 +16,7 @@ import {
   type Volume,
 } from "@fastview/contracts"
 import { vi } from "vitest"
+import { setRangeFetch } from "../features/bytes"
 
 // An in-memory commander API: folders, query sessions sorted "in Go",
 // paging, indexOf, the shared context and settings. Tests drive it the way
@@ -81,6 +84,20 @@ export interface FakeOptions {
   recent?: RecentFolder[]
   /** fs.volumes waits for this (a slow network drive). */
   volumesDelay?: Promise<void>
+  /** fs.canTrash answers this (default true). */
+  trash?: boolean
+  /** library.get waits for this (a slow library.db at startup). */
+  libraryDelay?: Promise<void>
+  /** Stage C05: file contents by entry id, served through token URLs with Range. */
+  contents?: Record<number, Uint8Array>
+  /** Entry ids main resolves as programs (shell.open needs allowProgram). */
+  programs?: number[]
+}
+
+/** What main would have done for shell.open / shell.edit (FASTVIEW_TEST_SHELL=record). */
+export interface ShellRecord {
+  action: "open" | "edit"
+  entryId: number
 }
 
 const ok = <R>(r: R) => ({ ok: true as const, r })
@@ -124,6 +141,28 @@ export function installFakeCommander(options: FakeOptions) {
   let carried: number[] = options.carried ?? []
   let carriedVersion = options.context?.version ?? 0
   let nextJob = 0
+  let nextEntry = 900_000_000
+  const jobs: JobSnapshot[] = []
+  let clip: { mode: "" | "copy" | "cut"; count: number } = { mode: "", count: 0 }
+  const job = (over: Partial<JobSnapshot>): JobSnapshot => ({
+    jobId: ++nextJob,
+    kind: "copy",
+    state: "queued",
+    total: 0,
+    done: 0,
+    failed: 0,
+    skipped: 0,
+    bytesTotal: 0,
+    bytesDone: 0,
+    current: "",
+    destination: "",
+    error: "",
+    startedMs: 1,
+    finishedMs: 0,
+    bytesPerSec: 0,
+    etaMs: 0,
+    ...over,
+  })
   let bookmarks: Bookmark[] = [...(options.bookmarks ?? [])]
   let nextBookmark = Math.max(0, ...bookmarks.map((b) => b.id))
   const bookmarksChanged = (): void =>
@@ -158,6 +197,21 @@ export function installFakeCommander(options: FakeOptions) {
     return [...out]
   }
   let nextQuery = 0
+  const descriptors = new Map<number, QueryDescriptor>()
+  /** A session's rows as Go would sort them. */
+  const rowsOf = (d: QueryDescriptor): ContentItem[] => {
+    const f = byId.get(d.dirId)!
+    const key = d.sort[0] ?? { field: "name", direction: "asc" }
+    const hidden = ENTRY_ATTRS.hidden | ENTRY_ATTRS.system
+    return f.entries
+      .filter((e) => d.showHidden || ((e.attrs ?? 0) & hidden) === 0)
+      .sort((a, b) => {
+        const dirs = Number(b.kind === "dir") - Number(a.kind === "dir")
+        if (dirs !== 0) return dirs
+        const c = compare(key.field, a, b)
+        return (key.direction === "desc" ? -c : c) || a.name.localeCompare(b.name)
+      })
+  }
   let nextScan = 0
   const listeners = new Map<EventChannel, Set<(p: never) => void>>()
 
@@ -188,7 +242,10 @@ export function installFakeCommander(options: FakeOptions) {
     system: { ping: vi.fn(), info: vi.fn() },
     sidecar: { getStatus: vi.fn(async () => ok({ state: "ready" })) },
     library: {
-      get: vi.fn(async () => ok({ settings, bookmarks, recent: options.recent ?? [] })),
+      get: vi.fn(async () => {
+        await options.libraryDelay
+        return ok({ settings, bookmarks, recent: options.recent ?? [] })
+      }),
       setSetting: vi.fn(async (key: string, value: unknown) => {
         settings[key] = value
         return ok({ ok: true })
@@ -232,19 +289,10 @@ export function installFakeCommander(options: FakeOptions) {
     },
     query: {
       open: vi.fn(async (d: QueryDescriptor) => {
-        const f = byId.get(d.dirId)
-        if (!f) return err("NOT_FOUND", "folder is not indexed")
-        const key = d.sort[0] ?? { field: "name", direction: "asc" }
-        const hidden = ENTRY_ATTRS.hidden | ENTRY_ATTRS.system
-        const rows = f.entries
-          .filter((e) => d.showHidden || ((e.attrs ?? 0) & hidden) === 0)
-          .sort((a, b) => {
-            const dirs = Number(b.kind === "dir") - Number(a.kind === "dir")
-            if (dirs !== 0) return dirs
-            const c = compare(key.field, a, b)
-            return (key.direction === "desc" ? -c : c) || a.name.localeCompare(b.name)
-          })
+        if (!byId.get(d.dirId)) return err("NOT_FOUND", "folder is not indexed")
+        const rows = rowsOf(d)
         sessions.set(++nextQuery, rows)
+        descriptors.set(nextQuery, d)
         return ok({ queryId: nextQuery, version: 1, total: rows.length })
       }),
       page: vi.fn(
@@ -337,6 +385,8 @@ export function installFakeCommander(options: FakeOptions) {
           error: "",
           startedMs: 1,
           finishedMs: 0,
+          bytesPerSec: 0,
+          etaMs: 0,
         })
       }),
       cancel: vi.fn(async () => ok({ cancelled: true })),
@@ -346,6 +396,94 @@ export function installFakeCommander(options: FakeOptions) {
         await options.volumesDelay
         return ok({ volumes: options.volumes ?? [] })
       }),
+      // A new folder: added to the parent's listing (as Go's index would be).
+      mkdir: vi.fn(async (parentDirId: number, path: string) => {
+        const f = byId.get(parentDirId)
+        if (!f) return err("NOT_FOUND", "the folder is not in the index")
+        const first = path.split(/[\\/]/).filter((x) => x !== "")[0] ?? ""
+        if (first === "" || first.includes(":"))
+          return err(
+            "INVALID_ARGUMENT",
+            `${first}: The name contains characters that aren't allowed.`,
+            {
+              reason: "INVALID_NAME",
+            },
+          )
+        const existing = f.entries.find((e) => e.name === first)
+        if (existing) return ok({ entryId: existing.id, created: false })
+        const id = ++nextEntry
+        f.entries.push(item(id, first, { kind: "dir" }))
+        return ok({ entryId: id, created: true })
+      }),
+      canTrash: vi.fn(async () => ok({ trash: options.trash ?? true })),
+    },
+    files: {
+      start: vi.fn(async (p: CommanderJobParams) => {
+        const total = resolve(p.source.selection).length
+        const snap = job({ kind: p.kind, total })
+        if (p.kind === "copy" || p.kind === "move") {
+          const dest = byId.get(p.destinationDirId)
+          if (!dest) return err("NOT_FOUND", "the folder is not in the index")
+          snap.destination = dest.crumbs.at(-1)?.name ?? ""
+        }
+        jobs.push(snap)
+        return ok(snap)
+      }),
+      pause: vi.fn(async () => ok({ ok: true })),
+      resume: vi.fn(async () => ok({ ok: true })),
+      startNow: vi.fn(async () => ok({ ok: true })),
+      resolve: vi.fn(async () => ok({ ok: true })),
+      errors: vi.fn(async () =>
+        ok({
+          errors: [
+            {
+              name: "locked.jpg",
+              code: "IN_USE" as const,
+              message: "The item is open in another program.",
+            },
+          ],
+          total: 1,
+        }),
+      ),
+      list: vi.fn(async () => ok({ jobs })),
+      rename: vi.fn(async (entryId: number, name: string) => {
+        if (name.includes("/"))
+          return err("INVALID_ARGUMENT", "The name can't contain / or \\.", {
+            reason: "INVALID_NAME",
+          })
+        for (const f of options.folders) {
+          const e = f.entries.find((x) => x.id === entryId)
+          if (e) {
+            if (f.entries.some((x) => x.name === name && x.id !== entryId))
+              return err("INVALID_ARGUMENT", `${name} already exists`, { reason: "ALREADY_EXISTS" })
+            e.name = name
+            const dot = name.lastIndexOf(".")
+            e.ext = e.kind === "dir" || dot <= 0 ? "" : name.slice(dot + 1).toLowerCase()
+            return ok({ name })
+          }
+        }
+        return err("NOT_FOUND", "the item no longer exists")
+      }),
+    },
+    clip: {
+      set: vi.fn(async (sel: SelectionDescriptor, mode: "copy" | "cut") => {
+        clip = { mode, count: resolve(sel).length }
+        return ok(clip)
+      }),
+      get: vi.fn(async () => ok(clip)),
+      paste: vi.fn(async (destinationDirId: number) => {
+        if (clip.count === 0) return err("INVALID_ARGUMENT", "the clipboard is empty")
+        if (!byId.get(destinationDirId)) return err("NOT_FOUND", "the folder is not in the index")
+        const snap = job({ kind: clip.mode === "cut" ? "move" : "copy", total: clip.count })
+        jobs.push(snap)
+        return ok(snap)
+      }),
+    },
+    clipboard: {
+      copyPaths: vi.fn(async (sel: SelectionDescriptor) =>
+        ok({ count: resolve(sel).length, truncated: false }),
+      ),
+      copyText: vi.fn(async () => ok({ ok: true })),
     },
     places: {
       list: vi.fn(async () =>
@@ -392,10 +530,141 @@ export function installFakeCommander(options: FakeOptions) {
       return () => set.delete(listener as (p: never) => void)
     }),
   }
-  window.fastview = api as unknown as CommanderApi
+  // Stage C05: token URLs serve the contents with Range; reads are recorded.
+  const tokens = new Map<string, Uint8Array>()
+  const reads: { url: string; start: number; end: number }[] = []
+  setRangeFetch(async (url, start, end) => {
+    const bytes = tokens.get(url)
+    if (!bytes) throw new Error("The file can no longer be read.")
+    reads.push({ url, start, end })
+    return bytes.slice(start, end + 1)
+  })
+  const shell: ShellRecord[] = []
+  const entryById = (id: number): ContentItem | undefined => {
+    for (const f of options.folders) {
+      const found = f.entries.find((e) => e.id === id)
+      if (found) return found
+    }
+    return undefined
+  }
+  const tokenOf = (id: number): string => `fastview-media://m/${id.toString(16).padStart(32, "0")}`
+  const viewers = {
+    media: {
+      open: vi.fn(async (id: number) => {
+        const e = entryById(id)
+        if (!e || (e.kind !== "image" && e.kind !== "video"))
+          return err("NOT_FOUND", "not an indexed image or video")
+        return ok({
+          url: tokenOf(id),
+          kind: e.kind,
+          mime: e.kind === "image" ? "image/jpeg" : "video/mp4",
+          width: 800,
+          height: 600,
+          durationMs: e.kind === "video" ? 5000 : 0,
+          videoCodec: e.kind === "video" ? "h264" : "",
+          audioCodec: "",
+        })
+      }),
+    },
+    preview: {
+      ensure: vi.fn(async (p: { items: { id: number }[] }) =>
+        ok({
+          items: p.items.map(({ id }) => ({
+            id,
+            url: `fastview-thumb://t/${id.toString(16).padStart(64, "f")}.jpg`,
+            width: 800,
+            height: 600,
+          })),
+        }),
+      ),
+    },
+    props: {
+      get: vi.fn(async (id: number) => {
+        const e = entryById(id)
+        if (!e) return err("NOT_FOUND", "not in the index")
+        return ok({
+          id,
+          kind: e.kind,
+          name: e.name,
+          ext: e.ext,
+          path: `C:\\fake\\${e.name}`,
+          exists: true,
+          sizeBytes: e.sizeBytes,
+          modifiedMs: e.modifiedMs,
+          createdMs: null,
+          accessedMs: null,
+          width: null,
+          height: null,
+          childFolders: e.kind === "dir" ? 3 : null,
+          childMedia: null,
+          favorite: false,
+          rating: 0,
+          label: 0,
+          tags: [],
+        })
+      }),
+    },
+    file: {
+      open: vi.fn(async (id: number) => {
+        const e = entryById(id)
+        if (!e) return err("NOT_FOUND", "not in the index")
+        if (e.kind === "dir") return err("INVALID_ARGUMENT", "a folder has no contents to view")
+        const bytes = options.contents?.[id] ?? new Uint8Array(e.sizeBytes)
+        const url = tokenOf(id)
+        tokens.set(url, bytes)
+        return ok({
+          url,
+          kind: e.kind,
+          mime: "application/octet-stream",
+          sizeBytes: bytes.length,
+        })
+      }),
+    },
+    shell: {
+      open: vi.fn(async (id: number, allowProgram?: boolean) => {
+        if (options.programs?.includes(id) && allowProgram !== true)
+          return err("PERMISSION_DENIED", "this file is a program; confirm to run it", {
+            reason: "program",
+          })
+        shell.push({ action: "open", entryId: id })
+        return ok({ ok: true })
+      }),
+      edit: vi.fn(async (id: number) => {
+        const e = entryById(id)
+        if (!e || e.kind === "dir")
+          return err("PERMISSION_DENIED", "a folder cannot be edited", { reason: "folder" })
+        shell.push({ action: "edit", entryId: id })
+        return ok({ ok: true })
+      }),
+    },
+  }
+  const fs = Object.assign(api.fs, {
+    // Shift+F4: an empty file added to the parent's listing (as Go indexes it).
+    mkfile: vi.fn(async (parentDirId: number, name: string) => {
+      const f = byId.get(parentDirId)
+      if (!f) return err("NOT_FOUND", "the folder is not in the index")
+      if (name === "" || /[\\/:]/.test(name))
+        return err(
+          "INVALID_ARGUMENT",
+          `${name}: The name contains characters that aren't allowed.`,
+          {
+            reason: "INVALID_NAME",
+          },
+        )
+      const existing = f.entries.find((e) => e.name === name)
+      if (existing?.kind === "dir")
+        return err("INVALID_ARGUMENT", `${name} exists and is not a file`, { reason: "EXISTS" })
+      if (existing) return ok({ entryId: existing.id, created: false })
+      const id = ++nextEntry
+      f.entries.push(item(id, name))
+      return ok({ entryId: id, created: true })
+    }),
+  })
+  const full = Object.assign(api, viewers, { fs })
+  window.fastview = full as unknown as CommanderApi
 
   return {
-    api,
+    api: full,
     settings,
     /** The viewer published a context (as the sidecar would hold it), carrying these ids. */
     setContext(
@@ -421,7 +690,31 @@ export function installFakeCommander(options: FakeOptions) {
       listeners.get(channel)?.forEach((l) => (l as (p: EventMap[C]) => void)(payload))
     },
     lastDescriptor: (): QueryDescriptor => api.query.open.mock.calls.at(-1)![0],
+    /** A job snapshot as Go would send it. */
+    job,
+    /** A folder of the fake filesystem (tests change its entries, then relist). */
+    folder: (dirId: number): FakeFolder | undefined => byId.get(dirId),
+    /** A folder's session changed in Go: every session of it gets a new version (and is re-sorted). */
+    relist(dirId: number) {
+      for (const [queryId, d] of descriptors) {
+        if (d.dirId !== dirId) continue
+        const v = (versions.get(queryId) ?? 1) + 1
+        sessions.set(queryId, rowsOf(d))
+        versions.set(queryId, v)
+        listeners.get("query.invalidated")?.forEach((l) =>
+          (l as (p: EventMap["query.invalidated"]) => void)({
+            queryId,
+            version: v,
+            total: sessions.get(queryId)!.length,
+          }),
+        )
+      }
+    },
     bookmarks: (): Bookmark[] => bookmarks,
+    /** Stage C05: shell actions main would have performed. */
+    shell,
+    /** Stage C05: Range reads of token URLs. */
+    reads,
     /** Another app (the viewer) changed the bookmarks. */
     setBookmarks(next: Bookmark[]) {
       bookmarks = next

@@ -1,0 +1,13 @@
+{"at":"2026-10-06T10:18:36.413Z","test":"scroll-100k","size":"medium","windowWidth":1920,"contentWidth":1664,"perRow":8,"frames":721,"maxFrameGapMs":15,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":176668,"ensureCalls":1,"pageCalls":25}
+{"at":"2026-10-06T10:18:47.709Z","test":"scroll-100k","size":"small","windowWidth":2560,"contentWidth":2304,"perRow":17,"frames":722,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":204,"scrolledPx":177068,"ensureCalls":1,"pageCalls":78}
+{"at":"2026-10-06T10:18:53.599Z","test":"scroll-10k","frames":434,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":88740}
+{"at":"2026-10-06T10:25:18.042Z","test":"responsive","seen":[{"window":1280,"width":1024,"perRow":5},{"window":1920,"width":1664,"perRow":8},{"window":2560,"width":2304,"perRow":11}]}
+{"at":"2026-10-06T10:25:28.687Z","test":"scroll-100k","size":"medium","windowWidth":1920,"contentWidth":1664,"perRow":8,"frames":721,"maxFrameGapMs":15,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":176668,"ensureCalls":1,"pageCalls":25}
+{"at":"2026-10-06T10:25:39.920Z","test":"scroll-100k","size":"small","windowWidth":2560,"contentWidth":2304,"perRow":17,"frames":722,"maxFrameGapMs":8,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":204,"scrolledPx":177068,"ensureCalls":1,"pageCalls":78}
+{"at":"2026-10-06T10:25:44.403Z","test":"scroll-10k","frames":433,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":88440}
+{"at":"2026-10-06T10:25:45.189Z","test":"first-thumb","tilesMountedMs":101,"firstReadyMs":179,"mountToReadyMs":78}
+{"at":"2026-10-06T12:26:36.529Z","test":"scroll-100k","size":"medium","windowWidth":1920,"contentWidth":1664,"perRow":8,"frames":722,"maxFrameGapMs":8,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":177068,"ensureCalls":1,"pageCalls":25}
+{"at":"2026-10-06T12:26:44.918Z","test":"scroll-100k","size":"small","windowWidth":2560,"contentWidth":2304,"perRow":17,"frames":721,"maxFrameGapMs":14,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":204,"scrolledPx":176668,"ensureCalls":1,"pageCalls":78}
+{"at":"2026-10-06T12:26:49.677Z","test":"scroll-10k","frames":433,"maxFrameGapMs":8,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":88440}
+{"at":"2026-10-06T12:26:51.015Z","test":"first-thumb","tilesMountedMs":311,"firstReadyMs":398,"mountToReadyMs":87}
+{"at":"2026-10-06T12:28:05.095Z","test":"responsive","seen":[{"window":1280,"width":1024,"perRow":5},{"window":1920,"width":1024,"perRow":5},{"window":2560,"width":2304,"perRow":11}]}

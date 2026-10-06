@@ -10,7 +10,13 @@ import {
   webContents,
 } from "electron"
 import { handleAppProtocol, registerAppScheme } from "./appProtocol"
-import { handleMediaProtocol, MediaTokens, toMediaOpenResult } from "./mediaProtocol"
+import { spawn } from "node:child_process"
+import {
+  handleMediaProtocol,
+  MediaTokens,
+  toFileOpenResult,
+  toMediaOpenResult,
+} from "./mediaProtocol"
 import { handleThumbProtocol } from "./thumbProtocol"
 import {
   broadcast,
@@ -154,7 +160,9 @@ async function boot(): Promise<void> {
 
   const devUrl = rendererDevUrl()
   const devUrls = [devUrl, commanderDevUrl()].filter((u): u is string => u !== null)
-  hardenSession(session.defaultSession, [trustedOrigin(devUrl), commanderOrigin()], devUrls)
+  hardenSession(session.defaultSession, [trustedOrigin(devUrl), commanderOrigin()], devUrls, [
+    commanderOrigin(),
+  ])
   handleAppProtocol({ [APP_HOST]: rendererDistPath(), [COMMANDER_HOST]: commanderDistPath() })
 
   const sc = new SidecarProcess({
@@ -196,6 +204,22 @@ async function boot(): Promise<void> {
       if (recordShell) shellLog.push({ action: "clipboard", value: text })
       else clipboard.writeText(text)
     },
+    launch: (file, args) => {
+      if (recordShell) {
+        shellLog.push({ action: "launch", value: [file, ...args].join("|") })
+        return Promise.resolve()
+      }
+      // Detached, no shell, no inherited stdio: the editor outlives nothing of ours.
+      return new Promise((resolve, reject) => {
+        const child = spawn(file, [...args], { detached: true, stdio: "ignore", shell: false })
+        child.once("error", reject)
+        child.once("spawn", () => {
+          child.unref()
+          resolve()
+        })
+      })
+    },
+    platform: process.platform,
     writeClipboardImage: async (png) => {
       // Tests read the size back from the PNG header.
       if (recordShell) {
@@ -222,6 +246,9 @@ async function boot(): Promise<void> {
     ...workspaceHandlers(workspaceDeps),
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),
+    // Commander only (the allowlist); the token may be fetch()ed by its origin alone.
+    "file.open": async (_event, { entryId }) =>
+      toFileOpenResult(await sc.call("file.resolve", { entryId }), mediaTokens, commanderOrigin()),
     "sidecar.getStatus": () => sc.getStatus(),
     "dialog.openFolder": async (event) => {
       // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.

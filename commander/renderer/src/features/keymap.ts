@@ -16,8 +16,8 @@ import { bridge, isBridgeAvailable } from "../bridge"
 // Cursor movement (arrows, PgUp/PgDn, Home/End), Shift+arrows, Enter and
 // the letters of quick search are fixed and not part of the map.
 
-export type Scope = "shell" | "panels"
-export const SCOPES: readonly Scope[] = ["shell", "panels"]
+export type Scope = "shell" | "panels" | "lister"
+export const SCOPES: readonly Scope[] = ["shell", "panels", "lister"]
 
 export const ACTIONS = [
   // Shell: work wherever focus is.
@@ -38,11 +38,25 @@ export const ACTIONS = [
   },
   { id: "panel.other", scope: "shell", group: "Panels", label: "Other panel", defaults: ["Tab"] },
   {
+    id: "queue.toggle",
+    scope: "shell",
+    group: "Files",
+    label: "Operation queue",
+    defaults: ["Mod+j"],
+  },
+  {
     id: "app.settings",
     scope: "shell",
     group: "App",
     label: "Settings",
     defaults: ["Mod+,"],
+  },
+  {
+    id: "view.quick",
+    scope: "shell",
+    group: "View",
+    label: "Quick view",
+    defaults: ["Mod+q"],
   },
   // Panels: act on the active panel.
   {
@@ -149,6 +163,87 @@ export const ACTIONS = [
   },
   { id: "view.brief", scope: "panels", group: "View", label: "Brief view", defaults: ["Mod+F1"] },
   { id: "view.full", scope: "panels", group: "View", label: "Full view", defaults: ["Mod+F2"] },
+  {
+    id: "files.copy",
+    scope: "panels",
+    group: "Files",
+    label: "Copy to the other panel",
+    defaults: ["F5"],
+  },
+  {
+    id: "files.move",
+    scope: "panels",
+    group: "Files",
+    label: "Move to the other panel",
+    defaults: ["F6"],
+  },
+  {
+    id: "files.copyHere",
+    scope: "panels",
+    group: "Files",
+    label: "Copy here under a new name",
+    defaults: ["Shift+F5"],
+  },
+  {
+    id: "files.rename",
+    scope: "panels",
+    group: "Files",
+    label: "Rename",
+    defaults: ["F2", "Shift+F6"],
+  },
+  { id: "files.mkdir", scope: "panels", group: "Files", label: "New folder", defaults: ["F7"] },
+  { id: "files.view", scope: "panels", group: "Files", label: "View (lister)", defaults: ["F3"] },
+  { id: "files.edit", scope: "panels", group: "Files", label: "Edit", defaults: ["F4"] },
+  {
+    id: "files.newText",
+    scope: "panels",
+    group: "Files",
+    label: "New text file",
+    defaults: ["Shift+F4"],
+  },
+  {
+    id: "files.trash",
+    scope: "panels",
+    group: "Files",
+    label: "Delete (to the trash)",
+    defaults: ["F8", "Delete"],
+  },
+  {
+    id: "files.delete",
+    scope: "panels",
+    group: "Files",
+    label: "Delete permanently",
+    defaults: ["Shift+F8", "Shift+Delete"],
+  },
+  {
+    id: "clip.copy",
+    scope: "panels",
+    group: "Files",
+    label: "Copy to the clipboard",
+    defaults: ["Mod+c"],
+  },
+  {
+    id: "clip.cut",
+    scope: "panels",
+    group: "Files",
+    label: "Cut to the clipboard",
+    defaults: ["Mod+x"],
+  },
+  { id: "clip.paste", scope: "panels", group: "Files", label: "Paste", defaults: ["Mod+v"] },
+  {
+    id: "copy.paths",
+    scope: "panels",
+    group: "Files",
+    label: "Copy full paths as text",
+    defaults: ["Mod+Shift+c"],
+  },
+  {
+    id: "copy.names",
+    scope: "panels",
+    group: "Files",
+    label: "Copy names as text",
+    defaults: ["Mod+Alt+c"],
+  },
   { id: "view.refresh", scope: "panels", group: "View", label: "Refresh", defaults: ["Mod+r"] },
   {
     id: "view.hidden",
@@ -229,6 +324,36 @@ export const ACTIONS = [
     group: "Marking",
     label: "Calculate all folder sizes",
     defaults: ["Alt+Shift+Enter"],
+  },
+  // Lister (Stage C05): act in the full-window viewer.
+  { id: "lister.close", scope: "lister", group: "Lister", label: "Close", defaults: ["Escape"] },
+  { id: "lister.next", scope: "lister", group: "Lister", label: "Next file", defaults: ["n"] },
+  {
+    id: "lister.previous",
+    scope: "lister",
+    group: "Lister",
+    label: "Previous file",
+    defaults: ["p"],
+  },
+  { id: "lister.text", scope: "lister", group: "Lister", label: "Text", defaults: ["1"] },
+  { id: "lister.hex", scope: "lister", group: "Lister", label: "Hex", defaults: ["2"] },
+  { id: "lister.image", scope: "lister", group: "Lister", label: "Image", defaults: ["3"] },
+  { id: "lister.video", scope: "lister", group: "Lister", label: "Video", defaults: ["4"] },
+  { id: "lister.wrap", scope: "lister", group: "Lister", label: "Wrap lines", defaults: ["w"] },
+  { id: "lister.find", scope: "lister", group: "Lister", label: "Find", defaults: ["Mod+f"] },
+  {
+    id: "lister.findNext",
+    scope: "lister",
+    group: "Lister",
+    label: "Find next",
+    defaults: ["F3"],
+  },
+  {
+    id: "lister.findPrevious",
+    scope: "lister",
+    group: "Lister",
+    label: "Find previous",
+    defaults: ["Shift+F3"],
   },
 ] as const satisfies readonly ActionDef<Scope>[]
 

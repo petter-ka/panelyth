@@ -40,6 +40,10 @@ func mountTop(path string, dev uint64) string {
 	}
 }
 
+// CanTrash: every volume can get a trash folder on Unix; an item that
+// still can't be trashed fails with TRASH_UNAVAILABLE (ADR-0021).
+func CanTrash(string) bool { return true }
+
 // Trash moves path to the user's trash on its volume (ADR-0021).
 func Trash(path string) error {
 	dev, ok := devOf(path)
@@ -93,4 +97,13 @@ func macTrash(path, home, uid string, dev uint64) error {
 		return Errorf(CodeTrashUnavailable, "the trash is full of items with this name")
 	}
 	return os.Rename(path, filepath.Join(trash, name))
+}
+
+// TrashMany trashes each path (renames; no batching needed).
+func TrashMany(paths []string) []error {
+	errs := make([]error, len(paths))
+	for i, p := range paths {
+		errs[i] = Trash(p)
+	}
+	return errs
 }

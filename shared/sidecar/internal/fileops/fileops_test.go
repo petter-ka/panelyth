@@ -120,7 +120,7 @@ func TestCopyFilePreservesDataAndMtime(t *testing.T) {
 		t.Fatal(err)
 	}
 	var reported int64
-	if err := CopyFile(context.Background(), src, dst, false, func(n int64) { reported += n }); err != nil {
+	if err := CopyFile(context.Background(), src, dst, false, &CopyOptions{Progress: func(n int64) { reported += n }}); err != nil {
 		t.Fatal(err)
 	}
 	fi, err := os.Stat(dst)
@@ -156,12 +156,12 @@ func TestCopyFileCancelRemovesPartial(t *testing.T) {
 	write(t, src, 16<<20)
 	ctx, cancel := context.WithCancel(context.Background())
 	var seen int64
-	err := CopyFile(ctx, src, dst, false, func(n int64) {
+	err := CopyFile(ctx, src, dst, false, &CopyOptions{Progress: func(n int64) {
 		seen += n
 		if seen >= 2<<20 {
 			cancel()
 		}
-	})
+	}})
 	if !errors.Is(err, context.Canceled) {
 		t.Fatalf("err = %v, want context.Canceled", err)
 	}
@@ -179,7 +179,7 @@ func TestCopyTreeSkipsLinksAndIsAtomic(t *testing.T) {
 	hasLink := os.Symlink(filepath.Join(src, "a.jpg"), link) == nil // needs privileges on Windows
 	var skipped []string
 	dst := filepath.Join(dir, "copy")
-	if err := CopyTree(context.Background(), src, dst, nil, func(p string) { skipped = append(skipped, p) }); err != nil {
+	if err := CopyTree(context.Background(), src, dst, &CopyOptions{Skipped: func(p string) { skipped = append(skipped, p) }}); err != nil {
 		t.Fatal(err)
 	}
 	if !exists(filepath.Join(dst, "sub", "b.jpg")) || !exists(filepath.Join(dst, "a.jpg")) {
@@ -194,7 +194,7 @@ func TestCopyTreeSkipsLinksAndIsAtomic(t *testing.T) {
 	// A failure part-way leaves nothing under the final name.
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if err := CopyTree(ctx, src, filepath.Join(dir, "never"), nil, nil); err == nil {
+	if err := CopyTree(ctx, src, filepath.Join(dir, "never"), nil); err == nil {
 		t.Fatal("cancelled tree copy succeeded")
 	}
 	if exists(filepath.Join(dir, "never")) || exists(PartialName(dir, "never")) {
@@ -208,14 +208,14 @@ func TestMoveAndRename(t *testing.T) {
 	write(t, src, 5)
 	other := filepath.Join(dir, "b.jpg")
 	write(t, other, 1)
-	if err := Move(context.Background(), src, other, false, false, nil, nil); Code(err) != CodeExists {
+	if err := Move(context.Background(), src, other, false, false, nil); Code(err) != CodeExists {
 		t.Errorf("move onto existing = %v", err)
 	}
-	if err := Move(context.Background(), src, filepath.Join(dir, "sub-missing", "x.jpg"), false, false, nil, nil); Code(err) != CodeNotFound {
+	if err := Move(context.Background(), src, filepath.Join(dir, "sub-missing", "x.jpg"), false, false, nil); Code(err) != CodeNotFound {
 		t.Errorf("move into missing folder = %v (%s)", err, Code(err))
 	}
 	dst := filepath.Join(dir, "moved.jpg")
-	if err := Move(context.Background(), src, dst, false, false, nil, nil); err != nil || exists(src) || !exists(dst) {
+	if err := Move(context.Background(), src, dst, false, false, nil); err != nil || exists(src) || !exists(dst) {
 		t.Fatalf("move: %v", err)
 	}
 	if _, err := Rename(dst, "b.jpg"); Code(err) != CodeExists {
@@ -303,5 +303,31 @@ func TestTrashOnThisPlatform(t *testing.T) {
 	}
 	if err != nil || exists(item) {
 		t.Fatalf("Trash: %v", err)
+	}
+}
+
+func TestTrashManyOnThisPlatform(t *testing.T) {
+	if os.Getenv("FASTVIEW_TEST_TRASH") != "1" {
+		t.Skip("moves files into the real OS trash; set FASTVIEW_TEST_TRASH=1")
+	}
+	dir := t.TempDir()
+	var paths []string
+	for i := range 3 {
+		p := filepath.Join(dir, "fastview-trash-many-"+string(rune('a'+i))+".txt")
+		write(t, p, 1)
+		paths = append(paths, p)
+	}
+	paths = append(paths, filepath.Join(dir, "missing.txt"))
+	errs := TrashMany(paths)
+	if Code(errs[0]) == CodeTrashUnavailable {
+		t.Skipf("no trash for the temp folder on %s", runtime.GOOS)
+	}
+	for i := range 3 {
+		if errs[i] != nil || exists(paths[i]) {
+			t.Errorf("%s: %v", paths[i], errs[i])
+		}
+	}
+	if Code(errs[3]) != CodeNotFound {
+		t.Errorf("missing item: %v", errs[3])
 	}
 }

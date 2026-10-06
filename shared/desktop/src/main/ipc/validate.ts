@@ -1,6 +1,8 @@
 import { isAbsolute } from "node:path"
 import {
+  CONFLICT_DECISIONS,
   CONFLICT_POLICIES,
+  MAX_MKDIR_PATH_CHARS,
   ENTRY_KINDS,
   MAX_COPY_TEXT_CHARS,
   MAX_JOB_ERRORS_PAGE,
@@ -99,6 +101,22 @@ function selectionProblem(sel: unknown): string | null {
 }
 
 const conflicts: ReadonlySet<unknown> = new Set(CONFLICT_POLICIES)
+const MAX_MASK_CHARS = 256 // index.MaxMaskLen
+
+/** Exactly one destination: an absolute path or a folder id (Stage C04). */
+function destinationProblem(p: Record<string, unknown>): string | null {
+  const byPath = p.destination !== undefined
+  const byId = p.destinationDirId !== undefined
+  if (byPath === byId) return "expected destination or destinationDirId"
+  return byId
+    ? isId(p.destinationDirId)
+      ? null
+      : "invalid destinationDirId"
+    : pathProblem(p.destination)
+}
+const decisions: ReadonlySet<unknown> = new Set(CONFLICT_DECISIONS)
+const jobIdParams: Validator = (p) =>
+  shape(p, ["jobId"]) && isId(p.jobId) ? null : "expected { jobId }"
 const isLabel = (v: unknown): boolean =>
   Number.isSafeInteger(v) && (v as number) >= 0 && (v as number) <= MAX_LABEL
 const isRating = (v: unknown): boolean =>
@@ -120,10 +138,22 @@ function jobStartProblem(p: unknown): string | null {
   switch (p.kind) {
     case "copy":
     case "move":
-      if (!shape(p, ["kind", "source", "destination", "conflict"]))
-        return "expected { kind, source, destination, conflict }"
+      // copyLinks is added by main from the caller's profile, never sent by a renderer.
+      if (
+        !shapeWithOptional(
+          p,
+          ["kind", "source", "conflict"],
+          ["destination", "destinationDirId", "verify", "now", "mask", "name"],
+        )
+      )
+        return "expected { kind, source, destination | destinationDirId, conflict, verify?, now?, mask?, name? }"
       if (!conflicts.has(p.conflict)) return "invalid conflict policy"
-      return pathProblem(p.destination) ?? sourceProblem(p.source)
+      if (p.verify !== undefined && typeof p.verify !== "boolean") return "invalid verify"
+      if (p.now !== undefined && typeof p.now !== "boolean") return "invalid now"
+      if (p.mask !== undefined && (typeof p.mask !== "string" || p.mask.length > MAX_MASK_CHARS))
+        return "invalid mask"
+      if (p.name !== undefined && !isName(p.name)) return "invalid name"
+      return destinationProblem(p) ?? sourceProblem(p.source)
     case "trash":
     case "delete":
     case "dirSize":
@@ -353,10 +383,22 @@ export const validators: Record<RendererMethod, Validator> = {
       ? null
       : "expected { ids } (at most 500)",
   "places.list": empty,
-  "shell.open": entryParams,
+  "shell.open": (p) =>
+    shapeWithOptional(p, ["entryId"], ["allowProgram"]) &&
+    isId(p.entryId) &&
+    (p.allowProgram === undefined || typeof p.allowProgram === "boolean")
+      ? null
+      : "expected { entryId, allowProgram? }",
+  "shell.edit": entryParams,
+  "file.open": entryParams,
   "shell.reveal": entryParams,
   "shell.revealPath": (p) => (shape(p, ["path"]) ? pathProblem(p.path) : "expected { path }"),
-  "clipboard.copyPaths": selectionParams,
+  "clipboard.copyPaths": (p) => {
+    if (!shapeWithOptional(p, ["selection"], ["namesOnly"]))
+      return "expected { selection, namesOnly? }"
+    if (p.namesOnly !== undefined && typeof p.namesOnly !== "boolean") return "invalid namesOnly"
+    return selectionProblem(p.selection)
+  },
   "clipboard.copyImage": entryParams,
   "clipboard.copyText": (p) =>
     shape(p, ["text"]) && typeof p.text === "string" && p.text.length <= MAX_COPY_TEXT_CHARS
@@ -373,6 +415,16 @@ export const validators: Record<RendererMethod, Validator> = {
       : `limit must be 1..${MAX_JOB_ERRORS_PAGE}`
   },
   "jobs.list": empty,
+  "jobs.pause": jobIdParams,
+  "jobs.resume": jobIdParams,
+  "jobs.startNow": jobIdParams,
+  "jobs.resolve": (p) =>
+    shape(p, ["jobId", "decision", "applyToAll"]) &&
+    isId(p.jobId) &&
+    decisions.has(p.decision) &&
+    typeof p.applyToAll === "boolean"
+      ? null
+      : "expected { jobId, decision, applyToAll }",
   "clip.set": (p) => {
     if (!shape(p, ["selection", "mode"])) return "expected { selection, mode }"
     if (p.mode !== "copy" && p.mode !== "cut") return "invalid mode"
@@ -380,9 +432,24 @@ export const validators: Record<RendererMethod, Validator> = {
   },
   "clip.get": empty,
   "clip.paste": (p) => {
-    if (!shape(p, ["destination", "conflict"])) return "expected { destination, conflict }"
-    return conflicts.has(p.conflict) ? pathProblem(p.destination) : "invalid conflict policy"
+    if (!shapeWithOptional(p, ["conflict"], ["destination", "destinationDirId"]))
+      return "expected { destination | destinationDirId, conflict }"
+    return conflicts.has(p.conflict) ? destinationProblem(p) : "invalid conflict policy"
   },
+  "fs.mkdir": (p) =>
+    shape(p, ["parentDirId", "path"]) &&
+    isId(p.parentDirId) &&
+    typeof p.path === "string" &&
+    p.path.trim().length > 0 &&
+    p.path.length <= MAX_MKDIR_PATH_CHARS &&
+    !p.path.includes("\0")
+      ? null
+      : "expected { parentDirId, path }",
+  "fs.mkfile": (p) =>
+    shape(p, ["parentDirId", "name"]) && isId(p.parentDirId) && isName(p.name)
+      ? null
+      : "expected { parentDirId, name }",
+  "fs.canTrash": (p) => (shape(p, ["dirId"]) && isId(p.dirId) ? null : "expected { dirId }"),
   "entry.rename": (p) =>
     shape(p, ["entryId", "name"]) && isId(p.entryId) && isName(p.name)
       ? null

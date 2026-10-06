@@ -43,8 +43,14 @@ function jobParams(p: JobStartParams): JobStartParams {
       return {
         kind: p.kind,
         source: source(p.source),
-        destination: p.destination,
         conflict: p.conflict,
+        ...("destination" in p
+          ? { destination: p.destination }
+          : { destinationDirId: p.destinationDirId }),
+        ...(p.verify !== undefined && { verify: p.verify }),
+        ...(p.now !== undefined && { now: p.now }),
+        ...(p.mask !== undefined && { mask: p.mask }),
+        ...(p.name !== undefined && { name: p.name }),
       }
     case "trash":
     case "delete":
@@ -171,6 +177,11 @@ const api: FastViewApi = {
     cancel: (jobId) => invoke("jobs.cancel", { jobId }),
     errors: (jobId, offset, limit) => invoke("jobs.errors", { jobId, offset, limit }),
     list: () => invoke("jobs.list", {}),
+    pause: (jobId) => invoke("jobs.pause", { jobId }),
+    resume: (jobId) => invoke("jobs.resume", { jobId }),
+    startNow: (jobId) => invoke("jobs.startNow", { jobId }),
+    resolve: (jobId, decision, applyToAll) =>
+      invoke("jobs.resolve", { jobId, decision, applyToAll }),
   },
   clip: {
     set: (sel, mode) => invoke("clip.set", { selection: selection(sel), mode }),

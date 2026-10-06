@@ -3,11 +3,13 @@
   "ok": true,
   "r": {
     "bytesDone": 0,
+    "bytesPerSec": 0,
     "bytesTotal": 0,
     "current": "",
     "destination": "",
     "done": 0,
     "error": "",
+    "etaMs": 0,
     "failed": 0,
     "finishedMs": 1,
     "jobId": 1,

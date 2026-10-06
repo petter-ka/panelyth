@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@fastview/media-ui": "workspace:*",
     "@fastview/renderer-core": "workspace:*",
     "@fastview/ui": "workspace:*",
     "@radix-ui/react-context-menu": "2.3.7",

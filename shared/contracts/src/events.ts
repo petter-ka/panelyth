@@ -2,6 +2,7 @@ import type {
   AppId,
   Bookmark,
   FolderCoverItem,
+  JobConflict,
   JobSnapshot,
   PreviewItem,
   QuerySnapshot,
@@ -43,6 +44,8 @@ export interface EventMap {
   "folder.covers": { items: FolderCoverItem[] }
   /** A job's full state, at most 4 Hz per job; the final state is always delivered. */
   "job.progress": JobSnapshot
+  /** A job with the "ask" policy waits on this item (Stage P03); answer with jobs.resolve. */
+  "job.conflict": { jobId: number; conflict: JobConflict }
   /** From main: this app view was shown or hidden by the app switch (ADR-0031). */
   "app.visibility": { app: AppId; visible: boolean }
   /** From main: a shared.* setting changed, so the other app can apply it (ADR-0031). */
@@ -62,6 +65,7 @@ export const EVENT_CHANNELS = [
   "preview.ready",
   "folder.covers",
   "job.progress",
+  "job.conflict",
   "app.visibility",
   "settings.changed",
   "volumes.changed",
@@ -75,6 +79,7 @@ export const SIDECAR_EVENT_CHANNELS = [
   "preview.ready",
   "folder.covers",
   "job.progress",
+  "job.conflict",
   "volumes.changed",
   "bookmarks.changed",
 ] as const satisfies readonly EventChannel[]

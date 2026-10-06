@@ -150,3 +150,11 @@ export async function commanderOf(app: ElectronApplication): Promise<Page> {
   })
   return c
 }
+
+/** Opens a folder that may be empty (goTo waits for entry rows). */
+export async function openFolder(c: Page, side: Side, path: string): Promise<void> {
+  await c.getByTestId(`path-${side}`).click()
+  await c.getByRole("textbox", { name: "Path" }).fill(path)
+  await c.keyboard.press("Enter")
+  await expect(c.getByTestId(`path-${side}`)).toHaveText(path)
+}
