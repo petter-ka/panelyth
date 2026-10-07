@@ -30,6 +30,7 @@ import { NewFileDialog, ProgramDialog } from "./OpenDialogs"
 import { QuickView } from "./QuickView"
 import { ConflictDialog, JobDetailsDialog, QueuePanel } from "./QueuePanel"
 import { FunctionKeyBar } from "./FunctionKeyBar"
+import { QuickActionBar } from "./QuickActionBar"
 import { HotlistDialog } from "./HotlistDialog"
 import { MaskDialog } from "./MaskDialog"
 import { Panel, type PanelHandle } from "./Panel"
@@ -149,8 +150,9 @@ export function AppShell() {
 
   return (
     <TooltipProvider>
-      <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto_auto_auto]">
+      <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto_auto_auto]">
         <AppSwitcher current="commander" shortcut={SWITCH_SHORTCUT} onSwitch={switchToViewer} />
+        <QuickActionBar />
         <Group
           key={layoutToken}
           id="panels"

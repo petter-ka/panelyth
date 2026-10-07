@@ -80,9 +80,14 @@ The viewer's tile components on the shared preview cache, inside the panel, with
 
 ## Function-key bar
 
-F3 View · F4 Edit · F5 Copy · F6 Move · F7 New folder · F8 Delete · Alt+F4 Exit. Every label is a button. While
-Shift or Alt is held, the labels change to those variants (Shift+F5 Copy here, Shift+F6 Rename, Shift+F8 Delete
-permanently, Alt+F5 Pack, Alt+F7 Find, …), so the bar teaches the keymap.
+F3 View · F4 Edit · F5 Copy · F6 Move · F7 New folder · F8 Delete. Every label is a button, paired
+with a compact action icon and a keycap so the bar is easy to scan while still teaching the keymap. While Shift or Alt
+is held, the labels change to those variants (Shift+F5 Copy here, Shift+F6 Rename, Shift+F8 Delete permanently,
+Alt+F5 Pack, Alt+F7 Find, …).
+
+Above it, a compact quick-action toolbar provides icon buttons for Find files, quick filter, branch view, quick view,
+refresh, the directory hotlist and rename. Tooltips show each action's current shortcut; quick view, branch view and
+quick filter expose their active state.
 
 ## Command line (Stage C10)
 

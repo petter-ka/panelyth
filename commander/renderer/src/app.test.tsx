@@ -39,7 +39,6 @@ describe("commander shell (Stage C00)", () => {
     expect(screen.getByRole("button", { name: /F5 Copy/ })).toBeEnabled()
     expect(screen.getByRole("button", { name: /F3 View/ })).toBeEnabled()
     expect(screen.getByRole("button", { name: /F4 Edit/ })).toBeEnabled()
-    expect(screen.getByRole("button", { name: /Exit/ })).toBeEnabled()
   })
 
   it("Tab moves the active panel and its focus", () => {
@@ -59,13 +58,6 @@ describe("commander shell (Stage C00)", () => {
     await waitFor(() => expect(api.app.switch).toHaveBeenCalledWith("viewer"))
     fireEvent.keyDown(window, { key: "M", ctrlKey: true, shiftKey: true })
     await waitFor(() => expect(api.app.switch).toHaveBeenCalledTimes(2))
-  })
-
-  it("exits from the function-key bar", async () => {
-    const api = installApi()
-    render(<AppShell />)
-    fireEvent.click(screen.getByRole("button", { name: /Exit/ }))
-    await waitFor(() => expect(api.app.exit).toHaveBeenCalled())
   })
 
   it("persists the panel split once, after the drag settles", async () => {
