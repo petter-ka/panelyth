@@ -4,6 +4,7 @@
 //	go run ./cmd/fixturegen -out /tmp/fv-flat-100k -files 100000
 //	go run ./cmd/fixturegen -out /tmp/fv-images -images 300 -width 1600 -height 1200
 //	go run ./cmd/fixturegen -out /tmp/fv-text-2g -text-log-bytes 2147483648 -encodings
+//	go run ./cmd/fixturegen -out /tmp/fv-archives -archive-samples -archive-zip-entries 100000
 package main
 
 import (
@@ -33,6 +34,11 @@ func main() {
 	var text fixture.TextSpec
 	flag.Int64Var(&text.LogBytes, "text-log-bytes", 0, "write big.log with numbered lines up to this size (lister fixtures)")
 	flag.BoolVar(&text.Encodings, "encodings", false, "write the encoding samples (lister fixtures)")
+	var arch fixture.ArchiveSpec
+	flag.BoolVar(&arch.Samples, "archive-samples", false, "write set.zip, set.tar.gz and slip.zip (archive fixtures)")
+	flag.IntVar(&arch.ZipEntries, "archive-zip-entries", 0, "write many.zip with this many entries")
+	flag.Int64Var(&arch.TgzBytes, "archive-tgz-bytes", 0, "write big.tar.gz with about this many bytes")
+	flag.IntVar(&arch.PackFiles, "archive-pack-files", 0, "write pack/ with this many 4 KiB files")
 	flag.Parse()
 	if *out == "" {
 		fmt.Fprintln(os.Stderr, "-out is required")
@@ -40,7 +46,14 @@ func main() {
 	}
 	start := time.Now()
 	result := map[string]any{"root": *out}
-	if text.LogBytes > 0 || text.Encodings {
+	if arch.Samples || arch.ZipEntries > 0 || arch.TgzBytes > 0 || arch.PackFiles > 0 {
+		if err := fixture.GenerateArchives(*out, arch); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		result["archives"] = arch
+		result["expected"] = fixture.Expected{}
+	} else if text.LogBytes > 0 || text.Encodings {
 		if err := fixture.GenerateText(*out, text); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

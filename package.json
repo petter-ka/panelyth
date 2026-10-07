@@ -21,7 +21,8 @@
     "bench:startup": "pnpm build && pnpm --filter @fastview/bench startup",
     "bench:index": "node scripts/go.mjs indexbench",
     "bench:previews": "node scripts/go.mjs thumbbench",
-    "bench:find": "node scripts/go.mjs findbench"
+    "bench:find": "node scripts/go.mjs findbench",
+    "bench:archives": "node scripts/go.mjs archivebench"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

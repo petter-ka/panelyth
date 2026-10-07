@@ -1,6 +1,13 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react"
 import { Tooltip } from "@fastview/ui"
-import { goUp, openPath, setFilter, toPanelError, useListingStore } from "../features/listing"
+import {
+  archivePath,
+  goUp,
+  openPath,
+  setFilter,
+  toPanelError,
+  useListingStore,
+} from "../features/listing"
 import type { Side } from "../features/panels"
 
 export interface PathBarHandle {
@@ -28,6 +35,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
   const loading = useListingStore((s) => s[side].loading)
   const branch = useListingStore((s) => s[side].branch)
   const find = useListingStore((s) => s[side].find)
+  const archive = useListingStore((s) => s[side].archive)
   const filter = useListingStore((s) => s[side].filter)
   const [editing, setEditing] = useState(false)
   const [filtering, setFiltering] = useState(false)
@@ -130,7 +138,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               aria-busy={loading}
               className={`h-6 min-w-0 flex-1 truncate rounded px-1.5 text-left font-mono font-normal hover:bg-raised ${active ? "text-text" : "text-muted"}`}
             >
-              {path || "No folder open"}
+              {archive ? archivePath(path, archive) : path || "No folder open"}
             </button>
           </Tooltip>
           {filtering ? (

@@ -4,6 +4,7 @@ import type { ActionId } from "./keymap"
 import { setHelpOpen } from "./keymap"
 import {
   COLUMN_SORT,
+  enterArchiveAtCursor,
   goHistory,
   goRoot,
   goUp,
@@ -46,6 +47,7 @@ import {
   startRename,
 } from "./files"
 import { toggleQueue } from "./queue"
+import { openPack, openUnpack, testArchives } from "./archives"
 import { openFind } from "./find"
 import { openHistoryMenu, openHotlist } from "./hotlist"
 import { setSettingsOpen } from "./settings"
@@ -79,7 +81,8 @@ async function markAndSize(side: Side): Promise<void> {
   const index = p.cursor - parentRows(p)
   const item = index >= 0 ? await pageStoreOf(side).ensureIndex(index) : undefined
   await toggleCursor(side, false)
-  if (item?.kind === "dir" && isMarked(marksOf(side), index, item.id)) {
+  // Folders inside an archive come with their size from the listing.
+  if (item?.kind === "dir" && !p.archive && isMarked(marksOf(side), index, item.id)) {
     const d = cursorDescriptor(side)
     if (d) await calculateSizes(side, d).catch(() => undefined)
   }
@@ -223,6 +226,22 @@ export function runPanelAction(side: Side, id: ActionId): void {
     case "view.branch":
       void toggleBranch(side)
       break
+    case "archive.enter":
+      closeQuickSearch()
+      void enterArchiveAtCursor(side)
+      break
+    case "archive.pack":
+      closeQuickSearch()
+      openPack(side)
+      break
+    case "archive.unpack":
+      closeQuickSearch()
+      void openUnpack(side)
+      break
+    case "archive.test":
+      closeQuickSearch()
+      void testArchives(side)
+      break
     case "view.filter":
       closeQuickSearch()
       useUiStore.setState((s) => ({
@@ -268,7 +287,7 @@ export function runPanelAction(side: Side, id: ActionId): void {
     case "size.all": {
       // Every row; Go skips the files.
       const q = panel(side).query
-      if (q && q.total > 0) {
+      if (q && q.total > 0 && !panel(side).archive) {
         void calculateSizes(side, {
           queryId: q.queryId,
           version: q.version,

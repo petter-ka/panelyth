@@ -13,6 +13,7 @@ import (
 	"strings"
 	"time"
 
+	"fastview/sidecar/internal/archive"
 	"fastview/sidecar/internal/fsx"
 	"fastview/sidecar/internal/library"
 	"fastview/sidecar/internal/platform"
@@ -67,7 +68,9 @@ func Run(ctx context.Context, cfg Config) error {
 			}
 		}
 	}
-	svc, err := newIndexService(dirs.CacheRoot, maxBytes, cfg.Logger, srv.Emit, tools)
+	// Archives beyond the built-in formats (ADR-0030); optional like ffmpeg.
+	sevenZip := archive.LocateTool(cfg.Getenv)
+	svc, err := newIndexService(dirs.CacheRoot, maxBytes, cfg.Logger, srv.Emit, tools, sevenZip)
 	if err != nil {
 		return err
 	}
@@ -97,7 +100,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	cfg.Logger.Info("sidecar starting", "version", cfg.Version, "pid", os.Getpid(),
 		"cacheRoot", dirs.CacheRoot, "configRoot", dirs.ConfigRoot,
-		"ffmpeg", tools.FFmpeg, "ffprobe", tools.FFprobe)
+		"ffmpeg", tools.FFmpeg, "ffprobe", tools.FFprobe, "7z", sevenZip.Path)
 
 	err = srv.Serve(ctx, cfg.In, cfg.Out, rpc.Hello{
 		Protocol:      rpc.ProtocolVersion,

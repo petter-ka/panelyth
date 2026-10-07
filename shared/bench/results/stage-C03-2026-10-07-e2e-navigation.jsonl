@@ -4,3 +4,6 @@
 {"at":"2026-10-07T15:22:17.493Z","test":"session-restore","restoreMs":310,"budgetMs":1300}
 {"at":"2026-10-07T15:22:39.849Z","test":"tab-switch-1k","warmP95Ms":13.8,"warmMedianMs":12.3,"coldMedianMs":19.2,"coldP95Ms":21,"budgetP95Ms":50}
 {"at":"2026-10-07T15:22:41.905Z","test":"drive-menu-dead-share","menuOpenMs":5,"otherPanelCursorMs":2,"deadShareListedAfterMs":1343,"shareDelayMs":8000}
+{"at":"2026-10-07T18:39:49.718Z","test":"session-restore","restoreMs":361,"budgetMs":1300}
+{"at":"2026-10-07T18:40:12.181Z","test":"tab-switch-1k","warmP95Ms":17.2,"warmMedianMs":11.1,"coldMedianMs":30.8,"coldP95Ms":38.3,"budgetP95Ms":50}
+{"at":"2026-10-07T18:40:15.873Z","test":"drive-menu-dead-share","menuOpenMs":2,"otherPanelCursorMs":6,"deadShareListedAfterMs":1343,"shareDelayMs":8000}

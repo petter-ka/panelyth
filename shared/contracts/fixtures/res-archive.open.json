@@ -1,0 +1,13 @@
+{
+  "id": 93,
+  "ok": true,
+  "r": {
+    "archiveId": 1,
+    "bytes": 3,
+    "entries": 3,
+    "format": "zip",
+    "packedBytes": 289,
+    "rejected": 0
+  },
+  "t": "res"
+}

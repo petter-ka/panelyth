@@ -65,9 +65,10 @@ test.describe("commander foundation (Stage C00)", () => {
         // C02 marks (selection) and folder sizes (jobs); C04 file
         // operations (files, clip, clipboard, fs.mkdir, fs.canTrash); C05
         // quick view, lister, open and edit (media, preview, props, file,
-        // shell, fs.mkfile).
+        // shell, fs.mkfile); C07 archives.
         apiKeys: [
           "app",
+          "archive",
           "clip",
           "clipboard",
           "context",

@@ -199,3 +199,13 @@ func RemovePartials(dir string) int {
 	}
 	return n
 }
+
+// CommitFile renames a finished partial file into place (archive extraction,
+// Stage C07); without replace an existing dst is ALREADY_EXISTS. The
+// partial file is removed on failure.
+func CommitFile(partial, dst string, replace bool) error {
+	return commit(partial, dst, replace, false)
+}
+
+// RemovePartial removes a partial file or folder (read-only ones too).
+func RemovePartial(p string, isDir bool) { removePartial(p, isDir) }

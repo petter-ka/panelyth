@@ -72,8 +72,25 @@ export function folder(
   return { dirId, path, crumbs, entries: [...entries, ...extra] }
 }
 
+/**
+ * Stage C07: an archive file (entry `entryId` of some folder) and its
+ * listing: the root's entries and each inner folder's, by folder entry id.
+ * `error` makes archive.open fail (details.reason).
+ */
+export interface FakeArchive {
+  entryId: number
+  archiveId: number
+  root: ContentItem[]
+  dirs?: Record<number, ContentItem[]>
+  error?: { code: ErrorCode; reason: string; message: string }
+}
+
 export interface FakeOptions {
   folders: FakeFolder[]
+  archives?: FakeArchive[]
+  /** archive.check's warnings. */
+  archiveWarnings?: ("space" | "ratio")[]
+  sevenZip?: boolean
   settings?: Record<string, unknown>
   context?: SharedContext
   home?: string
@@ -219,7 +236,10 @@ export function installFakeCommander(options: FakeOptions) {
     const key = d.sort[0] ?? { field: "name", direction: "asc" }
     const hidden = ENTRY_ATTRS.hidden | ENTRY_ATTRS.system
     let rows: ContentItem[]
-    if (d.findId !== undefined) {
+    if (d.archiveId !== undefined) {
+      const a = (options.archives ?? []).find((x) => x.archiveId === d.archiveId)!
+      rows = (d.archiveDirId ? (a.dirs?.[d.archiveDirId] ?? []) : a.root).slice()
+    } else if (d.findId !== undefined) {
       rows = (finds.get(d.findId)?.results ?? []).slice()
     } else if (d.recursive) {
       // Branch view: every file below the folder, each with its folder.
@@ -347,6 +367,34 @@ export function installFakeCommander(options: FakeOptions) {
         return ok({ findId, queryId: nextQuery, version: 1, total: 0 })
       }),
       cancel: vi.fn(async (findId: number) => ok({ cancelled: finds.has(findId) })),
+    },
+    archive: {
+      open: vi.fn(async (entryId: number) => {
+        const a = (options.archives ?? []).find((x) => x.entryId === entryId)
+        if (!a) return err("UNSUPPORTED_MEDIA", "not an archive", { reason: "notArchive" })
+        if (a.error) return err(a.error.code, a.error.message, { reason: a.error.reason })
+        const all = [...a.root, ...Object.values(a.dirs ?? {}).flat()]
+        return ok({
+          archiveId: a.archiveId,
+          format: "zip" as const,
+          entries: all.length,
+          rejected: 0,
+          bytes: all.reduce((n, e) => n + (e.kind === "dir" ? 0 : e.sizeBytes), 0),
+          packedBytes: 100,
+        })
+      }),
+      close: vi.fn(async () => ok({ closed: true })),
+      check: vi.fn(async (selection: SelectionDescriptor) =>
+        ok({
+          files: resolve(selection).length,
+          bytes: 1000,
+          packedBytes: 100,
+          freeBytes: 1e12,
+          warnings: options.archiveWarnings ?? [],
+          partial: false,
+        }),
+      ),
+      tools: vi.fn(async () => ok({ sevenZip: options.sevenZip ?? false })),
     },
     query: {
       open: vi.fn(async (d: QueryDescriptor) => {
@@ -484,7 +532,7 @@ export function installFakeCommander(options: FakeOptions) {
       start: vi.fn(async (p: CommanderJobParams) => {
         const total = resolve(p.source.selection).length
         const snap = job({ kind: p.kind, total })
-        if (p.kind === "copy" || p.kind === "move") {
+        if (p.kind === "copy" || p.kind === "move" || p.kind === "extract" || p.kind === "pack") {
           const dest = byId.get(p.destinationDirId)
           if (!dest) return err("NOT_FOUND", "the folder is not in the index")
           snap.destination = dest.crumbs.at(-1)?.name ?? ""

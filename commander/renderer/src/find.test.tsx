@@ -256,7 +256,7 @@ describe("quick filter (Ctrl+S)", () => {
     const fake = await start()
     const opens = fake.api.dir.open.mock.calls.length
     await key("left", { key: "s", ctrlKey: true })
-    const input = await screen.findByLabelText("Quick filter")
+    const input = await screen.findByRole("textbox", { name: "Quick filter" })
     await waitFor(() => expect(input).toHaveFocus())
     fireEvent.change(input, { target: { value: "file000001*" } })
     await waitFor(() => expect(fake.lastDescriptor()).toMatchObject({ nameMask: "file000001*" }))
@@ -269,7 +269,7 @@ describe("quick filter (Ctrl+S)", () => {
     expect(fake.api.dir.open.mock.calls.length).toBe(opens)
     await key("left", { key: "s", ctrlKey: true })
     await act(async () => {
-      fireEvent.keyDown(screen.getByLabelText("Quick filter"), { key: "Escape" })
+      fireEvent.keyDown(screen.getByRole("textbox", { name: "Quick filter" }), { key: "Escape" })
     })
     await waitFor(() => expect(fake.lastDescriptor().nameMask).toBeUndefined())
     expect(screen.queryByTestId("filter-left")).toBeNull()

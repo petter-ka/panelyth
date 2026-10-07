@@ -28,6 +28,7 @@ import {
   MAX_NAME_MASK_CHARS,
   FIND_ATTR_BITS,
   FIND_ENCODINGS,
+  ARCHIVE_CREATE_FORMATS,
   MAX_FIND_ROOTS,
   MAX_FIND_TEXT_CHARS,
   type RendererMethod,
@@ -124,6 +125,7 @@ const decisions: ReadonlySet<unknown> = new Set(CONFLICT_DECISIONS)
 const isLane = (v: unknown): boolean => typeof v === "string" && /^[a-z0-9-]{1,16}$/.test(v)
 
 const findEncodings: ReadonlySet<unknown> = new Set(FIND_ENCODINGS)
+const archiveCreateFormats: ReadonlySet<unknown> = new Set(ARCHIVE_CREATE_FORMATS)
 const FIND_KEYS = [
   "roots",
   "mask",
@@ -227,6 +229,41 @@ function jobStartProblem(p: unknown): string | null {
         return "invalid pattern"
       if (!isCount(p.start) || p.start > MAX_RENAME_START) return "invalid start"
       return sourceProblem(p.source)
+    case "extract":
+      if (
+        !shapeWithOptional(
+          p,
+          ["kind", "source", "destinationDirId", "conflict"],
+          ["links", "subfolders"],
+        )
+      )
+        return "expected { kind, source, destinationDirId, conflict, links?, subfolders? }"
+      if (!conflicts.has(p.conflict)) return "invalid conflict policy"
+      if (!isId(p.destinationDirId)) return "invalid destinationDirId"
+      for (const k of ["links", "subfolders"] as const) {
+        if (p[k] !== undefined && typeof p[k] !== "boolean") return `invalid ${k}`
+      }
+      return sourceProblem(p.source)
+    case "pack":
+      if (
+        !shapeWithOptional(
+          p,
+          ["kind", "source", "destinationDirId", "conflict", "name", "format", "level"],
+          ["deleteOriginals"],
+        )
+      )
+        return "expected { kind, source, destinationDirId, conflict, name, format, level, deleteOriginals? }"
+      if (!conflicts.has(p.conflict)) return "invalid conflict policy"
+      if (!isId(p.destinationDirId)) return "invalid destinationDirId"
+      if (!isName(p.name)) return "invalid name"
+      if (!archiveCreateFormats.has(p.format)) return "invalid format"
+      if (!Number.isSafeInteger(p.level) || (p.level as number) < 0 || (p.level as number) > 9)
+        return "level must be 0..9"
+      if (p.deleteOriginals !== undefined && typeof p.deleteOriginals !== "boolean")
+        return "invalid deleteOriginals"
+      return sourceProblem(p.source)
+    case "testArchive":
+      return shape(p, ["kind", "source"]) ? sourceProblem(p.source) : "expected { kind, source }"
     case "favorite":
       if (!shape(p, ["kind", "source", "favorite"]) || typeof p.favorite !== "boolean")
         return "expected { kind, source, favorite }"
@@ -293,6 +330,15 @@ export const validators: Record<RendererMethod, Validator> = {
       : "expected { entryId } and optionally lane",
   "find.start": (p) => findStartProblem(p),
   "find.cancel": (p) => (shape(p, ["findId"]) && isId(p.findId) ? null : "expected { findId }"),
+  "archive.open": entryParams,
+  "archive.close": (p) =>
+    shape(p, ["archiveId"]) && isId(p.archiveId) ? null : "expected { archiveId }",
+  "archive.check": (p) => {
+    if (!shape(p, ["selection", "destinationDirId"]) || !isId(p.destinationDirId))
+      return "expected { selection, destinationDirId }"
+    return selectionProblem(p.selection)
+  },
+  "archive.tools": empty,
   "dir.cancelScan": (p) => (shape(p, ["scanId"]) && isId(p.scanId) ? null : "expected { scanId }"),
   "query.open": (p) => {
     const keys = [
@@ -306,7 +352,7 @@ export const validators: Record<RendererMethod, Validator> = {
       "minRating",
       "tags",
     ]
-    const optional = ["scope", "showHidden", "nameMask", "findId"]
+    const optional = ["scope", "showHidden", "nameMask", "findId", "archiveId", "archiveDirId"]
     if (!shapeWithOptional(p, keys, optional))
       return `expected { ${keys.join(", ")} } and optionally ${optional.join(", ")}`
     if (p.scope !== undefined && !scopes.has(p.scope)) return "invalid scope"
@@ -319,6 +365,13 @@ export const validators: Record<RendererMethod, Validator> = {
       return "invalid nameMask"
     if (p.findId !== undefined && (!isId(p.findId) || p.scope !== "all" || p.recursive !== false))
       return "findId needs the all scope and no recursion"
+    if (
+      p.archiveId !== undefined &&
+      (!isId(p.archiveId) || p.scope !== "all" || p.recursive !== false || p.findId !== undefined)
+    )
+      return "archiveId needs the all scope, no recursion and no findId"
+    if (p.archiveDirId !== undefined && (p.archiveId === undefined || !isCount(p.archiveDirId)))
+      return "archiveDirId needs an archiveId"
     if (typeof p.favorite !== "boolean" || !isRating(p.minRating))
       return "invalid favorite or minRating"
     if (!Array.isArray(p.tags) || p.tags.length > MAX_TAG_FILTERS || !p.tags.every(isTagName))

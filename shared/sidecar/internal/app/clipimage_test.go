@@ -51,7 +51,7 @@ func TestClipboardImage(t *testing.T) {
 		t.Fatal(err)
 	}
 	log := slog.New(slog.DiscardHandler)
-	svc, err := newIndexService(cacheRoot, 1<<30, log, func(string, any) error { return nil }, &video.Tools{})
+	svc, err := newIndexService(cacheRoot, 1<<30, log, func(string, any) error { return nil }, &video.Tools{}, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

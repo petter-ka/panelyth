@@ -1,4 +1,5 @@
 import {
+  type ArchiveFormat,
   type ContentItem,
   type Crumb,
   type DirOpenResult,
@@ -70,6 +71,23 @@ export interface FindLocation {
   label: string
 }
 
+/**
+ * An open archive shown in a panel (Stage C07, ADR-0030): read-only, its
+ * folders listed from Go's listing. The panel's folder stays the one holding
+ * the archive; ".." at the archive's root returns there.
+ */
+export interface ArchiveLocation {
+  archiveId: number
+  /** The archive file's entry in the folder (the cursor lands on it when leaving). */
+  entryId: number
+  name: string
+  format: ArchiveFormat
+  /** The folders entered inside the archive, outermost first. */
+  dirs: { id: number; name: string }[]
+  /** Entries with unsafe names that are not listed (zip-slip). */
+  rejected: number
+}
+
 export interface PanelState {
   /** The open folder; null before the first listing. */
   dirId: number | null
@@ -105,6 +123,8 @@ export interface PanelState {
    */
   branch: boolean
   find: FindLocation | null
+  /** Stage C07: inside an archive. */
+  archive: ArchiveLocation | null
   /** The quick filter (Ctrl+S): a name mask on the files; "" = none. Cleared by a folder change. */
   filter: string
 }
@@ -134,6 +154,7 @@ const emptyPanel = (): PanelState => ({
   historyIndex: -1,
   branch: false,
   find: null,
+  archive: null,
   filter: "",
 })
 
@@ -172,10 +193,10 @@ bindExpired()
 
 /**
  * 1 when row 0 is the synthetic "..": the folder has a parent, or the panel
- * shows a branch view or search results (".." goes back to the folder).
+ * shows a branch view, search results or an archive (".." goes back).
  */
 export const parentRows = (p: PanelState): number =>
-  p.crumbs.length > 1 || p.branch || p.find !== null ? 1 : 0
+  p.crumbs.length > 1 || p.branch || p.find !== null || p.archive !== null ? 1 : 0
 
 /** A branch view or search results: rows come from many folders. */
 export const spansFolders = (p: PanelState): boolean => p.branch || p.find !== null
@@ -196,7 +217,10 @@ const seqs: Record<Side, number> = { left: 0, right: 0 }
 /** The navigation that failed last, for Retry on the error state. */
 const failed: Record<Side, (() => Promise<void>) | null> = { left: null, right: null }
 
-type DescriptorState = Pick<PanelState, "sort" | "showHidden" | "branch" | "find" | "filter">
+type DescriptorState = Pick<
+  PanelState,
+  "sort" | "showHidden" | "branch" | "find" | "filter" | "archive"
+>
 
 function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
   return {
@@ -213,6 +237,10 @@ function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
     showHidden: p.showHidden,
     ...(p.filter !== "" && { nameMask: p.filter }),
     ...(p.find && { findId: p.find.findId }),
+    ...(p.archive && {
+      archiveId: p.archive.archiveId,
+      archiveDirId: p.archive.dirs.at(-1)?.id ?? 0,
+    }),
   }
 }
 
@@ -268,7 +296,7 @@ async function navigate(
     // The quick filter stays while the panel shows the same folder.
     const filter = getPanel(side).dirId === dir.dirId ? getPanel(side).filter : ""
     const snapshot = await bridge.openQuery(
-      descriptor(dir.dirId, { ...getPanel(side), branch, find: null, filter }),
+      descriptor(dir.dirId, { ...getPanel(side), branch, find: null, archive: null, filter }),
     )
     if (seq !== seqs[side]) {
       void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
@@ -316,6 +344,7 @@ async function navigate(
       revealToken: p.revealToken + 1,
       branch,
       find: null,
+      archive: null,
       filter,
       ...recordHistory(p, dir.path, options.historyIndex),
     })
@@ -365,6 +394,11 @@ export const goToEntry = (side: Side, entryId: number): Promise<void> =>
  */
 export function goUp(side: Side): Promise<void> {
   const p = getPanel(side)
+  if (p.archive) {
+    const left = p.archive.dirs.at(-1)
+    if (!left) return openPath(side, p.path, { focusId: p.archive.entryId })
+    return showArchive(side, { ...p.archive, dirs: p.archive.dirs.slice(0, -1) }, left.id)
+  }
   if (p.dirId !== null && spansFolders(p)) return openPath(side, p.path)
   const parent = p.crumbs.at(-2)
   if (!parent || p.dirId === null) return Promise.resolve()
@@ -374,7 +408,7 @@ export function goUp(side: Side): Promise<void> {
 /** Ctrl+B: the folder's subtree as one flat list of files, or back to the folder. */
 export function toggleBranch(side: Side): Promise<void> {
   const p = getPanel(side)
-  if (p.dirId === null || p.find) return Promise.resolve()
+  if (p.dirId === null || p.find || p.archive) return Promise.resolve()
   return openPath(side, p.path, { branch: !p.branch, focusId: cursorEntryId(side) })
 }
 
@@ -396,7 +430,7 @@ export async function showFindResults(side: Side, find: FindLocation): Promise<v
   if (p.dirId === null) return
   const seq = ++seqs[side]
   const snapshot = await bridge.openQuery(
-    descriptor(p.dirId, { ...p, branch: false, find, filter: "" }),
+    descriptor(p.dirId, { ...p, branch: false, find, archive: null, filter: "" }),
   )
   if (seq !== seqs[side]) {
     void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
@@ -413,6 +447,7 @@ export async function showFindResults(side: Side, find: FindLocation): Promise<v
     query: snapshot,
     branch: false,
     find,
+    archive: null,
     filter: "",
     error: null,
     loading: false,
@@ -422,6 +457,123 @@ export async function showFindResults(side: Side, find: FindLocation): Promise<v
     revealToken: getPanel(side).revealToken + 1,
   })
   if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
+}
+
+// Archives (Stage C07, ADR-0030) ------------------------------------------------
+
+/** Archive file names the commander tries to open (Go decides; 7-Zip formats need the tool). */
+const ARCHIVE_NAME =
+  /\.(zip|tar|tgz|tbz2?|gz|7z|rar|xz|txz|lzma|bz2|cab|iso|arj|lzh|lha|wim|zst|tzst|cpio|rpm|deb)$/i
+
+export const isArchiveName = (name: string): boolean => ARCHIVE_NAME.test(name)
+
+/** "D:\\Photos\\set.zip\\docs\\2026" for the path bar (the folder's own separator). */
+export function archivePath(folder: string, a: ArchiveLocation): string {
+  const sep = folder.includes("\\") ? "\\" : "/"
+  const base = folder.endsWith(sep) ? folder.slice(0, -1) : folder
+  return [base, a.name, ...a.dirs.map((d) => d.name)].join(sep)
+}
+
+/** Why an archive can't be opened, from archive.open's error. */
+export type ArchiveOpenFailure = "notArchive" | "noTool" | "other"
+
+type ArchiveFailureHandler = (
+  side: Side,
+  item: ContentItem,
+  why: ArchiveOpenFailure,
+  message: string,
+) => void
+let archiveFailure: ArchiveFailureHandler | null = null
+
+/** open.ts: what happens when an archive can't be entered (open it with its app, say why). */
+export function setArchiveFailureHandler(handler: ArchiveFailureHandler | null): void {
+  archiveFailure = handler
+}
+
+/**
+ * Enter (or Ctrl+PgDn) on an archive: Go lists it once, then its root opens
+ * in the panel like a folder. Leaving goes back with the cursor on the file.
+ */
+export async function enterArchive(side: Side, item: ContentItem): Promise<void> {
+  const p = getPanel(side)
+  if (p.dirId === null) return
+  const seq = ++seqs[side]
+  patch(side, { loading: true })
+  try {
+    const opened = await bridge.openArchive(item.id)
+    if (seq !== seqs[side]) {
+      void bridge.closeArchive(opened.archiveId).catch(() => undefined)
+      return
+    }
+    await showArchive(side, {
+      archiveId: opened.archiveId,
+      entryId: item.id,
+      name: item.name,
+      format: opened.format,
+      dirs: [],
+      rejected: opened.rejected,
+    })
+  } catch (error) {
+    if (seq !== seqs[side]) return
+    patch(side, { loading: false })
+    const reason =
+      error instanceof FastViewError
+        ? (error.details as { reason?: string } | undefined)?.reason
+        : undefined
+    const why: ArchiveOpenFailure =
+      reason === "notArchive" ? "notArchive" : reason === "noTool" ? "noTool" : "other"
+    archiveFailure?.(side, item, why, error instanceof Error ? error.message : String(error))
+  }
+}
+
+/**
+ * Shows a folder of an open archive (a new session over Go's listing);
+ * focusId puts the cursor on an entry (the folder just left).
+ */
+async function showArchive(side: Side, archive: ArchiveLocation, focusId?: number): Promise<void> {
+  const p = getPanel(side)
+  if (p.dirId === null) return
+  const seq = ++seqs[side]
+  try {
+    const snapshot = await bridge.openQuery(
+      descriptor(p.dirId, { ...p, branch: false, find: null, archive, filter: "" }),
+    )
+    let cursor = 0
+    if (focusId !== undefined) {
+      const at = await bridge.indexOf(snapshot.queryId, focusId).catch(() => null)
+      if (at && at.index >= 0) cursor = at.index + 1
+    }
+    if (seq !== seqs[side]) {
+      void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
+      return
+    }
+    const previous = getPanel(side).query
+    if (previous && previous.queryId !== snapshot.queryId && !isParked(previous.queryId)) {
+      void bridge.closeQuery(previous.queryId).catch(() => undefined)
+    }
+    stores[side].reset(snapshot)
+    sessionChanged(side, { kind: "reset" })
+    pendingFocus[side] = null
+    patch(side, {
+      query: snapshot,
+      branch: false,
+      find: null,
+      archive,
+      filter: "",
+      error: null,
+      loading: false,
+      scanId: 0,
+      progress: null,
+      cursor,
+      revealToken: getPanel(side).revealToken + 1,
+    })
+    if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
+  } catch (error) {
+    if (seq !== seqs[side]) return
+    // The archive was closed (a sidecar restart): the folder again.
+    if (isExpired(error)) void openPath(side, p.path, { focusId: archive.entryId })
+    else patch(side, { error: toPanelError(error), loading: false })
+  }
 }
 
 /** Alt+← / Alt+→: the panel's previous or next folder. */
@@ -450,6 +602,10 @@ export function goRoot(side: Side): Promise<void> {
  */
 export function openIn(target: Side, from: Side): Promise<void> {
   const p = getPanel(from)
+  // Inside an archive: the folder holding it.
+  if (p.archive && p.dirId !== null) {
+    return target === from ? Promise.resolve() : openFolderEntry(target, p.dirId)
+  }
   if (p.dirId === null) return Promise.resolve()
   const index = p.cursor - parentRows(p)
   if (index < 0) {
@@ -494,9 +650,25 @@ export function enter(side: Side): Promise<void> {
   const index = p.cursor - parentRows(p)
   if (index < 0) return goUp(side)
   const item = stores[side].getItem(index)
+  if (item?.kind === "dir" && p.archive) {
+    return showArchive(side, {
+      ...p.archive,
+      dirs: [...p.archive.dirs, { id: item.id, name: item.name }],
+    })
+  }
   if (item?.kind === "dir") return openFolderEntry(side, item.id)
+  if (item && !p.archive && isArchiveName(item.name)) return enterArchive(side, item)
   if (item && fileOpener) return fileOpener(side, item)
   return Promise.resolve()
+}
+
+/** Ctrl+PgDn: enters the archive under the cursor (Enter does too). */
+export function enterArchiveAtCursor(side: Side): Promise<void> {
+  const p = getPanel(side)
+  const index = p.cursor - parentRows(p)
+  const item = index >= 0 ? stores[side].getItem(index) : undefined
+  if (!item || item.kind === "dir" || p.archive) return Promise.resolve()
+  return enterArchive(side, item)
 }
 
 /** Ctrl+R: re-list the folder; the session stays, so the cursor and scroll stay too. */
@@ -504,8 +676,8 @@ export async function refresh(side: Side): Promise<void> {
   const p = getPanel(side)
   if (!p.path) return
   if (p.error || !p.query) return openPath(side, p.path, { branch: p.branch })
-  // Search results follow file changes on their own.
-  if (p.find) return
+  // Search results follow file changes on their own; an archive is read once.
+  if (p.find || p.archive) return
   try {
     const dir = await bridge.openDir(p.path, side, p.branch)
     if (getPanel(side).dirId !== dir.dirId) return
@@ -550,8 +722,9 @@ async function reopenQuery(side: Side): Promise<void> {
     })
   } catch (error) {
     if (seq !== seqs[side]) return
-    // The results of a search that was forgotten: the folder again.
-    if (p.find && isExpired(error)) void openPath(side, p.path)
+    // The results of a search that was forgotten, or a closed archive: the folder again.
+    if ((p.find || p.archive) && isExpired(error))
+      void openPath(side, p.path, p.archive ? { focusId: p.archive.entryId } : undefined)
     else patch(side, { error: toPanelError(error) })
   }
 }
@@ -571,6 +744,7 @@ interface ParkedSession {
   query: QuerySnapshot
   branch: boolean
   find: FindLocation | null
+  archive: ArchiveLocation | null
   filter: string
   timer: ReturnType<typeof setTimeout>
 }
@@ -607,6 +781,7 @@ export function parkSession(side: Side, tabId: number): void {
     query: p.query,
     branch: p.branch,
     find: p.find,
+    archive: p.archive,
     filter: p.filter,
     timer: setTimeout(() => dropParked(tabId), TAB_GRACE_MS),
   })
@@ -648,6 +823,7 @@ export function adoptSession(side: Side, tabId: number, focusId: number | null):
     query: s.query,
     branch: s.branch,
     find: s.find,
+    archive: s.archive,
     filter: s.filter,
     cursor: 0,
     revealToken: p.revealToken + 1,

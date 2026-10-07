@@ -15,7 +15,7 @@ import (
 // newContextService opens an index service with library.db in configDir.
 func newContextService(t *testing.T, configDir string) *indexService {
 	t.Helper()
-	svc, err := newIndexService(t.TempDir(), 1<<20, slog.New(slog.DiscardHandler), func(string, any) error { return nil }, nil)
+	svc, err := newIndexService(t.TempDir(), 1<<20, slog.New(slog.DiscardHandler), func(string, any) error { return nil }, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

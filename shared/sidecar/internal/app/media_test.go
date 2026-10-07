@@ -33,7 +33,7 @@ func TestMediaResolveVideo(t *testing.T) {
 		t.Fatal(err)
 	}
 	log := slog.New(slog.DiscardHandler)
-	svc, err := newIndexService(t.TempDir(), 1<<30, log, func(string, any) error { return nil }, tools)
+	svc, err := newIndexService(t.TempDir(), 1<<30, log, func(string, any) error { return nil }, tools, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

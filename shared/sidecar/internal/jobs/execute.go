@@ -41,6 +41,8 @@ func validate(s Spec) error {
 		if len(s.Mask) > index.MaxMaskLen {
 			return fmt.Errorf("%w: the mask is too long", ErrInvalid)
 		}
+	case KindExtract, KindPack, KindTestArchive:
+		return validateArchive(s)
 	case KindTrash, KindDelete, KindFavorite, KindDirSize:
 	case KindRename:
 		if _, err := ParsePattern(s.Pattern); err != nil {
@@ -136,6 +138,12 @@ func (m *Manager) execute(j *job) (State, string) {
 		msg, err = m.annotate(j, a)
 	case KindDirSize:
 		err = m.dirSizes(j)
+	case KindExtract:
+		msg, err = m.extract(j, a)
+	case KindPack:
+		msg, err = m.pack(j, a)
+	case KindTestArchive:
+		err = m.testArchives(j)
 	}
 	a.flush()
 	switch {

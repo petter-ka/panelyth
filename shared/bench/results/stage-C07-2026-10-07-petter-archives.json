@@ -1,0 +1,75 @@
+{
+  "stage": "C07",
+  "at": "2026-10-07T20:45:51+02:00",
+  "numCpu": 32,
+  "osTool": "C:\\WINDOWS\\System32\\tar.exe",
+  "zipEntries": 100000,
+  "list100kZip": [
+    {
+      "elapsedMs": 53.375,
+      "bytesPerEntry": 75.55724275724276
+    },
+    {
+      "elapsedMs": 40.086,
+      "bytesPerEntry": 75.50913086913087
+    },
+    {
+      "elapsedMs": 40.264,
+      "bytesPerEntry": 75.45950049950049
+    }
+  ],
+  "listTgzMs": [
+    2391.625,
+    2355.426,
+    2361.233
+  ],
+  "tgzContentBytes": 1073741824,
+  "extractTgz": {
+    "oursMs": [
+      2803.804,
+      2795.839,
+      2833.906
+    ],
+    "osToolMs": [
+      1684.509,
+      1655.74,
+      1655.436
+    ],
+    "oursMBPerSec": 366.25857211377337,
+    "osToolMBPerSec": 618.5681596872365,
+    "ratio": 0.5921070562360709
+  },
+  "packFiles": 10000,
+  "pack": {
+    "tgz": {
+      "oursMs": [
+        300.274,
+        297.922,
+        300.072
+      ],
+      "osToolMs": [
+        446.558,
+        439.08,
+        447.824
+      ],
+      "oursMBPerSec": 131.11653385785542,
+      "osToolMBPerSec": 88.96442561719961,
+      "ratio": 1.473808580769463
+    },
+    "zip": {
+      "oursMs": [
+        5576.601,
+        1771.258,
+        1657.996
+      ],
+      "osToolMs": [
+        791.876,
+        808.158,
+        803.999
+      ],
+      "oursMBPerSec": 23.56006890245815,
+      "osToolMBPerSec": 49.32906162075881,
+      "ratio": 0.4776103199283954
+    }
+  }
+}

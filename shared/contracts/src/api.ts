@@ -1,6 +1,10 @@
 import type { RpcEnvelope } from "./errors"
 import type { EventChannel, EventMap } from "./events"
 import type {
+  ArchiveCheckResult,
+  ArchiveCloseResult,
+  ArchiveOpenResult,
+  ArchiveToolsResult,
   ClipMode,
   ClipState,
   ConflictDecision,
@@ -232,6 +236,16 @@ export interface CommanderApi {
   find: {
     start(params: FindStartParams): Promise<RpcEnvelope<FindStartResult>>
     cancel(findId: number): Promise<RpcEnvelope<FindCancelResult>>
+  }
+  /** Archives as folders (Stage C07, ADR-0030); pack, unpack and test are `files.start` jobs. */
+  archive: {
+    open(entryId: number): Promise<RpcEnvelope<ArchiveOpenResult>>
+    close(archiveId: number): Promise<RpcEnvelope<ArchiveCloseResult>>
+    check(
+      selection: SelectionDescriptor,
+      destinationDirId: number,
+    ): Promise<RpcEnvelope<ArchiveCheckResult>>
+    tools(): Promise<RpcEnvelope<ArchiveToolsResult>>
   }
   query: {
     open(descriptor: QueryDescriptor): Promise<RpcEnvelope<QuerySnapshot>>

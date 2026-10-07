@@ -1,8 +1,16 @@
 import type { ContentItem } from "@fastview/contracts"
 import { create } from "zustand"
 import { bridge, FastViewError } from "../bridge"
-import { notice } from "./files"
-import { focusEntry, pageStoreOf, parentRows, setFileOpener, useListingStore } from "./listing"
+import { notice, READ_ONLY } from "./files"
+import {
+  focusEntry,
+  pageStoreOf,
+  parentRows,
+  setArchiveFailureHandler,
+  setFileOpener,
+  useListingStore,
+  type ArchiveOpenFailure,
+} from "./listing"
 import type { Side } from "./panels"
 import { useSettingsStore } from "./settings"
 
@@ -73,6 +81,10 @@ export const cancelProgram = (): void => set({ program: null })
 export async function editCursor(side: Side): Promise<void> {
   const item = cursorItem(side)
   if (!item || item.kind === "dir") return
+  if (useListingStore.getState()[side].archive) {
+    notice("Files inside an archive can't be edited. Copy them out with F5 first.")
+    return
+  }
   try {
     await bridge.shellEdit(item.id)
   } catch (error) {
@@ -82,7 +94,23 @@ export async function editCursor(side: Side): Promise<void> {
 
 /** Shift+F4. */
 export function openNewFile(side: Side): void {
-  if (useListingStore.getState()[side].dirId !== null) set({ newFile: { side, error: null } })
+  const p = useListingStore.getState()[side]
+  if (p.archive) notice(READ_ONLY)
+  else if (p.dirId !== null) set({ newFile: { side, error: null } })
+}
+
+/**
+ * An archive that can't be entered: one this build does not read opens with
+ * its default app; without 7-Zip that also happens, with the reason shown;
+ * a damaged or protected archive only says why.
+ */
+export function archiveFailed(item: ContentItem, why: ArchiveOpenFailure, message: string): void {
+  if (why === "other") {
+    notice(`${item.name} can't be opened: ${message}`)
+    return
+  }
+  if (why === "noTool") notice(`7-Zip isn't installed, so ${item.name} opens with its default app.`)
+  void openWithApp(item)
 }
 
 export const closeNewFile = (): void => set({ newFile: null })
@@ -109,7 +137,11 @@ export async function createTextFile(name: string): Promise<boolean> {
 /** Enter on a file goes through openWithApp (listing.enter keeps folders). */
 export function startOpen(): () => void {
   setFileOpener((_side, item) => openWithApp(item))
-  return () => setFileOpener(null)
+  setArchiveFailureHandler((_side, item, why, message) => archiveFailed(item, why, message))
+  return () => {
+    setFileOpener(null)
+    setArchiveFailureHandler(null)
+  }
 }
 
 /** Tests. */

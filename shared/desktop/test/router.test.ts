@@ -243,6 +243,112 @@ describe("invoke router", () => {
     })
   })
 
+  it("checks archive methods and jobs (Stage C07)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const sel = { queryId: 2, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    const descriptor = {
+      dirId: 1,
+      recursive: false,
+      sort: [],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+      scope: "all",
+      archiveId: 3,
+      archiveDirId: 0,
+    }
+    for (const [m, p] of [
+      ["archive.open", { entryId: 9 }],
+      ["archive.close", { archiveId: 3 }],
+      ["archive.check", { selection: sel, destinationDirId: 4 }],
+      ["archive.tools", {}],
+      ["query.open", descriptor],
+      [
+        "jobs.start",
+        {
+          kind: "extract",
+          source: { selection: sel },
+          destinationDirId: 4,
+          conflict: "ask",
+          subfolders: true,
+        },
+      ],
+      [
+        "jobs.start",
+        {
+          kind: "pack",
+          source: { selection: sel },
+          destinationDirId: 4,
+          conflict: "ask",
+          name: "out.zip",
+          format: "zip",
+          level: 6,
+          deleteOriginals: false,
+        },
+      ],
+      ["jobs.start", { kind: "testArchive", source: { selection: sel } }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
+      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+    }
+    const pack = {
+      kind: "pack",
+      source: { selection: sel },
+      destinationDirId: 4,
+      conflict: "ask",
+      name: "out.zip",
+      format: "zip",
+      level: 6,
+    }
+    for (const [m, p] of [
+      ["archive.open", { entryId: 0 }],
+      ["archive.close", {}],
+      ["archive.check", { selection: sel }],
+      ["query.open", { ...descriptor, recursive: true }],
+      ["query.open", { ...descriptor, archiveId: undefined }],
+      ["query.open", { ...descriptor, findId: 2 }],
+      ["jobs.start", { ...pack, format: "rar" }],
+      ["jobs.start", { ...pack, level: 10 }],
+      ["jobs.start", { ...pack, name: "" }],
+      ["jobs.start", { ...pack, destination: "/tmp" }],
+      [
+        "jobs.start",
+        { kind: "extract", source: { selection: sel }, destinationDirId: 4, conflict: "nope" },
+      ],
+      [
+        "jobs.start",
+        {
+          kind: "extract",
+          source: { selection: sel },
+          destinationDirId: 4,
+          conflict: "ask",
+          links: 1,
+        },
+      ],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer has no archives.
+    for (const m of ["archive.open", "archive.close", "archive.check", "archive.tools"]) {
+      const res = await handler(ok, m, { entryId: 1 })
+      expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    }
+    expect(
+      await handler(ok, "jobs.start", { kind: "testArchive", source: { selection: sel } }),
+    ).toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    expect(
+      await handler(ok, "query.open", { ...descriptor, scope: undefined, archiveDirId: undefined }),
+    ).toMatchObject({ ok: false })
+  })
+
   it("lets the commander list folders in the all scope (Stage C01)", async () => {
     const { handler, sidecar, commander } = setup()
     const descriptor = {

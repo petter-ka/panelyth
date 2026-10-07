@@ -1,5 +1,7 @@
 import type {
   AppId,
+  ArchiveCheckResult,
+  ArchiveOpenResult,
   Bookmark,
   ClipMode,
   ClipState,
@@ -118,6 +120,18 @@ export const bridge = {
     unwrap(() => api().find.start(spec)),
   findCancel: async (findId: number): Promise<boolean> =>
     (await unwrap(() => api().find.cancel(findId))).cancelled,
+  // Stage C07: archives as folders.
+  openArchive: (entryId: number): Promise<ArchiveOpenResult> =>
+    unwrap(() => api().archive.open(entryId)),
+  closeArchive: async (archiveId: number): Promise<void> => {
+    await unwrap(() => api().archive.close(archiveId))
+  },
+  checkArchive: (
+    selection: SelectionDescriptor,
+    destinationDirId: number,
+  ): Promise<ArchiveCheckResult> => unwrap(() => api().archive.check(selection, destinationDirId)),
+  /** Whether 7-Zip was found (7z, rar and others; creating 7z). */
+  sevenZip: async (): Promise<boolean> => (await unwrap(() => api().archive.tools())).sevenZip,
   cancelScan: async (scanId: number): Promise<void> => {
     await unwrap(() => api().dir.cancelScan(scanId))
   },

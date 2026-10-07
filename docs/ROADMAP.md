@@ -27,8 +27,8 @@ Only one stage is active at a time. Default order:
 | 8 | P03 — File-operation engine v2 | platform | implementation done (2026-10-06): queue, conflicts, throughput (the viewer gains speed too) |
 | 9 | C04 — File operations | commander | implementation done (2026-10-06): F5 / F6 / F7 / F8 |
 | 10 | C05 — Quick view, lister, open and edit | commander | implementation done (2026-10-06): shared media components |
-| 11 | C06 — Find files, branch view, quick filter | commander | active (implementation done 2026-10-07): session sources (ADR-0017) |
-| 12 | C07 — Archives | commander | |
+| 11 | C06 — Find files, branch view, quick filter | commander | implementation done (2026-10-07): session sources (ADR-0017) |
+| 12 | C07 — Archives | commander | active (implementation done 2026-10-07): ADR-0030 accepted; archives as session sources |
 | 13 | C08 — Compare, synchronize, checksums | commander | |
 | 14 | C09 — Multi-rename, attributes, properties | commander | |
 | 15 | C10 — Command line, tools, customization | commander | the most sensitive feature last |
@@ -156,11 +156,11 @@ F5 copy, F6 move, rename, new folder, trash and permanent delete, queue panel, c
 
 Quick view, F3 lister (text, hex, images, video), F4 editor, opening files with confirmation for programs.
 
-### C06 — Find files, branch view and quick filter (active; implementation done 2026-10-07)
+### C06 — Find files, branch view and quick filter (implementation done 2026-10-07)
 
 Find by name, content, size, date and attributes; feed to panel; flat subtree listing; quick filter.
 
-### C07 — Archives
+### C07 — Archives (active; implementation done 2026-10-07)
 
 zip and tar(.gz) as folders; pack, unpack, test; optional 7-Zip.
 

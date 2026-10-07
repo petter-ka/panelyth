@@ -1,0 +1,38 @@
+{
+  "id": 95,
+  "ok": true,
+  "r": {
+    "items": [
+      {
+        "dirSizeBytes": 1,
+        "ext": "",
+        "favorite": false,
+        "id": 1125899908939778,
+        "kind": "dir",
+        "label": 0,
+        "modifiedMs": 0,
+        "name": "docs",
+        "rating": 0,
+        "sizeBytes": 0,
+        "thumb": null
+      },
+      {
+        "ext": "txt",
+        "favorite": false,
+        "id": 1125899908939777,
+        "kind": "file",
+        "label": 0,
+        "modifiedMs": 1714979290000,
+        "name": "b.txt",
+        "rating": 0,
+        "sizeBytes": 2,
+        "thumb": null
+      }
+    ],
+    "offset": 0,
+    "queryId": 11,
+    "total": 2,
+    "version": 1
+  },
+  "t": "res"
+}

@@ -443,6 +443,40 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-query.page-find.json"] = foundPage
 	firstFound := foundPage.(map[string]any)["r"].(map[string]any)["items"].([]any)[0].(map[string]any)["id"]
 	golden["res-dir.openContaining.json"] = call(87, byID(87, "dir.openContaining", map[string]any{"entryId": firstFound, "lane": "left"}))
+	// Stage C07: an archive opened like a folder, its entries paged from the
+	// listing, an extraction checked, and the archive closed.
+	archDir := filepath.Join(t.TempDir(), "archives")
+	_ = os.MkdirAll(archDir, 0o755)
+	writeTestZip(t, filepath.Join(archDir, "set.zip"), map[string]string{"docs/a.txt": "a", "b.txt": "bb"})
+	aDir := call(90, byID(90, "dir.open", map[string]any{"path": archDir, "recursive": false})).(map[string]any)["r"].(map[string]any)
+	for done := false; !done; {
+		for _, e := range events {
+			p, _ := e["p"].(map[string]any)
+			if e["ch"] == "index.progress" && p["state"] == "completed" && p["dirId"] == aDir["dirId"] {
+				done = true
+			}
+		}
+		if !done {
+			events = append(events, read().(map[string]any))
+		}
+	}
+	aq := call(91, byID(91, "query.open", map[string]any{"dirId": aDir["dirId"], "recursive": false, "sort": []any{}, "kinds": []any{}, "scope": "all"})).(map[string]any)["r"].(map[string]any)
+	zipID := call(92, byID(92, "query.page", map[string]any{"queryId": aq["queryId"], "offset": 0, "limit": 1})).(map[string]any)["r"].(map[string]any)["items"].([]any)[0].(map[string]any)["id"]
+	golden["res-archive.open.json"] = call(93, byID(93, "archive.open", map[string]any{"entryId": zipID}))
+	archiveID := golden["res-archive.open.json"].(map[string]any)["r"].(map[string]any)["archiveId"]
+	golden["res-query.open-archive.json"] = call(94, byID(94, "query.open", map[string]any{"dirId": aDir["dirId"], "recursive": false,
+		"sort": []any{map[string]any{"field": "name", "direction": "asc"}}, "kinds": []any{}, "search": "", "exts": []any{}, "favorite": false,
+		"minRating": 0, "tags": []any{}, "scope": "all", "archiveId": archiveID, "archiveDirId": 0}))
+	archQuery := golden["res-query.open-archive.json"].(map[string]any)["r"].(map[string]any)
+	golden["res-query.page-archive.json"] = call(95, byID(95, "query.page", map[string]any{"queryId": archQuery["queryId"], "offset": 0, "limit": 10}))
+	archSel := map[string]any{"queryId": archQuery["queryId"], "version": archQuery["version"], "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
+	check := call(96, byID(96, "archive.check", map[string]any{"selection": archSel, "destinationDirId": aDir["dirId"]}))
+	check.(map[string]any)["r"].(map[string]any)["freeBytes"] = float64(1 << 30)
+	golden["res-archive.check.json"] = check
+	golden["res-archive.tools.json"] = call(97, `{"t":"req","id":97,"m":"archive.tools","p":{}}`)
+	golden["res-archive.tools.json"].(map[string]any)["r"].(map[string]any)["sevenZip"] = false
+	golden["res-archive.close.json"] = call(98, byID(98, "archive.close", map[string]any{"archiveId": archiveID}))
+	golden["res-archive.open-notarchive.json"] = call(99, byID(99, "archive.open", map[string]any{"entryId": firstImage}))
 	// Stage C01: the shared context and query.indexOf.
 	imgSel := map[string]any{"queryId": qid, "version": 1, "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
 	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage, "selection": imgSel}))

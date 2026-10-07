@@ -260,6 +260,35 @@ export const ACTIONS = [
     label: "Find files",
     defaults: ["Alt+F7"],
   },
+  // Stage C07: archives.
+  {
+    id: "archive.enter",
+    scope: "panels",
+    group: "Archives",
+    label: "Open the archive under the cursor",
+    defaults: ["Mod+PageDown"],
+  },
+  {
+    id: "archive.pack",
+    scope: "panels",
+    group: "Archives",
+    label: "Pack",
+    defaults: ["Alt+F5"],
+  },
+  {
+    id: "archive.unpack",
+    scope: "panels",
+    group: "Archives",
+    label: "Unpack",
+    defaults: ["Alt+F9"],
+  },
+  {
+    id: "archive.test",
+    scope: "panels",
+    group: "Archives",
+    label: "Test archives",
+    defaults: ["Alt+Shift+F9"],
+  },
   {
     id: "view.branch",
     scope: "panels",

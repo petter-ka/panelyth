@@ -7,7 +7,9 @@ import (
 	"os"
 	"path/filepath"
 
+	"fastview/sidecar/internal/archive"
 	"fastview/sidecar/internal/imaging"
+	"fastview/sidecar/internal/index"
 	"fastview/sidecar/internal/media"
 	"fastview/sidecar/internal/rpc"
 	"fastview/sidecar/internal/video"
@@ -71,6 +73,9 @@ func (s *indexService) registerMedia(srv *rpc.Server) {
 // (any kind; a link counts when its target is a file) and returns what main
 // needs to serve it read-only. Folders are refused.
 func (s *indexService) fileResolve(ctx context.Context, p mediaResolveParams) (fileResolveResult, error) {
+	if archive.IsID(p.EntryID) {
+		return s.archiveFileResolve(ctx, p.EntryID)
+	}
 	paths, err := s.store.EntryPaths(ctx, []int64{p.EntryID})
 	if err != nil {
 		return fileResolveResult{}, dbError(err)
@@ -101,13 +106,28 @@ func (s *indexService) fileResolve(ctx context.Context, p mediaResolveParams) (f
 // mediaResolve validates that the entry is an indexed image or video that
 // still exists, and returns what Electron main needs to serve it.
 func (s *indexService) mediaResolve(ctx context.Context, reg *imaging.Registry, p mediaResolveParams) (mediaResolveResult, error) {
-	srcs, err := s.store.Sources(ctx, []int64{p.EntryID})
-	if err != nil {
-		return mediaResolveResult{}, dbError(err)
-	}
-	src, ok := srcs[p.EntryID]
-	if !ok {
-		return mediaResolveResult{}, rpc.NewError(rpc.CodeNotFound, "not an indexed image or video")
+	var src index.Source
+	if archive.IsID(p.EntryID) {
+		// An image or video inside an archive: its temporary extraction.
+		f, err := s.archiveFileResolve(ctx, p.EntryID)
+		if err != nil {
+			return mediaResolveResult{}, err
+		}
+		kind, ok := media.ParseKind(f.Kind)
+		if !ok || !kind.IsMedia() {
+			return mediaResolveResult{}, rpc.NewError(rpc.CodeNotFound, "not an image or video")
+		}
+		src = index.Source{Path: f.Path, Kind: kind, Ext: media.Ext(f.Path)}
+	} else {
+		srcs, err := s.store.Sources(ctx, []int64{p.EntryID})
+		if err != nil {
+			return mediaResolveResult{}, dbError(err)
+		}
+		found, ok := srcs[p.EntryID]
+		if !ok {
+			return mediaResolveResult{}, rpc.NewError(rpc.CodeNotFound, "not an indexed image or video")
+		}
+		src = found
 	}
 	fi, err := os.Stat(src.Path)
 	switch {

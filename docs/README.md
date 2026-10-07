@@ -143,7 +143,7 @@ Claude Code should read these files in this order:
 | 0027 | App capability profiles: allowlists, shell actions, launching | shared | Allowlists accepted (P01), launching accepted (C05, 2026-10-06); the command line is decided in C10 |
 | 0028 | Commander panels: dual-panel layout, TanStack Table (table view) and virtualized lists | commander | Accepted (Stage C01) |
 | 0029 | File-operation engine v2 | shared | Accepted (Stage P03, 2026-10-06) |
-| 0030 | Archives as folders | commander | Proposed (Stage C07) |
+| 0030 | Archives as folders | commander | Accepted (Stage C07) |
 | 0031 | One shell for both apps: app switching and shared state | shared | Accepted |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.

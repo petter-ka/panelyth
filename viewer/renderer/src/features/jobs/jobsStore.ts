@@ -124,6 +124,10 @@ const KIND_LABEL: Record<JobKind, string> = {
   label: "Labeling",
   tag: "Tagging",
   dirSize: "Calculating folder sizes",
+  // The commander's archive jobs (Stage C07), shown when they reach this queue.
+  extract: "Extracting",
+  pack: "Packing",
+  testArchive: "Testing",
 }
 
 export function jobLabel(s: JobsState, job: JobSnapshot): string {

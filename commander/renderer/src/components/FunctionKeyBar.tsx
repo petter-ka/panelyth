@@ -31,6 +31,7 @@ export function FunctionKeyBar() {
           <button
             type="button"
             tabIndex={-1}
+            aria-label={`${key} ${label}`}
             onClick={() => runPanelAction(usePanelsStore.getState().active, action)}
             className="group flex min-w-0 flex-1 items-center justify-center gap-1.5 border-r border-border px-1.5 text-text hover:bg-raised focus-visible:z-10 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent"
           >

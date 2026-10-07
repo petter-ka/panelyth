@@ -3,6 +3,7 @@
 import { ERROR_CODES, type RpcErrorShape } from "./errors"
 import type { EventMap, FindProgress, IndexProgress } from "./events"
 import {
+  ARCHIVE_FORMATS,
   ENTRY_KINDS,
   JOB_KINDS,
   JOB_STATES,
@@ -49,6 +50,11 @@ import {
   type Thumb,
   type CancelScanResult,
   type FindCancelResult,
+  type ArchiveCheckResult,
+  type ArchiveCloseResult,
+  type ArchiveOpenResult,
+  type ArchiveToolsResult,
+  type ArchiveWarning,
   type FindStartResult,
   type ContentItem,
   type DirOpenResult,
@@ -77,6 +83,7 @@ const isStr = (v: unknown): v is string => typeof v === "string"
 const isBool = (v: unknown): v is boolean => typeof v === "boolean"
 const errorCodes: ReadonlySet<string> = new Set(ERROR_CODES)
 const entryKinds: ReadonlySet<string> = new Set(ENTRY_KINDS)
+const archiveFormats: ReadonlySet<unknown> = new Set(ARCHIVE_FORMATS)
 const previewProfiles: ReadonlySet<string> = new Set(PREVIEW_PROFILES)
 const scanStates: ReadonlySet<string> = new Set(["running", "completed", "cancelled", "failed"])
 const volumeKinds: ReadonlySet<string> = new Set([
@@ -324,6 +331,25 @@ export const sidecarResultGuards: ResultGuards = {
   "dir.openContaining": (v): v is DirOpenResult => sidecarResultGuards["dir.open"](v),
   "find.start": (v): v is FindStartResult => isRec(v) && isInt(v.findId) && isQuerySnapshot(v),
   "find.cancel": (v): v is FindCancelResult => isRec(v) && isBool(v.cancelled),
+  "archive.open": (v): v is ArchiveOpenResult =>
+    isRec(v) &&
+    isInt(v.archiveId) &&
+    archiveFormats.has(v.format) &&
+    isCount(v.entries) &&
+    isCount(v.rejected) &&
+    isCount(v.bytes) &&
+    isCount(v.packedBytes),
+  "archive.close": (v): v is ArchiveCloseResult => isRec(v) && isBool(v.closed),
+  "archive.check": (v): v is ArchiveCheckResult =>
+    isRec(v) &&
+    isCount(v.files) &&
+    isCount(v.bytes) &&
+    isCount(v.packedBytes) &&
+    isInt(v.freeBytes) &&
+    v.freeBytes >= -1 &&
+    arrayOf(v.warnings, (w): w is ArchiveWarning => w === "space" || w === "ratio") &&
+    isBool(v.partial),
+  "archive.tools": (v): v is ArchiveToolsResult => isRec(v) && isBool(v.sevenZip),
   "query.open": isQuerySnapshot,
   "query.page": (v): v is QueryPageResult =>
     isRec(v) &&

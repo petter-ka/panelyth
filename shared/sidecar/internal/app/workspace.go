@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"fastview/sidecar/internal/archive"
 	"fastview/sidecar/internal/fsx"
 	"fastview/sidecar/internal/index"
 	"fastview/sidecar/internal/library"
@@ -158,6 +159,9 @@ func (s *indexService) registerWorkspace(srv *rpc.Server) {
 		ids, err := s.resolveSelection(p.Selection)
 		if err != nil {
 			return index.Summary{}, err
+		}
+		if archiveOnly(ids) {
+			return s.archiveSummary(ids)
 		}
 		sum, err := s.store.Summarize(ctx, ids)
 		if err != nil {
@@ -330,6 +334,18 @@ func (s *indexService) fsListDirs(ctx context.Context, p fsListDirsParams) (fsLi
 }
 
 func (s *indexService) entryPath(ctx context.Context, p entryParams) (entryPathResult, error) {
+	if archive.IsID(p.EntryID) {
+		// Opened with its program from a temporary extraction (Stage C07).
+		f, err := s.archiveFileResolve(ctx, p.EntryID)
+		if err != nil {
+			return entryPathResult{}, err
+		}
+		fi, err := os.Stat(f.Path)
+		if err != nil {
+			return entryPathResult{}, statError(err, "file")
+		}
+		return entryPathResult{Path: f.Path, Kind: f.Kind, Program: fsx.IsProgram(f.Path, fi)}, nil
+	}
 	paths, err := s.store.EntryPaths(ctx, []int64{p.EntryID})
 	if err != nil {
 		return entryPathResult{}, dbError(err)
@@ -353,6 +369,9 @@ func msPtr(ns int64) *int64 {
 }
 
 func (s *indexService) propsGet(ctx context.Context, p entryParams) (propsResult, error) {
+	if archive.IsID(p.EntryID) {
+		return s.archiveProps(p.EntryID)
+	}
 	d, err := s.store.Entry(ctx, p.EntryID)
 	if errors.Is(err, index.ErrNotFound) {
 		return propsResult{}, rpc.NewError(rpc.CodeNotFound, "not in the index")

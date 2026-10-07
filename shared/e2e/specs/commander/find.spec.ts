@@ -128,7 +128,7 @@ test.describe("find files, branch view, quick filter (Stage C06)", () => {
 
       // Quick filter: folders stay, files match the mask.
       await c.keyboard.press("Control+s")
-      await c.getByLabel("Quick filter").fill("*.jpg")
+      await c.getByRole("textbox", { name: "Quick filter" }).fill("*.jpg")
       await c.keyboard.press("Enter")
       await expect(c.getByTestId("filter-left")).toContainText("*.jpg")
       await expect(grid(c).locator("[data-id]")).toHaveCount(3)

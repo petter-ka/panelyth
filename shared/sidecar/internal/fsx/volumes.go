@@ -140,3 +140,10 @@ func VolumeSignature() (string, error) {
 	}
 	return string(b), nil
 }
+
+// FreeSpace reads the free bytes of the volume holding path, waiting at
+// most NetworkSpaceTimeout (archive extraction checks, Stage C07).
+func FreeSpace(path string) (int64, bool) {
+	r, ok := readSpace(path, NetworkSpaceTimeout)
+	return r.free, ok && r.ok
+}

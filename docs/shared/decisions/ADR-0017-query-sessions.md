@@ -24,6 +24,12 @@ listings) carry each row's `dirPath`. A finished search is forgotten when its la
 searches are kept: beyond that the oldest finished one goes, preferring one without sessions; a panel whose search
 was forgotten shows its folder again.
 
+Amended 2026-10-07 (Stage C07): a source may also supply its **rows** (`query.ItemSource`): archive entries are not
+in `index.db`, so their pages are built from the archive's listing in Go. A source that serves one folder
+(`SingleFolder`) has no `dirPath` on its rows. Archive entry ids come from their own range (from 2^50 up, below
+2^53), so a selection descriptor never mixes them up with index ids; Go resolves them to the open archive's entries
+(ADR-0030).
+
 ## Context
 
 Offset/limit over a table that is still growing during a scan shifts rows under the user. SQLite `OFFSET` is

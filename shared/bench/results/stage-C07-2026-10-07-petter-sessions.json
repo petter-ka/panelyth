@@ -1,0 +1,9 @@
+{
+  "stage": "C07",
+  "what": "viewer session regression gate: go test -bench in internal/query, HEAD (82b78e4) vs C07, count 5, reference machine (32 threads)",
+  "unit": "ns/op (median of 5)",
+  "OpenAndPage10k": { "head": 20328525, "c07": 20252085, "allocsHead": 141285, "allocsC07": 141285 },
+  "IndexOf100k": { "head": 18893, "c07": 18987 },
+  "Locate100k": { "head": 131287, "c07": 131657 },
+  "Positions100k": { "head": 2580593, "c07": 2442940 }
+}

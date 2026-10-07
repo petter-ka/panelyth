@@ -1,4 +1,4 @@
-import type { ConflictPolicy, SelectionDescriptor } from "@fastview/contracts"
+import type { ArchiveWarning, ConflictPolicy, SelectionDescriptor } from "@fastview/contracts"
 import { isMarked } from "@fastview/renderer-core"
 import { create } from "zustand"
 import { bridge, FastViewError } from "../bridge"
@@ -14,7 +14,15 @@ import { useTabsStore } from "./tabs"
 // on the cursor entry when nothing is marked. Jobs run on the engine v2
 // queue (ADR-0029); destinations are folder ids resolved in Go (ADR-0027).
 
-export type CopyKind = "copy" | "move"
+/** "extract": F5 from an archive panel copies its entries out (Stage C07). */
+export type CopyKind = "copy" | "move" | "extract"
+
+/** What every changing command says inside an archive (ADR-0030: read-only). */
+export const READ_ONLY = "Archives are read-only here. Copy files out with F5."
+const INTO_ARCHIVE = "Files can't be copied into an archive. Pack them with Alt+F5."
+
+/** Whether a panel shows an archive (Stage C07). */
+export const inArchive = (side: Side): boolean => useListingStore.getState()[side].archive !== null
 
 /** The conflict policies the copy dialog offers (UX-DESIGN "Dialogs"). */
 export const POLICIES: readonly { value: ConflictPolicy; label: string }[] = [
@@ -43,6 +51,10 @@ export interface CopyDialogState {
   mask: string
   conflict: ConflictPolicy
   verify: boolean
+  /** extract: create links stored in the archive (inside the target only). */
+  links: boolean
+  /** extract: archive.check's warnings ("space", "ratio"), once known. */
+  warnings: ArchiveWarning[]
   error: string | null
 }
 
@@ -163,6 +175,17 @@ export async function openCopy(
   const source = operand(side)
   const dest = target ?? otherPanelTarget(side)
   if (!source || !dest) return
+  if (!target && inArchive(otherSide(side))) {
+    notice(INTO_ARCHIVE)
+    return
+  }
+  if (inArchive(side)) {
+    if (kind === "move") {
+      notice(READ_ONLY)
+      return
+    }
+    kind = "extract"
+  }
   const count = source.ranges.reduce((n, [a, b]) => n + b - a, 0) + source.include.length
   set({
     copy: {
@@ -178,6 +201,8 @@ export async function openCopy(
       mask: "*.*",
       conflict: "ask",
       verify: false,
+      links: true,
+      warnings: [],
       error: null,
     },
   })
@@ -185,6 +210,12 @@ export async function openCopy(
   const now = get().copy
   if (info && now?.source === source)
     set({ copy: { ...now, count: info.count, bytes: info.bytes } })
+  // Copying out of an archive: too little space, or a bomb, is said first.
+  if (kind === "extract" && dest.dirId !== null) {
+    const check = await bridge.checkArchive(source, dest.dirId).catch(() => null)
+    const later = get().copy
+    if (check && later?.source === source) set({ copy: { ...later, warnings: check.warnings } })
+  }
 }
 
 /** Shift+F5: the cursor entry copied into its own folder under a new name. */
@@ -193,6 +224,10 @@ export function openCopyHere(side: Side): void {
   const source = cursorDescriptor(side)
   const p = panel(side)
   if (!item || !source || p.dirId === null) return
+  if (p.archive) {
+    notice(READ_ONLY)
+    return
+  }
   set({
     copy: {
       kind: "copy",
@@ -207,6 +242,8 @@ export function openCopyHere(side: Side): void {
       mask: "*.*",
       conflict: "ask",
       verify: false,
+      links: true,
+      warnings: [],
       error: null,
     },
   })
@@ -240,16 +277,26 @@ export async function startCopy(now: boolean): Promise<boolean> {
       dirId = (await bridge.openDir(typed)).dirId
     }
     const mask = c.mask.trim()
-    await bridge.startJob({
-      kind: c.kind,
-      source: { selection: c.source },
-      destinationDirId: dirId,
-      conflict: c.conflict,
-      ...(c.verify && { verify: true }),
-      ...(now && { now: true }),
-      ...(!ALL_FILES.has(mask) && { mask }),
-      ...(c.name !== null && { name: c.name.trim() }),
-    })
+    if (c.kind === "extract") {
+      await bridge.startJob({
+        kind: "extract",
+        source: { selection: c.source },
+        destinationDirId: dirId,
+        conflict: c.conflict,
+        links: c.links,
+      })
+    } else {
+      await bridge.startJob({
+        kind: c.kind,
+        source: { selection: c.source },
+        destinationDirId: dirId,
+        conflict: c.conflict,
+        ...(c.verify && { verify: true }),
+        ...(now && { now: true }),
+        ...(!ALL_FILES.has(mask) && { mask }),
+        ...(c.name !== null && { name: c.name.trim() }),
+      })
+    }
   } catch (error) {
     const reason =
       error instanceof FastViewError ? (error.details as { reason?: string })?.reason : ""
@@ -294,6 +341,10 @@ export async function openDelete(side: Side, permanent: boolean): Promise<void> 
   const source = operand(side)
   const p = panel(side)
   if (!source || p.dirId === null) return
+  if (p.archive) {
+    notice(READ_ONLY)
+    return
+  }
   const count = source.ranges.reduce((n, [a, b]) => n + b - a, 0) + source.include.length
   set({
     remove: {
@@ -343,7 +394,8 @@ export async function confirmDelete(): Promise<void> {
 // New folder and rename ---------------------------------------------------------------------
 
 export function openMkdir(side: Side): void {
-  if (panel(side).dirId !== null) set({ mkdir: { side, error: null } })
+  if (panel(side).archive) notice(READ_ONLY)
+  else if (panel(side).dirId !== null) set({ mkdir: { side, error: null } })
 }
 
 export const closeMkdir = (): void => set({ mkdir: null })
@@ -368,6 +420,10 @@ export async function createFolder(path: string): Promise<boolean> {
 export function startRename(side: Side): void {
   const item = cursorItem(side)
   if (!item) return
+  if (panel(side).archive) {
+    notice(READ_ONLY)
+    return
+  }
   set({
     rename: {
       side,
@@ -408,6 +464,10 @@ export async function commitRename(name: string): Promise<boolean> {
 export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<void> {
   const source = operand(side)
   if (!source) return
+  if (panel(side).archive) {
+    notice(READ_ONLY)
+    return
+  }
   try {
     const state = await bridge.clipSet(source, mode)
     notice(
@@ -422,6 +482,10 @@ export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<vo
 export async function clipboardPaste(side: Side): Promise<void> {
   const dirId = panel(side).dirId
   if (dirId === null) return
+  if (panel(side).archive) {
+    notice(INTO_ARCHIVE)
+    return
+  }
   try {
     await bridge.clipPaste(dirId, "ask")
   } catch (error) {

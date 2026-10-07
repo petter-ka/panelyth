@@ -74,6 +74,16 @@ type Source interface {
 	Missing()
 }
 
+// ItemSource is a Source whose rows are not in the index (archives, Stage
+// C07): pages are built from it instead of index.db.
+type ItemSource interface {
+	Items(ctx context.Context, ids []int64) ([]index.Item, error)
+}
+
+// singleFolder is a Source whose rows all come from one folder: its pages
+// carry no folder path.
+type singleFolder interface{ SingleFolder() bool }
+
 type session struct {
 	id      int64
 	desc    index.Descriptor
@@ -211,7 +221,13 @@ func (m *Manager) SpansFolders(id int64) bool {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	s := m.sessions[id]
-	return s != nil && (s.src != nil || (s.desc.Recursive && s.desc.Scope == index.ScopeAll))
+	if s == nil {
+		return false
+	}
+	if sf, ok := s.src.(singleFolder); ok && sf.SingleFolder() {
+		return false
+	}
+	return s.src != nil || (s.desc.Recursive && s.desc.Scope == index.ScopeAll)
 }
 
 // Page returns items [offset, offset+limit) of the session's current version.
@@ -230,7 +246,13 @@ func (m *Manager) Page(ctx context.Context, id int64, offset, limit int) (Page, 
 	src := s.src
 	m.mu.Unlock()
 
-	items, err := m.store.LoadItems(ctx, window)
+	var items []index.Item
+	var err error
+	if is, ok := src.(ItemSource); ok {
+		items, err = is.Items(ctx, window)
+	} else {
+		items, err = m.store.LoadItems(ctx, window)
+	}
 	if err != nil {
 		return Page{}, err
 	}

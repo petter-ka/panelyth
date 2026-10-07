@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"fastview/sidecar/internal/archive"
 	"fastview/sidecar/internal/events"
 	"fastview/sidecar/internal/find"
 	"fastview/sidecar/internal/fsx"
@@ -48,19 +49,21 @@ type indexService struct {
 	scans   *scan.Manager
 	queries *query.Manager
 	finds   *find.Manager
-	watcher *watch.Watcher
-	events  *events.Coalescer
-	disk    *preview.DiskCache
-	preview *preview.Service
-	video   *video.Tools
-	jobs    *jobs.Manager
-	meta    *meta.Extractor
-	clip    clipboard
-	clipImg *clipImager
-	context *sharedContext
-	stopBg  context.CancelFunc
-	bg      context.Context
-	volumes volumeMonitor
+	// archives are the open archives (Stage C07, ADR-0030).
+	archives *archive.Manager
+	watcher  *watch.Watcher
+	events   *events.Coalescer
+	disk     *preview.DiskCache
+	preview  *preview.Service
+	video    *video.Tools
+	jobs     *jobs.Manager
+	meta     *meta.Extractor
+	clip     clipboard
+	clipImg  *clipImager
+	context  *sharedContext
+	stopBg   context.CancelFunc
+	bg       context.Context
+	volumes  volumeMonitor
 	// lib is set before libReady closes; nil when library.db could not be
 	// opened (user-data methods then fail, browsing keeps working).
 	lib      *library.Library
@@ -69,7 +72,7 @@ type indexService struct {
 
 // newIndexService opens index.db and the preview cache under cacheRoot
 // (ADR-0016) and starts background maintenance.
-func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, emit events.EmitFunc, tools *video.Tools) (*indexService, error) {
+func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, emit events.EmitFunc, tools *video.Tools, sevenZip *archive.Tool) (*indexService, error) {
 	store, err := index.Open(filepath.Join(cacheRoot, "db", "index.db"), log)
 	if err != nil {
 		return nil, err
@@ -106,10 +109,13 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 		Dropped: func(id int64) {
 			svc.meta.Drop(id)
 			svc.finds.Dropped(id)
+			svc.archives.Dropped(id)
 		},
 	}, func(s query.Snapshot) {
 		svc.events.Post(evQueryInvalidated, strconv.FormatInt(s.QueryID, 10), s)
 	})
+	// Entries viewed from archives are extracted to <cache>/tmp/archive.
+	svc.archives = archive.NewManager(sevenZip, filepath.Join(cacheRoot, "tmp", "archive"), log)
 	svc.finds = find.NewManager(find.Deps{Store: store, Log: log, Progress: svc.emitFind, Refresh: svc.queries.Refresh})
 	svc.scans = scan.NewManager(store, log, scan.Options{}, scan.Hooks{
 		Progress: func(p scan.Progress) {
@@ -119,7 +125,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 	}, nil)
 	svc.watcher = watch.New(log, svc.scans.Relist, 300*time.Millisecond, 2*time.Second)
 	svc.jobs = jobs.NewManager(jobs.Deps{Store: store, Library: svc.library, Changed: svc.changed,
-		Emit: svc.emitJob, Ask: svc.askJob, Log: log})
+		Emit: svc.emitJob, Ask: svc.askJob, Archive: sevenZip, Log: log})
 	return svc, nil
 }
 
@@ -132,6 +138,7 @@ func (s *indexService) close() {
 	s.meta.Close()
 	s.preview.Close()
 	s.queries.Shutdown()
+	s.archives.Shutdown()
 	s.events.Close()
 	if err := s.store.Close(); err != nil {
 		s.log.Warn("close index", "err", err)
@@ -191,6 +198,10 @@ type (
 		// FindID opens a session over a search's results (Stage C06); the
 		// folder fields do not apply then.
 		FindID int64 `json:"findId"`
+		// ArchiveID opens a folder of an open archive (Stage C07):
+		// ArchiveDirID is the folder's entry id, 0 for the root.
+		ArchiveID    int64 `json:"archiveId"`
+		ArchiveDirID int64 `json:"archiveDirId"`
 	}
 	queryPageParams struct {
 		QueryID int64 `json:"queryId"`
@@ -278,6 +289,7 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerJobs(srv)
 	s.registerContext(srv)
 	s.registerFind(srv)
+	s.registerArchives(srv)
 	rpc.Register(srv, "query.close", func(_ context.Context, p queryCloseParams) (queryCloseResult, error) {
 		return queryCloseResult{Closed: s.queries.Close(p.QueryID)}, nil
 	})
@@ -386,6 +398,12 @@ func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.
 		d.Tags = append(d.Tags, clean)
 	}
 	d.FavoriteOnly, d.MinRating = p.Favorite, p.MinRating
+	if p.ArchiveID != 0 {
+		if d.Scope != index.ScopeAll || d.Recursive || p.FindID != 0 {
+			return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "archive folders need the all scope and no recursion")
+		}
+		return s.openArchiveQuery(ctx, p.ArchiveID, p.ArchiveDirID, d)
+	}
 	if p.FindID != 0 {
 		if d.Scope != index.ScopeAll || d.Recursive {
 			return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "search results need the all scope and no recursion")

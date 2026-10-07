@@ -35,7 +35,8 @@ export function panelDnd(side: Side) {
     },
     ...dropTarget(side, () => {
       const p = useListingStore.getState()[side]
-      return p.dirId === null ? null : { path: p.path, dirId: p.dirId }
+      // An archive panel takes no drops (archives are read-only, ADR-0030).
+      return p.dirId === null || p.archive ? null : { path: p.path, dirId: p.dirId }
     }),
   }
 }

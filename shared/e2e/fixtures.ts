@@ -20,6 +20,8 @@ export interface FixtureSpec {
   }
   /** Lister fixtures (Stage C05): a numbered log of this size and the encoding samples. */
   text?: { logBytes: number; encodings: boolean }
+  /** Archive fixtures (Stage C07): samples (set.zip, set.tar.gz, slip.zip), many.zip, big.tar.gz, pack/. */
+  archives?: { samples?: boolean; zipEntries?: number; tgzBytes?: number; packFiles?: number }
   files: number
   depth?: number
   fanout?: number
@@ -56,6 +58,17 @@ export function ensureFixture(
             "-text-log-bytes",
             String(spec.text.logBytes),
             ...(spec.text.encodings ? ["-encodings"] : []),
+          ]
+        : []),
+      ...(spec.archives
+        ? [
+            ...(spec.archives.samples ? ["-archive-samples"] : []),
+            "-archive-zip-entries",
+            String(spec.archives.zipEntries ?? 0),
+            "-archive-tgz-bytes",
+            String(spec.archives.tgzBytes ?? 0),
+            "-archive-pack-files",
+            String(spec.archives.packFiles ?? 0),
           ]
         : []),
       ...(spec.images

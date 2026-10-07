@@ -6,6 +6,7 @@ import {
   IPC_EVENT,
   IPC_INVOKE,
   type CommanderApi,
+  type CommanderJobParams,
   type EventChannel,
   type EventMessage,
   type RendererMethod,
@@ -21,6 +22,46 @@ const copySelection = (s: SelectionDescriptor): SelectionDescriptor => ({
   include: [...s.include],
   exclude: [...s.exclude],
 })
+
+/** Only the known fields of each job kind cross the bridge. */
+function jobParams(p: CommanderJobParams): CommanderJobParams {
+  const source = { selection: copySelection(p.source.selection) }
+  switch (p.kind) {
+    case "copy":
+    case "move":
+      return {
+        kind: p.kind,
+        source,
+        destinationDirId: p.destinationDirId,
+        conflict: p.conflict,
+        ...(p.verify !== undefined && { verify: p.verify }),
+        ...(p.now !== undefined && { now: p.now }),
+        ...(p.mask !== undefined && { mask: p.mask }),
+        ...(p.name !== undefined && { name: p.name }),
+      }
+    case "extract":
+      return {
+        kind: p.kind,
+        source,
+        destinationDirId: p.destinationDirId,
+        conflict: p.conflict,
+        ...(p.links !== undefined && { links: p.links }),
+        ...(p.subfolders !== undefined && { subfolders: p.subfolders }),
+      }
+    case "pack":
+      return {
+        kind: p.kind,
+        source,
+        destinationDirId: p.destinationDirId,
+        conflict: p.conflict,
+        name: p.name,
+        format: p.format,
+        level: p.level,
+        ...(p.deleteOriginals !== undefined && { deleteOriginals: p.deleteOriginals }),
+      }
+  }
+  return { kind: p.kind, source }
+}
 
 const invoke = <R>(method: RendererMethod, params?: unknown): Promise<RpcEnvelope<R>> =>
   ipcRenderer.invoke(IPC_INVOKE, method, params) as Promise<RpcEnvelope<R>>
@@ -106,6 +147,13 @@ const api: CommanderApi = {
       }),
     cancel: (findId) => invoke("find.cancel", { findId }),
   },
+  archive: {
+    open: (entryId) => invoke("archive.open", { entryId }),
+    close: (archiveId) => invoke("archive.close", { archiveId }),
+    check: (selection, destinationDirId) =>
+      invoke("archive.check", { selection: copySelection(selection), destinationDirId }),
+    tools: () => invoke("archive.tools", {}),
+  },
   query: {
     // Copied field by field: only known fields cross the bridge.
     open: (d) =>
@@ -123,6 +171,8 @@ const api: CommanderApi = {
         ...(d.showHidden !== undefined && { showHidden: d.showHidden }),
         ...(d.nameMask !== undefined && { nameMask: d.nameMask }),
         ...(d.findId !== undefined && { findId: d.findId }),
+        ...(d.archiveId !== undefined && { archiveId: d.archiveId }),
+        ...(d.archiveDirId !== undefined && { archiveDirId: d.archiveDirId }),
       }),
     page: ({ queryId, offset, limit, thumbProfile }) =>
       invoke("query.page", { queryId, offset, limit, thumbProfile }),
@@ -172,22 +222,7 @@ const api: CommanderApi = {
     edit: (entryId) => invoke("shell.edit", { entryId }),
   },
   files: {
-    start: (p) =>
-      invoke(
-        "jobs.start",
-        p.kind === "copy" || p.kind === "move"
-          ? {
-              kind: p.kind,
-              source: { selection: copySelection(p.source.selection) },
-              destinationDirId: p.destinationDirId,
-              conflict: p.conflict,
-              ...(p.verify !== undefined && { verify: p.verify }),
-              ...(p.now !== undefined && { now: p.now }),
-              ...(p.mask !== undefined && { mask: p.mask }),
-              ...(p.name !== undefined && { name: p.name }),
-            }
-          : { kind: p.kind, source: { selection: copySelection(p.source.selection) } },
-      ),
+    start: (p) => invoke("jobs.start", jobParams(p)),
     pause: (jobId) => invoke("jobs.pause", { jobId }),
     resume: (jobId) => invoke("jobs.resume", { jobId }),
     startNow: (jobId) => invoke("jobs.startNow", { jobId }),

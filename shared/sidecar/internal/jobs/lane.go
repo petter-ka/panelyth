@@ -12,12 +12,14 @@ import (
 // jobs have no lane (ADR-0029).
 func laneOf(spec Spec, store *index.Store) string {
 	switch spec.Kind {
-	case KindCopy, KindMove, KindTrash, KindDelete, KindRename:
+	case KindCopy, KindMove, KindTrash, KindDelete, KindRename, KindExtract, KindPack, KindTestArchive:
 	default:
 		return ""
 	}
 	src := ""
-	if len(spec.IDs) > 0 && store != nil {
+	if sel := spec.Archive.Selection; sel != nil {
+		src = fsx.VolumeID(sel.Archive.Listing.Path)
+	} else if len(spec.IDs) > 0 && store != nil {
 		if paths, err := store.EntryPaths(context.Background(), spec.IDs[:1]); err == nil && len(paths) > 0 {
 			src = fsx.VolumeID(paths[0].Path)
 		}

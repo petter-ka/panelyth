@@ -1,6 +1,6 @@
 # Commander Architecture
 
-Status: **in progress** (C00 done, C01–C05 implemented; Stages C06–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
+Status: **in progress** (C00 done, C01–C07 implemented; Stages C08–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
 an app view in the FastView shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
 shares the viewer's sidecar, index (queried with the `all` scope, ADR-0026), preview cache, jobs, clipboard and
 `library.db`. Switching between the apps and the state they share: `docs/shared/APP-SWITCHING.md`. This document
@@ -142,7 +142,7 @@ Enter on a folder
 | P03 / C04 | jobs v2: `jobs.pause`, `jobs.resume`, `jobs.startNow`, `jobs.resolve`, `job.conflict`; copy and move by `destinationDirId` with `mask` and `name`; `fs.mkdir`, `fs.canTrash`; `clipboard.copyPaths` `namesOnly` |
 | C05 | `file.open` (token URL for any file kind; main-only `file.resolve`), `shell.open` with `allowProgram`, `shell.edit`, `fs.mkfile`; `media.open`, `preview.ensure`, `props.get` and the `preview.ready` event for the commander; `entry.path.program` |
 | C06 | `find.start`, `find.cancel` (a session source); branch listings (recursive, all scope) |
-| C07 | `archive.open`, `archive.close` (a session source); pack, unpack and test jobs |
+| C07 | `archive.open`, `archive.close`, `archive.check`, `archive.tools`; `query.open { archiveId, archiveDirId }` (a session source with its own rows); job kinds `extract`, `pack`, `testArchive` (ADR-0030 "As built") |
 | C08 | `compare.dirs` (a diff session), sync jobs, `hash.create`, `hash.verify` jobs |
 | C09 | `rename.preview`, rename jobs with an undo journal; attribute and timestamp jobs |
 | C10 | `shell.run` (main), user commands |

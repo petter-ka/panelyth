@@ -1,0 +1,13 @@
+{
+  "id": 96,
+  "ok": true,
+  "r": {
+    "bytes": 3,
+    "files": 2,
+    "freeBytes": 1073741824,
+    "packedBytes": 289,
+    "partial": false,
+    "warnings": []
+  },
+  "t": "res"
+}

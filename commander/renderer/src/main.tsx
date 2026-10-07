@@ -18,6 +18,7 @@ import { startMedia } from "./features/media"
 import { startOpen } from "./features/open"
 import { startQuickView } from "./features/viewers"
 import { startFind } from "./features/find"
+import { startArchives } from "./features/archives"
 import "./styles.css"
 
 initTheme()
@@ -55,6 +56,8 @@ if (isBridgeAvailable()) {
   startMedia()
   // Find files: results and progress of the dialog's search (C06).
   startFind()
+  // Archives: the results of archive tests are announced (C07).
+  startArchives()
 }
 
 const root = document.getElementById("root")

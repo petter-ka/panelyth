@@ -144,7 +144,13 @@ const COMMANDER_JOB_KINDS: ReadonlySet<unknown> = new Set([
   "trash",
   "delete",
   "dirSize",
+  // Stage C07: copy out of archives and unpack, pack, test.
+  "extract",
+  "pack",
+  "testArchive",
 ])
+
+const ARCHIVE_JOB_KINDS: ReadonlySet<unknown> = new Set(["extract", "pack", "testArchive"])
 
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
   const p = params as Record<string, unknown>
@@ -152,7 +158,7 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
   if (
     app === "viewer" &&
     method === "query.open" &&
-    (p.scope === "all" || p.findId !== undefined)
+    (p.scope === "all" || p.findId !== undefined || p.archiveId !== undefined)
   ) {
     return "the viewer lists media only"
   }
@@ -166,11 +172,14 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
   ) {
     return "commander settings are the commander's"
   }
+  if (app === "viewer" && method === "jobs.start" && ARCHIVE_JOB_KINDS.has(p.kind)) {
+    return "archive jobs are the commander's"
+  }
   if (app === "commander") {
     // Stage C04: its jobs are file operations, and destinations are folder
     // ids resolved in Go, never paths from the renderer (ADR-0027).
     if (method === "jobs.start" && !COMMANDER_JOB_KINDS.has(p.kind)) {
-      return "the commander starts copy, move, trash, delete and folder-size jobs only"
+      return "the commander starts file operations, folder sizes and archive jobs only"
     }
     if ((method === "jobs.start" || method === "clip.paste") && p.destination !== undefined) {
       return "the commander names destinations by folder id"

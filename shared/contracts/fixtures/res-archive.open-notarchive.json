@@ -1,0 +1,13 @@
+{
+  "e": {
+    "code": "UNSUPPORTED_MEDIA",
+    "details": {
+      "reason": "notArchive"
+    },
+    "message": "This file is not an archive FastView can open.",
+    "retryable": false
+  },
+  "id": 99,
+  "ok": false,
+  "t": "res"
+}

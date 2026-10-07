@@ -62,6 +62,14 @@ type (
 		Label    int    `json:"label"`
 		Tag      string `json:"tag"`
 		Add      bool   `json:"add"`
+		// Archives (Stage C07): extract creates links (links) and unpacks
+		// each archive into its own folder (subfolders); pack takes the
+		// archive's name (name), format, level and deleteOriginals.
+		Links           bool   `json:"links"`
+		Subfolders      bool   `json:"subfolders"`
+		Format          string `json:"format"`
+		Level           int    `json:"level"`
+		DeleteOriginals bool   `json:"deleteOriginals"`
 	}
 	jobIDParams struct {
 		JobID int64 `json:"jobId"`
@@ -246,7 +254,7 @@ func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Sn
 	if len(p.Pattern) > MaxPatternBytes {
 		return jobs.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "the pattern is too long")
 	}
-	if spec.Kind == jobs.KindCopy || spec.Kind == jobs.KindMove {
+	if spec.Kind == jobs.KindCopy || spec.Kind == jobs.KindMove || spec.Kind == jobs.KindExtract || spec.Kind == jobs.KindPack {
 		dest, err := s.jobDestination(ctx, p.DestinationDirID, p.Destination)
 		if err != nil {
 			return jobs.Snapshot{}, err
@@ -258,6 +266,9 @@ func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Sn
 		return jobs.Snapshot{}, err
 	}
 	spec.IDs = ids
+	if err := s.archiveJob(p, &spec, ids); err != nil {
+		return jobs.Snapshot{}, err
+	}
 	return s.startJob(spec)
 }
 
@@ -297,6 +308,9 @@ func (s *indexService) clipSet(_ context.Context, p clipSetParams) (clipState, e
 	ids, err := s.resolveSelection(p.Selection)
 	if err != nil {
 		return clipState{}, err
+	}
+	if archiveOnly(ids) {
+		return clipState{}, rpc.NewError(rpc.CodeInvalidArgument, "entries inside an archive are copied out with F5")
 	}
 	s.clip.mu.Lock()
 	s.clip.ids, s.clip.cut = ids, p.Mode == "cut"

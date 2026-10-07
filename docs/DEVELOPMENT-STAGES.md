@@ -65,8 +65,8 @@ A stage is complete only when:
 | C03 | Drives, tabs, hotlist, history and session | C02 | implementation done (2026-10-06); the NVDA pass remains |
 | C04 | File operations | C03, P03 | implementation done (2026-10-06); the NVDA pass remains |
 | C05 | Quick view, lister, open and edit | C04 | implementation done (2026-10-06); the NVDA pass remains |
-| C06 | Find files, branch view and quick filter | C05 | **active**: implementation done (2026-10-07); the NVDA pass remains |
-| C07 | Archives | C06 | planned |
+| C06 | Find files, branch view and quick filter | C05 | implementation done (2026-10-07); the NVDA pass remains |
+| C07 | Archives | C06 | **active**: implementation done (2026-10-07); the NVDA pass and a run with a real 7-Zip remain |
 | C08 | Compare, synchronize and checksums | C07 | planned |
 | C09 | Multi-rename, attributes and properties | C08 | planned |
 | C10 | Command line, tools and customization | C09 | planned |
@@ -89,13 +89,17 @@ A stage is complete only when:
 
 ## Active stage
 
-`C06 — Find files, branch view and quick filter` (`docs/commander/stages/C06-find-and-branch-view.md`), started
-2026-10-07 right after C05 (quick view, lister, open and edit; implementation done 2026-10-06). Query sessions get a
-session-source interface (amends ADR-0017): the index stays the default source and a search's results are the `find`
-source, sorted and paged in Go like a folder. Each commander panel scans in its own lane, so one panel never cancels
-the other's listing or branch view.
+`C07 — Archives` (`docs/commander/stages/C07-archives.md`), started 2026-10-07 right after C06 (find files, branch
+view and quick filter; implementation done 2026-10-07). ADR-0030 is accepted: zip, tar, tar.gz, tar.bz2 and .gz are
+read with the standard library, 7z, rar and others through an optional 7-Zip; an open archive is a query-session
+source whose rows come from its listing in Go (amends ADR-0017 again), never from `index.db`. Copy out, unpack, pack
+and test are jobs on the engine v2 queue.
 
-Open from C02 to C06: the NVDA pass (grid, Brief view, menus, dialogs, queue panel, quick view, lister, find dialog). Open from P03:
+Open from C07: a run with a real 7-Zip on the reference machine (the adapter is tested against a fake tool; the real
+test skips without 7-Zip), and extracting a 1 GiB tar.gz at 0.60x the OS's tar (Go's gzip is the limit).
+
+Open from C02 to C07: the NVDA pass (grid, Brief view, menus, dialogs, queue panel, quick view, lister, find dialog,
+pack and unpack dialogs). Open from P03:
 the Linux and macOS fast paths (P04).
 
 Open from C01: the cold-cache 100k timings (470 / 366 ms on the first run after a build) and the rest of P02

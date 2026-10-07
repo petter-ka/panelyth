@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"fastview/sidecar/internal/archive"
 	"fastview/sidecar/internal/index"
 	"fastview/sidecar/internal/library"
 	"fastview/sidecar/internal/scan"
@@ -97,6 +98,8 @@ type Spec struct {
 	Label    int    // label (0 clears)
 	Tag      string // tag
 	Add      bool
+	// Archive holds the extract, pack and test fields (Stage C07).
+	Archive ArchiveSpec
 }
 
 // Snapshot is a job's progress (the job.progress payload).
@@ -188,7 +191,10 @@ type Deps struct {
 	// Lane returns a job's lane ("" = none: runs whenever a slot is free).
 	// Nil uses volumes (laneOf).
 	Lane func(Spec, *index.Store) string
-	Log  *slog.Logger
+	// Archive is the 7-Zip archive jobs use (nil or unavailable: the
+	// built-in formats only).
+	Archive *archive.Tool
+	Log     *slog.Logger
 }
 
 // Manager owns all jobs. Safe for concurrent use.

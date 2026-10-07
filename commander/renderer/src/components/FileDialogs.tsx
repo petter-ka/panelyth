@@ -14,6 +14,7 @@ import {
   type CopyDialogState,
 } from "../features/files"
 import { formatBytes } from "../features/format"
+import { ArchiveWarnings } from "./ArchiveDialogs"
 
 const field =
   "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
@@ -39,7 +40,9 @@ export function CopyDialog() {
 
 function CopyForm({ c }: { c: CopyDialogState }) {
   const [busy, setBusy] = useState(false)
-  const verb = c.kind === "copy" ? "Copy" : "Move"
+  const verb = c.kind === "move" ? "Move" : "Copy"
+  // F5 in an archive panel copies entries out (an extract job, Stage C07).
+  const extract = c.kind === "extract"
   const here = c.name !== null
   const submit = async (now: boolean): Promise<void> => {
     setBusy(true)
@@ -52,7 +55,13 @@ function CopyForm({ c }: { c: CopyDialogState }) {
       onOpenChange={(open) => {
         if (!open) closeCopy()
       }}
-      title={here ? `Copy ${c.what} here` : `${verb} ${c.what}${amount(c.bytes)}`}
+      title={
+        here
+          ? `Copy ${c.what} here`
+          : extract
+            ? `Copy ${c.what}${amount(c.bytes)} out of the archive`
+            : `${verb} ${c.what}${amount(c.bytes)}`
+      }
       contentClassName="w-[min(34rem,calc(100vw-2rem))]"
     >
       <form
@@ -94,7 +103,7 @@ function CopyForm({ c }: { c: CopyDialogState }) {
           </label>
         )}
         <div className="flex gap-3">
-          {!here && (
+          {!here && !extract && (
             <label className="flex flex-1 flex-col gap-1">
               <span className="text-muted">Only files matching</span>
               <input
@@ -124,14 +133,28 @@ function CopyForm({ c }: { c: CopyDialogState }) {
             </select>
           </label>
         </div>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={c.verify}
-            onChange={(e) => updateCopy({ verify: e.target.checked })}
-          />
-          Verify after copying (compare checksums)
-        </label>
+        {extract ? (
+          <>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={c.links}
+                onChange={(e) => updateCopy({ links: e.target.checked })}
+              />
+              Create links stored in the archive (only those that stay inside the folder)
+            </label>
+            <ArchiveWarnings warnings={c.warnings} />
+          </>
+        ) : (
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={c.verify}
+              onChange={(e) => updateCopy({ verify: e.target.checked })}
+            />
+            Verify after copying (compare checksums)
+          </label>
+        )}
         {c.error && (
           <p role="alert" className="text-danger">
             {c.error}
@@ -139,7 +162,7 @@ function CopyForm({ c }: { c: CopyDialogState }) {
         )}
         <div className="flex justify-end gap-2">
           <Button onClick={closeCopy}>Cancel</Button>
-          {!here && (
+          {!here && !extract && (
             <Button
               disabled={busy}
               onClick={() => void submit(false)}

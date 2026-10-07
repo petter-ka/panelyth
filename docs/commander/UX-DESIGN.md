@@ -174,6 +174,7 @@ entry is remappable.
 | F3 / F4 / Shift+F4 | Lister / edit / new text file | C05 |
 | Alt+F7 / Ctrl+S / Ctrl+B | Find files / quick filter / branch view | C06 |
 | Alt+F5 / Alt+F9 / Alt+Shift+F9 | Pack / unpack / test archives | C07 |
+| Ctrl+PgDn | Open the archive under the cursor (Enter does too; Backspace at its root leaves it) | C07 |
 | Shift+F2 | Compare directories | C08 |
 | Ctrl+M | Multi-rename | C09 |
 | Alt+Shift+Enter / Alt+Enter | Size of all folders / properties | C09 |

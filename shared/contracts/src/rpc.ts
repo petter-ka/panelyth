@@ -191,6 +191,14 @@ export interface QueryDescriptor {
    * filtered by sort, showHidden and nameMask; needs the all scope and no recursion.
    */
   findId?: number
+  /**
+   * A folder of an open archive (Stage C07, commander, ADR-0030): its
+   * entries come from the archive's listing in Go; needs the all scope and
+   * no recursion. `dirId` is then the folder holding the archive.
+   */
+  archiveId?: number
+  /** The archive folder's entry id; 0 or omitted = the archive's root. */
+  archiveDirId?: number
 }
 
 export const MAX_SEARCH_CHARS = 256
@@ -715,6 +723,9 @@ export type JobKind =
   | "label"
   | "tag"
   | "dirSize"
+  | "extract"
+  | "pack"
+  | "testArchive"
 export const JOB_KINDS = [
   "copy",
   "move",
@@ -726,6 +737,9 @@ export const JOB_KINDS = [
   "label",
   "tag",
   "dirSize",
+  "extract",
+  "pack",
+  "testArchive",
 ] as const satisfies readonly JobKind[]
 
 /**
@@ -816,6 +830,38 @@ export type JobStartParams =
   | { kind: "label"; source: JobSource; label: number }
   | { kind: "tag"; source: JobSource; tag: string; add: boolean }
 
+/**
+ * Archive jobs (Stage C07, ADR-0030). extract: entries of an archive panel
+ * (copy out, F5) or whole archives (unpack, Alt+F9) into a folder. pack
+ * (Alt+F5): the marked entries into a new archive. testArchive
+ * (Alt+Shift+F9): reads archives through, checking their checksums.
+ */
+export type ArchiveJobParams =
+  | {
+      kind: "extract"
+      source: JobSource
+      destinationDirId: number
+      conflict: ConflictPolicy
+      /** Create links stored in archives (inside the target only). */
+      links?: boolean
+      /** Unpack each archive into a folder named after it. */
+      subfolders?: boolean
+    }
+  | {
+      kind: "pack"
+      source: JobSource
+      destinationDirId: number
+      conflict: ConflictPolicy
+      /** The new archive's file name. */
+      name: string
+      format: ArchiveCreateFormat
+      /** 0 (store) .. 9. */
+      level: number
+      /** Delete the entries that were packed completely. */
+      deleteOriginals?: boolean
+    }
+  | { kind: "testArchive"; source: JobSource }
+
 /** The commander's jobs (Stage C04): copy and move name their destination by folder id. */
 export type CommanderJobParams =
   | {
@@ -829,6 +875,7 @@ export type CommanderJobParams =
       name?: string
     }
   | { kind: "trash" | "delete" | "dirSize"; source: JobSource }
+  | ArchiveJobParams
 
 export const MAX_RENAME_PATTERN_CHARS = 255
 export const MAX_RENAME_START = 1_000_000_000
@@ -898,6 +945,14 @@ export type JobItemErrorCode =
   | "IO_ERROR"
   /** The copy differed from the original (verify) and was removed. */
   | "VERIFY_FAILED"
+  /** Archives (Stage C07): a name that would leave the target (zip-slip), never extracted. */
+  | "UNSAFE_PATH"
+  /** The archive or entry is damaged (checksum, truncation). */
+  | "CORRUPT"
+  /** Password-protected; not supported. */
+  | "ENCRYPTED"
+  /** An entry expanded beyond its stored size (a bomb), or is too large to view. */
+  | "TOO_LARGE"
 
 export interface JobItemError {
   name: string
@@ -1065,6 +1120,79 @@ export interface FindCancelResult {
   cancelled: boolean
 }
 
+// Archives (Stage C07, commander, ADR-0030) ---------------------------------
+
+/** zip, tar, tar.gz, tar.bz2 and .gz built in; "7z" is everything 7-Zip opens. */
+export type ArchiveFormat = "zip" | "tar" | "tgz" | "tbz2" | "gz" | "7z"
+export const ARCHIVE_FORMATS = [
+  "zip",
+  "tar",
+  "tgz",
+  "tbz2",
+  "gz",
+  "7z",
+] as const satisfies readonly ArchiveFormat[]
+
+/** What Alt+F5 creates (7z needs 7-Zip). */
+export type ArchiveCreateFormat = "zip" | "tgz" | "7z"
+export const ARCHIVE_CREATE_FORMATS = [
+  "zip",
+  "tgz",
+  "7z",
+] as const satisfies readonly ArchiveCreateFormat[]
+
+/**
+ * archive.open: an archive file (an index entry) listed in Go and held until
+ * archive.close; its folders open with query.open { archiveId, archiveDirId }.
+ * Errors carry details.reason "notArchive", "noTool" (7-Zip missing),
+ * "corrupt", "encrypted" or "tooLarge".
+ */
+export interface ArchiveOpenResult {
+  archiveId: number
+  format: ArchiveFormat
+  /** Listed entries, folders included. */
+  entries: number
+  /** Entries with unsafe names (zip-slip, absolute paths): never listed or extracted. */
+  rejected: number
+  /** Expanded size of all files. */
+  bytes: number
+  /** The archive file's size. */
+  packedBytes: number
+}
+
+export interface ArchiveIdParams {
+  archiveId: number
+}
+
+export interface ArchiveCloseResult {
+  closed: boolean
+}
+
+/** archive.check: sizes an extraction before it starts (entries of an archive panel, or archives to unpack). */
+export interface ArchiveCheckParams {
+  selection: SelectionDescriptor
+  destinationDirId: number
+}
+
+/** "space": larger than the free space; "ratio": expands > 100× its packed size (a bomb). */
+export type ArchiveWarning = "space" | "ratio"
+
+export interface ArchiveCheckResult {
+  files: number
+  bytes: number
+  packedBytes: number
+  /** -1 when the free space could not be read in time. */
+  freeBytes: number
+  warnings: ArchiveWarning[]
+  /** Only the first 64 archives were looked at. */
+  partial: boolean
+}
+
+/** archive.tools: whether 7-Zip was found (7z, rar and others; creating 7z). */
+export interface ArchiveToolsResult {
+  sevenZip: boolean
+}
+
 export interface EntryRenameParams {
   entryId: number
   /** The full new name. Files must keep a supported extension of the same kind. */
@@ -1182,6 +1310,10 @@ export interface SidecarMethodMap {
   "dir.openContaining": { params: DirOpenContainingParams; result: DirOpenResult }
   "find.start": { params: FindStartParams; result: FindStartResult }
   "find.cancel": { params: FindIdParams; result: FindCancelResult }
+  "archive.open": { params: EntryParams; result: ArchiveOpenResult }
+  "archive.close": { params: ArchiveIdParams; result: ArchiveCloseResult }
+  "archive.check": { params: ArchiveCheckParams; result: ArchiveCheckResult }
+  "archive.tools": { params: EmptyParams; result: ArchiveToolsResult }
   "query.open": { params: QueryDescriptor; result: QuerySnapshot }
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
@@ -1221,7 +1353,8 @@ export interface SidecarMethodMap {
   "library.removeBookmark": { params: RemoveBookmarkParams; result: OkResult }
   "library.updateBookmark": { params: UpdateBookmarkParams; result: Bookmark }
   "library.reorderBookmarks": { params: ReorderBookmarksParams; result: OkResult }
-  "jobs.start": { params: JobStartParams; result: JobSnapshot }
+  /** Archive jobs are the commander's (main checks the caller's profile). */
+  "jobs.start": { params: JobStartParams | ArchiveJobParams; result: JobSnapshot }
   "jobs.cancel": { params: JobIdParams; result: JobCancelResult }
   "jobs.errors": { params: JobErrorsParams; result: JobErrorsResult }
   "jobs.list": { params: EmptyParams; result: JobListResult }
@@ -1371,6 +1504,10 @@ export const COMMANDER_ONLY_METHODS = [
   "find.start",
   "find.cancel",
   "dir.openContaining",
+  "archive.open",
+  "archive.close",
+  "archive.check",
+  "archive.tools",
 ] as const
 
 /** Every method some renderer may invoke. Main rejects everything else. */
@@ -1447,6 +1584,11 @@ export const COMMANDER_METHODS = [
   "find.start",
   "find.cancel",
   "dir.openContaining",
+  // Stage C07: archives as folders; pack, unpack and test are jobs.
+  "archive.open",
+  "archive.close",
+  "archive.check",
+  "archive.tools",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */

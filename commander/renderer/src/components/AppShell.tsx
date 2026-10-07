@@ -24,6 +24,8 @@ import { useOpenStore } from "../features/open"
 import { useQueueStore } from "../features/queue"
 import { quickTarget, useViewersStore } from "../features/viewers"
 import { CopyDialog, DeleteDialog, MkdirDialog } from "./FileDialogs"
+import { PackDialog, UnpackDialog } from "./ArchiveDialogs"
+import { useArchivesStore } from "../features/archives"
 import { FindDialog } from "./FindDialog"
 import { Lister } from "./Lister"
 import { NewFileDialog, ProgramDialog } from "./OpenDialogs"
@@ -126,7 +128,12 @@ export function AppShell() {
     const offFind = useFindStore.subscribe((s, prev) => {
       if (prev.dialog && !s.dialog) focusActive()
     })
+    // Stage C07: pack and unpack.
+    const offArchives = useArchivesStore.subscribe((s, prev) => {
+      if ((prev.pack ?? prev.unpack) && !(s.pack ?? s.unpack)) focusActive()
+    })
     return () => {
+      offArchives()
       offFind()
       offMask()
       offHelp()
@@ -204,6 +211,8 @@ export function AppShell() {
         <CopyDialog />
         <DeleteDialog />
         <MkdirDialog />
+        <PackDialog />
+        <UnpackDialog />
         <ConflictDialog />
         <JobDetailsDialog />
         <SettingsDialog />
