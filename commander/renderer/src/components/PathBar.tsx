@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react"
+import { Tooltip } from "@fastview/ui"
 import { openPath, toPanelError, useListingStore } from "../features/listing"
 import type { Side } from "../features/panels"
 
@@ -75,17 +76,18 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
           className="h-6 w-full rounded border border-accent bg-canvas px-1.5 font-mono font-normal text-text outline-none"
         />
       ) : (
-        <button
-          type="button"
-          tabIndex={-1}
-          title="Edit the path (Alt+D)"
-          onClick={edit}
-          data-testid={`path-${side}`}
-          aria-busy={loading}
-          className={`h-6 w-full truncate rounded px-1.5 text-left font-mono font-normal hover:bg-raised ${active ? "text-text" : "text-muted"}`}
-        >
-          {path || "No folder open"}
-        </button>
+        <Tooltip content="Edit the path (Alt+D)">
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={edit}
+            data-testid={`path-${side}`}
+            aria-busy={loading}
+            className={`h-6 w-full truncate rounded px-1.5 text-left font-mono font-normal hover:bg-raised ${active ? "text-text" : "text-muted"}`}
+          >
+            {path || "No folder open"}
+          </button>
+        </Tooltip>
       )}
       {editing && error && (
         <p

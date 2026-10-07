@@ -1,4 +1,5 @@
 import type { ReactNode } from "react"
+import { Tooltip } from "@fastview/ui"
 import {
   askTags,
   setFavorite,
@@ -12,15 +13,16 @@ import { CopyIcon, HeartIcon, MoveIcon, TagIcon, TrashIcon } from "../ui/icons"
 
 function Action(props: { label: string; title?: string; onClick(): void; children: ReactNode }) {
   return (
-    <button
-      type="button"
-      title={props.title ?? props.label}
-      onClick={props.onClick}
-      className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-text hover:bg-raised"
-    >
-      {props.children}
-      {props.label}
-    </button>
+    <Tooltip content={props.title ?? props.label}>
+      <button
+        type="button"
+        onClick={props.onClick}
+        className="flex h-7 items-center gap-1.5 rounded-md px-2 text-xs text-text hover:bg-raised"
+      >
+        {props.children}
+        {props.label}
+      </button>
+    </Tooltip>
   )
 }
 

@@ -1,4 +1,5 @@
 import type { ContentItem } from "@fastview/contracts"
+import { Tooltip } from "@fastview/ui"
 import { useCallback, useRef, useState, type KeyboardEvent, type RefObject } from "react"
 import {
   formatTime,
@@ -62,37 +63,42 @@ export function PreviewPane() {
       data-entry-id={shown?.id}
     >
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3">
-        <span className="min-w-0 flex-1 truncate text-xs font-medium" title={shown?.name}>
-          {shown?.name ?? "Preview"}
-        </span>
+        <Tooltip content={shown?.name}>
+          <span className="min-w-0 flex-1 truncate text-xs font-medium">
+            {shown?.name ?? "Preview"}
+          </span>
+        </Tooltip>
         {isImage && (
           <div role="toolbar" aria-label="Zoom" className="flex shrink-0 items-center gap-1">
-            <button
-              type="button"
-              className={zoomButton}
-              aria-pressed={zoom.fit}
-              onClick={() => controller.current?.fit()}
-              title="Fit (0)"
-            >
-              Fit
-            </button>
-            <button
-              type="button"
-              className={zoomButton}
-              onClick={() => controller.current?.actualSize()}
-              title="Actual size (1)"
-            >
-              1:1
-            </button>
-            <button
-              type="button"
-              className={`${zoomButton} w-6 px-0`}
-              onClick={() => controller.current?.zoomOut()}
-              aria-label="Zoom out"
-              title="Zoom out (−)"
-            >
-              −
-            </button>
+            <Tooltip content="Fit (0)">
+              <button
+                type="button"
+                className={zoomButton}
+                aria-pressed={zoom.fit}
+                onClick={() => controller.current?.fit()}
+              >
+                Fit
+              </button>
+            </Tooltip>
+            <Tooltip content="Actual size (1)">
+              <button
+                type="button"
+                className={zoomButton}
+                onClick={() => controller.current?.actualSize()}
+              >
+                1:1
+              </button>
+            </Tooltip>
+            <Tooltip content="Zoom out (−)">
+              <button
+                type="button"
+                className={`${zoomButton} w-6 px-0`}
+                onClick={() => controller.current?.zoomOut()}
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+            </Tooltip>
             <span
               className="w-9 text-center text-[0.6875rem] tabular-nums"
               data-testid="pane-zoom"
@@ -100,15 +106,16 @@ export function PreviewPane() {
             >
               {Math.round(zoom.value * 100)}%
             </span>
-            <button
-              type="button"
-              className={`${zoomButton} w-6 px-0`}
-              onClick={() => controller.current?.zoomIn()}
-              aria-label="Zoom in"
-              title="Zoom in (+)"
-            >
-              +
-            </button>
+            <Tooltip content="Zoom in (+)">
+              <button
+                type="button"
+                className={`${zoomButton} w-6 px-0`}
+                onClick={() => controller.current?.zoomIn()}
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+            </Tooltip>
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import type { AppId } from "@fastview/contracts"
+import { Tooltip } from "./Tooltip"
 
 const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
 
@@ -40,17 +41,18 @@ export interface AppSwitchButtonProps {
 export function AppSwitchButton({ target, shortcut, onSwitch }: AppSwitchButtonProps) {
   const label = `Switch to ${TITLES[target]}`
   return (
-    <button
-      type="button"
-      onClick={onSwitch}
-      aria-label={label}
-      aria-keyshortcuts={shortcut.replace("Ctrl", "Control")}
-      title={`${label} (${shortcut})`}
-      data-testid="app-switch"
-      data-target={target}
-      className="grid size-7 shrink-0 place-items-center rounded-md text-text hover:bg-raised"
-    >
-      {target === "commander" ? <CommanderGlyph /> : <ViewerGlyph />}
-    </button>
+    <Tooltip content={`${label} (${shortcut})`} side="right">
+      <button
+        type="button"
+        onClick={onSwitch}
+        aria-label={label}
+        aria-keyshortcuts={shortcut.replace("Ctrl", "Control")}
+        data-testid="app-switch"
+        data-target={target}
+        className="grid size-7 shrink-0 place-items-center rounded-md text-text hover:bg-raised"
+      >
+        {target === "commander" ? <CommanderGlyph /> : <ViewerGlyph />}
+      </button>
+    </Tooltip>
   )
 }

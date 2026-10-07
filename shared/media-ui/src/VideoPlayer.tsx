@@ -177,6 +177,7 @@ export function VideoPlayer({
         : started
           ? "paused"
           : "ready"
+  const unavailable = !url || !!problem
 
   return (
     <div
@@ -277,16 +278,21 @@ export function VideoPlayer({
         aria-label="Playback controls"
         className="flex h-10 shrink-0 items-center gap-1 border-t border-border bg-chrome px-1.5"
       >
-        <button
-          type="button"
-          className={control}
-          onClick={toggle}
-          disabled={!url || !!problem}
-          aria-label={playing ? "Pause" : "Play"}
-          title={playing ? "Pause (Space)" : "Play (Space)"}
+        <span
+          className={unavailable ? "inline-flex" : "contents"}
+          data-tooltip-content={playing ? "Pause (Space)" : "Play (Space)"}
         >
-          {playing ? <PauseIcon /> : <PlayIcon />}
-        </button>
+          <button
+            type="button"
+            className={control}
+            onClick={toggle}
+            disabled={unavailable}
+            style={unavailable ? { pointerEvents: "none" } : undefined}
+            aria-label={playing ? "Pause" : "Play"}
+          >
+            {playing ? <PauseIcon /> : <PlayIcon />}
+          </button>
+        </span>
         <span
           className="shrink-0 px-1 text-[0.6875rem] text-muted tabular-nums"
           data-testid="video-time"
@@ -310,7 +316,7 @@ export function VideoPlayer({
           onClick={() => setMuted(!muted)}
           aria-label={muted ? "Unmute" : "Mute"}
           aria-pressed={muted}
-          title={muted ? "Unmute (M)" : "Mute (M)"}
+          data-tooltip-content={muted ? "Unmute (M)" : "Mute (M)"}
         >
           {muted ? <MuteIcon /> : <VolumeIcon />}
         </button>
@@ -324,16 +330,21 @@ export function VideoPlayer({
           className="hidden w-16 @[320px]:block"
           testId="video-volume"
         />
-        <button
-          type="button"
-          className={control}
-          onClick={toggleFullscreen}
-          disabled={!url || !!problem}
-          aria-label={fullscreen ? "Exit full screen" : "Full screen"}
-          title={fullscreen ? "Exit full screen (F)" : "Full screen (F)"}
+        <span
+          className={unavailable ? "inline-flex" : "contents"}
+          data-tooltip-content={fullscreen ? "Exit full screen (F)" : "Full screen (F)"}
         >
-          {fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
-        </button>
+          <button
+            type="button"
+            className={control}
+            onClick={toggleFullscreen}
+            disabled={unavailable}
+            style={unavailable ? { pointerEvents: "none" } : undefined}
+            aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+          >
+            {fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+          </button>
+        </span>
       </div>
     </div>
   )

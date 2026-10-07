@@ -1,4 +1,5 @@
 import type { Volume, VolumeKind } from "@fastview/contracts"
+import { Tooltip } from "@fastview/ui"
 import { useEffect, useMemo } from "react"
 import {
   closeDriveMenu,
@@ -58,37 +59,38 @@ export function DriveBar({ side }: { side: Side }) {
       data-testid={`drives-${side}`}
       className="flex h-7 shrink-0 items-center gap-0.5 overflow-hidden border-b border-border bg-chrome px-1.5 text-[0.6875rem]"
     >
-      <button
-        type="button"
-        tabIndex={-1}
-        aria-haspopup="menu"
-        aria-expanded={menuOpen}
-        aria-label="Drive menu"
-        title={`Drive menu (${side === "left" ? "Alt+F1" : "Alt+F2"})`}
-        onClick={() => (menuOpen ? closeDriveMenu() : openDriveMenu(side))}
-        className="mr-1 flex h-5 items-center gap-1 rounded px-1.5 font-medium text-text hover:bg-raised"
-      >
-        {current ? driveName(current) : "Drives"}
-        <span aria-hidden="true" className="text-muted">
-          ▾
-        </span>
-      </button>
+      <Tooltip content={`Drive menu (${side === "left" ? "Alt+F1" : "Alt+F2"})`}>
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          aria-label="Drive menu"
+          onClick={() => (menuOpen ? closeDriveMenu() : openDriveMenu(side))}
+          className="mr-1 flex h-5 items-center gap-1 rounded px-1.5 font-medium text-text hover:bg-raised"
+        >
+          {current ? driveName(current) : "Drives"}
+          <span aria-hidden="true" className="text-muted">
+            ▾
+          </span>
+        </button>
+      </Tooltip>
       {volumes.map((v) => {
         const pressed = current?.path === v.path
         return (
-          <button
-            key={v.path}
-            type="button"
-            tabIndex={-1}
-            aria-pressed={pressed}
-            title={driveTitle(v)}
-            data-not-ready={v.notReady || undefined}
-            onClick={() => void openDrive(side, v.path)}
-            {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
-            className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
-          >
-            {driveName(v)}
-          </button>
+          <Tooltip key={v.path} content={driveTitle(v)}>
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-pressed={pressed}
+              data-not-ready={v.notReady || undefined}
+              onClick={() => void openDrive(side, v.path)}
+              {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
+              className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
+            >
+              {driveName(v)}
+            </button>
+          </Tooltip>
         )
       })}
       <span className="flex-1" />

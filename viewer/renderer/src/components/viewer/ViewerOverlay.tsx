@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ButtonHTMLAttributes,
+  type KeyboardEvent,
+} from "react"
+import { Tooltip } from "@fastview/ui"
 import { useFolderStore } from "../../features/folder/folderStore"
 import { useSettingsStore } from "../../features/settings/settingsStore"
 import { useThumb } from "../../features/previews/thumbStore"
@@ -30,6 +38,17 @@ const button =
 const iconButton = `${button} grid w-7 place-items-center px-0`
 
 const hint = (text: string, key: string | undefined): string => (key ? `${text} (${key})` : text)
+
+function HintButton({
+  tooltip,
+  ...props
+}: Omit<ButtonHTMLAttributes<HTMLButtonElement>, "title"> & { tooltip: string }) {
+  return (
+    <Tooltip content={tooltip}>
+      <button {...props} />
+    </Tooltip>
+  )
+}
 
 /**
  * The focused image viewer (Stage 04): a full-window overlay opened from an
@@ -127,14 +146,14 @@ export function ViewerOverlay() {
         aria-label="Viewer toolbar"
         className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3"
       >
-        <button
+        <HintButton
           type="button"
           className={button}
           onClick={close}
-          title={hint("Back to folder", hints.close)}
+          tooltip={hint("Back to folder", hints.close)}
         >
           ← Folder
-        </button>
+        </HintButton>
         <div className="flex min-w-0 flex-1 items-baseline gap-3 px-1">
           <span className="truncate text-xs font-medium" data-testid="viewer-name">
             {item.name}
@@ -143,49 +162,49 @@ export function ViewerOverlay() {
             {formatCount(index + 1)} / {formatCount(total)}
           </span>
         </div>
-        <button
+        <HintButton
           type="button"
           className={button}
           onClick={() => void step(-1)}
-          title={hint("Previous image", hints.previous)}
+          tooltip={hint("Previous image", hints.previous)}
         >
           Previous
-        </button>
-        <button
+        </HintButton>
+        <HintButton
           type="button"
           className={button}
           onClick={() => void step(1)}
-          title={hint("Next image", hints.next)}
+          tooltip={hint("Next image", hints.next)}
         >
           Next
-        </button>
+        </HintButton>
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        <button
+        <HintButton
           type="button"
           className={button}
           aria-pressed={zoom.fit}
           onClick={() => controller.current?.fit()}
-          title={hint("Fit to window", hints.fit)}
+          tooltip={hint("Fit to window", hints.fit)}
         >
           Fit
-        </button>
-        <button
+        </HintButton>
+        <HintButton
           type="button"
           className={button}
           onClick={() => controller.current?.actualSize()}
-          title={hint("Actual size", hints.actual)}
+          tooltip={hint("Actual size", hints.actual)}
         >
           1:1
-        </button>
-        <button
+        </HintButton>
+        <HintButton
           type="button"
           className={`${button} w-7 px-0`}
           onClick={() => controller.current?.zoomOut()}
           aria-label="Zoom out"
-          title={hint("Zoom out", hints.zoomOut)}
+          tooltip={hint("Zoom out", hints.zoomOut)}
         >
           −
-        </button>
+        </HintButton>
         <span
           className="w-12 text-center text-xs tabular-nums"
           data-testid="viewer-zoom"
@@ -193,54 +212,54 @@ export function ViewerOverlay() {
         >
           {Math.round(zoom.value * 100)}%
         </span>
-        <button
+        <HintButton
           type="button"
           className={`${button} w-7 px-0`}
           onClick={() => controller.current?.zoomIn()}
           aria-label="Zoom in"
-          title={hint("Zoom in", hints.zoomIn)}
+          tooltip={hint("Zoom in", hints.zoomIn)}
         >
           +
-        </button>
+        </HintButton>
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        <button
+        <HintButton
           type="button"
           className={iconButton}
           onClick={() => updateTransform((t) => rotateBy(t, -1))}
           aria-label="Rotate left"
-          title={hint("Rotate left", hints.rotateCcw)}
+          tooltip={hint("Rotate left", hints.rotateCcw)}
         >
           <RotateCcwIcon size={14} />
-        </button>
-        <button
+        </HintButton>
+        <HintButton
           type="button"
           className={iconButton}
           onClick={() => updateTransform((t) => rotateBy(t, 1))}
           aria-label="Rotate right"
-          title={hint("Rotate right", hints.rotateCw)}
+          tooltip={hint("Rotate right", hints.rotateCw)}
         >
           <RotateCwIcon size={14} />
-        </button>
-        <button
+        </HintButton>
+        <HintButton
           type="button"
           className={iconButton}
           aria-pressed={transform.flipH}
           onClick={() => updateTransform(flipHorizontal)}
           aria-label="Flip horizontally"
-          title={hint("Flip horizontally", hints.flip)}
+          tooltip={hint("Flip horizontally", hints.flip)}
         >
           <FlipIcon size={14} />
-        </button>
+        </HintButton>
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
-        <button
+        <HintButton
           type="button"
           className={iconButton}
           onClick={() => void copyImage(item.id)}
           aria-label="Copy picture"
-          title={hint("Copy picture", hints.copy)}
+          tooltip={hint("Copy picture", hints.copy)}
         >
           <CopyIcon size={14} />
-        </button>
+        </HintButton>
       </div>
       <ContextMenuRoot>
         <ContextMenuTrigger asChild>

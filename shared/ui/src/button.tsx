@@ -2,6 +2,7 @@
 // class-variance dependency). Variants are the looks the app already used,
 // collected in one place so new UI does not invent more.
 import type { ButtonHTMLAttributes, ReactNode } from "react"
+import { Tooltip } from "./Tooltip"
 
 export type ButtonVariant = "primary" | "secondary" | "danger" | "toolbar"
 export type ButtonSize = "md" | "sm" | "icon"
@@ -39,9 +40,10 @@ export function Button({
   size = "md",
   className,
   type = "button",
+  title,
   ...rest
 }: ButtonProps) {
-  return (
+  const button = (
     <button
       type={type}
       className={
@@ -50,6 +52,7 @@ export function Button({
       {...rest}
     />
   )
+  return title ? <Tooltip content={title}>{button}</Tooltip> : button
 }
 
 /** A key cap, for shortcut references. */

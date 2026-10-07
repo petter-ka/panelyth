@@ -1,5 +1,6 @@
 import { chordAllowedWhileTyping, eventChord } from "@fastview/renderer-core"
 import { ImageViewer, VideoPlayer } from "@fastview/media-ui"
+import { Tooltip } from "@fastview/ui"
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react"
 import { formatBytes } from "../features/format"
 import { actionFor, type ActionId } from "../features/keymap"
@@ -208,23 +209,25 @@ function ListerWindow({ l }: { l: ListerState }) {
       className="fixed inset-0 z-40 flex flex-col bg-canvas outline-none"
     >
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2 text-xs">
-        <span className="min-w-0 flex-1 truncate text-text" title={item.name}>
-          {item.name}
-          <span className="ml-2 text-muted">{formatBytes(item.sizeBytes)}</span>
-        </span>
+        <Tooltip content={item.name}>
+          <span className="min-w-0 flex-1 truncate text-text">
+            {item.name}
+            <span className="ml-2 text-muted">{formatBytes(item.sizeBytes)}</span>
+          </span>
+        </Tooltip>
         <div role="group" aria-label="View as" className="flex gap-1">
           {MODES.map((m) => (
-            <button
-              key={m.mode}
-              type="button"
-              className={chip}
-              aria-pressed={mode === m.mode}
-              disabled={!available(m.mode)}
-              title={`${m.label} (${m.key})`}
-              onClick={() => setListerMode(m.mode)}
-            >
-              {m.label}
-            </button>
+            <Tooltip key={m.mode} content={`${m.label} (${m.key})`}>
+              <button
+                type="button"
+                className={chip}
+                aria-pressed={mode === m.mode}
+                disabled={!available(m.mode)}
+                onClick={() => setListerMode(m.mode)}
+              >
+                {m.label}
+              </button>
+            </Tooltip>
           ))}
         </div>
         {mode === "text" && (
@@ -244,30 +247,30 @@ function ListerWindow({ l }: { l: ListerState }) {
                 </option>
               ))}
             </select>
-            <button
-              type="button"
-              className={chip}
-              aria-pressed={wrap}
-              title="Wrap lines (W)"
-              onClick={() => setWrap((w) => (lastWrap = !w))}
-            >
-              Wrap
-            </button>
+            <Tooltip content="Wrap lines (W)">
+              <button
+                type="button"
+                className={chip}
+                aria-pressed={wrap}
+                onClick={() => setWrap((w) => (lastWrap = !w))}
+              >
+                Wrap
+              </button>
+            </Tooltip>
           </>
         )}
         {(mode === "text" || mode === "hex") && (
-          <button
-            type="button"
-            className={chip}
-            title="Find (Ctrl+F)"
-            onClick={() => run("lister.find")}
-          >
-            Find
-          </button>
+          <Tooltip content="Find (Ctrl+F)">
+            <button type="button" className={chip} onClick={() => run("lister.find")}>
+              Find
+            </button>
+          </Tooltip>
         )}
-        <button type="button" className={chip} title="Close (Esc)" onClick={closeLister}>
-          Close
-        </button>
+        <Tooltip content="Close (Esc)">
+          <button type="button" className={chip} onClick={closeLister}>
+            Close
+          </button>
+        </Tooltip>
       </div>
       {findOpen && (
         <form

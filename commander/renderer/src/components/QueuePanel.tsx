@@ -1,5 +1,5 @@
 import type { ConflictDecision, JobConflictSide, JobSnapshot } from "@fastview/contracts"
-import { Button, DialogWindow } from "@fastview/ui"
+import { Button, DialogWindow, Tooltip } from "@fastview/ui"
 import { useState } from "react"
 import { formatBytes, formatCount, formatDate } from "../features/format"
 import {
@@ -202,15 +202,16 @@ export function QueuePanel() {
             </ul>
           </div>
           {list.length > 1 && (
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={toggleQueue}
-              title="Show all operations (Ctrl+J)"
-              className="h-7 shrink-0 px-3 text-muted hover:text-text"
-            >
-              +{list.length - 1} more
-            </button>
+            <Tooltip content="Show all operations (Ctrl+J)">
+              <button
+                type="button"
+                tabIndex={-1}
+                onClick={toggleQueue}
+                className="h-7 shrink-0 px-3 text-muted hover:text-text"
+              >
+                +{list.length - 1} more
+              </button>
+            </Tooltip>
           )}
         </div>
       )}
@@ -234,9 +235,9 @@ function Side({
       <span className="text-[0.6875rem] font-semibold tracking-wide text-muted uppercase">
         {title}
       </span>
-      <span className="truncate text-text" title={name}>
-        {name}
-      </span>
+      <Tooltip content={name}>
+        <span className="truncate text-text">{name}</span>
+      </Tooltip>
       <span className="text-muted tabular-nums">
         {side.isDir ? "Folder" : formatBytes(side.size)}
       </span>
@@ -322,9 +323,9 @@ export function JobDetailsDialog() {
       <ul className="max-h-80 overflow-y-auto text-xs" data-testid="job-details">
         {d.errors.map((e, i) => (
           <li key={i} className="flex gap-3 border-b border-border py-1.5">
-            <span className="w-48 shrink-0 truncate text-text" title={e.name}>
-              {e.name || "—"}
-            </span>
+            <Tooltip content={e.name}>
+              <span className="w-48 shrink-0 truncate text-text">{e.name || "—"}</span>
+            </Tooltip>
             <span className="min-w-0 flex-1 text-muted">{e.message}</span>
           </li>
         ))}

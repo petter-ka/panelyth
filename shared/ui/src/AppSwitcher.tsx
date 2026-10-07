@@ -1,5 +1,6 @@
 import type { AppId } from "@fastview/contracts"
 import { CommanderGlyph, ViewerGlyph } from "./AppSwitchButton"
+import { Tooltip } from "./Tooltip"
 
 const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
 const APPS: AppId[] = ["viewer", "commander"]
@@ -24,21 +25,25 @@ export function AppSwitcher({ current, shortcut, onSwitch }: AppSwitcherProps) {
         const Glyph = app === "viewer" ? ViewerGlyph : CommanderGlyph
 
         return (
-          <button
+          <Tooltip
             key={app}
-            type="button"
-            onClick={active ? undefined : onSwitch}
-            disabled={active}
-            aria-label={active ? `${TITLES[app]} (current app)` : label}
-            aria-current={active ? "page" : undefined}
-            aria-keyshortcuts={active ? undefined : shortcut.replace("Ctrl", "Control")}
-            title={active ? `${TITLES[app]} (current app)` : `${label} (${shortcut})`}
-            data-target={app}
-            data-testid={active ? "current-app" : "app-switch"}
-            className={`grid size-9 shrink-0 place-items-center rounded-md ${active ? "bg-raised text-accent" : "text-muted hover:bg-raised hover:text-text"}`}
+            side="right"
+            content={active ? `${TITLES[app]} (current app)` : `${label} (${shortcut})`}
           >
-            <Glyph size={18} />
-          </button>
+            <button
+              type="button"
+              onClick={active ? undefined : onSwitch}
+              disabled={active}
+              aria-label={active ? `${TITLES[app]} (current app)` : label}
+              aria-current={active ? "page" : undefined}
+              aria-keyshortcuts={active ? undefined : shortcut.replace("Ctrl", "Control")}
+              data-target={app}
+              data-testid={active ? "current-app" : "app-switch"}
+              className={`grid size-9 shrink-0 place-items-center rounded-md ${active ? "bg-raised text-accent" : "text-muted hover:bg-raised hover:text-text"}`}
+            >
+              <Glyph size={18} />
+            </button>
+          </Tooltip>
         )
       })}
     </nav>

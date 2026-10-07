@@ -2,6 +2,7 @@ import { defaultChords, eventChord, formatChord, type ActionDef } from "@fastvie
 import { useState, type KeyboardEvent } from "react"
 import { Button, Kbd } from "./button"
 import { DialogWindow } from "./dialog"
+import { Tooltip } from "./Tooltip"
 
 export interface ShortcutsDialogProps {
   open: boolean
@@ -107,20 +108,23 @@ export function ShortcutsDialog({
                       >
                         Change
                       </Button>
-                      <Button
-                        size="sm"
-                        className="h-6 px-2"
-                        disabled={!custom}
-                        aria-label={`Reset shortcut for ${a.label}`}
-                        title={`Default: ${
+                      <Tooltip
+                        content={`Default: ${
                           defaultChords(a)
                             .map((c) => formatChord(c))
                             .join(", ") || "none"
                         }`}
-                        onClick={() => onReset(a.id)}
                       >
-                        Reset
-                      </Button>
+                        <Button
+                          size="sm"
+                          className="h-6 px-2"
+                          disabled={!custom}
+                          aria-label={`Reset shortcut for ${a.label}`}
+                          onClick={() => onReset(a.id)}
+                        >
+                          Reset
+                        </Button>
+                      </Tooltip>
                     </li>
                   )
                 })}

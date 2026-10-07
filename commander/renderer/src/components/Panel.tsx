@@ -1,4 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, type KeyboardEvent } from "react"
+import { Tooltip } from "@fastview/ui"
 import { useUiStore } from "../features/commands"
 import { useQuickSearch } from "../features/quicksearch"
 import {
@@ -155,14 +156,15 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
                 Retry
               </button>
               {dirId !== null && (
-                <button
-                  type="button"
-                  onClick={() => dismissError(side)}
-                  title="Esc"
-                  className="rounded border border-border px-2.5 py-1 text-text hover:bg-raised"
-                >
-                  Back
-                </button>
+                <Tooltip content="Esc">
+                  <button
+                    type="button"
+                    onClick={() => dismissError(side)}
+                    className="rounded border border-border px-2.5 py-1 text-text hover:bg-raised"
+                  >
+                    Back
+                  </button>
+                </Tooltip>
               )}
               <button
                 type="button"

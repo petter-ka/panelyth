@@ -1,4 +1,5 @@
 import type { SidecarState } from "@fastview/contracts"
+import { Tooltip } from "@fastview/ui"
 import { useEffect, useState } from "react"
 import { bridge } from "../bridge"
 import { useFolderStore } from "../features/folder/folderStore"
@@ -87,46 +88,52 @@ export function StatusBar() {
         <span data-state={state}>{LABEL[state]}</span>
       </span>
       {state === "ready" && (
-        <button
-          type="button"
-          onClick={() => void measurePing()}
-          title="Measure backend round trip"
-          className="rounded px-1 tabular-nums hover:text-text"
-          data-testid="ping"
-        >
-          {pingMs === null ? "ping …" : `ping ${pingMs.toFixed(1)} ms`}
-        </button>
+        <Tooltip content="Measure backend round trip">
+          <button
+            type="button"
+            onClick={() => void measurePing()}
+            className="rounded px-1 tabular-nums hover:text-text"
+            data-testid="ping"
+          >
+            {pingMs === null ? "ping …" : `ping ${pingMs.toFixed(1)} ms`}
+          </button>
+        </Tooltip>
       )}
       {goVersion && <span>{goVersion}</span>}
       <span className="flex-1" />
       <SelectionSummary />
-      <button
-        type="button"
-        onClick={openShortcutHelp}
-        title={shortcutHint ? `Keyboard shortcuts (${shortcutHint})` : "Keyboard shortcuts"}
-        aria-label="Keyboard shortcuts"
-        className="grid place-items-center rounded px-1 hover:text-text"
+      <Tooltip
+        content={shortcutHint ? `Keyboard shortcuts (${shortcutHint})` : "Keyboard shortcuts"}
       >
-        <KeyboardIcon size={14} />
-      </button>
-      <button
-        type="button"
-        onClick={openSettings}
-        title="Settings"
-        aria-label="Settings"
-        className="grid place-items-center rounded px-1 hover:text-text"
-      >
-        <SettingsIcon size={14} />
-      </button>
-      <button
-        type="button"
-        onClick={cycleTheme}
-        title="Change theme"
-        className="rounded px-1 capitalize hover:text-text"
-        data-testid="theme-toggle"
-      >
-        Theme: {themeLabel}
-      </button>
+        <button
+          type="button"
+          onClick={openShortcutHelp}
+          aria-label="Keyboard shortcuts"
+          className="grid place-items-center rounded px-1 hover:text-text"
+        >
+          <KeyboardIcon size={14} />
+        </button>
+      </Tooltip>
+      <Tooltip content="Settings">
+        <button
+          type="button"
+          onClick={openSettings}
+          aria-label="Settings"
+          className="grid place-items-center rounded px-1 hover:text-text"
+        >
+          <SettingsIcon size={14} />
+        </button>
+      </Tooltip>
+      <Tooltip content="Change theme">
+        <button
+          type="button"
+          onClick={cycleTheme}
+          className="rounded px-1 capitalize hover:text-text"
+          data-testid="theme-toggle"
+        >
+          Theme: {themeLabel}
+        </button>
+      </Tooltip>
     </footer>
   )
 }

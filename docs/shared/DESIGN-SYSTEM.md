@@ -88,6 +88,14 @@ added only with a measured trace (ADR-0014).
 Stage 08 motion: menus and dialogs fade and scale in from 98 % over 120 ms (`--motion-fast`, `--motion-ease`) and
 close instantly, and the tree chevron rotates when a node expands. Everything is off under `prefers-reduced-motion`.
 
+### Tooltips
+
+Use the shared `Tooltip` component for hover hints, or `data-tooltip-content` directly in virtualized rows. The
+app-level `TooltipProvider` shows one theme-aware tooltip after 500 ms on pointer hover or keyboard focus, including
+for portalled dialogs. Do not put native HTML `title` attributes on UI elements; component `title` props that render
+visible headings or labels are unaffected. Use `side="right"` for left rails and
+`data-tooltip-side="right"` for virtualized rows; the tooltip flips if the viewport has no room on that side.
+
 ## Keyboard foundation
 
 - Every command key comes from the keymap (ADR-0022). Menus and tooltips show the current key, and **Keyboard

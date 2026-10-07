@@ -1,5 +1,5 @@
 import type { SidecarState } from "@fastview/contracts"
-import { THEME_OPTIONS, useThemeStore } from "@fastview/ui"
+import { THEME_OPTIONS, Tooltip, useThemeStore } from "@fastview/ui"
 import { useCarryNotice } from "../features/carry"
 import { useFilesStore } from "../features/files"
 import { useSidecarStore } from "../features/sidecar"
@@ -46,15 +46,16 @@ export function StatusBar() {
         </span>
       )}
       <span className="flex-1" />
-      <button
-        type="button"
-        onClick={cycle}
-        className="rounded px-1 hover:text-text"
-        title="Change theme (shared with the viewer)"
-        data-testid="theme-toggle"
-      >
-        Theme: {themeLabel}
-      </button>
+      <Tooltip content="Change theme (shared with the viewer)">
+        <button
+          type="button"
+          onClick={cycle}
+          className="rounded px-1 hover:text-text"
+          data-testid="theme-toggle"
+        >
+          Theme: {themeLabel}
+        </button>
+      </Tooltip>
     </footer>
   )
 }

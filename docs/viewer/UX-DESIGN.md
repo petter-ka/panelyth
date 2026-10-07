@@ -26,7 +26,7 @@ Minimal, polished, desktop-native and power-user friendly.
 The app switcher rail sits at the far left; the workspace begins beside it. The workspace's left column sits beside the
 content pane. Its folder tree is above the preview. Drag the vertical divider to resize
 the columns and the horizontal divider in the left column to resize the tree and preview. Both sizes persist with the
-workspace.
+workspace. An icon button on the tree/preview divider collapses or restores the preview.
 
 ## App switcher rail
 
@@ -44,6 +44,10 @@ Rules and options: `docs/shared/APP-SWITCHING.md`.
 - bookmarks
 - recent
 - lazy folder tree
+
+The folder tree keeps a sticky breadcrumb inside its scrolling area for the open folder. It remains at the top while
+the tree scrolls up or down, keeps the filesystem root and last three ancestors visible, and puts intermediate folders
+in the ellipsis menu. Selecting an ancestor opens that folder.
 
 Never eagerly recurse through the full filesystem.
 

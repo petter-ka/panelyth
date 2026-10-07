@@ -1,5 +1,5 @@
 import { chordAllowedWhileTyping, eventChord } from "@fastview/renderer-core"
-import { AppSwitcher, ShortcutsDialog } from "@fastview/ui"
+import { AppSwitcher, ShortcutsDialog, TooltipProvider } from "@fastview/ui"
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
@@ -141,66 +141,68 @@ export function AppShell() {
   }, [])
 
   return (
-    <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto_auto_auto]">
-      <AppSwitcher current="commander" shortcut={SWITCH_SHORTCUT} onSwitch={switchToViewer} />
-      <Group
-        key={layoutToken}
-        id="panels"
-        orientation="horizontal"
-        defaultLayout={{ left: split, right: 100 - split }}
-        onLayoutChanged={(layout, meta) => {
-          const left = layout.left
-          if (meta.isUserInteraction && typeof left === "number") setSplit(left)
-        }}
-        className="min-h-0"
-      >
-        <ResizablePanel id="left" minSize="10%">
-          <PanelSlot side="left" quick={quick === "left"}>
-            <Panel
-              side="left"
-              active={active === "left"}
-              onActivate={() => setActivePanel("left")}
-              ref={(el) => {
-                lists.current.left = el
-              }}
-            />
-          </PanelSlot>
-        </ResizablePanel>
-        <Separator
-          id="panels-separator"
-          aria-label="Resize panels"
-          className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
-          onDoubleClick={resetSplit}
-        />
-        <ResizablePanel id="right" minSize="10%">
-          <PanelSlot side="right" quick={quick === "right"}>
-            <Panel
-              side="right"
-              active={active === "right"}
-              onActivate={() => setActivePanel("right")}
-              ref={(el) => {
-                lists.current.right = el
-              }}
-            />
-          </PanelSlot>
-        </ResizablePanel>
-      </Group>
-      <QueuePanel />
-      <FunctionKeyBar />
-      <StatusBar />
-      <CommanderShortcuts />
-      <MaskDialog />
-      <HotlistDialog />
-      <CopyDialog />
-      <DeleteDialog />
-      <MkdirDialog />
-      <ConflictDialog />
-      <JobDetailsDialog />
-      <SettingsDialog />
-      <ProgramDialog />
-      <NewFileDialog />
-      <Lister />
-    </div>
+    <TooltipProvider>
+      <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)_auto_auto_auto]">
+        <AppSwitcher current="commander" shortcut={SWITCH_SHORTCUT} onSwitch={switchToViewer} />
+        <Group
+          key={layoutToken}
+          id="panels"
+          orientation="horizontal"
+          defaultLayout={{ left: split, right: 100 - split }}
+          onLayoutChanged={(layout, meta) => {
+            const left = layout.left
+            if (meta.isUserInteraction && typeof left === "number") setSplit(left)
+          }}
+          className="min-h-0"
+        >
+          <ResizablePanel id="left" minSize="10%">
+            <PanelSlot side="left" quick={quick === "left"}>
+              <Panel
+                side="left"
+                active={active === "left"}
+                onActivate={() => setActivePanel("left")}
+                ref={(el) => {
+                  lists.current.left = el
+                }}
+              />
+            </PanelSlot>
+          </ResizablePanel>
+          <Separator
+            id="panels-separator"
+            aria-label="Resize panels"
+            className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
+            onDoubleClick={resetSplit}
+          />
+          <ResizablePanel id="right" minSize="10%">
+            <PanelSlot side="right" quick={quick === "right"}>
+              <Panel
+                side="right"
+                active={active === "right"}
+                onActivate={() => setActivePanel("right")}
+                ref={(el) => {
+                  lists.current.right = el
+                }}
+              />
+            </PanelSlot>
+          </ResizablePanel>
+        </Group>
+        <QueuePanel />
+        <FunctionKeyBar />
+        <StatusBar />
+        <CommanderShortcuts />
+        <MaskDialog />
+        <HotlistDialog />
+        <CopyDialog />
+        <DeleteDialog />
+        <MkdirDialog />
+        <ConflictDialog />
+        <JobDetailsDialog />
+        <SettingsDialog />
+        <ProgramDialog />
+        <NewFileDialog />
+        <Lister />
+      </div>
+    </TooltipProvider>
   )
 }
 

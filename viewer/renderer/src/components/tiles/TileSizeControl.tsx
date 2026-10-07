@@ -1,5 +1,6 @@
 import { TILE_SIZE_ORDER, type TileSize } from "../../features/tiles/layout"
 import { useLayoutStore } from "../../features/tiles/layoutStore"
+import { Tooltip } from "@fastview/ui"
 
 const LABEL: Record<TileSize, { short: string; long: string }> = {
   small: { short: "S", long: "Small tiles" },
@@ -18,17 +19,17 @@ export function TileSizeControl() {
       className="flex h-7 overflow-hidden rounded-md border border-border"
     >
       {TILE_SIZE_ORDER.map((s) => (
-        <button
-          key={s}
-          type="button"
-          title={`${LABEL[s].long} (Ctrl + scroll to change)`}
-          aria-label={LABEL[s].long}
-          aria-pressed={size === s}
-          onClick={() => setSize(s)}
-          className={`w-7 text-xs ${size === s ? "bg-raised font-medium text-text" : "text-muted hover:text-text"}`}
-        >
-          {LABEL[s].short}
-        </button>
+        <Tooltip key={s} content={`${LABEL[s].long} (Ctrl + scroll to change)`}>
+          <button
+            type="button"
+            aria-label={LABEL[s].long}
+            aria-pressed={size === s}
+            onClick={() => setSize(s)}
+            className={`w-7 text-xs ${size === s ? "bg-raised font-medium text-text" : "text-muted hover:text-text"}`}
+          >
+            {LABEL[s].short}
+          </button>
+        </Tooltip>
       ))}
     </div>
   )

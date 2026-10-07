@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AppSwitcher } from "@fastview/ui"
+import { AppSwitcher, Tooltip, TooltipProvider } from "@fastview/ui"
 import { Group, Panel, Separator, type PanelImperativeHandle } from "react-resizable-panels"
 import { bridge, canSwitchApps } from "../bridge"
 import { ContentPane } from "../components/ContentPane"
@@ -17,6 +17,7 @@ import { setPanes, usePaneStore } from "../features/workspace/workspace"
 import { useGlobalShortcuts } from "./shortcuts"
 import { DialogWindow } from "../components/ui/dialog"
 import { Button } from "../components/ui/button"
+import { ChevronDownIcon } from "../components/ui/icons"
 import { useSettingsStore } from "../features/settings/settingsStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { useShortcutHint } from "../features/shortcuts/shortcutStore"
@@ -55,6 +56,8 @@ export function AppShell() {
   const sidebar = useRef<PanelImperativeHandle>(null)
   const preview = useRef<PanelImperativeHandle>(null)
   const [confirmExit, setConfirmExit] = useState(false)
+  const [treeSize, setTreeSize] = useState(panes?.tree ?? 62)
+  const [previewCollapsed, setPreviewCollapsed] = useState(panes?.preview === 0)
   const commanderEnabled = canSwitchApps()
   const appSwitchShortcut = useShortcutHint("app.switch")
   useGlobalShortcuts()
@@ -88,8 +91,13 @@ export function AppShell() {
         toggle(id) {
           const panel = (id === "sidebar" ? sidebar : preview).current
           if (!panel) return
-          if (panel.isCollapsed()) panel.expand()
-          else panel.collapse()
+          if (panel.isCollapsed()) {
+            panel.expand()
+            if (id === "preview") setPreviewCollapsed(false)
+          } else {
+            panel.collapse()
+            if (id === "preview") setPreviewCollapsed(true)
+          }
         },
         expand(id) {
           const panel = (id === "sidebar" ? sidebar : preview).current
@@ -99,103 +107,146 @@ export function AppShell() {
     [],
   )
 
+  useEffect(() => {
+    setTreeSize(panes?.tree ?? 62)
+    setPreviewCollapsed(panes?.preview === 0)
+  }, [applyToken, panes])
+
+  const syncLeftLayout = useCallback((layout: Record<string, number>) => {
+    if (layout.tree !== undefined) setTreeSize(layout.tree)
+    if (layout.preview !== undefined) setPreviewCollapsed(layout.preview === 0)
+  }, [])
+
   return (
-    <div
-      className={`grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[minmax(0,1fr)_auto]`}
-    >
-      {commanderEnabled && (
-        <AppSwitcher
-          current="viewer"
-          shortcut={appSwitchShortcut ?? "Ctrl+Shift+M"}
-          onSwitch={switchToCommander}
-        />
-      )}
-      {/* A layout applied from library.db (or reset) remounts the group with it. */}
-      <Group
-        key={applyToken}
-        id="workspace"
-        orientation="horizontal"
-        defaultLayout={groupLayout(panes, ["sidebar", "content"])}
-        onLayoutChanged={(layout, meta) => {
-          if (meta.isUserInteraction) saveGroupLayout(meta.requestedLayout ?? layout)
-        }}
-        className="min-h-0"
+    <TooltipProvider>
+      <div
+        className={`grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[minmax(0,1fr)_auto]`}
       >
-        <Panel
-          id="sidebar"
-          panelRef={sidebar}
-          defaultSize={240}
-          minSize={180}
-          maxSize={480}
-          collapsible
-          groupResizeBehavior="preserve-pixel-size"
+        {commanderEnabled && (
+          <AppSwitcher
+            current="viewer"
+            shortcut={appSwitchShortcut ?? "Ctrl+Shift+M"}
+            onSwitch={switchToCommander}
+          />
+        )}
+        {/* A layout applied from library.db (or reset) remounts the group with it. */}
+        <Group
+          key={applyToken}
+          id="workspace"
+          orientation="horizontal"
+          defaultLayout={groupLayout(panes, ["sidebar", "content"])}
+          onLayoutChanged={(layout, meta) => {
+            if (meta.isUserInteraction) saveGroupLayout(meta.requestedLayout ?? layout)
+          }}
+          className="min-h-0"
         >
-          <Group
-            id="left-column"
-            orientation="vertical"
-            defaultLayout={
-              panes && panes.tree !== undefined && panes.preview !== undefined
-                ? groupLayout(panes, ["tree", "preview"])
-                : undefined
-            }
-            onLayoutChanged={(layout, meta) => {
-              if (meta.isUserInteraction) saveGroupLayout(meta.requestedLayout ?? layout)
-            }}
-            className="h-full min-h-0"
+          <Panel
+            id="sidebar"
+            panelRef={sidebar}
+            defaultSize={240}
+            minSize={180}
+            maxSize={480}
+            collapsible
+            groupResizeBehavior="preserve-pixel-size"
           >
-            <Panel id="tree" defaultSize="62%" minSize={140}>
-              <SidebarPane />
-            </Panel>
-            <Separator
-              id="tree-preview-separator"
-              aria-label="Resize folder tree and preview"
-              className={stackedSeparator}
-            />
-            <Panel
-              id="preview"
-              panelRef={preview}
-              defaultSize="38%"
-              minSize={160}
-              collapsible
-              groupResizeBehavior="preserve-pixel-size"
+            <div className="relative h-full min-h-0 overflow-visible">
+              <Group
+                id="left-column"
+                orientation="vertical"
+                defaultLayout={
+                  panes && panes.tree !== undefined && panes.preview !== undefined
+                    ? groupLayout(panes, ["tree", "preview"])
+                    : undefined
+                }
+                onLayoutChange={syncLeftLayout}
+                onLayoutChanged={(layout, meta) => {
+                  syncLeftLayout(layout)
+                  if (meta.isUserInteraction) saveGroupLayout(meta.requestedLayout ?? layout)
+                }}
+                className="h-full min-h-0"
+              >
+                <Panel id="tree" defaultSize="62%" minSize={140}>
+                  <SidebarPane />
+                </Panel>
+                <Separator
+                  id="tree-preview-separator"
+                  aria-label="Resize folder tree and preview"
+                  className={stackedSeparator}
+                />
+                <Panel
+                  id="preview"
+                  panelRef={preview}
+                  defaultSize="38%"
+                  minSize={160}
+                  collapsible
+                  groupResizeBehavior="preserve-pixel-size"
+                >
+                  <PreviewPane />
+                </Panel>
+              </Group>
+              <Tooltip content={previewCollapsed ? "Expand preview" : "Collapse preview"}>
+                <button
+                  type="button"
+                  aria-label={previewCollapsed ? "Expand preview pane" : "Collapse preview pane"}
+                  aria-expanded={!previewCollapsed}
+                  aria-controls="preview"
+                  onClick={() => {
+                    const panel = preview.current
+                    if (!panel) return
+                    if (panel.isCollapsed()) {
+                      panel.expand()
+                      setPreviewCollapsed(false)
+                    } else {
+                      panel.collapse()
+                      setPreviewCollapsed(true)
+                    }
+                  }}
+                  className="absolute left-1/2 z-20 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-md border border-border bg-chrome text-muted shadow-sm hover:bg-raised hover:text-text focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+                  style={{
+                    top: treeSize >= 98 ? "calc(100% - 14px)" : `${treeSize}%`,
+                  }}
+                >
+                  <ChevronDownIcon
+                    className={`transition-transform duration-[var(--motion-fast)] ${previewCollapsed ? "rotate-180" : ""}`}
+                  />
+                </button>
+              </Tooltip>
+            </div>
+          </Panel>
+          <Separator id="sidebar-separator" aria-label="Resize left column" className={separator} />
+          <Panel id="content" minSize={360}>
+            <ContentPane />
+          </Panel>
+        </Group>
+        <StatusBar />
+        <ViewerOverlay />
+        <Notice />
+        <PropertiesDialog />
+        <JobDialogs />
+        <ShortcutsDialog />
+        <SettingsDialog />
+        <DialogWindow
+          open={confirmExit}
+          onOpenChange={setConfirmExit}
+          title="Close FastView?"
+          description="FastView will close."
+        >
+          <div className="flex justify-end gap-2">
+            <Button autoFocus onClick={() => setConfirmExit(false)}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => {
+                setConfirmExit(false)
+                void bridge.quit().catch(() => undefined)
+              }}
             >
-              <PreviewPane />
-            </Panel>
-          </Group>
-        </Panel>
-        <Separator id="sidebar-separator" aria-label="Resize left column" className={separator} />
-        <Panel id="content" minSize={360}>
-          <ContentPane />
-        </Panel>
-      </Group>
-      <StatusBar />
-      <ViewerOverlay />
-      <Notice />
-      <PropertiesDialog />
-      <JobDialogs />
-      <ShortcutsDialog />
-      <SettingsDialog />
-      <DialogWindow
-        open={confirmExit}
-        onOpenChange={setConfirmExit}
-        title="Close FastView?"
-        description="FastView will close."
-      >
-        <div className="flex justify-end gap-2">
-          <Button autoFocus onClick={() => setConfirmExit(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={() => {
-              setConfirmExit(false)
-              void bridge.quit().catch(() => undefined)
-            }}
-          >
-            Close app
-          </Button>
-        </div>
-      </DialogWindow>
-    </div>
+              Close app
+            </Button>
+          </div>
+        </DialogWindow>
+      </div>
+    </TooltipProvider>
   )
 }

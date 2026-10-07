@@ -1,6 +1,6 @@
 import type { ContentItem } from "@fastview/contracts"
 import { isMarked, usePageItem, type PageStore } from "@fastview/renderer-core"
-import { useInterfaceSizeStore, type InterfaceSize } from "@fastview/ui"
+import { Tooltip, useInterfaceSizeStore, type InterfaceSize } from "@fastview/ui"
 import {
   columnOrderingFeature,
   columnPinningFeature,
@@ -259,7 +259,8 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       const widths: ColumnWidths = { ...current }
       for (const id of COLUMN_IDS) {
         const value = next[id]
-        if (typeof value !== "number" || Math.round(value) === Math.round(previous[id] ?? 0)) continue
+        if (typeof value !== "number" || Math.round(value) === Math.round(previous[id] ?? 0))
+          continue
         const min = id === "name" ? COLUMN_LIMITS.nameMin : COLUMN_LIMITS.min
         const max = id === "name" ? COLUMN_LIMITS.nameMax : COLUMN_LIMITS.max
         widths[id] = Math.round(Math.max(min, Math.min(max, value)))
@@ -331,7 +332,8 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       id: column.id as ColumnId,
       size: column.getSize(),
       pin,
-      offset: pin === "start" ? column.getStart("start") : pin === "end" ? column.getAfter("end") : 0,
+      offset:
+        pin === "start" ? column.getStart("start") : pin === "end" ? column.getAfter("end") : 0,
     }
   })
   const tableWidth = GUTTER_WIDTH + renderColumns.reduce((total, column) => total + column.size, 0)
@@ -448,11 +450,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
         )
       } else if (targetColumn.pin === "end") {
         const at = next.pinning.end.indexOf(target)
-        next.pinning.end.splice(
-          at < 0 ? next.pinning.end.length : at + (after ? 1 : 0),
-          0,
-          source,
-        )
+        next.pinning.end.splice(at < 0 ? next.pinning.end.length : at + (after ? 1 : 0), 0, source)
       } else {
         const center = next.order.filter(
           (id) => !next.pinning.start.includes(id) && !next.pinning.end.includes(id),
@@ -498,7 +496,12 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     const sorted = sort.field === COLUMN_SORT[id]
     const entries: MenuEntry[] = [
       { id: "column-heading", label: `${COLUMN_LABEL[id]} column`, heading: true },
-      { id: "fit", label: "Fit to visible rows", detail: "Double-click edge", onSelect: () => fitColumn(id) },
+      {
+        id: "fit",
+        label: "Fit to visible rows",
+        detail: "Double-click edge",
+        onSelect: () => fitColumn(id),
+      },
       { id: "reset-width", label: "Reset column width", onSelect: () => resetColumnWidth(id) },
       { id: "sort-heading", label: "Sort", heading: true },
       {
@@ -628,76 +631,78 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
               const header = table.getFlatHeaders().find((item) => item.column.id === id)
               const sorted = column.getIsSorted()
               return (
-                <div
+                <Tooltip
                   key={id}
-                  role="columnheader"
-                  aria-sort={sorted ? (sorted === "asc" ? "ascending" : "descending") : "none"}
-                  data-column={id}
-                  data-column-header={id}
-                  data-drag-over={dragOver === id}
-                  draggable
-                  onContextMenu={(event) => openColumnMenu(event, id)}
-                  onDragStart={(event) => {
-                    event.stopPropagation()
-                    if ((event.target as HTMLElement).closest('[data-testid^="resize-"]')) {
-                      event.preventDefault()
-                      return
-                    }
-                    event.dataTransfer.setData(COLUMN_DRAG_TYPE, id)
-                    event.dataTransfer.effectAllowed = "move"
-                  }}
-                  onDragOver={(event) => {
-                    if (!Array.from(event.dataTransfer.types).includes(COLUMN_DRAG_TYPE)) return
-                    event.preventDefault()
-                    event.stopPropagation()
-                    event.dataTransfer.dropEffect = "move"
-                    setDragOver(id)
-                  }}
-                  onDragLeave={(event) => {
-                    if (event.currentTarget === event.target) setDragOver(null)
-                  }}
-                  onDrop={(event) => {
-                    const source = event.dataTransfer.getData(COLUMN_DRAG_TYPE) as ColumnId
-                    if (!COLUMN_IDS.includes(source)) return
-                    event.preventDefault()
-                    event.stopPropagation()
-                    setDragOver(null)
-                    const bounds = event.currentTarget.getBoundingClientRect()
-                    handleColumnDrop(source, id, event.clientX > bounds.left + bounds.width / 2)
-                  }}
-                  style={columnStyle(renderColumn, true)}
-                  className={`relative flex shrink-0 items-center ${dragOver === id ? "border-l-2 border-accent" : ""} ${renderColumn.pin ? "bg-chrome" : ""}`}
-                  title="Drag to reorder; right-click for column options"
+                  content="Drag to reorder; right-click for column options. Drag the edge to resize; double-click to fit visible cells."
                 >
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => toggleSort(side, COLUMN_SORT[id])}
-                    className={`flex h-full w-full items-center gap-1 px-1.5 hover:text-text ${RIGHT.has(id) ? "justify-end" : ""} ${sorted ? "text-text" : ""}`}
-                  >
-                    {String(header?.column.columnDef.header ?? COLUMN_LABEL[id])}
-                    {sorted && <span aria-hidden="true">{sorted === "asc" ? "↑" : "↓"}</span>}
-                  </button>
                   <div
-                    aria-hidden="true"
-                    data-testid={`resize-${id}`}
-                    onMouseDown={(event) => {
+                    role="columnheader"
+                    aria-sort={sorted ? (sorted === "asc" ? "ascending" : "descending") : "none"}
+                    data-column={id}
+                    data-column-header={id}
+                    data-drag-over={dragOver === id}
+                    draggable
+                    onContextMenu={(event) => openColumnMenu(event, id)}
+                    onDragStart={(event) => {
                       event.stopPropagation()
-                      header?.getResizeHandler()(event)
+                      if ((event.target as HTMLElement).closest('[data-testid^="resize-"]')) {
+                        event.preventDefault()
+                        return
+                      }
+                      event.dataTransfer.setData(COLUMN_DRAG_TYPE, id)
+                      event.dataTransfer.effectAllowed = "move"
                     }}
-                    onTouchStart={(event) => {
-                      event.stopPropagation()
-                      header?.getResizeHandler()(event)
-                    }}
-                    onDoubleClick={(event) => {
+                    onDragOver={(event) => {
+                      if (!Array.from(event.dataTransfer.types).includes(COLUMN_DRAG_TYPE)) return
                       event.preventDefault()
                       event.stopPropagation()
-                      fitColumn(id)
+                      event.dataTransfer.dropEffect = "move"
+                      setDragOver(id)
                     }}
-                    title="Drag to resize; double-click to fit visible cells"
-                    className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize hover:bg-accent"
-                  />
-                </div>
+                    onDragLeave={(event) => {
+                      if (event.currentTarget === event.target) setDragOver(null)
+                    }}
+                    onDrop={(event) => {
+                      const source = event.dataTransfer.getData(COLUMN_DRAG_TYPE) as ColumnId
+                      if (!COLUMN_IDS.includes(source)) return
+                      event.preventDefault()
+                      event.stopPropagation()
+                      setDragOver(null)
+                      const bounds = event.currentTarget.getBoundingClientRect()
+                      handleColumnDrop(source, id, event.clientX > bounds.left + bounds.width / 2)
+                    }}
+                    style={columnStyle(renderColumn, true)}
+                    className={`relative flex shrink-0 items-center ${dragOver === id ? "border-l-2 border-accent" : ""} ${renderColumn.pin ? "bg-chrome" : ""}`}
+                  >
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      onClick={() => toggleSort(side, COLUMN_SORT[id])}
+                      className={`flex h-full w-full items-center gap-1 px-1.5 hover:text-text ${RIGHT.has(id) ? "justify-end" : ""} ${sorted ? "text-text" : ""}`}
+                    >
+                      {String(header?.column.columnDef.header ?? COLUMN_LABEL[id])}
+                      {sorted && <span aria-hidden="true">{sorted === "asc" ? "↑" : "↓"}</span>}
+                    </button>
+                    <div
+                      aria-hidden="true"
+                      data-testid={`resize-${id}`}
+                      onMouseDown={(event) => {
+                        event.stopPropagation()
+                        header?.getResizeHandler()(event)
+                      }}
+                      onTouchStart={(event) => {
+                        event.stopPropagation()
+                        header?.getResizeHandler()(event)
+                      }}
+                      onDoubleClick={(event) => {
+                        event.preventDefault()
+                        event.stopPropagation()
+                        fitColumn(id)
+                      }}
+                      className="absolute top-0 right-0 z-10 h-full w-1.5 cursor-col-resize hover:bg-accent"
+                    />
+                  </div>
+                </Tooltip>
               )
             })}
           </div>
@@ -793,10 +798,17 @@ const ParentRow = memo(function ParentRow({ side, index, top, height, width, col
           role="gridcell"
           data-column={column.id}
           style={columnStyle(column)}
-          className={column.id === "name" ? "flex items-center gap-1.5 truncate px-1.5" : cellClass(column.id)}
+          className={
+            column.id === "name"
+              ? "flex items-center gap-1.5 truncate px-1.5"
+              : cellClass(column.id)
+          }
         >
           {column.id === "name" ? (
-            <><TypeGlyph glyph="up" />..</>
+            <>
+              <TypeGlyph glyph="up" />
+              ..
+            </>
           ) : column.id === "size" ? (
             "<DIR>"
           ) : null}
@@ -871,15 +883,27 @@ function Cells({
           role="gridcell"
           data-column={column.id}
           style={columnStyle(column)}
-          className={column.id === "name" ? "flex items-center gap-1.5 truncate px-1.5" : cellClass(column.id, marked)}
+          className={
+            column.id === "name"
+              ? "flex items-center gap-1.5 truncate px-1.5"
+              : cellClass(column.id, marked)
+          }
         >
           {column.id === "name" ? (
             <>
               <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} marked={marked} />
-              {renaming ? <RenameField onDone={() => focusGrid(side)} /> : <span className="truncate">{baseName(item)}</span>}
+              {renaming ? (
+                <RenameField onDone={() => focusGrid(side)} />
+              ) : (
+                <span className="truncate">{baseName(item)}</span>
+              )}
             </>
           ) : column.id === "ext" ? (
-            item.kind === "dir" ? "" : item.ext
+            item.kind === "dir" ? (
+              ""
+            ) : (
+              item.ext
+            )
           ) : column.id === "size" ? (
             formatSize(item, sizeFormat)
           ) : column.id === "date" ? (

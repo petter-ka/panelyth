@@ -1,5 +1,6 @@
 import { useId, useState, type KeyboardEvent } from "react"
 import { setSwitchSettings, useSwitchSettings } from "@fastview/renderer-core"
+import { Tooltip } from "@fastview/ui"
 import { bridge, canSwitchApps } from "../bridge"
 import { useLibraryStore } from "../features/library/libraryStore"
 import { openShortcutHelp } from "../features/shortcuts/shortcutStore"
@@ -96,18 +97,18 @@ function ChoiceGroup<T extends string>({
       className={`${layout === "grid" ? "grid grid-cols-4" : "flex"} gap-1 rounded-lg border border-border bg-canvas p-1`}
     >
       {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          aria-pressed={value === option.value}
-          aria-label={option.title ?? option.label}
-          title={option.title}
-          disabled={disabled}
-          onClick={() => onChange(option.value)}
-          className={choiceButton}
-        >
-          {option.label}
-        </button>
+        <Tooltip key={option.value} content={option.title}>
+          <button
+            type="button"
+            aria-pressed={value === option.value}
+            aria-label={option.title ?? option.label}
+            disabled={disabled}
+            onClick={() => onChange(option.value)}
+            className={choiceButton}
+          >
+            {option.label}
+          </button>
+        </Tooltip>
       ))}
     </div>
   )
@@ -155,12 +156,11 @@ function ViewerSettings() {
         )}
         {preferences.startupFolder === "specified" && (
           <div className="flex min-w-0 items-center gap-2 pl-1">
-            <span
-              className="min-w-0 flex-1 truncate text-[0.6875rem] text-muted"
-              title={preferences.specifiedFolder ?? undefined}
-            >
-              {preferences.specifiedFolder ?? "Choose a folder to use at startup"}
-            </span>
+            <Tooltip content={preferences.specifiedFolder ?? undefined}>
+              <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-muted">
+                {preferences.specifiedFolder ?? "Choose a folder to use at startup"}
+              </span>
+            </Tooltip>
             <Button size="sm" disabled={!libraryLoaded} onClick={() => void chooseFolder()}>
               Choose folder
             </Button>

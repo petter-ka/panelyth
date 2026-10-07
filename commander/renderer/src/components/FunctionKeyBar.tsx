@@ -1,4 +1,5 @@
 import { bridge } from "../bridge"
+import { Tooltip } from "@fastview/ui"
 import { runPanelAction } from "../features/commands"
 import type { ActionId } from "../features/keymap"
 import { usePanelsStore } from "../features/panels"
@@ -21,27 +22,31 @@ export function FunctionKeyBar() {
       data-testid="function-keys"
     >
       {KEYS.map(({ key, label, action }) => (
-        <button
+        <Tooltip
           key={key}
+          content={action ? `${label} (${key})` : `${label} (${key}) is not available yet`}
+        >
+          <button
+            type="button"
+            tabIndex={-1}
+            disabled={action === null}
+            onClick={() => action && runPanelAction(usePanelsStore.getState().active, action)}
+            className="flex flex-1 items-center justify-center gap-1.5 border-r border-border text-text hover:bg-raised disabled:text-muted disabled:hover:bg-transparent"
+          >
+            <kbd className="font-mono">{key}</kbd> {label}
+          </button>
+        </Tooltip>
+      ))}
+      <Tooltip content="Exit (Alt+F4)">
+        <button
           type="button"
           tabIndex={-1}
-          disabled={action === null}
-          title={action ? `${label} (${key})` : `${label} (${key}) is not available yet`}
-          onClick={() => action && runPanelAction(usePanelsStore.getState().active, action)}
-          className="flex flex-1 items-center justify-center gap-1.5 border-r border-border text-text hover:bg-raised disabled:text-muted disabled:hover:bg-transparent"
+          onClick={() => void bridge.exit().catch(() => undefined)}
+          className="flex flex-1 items-center justify-center gap-1.5 text-text hover:bg-raised"
         >
-          <kbd className="font-mono">{key}</kbd> {label}
+          <kbd className="font-mono">Alt+F4</kbd> Exit
         </button>
-      ))}
-      <button
-        type="button"
-        tabIndex={-1}
-        onClick={() => void bridge.exit().catch(() => undefined)}
-        title="Exit (Alt+F4)"
-        className="flex flex-1 items-center justify-center gap-1.5 text-text hover:bg-raised"
-      >
-        <kbd className="font-mono">Alt+F4</kbd> Exit
-      </button>
+      </Tooltip>
     </nav>
   )
 }

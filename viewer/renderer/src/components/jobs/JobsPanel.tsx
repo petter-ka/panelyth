@@ -11,6 +11,7 @@ import {
   useJobsStore,
   visibleJobs,
 } from "../../features/jobs/jobsStore"
+import { Tooltip } from "@fastview/ui"
 import { formatBytes } from "../../lib/format"
 import { CloseIcon } from "../ui/icons"
 
@@ -43,9 +44,9 @@ function JobRow({ job }: { job: JobSnapshot }) {
   return (
     <li className="flex flex-col gap-1 px-3 py-2" data-testid="job" data-state={job.state}>
       <div className="flex items-center gap-2">
-        <span className="min-w-0 flex-1 truncate text-xs text-text" title={label}>
-          {label}
-        </span>
+        <Tooltip content={label}>
+          <span className="min-w-0 flex-1 truncate text-xs text-text">{label}</span>
+        </Tooltip>
         {active ? (
           <button
             type="button"
@@ -79,7 +80,11 @@ function JobRow({ job }: { job: JobSnapshot }) {
               · {formatBytes(job.bytesDone)} of {formatBytes(job.bytesTotal)}
             </>
           )}
-          {active && job.current && <span title={job.current}> · {job.current}</span>}
+          {active && job.current && (
+            <Tooltip content={job.current}>
+              <span> · {job.current}</span>
+            </Tooltip>
+          )}
         </span>
         {job.failed > 0 && !active && (
           <button

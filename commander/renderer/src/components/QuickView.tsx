@@ -1,5 +1,6 @@
 import type { ContentItem, Properties } from "@fastview/contracts"
 import { ImageViewer, requestFit, requestMedia, VideoPlayer } from "@fastview/media-ui"
+import { Tooltip } from "@fastview/ui"
 import { useEffect, useState } from "react"
 import { bridge } from "../bridge"
 import { formatBytes, formatDate } from "../features/format"
@@ -75,9 +76,9 @@ function PropertiesBlock({ item }: { item: ContentItem }) {
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
           <dt className="text-muted">{k}</dt>
-          <dd className={`truncate text-text ${k === "Name" ? "" : "font-mono"}`} title={v}>
-            {v}
-          </dd>
+          <Tooltip content={v}>
+            <dd className={`truncate text-text ${k === "Name" ? "" : "font-mono"}`}>{v}</dd>
+          </Tooltip>
         </div>
       ))}
     </dl>
@@ -141,14 +142,15 @@ export function QuickView() {
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2 text-xs">
         <span className="text-muted">Quick view</span>
         <span className="min-w-0 flex-1 truncate text-text">{item?.name ?? ""}</span>
-        <button
-          type="button"
-          onClick={closeQuickView}
-          title="Close quick view (Ctrl+Q)"
-          className="rounded px-1.5 py-0.5 text-muted hover:bg-raised hover:text-text"
-        >
-          Close
-        </button>
+        <Tooltip content="Close quick view (Ctrl+Q)">
+          <button
+            type="button"
+            onClick={closeQuickView}
+            className="rounded px-1.5 py-0.5 text-muted hover:bg-raised hover:text-text"
+          >
+            Close
+          </button>
+        </Tooltip>
       </div>
       <div className="flex min-h-0 flex-1 flex-col">{body}</div>
     </section>

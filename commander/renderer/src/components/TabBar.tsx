@@ -1,4 +1,5 @@
 import { useState } from "react"
+import { Tooltip } from "@fastview/ui"
 import { useListingStore } from "../features/listing"
 import { setActivePanel, type Side } from "../features/panels"
 import {
@@ -37,65 +38,65 @@ export function TabBar({ side }: { side: Side }) {
         const name = (selected ? liveName : tab.name) || tab.path || "New tab"
         const files = dropTarget(side, () => tabTarget(side, index))
         return (
-          <div
-            key={tab.id}
-            role="tab"
-            aria-selected={selected}
-            data-testid={`tab-${side}-${index}`}
-            data-locked={tab.locked || undefined}
-            title={tab.path}
-            draggable
-            onDragStart={(e) => {
-              setDragFrom(index)
-              e.dataTransfer.effectAllowed = "move"
-            }}
-            onDragOver={(e) => {
-              if (dragFrom !== null) e.preventDefault()
-              else files.onDragOver(e) // panel items dropped on a tab: its folder
-            }}
-            onDrop={(e) => {
-              if (dragFrom === null) return files.onDrop(e)
-              e.preventDefault()
-              moveTab(side, dragFrom, index)
-              setDragFrom(null)
-            }}
-            onDragEnd={() => setDragFrom(null)}
-            onMouseDown={(e) => {
-              setActivePanel(side)
-              if (e.button === 1) {
+          <Tooltip key={tab.id} content={tab.path}>
+            <div
+              role="tab"
+              aria-selected={selected}
+              data-testid={`tab-${side}-${index}`}
+              data-locked={tab.locked || undefined}
+              draggable
+              onDragStart={(e) => {
+                setDragFrom(index)
+                e.dataTransfer.effectAllowed = "move"
+              }}
+              onDragOver={(e) => {
+                if (dragFrom !== null) e.preventDefault()
+                else files.onDragOver(e) // panel items dropped on a tab: its folder
+              }}
+              onDrop={(e) => {
+                if (dragFrom === null) return files.onDrop(e)
                 e.preventDefault()
-                void closeTab(side, index)
-              }
-            }}
-            onClick={() => void activateTab(side, index)}
-            onContextMenu={(e) => {
-              e.preventDefault()
-              setMenu(index)
-            }}
-            className={`group/tab flex h-6 max-w-40 min-w-0 cursor-default items-center gap-1 rounded-t border border-b-0 px-2 font-medium ${selected ? "border-border bg-canvas text-text" : "border-transparent text-muted hover:bg-raised hover:text-text"}`}
-          >
-            {tab.locked && (
-              <span aria-label="Locked" className="text-muted">
-                🔒︎
-              </span>
-            )}
-            <span className="truncate">{name}</span>
-            {!tab.locked && (
-              <button
-                type="button"
-                tabIndex={-1}
-                aria-label={`Close ${name}`}
-                onMouseDown={(e) => e.stopPropagation()}
-                onClick={(e) => {
-                  e.stopPropagation()
+                moveTab(side, dragFrom, index)
+                setDragFrom(null)
+              }}
+              onDragEnd={() => setDragFrom(null)}
+              onMouseDown={(e) => {
+                setActivePanel(side)
+                if (e.button === 1) {
+                  e.preventDefault()
                   void closeTab(side, index)
-                }}
-                className="ml-0.5 hidden size-4 place-items-center rounded text-muted group-hover/tab:grid hover:bg-raised hover:text-text"
-              >
-                ×
-              </button>
-            )}
-          </div>
+                }
+              }}
+              onClick={() => void activateTab(side, index)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                setMenu(index)
+              }}
+              className={`group/tab flex h-6 max-w-40 min-w-0 cursor-default items-center gap-1 rounded-t border border-b-0 px-2 font-medium ${selected ? "border-border bg-canvas text-text" : "border-transparent text-muted hover:bg-raised hover:text-text"}`}
+            >
+              {tab.locked && (
+                <span aria-label="Locked" className="text-muted">
+                  🔒︎
+                </span>
+              )}
+              <span className="truncate">{name}</span>
+              {!tab.locked && (
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  aria-label={`Close ${name}`}
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    void closeTab(side, index)
+                  }}
+                  className="ml-0.5 hidden size-4 place-items-center rounded text-muted group-hover/tab:grid hover:bg-raised hover:text-text"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+          </Tooltip>
         )
       })}
       {menu !== null && tabs[menu] && (

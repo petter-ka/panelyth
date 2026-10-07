@@ -1,5 +1,6 @@
-import type { PlaceId } from "@fastview/contracts"
+import type { Crumb, PlaceId } from "@fastview/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
+import { Tooltip } from "@fastview/ui"
 import {
   memo,
   useEffect,
@@ -41,10 +42,17 @@ import {
   ContextMenuRoot,
   ContextMenuSeparator,
   ContextMenuTrigger,
+  DropdownContent,
+  DropdownItem,
+  DropdownRoot,
+  DropdownTrigger,
 } from "./ui/menu"
 
 const ROW_HEIGHT = 26
 const INDENT = 14
+const PATH_HEADER_HEIGHT = 32
+const LIST_PADDING = 4
+const EMPTY_CRUMBS: Crumb[] = []
 
 type SidebarRow =
   | { type: "header"; id: string; label: string }
@@ -159,6 +167,76 @@ const rowPath = (row: SidebarRow): string | null =>
 const isNavigable = (row: SidebarRow | undefined): boolean =>
   row?.type === "link" || row?.type === "tree"
 
+function FolderPathHeader({ crumbs }: { crumbs: Crumb[] }) {
+  if (crumbs.length === 0) return null
+
+  // Keep the filesystem root visible and tuck long middle paths into a menu.
+  const hidden = crumbs.length > 4 ? crumbs.slice(1, -3) : []
+  const shown = hidden.length > 0 ? [crumbs[0]!, ...crumbs.slice(-3)] : crumbs
+
+  return (
+    <div
+      className="sticky top-0 z-10 flex h-8 shrink-0 items-center border-b border-border bg-chrome px-2"
+      data-testid="sidebar-path-header"
+    >
+      <nav aria-label="Selected folder path" className="min-w-0 flex-1 overflow-hidden">
+        <ol className="flex min-w-0 items-center">
+          {shown.map((crumb, index) => {
+            const last = index === shown.length - 1
+            const showHidden = hidden.length > 0 && index === 1
+            return (
+              <li key={crumb.path} className="flex min-w-0 shrink items-center">
+                {index > 0 && !showHidden && (
+                  <ChevronRightIcon size={12} className="shrink-0 text-muted" />
+                )}
+                {showHidden && (
+                  <>
+                    <ChevronRightIcon size={12} className="shrink-0 text-muted" />
+                    <DropdownRoot>
+                      <DropdownTrigger
+                        className="rounded px-1 py-0.5 text-xs text-muted hover:bg-raised hover:text-text"
+                        aria-label={`Show ${hidden.length} parent folders`}
+                        onKeyDown={(event) => event.stopPropagation()}
+                      >
+                        …
+                      </DropdownTrigger>
+                      <DropdownContent>
+                        {hidden.map((parent) => (
+                          <DropdownItem
+                            key={parent.path}
+                            onSelect={() => void openFolder(parent.path)}
+                          >
+                            {parent.name}
+                          </DropdownItem>
+                        ))}
+                      </DropdownContent>
+                    </DropdownRoot>
+                    <ChevronRightIcon size={12} className="shrink-0 text-muted" />
+                  </>
+                )}
+                <Tooltip content={crumb.path}>
+                  <button
+                    type="button"
+                    aria-current={last ? "location" : undefined}
+                    disabled={last}
+                    data-testid="sidebar-path-crumb"
+                    data-path={crumb.path}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    onClick={() => void openFolder(crumb.path)}
+                    className={`min-w-0 truncate rounded px-1 py-0.5 text-[0.6875rem] ${last ? "max-w-[7rem] font-medium text-text" : "max-w-[4rem] text-muted hover:bg-raised hover:text-text"}`}
+                  >
+                    {crumb.name}
+                  </button>
+                </Tooltip>
+              </li>
+            )
+          })}
+        </ol>
+      </nav>
+    </div>
+  )
+}
+
 interface RowViewProps {
   row: SidebarRow
   active: boolean
@@ -210,7 +288,8 @@ const RowView = memo(function RowView({
       aria-selected={active}
       aria-expanded={row.type === "tree" && node?.hasChildren ? row.expanded : undefined}
       aria-label={label}
-      title={path ?? undefined}
+      data-tooltip-content={path ?? undefined}
+      data-tooltip-side="right"
       data-testid={row.type === "tree" ? "tree-node" : "sidebar-link"}
       data-path={path ?? undefined}
       className={[
@@ -287,11 +366,13 @@ const RowView = memo(function RowView({
 export function SidebarPane() {
   const rows = useRows()
   const folderPath = useFolderStore((s) => s.folder?.path ?? null)
+  const folderCrumbs = useFolderStore((s) => s.folder?.crumbs ?? EMPTY_CRUMBS)
   const bookmarks = useLibraryStore((s) => s.bookmarks)
   const revealToken = useTreeStore((s) => s.revealToken)
   const activeKey = useTreeStore((s) => s.activeKey)
   const interfaceScale = INTERFACE_SIZE_SCALE[useInterfaceSizeStore((s) => s.size)]
   const rowHeight = ROW_HEIGHT * interfaceScale
+  const pathHeaderOffset = folderCrumbs.length > 0 ? PATH_HEADER_HEIGHT : 0
   const [focusId, setFocusId] = useState<string | null>(null)
   const [menuRow, setMenuRow] = useState<SidebarRow | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -301,13 +382,16 @@ export function SidebarPane() {
     count: rows.length,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => rowHeight,
+    paddingStart: pathHeaderOffset + LIST_PADDING,
+    paddingEnd: LIST_PADDING,
+    scrollPaddingStart: pathHeaderOffset,
     overscan: 8,
     useFlushSync: false,
   })
 
   useEffect(() => {
     virtualizer.measure()
-  }, [virtualizer, rowHeight])
+  }, [virtualizer, rowHeight, pathHeaderOffset])
 
   // Scroll the revealed (open) folder into view in the tree.
   useEffect(() => {
@@ -380,10 +464,7 @@ export function SidebarPane() {
         <ContextMenuTrigger asChild>
           <div
             ref={scrollRef}
-            role="tree"
-            aria-label="Folders"
-            tabIndex={0}
-            aria-activedescendant={focusIndex >= 0 ? `sidebar-${rows[focusIndex]!.id}` : undefined}
+            tabIndex={-1}
             onKeyDown={onKeyDown}
             onFocus={() => {
               // Keep a row the mouse just pressed; otherwise start at the open
@@ -392,37 +473,58 @@ export function SidebarPane() {
                 rows.find((r) => r.type === "tree" && r.key === activeKey) ?? rows.find(isNavigable)
               setFocusId((current) => current ?? fallback?.id ?? null)
             }}
-            className="min-h-0 flex-1 overflow-y-auto py-1 outline-none"
+            className="min-h-0 flex-1 overflow-y-auto outline-none"
             data-testid="sidebar-list"
           >
-            <div className="relative w-full" style={{ height: virtualizer.getTotalSize() }}>
-              {virtualizer.getVirtualItems().map((v) => {
-                const row = rows[v.index]!
-                const active =
-                  activeFolderKey !== null &&
-                  ((row.type === "tree" && row.key === activeFolderKey) ||
-                    (row.type === "link" &&
-                      nodeKey(row.path) === activeFolderKey &&
-                      row.id.startsWith("place")))
-                return (
-                  <div
-                    key={row.id}
-                    className="absolute top-0 left-0 w-full"
-                    style={{ height: rowHeight, transform: `translateY(${v.start}px)` }}
-                  >
-                    <RowView
-                      row={row}
-                      active={active}
-                      focused={row.id === focusId}
-                      interfaceScale={interfaceScale}
-                      onOpen={(p) => void openFolder(p)}
-                      onDropTransfer={(path, name, payload) => askDropTransfer(payload, path, name)}
-                      onMenu={setMenuRow}
-                      onFocusRow={setFocusId}
-                    />
-                  </div>
-                )
-              })}
+            {folderCrumbs.length > 0 && <FolderPathHeader crumbs={folderCrumbs} />}
+            <div
+              role="tree"
+              aria-label="Folders"
+              tabIndex={0}
+              aria-activedescendant={
+                focusIndex >= 0 ? `sidebar-${rows[focusIndex]!.id}` : undefined
+              }
+              className="outline-none"
+            >
+              <div
+                role="presentation"
+                className="relative w-full"
+                style={{
+                  height: virtualizer.getTotalSize(),
+                  marginTop: pathHeaderOffset > 0 ? -pathHeaderOffset : 0,
+                }}
+              >
+                {virtualizer.getVirtualItems().map((v) => {
+                  const row = rows[v.index]!
+                  const active =
+                    activeFolderKey !== null &&
+                    ((row.type === "tree" && row.key === activeFolderKey) ||
+                      (row.type === "link" &&
+                        nodeKey(row.path) === activeFolderKey &&
+                        row.id.startsWith("place")))
+                  return (
+                    <div
+                      key={row.id}
+                      role="presentation"
+                      className="absolute top-0 left-0 w-full"
+                      style={{ height: rowHeight, transform: `translateY(${v.start}px)` }}
+                    >
+                      <RowView
+                        row={row}
+                        active={active}
+                        focused={row.id === focusId}
+                        interfaceScale={interfaceScale}
+                        onOpen={(p) => void openFolder(p)}
+                        onDropTransfer={(path, name, payload) =>
+                          askDropTransfer(payload, path, name)
+                        }
+                        onMenu={setMenuRow}
+                        onFocusRow={setFocusId}
+                      />
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </ContextMenuTrigger>

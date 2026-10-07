@@ -224,9 +224,7 @@ function MediaThumb({
     )
   }
   if (item.kind === "image") {
-    return (
-      <div className={fallbackFrameClass(visual)} data-testid="thumb-loading" />
-    )
+    return <div className={fallbackFrameClass(visual)} data-testid="thumb-loading" />
   }
   return <div className={fallbackFrameClass(visual)} />
 }
@@ -300,7 +298,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
       data-testid="tile"
       data-index={index}
       data-kind={item?.kind ?? "loading"}
-      title={item ? tooltip(item) : undefined}
+      data-tooltip-content={item ? tooltip(item) : undefined}
       className="flex shrink-0 flex-col [contain:layout_paint]"
       style={{ width: m.tile }}
       onMouseDown={(e) => {

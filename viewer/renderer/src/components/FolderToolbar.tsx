@@ -1,4 +1,5 @@
 import type { Crumb, EntryKind, SortDirection, SortField, Tag } from "@fastview/contracts"
+import { Tooltip } from "@fastview/ui"
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react"
 import { SEARCH_INPUT_ID } from "../app/shortcuts"
 import { bridge } from "../bridge"
@@ -12,7 +13,6 @@ import {
   goUp,
   hasFilters,
   openFolder,
-  openFolderDialog,
   refresh,
   setExts,
   setFavoriteFilter,
@@ -41,7 +41,6 @@ import {
   FilterIcon,
   HeartIcon,
   PanelLeftIcon,
-  PanelRightIcon,
   RefreshIcon,
   SearchIcon,
   SortIcon,
@@ -111,16 +110,17 @@ function IconButton(props: {
 }) {
   const shortcut = useShortcutHint(props.action)
   return (
-    <button
-      type="button"
-      className={iconButton}
-      aria-label={props.label}
-      title={shortcut ? `${props.label} (${shortcut})` : props.label}
-      disabled={props.disabled}
-      onClick={props.onClick}
-    >
-      {props.children}
-    </button>
+    <Tooltip content={shortcut ? `${props.label} (${shortcut})` : props.label}>
+      <button
+        type="button"
+        className={iconButton}
+        aria-label={props.label}
+        disabled={props.disabled}
+        onClick={props.onClick}
+      >
+        {props.children}
+      </button>
+    </Tooltip>
   )
 }
 
@@ -160,17 +160,18 @@ function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
           const last = i === shown.length - 1
           return (
             <li key={c.path} className={`flex items-center ${last ? "min-w-0" : "min-w-0 shrink"}`}>
-              <button
-                type="button"
-                title={c.path}
-                aria-current={last ? "page" : undefined}
-                data-testid={last ? "folder-name" : undefined}
-                disabled={last}
-                onClick={() => void openFolder(c.path)}
-                className={`truncate rounded px-1.5 py-0.5 font-mono font-normal text-xs ${last ? "text-text" : "text-muted hover:bg-raised hover:text-text"}`}
-              >
-                {c.name}
-              </button>
+              <Tooltip content={c.path}>
+                <button
+                  type="button"
+                  aria-current={last ? "page" : undefined}
+                  data-testid={last ? "folder-name" : undefined}
+                  disabled={last}
+                  onClick={() => void openFolder(c.path)}
+                  className={`truncate rounded px-1.5 py-0.5 font-mono font-normal text-xs ${last ? "text-text" : "text-muted hover:bg-raised hover:text-text"}`}
+                >
+                  {c.name}
+                </button>
+              </Tooltip>
               {!last && <ChevronRightIcon size={12} className="shrink-0 text-muted" />}
             </li>
           )
@@ -240,8 +241,6 @@ function SearchBox({ disabled }: { disabled: boolean }) {
 }
 
 function NavBar() {
-  const ready = useSidecarStore((s) => s.status?.state === "ready")
-  const opening = useFolderStore((s) => s.opening)
   const folder = useFolderStore((s) => s.folder)
   const back = useFolderStore(canGoBack)
   const forward = useFolderStore(canGoForward)
@@ -281,17 +280,6 @@ function NavBar() {
         {folder && <Breadcrumb crumbs={folder.crumbs} />}
       </div>
       <SearchBox disabled={!folder} />
-      <button
-        type="button"
-        className={`${control} ml-1`}
-        disabled={!ready || opening}
-        onClick={() => void openFolderDialog()}
-      >
-        Open folder…
-      </button>
-      <IconButton label="Show or hide preview" onClick={() => togglePane("preview")}>
-        <PanelRightIcon />
-      </IconButton>
     </div>
   )
 }
