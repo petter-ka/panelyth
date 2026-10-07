@@ -166,6 +166,83 @@ describe("invoke router", () => {
     }
   })
 
+  it("gives the commander find files, branch scans and Go to file; the viewer none of them (Stage C06)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const abs = process.platform === "win32" ? "C:\\data" : "/data"
+    const spec = {
+      roots: [abs],
+      mask: "*.txt|bak\\",
+      depth: -1,
+      hidden: false,
+      text: "needle",
+      caseSensitive: false,
+      wholeWords: true,
+      encodings: ["utf-8", "utf-16le"],
+      skipBinary: true,
+      minSize: 0,
+      maxSize: null,
+      modifiedAfter: null,
+      modifiedBefore: 1_700_000_000_000,
+      attrsSet: 0,
+      attrsClear: 1,
+    }
+    const descriptor = {
+      dirId: 1,
+      recursive: false,
+      sort: [{ field: "size", direction: "desc" }],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+      scope: "all",
+      showHidden: false,
+      nameMask: "*.log",
+      findId: 4,
+    }
+    for (const [m, p] of [
+      ["find.start", spec],
+      ["find.cancel", { findId: 4 }],
+      ["dir.openContaining", { entryId: 9 }],
+      ["query.open", descriptor],
+      ["dir.open", { path: abs, recursive: true, lane: "left" }],
+      ["dir.openEntry", { entryId: 9, recursive: true, lane: "right" }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
+      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+    }
+    for (const [m, p] of [
+      ["find.start", { ...spec, roots: [] }],
+      ["find.start", { ...spec, roots: ["relative"] }],
+      ["find.start", { ...spec, encodings: ["utf-32"] }],
+      ["find.start", { ...spec, attrsSet: 32 }],
+      ["find.start", { ...spec, depth: -2 }],
+      ["find.start", { ...spec, minSize: -1 }],
+      ["find.start", { ...spec, extra: true }],
+      ["find.cancel", { findId: 0 }],
+      ["dir.openContaining", { path: abs }],
+      ["query.open", { ...descriptor, recursive: true }],
+      ["query.open", { ...descriptor, findId: -1 }],
+      ["dir.open", { path: abs, recursive: false, lane: "Left Panel" }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    for (const m of ["find.start", "find.cancel", "dir.openContaining"]) {
+      const res = await handler(ok, m, { findId: 1 })
+      expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    }
+    // Search results are in the all scope: never the viewer's.
+    expect(await handler(ok, "query.open", { ...descriptor, scope: undefined })).toMatchObject({
+      ok: false,
+    })
+  })
+
   it("lets the commander list folders in the all scope (Stage C01)", async () => {
     const { handler, sidecar, commander } = setup()
     const descriptor = {

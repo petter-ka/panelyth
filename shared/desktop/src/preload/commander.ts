@@ -36,6 +36,8 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "index.progress",
   "volumes.changed",
   "bookmarks.changed",
+  // Stage C06: find files.
+  "find.progress",
   // Stage C05: quick view and lister images.
   "preview.ready",
 ])
@@ -74,9 +76,35 @@ const api: CommanderApi = {
     reorderBookmarks: (ids) => invoke("library.reorderBookmarks", { ids: [...ids] }),
   },
   dir: {
-    open: ({ path, recursive }) => invoke("dir.open", { path, recursive }),
-    openEntry: ({ entryId, recursive }) => invoke("dir.openEntry", { entryId, recursive }),
+    open: ({ path, recursive, lane }) =>
+      invoke("dir.open", { path, recursive, ...(lane !== undefined && { lane }) }),
+    openEntry: ({ entryId, recursive, lane }) =>
+      invoke("dir.openEntry", { entryId, recursive, ...(lane !== undefined && { lane }) }),
     cancelScan: (scanId) => invoke("dir.cancelScan", { scanId }),
+    openContaining: (entryId, lane) =>
+      invoke("dir.openContaining", { entryId, ...(lane !== undefined && { lane }) }),
+  },
+  find: {
+    // Copied field by field: only known fields cross the bridge.
+    start: (s) =>
+      invoke("find.start", {
+        roots: [...s.roots],
+        mask: s.mask,
+        depth: s.depth,
+        hidden: s.hidden,
+        text: s.text,
+        caseSensitive: s.caseSensitive,
+        wholeWords: s.wholeWords,
+        encodings: [...s.encodings],
+        skipBinary: s.skipBinary,
+        minSize: s.minSize,
+        maxSize: s.maxSize,
+        modifiedAfter: s.modifiedAfter,
+        modifiedBefore: s.modifiedBefore,
+        attrsSet: s.attrsSet,
+        attrsClear: s.attrsClear,
+      }),
+    cancel: (findId) => invoke("find.cancel", { findId }),
   },
   query: {
     // Copied field by field: only known fields cross the bridge.
@@ -94,6 +122,7 @@ const api: CommanderApi = {
         ...(d.scope !== undefined && { scope: d.scope }),
         ...(d.showHidden !== undefined && { showHidden: d.showHidden }),
         ...(d.nameMask !== undefined && { nameMask: d.nameMask }),
+        ...(d.findId !== undefined && { findId: d.findId }),
       }),
     page: ({ queryId, offset, limit, thumbProfile }) =>
       invoke("query.page", { queryId, offset, limit, thumbProfile }),

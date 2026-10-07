@@ -173,7 +173,7 @@ func (s *indexService) registerTrash(ctx context.Context, id int64) (fsCanTrashR
 func listIDs(t *testing.T, svc *indexService, dir index.DirInfo) []int64 {
 	t.Helper()
 	ctx := context.Background()
-	scanID, err := svc.scans.Open(dir, false)
+	scanID, err := svc.scans.Open(dir, false, "")
 	if err != nil {
 		t.Fatal(err)
 	}

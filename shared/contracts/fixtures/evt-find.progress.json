@@ -1,0 +1,19 @@
+{
+  "ch": "find.progress",
+  "p": {
+    "bytes": 0,
+    "current": "/fixtures/golden",
+    "dirs": 1,
+    "elapsedMs": 1,
+    "entries": 8,
+    "errors": 0,
+    "findId": 1,
+    "firstMatchMs": 1,
+    "matches": 4,
+    "searched": 0,
+    "state": "completed",
+    "truncated": false
+  },
+  "seq": 1,
+  "t": "evt"
+}

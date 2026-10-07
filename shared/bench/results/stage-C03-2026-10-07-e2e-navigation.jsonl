@@ -1,0 +1,6 @@
+{"at":"2026-10-07T14:53:07.672Z","test":"session-restore","restoreMs":291,"budgetMs":1300}
+{"at":"2026-10-07T14:53:30.050Z","test":"tab-switch-1k","warmP95Ms":12.9,"warmMedianMs":12.1,"coldMedianMs":21.4,"coldP95Ms":22.5,"budgetP95Ms":50}
+{"at":"2026-10-07T14:53:32.187Z","test":"drive-menu-dead-share","menuOpenMs":7,"otherPanelCursorMs":5,"deadShareListedAfterMs":1348,"shareDelayMs":8000}
+{"at":"2026-10-07T15:22:17.493Z","test":"session-restore","restoreMs":310,"budgetMs":1300}
+{"at":"2026-10-07T15:22:39.849Z","test":"tab-switch-1k","warmP95Ms":13.8,"warmMedianMs":12.3,"coldMedianMs":19.2,"coldP95Ms":21,"budgetP95Ms":50}
+{"at":"2026-10-07T15:22:41.905Z","test":"drive-menu-dead-share","menuOpenMs":5,"otherPanelCursorMs":2,"deadShareListedAfterMs":1343,"shareDelayMs":8000}

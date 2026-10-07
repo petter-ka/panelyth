@@ -98,7 +98,7 @@ export function scrollPanel(
   return c.evaluate(
     async ({ side, ms, pxPerFrame }) => {
       const grid = document.querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)!
-      const body = grid.children[1] as HTMLElement
+      const body = grid.children[0] as HTMLElement
       const long: number[] = []
       const po = new PerformanceObserver((l) =>
         l.getEntries().forEach((e) => long.push(e.duration)),
@@ -138,7 +138,7 @@ export function scrollPanel(
 export const visibleRows = (c: Page, side: Side) =>
   c.evaluate((side) => {
     const grid = document.querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)!
-    const body = grid.children[1] as HTMLElement
+    const body = grid.children[0] as HTMLElement
     const row = grid.querySelector<HTMLElement>("[data-row]")
     return Math.ceil(body.clientHeight / (row?.offsetHeight || 22))
   }, side)

@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"fastview/sidecar/internal/events"
+	"fastview/sidecar/internal/find"
 	"fastview/sidecar/internal/fsx"
 	"fastview/sidecar/internal/index"
 	"fastview/sidecar/internal/jobs"
@@ -46,6 +47,7 @@ type indexService struct {
 	store   *index.Store
 	scans   *scan.Manager
 	queries *query.Manager
+	finds   *find.Manager
 	watcher *watch.Watcher
 	events  *events.Coalescer
 	disk    *preview.DiskCache
@@ -101,18 +103,22 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 				svc.meta.Drop(id)
 			}
 		},
-		Dropped: func(id int64) { svc.meta.Drop(id) },
+		Dropped: func(id int64) {
+			svc.meta.Drop(id)
+			svc.finds.Dropped(id)
+		},
 	}, func(s query.Snapshot) {
 		svc.events.Post(evQueryInvalidated, strconv.FormatInt(s.QueryID, 10), s)
 	})
+	svc.finds = find.NewManager(find.Deps{Store: store, Log: log, Progress: svc.emitFind, Refresh: svc.queries.Refresh})
 	svc.scans = scan.NewManager(store, log, scan.Options{}, scan.Hooks{
 		Progress: func(p scan.Progress) {
 			svc.events.Post(evIndexProgress, strconv.FormatInt(p.ScanID, 10), p)
 		},
-		Changed: svc.queries.Changed,
+		Changed: svc.changed,
 	}, nil)
 	svc.watcher = watch.New(log, svc.scans.Relist, 300*time.Millisecond, 2*time.Second)
-	svc.jobs = jobs.NewManager(jobs.Deps{Store: store, Library: svc.library, Changed: svc.queries.Changed,
+	svc.jobs = jobs.NewManager(jobs.Deps{Store: store, Library: svc.library, Changed: svc.changed,
 		Emit: svc.emitJob, Ask: svc.askJob, Log: log})
 	return svc, nil
 }
@@ -120,6 +126,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 func (s *indexService) close() {
 	s.stopBg()
 	s.jobs.Close()
+	s.finds.Close()
 	s.watcher.Close()
 	s.scans.Close()
 	s.meta.Close()
@@ -136,6 +143,9 @@ type (
 	dirOpenParams struct {
 		Path      string `json:"path"`
 		Recursive bool   `json:"recursive"`
+		// Lane names the caller's foreground scan slot (a commander panel);
+		// a new scan cancels only the previous one in its lane.
+		Lane string `json:"lane"`
 	}
 	dirOpenResult struct {
 		DirID        int64  `json:"dirId"`
@@ -149,8 +159,9 @@ type (
 		Crumbs []fsx.Crumb `json:"crumbs"`
 	}
 	dirOpenEntryParams struct {
-		EntryID   int64 `json:"entryId"`
-		Recursive bool  `json:"recursive"`
+		EntryID   int64  `json:"entryId"`
+		Recursive bool   `json:"recursive"`
+		Lane      string `json:"lane"`
 	}
 	cancelScanParams struct {
 		ScanID int64 `json:"scanId"`
@@ -177,6 +188,9 @@ type (
 		Scope      string `json:"scope"`
 		ShowHidden bool   `json:"showHidden"`
 		NameMask   string `json:"nameMask"`
+		// FindID opens a session over a search's results (Stage C06); the
+		// folder fields do not apply then.
+		FindID int64 `json:"findId"`
 	}
 	queryPageParams struct {
 		QueryID int64 `json:"queryId"`
@@ -199,7 +213,10 @@ type (
 		Attrs int `json:"attrs,omitempty"`
 		// DirSizeBytes is a folder's calculated size (Stage C02); omitted until calculated.
 		DirSizeBytes *int64 `json:"dirSizeBytes,omitempty"`
-		Thumb        *thumb `json:"thumb"`
+		// DirPath is the entry's folder, in sessions spanning folders (find
+		// results, branch views; Stage C06).
+		DirPath string `json:"dirPath,omitempty"`
+		Thumb   *thumb `json:"thumb"`
 	}
 	thumb struct {
 		URL    string `json:"url"`
@@ -260,6 +277,7 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerWorkspace(srv)
 	s.registerJobs(srv)
 	s.registerContext(srv)
+	s.registerFind(srv)
 	rpc.Register(srv, "query.close", func(_ context.Context, p queryCloseParams) (queryCloseResult, error) {
 		return queryCloseResult{Closed: s.queries.Close(p.QueryID)}, nil
 	})
@@ -286,7 +304,10 @@ func (s *indexService) dirOpen(ctx context.Context, p dirOpenParams) (dirOpenRes
 	if err != nil {
 		return dirOpenResult{}, dbError(err)
 	}
-	scanID, err := s.scans.Open(info, p.Recursive)
+	if len(p.Lane) > 16 {
+		return dirOpenResult{}, rpc.NewError(rpc.CodeInvalidArgument, "lane must be at most 16 characters")
+	}
+	scanID, err := s.scans.Open(info, p.Recursive, p.Lane)
 	if err != nil {
 		return dirOpenResult{}, dbError(err)
 	}
@@ -365,6 +386,12 @@ func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.
 		d.Tags = append(d.Tags, clean)
 	}
 	d.FavoriteOnly, d.MinRating = p.Favorite, p.MinRating
+	if p.FindID != 0 {
+		if d.Scope != index.ScopeAll || d.Recursive {
+			return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "search results need the all scope and no recursion")
+		}
+		return s.openFindQuery(ctx, p.FindID, d)
+	}
 	snap, err := s.queries.Open(ctx, d)
 	if errors.Is(err, index.ErrNotFound) {
 		return snap, rpc.NewError(rpc.CodeNotFound, "folder is not indexed")
@@ -396,13 +423,23 @@ func (s *indexService) queryPage(ctx context.Context, p queryPageParams) (queryP
 			return queryPageResult{}, dbError(err)
 		}
 	}
+	var dirs map[int64]string
+	if s.queries.SpansFolders(p.QueryID) {
+		ids := make([]int64, len(page.Items))
+		for i, it := range page.Items {
+			ids[i] = it.ID
+		}
+		if dirs, err = s.store.ParentPaths(ctx, ids); err != nil {
+			return queryPageResult{}, dbError(err)
+		}
+	}
 	ann := s.annotations(ctx, page.Items)
 	items := make([]contentItem, len(page.Items))
 	for i, it := range page.Items {
 		a := ann[it.PathKey]
 		items[i] = contentItem{ID: it.ID, Kind: it.Kind.String(), Name: it.Name, Ext: it.Ext,
 			SizeBytes: it.Size, ModifiedMs: it.MtimeNs / int64(time.Millisecond), Favorite: a.Favorite, Rating: a.Rating, Label: a.Label,
-			Attrs: it.Attrs}
+			Attrs: it.Attrs, DirPath: dirs[it.ID]}
 		if it.DirSize >= 0 {
 			items[i].DirSizeBytes = &it.DirSize
 		}
@@ -524,5 +561,5 @@ func (s *indexService) dirOpenEntry(ctx context.Context, p dirOpenEntryParams) (
 	if err != nil {
 		return dirOpenResult{}, dbError(err)
 	}
-	return s.dirOpen(ctx, dirOpenParams{Path: info.Path, Recursive: p.Recursive})
+	return s.dirOpen(ctx, dirOpenParams{Path: info.Path, Recursive: p.Recursive, Lane: p.Lane})
 }

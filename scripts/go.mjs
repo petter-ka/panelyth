@@ -81,6 +81,16 @@ if (task) {
         resultPath("previews"),
       ])
       break
+    case "findbench":
+      run(goBinary(), [
+        "run",
+        "./cmd/findbench",
+        "-fixtures",
+        fixtureRoot(),
+        "-out",
+        resultPath("find"),
+      ])
+      break
     case "bench":
       run(goBinary(), ["test", "-run=^$", "-bench=.", "-benchmem", "-count=5", "./..."])
       break

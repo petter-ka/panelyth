@@ -59,9 +59,25 @@ type Options struct {
 	Dropped      func(id int64)
 }
 
+// Source supplies a session's ids instead of the index (ADR-0017 as amended
+// by Stage C06): find results now, archives (C07) and compares (C08) later.
+// A source sorts and filters in Go by the descriptor's Sort, NameMask and
+// ShowHidden; DirID and Recursive do not apply. Sessions over a source are
+// never refreshed by index changes; the source asks with Manager.Refresh.
+type Source interface {
+	IDs(ctx context.Context, d index.Descriptor) ([]int64, error)
+	// Names returns the folded names of the source's entries (quick search,
+	// marking by mask).
+	Names(ctx context.Context) (map[int64]index.NameRow, error)
+	// Missing reports that a page could not load some of the source's ids
+	// (deleted meanwhile); the next IDs leaves them out.
+	Missing()
+}
+
 type session struct {
 	id      int64
 	desc    index.Descriptor
+	src     Source
 	dirKey  string
 	ids     []int64
 	version int64
@@ -110,7 +126,16 @@ func (m *Manager) Open(ctx context.Context, d index.Descriptor) (Snapshot, error
 	if err != nil {
 		return Snapshot{}, err
 	}
-	ids, err := m.materialize(ctx, d, dir.Key)
+	return m.open(ctx, d, nil, dir.Key)
+}
+
+// OpenSource materializes a new session over src instead of the index.
+func (m *Manager) OpenSource(ctx context.Context, d index.Descriptor, src Source) (Snapshot, error) {
+	return m.open(ctx, d, src, "")
+}
+
+func (m *Manager) open(ctx context.Context, d index.Descriptor, src Source, dirKey string) (Snapshot, error) {
+	ids, err := m.materialize(ctx, d, src, dirKey)
 	if err != nil {
 		return Snapshot{}, err
 	}
@@ -120,7 +145,7 @@ func (m *Manager) Open(ctx context.Context, d index.Descriptor) (Snapshot, error
 		return Snapshot{}, ErrUnknownSession
 	}
 	m.nextID++
-	s := &session{id: m.nextID, desc: d, dirKey: dir.Key, ids: ids, version: 1, lastUsed: time.Now()}
+	s := &session{id: m.nextID, desc: d, src: src, dirKey: dirKey, ids: ids, version: 1, lastUsed: time.Now()}
 	m.sessions[s.id] = s
 	dropped := m.evictLocked()
 	m.mu.Unlock()
@@ -132,7 +157,10 @@ func (m *Manager) Open(ctx context.Context, d index.Descriptor) (Snapshot, error
 }
 
 // materialize builds the id list, attaching user data when d needs it.
-func (m *Manager) materialize(ctx context.Context, d index.Descriptor, dirKey string) ([]int64, error) {
+func (m *Manager) materialize(ctx context.Context, d index.Descriptor, src Source, dirKey string) ([]int64, error) {
+	if src != nil {
+		return src.IDs(ctx, d)
+	}
 	if d.NeedsUser() && m.opts.User != nil {
 		rows, err := m.opts.User(ctx, d, dirKey)
 		if err != nil {
@@ -176,6 +204,16 @@ func (m *Manager) dropLocked(s *session) {
 	delete(m.sessions, s.id)
 }
 
+// SpansFolders reports whether a session's rows come from many folders (a
+// source, or a recursive listing in the all scope): their pages carry each
+// row's folder.
+func (m *Manager) SpansFolders(id int64) bool {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	s := m.sessions[id]
+	return s != nil && (s.src != nil || (s.desc.Recursive && s.desc.Scope == index.ScopeAll))
+}
+
 // Page returns items [offset, offset+limit) of the session's current version.
 func (m *Manager) Page(ctx context.Context, id int64, offset, limit int) (Page, error) {
 	m.mu.Lock()
@@ -189,11 +227,18 @@ func (m *Manager) Page(ctx context.Context, id int64, offset, limit int) (Page, 
 	lo := min(max(offset, 0), len(s.ids))
 	hi := min(lo+min(max(limit, 0), MaxPageSize), len(s.ids))
 	window := slices.Clone(s.ids[lo:hi])
+	src := s.src
 	m.mu.Unlock()
 
 	items, err := m.store.LoadItems(ctx, window)
 	if err != nil {
 		return Page{}, err
+	}
+	if src != nil && len(items) < len(window) {
+		// Index changes do not reach source sessions; a gap heals itself
+		// with the next version.
+		src.Missing()
+		m.Refresh(id)
 	}
 	return Page{Snapshot: snap, Offset: lo, Items: items}, nil
 }
@@ -254,8 +299,11 @@ func (m *Manager) Facets(ctx context.Context, id int64) (index.Facets, error) {
 		return index.Facets{}, ErrUnknownSession
 	}
 	s.lastUsed = time.Now()
-	desc, key := s.desc, s.dirKey
+	desc, key, src := s.desc, s.dirKey, s.src
 	m.mu.Unlock()
+	if src != nil {
+		return index.Facets{Exts: []index.ExtCount{}}, nil
+	}
 	return m.store.Facets(ctx, desc, key)
 }
 
@@ -317,6 +365,9 @@ func (m *Manager) markLocked(s *session) {
 }
 
 func affects(s *session, changes []scan.Change) bool {
+	if s.src != nil {
+		return false
+	}
 	for _, c := range changes {
 		if c.DirID == s.desc.DirID {
 			return true
@@ -350,11 +401,11 @@ func (m *Manager) refresh(id int64) {
 		return
 	}
 	s.running, s.dirtyAgain = true, false
-	desc, key := s.desc, s.dirKey
+	desc, key, src := s.desc, s.dirKey, s.src
 	m.mu.Unlock()
 
 	start := time.Now()
-	ids, err := m.materialize(context.Background(), desc, key)
+	ids, err := m.materialize(context.Background(), desc, src, key)
 	cost := time.Since(start)
 
 	m.mu.Lock()

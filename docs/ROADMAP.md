@@ -26,8 +26,8 @@ Only one stage is active at a time. Default order:
 | 7 | C03 — Drives, tabs, hotlist, history, session | commander | implementation done (2026-10-06): navigation complete; shared bookmarks and recent |
 | 8 | P03 — File-operation engine v2 | platform | implementation done (2026-10-06): queue, conflicts, throughput (the viewer gains speed too) |
 | 9 | C04 — File operations | commander | implementation done (2026-10-06): F5 / F6 / F7 / F8 |
-| 10 | C05 — Quick view, lister, open and edit | commander | active (implementation done 2026-10-06): shared media components |
-| 11 | C06 — Find files, branch view, quick filter | commander | |
+| 10 | C05 — Quick view, lister, open and edit | commander | implementation done (2026-10-06): shared media components |
+| 11 | C06 — Find files, branch view, quick filter | commander | active (implementation done 2026-10-07): session sources (ADR-0017) |
 | 12 | C07 — Archives | commander | |
 | 13 | C08 — Compare, synchronize, checksums | commander | |
 | 14 | C09 — Multi-rename, attributes, properties | commander | |
@@ -152,11 +152,11 @@ view, full session restore.
 
 F5 copy, F6 move, rename, new folder, trash and permanent delete, queue panel, conflict dialog, drag and drop.
 
-### C05 — Quick view, lister, open and edit (active; implementation done 2026-10-06)
+### C05 — Quick view, lister, open and edit (implementation done 2026-10-06)
 
 Quick view, F3 lister (text, hex, images, video), F4 editor, opening files with confirmation for programs.
 
-### C06 — Find files, branch view and quick filter
+### C06 — Find files, branch view and quick filter (active; implementation done 2026-10-07)
 
 Find by name, content, size, date and attributes; feed to panel; flat subtree listing; quick filter.
 

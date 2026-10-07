@@ -2,8 +2,7 @@ import { DEFAULT_SWITCH_SETTINGS, type SharedContext } from "@fastview/contracts
 import { useSwitchSettings } from "@fastview/renderer-core"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { useGlobalShortcuts } from "../../app/shortcuts"
-import { ContentPane } from "../../components/ContentPane"
+import { AppShell } from "../../app/AppShell"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
 import { openFolder, resetFolderStore, useFolderStore } from "../folder/folderStore"
@@ -21,10 +20,8 @@ import { resetContextSync, startContextSync } from "./appSwitch"
 
 let stop: (() => void)[] = []
 
-function Harness() {
-  useGlobalShortcuts()
-  return <ContentPane />
-}
+// The switch lives in the app rail of the shell (ADR-0031).
+const Harness = () => <AppShell />
 
 function setup(commanderEnabled: boolean) {
   const bridge = installFakeBridge()
@@ -53,12 +50,12 @@ describe("switch to the commander", () => {
     expect(screen.queryByTestId("app-switch")).not.toBeInTheDocument()
   })
 
-  it("is the first toolbar control and switches by click", async () => {
+  it("sits in the app rail and switches by click", async () => {
     const { switchApp } = setup(true)
-    const toolbar = screen.getByRole("toolbar", { name: "Navigation" })
+    const rail = screen.getByRole("navigation", { name: "Applications" })
     const button = screen.getByRole("button", { name: "Switch to Commander" })
-    expect(toolbar.querySelector("button")).toBe(button)
-    expect(button).toHaveAttribute("title", "Switch to Commander (Ctrl+Shift+M)")
+    expect(rail).toContainElement(button)
+    expect(button).toHaveAttribute("data-tooltip-content", "Switch to Commander (Ctrl+Shift+M)")
     fireEvent.click(button)
     await waitFor(() => expect(switchApp).toHaveBeenCalledWith("commander"))
   })

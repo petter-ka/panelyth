@@ -44,7 +44,10 @@ for. People coming from Total Commander find their keys where they expect them.
 - **Drive and tab bar:** drive buttons with the current one pressed, free space, and folder tabs. Tabs show the folder
   name and a lock glyph when locked.
 - **Path bar:** the full path and the active mask (`*.*`, or the quick filter). Click it or press Alt+D (as in Explorer) to edit;
-  Enter navigates; Esc cancels.
+  Enter navigates; Esc cancels. A branch view or fed search results show an accent "Branch view" or "Search results: …"
+  chip before the path (click or Backspace returns to the folder); the quick filter (Ctrl+S) is edited in a field
+  after the path, filters as you type, and stays as a chip until clicked or cleared with Esc. Rows from other folders
+  show that folder, relative to the panel's, muted before the name.
 - **Column header:** Name, Ext, Size, Date, Attr (the Full view is a TanStack Table, ADR-0028). The sort column shows
   ↑ or ↓; clicking a header sorts in Go, never in the browser. Widths and layouts persist per panel. Drag a column
   header to reorder it, or drag its edge to resize it. Double-click the edge to fit the header and

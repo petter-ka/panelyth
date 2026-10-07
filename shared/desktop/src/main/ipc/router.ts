@@ -149,7 +149,11 @@ const COMMANDER_JOB_KINDS: ReadonlySet<unknown> = new Set([
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
   const p = params as Record<string, unknown>
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
-  if (app === "viewer" && method === "query.open" && p.scope === "all") {
+  if (
+    app === "viewer" &&
+    method === "query.open" &&
+    (p.scope === "all" || p.findId !== undefined)
+  ) {
     return "the viewer lists media only"
   }
   // The commander's settings include the F4 editor that main starts (Stage C05):

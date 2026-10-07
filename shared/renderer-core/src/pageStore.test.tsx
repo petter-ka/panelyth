@@ -29,7 +29,8 @@ function backend(totals: Record<number, number>) {
     const total = totals[queryId]
     if (total === undefined) throw new Expired()
     const items: ContentItem[] = []
-    for (let i = offset; i < Math.min(total, offset + limit); i++) items.push(item(queryId * 1e6 + i + 1))
+    for (let i = offset; i < Math.min(total, offset + limit); i++)
+      items.push(item(queryId * 1e6 + i + 1))
     return { queryId, version: versions[queryId] ?? 1, total, items }
   })
   return { fetch, versions }

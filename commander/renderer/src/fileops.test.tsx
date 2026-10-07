@@ -207,7 +207,7 @@ describe("copy and move", () => {
     await act(async () => {
       fireEvent.dragStart(row, { dataTransfer })
     })
-    const body = grid("right").children[1]!
+    const body = grid("right").children[0]!
     await act(async () => {
       fireEvent.dragOver(body, { dataTransfer })
       fireEvent.drop(body, { dataTransfer })
@@ -414,7 +414,7 @@ describe("the queue", () => {
     await act(async () => fake.emit("job.progress", j))
     const dialog = await screen.findByTestId("conflict-dialog")
     expect(screen.getByRole("dialog")).toHaveTextContent("“photo.jpg” already exists")
-    expect(dialog).toHaveTextContent("2,048 bytes")
+    expect(dialog).toHaveTextContent("2.0 KB")
     expect(within(dialog).getAllByText("newer")).toHaveLength(1)
     await act(async () => {
       fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })

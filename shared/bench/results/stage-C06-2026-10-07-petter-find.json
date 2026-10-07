@@ -1,0 +1,168 @@
+{
+  "stage": "C06",
+  "at": "2026-10-07T16:34:46+02:00",
+  "numCpu": 32,
+  "tree": "C:\\Users\\hunki\\AppData\\Local\\Temp\\fastview-fixtures\\tree-500k",
+  "treeEntries": 506980,
+  "byName": [
+    {
+      "mask": "IMG_177.*",
+      "matches": 2801,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": 52,
+      "elapsedMs": 315.716,
+      "entriesPerSec": 1605808.874976284
+    },
+    {
+      "mask": "IMG_177.*",
+      "matches": 2801,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": 47,
+      "elapsedMs": 298.266,
+      "entriesPerSec": 1699759.0073840031
+    },
+    {
+      "mask": "IMG_177.*",
+      "matches": 2801,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": 47,
+      "elapsedMs": 298.487,
+      "entriesPerSec": 1698501.6442916144
+    },
+    {
+      "mask": "*.gif",
+      "matches": 61622,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": 9,
+      "elapsedMs": 1211.46,
+      "entriesPerSec": 418487.6099912502
+    },
+    {
+      "mask": "*.gif",
+      "matches": 61622,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": 10,
+      "elapsedMs": 1257.504,
+      "entriesPerSec": 403164.3624336931
+    },
+    {
+      "mask": "*.gif",
+      "matches": 61622,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": 9,
+      "elapsedMs": 1326.243,
+      "entriesPerSec": 382268.29921705957
+    },
+    {
+      "mask": "nothing-matches-*",
+      "matches": 0,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": -1,
+      "elapsedMs": 225.426,
+      "entriesPerSec": 2248981.8207143866
+    },
+    {
+      "mask": "nothing-matches-*",
+      "matches": 0,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": -1,
+      "elapsedMs": 214.441,
+      "entriesPerSec": 2364190.360363679
+    },
+    {
+      "mask": "nothing-matches-*",
+      "matches": 0,
+      "entries": 506981,
+      "dirs": 2801,
+      "firstResultMs": -1,
+      "elapsedMs": 216.457,
+      "entriesPerSec": 2342170.159726284
+    }
+  ],
+  "sequentialReadMBPerSec": [
+    6396.421605838025,
+    6170.353852906051,
+    5454.211898627145
+  ],
+  "content": [
+    {
+      "text": "zebra-quokka",
+      "patterns": 3,
+      "caseSensitive": false,
+      "files": 256,
+      "bytes": 1073757184,
+      "elapsedMs": 165.538,
+      "mbPerSec": 6185.949447727662,
+      "shareOfSequentialRead": 0.9670953275002597,
+      "heapPeakMB": 5.535911560058594
+    },
+    {
+      "text": "zebra-quokka",
+      "patterns": 3,
+      "caseSensitive": false,
+      "files": 256,
+      "bytes": 1073757184,
+      "elapsedMs": 221.346,
+      "mbPerSec": 4626.307448237149,
+      "shareOfSequentialRead": 0.7232649336333162,
+      "heapPeakMB": 9.879234313964844
+    },
+    {
+      "text": "zebra-quokka",
+      "patterns": 3,
+      "caseSensitive": false,
+      "files": 256,
+      "bytes": 1073757184,
+      "elapsedMs": 146.53,
+      "mbPerSec": 6988.425234388703,
+      "shareOfSequentialRead": 1.0925523151898484,
+      "heapPeakMB": 9.957023620605469
+    },
+    {
+      "text": "zebra-quokka",
+      "patterns": 1,
+      "caseSensitive": true,
+      "files": 256,
+      "bytes": 1073757184,
+      "elapsedMs": 82.886,
+      "mbPerSec": 12354.405277059259,
+      "shareOfSequentialRead": 1.9314557479737375,
+      "heapPeakMB": 9.823501586914062
+    },
+    {
+      "text": "zebra-quokka",
+      "patterns": 1,
+      "caseSensitive": true,
+      "files": 256,
+      "bytes": 1073757184,
+      "elapsedMs": 89.22,
+      "mbPerSec": 11477.334252823899,
+      "shareOfSequentialRead": 1.7943367338932936,
+      "heapPeakMB": 9.857406616210938
+    },
+    {
+      "text": "zebra-quokka",
+      "patterns": 1,
+      "caseSensitive": true,
+      "files": 256,
+      "bytes": 1073757184,
+      "elapsedMs": 87.844,
+      "mbPerSec": 11657.16858298556,
+      "shareOfSequentialRead": 1.8224515676618378,
+      "heapPeakMB": 9.877861022949219
+    }
+  ],
+  "cancelMs": [
+    0,
+    0,
+    0
+  ]
+}

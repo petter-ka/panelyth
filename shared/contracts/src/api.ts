@@ -8,6 +8,9 @@ import type {
   FsMkdirResult,
   FsMkfileResult,
   FileOpenResult,
+  FindCancelResult,
+  FindStartParams,
+  FindStartResult,
   PreviewEnsureParams as CommanderPreviewParams,
   CommanderJobParams,
   ConflictPolicy,
@@ -222,6 +225,13 @@ export interface CommanderApi {
     open(params: DirOpenParams): Promise<RpcEnvelope<DirOpenResult>>
     openEntry(params: DirOpenEntryParams): Promise<RpcEnvelope<DirOpenResult>>
     cancelScan(scanId: number): Promise<RpcEnvelope<CancelScanResult>>
+    /** "Go to file" (Stage C06): the folder holding an entry. */
+    openContaining(entryId: number, lane?: string): Promise<RpcEnvelope<DirOpenResult>>
+  }
+  /** Find files (Stage C06): results stream into a query session. */
+  find: {
+    start(params: FindStartParams): Promise<RpcEnvelope<FindStartResult>>
+    cancel(findId: number): Promise<RpcEnvelope<FindCancelResult>>
   }
   query: {
     open(descriptor: QueryDescriptor): Promise<RpcEnvelope<QuerySnapshot>>

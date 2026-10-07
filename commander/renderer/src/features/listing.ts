@@ -63,6 +63,13 @@ export interface PanelError {
   message: string
 }
 
+/** Search results shown in a panel (Stage C06, "Feed to panel"). */
+export interface FindLocation {
+  findId: number
+  /** What was searched, for the path bar. */
+  label: string
+}
+
 export interface PanelState {
   /** The open folder; null before the first listing. */
   dirId: number | null
@@ -91,6 +98,15 @@ export interface PanelState {
   /** Visited folders of this panel (Alt+← / Alt+→); `historyIndex` is the current one. */
   history: string[]
   historyIndex: number
+  /**
+   * Stage C06: the folder's subtree as one flat list of files (Ctrl+B), or a
+   * search's results in place of the folder (Feed to panel). ".." leaves
+   * either and shows the folder again.
+   */
+  branch: boolean
+  find: FindLocation | null
+  /** The quick filter (Ctrl+S): a name mask on the files; "" = none. Cleared by a folder change. */
+  filter: string
 }
 
 const MAX_HISTORY = 50
@@ -116,6 +132,9 @@ const emptyPanel = (): PanelState => ({
   revealToken: 0,
   history: [],
   historyIndex: -1,
+  branch: false,
+  find: null,
+  filter: "",
 })
 
 export const useListingStore = create<Record<Side, PanelState>>(() => ({
@@ -131,7 +150,7 @@ export function patch(side: Side, value: Partial<PanelState>): void {
 
 // Page stores ---------------------------------------------------------------
 
-const isExpired = (error: unknown): boolean =>
+export const isExpired = (error: unknown): boolean =>
   error instanceof FastViewError && error.code === "NOT_FOUND"
 
 const makeStore = (): PageStore =>
@@ -151,8 +170,15 @@ bindExpired()
 
 // Rows ------------------------------------------------------------------------
 
-/** 1 when the folder has a parent, so row 0 is the synthetic "..". */
-export const parentRows = (p: PanelState): number => (p.crumbs.length > 1 ? 1 : 0)
+/**
+ * 1 when row 0 is the synthetic "..": the folder has a parent, or the panel
+ * shows a branch view or search results (".." goes back to the folder).
+ */
+export const parentRows = (p: PanelState): number =>
+  p.crumbs.length > 1 || p.branch || p.find !== null ? 1 : 0
+
+/** A branch view or search results: rows come from many folders. */
+export const spansFolders = (p: PanelState): boolean => p.branch || p.find !== null
 
 export const rowCount = (p: PanelState): number =>
   p.dirId === null ? 0 : parentRows(p) + (p.query?.total ?? 0)
@@ -170,10 +196,12 @@ const seqs: Record<Side, number> = { left: 0, right: 0 }
 /** The navigation that failed last, for Retry on the error state. */
 const failed: Record<Side, (() => Promise<void>) | null> = { left: null, right: null }
 
-function descriptor(dirId: number, p: Pick<PanelState, "sort" | "showHidden">): QueryDescriptor {
+type DescriptorState = Pick<PanelState, "sort" | "showHidden" | "branch" | "find" | "filter">
+
+function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
   return {
     dirId,
-    recursive: false,
+    recursive: p.branch,
     sort: [p.sort],
     kinds: [],
     search: "",
@@ -183,6 +211,8 @@ function descriptor(dirId: number, p: Pick<PanelState, "sort" | "showHidden">): 
     tags: [],
     scope: "all",
     showHidden: p.showHidden,
+    ...(p.filter !== "" && { nameMask: p.filter }),
+    ...(p.find && { findId: p.find.findId }),
   }
 }
 
@@ -212,6 +242,8 @@ interface NavigateOptions {
   historyIndex?: number
   /** A tab being shown (tabs.ts): never branches off a locked tab. */
   tabLoad?: boolean
+  /** Stage C06: show the folder as a branch view (its subtree's files). */
+  branch?: boolean
 }
 
 function recordHistory(p: PanelState, path: string, jump?: number) {
@@ -232,12 +264,17 @@ async function navigate(
   try {
     const dir = await open()
     if (seq !== seqs[side]) return
-    const snapshot = await bridge.openQuery(descriptor(dir.dirId, getPanel(side)))
+    const branch = options.branch === true
+    // The quick filter stays while the panel shows the same folder.
+    const filter = getPanel(side).dirId === dir.dirId ? getPanel(side).filter : ""
+    const snapshot = await bridge.openQuery(
+      descriptor(dir.dirId, { ...getPanel(side), branch, find: null, filter }),
+    )
     if (seq !== seqs[side]) {
       void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
       return
     }
-    const parent = dir.crumbs.length > 1 ? 1 : 0
+    const parent = dir.crumbs.length > 1 || branch ? 1 : 0
     let cursor = 0
     if (options.focusId) {
       const at = await bridge.indexOf(snapshot.queryId, options.focusId).catch(() => null)
@@ -277,6 +314,9 @@ async function navigate(
       query: snapshot,
       cursor,
       revealToken: p.revealToken + 1,
+      branch,
+      find: null,
+      filter,
       ...recordHistory(p, dir.path, options.historyIndex),
     })
     schedulePersist()
@@ -304,21 +344,84 @@ export async function openHome(side: Side): Promise<void> {
   if (home) await openPath(side, home)
 }
 
+// Each panel's scans run in its own lane, so one panel never stops the
+// other's listing or branch view (Stage C06).
 export const openPath = (side: Side, path: string, options?: NavigateOptions): Promise<void> =>
-  navigate(side, () => bridge.openDir(path), options)
+  navigate(side, () => bridge.openDir(path, side, options?.branch === true), options)
 
 export const openFolderEntry = (
   side: Side,
   entryId: number,
   options?: NavigateOptions,
-): Promise<void> => navigate(side, () => bridge.openDirEntry(entryId), options)
+): Promise<void> => navigate(side, () => bridge.openDirEntry(entryId, side), options)
 
-/** Backspace, Ctrl+PgUp, Enter on "..": the cursor lands on the folder just left. */
+/** "Go to file" (Stage C06): the entry's folder, with the cursor on the entry. */
+export const goToEntry = (side: Side, entryId: number): Promise<void> =>
+  navigate(side, () => bridge.openContaining(entryId, side), { focusId: entryId })
+
+/**
+ * Backspace, Ctrl+PgUp, Enter on "..": the cursor lands on the folder just
+ * left. In a branch view or search results it shows the folder again.
+ */
 export function goUp(side: Side): Promise<void> {
   const p = getPanel(side)
+  if (p.dirId !== null && spansFolders(p)) return openPath(side, p.path)
   const parent = p.crumbs.at(-2)
   if (!parent || p.dirId === null) return Promise.resolve()
   return openPath(side, parent.path, { focusId: p.dirId })
+}
+
+/** Ctrl+B: the folder's subtree as one flat list of files, or back to the folder. */
+export function toggleBranch(side: Side): Promise<void> {
+  const p = getPanel(side)
+  if (p.dirId === null || p.find) return Promise.resolve()
+  return openPath(side, p.path, { branch: !p.branch, focusId: cursorEntryId(side) })
+}
+
+/** Ctrl+S: the quick filter; "" clears it. A new session, never a rescan. */
+export function setFilter(side: Side, mask: string): void {
+  const filter = mask.trim()
+  if (getPanel(side).filter === filter) return
+  patch(side, { filter })
+  void reopenQuery(side)
+}
+
+/**
+ * Feed to panel (Stage C06): the search's results in place of the folder,
+ * in the panel's sort; ".." shows the folder again. Results keep arriving
+ * while the search runs.
+ */
+export async function showFindResults(side: Side, find: FindLocation): Promise<void> {
+  const p = getPanel(side)
+  if (p.dirId === null) return
+  const seq = ++seqs[side]
+  const snapshot = await bridge.openQuery(
+    descriptor(p.dirId, { ...p, branch: false, find, filter: "" }),
+  )
+  if (seq !== seqs[side]) {
+    void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
+    return
+  }
+  const previous = getPanel(side).query
+  if (previous && previous.queryId !== snapshot.queryId && !isParked(previous.queryId)) {
+    void bridge.closeQuery(previous.queryId).catch(() => undefined)
+  }
+  stores[side].reset(snapshot)
+  sessionChanged(side, { kind: "reset" })
+  pendingFocus[side] = null
+  patch(side, {
+    query: snapshot,
+    branch: false,
+    find,
+    filter: "",
+    error: null,
+    loading: false,
+    scanId: 0,
+    progress: null,
+    cursor: 0,
+    revealToken: getPanel(side).revealToken + 1,
+  })
+  if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
 }
 
 /** Alt+← / Alt+→: the panel's previous or next folder. */
@@ -400,9 +503,11 @@ export function enter(side: Side): Promise<void> {
 export async function refresh(side: Side): Promise<void> {
   const p = getPanel(side)
   if (!p.path) return
-  if (p.error || !p.query) return openPath(side, p.path)
+  if (p.error || !p.query) return openPath(side, p.path, { branch: p.branch })
+  // Search results follow file changes on their own.
+  if (p.find) return
   try {
-    const dir = await bridge.openDir(p.path)
+    const dir = await bridge.openDir(p.path, side, p.branch)
     if (getPanel(side).dirId !== dir.dirId) return
     patch(side, { scanId: dir.scanId, crumbs: dir.crumbs, progress: null })
   } catch (error) {
@@ -444,7 +549,10 @@ async function reopenQuery(side: Side): Promise<void> {
       revealToken: getPanel(side).revealToken + 1,
     })
   } catch (error) {
-    if (seq === seqs[side]) patch(side, { error: toPanelError(error) })
+    if (seq !== seqs[side]) return
+    // The results of a search that was forgotten: the folder again.
+    if (p.find && isExpired(error)) void openPath(side, p.path)
+    else patch(side, { error: toPanelError(error) })
   }
 }
 
@@ -461,6 +569,9 @@ interface ParkedSession {
   name: string
   crumbs: Crumb[]
   query: QuerySnapshot
+  branch: boolean
+  find: FindLocation | null
+  filter: string
   timer: ReturnType<typeof setTimeout>
 }
 
@@ -494,6 +605,9 @@ export function parkSession(side: Side, tabId: number): void {
     name: p.name,
     crumbs: p.crumbs,
     query: p.query,
+    branch: p.branch,
+    find: p.find,
+    filter: p.filter,
     timer: setTimeout(() => dropParked(tabId), TAB_GRACE_MS),
   })
 }
@@ -532,6 +646,9 @@ export function adoptSession(side: Side, tabId: number, focusId: number | null):
     loading: false,
     error: null,
     query: s.query,
+    branch: s.branch,
+    find: s.find,
+    filter: s.filter,
     cursor: 0,
     revealToken: p.revealToken + 1,
   })

@@ -1,11 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetFolderStore, useFolderStore } from "../folder/folderStore"
+import type * as FolderStore from "../folder/folderStore"
 import { useLibraryStore } from "../library/libraryStore"
 import { startStartupFolder } from "./startupFolder"
 
 const openFolder = vi.hoisted(() => vi.fn(async () => undefined))
 vi.mock("../folder/folderStore", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("../folder/folderStore")>()),
+  ...(await importOriginal<typeof FolderStore>()),
   openFolder,
 }))
 

@@ -26,7 +26,7 @@ interface TooltipTriggerProps {
 }
 
 interface TooltipProps {
-  content?: string | null
+  content?: string | null | undefined
   side?: Exclude<TooltipSide, "auto">
   children: ReactElement
 }
@@ -313,10 +313,8 @@ export function TooltipProvider({ children, delay = DEFAULT_DELAY }: TooltipProv
   }, [active, deactivate])
 
   useLayoutEffect(() => {
-    if (!active) {
-      setPosition((current) => (current.ready ? { ...current, ready: false } : current))
-      return
-    }
+    // The popup unmounts while inactive; the next activation positions it before paint.
+    if (!active) return
     positionPopup()
     window.addEventListener("resize", positionPopup)
     window.addEventListener("scroll", positionPopup, true)

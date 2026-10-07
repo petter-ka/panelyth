@@ -36,7 +36,7 @@ func (m *Manager) lookupFor(ctx context.Context, id int64, withNames bool) (*loo
 		m.mu.Unlock()
 		return nil, ErrUnknownSession
 	}
-	ids, version, desc, key := s.ids, s.version, s.desc, s.dirKey
+	ids, version, desc, key, src := s.ids, s.version, s.desc, s.dirKey, s.src
 	m.mu.Unlock()
 
 	m.lk.mu.Lock()
@@ -51,7 +51,13 @@ func (m *Manager) lookupFor(ctx context.Context, id int64, withNames bool) (*loo
 		l.pos[entry] = i
 	}
 	if withNames {
-		rows, err := m.store.Names(ctx, desc, key)
+		var rows map[int64]index.NameRow
+		var err error
+		if src != nil {
+			rows, err = src.Names(ctx)
+		} else {
+			rows, err = m.store.Names(ctx, desc, key)
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -212,11 +212,11 @@ func TestManagerForegroundCancelsPrevious(t *testing.T) {
 	defer m.Close()
 	ia, _ := r.store.EnsureDir(context.Background(), a)
 	ib, _ := r.store.EnsureDir(context.Background(), b)
-	idA, err := m.Open(ia, true)
+	idA, err := m.Open(ia, true, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	idB, _ := m.Open(ib, false)
+	idB, _ := m.Open(ib, false, "")
 	m.Wait(idA)
 	m.Wait(idB)
 	mu.Lock()

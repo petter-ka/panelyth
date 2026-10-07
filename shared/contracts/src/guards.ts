@@ -1,7 +1,7 @@
 // Small runtime guards for untrusted input crossing a process boundary.
 // Deliberately dependency-free; checks shape, not semantics.
 import { ERROR_CODES, type RpcErrorShape } from "./errors"
-import type { EventMap, IndexProgress } from "./events"
+import type { EventMap, FindProgress, IndexProgress } from "./events"
 import {
   ENTRY_KINDS,
   JOB_KINDS,
@@ -48,6 +48,8 @@ import {
   type PreviewItem,
   type Thumb,
   type CancelScanResult,
+  type FindCancelResult,
+  type FindStartResult,
   type ContentItem,
   type DirOpenResult,
   type EchoResult,
@@ -242,6 +244,7 @@ export function isContentItem(v: unknown): v is ContentItem {
     isLabel(v.label) &&
     (v.attrs === undefined || (isCount(v.attrs) && v.attrs < 64)) &&
     (v.dirSizeBytes === undefined || isCount(v.dirSizeBytes)) &&
+    (v.dirPath === undefined || isStr(v.dirPath)) &&
     (v.thumb === null || isThumb(v.thumb))
   )
 }
@@ -318,6 +321,9 @@ export const sidecarResultGuards: ResultGuards = {
     v.crumbs.length > 0,
   "dir.openEntry": (v): v is DirOpenResult => sidecarResultGuards["dir.open"](v),
   "dir.cancelScan": (v): v is CancelScanResult => isRec(v) && isBool(v.cancelled),
+  "dir.openContaining": (v): v is DirOpenResult => sidecarResultGuards["dir.open"](v),
+  "find.start": (v): v is FindStartResult => isRec(v) && isInt(v.findId) && isQuerySnapshot(v),
+  "find.cancel": (v): v is FindCancelResult => isRec(v) && isBool(v.cancelled),
   "query.open": isQuerySnapshot,
   "query.page": (v): v is QueryPageResult =>
     isRec(v) &&
@@ -461,6 +467,26 @@ export const sidecarResultGuards: ResultGuards = {
 
 type EventGuards = { [C in keyof EventMap]: (v: unknown) => v is EventMap[C] }
 
+const SCAN_STATES: readonly unknown[] = ["running", "completed", "cancelled", "failed"]
+
+export function isFindProgress(v: unknown): v is FindProgress {
+  return (
+    isRec(v) &&
+    isInt(v.findId) &&
+    SCAN_STATES.includes(v.state) &&
+    isInt(v.dirs) &&
+    isInt(v.entries) &&
+    isInt(v.searched) &&
+    isInt(v.bytes) &&
+    isInt(v.errors) &&
+    isStr(v.current) &&
+    isInt(v.matches) &&
+    isBool(v.truncated) &&
+    isInt(v.firstMatchMs) &&
+    isInt(v.elapsedMs)
+  )
+}
+
 export const eventGuards: EventGuards = {
   "sidecar.status": (v): v is SidecarStatus =>
     isRec(v) && isStr(v.state) && isNum(v.restarts) && isNum(v.since),
@@ -484,4 +510,5 @@ export const eventGuards: EventGuards = {
     Array.isArray(v.bookmarks) &&
     v.bookmarks.length <= 500 &&
     v.bookmarks.every(isBookmark),
+  "find.progress": isFindProgress,
 }

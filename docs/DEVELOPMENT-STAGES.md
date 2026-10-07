@@ -64,8 +64,8 @@ A stage is complete only when:
 | C02 | Keyboard, marks and quick search | C01 | implementation done; the NVDA pass and the C01 open items remain |
 | C03 | Drives, tabs, hotlist, history and session | C02 | implementation done (2026-10-06); the NVDA pass remains |
 | C04 | File operations | C03, P03 | implementation done (2026-10-06); the NVDA pass remains |
-| C05 | Quick view, lister, open and edit | C04 | **active**: implementation done (2026-10-06); the NVDA pass remains |
-| C06 | Find files, branch view and quick filter | C05 | planned |
+| C05 | Quick view, lister, open and edit | C04 | implementation done (2026-10-06); the NVDA pass remains |
+| C06 | Find files, branch view and quick filter | C05 | **active**: implementation done (2026-10-07); the NVDA pass remains |
 | C07 | Archives | C06 | planned |
 | C08 | Compare, synchronize and checksums | C07 | planned |
 | C09 | Multi-rename, attributes and properties | C08 | planned |
@@ -89,15 +89,13 @@ A stage is complete only when:
 
 ## Active stage
 
-`C05 — Quick view, lister, open and edit` (`docs/commander/stages/C05-quick-view-and-lister.md`), started 2026-10-06
-at the owner's request, right after C04 (file operations, implementation done). `ImageViewer`, `VideoPlayer` and their
-request logic moved to `shared/media-ui` and serve both apps. The commander shows quick view (Ctrl+Q) in place of the
-other panel, follows the cursor once it settles, and opens the lister (F3: text with encodings, wrap and find; hex;
-image; video; N / P; Esc) over byte windows read through the token protocol, so a 2 GB log opens in about 20 ms with
-bounded memory. Enter opens files with their default app and asks before programs; F4 edits, Shift+F4 creates a text
-file. ADR-0027's launching part is accepted; only the commander may read file bytes through tokens.
+`C06 — Find files, branch view and quick filter` (`docs/commander/stages/C06-find-and-branch-view.md`), started
+2026-10-07 right after C05 (quick view, lister, open and edit; implementation done 2026-10-06). Query sessions get a
+session-source interface (amends ADR-0017): the index stays the default source and a search's results are the `find`
+source, sorted and paged in Go like a folder. Each commander panel scans in its own lane, so one panel never cancels
+the other's listing or branch view.
 
-Open from C02 to C05: the NVDA pass (grid, Brief view, menus, dialogs, queue panel, quick view, lister). Open from P03:
+Open from C02 to C06: the NVDA pass (grid, Brief view, menus, dialogs, queue panel, quick view, lister, find dialog). Open from P03:
 the Linux and macOS fast paths (P04).
 
 Open from C01: the cold-cache 100k timings (470 / 366 ms on the first run after a build) and the rest of P02

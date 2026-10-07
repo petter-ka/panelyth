@@ -19,10 +19,12 @@ import { useDrivesStore } from "../features/drives"
 import { useHotlistStore } from "../features/hotlist"
 import { useSettingsStore } from "../features/settings"
 import { useFilesStore } from "../features/files"
+import { useFindStore } from "../features/find"
 import { useOpenStore } from "../features/open"
 import { useQueueStore } from "../features/queue"
 import { quickTarget, useViewersStore } from "../features/viewers"
 import { CopyDialog, DeleteDialog, MkdirDialog } from "./FileDialogs"
+import { FindDialog } from "./FindDialog"
 import { Lister } from "./Lister"
 import { NewFileDialog, ProgramDialog } from "./OpenDialogs"
 import { QuickView } from "./QuickView"
@@ -119,7 +121,12 @@ export function AppShell() {
     const offOpen = useOpenStore.subscribe((s, prev) => {
       if ((prev.program && !s.program) || (prev.newFile && !s.newFile)) focusActive()
     })
+    // Stage C06: the find dialog.
+    const offFind = useFindStore.subscribe((s, prev) => {
+      if (prev.dialog && !s.dialog) focusActive()
+    })
     return () => {
+      offFind()
       offMask()
       offHelp()
       offDrives()
@@ -200,6 +207,7 @@ export function AppShell() {
         <SettingsDialog />
         <ProgramDialog />
         <NewFileDialog />
+        <FindDialog />
         <Lister />
       </div>
     </TooltipProvider>

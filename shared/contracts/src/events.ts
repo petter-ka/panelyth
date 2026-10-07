@@ -12,6 +12,28 @@ import type {
 
 export type ScanState = "running" | "completed" | "cancelled" | "failed"
 
+/** A search's progress (Stage C06): throttled, the final state always delivered. */
+export interface FindProgress {
+  findId: number
+  state: ScanState
+  /** Folders listed, entries looked at. */
+  dirs: number
+  entries: number
+  /** Files whose content was read, and the bytes read. */
+  searched: number
+  bytes: number
+  /** Folders or files that could not be read. */
+  errors: number
+  /** The folder being searched (display only). */
+  current: string
+  matches: number
+  /** The search stopped at MAX_FIND_RESULTS. */
+  truncated: boolean
+  /** Time to the first result; -1 before it. */
+  firstMatchMs: number
+  elapsedMs: number
+}
+
 /** Throttled (≤ ~10/s per scan) and coalesced; the latest snapshot wins. */
 export interface IndexProgress {
   scanId: number
@@ -54,6 +76,8 @@ export interface EventMap {
   "volumes.changed": { volumes: Volume[] }
   /** The shared bookmarks (the hotlist) changed in either app: the whole list (Stage C03). */
   "bookmarks.changed": { bookmarks: Bookmark[] }
+  /** A search's progress (Stage C06, commander); results arrive through query.invalidated. */
+  "find.progress": FindProgress
 }
 
 export type EventChannel = keyof EventMap
@@ -70,6 +94,7 @@ export const EVENT_CHANNELS = [
   "settings.changed",
   "volumes.changed",
   "bookmarks.changed",
+  "find.progress",
 ] as const satisfies readonly EventChannel[]
 
 /** Channels produced by the Go sidecar and forwarded by main unchanged. */
@@ -82,6 +107,7 @@ export const SIDECAR_EVENT_CHANNELS = [
   "job.conflict",
   "volumes.changed",
   "bookmarks.changed",
+  "find.progress",
 ] as const satisfies readonly EventChannel[]
 
 /** Payload of the single Electron push channel (IPC_EVENT). */

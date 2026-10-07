@@ -4,11 +4,7 @@ import type { Glyph } from "../features/format"
 const PATHS: Record<Glyph | "up", string[]> = {
   up: ["M8 13V3M4.5 6.5 8 3l3.5 3.5"],
   folder: ["M2 4.5h4.3l1.4 1.6H14v7H2z"],
-  image: [
-    "M2 3h12v10H2z",
-    "M3.5 11 6.4 7.5l2.1 2 1.3-1.4 2.7 2.9",
-    "M11.1 5.5h.01",
-  ],
+  image: ["M2 3h12v10H2z", "M3.5 11 6.4 7.5l2.1 2 1.3-1.4 2.7 2.9", "M11.1 5.5h.01"],
   video: ["M2 4h8v8H2z", "m10 6.2 4-2v7.6l-4-2z"],
   archive: ["M2.5 3h11v10h-11z", "M2.5 5.3h11", "M8 3v2.3m0 1.3v1.2m0 1.3v1.2"],
   text: ["M4 2h5l3 3v9H4z", "M9 2v3h3", "M6 8h4m-4 2.5h4"],
@@ -41,11 +37,7 @@ export function TypeGlyph({
   muted?: boolean
   marked?: boolean
 }) {
-  const color = marked
-    ? "var(--accent)"
-    : glyph === "up" || muted
-      ? "var(--muted)"
-      : COLORS[glyph]
+  const color = marked ? "var(--accent)" : glyph === "up" || muted ? "var(--muted)" : COLORS[glyph]
 
   return (
     <svg

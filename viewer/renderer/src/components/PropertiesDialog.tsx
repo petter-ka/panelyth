@@ -89,9 +89,15 @@ function EntryRows({ p }: { p: Properties }) {
           <Row label="Tags">{p.tags.length > 0 ? p.tags.join(", ") : "None"}</Row>
         </>
       )}
-      <Row label="Created" mono>{date(p.createdMs)}</Row>
-      <Row label="Modified" mono>{formatDate(p.modifiedMs)}</Row>
-      <Row label="Accessed" mono>{date(p.accessedMs)}</Row>
+      <Row label="Created" mono>
+        {date(p.createdMs)}
+      </Row>
+      <Row label="Modified" mono>
+        {formatDate(p.modifiedMs)}
+      </Row>
+      <Row label="Accessed" mono>
+        {date(p.accessedMs)}
+      </Row>
       {!p.exists && <Row label="Status">The file was moved or deleted since it was indexed.</Row>}
     </>
   )
@@ -105,7 +111,9 @@ function SelectionRows({ info }: { info: SelectionInfo }) {
   ].filter(Boolean)
   return (
     <>
-      <Row label="Selected" mono>{parts.join(", ") || "Nothing"}</Row>
+      <Row label="Selected" mono>
+        {parts.join(", ") || "Nothing"}
+      </Row>
       <Row label="Total size" mono>
         {formatBytes(info.bytes)} ({formatCount(info.bytes)} bytes)
       </Row>

@@ -17,11 +17,13 @@ type Manager struct {
 	opts  Options
 	hooks Hooks
 
-	mu         sync.Mutex
-	ctx        context.Context
-	cancelAll  context.CancelFunc
-	running    map[int64]*runningScan
-	foreground int64
+	mu        sync.Mutex
+	ctx       context.Context
+	cancelAll context.CancelFunc
+	running   map[int64]*runningScan
+	// foreground is the scan the user waits for, per lane (the viewer, each
+	// commander panel).
+	foreground map[string]int64
 	// relistDirty marks directories that changed again while being re-listed.
 	relistDirty map[int64]bool
 	wg          sync.WaitGroup
@@ -41,15 +43,16 @@ func NewManager(store *index.Store, log *slog.Logger, opts Options, hooks Hooks,
 	ctx, cancel := context.WithCancel(context.Background())
 	return &Manager{
 		store: store, log: log, opts: opts, hooks: hooks, ctx: ctx, cancelAll: cancel,
-		running: map[int64]*runningScan{}, relistDirty: map[int64]bool{}, onFinished: onFinished,
+		running: map[int64]*runningScan{}, foreground: map[string]int64{}, relistDirty: map[int64]bool{}, onFinished: onFinished,
 	}
 }
 
-// Open starts the foreground scan of root, cancelling the previous
-// foreground scan.
-func (m *Manager) Open(root index.DirInfo, recursive bool) (int64, error) {
+// Open starts the foreground scan of root in lane, cancelling the previous
+// foreground scan of that lane: the viewer's folder ("") or one commander
+// panel's, so a panel never stops the other panel's listing or branch view.
+func (m *Manager) Open(root index.DirInfo, recursive bool, lane string) (int64, error) {
 	m.mu.Lock()
-	if prev := m.running[m.foreground]; prev != nil {
+	if prev := m.running[m.foreground[lane]]; prev != nil {
 		prev.cancel()
 	}
 	m.mu.Unlock()
@@ -58,7 +61,7 @@ func (m *Manager) Open(root index.DirInfo, recursive bool) (int64, error) {
 		return 0, err
 	}
 	m.mu.Lock()
-	m.foreground = id
+	m.foreground[lane] = id
 	m.mu.Unlock()
 	return id, nil
 }

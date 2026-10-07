@@ -13,6 +13,7 @@ import {
   refresh,
   setView,
   swapPanels,
+  toggleBranch,
   toggleHidden,
   toggleSort,
   useListingStore,
@@ -45,6 +46,7 @@ import {
   startRename,
 } from "./files"
 import { toggleQueue } from "./queue"
+import { openFind } from "./find"
 import { openHistoryMenu, openHotlist } from "./hotlist"
 import { setSettingsOpen } from "./settings"
 import { closeOtherTabs, closeTab, cycleTab, newTab, swapTabs, toggleLock } from "./tabs"
@@ -58,12 +60,15 @@ interface UiState {
   lastMask: string
   /** Increments to ask a panel's path bar to start editing. */
   editPath: Record<Side, number>
+  /** Increments to ask a panel's path bar to edit the quick filter (Ctrl+S, Stage C06). */
+  editFilter: Record<Side, number>
 }
 
 export const useUiStore = create<UiState>(() => ({
   mask: null,
   lastMask: "*.*",
   editPath: { left: 0, right: 0 },
+  editFilter: { left: 0, right: 0 },
 }))
 
 const panel = (side: Side) => useListingStore.getState()[side]
@@ -210,6 +215,19 @@ export function runPanelAction(side: Side, id: ActionId): void {
       break
     case "view.hidden":
       toggleHidden(side)
+      break
+    case "find.open":
+      closeQuickSearch()
+      openFind(side)
+      break
+    case "view.branch":
+      void toggleBranch(side)
+      break
+    case "view.filter":
+      closeQuickSearch()
+      useUiStore.setState((s) => ({
+        editFilter: { ...s.editFilter, [side]: s.editFilter[side] + 1 },
+      }))
       break
     case "sort.name":
       toggleSort(side, COLUMN_SORT.name)

@@ -1,0 +1,4 @@
+{"at":"2026-10-07T14:50:16.657Z","test":"pause-latency","pauseMs":105,"finalState":"paused"}
+{"at":"2026-10-07T14:51:22.680Z","test":"copy-from-ui","small10k":{"copyMs":2161,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":632,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":113}
+{"at":"2026-10-07T15:15:36.875Z","test":"pause-latency","pauseMs":107,"finalState":"paused"}
+{"at":"2026-10-07T15:16:43.962Z","test":"copy-from-ui","small10k":{"copyMs":3185,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":1133,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"enter1kWhileCopyingMs":110}

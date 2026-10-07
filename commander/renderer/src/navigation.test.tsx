@@ -589,14 +589,14 @@ describe("Settings → Panels", () => {
     })
     const dialog = screen.getByRole("dialog")
     await act(async () => {
-      fireEvent.click(within(dialog).getByLabelText("Units (1.2 MB)"))
+      fireEvent.click(within(dialog).getByLabelText("Bytes (1,234,567)"))
       fireEvent.click(within(dialog).getByLabelText("ISO (2026-10-06 14:05)"))
     })
     expect(useSettingsStore.getState().settings).toMatchObject({
-      sizeFormat: "units",
+      sizeFormat: "bytes",
       dateFormat: "iso",
     })
-    expect(fake.settings[SETTINGS_KEY]).toMatchObject({ sizeFormat: "units", dateFormat: "iso" })
+    expect(fake.settings[SETTINGS_KEY]).toMatchObject({ sizeFormat: "bytes", dateFormat: "iso" })
     expect(formatSize(item(1, "a.bin", { sizeBytes: 1536 }), "units")).toBe("1.5 KB")
     expect(formatSize(item(1, "a.bin", { sizeBytes: 1536 }), "bytes")).toMatch(/^1.536$/)
     expect(formatDate(new Date(2026, 9, 6, 14, 5).getTime(), "iso")).toBe("2026-10-06 14:05")

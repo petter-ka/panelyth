@@ -35,6 +35,7 @@ var volatile = map[string]any{
 	"volumes":   []any{map[string]any{"path": "/", "label": "", "kind": "fixed"}},
 	"createdMs": 1, "accessedMs": 1, "lastOpenedAt": 1, "paths": []any{"/fixtures/golden/file"},
 	"startedMs": 1, "finishedMs": 1, "file": "/cache/FastView/v1/tmp/clip.png",
+	"firstMatchMs": 1, "dirPath": "/fixtures/golden",
 }
 
 // platformDependent values are replaced even when null (Linux has no birth time).
@@ -422,6 +423,26 @@ func TestGoldenFrames(t *testing.T) {
 	// Stage C05: any file for the commander's lister (main-only), and Shift+F4's new file.
 	golden["res-file.resolve.json"] = call(81, byID(81, "file.resolve", map[string]any{"entryId": clipID}))
 	golden["res-fs.mkfile.json"] = call(82, byID(82, "fs.mkfile", map[string]any{"parentDirId": vDir["dirId"], "name": "notes.txt"}))
+	// Stage C06: find by name in the golden fixture, its results as a panel
+	// session, and "Go to file".
+	findReq, _ := json.Marshal(map[string]any{"t": "req", "id": 83, "m": "find.start", "p": map[string]any{
+		"roots": []string{fixtureDir}, "mask": "*.jpg;*.txt|*0000*", "depth": 0, "hidden": false, "text": "", "caseSensitive": false,
+		"wholeWords": false, "encodings": []string{}, "skipBinary": true, "minSize": nil, "maxSize": nil,
+		"modifiedAfter": nil, "modifiedBefore": nil, "attrsSet": 0, "attrsClear": 0}})
+	golden["res-find.start.json"] = call(83, string(findReq))
+	findID := golden["res-find.start.json"].(map[string]any)["r"].(map[string]any)["findId"]
+	findDone := waitEvent("find.progress", "completed")
+	findDone["seq"] = float64(1) // depends on the events before it
+	findDone["p"].(map[string]any)["current"] = "/fixtures/golden"
+	golden["evt-find.progress.json"] = findDone
+	golden["res-find.cancel.json"] = call(84, byID(84, "find.cancel", map[string]any{"findId": findID}))
+	fq := call(85, byID(85, "query.open", map[string]any{"dirId": 0, "recursive": false, "sort": []any{map[string]any{"field": "name", "direction": "asc"}},
+		"kinds": []any{}, "search": "", "exts": []any{}, "favorite": false, "minRating": 0, "tags": []any{}, "scope": "all", "findId": findID}))
+	golden["res-query.open-find.json"] = fq
+	foundPage := call(86, byID(86, "query.page", map[string]any{"queryId": fq.(map[string]any)["r"].(map[string]any)["queryId"], "offset": 0, "limit": 10}))
+	golden["res-query.page-find.json"] = foundPage
+	firstFound := foundPage.(map[string]any)["r"].(map[string]any)["items"].([]any)[0].(map[string]any)["id"]
+	golden["res-dir.openContaining.json"] = call(87, byID(87, "dir.openContaining", map[string]any{"entryId": firstFound, "lane": "left"}))
 	// Stage C01: the shared context and query.indexOf.
 	imgSel := map[string]any{"queryId": qid, "version": 1, "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
 	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage, "selection": imgSel}))

@@ -17,6 +17,7 @@ import { startSidecarMonitoring } from "./features/sidecar"
 import { startMedia } from "./features/media"
 import { startOpen } from "./features/open"
 import { startQuickView } from "./features/viewers"
+import { startFind } from "./features/find"
 import "./styles.css"
 
 initTheme()
@@ -52,6 +53,8 @@ if (isBridgeAvailable()) {
   void startPanels().catch(() => undefined)
   // Quick view and the lister: the shared media components on this bridge (C05).
   startMedia()
+  // Find files: results and progress of the dialog's search (C06).
+  startFind()
 }
 
 const root = document.getElementById("root")

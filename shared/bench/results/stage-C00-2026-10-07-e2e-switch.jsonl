@@ -1,0 +1,2 @@
+{"at":"2026-10-07T14:53:55.663Z","test":"switch","firstSwitchMs":174,"laterSwitchMs":[5,4,6,4],"viewerOnlyMb":366,"bothViewsMb":493,"commanderViewMb":127}
+{"at":"2026-10-07T15:23:04.775Z","test":"switch","firstSwitchMs":164,"laterSwitchMs":[5,5,3,4],"viewerOnlyMb":370,"bothViewsMb":497,"commanderViewMb":127}

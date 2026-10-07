@@ -334,7 +334,7 @@ export function SettingsDialog() {
 
   const selectAdjacentTab = (e: KeyboardEvent<HTMLDivElement>): void => {
     const index = TABS.findIndex((item) => item.id === tab)
-    let next = index
+    let next: number
     if (e.key === "ArrowRight") next = (index + 1) % TABS.length
     else if (e.key === "ArrowLeft") next = (index + TABS.length - 1) % TABS.length
     else if (e.key === "Home") next = 0

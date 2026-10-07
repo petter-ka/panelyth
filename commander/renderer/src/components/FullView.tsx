@@ -38,6 +38,7 @@ import {
   formatSize,
   glyphOf,
   isMuted,
+  folderPrefix,
 } from "../features/format"
 import {
   COLUMN_LIMITS,
@@ -629,7 +630,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
               const id = renderColumn.id
               const column = table.getColumn(id)
               const header = table.getFlatHeaders().find((item) => item.column.id === id)
-              const sorted = column.getIsSorted()
+              const sorted = column?.getIsSorted() ?? false
               return (
                 <Tooltip
                   key={id}
@@ -875,6 +876,8 @@ function Cells({
   side: Side
 }) {
   const { sizeFormat, dateFormat } = useSettingsStore((s) => s.settings)
+  const panelPath = useListingStore((s) => s[side].path)
+  const prefix = folderPrefix(item.dirPath, panelPath)
   return (
     <>
       {columns.map((column) => (
@@ -895,7 +898,10 @@ function Cells({
               {renaming ? (
                 <RenameField onDone={() => focusGrid(side)} />
               ) : (
-                <span className="truncate">{baseName(item)}</span>
+                <span className="truncate">
+                  {prefix && <span className="text-muted">{prefix}</span>}
+                  {baseName(item)}
+                </span>
               )}
             </>
           ) : column.id === "ext" ? (

@@ -80,7 +80,11 @@ afterEach(() => {
 describe("listing (Stage C01)", () => {
   it("opens the home folder in both panels on first run, with the synthetic .. row", async () => {
     const fake = await start()
-    expect(fake.api.dir.open).toHaveBeenCalledWith({ path: HOME.path, recursive: false })
+    expect(fake.api.dir.open).toHaveBeenCalledWith({
+      path: HOME.path,
+      recursive: false,
+      lane: "left",
+    })
     expect(fake.lastDescriptor()).toMatchObject({ scope: "all", showHidden: false })
     await waitFor(() => expect(within(grid("left")).getByText("dir000001")).toBeInTheDocument())
     const first = rows("left")[0] as HTMLElement
@@ -120,7 +124,7 @@ describe("listing (Stage C01)", () => {
     await key("left", { key: "End" })
     expect(useListingStore.getState().left.cursor).toBe(100_000)
     // jsdom has no scrolling: deliver the scroll the virtualizer asked for.
-    const body = grid("left").children[1] as HTMLElement
+    const body = grid("left").children[0] as HTMLElement
     Object.defineProperty(body, "scrollTop", {
       configurable: true,
       value: 100_001 * ROW_HEIGHT.medium - 600,
@@ -157,7 +161,11 @@ describe("listing (Stage C01)", () => {
     await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
     await key("left", { key: "ArrowDown" })
     await key("left", { key: "Enter" })
-    expect(fake.api.dir.openEntry).toHaveBeenCalledWith({ entryId: 10_000_000, recursive: false })
+    expect(fake.api.dir.openEntry).toHaveBeenCalledWith({
+      entryId: 10_000_000,
+      recursive: false,
+      lane: "left",
+    })
     await waitFor(() => expect(screen.getByTestId("path-left")).toHaveTextContent(PICS.path))
     await key("left", { key: "Backspace" })
     await waitFor(() => expect(screen.getByTestId("path-left")).toHaveTextContent(HOME.path))
@@ -211,7 +219,8 @@ describe("listing (Stage C01)", () => {
       fireEvent.mouseUp(document, { clientX: 140 })
     })
     expect(useListingStore.getState().left.columns.ext).toBe(DEFAULT_COLUMNS.ext + 40)
-    expect(grid("left").style.getPropertyValue("--col-ext")).toBe(`${DEFAULT_COLUMNS.ext + 40}px`)
+    const extHeader = grid("left").querySelector<HTMLElement>("[data-column-header=ext]")!
+    expect(extHeader.style.width).toBe(`${DEFAULT_COLUMNS.ext + 40}px`)
     await act(async () => {
       await vi.advanceTimersByTimeAsync(500)
     })
@@ -305,7 +314,7 @@ describe("listing (Stage C01)", () => {
     fireEvent.click(within(state).getByRole("button", { name: "Back" }))
     expect(screen.queryByTestId("error-left")).not.toBeInTheDocument()
     expect(screen.getByTestId("path-left")).toHaveTextContent(HOME.path)
-    expect(fake.api.dir.open).toHaveBeenCalledWith({ path: "E:\\", recursive: false })
+    expect(fake.api.dir.open).toHaveBeenCalledWith({ path: "E:\\", recursive: false, lane: "left" })
   })
 
   it("shows an empty folder state", async () => {
@@ -345,7 +354,11 @@ describe("the shared context, part 1 (Stage C01)", () => {
         },
       },
     })
-    expect(fake.api.dir.openEntry).toHaveBeenCalledWith({ entryId: 10, recursive: false })
+    expect(fake.api.dir.openEntry).toHaveBeenCalledWith({
+      entryId: 10,
+      recursive: false,
+      lane: "left",
+    })
     await waitFor(() => expect(cursorRow("left")).toHaveTextContent("file000001"))
     // The inactive panel keeps its own folder.
     expect(screen.getByTestId("path-right")).toHaveTextContent(PICS.path)

@@ -143,7 +143,7 @@ func (s *indexService) fsMkdir(ctx context.Context, p fsMkdirParams) (fsMkdirRes
 	}
 	// The parent's sessions show the new folder at once; its listing (and
 	// the watcher) fills in the rest.
-	s.queries.Changed([]scan.Change{{DirID: parent.ID, DirKey: parent.Key}})
+	s.changed([]scan.Change{{DirID: parent.ID, DirKey: parent.Key}})
 	return fsMkdirResult{EntryID: first.ID, Created: created}, nil
 }
 
@@ -212,6 +212,6 @@ func (s *indexService) fsMkfile(ctx context.Context, p fsMkfileParams) (fsMkfile
 	if err != nil {
 		return fsMkfileResult{}, dbError(err)
 	}
-	s.queries.Changed([]scan.Change{{DirID: parent.ID, DirKey: parent.Key}})
+	s.changed([]scan.Change{{DirID: parent.ID, DirKey: parent.Key}})
 	return fsMkfileResult{EntryID: id, Created: created}, nil
 }

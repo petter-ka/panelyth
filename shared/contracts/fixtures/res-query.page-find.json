@@ -1,0 +1,65 @@
+{
+  "id": 86,
+  "ok": true,
+  "r": {
+    "items": [
+      {
+        "dirPath": "/fixtures/golden",
+        "ext": "jpg",
+        "favorite": false,
+        "id": 6,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704083038000,
+        "name": "IMG_2.JPG",
+        "rating": 0,
+        "sizeBytes": 2,
+        "thumb": null
+      },
+      {
+        "dirPath": "/fixtures/golden",
+        "ext": "txt",
+        "favorite": false,
+        "id": 7,
+        "kind": "file",
+        "label": 0,
+        "modifiedMs": 1704090957000,
+        "name": "notes_3.txt",
+        "rating": 0,
+        "sizeBytes": 3,
+        "thumb": null
+      },
+      {
+        "dirPath": "/fixtures/golden",
+        "ext": "jpg",
+        "favorite": false,
+        "id": 9,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704067200000,
+        "name": "renamed IMG_0 (2).jpg",
+        "rating": 0,
+        "sizeBytes": 0,
+        "thumb": null
+      },
+      {
+        "dirPath": "/fixtures/golden",
+        "ext": "jpg",
+        "favorite": true,
+        "id": 4,
+        "kind": "image",
+        "label": 0,
+        "modifiedMs": 1704067200000,
+        "name": "renamed IMG_0.jpg",
+        "rating": 0,
+        "sizeBytes": 0,
+        "thumb": null
+      }
+    ],
+    "offset": 0,
+    "queryId": 9,
+    "total": 4,
+    "version": 1
+  },
+  "t": "res"
+}

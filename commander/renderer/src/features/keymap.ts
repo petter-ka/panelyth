@@ -252,6 +252,28 @@ export const ACTIONS = [
     label: "Show hidden files",
     defaults: ["Mod+h"],
   },
+  // Stage C06: find files, branch view, quick filter.
+  {
+    id: "find.open",
+    scope: "panels",
+    group: "Files",
+    label: "Find files",
+    defaults: ["Alt+F7"],
+  },
+  {
+    id: "view.branch",
+    scope: "panels",
+    group: "View",
+    label: "Branch view (all files below)",
+    defaults: ["Mod+b"],
+  },
+  {
+    id: "view.filter",
+    scope: "panels",
+    group: "View",
+    label: "Quick filter",
+    defaults: ["Mod+s"],
+  },
   { id: "sort.name", scope: "panels", group: "View", label: "Sort by name", defaults: ["Mod+F3"] },
   {
     id: "sort.ext",

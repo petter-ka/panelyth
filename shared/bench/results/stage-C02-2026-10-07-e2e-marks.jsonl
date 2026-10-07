@@ -1,0 +1,4 @@
+{"at":"2026-10-07T14:51:51.556Z","test":"carry-selection","entries":9900,"commanderToViewerMs":23}
+{"at":"2026-10-07T15:15:02.006Z","test":"c02-benchmarks","held":{"keys":434,"p95FrameMs":7,"maxFrameGapMs":8,"longTasks":0,"cursorRow":434},"quickSearch":{"samples":13,"all":[6,7,7,7,9,9,10,10,10,11,12,12,13],"p50Ms":10,"p95Ms":13,"maxMs":13},"markAllMs":11,"invertMs":7,"invertBackMs":6,"folderSizes":{"ms":64,"folders":6,"files":51800,"filesPerSecond":809375}}
+{"at":"2026-10-07T15:21:19.771Z","test":"carry-selection","entries":9900,"commanderToViewerMs":23}
+{"at":"2026-10-07T15:22:15.491Z","test":"c02-benchmarks","held":{"keys":434,"p95FrameMs":7,"maxFrameGapMs":8,"longTasks":0,"cursorRow":434},"quickSearch":{"samples":13,"all":[6,6,8,9,9,9,11,11,11,11,12,13,13],"p50Ms":11,"p95Ms":13,"maxMs":13},"markAllMs":10,"invertMs":7,"invertBackMs":7,"folderSizes":{"ms":62,"folders":6,"files":51800,"filesPerSecond":835484}}

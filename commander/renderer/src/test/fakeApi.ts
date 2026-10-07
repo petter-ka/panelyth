@@ -9,6 +9,8 @@ import {
   type ErrorCode,
   type EventChannel,
   type EventMap,
+  type FindProgress,
+  type FindStartParams,
   type QueryDescriptor,
   type RecentFolder,
   type SelectionDescriptor,
@@ -198,19 +200,48 @@ export function installFakeCommander(options: FakeOptions) {
   }
   let nextQuery = 0
   const descriptors = new Map<number, QueryDescriptor>()
+  /** Stage C06: searches (results in found order) and the specs they ran with. */
+  const finds = new Map<number, { spec: FindStartParams; results: ContentItem[] }>()
+  let nextFind = 0
+  const maskMatch = (mask: string, name: string): boolean => {
+    const [inc = "", exc = ""] = mask.split("|")
+    const split = (m: string) => m.split(/[;\s]+/).filter((x) => x !== "")
+    const includes = split(inc).map((m) => (m === "*.*" ? "*" : m))
+    if (includes.length > 0 && !includes.some((m) => glob(m, name))) return false
+    return !split(exc).some((m) => glob(m, name))
+  }
+  const sep = (path: string): string => (path.includes("\\") ? "\\" : "/")
+  /** A folder and every folder below it (by path). */
+  const subtree = (f: FakeFolder): FakeFolder[] =>
+    options.folders.filter((g) => g === f || g.path.startsWith(f.path + sep(f.path)))
   /** A session's rows as Go would sort them. */
   const rowsOf = (d: QueryDescriptor): ContentItem[] => {
-    const f = byId.get(d.dirId)!
     const key = d.sort[0] ?? { field: "name", direction: "asc" }
     const hidden = ENTRY_ATTRS.hidden | ENTRY_ATTRS.system
-    return f.entries
-      .filter((e) => d.showHidden || ((e.attrs ?? 0) & hidden) === 0)
-      .sort((a, b) => {
-        const dirs = Number(b.kind === "dir") - Number(a.kind === "dir")
-        if (dirs !== 0) return dirs
-        const c = compare(key.field, a, b)
-        return (key.direction === "desc" ? -c : c) || a.name.localeCompare(b.name)
-      })
+    let rows: ContentItem[]
+    if (d.findId !== undefined) {
+      rows = (finds.get(d.findId)?.results ?? []).slice()
+    } else if (d.recursive) {
+      // Branch view: every file below the folder, each with its folder.
+      rows = subtree(byId.get(d.dirId)!).flatMap((g) =>
+        g.entries.filter((e) => e.kind !== "dir").map((e) => ({ ...e, dirPath: g.path })),
+      )
+    } else {
+      rows = byId.get(d.dirId)!.entries.slice()
+    }
+    rows = rows.filter(
+      (e) =>
+        (d.showHidden || ((e.attrs ?? 0) & hidden) === 0) &&
+        (!d.nameMask || e.kind === "dir" || maskMatch(d.nameMask, e.name)),
+    )
+    // Search results without sort keys stay in found order.
+    if (d.findId !== undefined && d.sort.length === 0) return rows
+    return rows.sort((a, b) => {
+      const dirs = Number(b.kind === "dir") - Number(a.kind === "dir")
+      if (dirs !== 0) return dirs
+      const c = compare(key.field, a, b)
+      return (key.direction === "desc" ? -c : c) || a.name.localeCompare(b.name)
+    })
   }
   let nextScan = 0
   const listeners = new Map<EventChannel, Set<(p: never) => void>>()
@@ -286,9 +317,41 @@ export function installFakeCommander(options: FakeOptions) {
         return f ? opened(f) : err("NOT_FOUND", "folder is not in the index")
       }),
       cancelScan: vi.fn(async () => ok({ cancelled: true })),
+      openContaining: vi.fn(async (entryId: number) => {
+        const f = options.folders.find((g) => g.entries.some((e) => e.id === entryId))
+        return f ? opened(f) : err("NOT_FOUND", "not in the index")
+      }),
+    },
+    find: {
+      start: vi.fn(async (spec: FindStartParams) => {
+        const root = byPath.get(spec.roots[0] ?? "")
+        if (!root) return err("NOT_FOUND", "folder does not exist")
+        const findId = ++nextFind
+        finds.set(findId, { spec, results: [] })
+        const d: QueryDescriptor = {
+          dirId: root.dirId,
+          recursive: false,
+          sort: [],
+          kinds: [],
+          search: "",
+          exts: [],
+          favorite: false,
+          minRating: 0,
+          tags: [],
+          scope: "all",
+          showHidden: true,
+          findId,
+        }
+        sessions.set(++nextQuery, [])
+        descriptors.set(nextQuery, d)
+        return ok({ findId, queryId: nextQuery, version: 1, total: 0 })
+      }),
+      cancel: vi.fn(async (findId: number) => ok({ cancelled: finds.has(findId) })),
     },
     query: {
       open: vi.fn(async (d: QueryDescriptor) => {
+        if (d.findId !== undefined && !finds.has(d.findId))
+          return err("NOT_FOUND", "the search results are no longer available")
         if (!byId.get(d.dirId)) return err("NOT_FOUND", "folder is not indexed")
         const rows = rowsOf(d)
         sessions.set(++nextQuery, rows)
@@ -710,6 +773,50 @@ export function installFakeCommander(options: FakeOptions) {
         )
       }
     },
+    /**
+     * Stage C06: a search found its results (files below its first root
+     * matching its mask, in folder order): every session over it gets a new
+     * version, then find.progress reports the final state.
+     */
+    finishFind(findId: number, state: FindProgress["state"] = "completed") {
+      const run = finds.get(findId)!
+      const root = byPath.get(run.spec.roots[0]!)!
+      run.results = subtree(root).flatMap((g) =>
+        g.entries
+          .filter((e) => e.kind !== "dir" && maskMatch(run.spec.mask || "*", e.name))
+          .map((e) => ({ ...e, dirPath: g.path })),
+      )
+      for (const [queryId, d] of descriptors) {
+        if (d.findId !== findId || !sessions.has(queryId)) continue
+        const v = (versions.get(queryId) ?? 1) + 1
+        sessions.set(queryId, rowsOf(d))
+        versions.set(queryId, v)
+        listeners.get("query.invalidated")?.forEach((l) =>
+          (l as (p: EventMap["query.invalidated"]) => void)({
+            queryId,
+            version: v,
+            total: sessions.get(queryId)!.length,
+          }),
+        )
+      }
+      const progress: FindProgress = {
+        findId,
+        state,
+        dirs: subtree(root).length,
+        entries: 0,
+        searched: 0,
+        bytes: 0,
+        errors: 0,
+        current: root.path,
+        matches: run.results.length,
+        truncated: false,
+        firstMatchMs: run.results.length > 0 ? 5 : -1,
+        elapsedMs: 12,
+      }
+      listeners.get("find.progress")?.forEach((l) => (l as (p: FindProgress) => void)(progress))
+    },
+    /** The search sessions still open (the dialog's and fed panels'). */
+    openSessions: (): number[] => [...sessions.keys()],
     bookmarks: (): Bookmark[] => bookmarks,
     /** Stage C05: shell actions main would have performed. */
     shell,

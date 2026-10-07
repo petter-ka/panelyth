@@ -16,7 +16,7 @@ describe("AppSwitchButton", () => {
     const onSwitch = vi.fn()
     render(<AppSwitchButton target="commander" shortcut="Ctrl+Shift+M" onSwitch={onSwitch} />)
     const button = screen.getByRole("button", { name: "Switch to Commander" })
-    expect(button).toHaveAttribute("title", "Switch to Commander (Ctrl+Shift+M)")
+    expect(button).toHaveAttribute("data-tooltip-content", "Switch to Commander (Ctrl+Shift+M)")
     expect(button).toHaveAttribute("aria-keyshortcuts", "Control+Shift+M")
     fireEvent.click(button)
     expect(onSwitch).toHaveBeenCalledOnce()

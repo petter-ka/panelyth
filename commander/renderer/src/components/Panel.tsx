@@ -77,6 +77,9 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   const error = useListingStore((s) => s[side].error)
   const total = useListingStore((s) => s[side].query?.total ?? 0)
   const listing = useListingStore((s) => s[side].progress?.state === "running")
+  const find = useListingStore((s) => s[side].find)
+  const branch = useListingStore((s) => s[side].branch)
+  const filter = useListingStore((s) => s[side].filter)
   const loading = useListingStore((s) => s[side].loading)
   const view = useListingStore((s) => s[side].view)
   // Ctrl+F1 / Ctrl+F2 replace the focused view: the new one takes the keys.
@@ -96,6 +99,14 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
     seenToken.current = editToken
   }, [editToken])
 
+  // Ctrl+S (view.filter, Stage C06).
+  const filterToken = useUiStore((s) => s.editFilter[side])
+  const seenFilter = useRef(filterToken)
+  useEffect(() => {
+    if (filterToken !== seenFilter.current) pathBar.current?.editFilter()
+    seenFilter.current = filterToken
+  }, [filterToken])
+
   const onKeyDown = (e: KeyboardEvent): void => {
     if (e.key === "Escape" && error) {
       e.preventDefault()
@@ -106,7 +117,9 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   let message: { title: string; detail?: string } | null = null
   if (dirId === null && !error) message = { title: loading ? "Opening…" : "No folder open" }
   else if (dirId !== null && total === 0 && !error && !loading) {
-    message = listing ? { title: "Listing…" } : { title: "This folder is empty" }
+    message = listing
+      ? { title: "Listing…" }
+      : { title: emptyTitle(find !== null, branch, filter !== "") }
   }
 
   return (
@@ -181,3 +194,9 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
     </section>
   )
 })
+
+function emptyTitle(find: boolean, branch: boolean, filtered: boolean): string {
+  if (filtered) return "No files match the quick filter"
+  if (find) return "No files found"
+  return branch ? "No files below this folder" : "This folder is empty"
+}

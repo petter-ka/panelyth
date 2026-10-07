@@ -26,6 +26,10 @@ import {
   SORT_FIELDS,
   QUERY_SCOPES,
   MAX_NAME_MASK_CHARS,
+  FIND_ATTR_BITS,
+  FIND_ENCODINGS,
+  MAX_FIND_ROOTS,
+  MAX_FIND_TEXT_CHARS,
   type RendererMethod,
 } from "@fastview/contracts"
 
@@ -115,6 +119,60 @@ function destinationProblem(p: Record<string, unknown>): string | null {
     : pathProblem(p.destination)
 }
 const decisions: ReadonlySet<unknown> = new Set(CONFLICT_DECISIONS)
+
+/** A scan lane (Stage C06): the caller's foreground slot, such as "left". */
+const isLane = (v: unknown): boolean => typeof v === "string" && /^[a-z0-9-]{1,16}$/.test(v)
+
+const findEncodings: ReadonlySet<unknown> = new Set(FIND_ENCODINGS)
+const FIND_KEYS = [
+  "roots",
+  "mask",
+  "depth",
+  "hidden",
+  "text",
+  "caseSensitive",
+  "wholeWords",
+  "encodings",
+  "skipBinary",
+  "minSize",
+  "maxSize",
+  "modifiedAfter",
+  "modifiedBefore",
+  "attrsSet",
+  "attrsClear",
+] as const
+const isBound = (v: unknown): boolean => v === null || isCount(v)
+
+/** find.start (Stage C06): read-only, so typed folder paths are allowed, like dir.open. */
+function findStartProblem(p: unknown): string | null {
+  if (!shape(p, FIND_KEYS)) return `expected { ${FIND_KEYS.join(", ")} }`
+  if (!Array.isArray(p.roots) || p.roots.length === 0 || p.roots.length > MAX_FIND_ROOTS)
+    return "give 1 to 16 folders"
+  for (const r of p.roots) {
+    const problem = pathProblem(r)
+    if (problem) return problem
+  }
+  if (typeof p.mask !== "string" || p.mask.length > MAX_MASK_CHARS) return "invalid mask"
+  if (!Number.isSafeInteger(p.depth) || (p.depth as number) < -1) return "invalid depth"
+  if (typeof p.text !== "string" || p.text.length > MAX_FIND_TEXT_CHARS * 2) return "invalid text"
+  for (const k of ["hidden", "caseSensitive", "wholeWords", "skipBinary"] as const) {
+    if (typeof p[k] !== "boolean") return `invalid ${k}`
+  }
+  if (
+    !Array.isArray(p.encodings) ||
+    p.encodings.length > FIND_ENCODINGS.length ||
+    !p.encodings.every((e) => findEncodings.has(e))
+  )
+    return "invalid encodings"
+  for (const k of ["minSize", "maxSize", "modifiedAfter", "modifiedBefore"] as const) {
+    if (!isBound(p[k])) return `invalid ${k}`
+  }
+  for (const k of ["attrsSet", "attrsClear"] as const) {
+    const v = p[k]
+    if (!isCount(v) || ((v as number) & ~FIND_ATTR_BITS) !== 0) return `invalid ${k}`
+  }
+  return null
+}
 const jobIdParams: Validator = (p) =>
   shape(p, ["jobId"]) && isId(p.jobId) ? null : "expected { jobId }"
 const isLabel = (v: unknown): boolean =>
@@ -210,19 +268,31 @@ export const validators: Record<RendererMethod, Validator> = {
   },
   "dir.open": (p) => {
     if (
-      !shape(p, ["path", "recursive"]) ||
+      !shapeWithOptional(p, ["path", "recursive"], ["lane"]) ||
       typeof p.path !== "string" ||
       typeof p.recursive !== "boolean"
     ) {
-      return "expected { path: string, recursive: boolean }"
+      return "expected { path: string, recursive: boolean } and optionally lane"
     }
+    if (p.lane !== undefined && !isLane(p.lane)) return "invalid lane"
     return pathProblem(p.path)
   },
   "media.open": (p) => (shape(p, ["entryId"]) && isId(p.entryId) ? null : "expected { entryId }"),
   "dir.openEntry": (p) =>
-    shape(p, ["entryId", "recursive"]) && isId(p.entryId) && typeof p.recursive === "boolean"
+    shapeWithOptional(p, ["entryId", "recursive"], ["lane"]) &&
+    isId(p.entryId) &&
+    typeof p.recursive === "boolean" &&
+    (p.lane === undefined || isLane(p.lane))
       ? null
-      : "expected { entryId, recursive }",
+      : "expected { entryId, recursive } and optionally lane",
+  "dir.openContaining": (p) =>
+    shapeWithOptional(p, ["entryId"], ["lane"]) &&
+    isId(p.entryId) &&
+    (p.lane === undefined || isLane(p.lane))
+      ? null
+      : "expected { entryId } and optionally lane",
+  "find.start": (p) => findStartProblem(p),
+  "find.cancel": (p) => (shape(p, ["findId"]) && isId(p.findId) ? null : "expected { findId }"),
   "dir.cancelScan": (p) => (shape(p, ["scanId"]) && isId(p.scanId) ? null : "expected { scanId }"),
   "query.open": (p) => {
     const keys = [
@@ -236,7 +306,7 @@ export const validators: Record<RendererMethod, Validator> = {
       "minRating",
       "tags",
     ]
-    const optional = ["scope", "showHidden", "nameMask"]
+    const optional = ["scope", "showHidden", "nameMask", "findId"]
     if (!shapeWithOptional(p, keys, optional))
       return `expected { ${keys.join(", ")} } and optionally ${optional.join(", ")}`
     if (p.scope !== undefined && !scopes.has(p.scope)) return "invalid scope"
@@ -247,6 +317,8 @@ export const validators: Record<RendererMethod, Validator> = {
       (typeof p.nameMask !== "string" || p.nameMask.length > MAX_NAME_MASK_CHARS)
     )
       return "invalid nameMask"
+    if (p.findId !== undefined && (!isId(p.findId) || p.scope !== "all" || p.recursive !== false))
+      return "findId needs the all scope and no recursion"
     if (typeof p.favorite !== "boolean" || !isRating(p.minRating))
       return "invalid favorite or minRating"
     if (!Array.isArray(p.tags) || p.tags.length > MAX_TAG_FILTERS || !p.tags.every(isTagName))

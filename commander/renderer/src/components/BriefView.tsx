@@ -12,7 +12,7 @@ import {
   type KeyboardEvent,
   type MouseEvent,
 } from "react"
-import { glyphOf, isMuted } from "../features/format"
+import { folderPrefix, glyphOf, isMuted } from "../features/format"
 import { enter, pageStoreOf, parentRows, rowCount, useListingStore } from "../features/listing"
 import { useMarksStore } from "../features/marks"
 import { onPanelKey } from "../features/panelKeys"
@@ -195,6 +195,8 @@ const BriefItem = memo(function BriefItem({
   const isCursor = useListingStore((s) => s[side].cursor === index)
   const marked = useMarksStore((s) => entry >= 0 && isMarked(s[side], entry, shown?.id))
   const renaming = useRenaming(side, index)
+  const panelPath = useListingStore((s) => s[side].path)
+  const prefix = shown ? folderPrefix(shown.dirPath, panelPath) : ""
   return (
     <div
       role="option"
@@ -224,7 +226,10 @@ const BriefItem = memo(function BriefItem({
       ) : shown ? (
         <>
           <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} marked={marked} />
-          <span className="truncate">{shown.kind === "dir" ? `[${shown.name}]` : shown.name}</span>
+          <span className="truncate">
+            {prefix && <span className="text-muted">{prefix}</span>}
+            {shown.kind === "dir" ? `[${shown.name}]` : shown.name}
+          </span>
         </>
       ) : (
         <span className="block h-2 w-24 rounded-sm bg-skeleton" />

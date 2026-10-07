@@ -10,6 +10,8 @@ import type {
   FsMkdirResult,
   FsMkfileResult,
   FileOpenResult,
+  FindStartParams,
+  FindStartResult,
   MediaOpenResult,
   PreviewEnsureParams,
   PreviewEnsureResult,
@@ -101,10 +103,21 @@ export const bridge = {
   reorderBookmarks: async (ids: number[]): Promise<void> => {
     await unwrap(() => api().library.reorderBookmarks(ids))
   },
-  openDir: (path: string): Promise<DirOpenResult> =>
-    unwrap(() => api().dir.open({ path, recursive: false })),
-  openDirEntry: (entryId: number): Promise<DirOpenResult> =>
-    unwrap(() => api().dir.openEntry({ entryId, recursive: false })),
+  /** lane: the panel whose foreground scan this is (Stage C06); recursive for a branch view. */
+  openDir: (path: string, lane?: string, recursive = false): Promise<DirOpenResult> =>
+    unwrap(() => api().dir.open({ path, recursive, ...(lane !== undefined && { lane }) })),
+  openDirEntry: (entryId: number, lane?: string): Promise<DirOpenResult> =>
+    unwrap(() =>
+      api().dir.openEntry({ entryId, recursive: false, ...(lane !== undefined && { lane }) }),
+    ),
+  /** "Go to file" (Stage C06): the folder holding an entry. */
+  openContaining: (entryId: number, lane?: string): Promise<DirOpenResult> =>
+    unwrap(() => api().dir.openContaining(entryId, lane)),
+  // Stage C06: find files.
+  findStart: (spec: FindStartParams): Promise<FindStartResult> =>
+    unwrap(() => api().find.start(spec)),
+  findCancel: async (findId: number): Promise<boolean> =>
+    (await unwrap(() => api().find.cancel(findId))).cancelled,
   cancelScan: async (scanId: number): Promise<void> => {
     await unwrap(() => api().dir.cancelScan(scanId))
   },

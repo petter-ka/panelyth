@@ -13,6 +13,17 @@ Amended 2026-10-05: sessions have a budget per app inside the one sidecar (ADR-0
 carried to the other app with `selection.fromContext` (ADR-0031); and find results, archives and directory compares
 add session sources (commander Stages C06–C08, ADR-0030).
 
+Amended 2026-10-07 (Stage C06): the **session-source interface** is in place. A session is materialized either from
+the index (the default) or from a `query.Source`, which returns the ordered ids for a descriptor (sorting and
+filtering by `sort`, `nameMask` and `showHidden` in Go; `dirId` and `recursive` do not apply), the folded names
+(quick search, marking by mask), and accepts a `Missing()` hint when a page could not load some of its ids. Index
+changes never refresh source sessions directly; the source asks for a refresh when its own data changed. Find
+results are the first source: the descriptor's `findId` selects it, the results are index entries (so every command
+and selection descriptor works on them), and pages of sessions spanning folders (sources and recursive all-scope
+listings) carry each row's `dirPath`. A finished search is forgotten when its last session closes. At most 8
+searches are kept: beyond that the oldest finished one goes, preferring one without sessions; a panel whose search
+was forgotten shows its folder again.
+
 ## Context
 
 Offset/limit over a table that is still growing during a scan shifts rows under the user. SQLite `OFFSET` is

@@ -116,3 +116,16 @@ export function baseName(item: ContentItem): string {
   const cut = item.name.length - item.ext.length - 1
   return cut > 0 && item.name[cut] === "." ? item.name.slice(0, cut) : item.name
 }
+
+/**
+ * Rows from many folders (branch view, search results; Stage C06): the
+ * entry's folder relative to the panel's, ending in a separator; "" for the
+ * panel's own folder or a row without one.
+ */
+export function folderPrefix(dirPath: string | undefined, base: string): string {
+  if (!dirPath || dirPath === base) return ""
+  const sep = dirPath.includes("\\") ? "\\" : "/"
+  const root = base.endsWith(sep) ? base : base + sep
+  const rel = dirPath.startsWith(root) ? dirPath.slice(root.length) : dirPath
+  return rel.endsWith(sep) ? rel : rel + sep
+}

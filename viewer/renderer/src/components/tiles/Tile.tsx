@@ -224,9 +224,17 @@ function MediaThumb({
     )
   }
   if (item.kind === "image") {
-    return <div className={fallbackFrameClass(visual)} data-testid="thumb-loading" />
+    return (
+      <div className={fallbackFrameClass(visual)} data-testid="thumb-loading">
+        <UserBadge item={item} />
+      </div>
+    )
   }
-  return <div className={fallbackFrameClass(visual)} />
+  return (
+    <div className={fallbackFrameClass(visual)}>
+      <UserBadge item={item} />
+    </div>
+  )
 }
 
 /** Label, favorite and rating, drawn inside the thumbnail frame. */

@@ -74,6 +74,7 @@ test.describe("commander foundation (Stage C00)", () => {
           "dir",
           "file",
           "files",
+          "find",
           "fs",
           "jobs",
           "library",

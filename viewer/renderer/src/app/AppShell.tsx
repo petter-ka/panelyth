@@ -107,10 +107,13 @@ export function AppShell() {
     [],
   )
 
-  useEffect(() => {
+  // A layout applied from library.db (or reset) resets the pane state during render.
+  const [applied, setApplied] = useState({ applyToken, panes })
+  if (applied.applyToken !== applyToken || applied.panes !== panes) {
+    setApplied({ applyToken, panes })
     setTreeSize(panes?.tree ?? 62)
     setPreviewCollapsed(panes?.preview === 0)
-  }, [applyToken, panes])
+  }
 
   const syncLeftLayout = useCallback((layout: Record<string, number>) => {
     if (layout.tree !== undefined) setTreeSize(layout.tree)

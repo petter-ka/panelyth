@@ -113,12 +113,18 @@ export interface DirOpenParams {
   path: string
   /** Also index every visible subfolder (bounded, cancellable). */
   recursive: boolean
+  /**
+   * The caller's foreground scan slot (Stage C06): a new scan cancels only the
+   * previous one in its lane. The viewer sends none; each commander panel its side.
+   */
+  lane?: string
 }
 
 /** Opens a folder tile by its index id (no path building in the renderer). */
 export interface DirOpenEntryParams {
   entryId: number
   recursive: boolean
+  lane?: string
 }
 
 export interface DirOpenResult {
@@ -180,6 +186,11 @@ export interface QueryDescriptor {
    * after "|" exclude. Folders always pass. "" or omitted = all files.
    */
   nameMask?: string
+  /**
+   * A search's results instead of a folder (Stage C06, commander): sorted and
+   * filtered by sort, showHidden and nameMask; needs the all scope and no recursion.
+   */
+  findId?: number
 }
 
 export const MAX_SEARCH_CHARS = 256
@@ -315,6 +326,8 @@ export interface ContentItem {
   attrs?: number
   /** Folders: the calculated size of everything below (Stage C02 dirSize jobs); omitted until calculated. */
   dirSizeBytes?: number
+  /** The entry's folder, in sessions spanning folders: find results and branch views (Stage C06). */
+  dirPath?: string
   /** Cached thumbnail for the page's thumbProfile, or null. */
   thumb: Thumb | null
 }
@@ -973,6 +986,85 @@ export interface FsCanTrashResult {
 
 export const MAX_MKDIR_PATH_CHARS = 4096
 
+/** "Go to file" (Stage C06): the entry's folder, scanned in the caller's lane. */
+export interface DirOpenContainingParams {
+  entryId: number
+  lane?: string
+}
+
+/** Find files (Stage C06, commander). Optional bounds are null when unset. */
+export interface FindStartParams {
+  /** Absolute folders to search in (1..16). */
+  roots: string[]
+  /** Name masks ("*.txt;*.md"); after "|" exclusions, "name\" or "name/" excludes folders. */
+  mask: string
+  /** Subfolder levels: 0 = only the folders themselves; -1 = unlimited. */
+  depth: number
+  /** Include hidden and system entries and enter such folders. */
+  hidden: boolean
+  /** Keep only files containing this text; "" = no content search. */
+  text: string
+  caseSensitive: boolean
+  wholeWords: boolean
+  /** Encodings to search the text in; empty = UTF-8, UTF-16 LE and Windows-1252. */
+  encodings: FindEncoding[]
+  skipBinary: boolean
+  minSize: number | null
+  maxSize: number | null
+  /** Modified time bounds, epoch ms. */
+  modifiedAfter: number | null
+  modifiedBefore: number | null
+  /** Attribute bits (ATTR_*) that must be set, and that must be clear. */
+  attrsSet: number
+  attrsClear: number
+}
+
+export type FindEncoding =
+  | "utf-8"
+  | "utf-16le"
+  | "utf-16be"
+  | "windows-1252"
+  | "windows-1250"
+  | "windows-1251"
+  | "iso-8859-2"
+  | "koi8-r"
+
+export const FIND_ENCODINGS = [
+  "utf-8",
+  "utf-16le",
+  "utf-16be",
+  "windows-1252",
+  "windows-1250",
+  "windows-1251",
+  "iso-8859-2",
+  "koi8-r",
+] as const satisfies readonly FindEncoding[]
+
+/** The ENTRY_ATTRS bits a search can require or exclude (not link: links are their own kind). */
+export const FIND_ATTR_BITS =
+  ENTRY_ATTRS.hidden |
+  ENTRY_ATTRS.system |
+  ENTRY_ATTRS.readOnly |
+  ENTRY_ATTRS.archive |
+  ENTRY_ATTRS.executable
+export const MAX_FIND_ROOTS = 16
+export const MAX_FIND_TEXT_CHARS = 1024
+/** A search stops at this many results (find.progress reports truncated). */
+export const MAX_FIND_RESULTS = 250_000
+
+/** The results tab's session (found order) starts empty; results arrive as query.invalidated. */
+export interface FindStartResult extends QuerySnapshot {
+  findId: number
+}
+
+export interface FindIdParams {
+  findId: number
+}
+
+export interface FindCancelResult {
+  cancelled: boolean
+}
+
 export interface EntryRenameParams {
   entryId: number
   /** The full new name. Files must keep a supported extension of the same kind. */
@@ -1086,6 +1178,10 @@ export interface SidecarMethodMap {
   "dir.open": { params: DirOpenParams; result: DirOpenResult }
   "dir.openEntry": { params: DirOpenEntryParams; result: DirOpenResult }
   "dir.cancelScan": { params: CancelScanParams; result: CancelScanResult }
+  /** The folder holding an entry, opened like dir.open ("Go to file", Stage C06). */
+  "dir.openContaining": { params: DirOpenContainingParams; result: DirOpenResult }
+  "find.start": { params: FindStartParams; result: FindStartResult }
+  "find.cancel": { params: FindIdParams; result: FindCancelResult }
   "query.open": { params: QueryDescriptor; result: QuerySnapshot }
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
@@ -1268,7 +1364,14 @@ export const VIEWER_METHODS = [
 ] as const
 
 /** Methods only the commander's profile has (ADR-0027): any file's bytes, the editor, new files. */
-export const COMMANDER_ONLY_METHODS = ["file.open", "shell.edit", "fs.mkfile"] as const
+export const COMMANDER_ONLY_METHODS = [
+  "file.open",
+  "shell.edit",
+  "fs.mkfile",
+  "find.start",
+  "find.cancel",
+  "dir.openContaining",
+] as const
 
 /** Every method some renderer may invoke. Main rejects everything else. */
 export const RENDERER_METHODS = [...VIEWER_METHODS, ...COMMANDER_ONLY_METHODS] as const
@@ -1340,6 +1443,10 @@ export const COMMANDER_METHODS = [
   "shell.open",
   "shell.edit",
   "fs.mkfile",
+  // Stage C06: find files, "Go to file".
+  "find.start",
+  "find.cancel",
+  "dir.openContaining",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */
