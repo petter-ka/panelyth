@@ -334,7 +334,7 @@ export function TooltipProvider({ children, delay = DEFAULT_DELAY }: TooltipProv
             id={id}
             role="tooltip"
             data-tooltip-popup
-            className="pointer-events-none fixed z-[9999] max-h-[calc(100vh-1rem)] max-w-[min(22rem,calc(100vw-1rem))] break-words whitespace-pre-line rounded-md border border-border bg-text px-2.5 py-1.5 text-xs leading-snug text-chrome"
+            className="pointer-events-none fixed z-[9999] max-h-[calc(100vh-1rem)] max-w-[min(22rem,calc(100vw-1rem))] break-words whitespace-pre-line rounded-md border border-border bg-text px-2 py-1 text-[0.6875rem] leading-snug font-bold text-chrome"
             style={{
               left: position.left,
               top: position.top,
