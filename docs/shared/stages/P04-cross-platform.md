@@ -155,6 +155,11 @@ not run by hand here.
 - **The viewer's e2e specs** still click "Open folder…", which the first screen no longer shows (the startup folder
   opens home; open since C06, see the C07 record). They need a way to open a folder from the UI (a product decision:
   for example an Open folder shortcut) or a test path; until then CI runs the commander and app-switch specs only.
+- **Windows e2e does not block CI** (owner's decision, 2026-10-08): it runs and reports, but its step continues on
+  error. Over four Windows runs 11 different commander specs failed, almost all on timing, and each passed in another
+  run. Still open: a restart opens the viewer instead of the last used commander when the start takes longer than the
+  400 ms wait for the shared context; the C02 carry-over spec (viewer selection back to marks) failed twice; further
+  timing races. Unit, Go, packaging and the packaged smoke test stay blocking on Windows.
 - Windows and macOS: the first CI run is the first run of the packaging and smoke test there, and of the e2e suites on
   macOS. The macOS `clonefile` path, "Put Back", FSEvents vs kqueue, and NFC/NFD names are verified in that run or by
   hand on a Mac.
