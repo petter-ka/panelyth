@@ -1,5 +1,5 @@
-import { formatChord } from "@fastview/renderer-core"
-import { Tooltip } from "@fastview/ui"
+import { formatChord } from "@panelyth/renderer-core"
+import { Tooltip } from "@panelyth/ui"
 import { runPanelAction } from "../features/commands"
 import type { ActionId } from "../features/keymap"
 import { useKeymapStore } from "../features/keymap"

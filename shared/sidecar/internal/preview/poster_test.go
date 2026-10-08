@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/video"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/video"
 )
 
 func videoTools(t *testing.T) *video.Tools {

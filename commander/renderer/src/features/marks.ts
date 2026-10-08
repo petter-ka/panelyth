@@ -1,4 +1,4 @@
-import type { SelectionDescriptor } from "@fastview/contracts"
+import type { SelectionDescriptor } from "@panelyth/contracts"
 import {
   addRanges,
   fromRanges,
@@ -11,7 +11,7 @@ import {
   toDescriptor,
   toggle,
   type Marks,
-} from "@fastview/renderer-core"
+} from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import {

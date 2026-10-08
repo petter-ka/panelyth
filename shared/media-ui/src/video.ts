@@ -1,4 +1,4 @@
-import type { ErrorCode } from "@fastview/contracts"
+import type { ErrorCode } from "@panelyth/contracts"
 import { create } from "zustand"
 
 /** "1:05", "12:00", "1:02:03" — hours only when needed. NaN/∞ shows "0:00". */

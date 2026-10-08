@@ -1,4 +1,4 @@
-import type { Crumb, Place, Volume } from "@fastview/contracts"
+import type { Crumb, Place, Volume } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { openPath } from "./listing"

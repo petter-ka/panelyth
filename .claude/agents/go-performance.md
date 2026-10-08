@@ -1,6 +1,6 @@
 ---
 name: go-performance
-description: Implement and optimize FastView Go indexing, decoding, cache and concurrency.
+description: Implement and optimize Panelyth Go indexing, decoding, cache and concurrency.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

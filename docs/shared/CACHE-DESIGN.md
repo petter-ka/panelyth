@@ -3,19 +3,19 @@
 > **Implemented in Stage 02** (`shared/sidecar/internal/preview`, `internal/imaging`,
 > `shared/desktop/src/main/thumbProtocol.ts`). Deviations from this document:
 > - Alpha previews are **PNG**, not WebP (no pure-Go WebP encoder, ADR-0019).
-> - The key also includes the JPEG quality; the URL is `fastview-thumb://t/<key>.<jpg|png>`, resolved by Electron
+> - The key also includes the JPEG quality; the URL is `panelyth-thumb://t/<key>.<jpg|png>`, resolved by Electron
 >   main under the `thumbnailRoot` announced in the sidecar's `hello`.
 > - Cache hits are not `stat`-verified per request; a broken file is reported by the renderer's `<img>` error
 >   and regenerated with `preview.ensure({ force })`.
 > - Failures: corrupt/unsupported are permanent for a key (a replaced file gets a new key); permission,
 >   missing-file and cache errors retry after 5 min / 1 min / 30 s.
-> - Cleanup: LRU to 90 % of a 2 GB default ceiling (`FASTVIEW_CACHE_MAX_BYTES`), orphan sweep 16 shards per pass.
+> - Cleanup: LRU to 90 % of a 2 GB default ceiling (`PANELYTH_CACHE_MAX_BYTES`), orphan sweep 16 shards per pass.
 
 ## Scope
 
 The preview cache is a platform service of the sidecar. The viewer uses it for tiles, folder covers and the preview
 pane; the commander uses it for quick view and, later, thumbnail mode. Both apps run on one sidecar and share one cache
-root, `<user-cache>/FastView/` (ADR-0031): a thumbnail generated in one app is a cache hit in the other.
+root, `<user-cache>/Panelyth/` (ADR-0031): a thumbnail generated in one app is a cache hit in the other.
 
 ## Goal
 
@@ -33,7 +33,7 @@ Use the OS-appropriate per-user cache directory from Go (`os.UserCacheDir()`).
 Under it:
 
 ```text
-<user-cache>/FastView/
+<user-cache>/Panelyth/
   v1/
     thumbnails/
     previews/

@@ -1,27 +1,27 @@
 import type { Session, WebContents, WebFrameMain } from "electron"
 
 export const APP_SCHEME = "app"
-export const APP_HOST = "fastview"
+export const APP_HOST = "panelyth"
 export const APP_ORIGIN = `${APP_SCHEME}://${APP_HOST}`
 /** The commander's app view is served from its own origin (ADR-0031). */
 export const COMMANDER_HOST = "commander"
 export const COMMANDER_ORIGIN = `${APP_SCHEME}://${COMMANDER_HOST}`
 
-// Previews load from fastview-thumb: (Stage 02); originals and videos from
-// fastview-media: (Stages 04 and 06). Only the commander may also fetch()
+// Previews load from panelyth-thumb: (Stage 02); originals and videos from
+// panelyth-media: (Stages 04 and 06). Only the commander may also fetch()
 // token URLs: its lister reads byte windows (Stage C05, ADR-0027). The
 // viewer keeps connect-src 'self', so it can never read a token's bytes.
-const connectTokens = (fetchTokens: boolean): string => (fetchTokens ? " fastview-media:" : "")
+const connectTokens = (fetchTokens: boolean): string => (fetchTokens ? " panelyth-media:" : "")
 
 const prodCsp = (fetchTokens: boolean): string =>
   [
     "default-src 'self'",
     "script-src 'self'",
     "style-src 'self'",
-    "img-src 'self' data: fastview-thumb: fastview-media:",
+    "img-src 'self' data: panelyth-thumb: panelyth-media:",
     "font-src 'self'",
     `connect-src 'self'${connectTokens(fetchTokens)}`,
-    "media-src fastview-media:",
+    "media-src panelyth-media:",
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'none'",
@@ -34,14 +34,14 @@ const devCsp = (origins: readonly string[], fetchTokens: boolean): string =>
     "default-src 'self'",
     "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: fastview-thumb: fastview-media:",
-    "media-src fastview-media:",
+    "img-src 'self' data: panelyth-thumb: panelyth-media:",
+    "media-src panelyth-media:",
     `connect-src 'self'${connectTokens(fetchTokens)} ${origins.map((o) => o.replace(/^http/, "ws")).join(" ")}`,
     "object-src 'none'",
     "base-uri 'none'",
   ].join("; ")
 
-/** fetchTokens: the page may fetch() fastview-media: URLs (the commander's view only). */
+/** fetchTokens: the page may fetch() panelyth-media: URLs (the commander's view only). */
 export function contentSecurityPolicy(
   devOrigins: string | readonly string[] | null,
   fetchTokens = false,

@@ -17,7 +17,7 @@ import {
   type RpcEnvelope,
   type SidecarMethod,
   type SidecarStatus,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import type { IpcMainInvokeEvent, WebContents } from "electron"
 import { RpcError } from "../sidecar/RpcClient"
 import { isTrustedSender } from "../security"

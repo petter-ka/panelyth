@@ -1,6 +1,6 @@
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/index
+pkg: panelyth/sidecar/internal/index
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkSearch100k/common-32         	      28	  40010518 ns/op	 1668589 B/op	   55656 allocs/op
 BenchmarkSearch100k/common-32         	unexpected fault address 0x300000000
@@ -32,10 +32,10 @@ database/sql.(*Rows).Next.func1(0x1d909b1dc000, 0x1d909af61927, 0x1d909af61926)
 	C:/Program Files/Go/src/database/sql/sql.go:3054 +0x6c fp=0x1d909af61908 sp=0x1d909af618c8 pc=0x7ff76bc542ac
 database/sql.(*Rows).Next(0x1d909b1dc000)
 	C:/Program Files/Go/src/database/sql/sql.go:3055 +0x52 fp=0x1d909af61938 sp=0x1d909af61908 pc=0x7ff76bc51052
-fastview/sidecar/internal/index.(*Store).QueryIDs(0x1d909affe060, {0x7ff76c22bfc0, 0x7ff76c2c45e0}, {0x1, 0x0, {0x1d909b13e030, 0x1, 0x1}, {0x0, 0x0, ...}, ...}, ...)
-	C:/work/viewer/native/fastview-go/internal/index/query.go:285 +0xf7b fp=0x1d909af61d48 sp=0x1d909af61938 pc=0x7ff76be6dadb
-fastview/sidecar/internal/index.BenchmarkSearch100k.func1(0x1d909b0de908)
-	C:/work/viewer/native/fastview-go/internal/index/query_test.go:212 +0x225 fp=0x1d909af61f10 sp=0x1d909af61d48 pc=0x7ff76be7dba5
+panelyth/sidecar/internal/index.(*Store).QueryIDs(0x1d909affe060, {0x7ff76c22bfc0, 0x7ff76c2c45e0}, {0x1, 0x0, {0x1d909b13e030, 0x1, 0x1}, {0x0, 0x0, ...}, ...}, ...)
+	C:/work/viewer/native/panelyth-go/internal/index/query.go:285 +0xf7b fp=0x1d909af61d48 sp=0x1d909af61938 pc=0x7ff76be6dadb
+panelyth/sidecar/internal/index.BenchmarkSearch100k.func1(0x1d909b0de908)
+	C:/work/viewer/native/panelyth-go/internal/index/query_test.go:212 +0x225 fp=0x1d909af61f10 sp=0x1d909af61d48 pc=0x7ff76be7dba5
 testing.(*B).runN(0x1d909b0de908, 0x1)
 	C:/Program Files/Go/src/testing/benchmark.go:219 +0x190 fp=0x1d909af61fa0 sp=0x1d909af61f10 pc=0x7ff76bb8be10
 testing.(*B).run1.func1()
@@ -548,8 +548,8 @@ testing.(*B).run(0x1d909b0de608?)
 	C:/Program Files/Go/src/testing/benchmark.go:288 +0x5b fp=0x1d909b0399e8 sp=0x1d909b0399b8 pc=0x7ff76bb8c3db
 testing.(*B).Run(0x1d909b0de308, {0x7ff76be92893?, 0x1?}, 0x1d909b0b02d0)
 	C:/Program Files/Go/src/testing/benchmark.go:868 +0x4df fp=0x1d909b039ab8 sp=0x1d909b0399e8 pc=0x7ff76bb8eb1f
-fastview/sidecar/internal/index.BenchmarkSearch100k(0x1d909b0de308)
-	C:/work/viewer/native/fastview-go/internal/index/query_test.go:210 +0x7f9 fp=0x1d909b039f10 sp=0x1d909b039ab8 pc=0x7ff76be774b9
+panelyth/sidecar/internal/index.BenchmarkSearch100k(0x1d909b0de308)
+	C:/work/viewer/native/panelyth-go/internal/index/query_test.go:210 +0x7f9 fp=0x1d909b039f10 sp=0x1d909b039ab8 pc=0x7ff76be774b9
 testing.(*B).runN(0x1d909b0de308, 0x1)
 	C:/Program Files/Go/src/testing/benchmark.go:219 +0x190 fp=0x1d909b039fa0 sp=0x1d909b039f10 pc=0x7ff76bb8be10
 testing.(*B).run1.func1()
@@ -587,10 +587,10 @@ runtime.goexit({})
 created by database/sql.OpenDB in goroutine 50
 	C:/Program Files/Go/src/database/sql/sql.go:846 +0x135
 exit status 2
-FAIL	fastview/sidecar/internal/index	2.745s
+FAIL	panelyth/sidecar/internal/index	2.745s
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/library
+pkg: panelyth/sidecar/internal/library
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkFavorite100k-32    	       6	 303283183 ns/op	 7847090 B/op	   14602 allocs/op
 BenchmarkFavorite100k-32    	       6	 305089633 ns/op	 7710417 B/op	   14567 allocs/op
@@ -598,10 +598,10 @@ BenchmarkFavorite100k-32    	       6	 306165900 ns/op	 7655668 B/op	   14545 al
 BenchmarkFavorite100k-32    	       6	 304465467 ns/op	 7915632 B/op	   14582 allocs/op
 BenchmarkFavorite100k-32    	       6	 307366533 ns/op	 7759321 B/op	   14565 allocs/op
 PASS
-ok  	fastview/sidecar/internal/library	10.831s
+ok  	panelyth/sidecar/internal/library	10.831s
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/jobs
+pkg: panelyth/sidecar/internal/jobs
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkCopySmallFiles-32    	       1	1098224200 ns/op	  11.93 MB/s	211473576 B/op	   15395 allocs/op
 BenchmarkCopySmallFiles-32    	       1	1044740300 ns/op	  12.55 MB/s	211414016 B/op	   15240 allocs/op
@@ -614,5 +614,5 @@ BenchmarkFavorite10k-32       	      19	  85211837 ns/op	19972253 B/op	  243942 
 BenchmarkFavorite10k-32       	      18	  81605883 ns/op	20202708 B/op	  244007 allocs/op
 BenchmarkFavorite10k-32       	      18	  81833472 ns/op	20225215 B/op	  243991 allocs/op
 PASS
-ok  	fastview/sidecar/internal/jobs	21.938s
+ok  	panelyth/sidecar/internal/jobs	21.938s
 FAIL

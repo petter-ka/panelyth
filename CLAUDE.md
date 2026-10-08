@@ -1,16 +1,16 @@
-# CLAUDE.md — FastView Product Family
+# CLAUDE.md — Panelyth Product Family
 
 ## Mission
 
-Build the FastView product family: high-performance local desktop apps for Windows, macOS and Linux on one shared
+Build the Panelyth product family: high-performance local desktop apps for Windows, macOS and Linux on one shared
 platform, hosted by one shell in one window (ADR-0025, ADR-0031). A left app rail switches between them, and the apps
 share state: the current folder, the selected file, the selection, bookmarks, recent locations,
 appearance and the file clipboard (`docs/shared/APP-SWITCHING.md`).
 
-- **FastView** (the viewer): a photo and video viewer.
+- **Panelyth** (the viewer): a photo and video viewer.
   > Opening a large image folder should feel immediate, scrolling should remain fluid, and thumbnail loading should not
   > freeze the UI.
-- **FastView Commander** (working title, planned): a keyboard-first, dual-panel file manager in the style of Total
+- **Panelyth Commander** (working title, planned): a keyboard-first, dual-panel file manager in the style of Total
   Commander.
   > Entering a folder should feel instant, the cursor should never lag, and file operations should never freeze the UI.
 

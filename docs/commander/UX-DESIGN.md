@@ -1,6 +1,6 @@
 # Commander UX Design
 
-FastView Commander's layout, panels, dialogs and keyboard model. The visual system (tokens, themes, typography,
+Panelyth Commander's layout, panels, dialogs and keyboard model. The visual system (tokens, themes, typography,
 motion, interface size, keymap foundation) is shared: `docs/shared/DESIGN-SYSTEM.md`.
 
 ## Goal

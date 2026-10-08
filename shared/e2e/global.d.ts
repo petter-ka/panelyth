@@ -1,7 +1,7 @@
-import type { FastViewApi } from "@fastview/contracts"
+import type { PanelythApi } from "@panelyth/contracts"
 
 declare global {
   interface Window {
-    fastview?: FastViewApi
+    panelyth?: PanelythApi
   }
 }

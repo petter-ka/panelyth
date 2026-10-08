@@ -1,4 +1,4 @@
-import type { OutboundFrame } from "@fastview/contracts"
+import type { OutboundFrame } from "@panelyth/contracts"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { RpcClient, RpcError } from "../src/main/sidecar/RpcClient"
 

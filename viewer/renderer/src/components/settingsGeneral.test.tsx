@@ -1,5 +1,5 @@
-import { DEFAULT_SWITCH_SETTINGS, SHARED_SWITCH_KEY } from "@fastview/contracts"
-import { startSwitchSettingsSync, useSwitchSettings } from "@fastview/renderer-core"
+import { DEFAULT_SWITCH_SETTINGS, SHARED_SWITCH_KEY } from "@panelyth/contracts"
+import { startSwitchSettingsSync, useSwitchSettings } from "@panelyth/renderer-core"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { useLibraryStore } from "../features/library/libraryStore"
@@ -14,7 +14,7 @@ let stop: (() => void) | null = null
 function setup(commanderEnabled: boolean) {
   const bridge = installFakeBridge()
   if (commanderEnabled) {
-    ;(window.fastview!.app as unknown as { switch: () => void }).switch = vi.fn()
+    ;(window.panelyth!.app as unknown as { switch: () => void }).switch = vi.fn()
   }
   const save = vi.fn()
   stop = startSwitchSettingsSync({

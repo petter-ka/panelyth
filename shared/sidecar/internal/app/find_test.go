@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/find"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/find"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage C06: find results work like a folder: pages, quick search and

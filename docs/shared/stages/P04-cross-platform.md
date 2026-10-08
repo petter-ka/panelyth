@@ -143,7 +143,7 @@ not run by hand here.
 
 ### Linux results
 
-- Go: all packages pass, also under `-race`. The real-trash tests (`FASTVIEW_TEST_TRASH=1`) pass with the
+- Go: all packages pass, also under `-race`. The real-trash tests (`PANELYTH_TEST_TRASH=1`) pass with the
   freedesktop trash. Skipped by design: long paths (Windows), the permission test (runs as root here), 7-Zip.
 - Unit: contracts 72, renderer-core 12, media-ui 5, desktop 110, ui 26, viewer 164, commander 123.
 - E2E: the commander and app-switch specs pass (37 of 37, 4.9 min). The C03 tab-switch and C06 find benchmarks missed their

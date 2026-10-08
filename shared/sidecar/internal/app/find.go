@@ -6,11 +6,11 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"fastview/sidecar/internal/find"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/query"
-	"fastview/sidecar/internal/rpc"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/find"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/scan"
 )
 
 // Stage C06: find files. Wire types mirror shared/contracts/src/rpc.ts.

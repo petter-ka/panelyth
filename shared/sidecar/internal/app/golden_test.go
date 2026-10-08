@@ -13,9 +13,9 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Golden frames pin the wire contract shared with TypeScript
@@ -28,13 +28,13 @@ const fixturesDir = "../../../../shared/contracts/fixtures"
 // volatile fields are replaced so fixtures are deterministic.
 var volatile = map[string]any{
 	"pid": 1234, "serverTimeNs": 1, "uptimeMs": 1, "goroutines": 1, "heapBytes": 1,
-	"runtimeMemBytes": 1, "numCpu": 1, "goVersion": "go1.x", "cacheRoot": "/cache/FastView/v1",
-	"configRoot": "/config/FastView", "path": "/fixtures/golden", "elapsedMs": 1, "lastListedAt": 1,
-	"thumbnailRoot": "/cache/FastView/v1/thumbnails", "url": "fastview-thumb://t/<key>.jpg",
+	"runtimeMemBytes": 1, "numCpu": 1, "goVersion": "go1.x", "cacheRoot": "/cache/Panelyth/v1",
+	"configRoot": "/config/Panelyth", "path": "/fixtures/golden", "elapsedMs": 1, "lastListedAt": 1,
+	"thumbnailRoot": "/cache/Panelyth/v1/thumbnails", "url": "panelyth-thumb://t/<key>.jpg",
 	"crumbs":    []any{map[string]any{"name": "/", "path": "/"}, map[string]any{"name": "golden", "path": "/fixtures/golden"}},
 	"volumes":   []any{map[string]any{"path": "/", "label": "", "kind": "fixed"}},
 	"createdMs": 1, "accessedMs": 1, "lastOpenedAt": 1, "paths": []any{"/fixtures/golden/file"},
-	"startedMs": 1, "finishedMs": 1, "file": "/cache/FastView/v1/tmp/clip.png",
+	"startedMs": 1, "finishedMs": 1, "file": "/cache/Panelyth/v1/tmp/clip.png",
 	"firstMatchMs": 1, "dirPath": "/fixtures/golden",
 	// Watcher rescans (inotify reports the test's own writes) take scan ids at
 	// timing-dependent moments.
@@ -73,9 +73,9 @@ func normalize(v any) any {
 func TestGoldenFrames(t *testing.T) {
 	inR, inW := io.Pipe()
 	outR, outW := io.Pipe()
-	env := map[string]string{"FASTVIEW_DEV_METHODS": "1", "FASTVIEW_CACHE_DIR": t.TempDir(), "FASTVIEW_CONFIG_DIR": t.TempDir(),
+	env := map[string]string{"PANELYTH_DEV_METHODS": "1", "PANELYTH_CACHE_DIR": t.TempDir(), "PANELYTH_CONFIG_DIR": t.TempDir(),
 		// Deterministic across machines: no ffprobe (video fields stay empty).
-		"FASTVIEW_FFMPEG": "off"}
+		"PANELYTH_FFMPEG": "off"}
 	done := make(chan error, 1)
 	go func() {
 		done <- Run(context.Background(), Config{
@@ -294,7 +294,7 @@ func TestGoldenFrames(t *testing.T) {
 	jobDone(golden["res-jobs.start-dirid.json"].(map[string]any)["r"].(map[string]any)["jobId"])
 	golden["res-library.deleteTag.json"] = call(57, `{"t":"req","id":57,"m":"library.deleteTag","p":{"id":1}}`)
 	// Stage P02 (ADR-0026): the commander's scope lists every entry.
-	golden["res-query.open-all.json"] = call(58, `{"t":"req","id":58,"m":"query.open","p":{"dirId":1,"recursive":false,"sort":[{"field":"name","direction":"asc"}],"kinds":[],"scope":"all","showHidden":true,"nameMask":"*|*.tmp;.fastview*"}}`)
+	golden["res-query.open-all.json"] = call(58, `{"t":"req","id":58,"m":"query.open","p":{"dirId":1,"recursive":false,"sort":[{"field":"name","direction":"asc"}],"kinds":[],"scope":"all","showHidden":true,"nameMask":"*|*.tmp;.panelyth*"}}`)
 	allQuery := golden["res-query.open-all.json"].(map[string]any)["r"].(map[string]any)["queryId"]
 	golden["res-query.page-all.json"] = call(59, byID(59, "query.page", map[string]any{"queryId": allQuery, "offset": 0, "limit": 4}))
 	golden["res-query.open-badscope.json"] = call(60, `{"t":"req","id":60,"m":"query.open","p":{"dirId":1,"recursive":false,"sort":[],"kinds":[],"scope":"everything"}}`)

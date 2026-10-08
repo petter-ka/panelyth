@@ -2,13 +2,13 @@ import { net, protocol } from "electron"
 import { join } from "node:path"
 import { pathToFileURL } from "node:url"
 
-export const THUMB_SCHEME = "fastview-thumb"
+export const THUMB_SCHEME = "panelyth-thumb"
 
 const NAME = /^\/([0-9a-f]{64})\.(jpg|png)$/
 const MIME = { jpg: "image/jpeg", png: "image/png" } as const
 
 /**
- * Maps fastview-thumb://t/<64-hex key>.<jpg|png> to its cache file. Only the
+ * Maps panelyth-thumb://t/<64-hex key>.<jpg|png> to its cache file. Only the
  * exact key format is accepted, so no renderer input can name another path
  * (CACHE-DESIGN.md "Security"). Returns null for anything else.
  */

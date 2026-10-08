@@ -96,7 +96,7 @@ Built (ADR-0029 is accepted; its "As built" section has the details):
   `jobs.spec.ts` passes unchanged.
 - **Benchmark tool** `cmd/copybench`: copy jobs against robocopy (or `cp`) on the same files, with warm-up copies,
   alternating order and settle time; purges exactly its own trashed files from the recycle bin. The controlled
-  large-file comparison is an opt-in Go test, `TestBenchLargeCopyVsOS` (`FASTVIEW_BENCH_LARGE=1`).
+  large-file comparison is an opt-in Go test, `TestBenchLargeCopyVsOS` (`PANELYTH_BENCH_LARGE=1`).
 
 Decisions by measurement (reference machine): 4 small files in flight with a 4 MiB threshold (1 MB files went from 2.0×
 to 1.34× of robocopy's time; 10 KB files are bound by per-file cost, not parallelism); unbuffered I/O off (buffered
@@ -106,7 +106,7 @@ Deviations and notes:
 
 - **Measurement noise on the reference machine.** The NVMe (C:) is about 98% full and Defender real-time protection is
   on. A 4 GB same-volume copy takes 1–2 s or 27–40 s depending on whether the drive is flushing, for robocopy as much
-  as for FastView, so `copybench`'s same-volume medians swung from 50% to 112% of robocopy between runs. The large-file
+  as for Panelyth, so `copybench`'s same-volume medians swung from 50% to 112% of robocopy between runs. The large-file
   acceptance numbers therefore come from the controlled, alternating comparison (below), which shows parity.
 - The Linux (`copy_file_range`) and macOS (`clonefile`) fast paths compile and vet but were not run here (Windows
   machine); the link-copy tests skip without the symlink privilege, and the Windows-names test runs only off Windows.
@@ -153,7 +153,7 @@ Measurements (reference machine: i9-13900K, C: NVMe ~98% full, D: and E: SATA HD
 - Linux and macOS fast paths, link copies with privilege, and Windows names off Windows: Stage P04. The Linux path and
   Windows names off Windows pass there (2026-10-08); a read-only bug on Unix was fixed.
 - Renderer long tasks during copies and pause latency from the UI: measured in Stage C04.
-- A 4.1 GB leftover of the first, aborted baseline run is at `%TEMP%\fastview-copybench` on the reference machine (the
+- A 4.1 GB leftover of the first, aborted baseline run is at `%TEMP%\panelyth-copybench` on the reference machine (the
   agent's removal was blocked by a safety check); delete it by hand.
 
 ## Exit checklist

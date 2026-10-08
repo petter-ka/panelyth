@@ -9,12 +9,12 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Archive jobs (Stage C07, ADR-0030): copy out of an archive and unpack
@@ -185,7 +185,7 @@ func (m *Manager) extract(j *job, a *applier) (string, error) {
 	err := m.eachTarget(j, func(t index.Target) error {
 		format, ok := archive.Detect(t.Name)
 		if !ok || t.Kind == media.KindDir {
-			j.fail(t.Name, archive.CodeCorrupt, "This is not an archive FastView can unpack.")
+			j.fail(t.Name, archive.CodeCorrupt, "This is not an archive Panelyth can unpack.")
 			return nil
 		}
 		target, top := dest, dest
@@ -283,7 +283,7 @@ func archiveCode(err error) string {
 func archiveMessage(err error) string {
 	switch {
 	case errors.Is(err, archive.ErrEncrypted):
-		return "The archive is protected by a password; FastView can't open it."
+		return "The archive is protected by a password; Panelyth can't open it."
 	case errors.Is(err, archive.ErrNoTool):
 		return "This format needs 7-Zip, which was not found. Install 7-Zip to open it."
 	case errors.Is(err, archive.ErrCorrupt):
@@ -300,7 +300,7 @@ func (m *Manager) testArchives(j *job) error {
 	return m.eachTarget(j, func(t index.Target) error {
 		format, ok := archive.Detect(t.Name)
 		if !ok || t.Kind == media.KindDir {
-			j.fail(t.Name, archive.CodeCorrupt, "This is not an archive FastView can test.")
+			j.fail(t.Name, archive.CodeCorrupt, "This is not an archive Panelyth can test.")
 			return nil
 		}
 		var done int64

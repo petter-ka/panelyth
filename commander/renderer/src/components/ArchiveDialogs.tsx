@@ -1,5 +1,5 @@
-import type { ArchiveWarning } from "@fastview/contracts"
-import { Button, DialogWindow } from "@fastview/ui"
+import type { ArchiveWarning } from "@panelyth/contracts"
+import { Button, DialogWindow } from "@panelyth/ui"
 import { useState } from "react"
 import {
   closePack,

@@ -13,14 +13,14 @@ import {
 test("app starts, renders the shell and the renderer can ping Go", async () => {
   const { app, page } = await launchApp()
   try {
-    await expect(page).toHaveTitle("FastView")
-    expect(page.url()).toBe("app://fastview/index.html")
+    await expect(page).toHaveTitle("Panelyth")
+    expect(page.url()).toBe("app://panelyth/index.html")
     await waitForReady(page)
     await expect(page.getByText("No folder open")).toBeVisible()
     await expect(page.getByTestId("sidecar-status")).toContainText("Backend ready")
     await expect(page.getByTestId("ping")).toHaveText(/ping \d+\.\d ms/)
 
-    const pong = await page.evaluate(() => window.fastview!.system.ping())
+    const pong = await page.evaluate(() => window.panelyth!.system.ping())
     expect(pong).toMatchObject({ ok: true, r: { pong: true } })
     const marks = await page.evaluate(() => performance.getEntriesByName("fv:first-render").length)
     expect(marks).toBe(1)
@@ -39,8 +39,8 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         process: typeof w.process,
         ipcRenderer: typeof w.ipcRenderer,
         electron: typeof w.electron,
-        apiKeys: Object.keys(window.fastview ?? {}).sort(),
-        systemKeys: Object.keys(window.fastview?.system ?? {}).sort(),
+        apiKeys: Object.keys(window.panelyth ?? {}).sort(),
+        systemKeys: Object.keys(window.panelyth?.system ?? {}).sort(),
       }
     })
     expect(probe).toEqual({
@@ -75,7 +75,7 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
     // Unknown event channels are refused by preload.
     const unknownChannel = await page.evaluate(() => {
       try {
-        window.fastview!.onEvent("nope" as never, () => {})
+        window.panelyth!.onEvent("nope" as never, () => {})
         return "accepted"
       } catch {
         return "rejected"
@@ -103,7 +103,7 @@ test("sidecar crash is recovered and the renderer keeps working", async () => {
     const second = await waitForReady(page, first.pid)
     expect(second.restarts).toBe(1)
     expect(await waitForExit(first.pid!)).toBe(true)
-    const pong = await page.evaluate(() => window.fastview!.system.ping())
+    const pong = await page.evaluate(() => window.panelyth!.system.ping())
     expect(pong.ok).toBe(true)
     await expect(page.getByTestId("sidecar-status")).toContainText("Backend ready")
   } finally {
@@ -123,14 +123,14 @@ test("dev-only methods are absent unless explicitly enabled", async () => {
   const off = await launchApp()
   try {
     await waitForReady(off.page)
-    expect(await off.page.evaluate(() => typeof window.fastview!.dev)).toBe("undefined")
+    expect(await off.page.evaluate(() => typeof window.panelyth!.dev)).toBe("undefined")
   } finally {
     await off.app.close()
   }
-  const on = await launchApp({ FASTVIEW_DEV_METHODS: "1" })
+  const on = await launchApp({ PANELYTH_DEV_METHODS: "1" })
   try {
     await waitForReady(on.page)
-    const echo = await on.page.evaluate(() => window.fastview!.dev!.echo("hi"))
+    const echo = await on.page.evaluate(() => window.panelyth!.dev!.echo("hi"))
     expect(echo).toEqual({ ok: true, r: { payload: "hi" } })
     expect((await sidecarStatus(on.page)).state).toBe("ready")
   } finally {

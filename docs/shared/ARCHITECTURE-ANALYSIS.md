@@ -24,7 +24,7 @@ Environment observed on 2026-09-30: Windows 11, i9-13900K, 64 GB RAM, Node 22.18
 ## 1. Monorepo structure
 
 ```text
-fastview/
+panelyth/
 ├── package.json                 root scripts only (dev, build, lint, typecheck, test, bench)
 ├── pnpm-workspace.yaml          apps/*, packages/*
 ├── tsconfig.base.json           strict, noUncheckedIndexedAccess, exactOptionalPropertyTypes
@@ -37,7 +37,7 @@ fastview/
 │   │   ├── src/main/
 │   │   │   ├── index.ts         app lifecycle, single-instance lock
 │   │   │   ├── window.ts        BrowserWindow + secure webPreferences, nav/permission guards
-│   │   │   ├── appProtocol.ts   app://fastview  (serves renderer dist in production)
+│   │   │   ├── appProtocol.ts   app://panelyth  (serves renderer dist in production)
 │   │   │   ├── sidecar/
 │   │   │   │   ├── SidecarProcess.ts   spawn, supervise, restart w/ backoff, shutdown
 │   │   │   │   ├── frames.ts           length-prefixed frame encoder/decoder
@@ -48,7 +48,7 @@ fastview/
 │   │   │   ├── protocols/       (stage 02+) thumb.ts, media.ts
 │   │   │   ├── log.ts           rotating file log (main + sidecar stderr)
 │   │   │   └── paths.ts         dev vs packaged sidecar binary resolution
-│   │   ├── src/preload/index.ts contextBridge → window.fastview (bundled to one file: sandbox)
+│   │   ├── src/preload/index.ts contextBridge → window.panelyth (bundled to one file: sandbox)
 │   │   └── vite.config.ts       builds main (node/cjs) + preload (single file)
 │   │
 │   └── renderer/                React + TypeScript + Vite
@@ -56,7 +56,7 @@ fastview/
 │       └── src/
 │           ├── main.tsx
 │           ├── app/             AppShell, providers, error boundary
-│           ├── bridge/          typed wrapper over window.fastview (only file touching it)
+│           ├── bridge/          typed wrapper over window.panelyth (only file touching it)
 │           ├── features/        navigation/ search/ sorting/ selection/ preview/
 │           │                    batch/ layout/ filesystem/ system/   (domain hooks + stores)
 │           ├── components/
@@ -72,12 +72,12 @@ fastview/
 │           ├── events.ts        EventMap: channel → payload
 │           ├── errors.ts        ErrorCode union + envelope
 │           ├── domain.ts        ContentItem, QueryDescriptor, SelectionDescriptor, …
-│           └── api.ts           FastViewApi (shape of window.fastview)
+│           └── api.ts           PanelythApi (shape of window.panelyth)
 │
 ├── native/
-│   └── fastview-go/
+│   └── panelyth-go/
 │       ├── go.mod
-│       ├── cmd/fastview-sidecar/main.go
+│       ├── cmd/panelyth-sidecar/main.go
 │       ├── cmd/fixturegen/      deterministic fixture trees (stage 01+)
 │       └── internal/
 │           ├── rpc/             framing, envelope, dispatcher, cancellation
@@ -114,12 +114,12 @@ Notes:
  React components                                                                 
    │ feature hooks / stores                                                       
    ▼                                                                               
- bridge ── window.fastview.* ──► preload ──ipc invoke──► router ──frames/stdin──► rpc dispatcher
+ bridge ── window.panelyth.* ──► preload ──ipc invoke──► router ──frames/stdin──► rpc dispatcher
                                   (typed,              (validate sender,         ├─ handlers (bounded
                                    no ipcRenderer)      method allowlist,        │   in-flight)
                                                         params, mint tokens)     ├─ index/SQLite
- <img src="fastview-thumb://…">  ◄──── protocol.handle ◄── derived cache path    ├─ scheduler/workers
- <video src="fastview-media://…"> ◄─── protocol.handle ◄── token → path (Go)     └─ jobs
+ <img src="panelyth-thumb://…">  ◄──── protocol.handle ◄── derived cache path    ├─ scheduler/workers
+ <video src="panelyth-media://…"> ◄─── protocol.handle ◄── token → path (Go)     └─ jobs
  onEvent(ch, cb) ◄── webContents.send('fv:event') ◄── RpcClient ◄──frames/stdout── event coalescer
                                                         sidecar stderr ──► log file
 ```
@@ -129,7 +129,7 @@ Process responsibilities, which tighten the wording in ARCHITECTURE.md:
 | Concern | Owner | Notes |
 |---|---|---|
 | Window, lifecycle, dialogs, menus, shell.openPath | Main | Native context menus are optional; shadcn ones are the default |
-| Protocol handlers (`app:`, `fastview-thumb:`, `fastview-media:`) | Main | Async streaming of files only. No lookups, decisions or transforms |
+| Protocol handlers (`app:`, `panelyth-thumb:`, `panelyth-media:`) | Main | Async streaming of files only. No lookups, decisions or transforms |
 | Sidecar spawn/supervise/restart | Main | |
 | Request routing + input validation | Main | Main is a thin validating relay, not a business layer |
 | Known user folders (Pictures, Videos…) | Main | `app.getPath()`: cheap and already cross-platform |
@@ -139,8 +139,8 @@ Process responsibilities, which tighten the wording in ARCHITECTURE.md:
 Security baseline (Stage 00):
 
 - `contextIsolation: true`, `sandbox: true`, `nodeIntegration: false`, `webSecurity: true`
-- The production renderer loads from the privileged custom scheme `app://fastview/`, not `file://`, with a path-traversal guard
-- Strict CSP: `default-src 'self'; img-src 'self' fastview-thumb: data:; media-src fastview-media:`
+- The production renderer loads from the privileged custom scheme `app://panelyth/`, not `file://`, with a path-traversal guard
+- Strict CSP: `default-src 'self'; img-src 'self' panelyth-thumb: data:; media-src panelyth-media:`
 - `will-navigate` is blocked, `setWindowOpenHandler` denies, and a permission request handler denies all
 - `ipcMain.handle` checks `event.senderFrame` origin against the app origin
 - The preload is a single bundled file because sandboxed preloads cannot `require` local modules
@@ -158,7 +158,7 @@ parsing in main. That change would not touch contracts.
 
 1. **Renderer ↔ main**: one invoke channel `fv:invoke(method, params)` plus one push channel `fv:event`.
    The preload exposes **typed namespaced functions** that it generates from the contracts method list, for example
-   `fastview.system.ping()`, plus `fastview.onEvent(channel, cb) → unsubscribe`. There is no generic escape hatch.
+   `panelyth.system.ping()`, plus `panelyth.onEvent(channel, cb) → unsubscribe`. There is no generic escape hatch.
    Main rejects any method that is not on the allowlist.
 2. **Main ↔ Go**: framed messages on stdin/stdout.
 
@@ -238,8 +238,8 @@ Events: `sidecar.status`, `index.progress`, `query.invalidated {queryId, version
 
 | DB | Location | Content | Disposable? |
 |---|---|---|---|
-| `index.db` | `<UserCacheDir>/FastView/v1/db/` | filesystem mirror, scans, preview cache index | **Yes.** Rebuildable |
-| `library.db` | `<UserConfigDir>/FastView/` (same root as Electron `userData`) | favorites, ratings, tags, collections, bookmarks, recent, settings | **No.** User data |
+| `index.db` | `<UserCacheDir>/Panelyth/v1/db/` | filesystem mirror, scans, preview cache index | **Yes.** Rebuildable |
+| `library.db` | `<UserConfigDir>/Panelyth/` (same root as Electron `userData`) | favorites, ratings, tags, collections, bookmarks, recent, settings | **No.** User data |
 
 `index.db` attaches `library.db` (`ATTACH … AS lib`) so it can sort and filter by rating, favorite and tags.
 Pragmas for both: `journal_mode=WAL`, `synchronous=NORMAL`, `foreign_keys=ON`, `temp_store=MEMORY`,
@@ -367,7 +367,7 @@ CREATE TABLE settings (key TEXT PRIMARY KEY, value_json TEXT NOT NULL);
 CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at INTEGER NOT NULL);
 ```
 
-When FastView itself moves or renames a file, it rewrites `library.items.path_key` in the same job step. Re-linking after
+When Panelyth itself moves or renames a file, it rewrites `library.items.path_key` in the same job step. Re-linking after
 external moves through `file_key` is future work.
 
 ### 4.4 Query sessions (see contradiction C3)
@@ -398,7 +398,7 @@ the Stage 05 benchmark shows LIKE is too slow.
 This follows CACHE-DESIGN.md with a URL scheme added.
 
 ```text
-<UserCacheDir>/FastView/v1/
+<UserCacheDir>/Panelyth/v1/
   db/index.db
   thumbnails/ab/cd/<64-hex>.jpg|.png|.webp
   previews/ab/cd/<64-hex>.jpg          (viewer-fit, video posters)
@@ -440,7 +440,7 @@ job:       open → re-stat (size/mtime still match?) → decode (ctx checks) �
            → encode → write tmp → rename → batched DB insert → coalesced preview.ready event
 ```
 
-URL format: `fastview-thumb://t/<64-hex>.<ext>`. The main-process protocol handler:
+URL format: `panelyth-thumb://t/<64-hex>.<ext>`. The main-process protocol handler:
 
 1. validates against `^[0-9a-f]{64}\.(jpg|png|webp)$`,
 2. derives `<cacheRoot>/thumbnails/<h[0:2]>/<h[2:4]>/<name>`, where `cacheRoot` comes from the Go `hello` frame and never from the renderer,
@@ -534,9 +534,9 @@ AppShell
 selection (video) → media.open(entryId)
   main → Go media.resolve(entryId): entry exists, kind=video, re-stat → {path, size, mtime, mime}
   main mints 128-bit random token → bounded LRU map (≈256) token → {path, size}
-  renderer ← { url: "fastview-media://m/<token>", poster: "fastview-thumb://…" }
+  renderer ← { url: "panelyth-media://m/<token>", poster: "panelyth-thumb://…" }
 <video src=url poster=poster preload="metadata">
-  fastview-media handler: parses Range → fs.open + createReadStream(start,end) → 206 + Content-Range
+  panelyth-media handler: parses Range → fs.open + createReadStream(start,end) → 206 + Content-Range
 ```
 
 - The scheme is registered privileged with `{ standard, secure, stream: true, supportFetchAPI }`. Range support is implemented
@@ -566,7 +566,7 @@ Go JobManager
   ├─ per item: execute → update index.db (batched tx) → update library.db path_keys
   ├─ conflicts: policy chosen up front (ask | skip | overwrite | keep-both);
   │             "ask" → job state awaiting_input + job.state event → jobs.resolveConflict(applyToAll?)
-  ├─ cancellation: between items, and between copy chunks (partial "*.fastview-partial" removed)
+  ├─ cancellation: between items, and between copy chunks (partial "*.panelyth-partial" removed)
   └─ events: job.progress coalesced ≤ 4 Hz {done, total, bytesDone, bytesTotal, current, errorCount}
              job.state on transitions; per-item errors pulled via jobs.errors(jobId, offset, limit)
 ```
@@ -708,7 +708,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   mirrors it by hand, and golden JSON fixtures produced by Go tests are type-checked or validated in TS. There is also a protocol version in `hello`.
 - **M8 — Build and packaging tooling.** This covers Vite for main and preload, the packager choice (electron-builder vs Forge, a Stage P04 decision),
   and the sidecar location in `resources/bin/<os>-<arch>/`.
-- **M9 — What the viewer displays.** *(Implemented in Stage 04 as proposed; see `docs/viewer/stages/04-viewer.md`.)* Proposal: originals through `fastview-media:` for browser-native formats up to a pixel cap of
+- **M9 — What the viewer displays.** *(Implemented in Stage 04 as proposed; see `docs/viewer/stages/04-viewer.md`.)* Proposal: originals through `panelyth-media:` for browser-native formats up to a pixel cap of
   about 50 MP, with Go's `viewer-fit` for TIFF, huge images and future formats. The viewer shows the cached grid thumbnail instantly and swaps after `img.decode()`.
 - **M10 — Sort semantics.** "Sort by tags" is undefined (proposal: the first tag alphabetically, untagged last). Created and accessed times are
   unreliable on some platforms and filesystems, and the UI shows "—".
@@ -742,7 +742,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
 - `scripts/build-sidecar.mjs`: `go build -trimpath` for the host OS/arch, output to `shared/desktop/resources/bin/<os>-<arch>/`
 
 **shared/contracts**
-- `rpc.ts` (`system.ping`, `system.info`), `events.ts` (`sidecar.status`), `errors.ts`, `api.ts` (`FastViewApi`)
+- `rpc.ts` (`system.ping`, `system.info`), `events.ts` (`sidecar.status`), `errors.ts`, `api.ts` (`PanelythApi`)
 
 **Go (`shared/sidecar`)**
 - `internal/rpc`: frame reader/writer (4 MiB cap), envelope types, dispatcher with generic
@@ -754,21 +754,21 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
 - `internal/app`: sends the `hello` frame, registers `system.ping` → `{ pong: true, serverTimeNs }` and `system.info` →
   `{ version, goVersion, pid, uptimeMs, protocol, heapBytes }`, and shuts down on `system.shutdown`, stdin EOF or SIGINT/SIGTERM
   (cancel root ctx, drain handlers ≤ 2 s, exit 0)
-- `cmd/fastview-sidecar/main.go`
+- `cmd/panelyth-sidecar/main.go`
 
 **Electron (`shared/desktop`)**
 - `window.ts`: secure `webPreferences`, CSP, navigation/window-open/permission guards, `ready-to-show`
-- `appProtocol.ts`: `app://fastview/` serves renderer `dist` in production, with a traversal guard
+- `appProtocol.ts`: `app://panelyth/` serves renderer `dist` in production, with a traversal guard
 - `sidecar/`: `SidecarProcess` (spawn with `windowsHide`, stderr → log, status machine, restart with backoff, ordered
   shutdown), `frames.ts` (chunk-boundary-safe decoder), `RpcClient` (pending map, timeouts, AbortSignal → cancel, rejects everything on exit)
 - `ipc/router.ts`: `fv:invoke` with sender-origin check and method allowlist. `fv:event` broadcast
-- `preload/index.ts`: `contextBridge.exposeInMainWorld('fastview', { system: { ping, info }, onEvent })`
+- `preload/index.ts`: `contextBridge.exposeInMainWorld('panelyth', { system: { ping, info }, onEvent })`
 - `log.ts`: size-capped rotating log in `app.getPath('logs')`
 - Single-instance lock. Quit path: `before-quit` → preventDefault → sidecar shutdown → `app.exit()`
 
 **React (`viewer/renderer`)**
 - Vite + React + TS strict, Tailwind with CSS-variable tokens and light/dark/system theme (theme stored in `localStorage` for now)
-- `bridge/`: the only module that touches `window.fastview`
+- `bridge/`: the only module that touches `window.panelyth`
 - `AppShell`: a **static** three-region layout (resizing arrives in Stage 05). Sidebar placeholder, content empty state
   ("Open a folder", disabled until Stage 01), `GridPlaceholder`, preview placeholder
 - `StatusBar`: sidecar status from `sidecar.status` plus the measured ping round trip

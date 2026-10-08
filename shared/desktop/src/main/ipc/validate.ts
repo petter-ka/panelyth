@@ -32,7 +32,7 @@ import {
   MAX_FIND_ROOTS,
   MAX_FIND_TEXT_CHARS,
   type RendererMethod,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 /** Returns null when params are valid, otherwise a reason. */
 type Validator = (params: unknown) => string | null

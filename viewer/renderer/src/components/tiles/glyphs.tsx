@@ -19,7 +19,7 @@ export function FolderGlyph({ size }: GlyphProps) {
 }
 
 // The video glyph lives with the shared VideoPlayer (Stage C05).
-export { VideoGlyph } from "@fastview/media-ui"
+export { VideoGlyph } from "@panelyth/media-ui"
 
 export function UnavailableGlyph({ size }: GlyphProps) {
   return (

@@ -8,7 +8,7 @@ import {
   type SidecarMethod,
   type SidecarMethodMap,
   type SidecarStatus,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import type { Logger } from "../log"
 import { encodeFrame, FrameDecoder } from "./frames"
 import { RpcClient, RpcError, type CallOptions } from "./RpcClient"

@@ -1,16 +1,16 @@
-import type { ContentItem, QuerySnapshot } from "@fastview/contracts"
+import type { ContentItem, QuerySnapshot } from "@panelyth/contracts"
 import {
   createPageStore,
   DEFAULT_MAX_PAGES,
   DEFAULT_PAGE_SIZE,
   usePageItem as useStorePageItem,
-} from "@fastview/renderer-core"
-import { bridge, FastViewError } from "../../bridge"
+} from "@panelyth/renderer-core"
+import { bridge, PanelythError } from "../../bridge"
 import { getThumbProfile, seedThumbs } from "../previews/thumbStore"
 
 /**
  * The viewer's one page store (the shared implementation lives in
- * @fastview/renderer-core). Pages carry the cached thumbnails of the current
+ * @panelyth/renderer-core). Pages carry the cached thumbnails of the current
  * tile size, which seed the thumbnail store as they arrive.
  */
 export const PAGE_SIZE = DEFAULT_PAGE_SIZE
@@ -23,7 +23,7 @@ const store = createPageStore({
     seedThumbs(res.items, profile)
     return res
   },
-  isExpired: (error) => error instanceof FastViewError && error.code === "NOT_FOUND",
+  isExpired: (error) => error instanceof PanelythError && error.code === "NOT_FOUND",
 })
 
 export const setExpiredHandler = (handler: (() => void) | null): void =>

@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Engine v2: lanes, start-now, pause, conflicts, speed (Stage P03, ADR-0029).

@@ -1,10 +1,10 @@
 ---
 name: architect
-description: Own architecture decisions, boundaries, ADRs and stage planning for the FastView product family (viewer, commander, shared platform).
+description: Own architecture decisions, boundaries, ADRs and stage planning for the Panelyth product family (viewer, commander, shared platform).
 tools: Read, Glob, Grep
 ---
 
-You are the FastView architecture agent.
+You are the Panelyth architecture agent.
 
 Responsibilities:
 

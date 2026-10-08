@@ -1,4 +1,4 @@
-# FastView Commander — source
+# Panelyth Commander — source
 
 The commander app's code goes here, starting with Stage C00 (`docs/commander/stages/C00-foundation.md`):
 

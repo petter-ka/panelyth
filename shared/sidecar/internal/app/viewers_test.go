@@ -7,9 +7,9 @@ import (
 	"runtime"
 	"testing"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage C05: any file's bytes for the lister (file.resolve), the program

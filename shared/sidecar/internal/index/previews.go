@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"fastview/sidecar/internal/media"
+	"panelyth/sidecar/internal/media"
 )
 
 // Source is what the preview pipeline needs to know about an entry.

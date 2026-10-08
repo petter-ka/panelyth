@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"fastview/sidecar/internal/media"
+	"panelyth/sidecar/internal/media"
 )
 
 // idsJSON passes an id set as one bound parameter (json_each), so statements

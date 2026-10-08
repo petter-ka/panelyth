@@ -43,7 +43,7 @@ func GenerateArchives(root string, spec ArchiveSpec) error {
 		return err
 	}
 	// A marker makes repeated calls with the same spec cheap (big.tar.gz).
-	marker := filepath.Join(root, ".fastview-archives")
+	marker := filepath.Join(root, ".panelyth-archives")
 	want := fmt.Sprintf("%+v", spec)
 	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
 		return nil

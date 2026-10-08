@@ -9,13 +9,13 @@ import (
 	"slices"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/scan"
 )
 
 // ErrInvalid wraps spec validation failures.
@@ -184,7 +184,7 @@ func message(err error) string {
 	case fileops.CodeNotFound:
 		return "The item no longer exists."
 	case fileops.CodePermission:
-		return "FastView doesn't have permission to change this item."
+		return "Panelyth doesn't have permission to change this item."
 	case fileops.CodeExists:
 		return "An item with this name already exists."
 	case fileops.CodeNoSpace:

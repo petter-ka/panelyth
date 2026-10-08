@@ -19,7 +19,7 @@ Open images in a focused viewer while preserving tile view responsiveness.
   A layer is shown only after `img.decode()` has finished, off the main thread, so there are no blank or half-painted
   frames.
 - **100 % means one image pixel per device pixel** (true actual size). Fit never upscales.
-- Originals reach the renderer only as `fastview-media://m/<token>`: 128-bit random tokens in a bounded LRU in
+- Originals reach the renderer only as `panelyth-media://m/<token>`: 128-bit random tokens in a bounded LRU in
   Electron main, mapped to paths the sidecar validated. Responses stream with HTTP Range support (206), which is ready
   for video seeking in Stage 06.
 
@@ -40,7 +40,7 @@ Backend and IPC:
 - `media.resolve` (sidecar, callable by main only): validates that the entry is an indexed image or video that still
   exists, probes display size (EXIF-aware, ~1 ms), and reports whether the original is browser-displayable.
 - `media.open` (renderer → main): resolves through the sidecar and mints the token URL.
-- `fastview-media:` protocol with Range; CSP `img-src` and `media-src` allow it. Main-local handlers now receive their params.
+- `panelyth-media:` protocol with Range; CSP `img-src` and `media-src` allow it. Main-local handlers now receive their params.
 
 UI: a viewer toolbar with Folder (back), name and position, Previous/Next, and Fit, 1:1, − / % / + (pressed state
 in amber). The image sits on the neutral canvas. A failure shows "This image can't be displayed" with a reason and

@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"sync"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/jobs"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/jobs"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage 07 methods (ADR-0021): batch jobs, the internal clipboard, single

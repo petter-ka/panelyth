@@ -1,4 +1,4 @@
-import { DialogWindow } from "@fastview/ui"
+import { DialogWindow } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
 import {
   MAX_EDITOR_CHARS,

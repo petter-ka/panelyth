@@ -1,4 +1,4 @@
-import type { PreviewPriority } from "@fastview/contracts"
+import type { PreviewPriority } from "@panelyth/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   memo,

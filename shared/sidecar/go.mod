@@ -1,4 +1,4 @@
-module fastview/sidecar
+module panelyth/sidecar
 
 go 1.27
 

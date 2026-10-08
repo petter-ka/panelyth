@@ -23,8 +23,8 @@ test("a fresh profile opens in the dark theme on the neutral canvas", async () =
 })
 
 test("the chosen theme persists across restarts", async () => {
-  const profile = mkdtempSync(join(tmpdir(), "fastview-profile-"))
-  const first = await launchApp({ FASTVIEW_USER_DATA_DIR: profile })
+  const profile = mkdtempSync(join(tmpdir(), "panelyth-profile-"))
+  const first = await launchApp({ PANELYTH_USER_DATA_DIR: profile })
   try {
     await waitForReady(first.page)
     await first.page.getByTestId("theme-toggle").click()
@@ -32,7 +32,7 @@ test("the chosen theme persists across restarts", async () => {
   } finally {
     await first.app.close()
   }
-  const second = await launchApp({ FASTVIEW_USER_DATA_DIR: profile })
+  const second = await launchApp({ PANELYTH_USER_DATA_DIR: profile })
   try {
     await waitForReady(second.page)
     await expect(second.page.getByTestId("theme-toggle")).toHaveText("Theme: light")

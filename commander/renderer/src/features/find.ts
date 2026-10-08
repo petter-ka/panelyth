@@ -7,8 +7,8 @@ import {
   type FindProgress,
   type FindStartParams,
   type QuerySnapshot,
-} from "@fastview/contracts"
-import { createPageStore, type PageStore } from "@fastview/renderer-core"
+} from "@panelyth/contracts"
+import { createPageStore, type PageStore } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { goToEntry, isExpired, showFindResults, useListingStore } from "./listing"

@@ -9,10 +9,10 @@ import {
   type SortDirection,
   type SortField,
   type SortKey,
-} from "@fastview/contracts"
-import { createPageStore, type PageStore } from "@fastview/renderer-core"
+} from "@panelyth/contracts"
+import { createPageStore, type PageStore } from "@panelyth/renderer-core"
 import { create } from "zustand"
-import { bridge, FastViewError, isBridgeAvailable } from "../bridge"
+import { bridge, PanelythError, isBridgeAvailable } from "../bridge"
 import { usePanelsStore, type Side } from "./panels"
 
 // Panel listings (Stage C01, ADR-0028): one query session per panel in the
@@ -172,7 +172,7 @@ export function patch(side: Side, value: Partial<PanelState>): void {
 // Page stores ---------------------------------------------------------------
 
 export const isExpired = (error: unknown): boolean =>
-  error instanceof FastViewError && error.code === "NOT_FOUND"
+  error instanceof PanelythError && error.code === "NOT_FOUND"
 
 const makeStore = (): PageStore =>
   createPageStore({ fetch: (q, offset, limit) => bridge.page(q, offset, limit), isExpired })
@@ -245,7 +245,7 @@ function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
 }
 
 export function toPanelError(error: unknown): PanelError {
-  if (!(error instanceof FastViewError)) return { kind: "other", message: String(error) }
+  if (!(error instanceof PanelythError)) return { kind: "other", message: String(error) }
   const reason = (error.details as { reason?: unknown } | undefined)?.reason
   switch (true) {
     case error.code === "NOT_FOUND":
@@ -517,7 +517,7 @@ export async function enterArchive(side: Side, item: ContentItem): Promise<void>
     if (seq !== seqs[side]) return
     patch(side, { loading: false })
     const reason =
-      error instanceof FastViewError
+      error instanceof PanelythError
         ? (error.details as { reason?: string } | undefined)?.reason
         : undefined
     const why: ArchiveOpenFailure =

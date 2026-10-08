@@ -21,8 +21,8 @@ Generate and persist previews without blocking the UI.
 | priority queue | 4 levels (visible, overscan, forward, idle), FIFO in request order; a promoted task takes its new request position |
 | cancellation/deprioritization | per-lane epochs: a newer request drops that lane's queued, un-requested work; the queue is bounded at 2,000 (worst priority evicted, overflow reported as `deferred`); shutdown cancels running work |
 | atomic cache writes | temp file in `<cache>/v1/tmp` (same volume) → rename; tmp cleared at startup |
-| cache cleanup | LRU down to 90 % of a 2 GB ceiling (`FASTVIEW_CACHE_MAX_BYTES`); orphan sweep of 16 of 256 shards per pass; first pass after 30 s, then every 30 min; never touches source files |
-| controlled preview protocol | `fastview-thumb://t/<64-hex>.<jpg\|png>`. Electron main resolves only that exact form under the sidecar-announced `thumbnailRoot` (from `hello`) and serves it asynchronously with immutable caching. No sidecar round trip, no path input from the renderer |
+| cache cleanup | LRU down to 90 % of a 2 GB ceiling (`PANELYTH_CACHE_MAX_BYTES`); orphan sweep of 16 of 256 shards per pass; first pass after 30 s, then every 30 min; never touches source files |
+| controlled preview protocol | `panelyth-thumb://t/<64-hex>.<jpg\|png>`. Electron main resolves only that exact form under the sidecar-announced `thumbnailRoot` (from `hello`) and serves it asynchronously with immutable caching. No sidecar round trip, no path input from the renderer |
 
 Also delivered:
 
@@ -51,7 +51,7 @@ Also delivered:
 |---|---|---|
 | Go | 16 packages | imaging (fit, JPEG render, EXIF rotate 6, orientation corner map for 2–8, PNG alpha stays PNG, unsupported / corrupt / truncated / 400 MP header refused, fast YCbCr path ≈ generic path), scheduler (10 identical requests → 1 decode, priority order + promotion, epoch drops stale work per lane, queue bound + eviction, fresh task after completion), service (generate → hit → restart hit, modified source miss, changed-without-rescan identity update, corrupt cache file forced regeneration, corrupt source and video fail permanently and are not retried, LRU + orphan cleanup never touches sources), key, disk cache, coalescer batching, golden frames for `preview.ensure`, `preview.ready` and pages with thumbs |
 | Contracts | 20 | preview guards (thumb URL prefix, failed-code union, ≤ 500 items per event) |
-| Desktop | 53 | `preview.ensure` / `thumbProfile` validation, `fastview-thumb` URL → path resolution (rejects wrong host, short or uppercase key, other extensions, traversal, encoded traversal, nested paths, query strings, other schemes) |
+| Desktop | 53 | `preview.ensure` / `thumbProfile` validation, `panelyth-thumb` URL → path resolution (rejects wrong host, short or uppercase key, other extensions, traversal, encoded traversal, nested paths, query strings, other schemes) |
 | Renderer | 47 | one batched ensure per page, folders never requested, ready/failed/other-profile events, page thumbs need no ensure, broken image regenerates once, folder switch forgets thumbs, in-place modification re-requests |
 | E2E | 17 | Stage 02: incremental thumbnails then cache hits after restart (0 generated), modified image gets a new thumbnail, corrupt cache file regenerated, protocol refuses missing/foreign URLs |
 

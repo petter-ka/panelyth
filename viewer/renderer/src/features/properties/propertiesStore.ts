@@ -1,4 +1,4 @@
-import type { SelectionDescriptor } from "@fastview/contracts"
+import type { SelectionDescriptor } from "@panelyth/contracts"
 import { create } from "zustand"
 import { useFolderStore } from "../folder/folderStore"
 import { getItem } from "../tiles/pageStore"

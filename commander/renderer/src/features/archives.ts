@@ -4,9 +4,9 @@ import type {
   ConflictPolicy,
   JobSnapshot,
   SelectionDescriptor,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import { create } from "zustand"
-import { bridge, FastViewError, isBridgeAvailable } from "../bridge"
+import { bridge, PanelythError, isBridgeAvailable } from "../bridge"
 import { inArchive, notice, operand, otherPanelTarget, READ_ONLY } from "./files"
 import { pageStoreOf, parentRows, useListingStore } from "./listing"
 import { marksDescriptor, markNone } from "./marks"
@@ -87,7 +87,7 @@ const set = useArchivesStore.setState
 const get = useArchivesStore.getState
 
 const errorText = (error: unknown): string =>
-  error instanceof FastViewError ? error.message : String(error)
+  error instanceof PanelythError ? error.message : String(error)
 
 const countOf = (d: SelectionDescriptor): number =>
   d.ranges.reduce((n, [a, b]) => n + b - a, 0) + d.include.length
@@ -148,7 +148,7 @@ async function resolveDir(t: Target): Promise<number> {
     return (await bridge.openDir(typed)).dirId
   } catch (error) {
     if (
-      error instanceof FastViewError &&
+      error instanceof PanelythError &&
       (error.code === "NOT_FOUND" || error.code === "INVALID_PATH")
     )
       throw new Error("This folder doesn't exist. Check the destination.", { cause: error })

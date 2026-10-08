@@ -5,4 +5,4 @@ export {
   initTheme,
   useThemeStore,
   type ThemePreference,
-} from "@fastview/ui"
+} from "@panelyth/ui"

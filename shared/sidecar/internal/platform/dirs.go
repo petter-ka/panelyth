@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	appDirName   = "FastView"
+	appDirName   = "Panelyth"
 	cacheVersion = "v1"
 )
 
@@ -23,10 +23,10 @@ type Dirs struct {
 }
 
 // ResolveDirs uses the OS per-user cache/config directories. The
-// FASTVIEW_CACHE_DIR and FASTVIEW_CONFIG_DIR environment variables override
+// PANELYTH_CACHE_DIR and PANELYTH_CONFIG_DIR environment variables override
 // them (tests, portable setups).
 func ResolveDirs(getenv func(string) string) (Dirs, error) {
-	cacheBase := getenv("FASTVIEW_CACHE_DIR")
+	cacheBase := getenv("PANELYTH_CACHE_DIR")
 	if cacheBase == "" {
 		base, err := os.UserCacheDir()
 		if err != nil {
@@ -34,7 +34,7 @@ func ResolveDirs(getenv func(string) string) (Dirs, error) {
 		}
 		cacheBase = filepath.Join(base, appDirName)
 	}
-	configRoot := getenv("FASTVIEW_CONFIG_DIR")
+	configRoot := getenv("PANELYTH_CONFIG_DIR")
 	if configRoot == "" {
 		base, err := os.UserConfigDir()
 		if err != nil {

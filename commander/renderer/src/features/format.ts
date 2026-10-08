@@ -1,4 +1,4 @@
-import { ENTRY_ATTRS, type ContentItem } from "@fastview/contracts"
+import { ENTRY_ATTRS, type ContentItem } from "@panelyth/contracts"
 import { formatRelative } from "date-fns"
 import type { DateFormat, SizeFormat } from "./settings"
 

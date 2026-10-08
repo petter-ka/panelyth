@@ -1,5 +1,5 @@
-import type { ContentItem } from "@fastview/contracts"
-import { Tooltip } from "@fastview/ui"
+import type { ContentItem } from "@panelyth/contracts"
+import { Tooltip } from "@panelyth/ui"
 import { useCallback, useRef, useState, type KeyboardEvent, type RefObject } from "react"
 import {
   formatTime,

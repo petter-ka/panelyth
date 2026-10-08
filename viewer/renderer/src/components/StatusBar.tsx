@@ -1,5 +1,5 @@
-import type { SidecarState } from "@fastview/contracts"
-import { Tooltip } from "@fastview/ui"
+import type { SidecarState } from "@panelyth/contracts"
+import { Tooltip } from "@panelyth/ui"
 import { useEffect, useState } from "react"
 import { bridge } from "../bridge"
 import { useFolderStore } from "../features/folder/folderStore"

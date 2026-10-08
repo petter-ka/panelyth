@@ -1,4 +1,4 @@
-import type { Bookmark, RecentFolder } from "@fastview/contracts"
+import type { Bookmark, RecentFolder } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { openPath, useListingStore } from "./listing"

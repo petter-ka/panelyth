@@ -3,7 +3,7 @@ import { createRequire } from "node:module"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
-import type { SidecarStatus } from "@fastview/contracts"
+import type { SidecarStatus } from "@panelyth/contracts"
 import { _electron, expect, type ElectronApplication, type Page } from "@playwright/test"
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
@@ -17,22 +17,22 @@ export interface Launched {
 
 /**
  * Launches the production build with isolated cache, config and Electron
- * profile directories. Pass FASTVIEW_USER_DATA_DIR in `env` to reuse a
+ * profile directories. Pass PANELYTH_USER_DATA_DIR in `env` to reuse a
  * profile across launches.
  */
 export async function launchApp(env: Record<string, string> = {}): Promise<Launched> {
-  const scratch = mkdtempSync(join(tmpdir(), "fastview-e2e-"))
+  const scratch = mkdtempSync(join(tmpdir(), "panelyth-e2e-"))
   const app = await _electron.launch({
     executablePath: electronPath,
     args: [desktopDir],
     env: {
       ...(process.env as Record<string, string>),
-      FASTVIEW_CACHE_DIR: join(scratch, "cache"),
-      FASTVIEW_CONFIG_DIR: join(scratch, "config"),
-      FASTVIEW_USER_DATA_DIR: join(scratch, "user-data"),
-      FASTVIEW_RENDERER_URL: "",
-      // Record shell/clipboard calls instead of opening apps (main exposes __fastviewShellLog).
-      FASTVIEW_TEST_SHELL: "record",
+      PANELYTH_CACHE_DIR: join(scratch, "cache"),
+      PANELYTH_CONFIG_DIR: join(scratch, "config"),
+      PANELYTH_USER_DATA_DIR: join(scratch, "user-data"),
+      PANELYTH_RENDERER_URL: "",
+      // Record shell/clipboard calls instead of opening apps (main exposes __panelythShellLog).
+      PANELYTH_TEST_SHELL: "record",
       ...env,
     },
   })
@@ -42,7 +42,7 @@ export async function launchApp(env: Record<string, string> = {}): Promise<Launc
 
 export function sidecarStatus(page: Page): Promise<SidecarStatus> {
   return page.evaluate(async () => {
-    const res = await window.fastview!.sidecar.getStatus()
+    const res = await window.panelyth!.sidecar.getStatus()
     if (!res.ok) throw new Error(res.e.message)
     return res.r
   })
@@ -88,13 +88,13 @@ export function shellState(
     () =>
       (
         globalThis as {
-          __fastviewShellState?: () => {
+          __panelythShellState?: () => {
             active: string | null
             commanderCreated: boolean
             commanderEnabled: boolean
           }
         }
-      ).__fastviewShellState?.() ?? {
+      ).__panelythShellState?.() ?? {
         active: null,
         commanderCreated: false,
         commanderEnabled: false,
@@ -117,8 +117,8 @@ export async function commanderPage(app: ElectronApplication, timeoutMs = 10_000
 export const commanderEnv = (
   startApp: "viewer" | "commander" = "viewer",
 ): Record<string, string> => ({
-  FASTVIEW_COMMANDER: "1",
-  FASTVIEW_START_APP: startApp,
+  PANELYTH_COMMANDER: "1",
+  PANELYTH_START_APP: startApp,
 })
 
 /**

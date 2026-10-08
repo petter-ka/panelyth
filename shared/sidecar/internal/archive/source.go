@@ -6,9 +6,9 @@ import (
 	"slices"
 	"strings"
 
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/natsort"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/natsort"
 )
 
 // Entry ids of open archives come from their own range (ADR-0030), far

@@ -35,7 +35,7 @@ export interface FixtureSpec {
 export function ensureFixture(
   name: string,
   spec: FixtureSpec,
-  base = join(tmpdir(), "fastview-fixtures"),
+  base = join(tmpdir(), "panelyth-fixtures"),
 ): Fixture {
   const root = join(base, name)
   const out = execFileSync(

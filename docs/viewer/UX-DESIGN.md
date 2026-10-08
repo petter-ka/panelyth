@@ -1,6 +1,6 @@
 # Viewer UX Design
 
-The FastView viewer's workspace, tile view, focused viewer, preview pane, selection and menus. The visual system
+The Panelyth viewer's workspace, tile view, focused viewer, preview pane, selection and menus. The visual system
 shared with the commander is in `docs/shared/DESIGN-SYSTEM.md`.
 
 ## Goal
@@ -152,7 +152,7 @@ Opened with Enter or double-click on an image tile; a full-window overlay on the
 - 100 % is one image pixel per screen pixel. Fit never enlarges small images. Above 200 % pixels render crisp
   (`image-rendering: pixelated`) for inspection.
 - Loading is progressive and never blank: tile thumbnail → sharp preview → original (only when zoomed past the preview).
-- Errors say what happened ("The file was moved or deleted", "damaged or in a format FastView can't read") and offer
+- Errors say what happened ("The file was moved or deleted", "damaged or in a format Panelyth can't read") and offer
   **Try again**; navigation keeps working.
 
 ## Settings (Stage 08.5)
@@ -246,7 +246,7 @@ below); **Copy name**. The viewer gets a right-click menu (Copy picture, Copy pa
 manager, Rotate, Flip, Back to folder) and a Copy picture button.
 
 **Copying.** Ctrl/Cmd+C on one selected image, or in the viewer, puts the picture itself on the OS clipboard, upright
-(EXIF orientation applied), so it pastes into editors, documents and chats. The selection also goes to FastView's file
+(EXIF orientation applied), so it pastes into editors, documents and chats. The selection also goes to Panelyth's file
 clipboard, so Ctrl/Cmd+V in another folder still copies the file. With several items selected, Ctrl/Cmd+C copies files
 only. A short message near the bottom confirms the copy, or says why it failed; "Copying picture…" shows only when it
 takes more than 200 ms.

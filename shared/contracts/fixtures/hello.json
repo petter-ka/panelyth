@@ -1,10 +1,10 @@
 {
-  "cacheRoot": "/cache/FastView/v1",
-  "configRoot": "/config/FastView",
+  "cacheRoot": "/cache/Panelyth/v1",
+  "configRoot": "/config/Panelyth",
   "goVersion": "go1.x",
   "pid": 1234,
   "protocol": 1,
   "t": "hello",
-  "thumbnailRoot": "/cache/FastView/v1/thumbnails",
+  "thumbnailRoot": "/cache/Panelyth/v1/thumbnails",
   "version": "test"
 }

@@ -3,8 +3,8 @@ package jobs
 import (
 	"context"
 
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
 )
 
 // laneOf puts file operations in a lane per (source volume, destination

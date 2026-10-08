@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"fastview/sidecar/internal/natsort"
+	"panelyth/sidecar/internal/natsort"
 )
 
 // Crumb is one breadcrumb segment, root first.

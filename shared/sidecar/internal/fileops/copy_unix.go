@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"fastview/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/fsx"
 )
 
 // preserve sets target's access and modification times and its permission

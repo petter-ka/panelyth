@@ -52,10 +52,10 @@ describe("media.open result", () => {
 
 describe("permissions", () => {
   it("allows only element fullscreen, only for our own page", () => {
-    expect(allowPermission("fullscreen", "app://fastview/index.html", "app://fastview")).toBe(true)
-    expect(allowPermission("fullscreen", "https://example.com/", "app://fastview")).toBe(false)
+    expect(allowPermission("fullscreen", "app://panelyth/index.html", "app://panelyth")).toBe(true)
+    expect(allowPermission("fullscreen", "https://example.com/", "app://panelyth")).toBe(false)
     for (const p of ["media", "clipboard-read", "notifications", "openExternal", "pointerLock"])
-      expect(allowPermission(p, "app://fastview/index.html", "app://fastview")).toBe(false)
+      expect(allowPermission(p, "app://panelyth/index.html", "app://panelyth")).toBe(false)
   })
 })
 
@@ -82,11 +82,11 @@ describe("media tokens", () => {
   })
 
   it.each([
-    "fastview-media://m/../../etc/passwd",
-    "fastview-media://m/ABCDEF0123456789ABCDEF0123456789",
-    `fastview-media://x/${"0".repeat(32)}`,
-    `fastview-media://m/${"0".repeat(32)}?x=1`,
-    `fastview-media://m/${"0".repeat(31)}`,
+    "panelyth-media://m/../../etc/passwd",
+    "panelyth-media://m/ABCDEF0123456789ABCDEF0123456789",
+    `panelyth-media://x/${"0".repeat(32)}`,
+    `panelyth-media://m/${"0".repeat(32)}?x=1`,
+    `panelyth-media://m/${"0".repeat(31)}`,
     "file:///etc/passwd",
   ])("rejects %s", (url) => {
     expect(parseMediaUrl(url)).toBeNull()
@@ -141,11 +141,11 @@ describe("file tokens for the commander (Stage C05, ADR-0027)", () => {
     expect(corsHeaders(fileTarget, "app://commander")).toMatchObject({
       "Access-Control-Allow-Origin": "app://commander",
     })
-    expect(corsHeaders(fileTarget, "app://fastview")).toBe("denied")
+    expect(corsHeaders(fileTarget, "app://panelyth")).toBe("denied")
     expect(corsHeaders(fileTarget, "null")).toBe("denied")
     // The viewer's media tokens are never fetch()able.
     const mediaTarget = { path: "/a.jpg", mime: "image/jpeg" }
-    expect(corsHeaders(mediaTarget, "app://fastview")).toBe("denied")
+    expect(corsHeaders(mediaTarget, "app://panelyth")).toBe("denied")
     expect(corsHeaders(mediaTarget, null)).toEqual({})
   })
 })
@@ -154,17 +154,17 @@ describe("token fetch is the commander's only (Stage C05, ADR-0027)", () => {
   it("gives fetch() access to token URLs in the commander's CSP alone", () => {
     const connect = (csp: string) => csp.split("; ").find((d) => d.startsWith("connect-src"))
     expect(connect(contentSecurityPolicy(null))).toBe("connect-src 'self'")
-    expect(connect(contentSecurityPolicy(null, true))).toBe("connect-src 'self' fastview-media:")
+    expect(connect(contentSecurityPolicy(null, true))).toBe("connect-src 'self' panelyth-media:")
     expect(connect(contentSecurityPolicy("http://localhost:5173"))).toBe(
       "connect-src 'self' ws://localhost:5173",
     )
     expect(connect(contentSecurityPolicy("http://localhost:5174", true))).toBe(
-      "connect-src 'self' fastview-media: ws://localhost:5174",
+      "connect-src 'self' panelyth-media: ws://localhost:5174",
     )
     // Both apps still show images and play videos from tokens.
     for (const csp of [contentSecurityPolicy(null), contentSecurityPolicy(null, true)]) {
-      expect(csp).toContain("img-src 'self' data: fastview-thumb: fastview-media:")
-      expect(csp).toContain("media-src fastview-media:")
+      expect(csp).toContain("img-src 'self' data: panelyth-thumb: panelyth-media:")
+      expect(csp).toContain("media-src panelyth-media:")
     }
   })
 })

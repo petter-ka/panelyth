@@ -6,7 +6,7 @@ import {
   type ButtonHTMLAttributes,
   type KeyboardEvent,
 } from "react"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 import { useFolderStore } from "../../features/folder/folderStore"
 import { useSettingsStore } from "../../features/settings/settingsStore"
 import { useThumb } from "../../features/previews/thumbStore"

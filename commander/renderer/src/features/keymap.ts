@@ -7,7 +7,7 @@ import {
   type ActionDef,
   type Keymap,
   type ShortcutOverrides,
-} from "@fastview/renderer-core"
+} from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 

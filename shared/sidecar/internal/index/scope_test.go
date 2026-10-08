@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Stage P02 (ADR-0026): every entry is stored; queries choose the scope.

@@ -13,12 +13,12 @@ import (
 	"strings"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/platform"
-	"fastview/sidecar/internal/rpc"
-	"fastview/sidecar/internal/video"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/platform"
+	"panelyth/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/video"
 )
 
 // Config holds process-level inputs; everything is injectable for tests.
@@ -49,20 +49,20 @@ func Run(ctx context.Context, cfg Config) error {
 		version:  cfg.Version,
 		started:  time.Now(),
 		shutdown: shutdown,
-		devMode:  cfg.Getenv("FASTVIEW_DEV_METHODS") == "1",
+		devMode:  cfg.Getenv("PANELYTH_DEV_METHODS") == "1",
 	})
 
 	// index.db and previews live in the disposable cache root (ADR-0016).
 	maxBytes := int64(DefaultCacheMaxBytes)
-	if v, perr := strconv.ParseInt(cfg.Getenv("FASTVIEW_CACHE_MAX_BYTES"), 10, 64); perr == nil && v > 0 {
+	if v, perr := strconv.ParseInt(cfg.Getenv("PANELYTH_CACHE_MAX_BYTES"), 10, 64); perr == nil && v > 0 {
 		maxBytes = v
 	}
 	// Video posters and probing (ADR-0018); absent tools degrade gracefully.
 	tools := video.Locate(cfg.Getenv)
 	// Benchmarks only (dev mode): a network drive whose space read hangs,
 	// "path=ms" (Stage C03 drive-menu benchmark).
-	if cfg.Getenv("FASTVIEW_DEV_METHODS") == "1" {
-		if path, ms, ok := strings.Cut(cfg.Getenv("FASTVIEW_DEV_SLOW_VOLUME"), "="); ok {
+	if cfg.Getenv("PANELYTH_DEV_METHODS") == "1" {
+		if path, ms, ok := strings.Cut(cfg.Getenv("PANELYTH_DEV_SLOW_VOLUME"), "="); ok {
 			if d, perr := strconv.Atoi(ms); perr == nil && path != "" {
 				fsx.SimulateSlowVolume(path, time.Duration(d)*time.Millisecond)
 			}

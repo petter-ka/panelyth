@@ -16,7 +16,7 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/fsx"
 )
 
 // Engine v2 (Stage P03, ADR-0029).

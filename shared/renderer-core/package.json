@@ -1,5 +1,5 @@
 {
-  "name": "@fastview/renderer-core",
+  "name": "@panelyth/renderer-core",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -12,7 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastview/contracts": "workspace:*",
+    "@panelyth/contracts": "workspace:*",
     "zustand": "5.0.15"
   },
   "peerDependencies": {

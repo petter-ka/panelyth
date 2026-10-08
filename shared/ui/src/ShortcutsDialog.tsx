@@ -1,4 +1,4 @@
-import { defaultChords, eventChord, formatChord, type ActionDef } from "@fastview/renderer-core"
+import { defaultChords, eventChord, formatChord, type ActionDef } from "@panelyth/renderer-core"
 import { useState, type KeyboardEvent } from "react"
 import { Button, Kbd } from "./button"
 import { DialogWindow } from "./dialog"

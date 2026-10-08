@@ -1,4 +1,4 @@
-import type { IndexProgress } from "@fastview/contracts"
+import type { IndexProgress } from "@panelyth/contracts"
 import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -100,7 +100,7 @@ describe("opening a folder", () => {
     await act(() => openFolder("/root-only"))
     expect(screen.getByText("Couldn't open the folder")).toBeInTheDocument()
     expect(
-      screen.getByText("FastView doesn't have permission to open this folder."),
+      screen.getByText("Panelyth doesn't have permission to open this folder."),
     ).toBeInTheDocument()
   })
 })

@@ -15,9 +15,9 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/natsort"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/natsort"
+	"panelyth/sidecar/internal/pathkey"
 
 	_ "modernc.org/sqlite"
 )

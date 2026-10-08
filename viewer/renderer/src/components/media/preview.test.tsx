@@ -1,4 +1,4 @@
-import type { ContentItem } from "@fastview/contracts"
+import type { ContentItem } from "@panelyth/contracts"
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AppShell } from "../../app/AppShell"
@@ -35,8 +35,8 @@ import { resetViewer, useViewerStore } from "../../features/viewer/viewerStore"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
 
-const tokenUrl = (id: number) => `fastview-media://m/${String(id).padStart(32, "0")}`
-const fitUrl = (id: number) => `fastview-thumb://t/${String(id).padStart(64, "f")}.jpg`
+const tokenUrl = (id: number) => `panelyth-media://m/${String(id).padStart(32, "0")}`
+const fitUrl = (id: number) => `panelyth-thumb://t/${String(id).padStart(64, "f")}.jpg`
 
 /** Folder, images, then videos: ids are index + 1. */
 function mixedItems(): ContentItem[] {

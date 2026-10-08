@@ -44,7 +44,7 @@ describe("workspace persistence", () => {
   })
 
   it("migrates the Stage 03 tile size key", () => {
-    localStorage.setItem("fastview.tileSize", "large")
+    localStorage.setItem("panelyth.tileSize", "large")
     expect(readMirror().tileSize).toBe("large")
   })
 

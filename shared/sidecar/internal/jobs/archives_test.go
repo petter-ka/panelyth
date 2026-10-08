@@ -8,8 +8,8 @@ import (
 	"slices"
 	"testing"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/index"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/index"
 )
 
 func makeZip(t *testing.T, path string, files map[string]string) {

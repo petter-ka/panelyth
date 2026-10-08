@@ -16,7 +16,7 @@ import { resetViewer, useViewerStore } from "../../features/viewer/viewerStore"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
 
-const fitUrl = (id: number) => `fastview-thumb://t/${String(id).padStart(64, "f")}.jpg`
+const fitUrl = (id: number) => `panelyth-thumb://t/${String(id).padStart(64, "f")}.jpg`
 
 let stop: (() => void)[] = []
 
@@ -124,7 +124,7 @@ describe("image viewer", () => {
     await waitFor(() => expect(imageViewer()).toHaveAttribute("data-layer", "original"))
     expect(screen.getByTestId("viewer-original-layer")).toHaveAttribute(
       "src",
-      "fastview-media://m/" + "6".padStart(32, "0"),
+      "panelyth-media://m/" + "6".padStart(32, "0"),
     )
     expect(screen.getByTestId("viewer-zoom")).toHaveTextContent("100%")
     await key(viewer(), "0")

@@ -17,7 +17,7 @@ import (
 	"strings"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fileops"
 )
 
 // Tool runs an external 7-Zip (ADR-0030, like ffmpeg in ADR-0018): 7z, rar
@@ -27,7 +27,7 @@ type Tool struct {
 	Path string
 }
 
-// LocateTool finds 7-Zip: FASTVIEW_7Z (a path; "off" disables it), then
+// LocateTool finds 7-Zip: PANELYTH_7Z (a path; "off" disables it), then
 // next to the sidecar executable, then PATH (7z, 7zz, 7za).
 func LocateTool(getenv func(string) string) *Tool {
 	names := []string{"7z", "7zz", "7za"}
@@ -37,7 +37,7 @@ func LocateTool(getenv func(string) string) *Tool {
 		}
 		return n
 	}
-	if v := getenv("FASTVIEW_7Z"); v != "" {
+	if v := getenv("PANELYTH_7Z"); v != "" {
 		if v == "off" {
 			return &Tool{}
 		}

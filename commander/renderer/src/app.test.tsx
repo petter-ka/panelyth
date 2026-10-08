@@ -1,4 +1,4 @@
-import type { CommanderApi } from "@fastview/contracts"
+import type { CommanderApi } from "@panelyth/contracts"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AppShell } from "./components/AppShell"
@@ -17,7 +17,7 @@ function installApi(settings: Record<string, unknown> = {}) {
     },
     onEvent: vi.fn(() => () => undefined),
   }
-  window.fastview = api as unknown as CommanderApi
+  window.panelyth = api as unknown as CommanderApi
   return api
 }
 
@@ -25,7 +25,7 @@ beforeEach(() => {
   usePanelsStore.setState({ active: "left", split: 50, layoutToken: 0 })
 })
 afterEach(() => {
-  delete window.fastview
+  delete window.panelyth
   vi.useRealTimers()
 })
 

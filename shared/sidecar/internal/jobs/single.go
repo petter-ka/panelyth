@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"path/filepath"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/scan"
 )
 
 // RenameOne renames a single entry synchronously (F2): the inline editor

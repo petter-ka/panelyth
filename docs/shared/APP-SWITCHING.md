@@ -20,7 +20,7 @@ your appearance settings.
 ## Model
 
 ```text
-┌──────────────── FastView shell: one Electron app, one window ────────────────┐
+┌──────────────── Panelyth shell: one Electron app, one window ────────────────┐
 │ Main process: window, app views, switch, per-view capability profiles,       │
 │               protocols, sidecar lifecycle                                    │
 │                                                                              │
@@ -66,8 +66,8 @@ your appearance settings.
 - Click the other app's icon, or press **Ctrl/Cmd+Shift+M** (action `app.switch` in the `shell` keymap scope; remappable). It also
   works while a text field has focus, such as the viewer's search box or the commander's command line, because it is
   a Ctrl/Cmd chord (ADR-0022 "while typing" rule).
-- The switch is instant, with no animation. The window title changes to the visible app ("FastView — Pictures",
-  "FastView Commander — Pictures").
+- The switch is instant, with no animation. The window title changes to the visible app ("Panelyth — Pictures",
+  "Panelyth Commander — Pictures").
 - Focus lands on the target's main surface: the viewer's tile view, or the commander's active panel.
 - While a modal dialog is open, the switch is unavailable: the rail sits behind the dialog's backdrop and the key does
   nothing.
@@ -139,7 +139,7 @@ viewer does not pause yet. Watching only the visible app's folders is part of St
 
 ## Persistence: the shared storage
 
-Everything shared lives in the existing `library.db` (`<UserConfigDir>/FastView/library.db`, ADR-0016):
+Everything shared lives in the existing `library.db` (`<UserConfigDir>/Panelyth/library.db`, ADR-0016):
 
 - settings `shared.context` (`{ v: 1, app, path, pathKey }`; the selection is never persisted). The visible app
   publishes its context when it is shown, when its folder changes and on the switch (with the focused entry and the

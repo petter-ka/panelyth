@@ -13,7 +13,7 @@ Use Electron/Chromium media capabilities for local video playback where supporte
 
 ## Implementation note (Stage 04)
 
-`fastview-media://m/<token>` exists: 128-bit random tokens in a bounded LRU in Electron main map to paths validated by
+`panelyth-media://m/<token>` exists: 128-bit random tokens in a bounded LRU in Electron main map to paths validated by
 the sidecar (`media.resolve`, callable by main only); responses stream with HTTP Range (206). Stage 04 uses it for
 image originals; Stage 06 adds video. `media.open` (renderer) returns only the token URL, never a path.
 

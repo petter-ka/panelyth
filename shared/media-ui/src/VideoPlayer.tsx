@@ -1,4 +1,4 @@
-import type { Thumb } from "@fastview/contracts"
+import type { Thumb } from "@panelyth/contracts"
 import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
 import {
   formatTime,
@@ -42,7 +42,7 @@ const control =
 
 /**
  * Local video playback (Stage 06, ADR-0009). Chromium plays the original
- * file from a fastview-media token URL (HTTP Range, so seeking never reads
+ * file from a panelyth-media token URL (HTTP Range, so seeking never reads
  * the whole file); no media bytes travel over IPC. The poster comes from
  * the Go poster cache (ADR-0018). Render with key={entryId}.
  *

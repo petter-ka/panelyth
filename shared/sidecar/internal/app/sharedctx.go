@@ -8,9 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/query"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // The shared context (ADR-0031, docs/shared/APP-SWITCHING.md): the folder

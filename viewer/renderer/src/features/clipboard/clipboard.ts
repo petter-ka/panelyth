@@ -1,4 +1,4 @@
-import type { ContentItem } from "@fastview/contracts"
+import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge } from "../../bridge"
 import { copySelection, currentSelection, useJobsStore } from "../jobs/jobsStore"
@@ -79,7 +79,7 @@ export function singleSelectedItem(): ContentItem | null {
 
 /**
  * Ctrl+C in the tile view: the files go to the internal clipboard (paste in
- * FastView) and a single picture also goes to the OS clipboard.
+ * Panelyth) and a single picture also goes to the OS clipboard.
  */
 export async function copySelectionToClipboard(): Promise<void> {
   const item = singleSelectedItem()

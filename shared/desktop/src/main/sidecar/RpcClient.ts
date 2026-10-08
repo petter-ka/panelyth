@@ -9,7 +9,7 @@ import {
   type RpcErrorShape,
   type SidecarMethod,
   type SidecarMethodMap,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 export class RpcError extends Error implements RpcErrorShape {
   override name = "RpcError"

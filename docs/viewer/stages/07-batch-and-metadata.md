@@ -66,14 +66,14 @@ Enable power-user file operations and metadata-based organization.
 - **Intermittent SQLite heap corruption (modernc.org/sqlite v1.60.1 / libc v1.77.1, Windows).** The Go benchmarks that
   commit 100k rows in one transaction and then query from the reader pool sometimes fail with
   `database disk image is malformed` or `unexpected fault address` inside the transpiled SQLite (`libc.Xfree`, page
-  and LIKE code). It reproduces **without FastView code** (a plain `database/sql` program: WAL, one writer and one
+  and LIKE code). It reproduces **without Panelyth code** (a plain `database/sql` program: WAL, one writer and one
   reader connection, 100k inserts, then queries). It happens with Go 1.26 and 1.27 alike, with async preemption off,
   and with `mmap_size(0)`. It wasn't seen with a single connection (18 runs). It is not caused by Stage 07, but it threatens
   the "index never corrupts" promise. It needs a decision: report upstream and pin, switch drivers (ADR-0019
   amendment), or rule out this machine's CPU (i9-13900K; Raptor Lake instability causes similar random faults).
 - **A damaged test fixture was found.** `flat-100k` had lost 58,119 of its 90,000 media files (deleted in NTFS
-  name order, nothing in the Recycle Bin, last change 09:55 today). No FastView job journal from the surviving
-  profiles touched it. The folder was kept as `%TEMP%/fastview-fixtures/flat-100k.damaged-2026-10-01` and the
+  name order, nothing in the Recycle Bin, last change 09:55 today). No Panelyth job journal from the surviving
+  profiles touched it. The folder was kept as `%TEMP%/panelyth-fixtures/flat-100k.damaged-2026-10-01` and the
   fixture regenerated. `fixturegen` trusts its marker file and does not detect missing files.
 
 ## Risks and follow-ups

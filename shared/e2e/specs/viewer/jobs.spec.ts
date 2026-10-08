@@ -23,8 +23,8 @@ const ipcCounts = (app: ElectronApplication): Promise<Record<string, number>> =>
   app.evaluate(
     () =>
       (
-        globalThis as { __fastviewIpcCounts?: () => Record<string, number> }
-      ).__fastviewIpcCounts?.() ?? {},
+        globalThis as { __panelythIpcCounts?: () => Record<string, number> }
+      ).__panelythIpcCounts?.() ?? {},
   )
 
 interface Metrics {
@@ -36,7 +36,7 @@ async function instrument(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as unknown as { __m: Metrics }
     w.__m = { longTasks: [], progress: [] }
-    window.fastview!.onEvent("job.progress", (p) => {
+    window.panelyth!.onEvent("job.progress", (p) => {
       w.__m.progress.push({ t: performance.now(), jobId: p.jobId, state: p.state, done: p.done })
     })
     new PerformanceObserver((l) =>
@@ -50,7 +50,7 @@ test.describe("batch operations (Stage 07)", () => {
   test("a metadata job over 90,000 selected files stays responsive with coalesced progress", async () => {
     test.setTimeout(300_000)
     const fx = ensureFixture("flat-100k", { files: 100_000, nonMediaEvery: 10 })
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: fx.root })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: fx.root })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -105,7 +105,7 @@ test.describe("batch operations (Stage 07)", () => {
 
   test("copy, rename and delete in a folder; failed items leave the index consistent", async () => {
     test.setTimeout(180_000)
-    const dir = join(mkdtempSync(join(tmpdir(), "fastview-jobs-")), "work")
+    const dir = join(mkdtempSync(join(tmpdir(), "panelyth-jobs-")), "work")
     const names = Array.from({ length: 12 }, (_, i) => `IMG_${String(i).padStart(2, "0")}.jpg`)
     mkdirSync(dir, { recursive: true })
     for (const n of [...names, "x1.jpg"]) writeFileSync(join(dir, n), "")
@@ -114,7 +114,7 @@ test.describe("batch operations (Stage 07)", () => {
         .filter((n) => !n.startsWith("."))
         .sort()
 
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: dir })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()

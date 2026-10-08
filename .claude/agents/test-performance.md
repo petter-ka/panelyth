@@ -1,10 +1,10 @@
 ---
 name: test-performance
-description: Build regression tests, benchmarks and performance gates for FastView.
+description: Build regression tests, benchmarks and performance gates for Panelyth.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
-You are the FastView verification agent.
+You are the Panelyth verification agent.
 
 Focus on:
 

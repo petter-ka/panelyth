@@ -7,12 +7,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/imaging"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/rpc"
-	"fastview/sidecar/internal/video"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/video"
 )
 
 // mimeByExt covers the indexed media extensions (internal/media).

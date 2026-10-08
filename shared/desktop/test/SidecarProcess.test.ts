@@ -1,7 +1,7 @@
 // Integration test against the real Go binary (built by `pnpm build:sidecar`).
 import { existsSync } from "node:fs"
 import { join, resolve } from "node:path"
-import type { SidecarStatus } from "@fastview/contracts"
+import type { SidecarStatus } from "@panelyth/contracts"
 import { afterEach, describe, expect, it } from "vitest"
 import type { Logger } from "../src/main/log"
 import { SidecarProcess } from "../src/main/sidecar/SidecarProcess"
@@ -13,7 +13,7 @@ const binary = resolve(
   "resources",
   "bin",
   `${process.platform}-${process.arch}`,
-  `fastview-sidecar${exe}`,
+  `panelyth-sidecar${exe}`,
 )
 
 const quiet: Logger = { info() {}, warn() {}, error() {}, sidecar() {} }
@@ -36,7 +36,7 @@ async function waitFor(pred: () => boolean, ms = 5_000): Promise<void> {
 }
 
 const tmp = resolve(__dirname, "..", "..", "..", "node_modules", ".tmp-sidecar-test")
-const env = { FASTVIEW_CACHE_DIR: join(tmp, "cache"), FASTVIEW_CONFIG_DIR: join(tmp, "config") }
+const env = { PANELYTH_CACHE_DIR: join(tmp, "cache"), PANELYTH_CONFIG_DIR: join(tmp, "config") }
 
 describe.runIf(existsSync(binary) || process.env.CI)("SidecarProcess (real binary)", () => {
   let sc: SidecarProcess | null = null
@@ -52,7 +52,7 @@ describe.runIf(existsSync(binary) || process.env.CI)("SidecarProcess (real binar
     await expect(sc.call("system.ping", {})).resolves.toMatchObject({ pong: true })
     const info = await sc.call("system.info", {})
     expect(info.protocol).toBe(1)
-    expect(sc.getHello()?.cacheRoot).toBe(join(env.FASTVIEW_CACHE_DIR, "v1"))
+    expect(sc.getHello()?.cacheRoot).toBe(join(env.PANELYTH_CACHE_DIR, "v1"))
     const pid = sc.getStatus().pid!
     await sc.stop()
     expect(sc.getStatus().state).toBe("stopped")

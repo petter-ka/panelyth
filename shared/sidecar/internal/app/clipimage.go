@@ -14,9 +14,9 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"fastview/sidecar/internal/imaging"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Copying a picture to the OS clipboard (Stage 08.6). Go decodes the image

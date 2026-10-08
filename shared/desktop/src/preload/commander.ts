@@ -12,7 +12,7 @@ import {
   type RendererMethod,
   type RpcEnvelope,
   type SelectionDescriptor,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 /** Only the descriptor's known fields cross the bridge. */
 const copySelection = (s: SelectionDescriptor): SelectionDescriptor => ({
@@ -271,4 +271,4 @@ const api: CommanderApi = {
   },
 }
 
-contextBridge.exposeInMainWorld("fastview", api)
+contextBridge.exposeInMainWorld("panelyth", api)

@@ -12,13 +12,13 @@ poster, seek, duration, volume/mute, playback state, a fullscreen-ready path and
 ## Decisions applied
 
 - **ADR-0018 accepted:** posters and probing use **ffmpeg/ffprobe subprocesses** (`internal/video`). The sidecar stays
-  pure Go (ADR-0019). The tools are found through `FASTVIEW_FFMPEG`, then next to the sidecar, then `PATH`. Without them,
+  pure Go (ADR-0019). The tools are found through `PANELYTH_FFMPEG`, then next to the sidecar, then `PATH`. Without them,
   videos still play; tiles show the video symbol and no failure is recorded.
 - **Posters are previews:** same profiles, cache key (path_key + size + mtime + profile), disk cache, scheduler (dedup,
   priority, lane epochs, bounded workers, pixel budget), `preview.ready` events and page-attached cache hits as image
   thumbnails. Each poster is one frame at `min(10 % of duration, 10 s)`, scaled and autorotated by ffmpeg, and
   re-encoded by `imaging.Encode`.
-- **Playback stays in Chromium** (ADR-0009): the original is played from a `fastview-media://m/<token>` URL with HTTP Range.
+- **Playback stays in Chromium** (ADR-0009): the original is played from a `panelyth-media://m/<token>` URL with HTTP Range.
   No media bytes travel over IPC. `media.resolve` and `media.open` carry `durationMs`, `videoCodec` and `audioCodec`.
 - **The pane follows the settled selection.** A change within 150 ms of the previous one waits until the selection
   settles, so a held arrow key loads only where it stops. The pane uses its own `pane` preview lane, so its requests
@@ -54,7 +54,7 @@ Backend and IPC:
   unreadable → `CORRUPT_MEDIA` (permanent), timeout → retry after 5 min, permission → retry after 5 min. Video
   dimensions are recorded for sorting.
 - `media.resolve`: videos are always `original: true` and gain the probe fields. The contract, guards and golden
-  fixtures were updated, plus a new `res-media.resolve-video.json`. Golden runs set `FASTVIEW_FFMPEG=off` so they
+  fixtures were updated, plus a new `res-media.resolve-video.json`. Golden runs set `PANELYTH_FFMPEG=off` so they
   don't depend on the machine.
 - Main: `toMediaOpenResult` (tested) and `allowPermission` (fullscreen only, own origin).
 - Renderer: `features/preview/previewStore` (settled selection, play requests), `features/media/video` (time format,
@@ -117,7 +117,7 @@ stat plus a `PATH` lookup), ping p95 0.2 ms, exit p95 17 ms, idle 352 MB, **56.7
 
 - [x] selected image/video previews load without freezing content browsing (settled selection, 0 long tasks while playing and walking tiles)
 - [x] cached poster is reused (0 generated after restart; posters attached to pages)
-- [x] video playback does not route media bytes through normal IPC (token URL + Range; `currentSrc` is `fastview-media://m/<token>`)
+- [x] video playback does not route media bytes through normal IPC (token URL + Range; `currentSrc` is `panelyth-media://m/<token>`)
 - [x] large images use a dedicated viewer path (Stage 04 `ImageViewer`: viewer-fit, original only past its resolution)
 - [x] unsupported codec/container states are explicit and offer a way out
 

@@ -1,8 +1,8 @@
 {
-  "name": "@fastview/desktop",
+  "name": "@panelyth/desktop",
   "version": "0.0.0",
   "private": true,
-  "description": "FastView Electron main process and preload",
+  "description": "Panelyth Electron main process and preload",
   "main": "dist/main/main.cjs",
   "scripts": {
     "build": "vite build --config vite.main.config.mts && vite build --config vite.preload.config.mts && vite build --config vite.preload-commander.config.mts",
@@ -10,7 +10,7 @@
     "test": "vitest run"
   },
   "devDependencies": {
-    "@fastview/contracts": "workspace:*",
+    "@panelyth/contracts": "workspace:*",
     "@types/node": "24.19.0",
     "electron": "44.5.1",
     "electron-builder": "26.15.3",

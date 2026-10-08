@@ -21,10 +21,10 @@ const ROTATE_AT_BYTES = 5 * 1024 * 1024
  * fill the disk. All I/O is asynchronous.
  */
 export async function createFileLogger(dir: string, mirrorToConsole: boolean): Promise<Logger> {
-  const file = join(dir, "fastview.log")
+  const file = join(dir, "panelyth.log")
   await mkdir(dir, { recursive: true })
   try {
-    if ((await stat(file)).size > ROTATE_AT_BYTES) await rename(file, join(dir, "fastview.1.log"))
+    if ((await stat(file)).size > ROTATE_AT_BYTES) await rename(file, join(dir, "panelyth.1.log"))
   } catch {
     // no previous log
   }

@@ -1,6 +1,6 @@
 # Platform Architecture (shared)
 
-The FastView product has two apps on one platform: the **viewer** and **FastView Commander** (working title). One
+The Panelyth product has two apps on one platform: the **viewer** and **Panelyth Commander** (working title). One
 Electron shell hosts both in one window, and one Go sidecar serves both (ADR-0025, ADR-0031). This document describes
 the shared platform. App-specific architecture:
 
@@ -11,11 +11,11 @@ the shared platform. App-specific architecture:
 ## System overview
 
 ```text
-┌──────────────────────── FastView shell: one Electron app ─────────────────────────┐
+┌──────────────────────── Panelyth shell: one Electron app ─────────────────────────┐
 │ Main process                                                                      │
 │  ├── window lifecycle, native dialogs, the app switch                             │
 │  ├── secure IPC: one capability profile per app view (ADR-0027)                   │
-│  ├── protocols: fastview-thumb (previews), fastview-media (token streams)         │
+│  ├── protocols: panelyth-thumb (previews), panelyth-media (token streams)         │
 │  └── Go sidecar lifecycle                                                         │
 │                                                                                   │
 │ One window, one app view (WebContentsView) per app; one visible at a time         │
@@ -50,7 +50,7 @@ the shared platform. App-specific architecture:
 | Index scope per query | `media`: folders and supported media (ADR-0015) | `all`: every entry, with attributes (ADR-0026) |
 | Capabilities | open folders and media only; no commands (ADR-0027) | open any file on a user action; programs after confirmation; command line (ADR-0027) |
 | Content surface | tiles only (ADR-0004) | detailed and brief lists, thumbnails later (ADR-0028) |
-| Data | shared: `<UserCacheDir>/FastView/` and `<UserConfigDir>/FastView/`; settings under `shared.*`, the viewer's keys, `commander.*` | (same) |
+| Data | shared: `<UserCacheDir>/Panelyth/` and `<UserConfigDir>/Panelyth/`; settings under `shared.*`, the viewer's keys, `commander.*` | (same) |
 
 Shared code:
 
@@ -215,7 +215,7 @@ The content surface (tile, row or quick view) receives a cache identifier / prev
 Electron exposes a controlled preview protocol:
 
 ```text
-fastview-thumb://<cache-key>
+panelyth-thumb://<cache-key>
 ```
 
 The protocol handler resolves only known cache entries.

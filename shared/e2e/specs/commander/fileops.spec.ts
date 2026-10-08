@@ -73,9 +73,9 @@ async function confirmJob(c: Page, states: string[], timeout = 60_000) {
 test.describe("file operations (Stage C04)", () => {
   test("scenario 8: copy a large file and many small files; pause, resume and cancel remove partial files", async () => {
     test.setTimeout(240_000)
-    const src = mkdtempSync(join(tmpdir(), "fastview-c04-src-"))
+    const src = mkdtempSync(join(tmpdir(), "panelyth-c04-src-"))
     const vol = otherVolume()
-    const dst = mkdtempSync(join(vol ?? tmpdir(), "fastview-c04-dst-"))
+    const dst = mkdtempSync(join(vol ?? tmpdir(), "panelyth-c04-dst-"))
     bigFile(join(src, "big.bin"), vol ? 1024 : 2048)
     mkdirSync(join(src, "small"))
     for (let i = 0; i < 2000; i++)
@@ -103,7 +103,7 @@ test.describe("file operations (Stage C04)", () => {
       }
       const state = await row.getAttribute("data-state")
       if (state === "paused") {
-        const partial = readdirSync(dst).find((n) => n.endsWith(".fastview-partial"))
+        const partial = readdirSync(dst).find((n) => n.endsWith(".panelyth-partial"))
         expect(partial, "the partial file is kept while paused").toBeTruthy()
         const size1 = statSync(join(dst, partial!)).size
         await c.waitForTimeout(500)
@@ -123,7 +123,7 @@ test.describe("file operations (Stage C04)", () => {
       }
       if ((await second.getAttribute("data-state")) === "cancelled") {
         await expect
-          .poll(() => readdirSync(dst).filter((n) => n.endsWith(".fastview-partial")))
+          .poll(() => readdirSync(dst).filter((n) => n.endsWith(".panelyth-partial")))
           .toEqual([])
         expect(readdirSync(dst)).not.toContain("big (2).bin")
       }
@@ -143,7 +143,7 @@ test.describe("file operations (Stage C04)", () => {
 
   test("scenario 9: each conflict policy from the dialog; ask stops only its own job", async () => {
     test.setTimeout(180_000)
-    const root = mkdtempSync(join(tmpdir(), "fastview-c04-conflict-"))
+    const root = mkdtempSync(join(tmpdir(), "panelyth-c04-conflict-"))
     const src = join(root, "src")
     mkdirSync(src)
     writeFileSync(join(src, "a.txt"), "new content")
@@ -228,9 +228,9 @@ test.describe("file operations (Stage C04)", () => {
 
   test("scenario 10: move across volumes, rename in place, nested new folder, delete with confirmation", async () => {
     test.setTimeout(180_000)
-    const root = mkdtempSync(join(tmpdir(), "fastview-c04-misc-"))
+    const root = mkdtempSync(join(tmpdir(), "panelyth-c04-misc-"))
     const vol = otherVolume()
-    const away = mkdtempSync(join(vol ?? tmpdir(), "fastview-c04-away-"))
+    const away = mkdtempSync(join(vol ?? tmpdir(), "panelyth-c04-away-"))
     writeFileSync(join(root, "move-me.txt"), "moved")
     writeFileSync(join(root, "photo.jpg"), "jpg")
     writeFileSync(join(root, "gone.txt"), "x")
@@ -287,13 +287,13 @@ test.describe("file operations (Stage C04)", () => {
 
   test("benchmark: copies from the UI; long tasks and navigation while copying", async () => {
     test.setTimeout(400_000)
-    const src = mkdtempSync(join(tmpdir(), "fastview-c04-bench-"))
-    const dst = mkdtempSync(join(tmpdir(), "fastview-c04-bench-dst-"))
+    const src = mkdtempSync(join(tmpdir(), "panelyth-c04-bench-"))
+    const dst = mkdtempSync(join(tmpdir(), "panelyth-c04-bench-dst-"))
     mkdirSync(join(src, "small"))
     for (let i = 0; i < 10_000; i++)
       writeFileSync(join(src, "small", `f${String(i).padStart(5, "0")}.bin`), randomBytes(10_000))
     bigFile(join(src, "big.bin"), 2048)
-    const nav = mkdtempSync(join(tmpdir(), "fastview-c04-nav-"))
+    const nav = mkdtempSync(join(tmpdir(), "panelyth-c04-nav-"))
     for (let i = 0; i < 1000; i++)
       writeFileSync(join(nav, `n${String(i).padStart(4, "0")}.txt`), "")
     // The fixtures were just written: let the drive flush them, or that

@@ -48,7 +48,7 @@ async function cursorTo(c: Page, name: string, dir = false): Promise<void> {
 /** The archive samples, a loose file to pack, in a folder of their own. */
 function sampleFolder(): string {
   const fixture = ensureFixture("archives-c07", { files: 0, archives: { samples: true } })
-  const root = mkdtempSync(join(tmpdir(), "fastview-c07-"))
+  const root = mkdtempSync(join(tmpdir(), "panelyth-c07-"))
   for (const name of ["set.zip", "set.tar.gz", "slip.zip"])
     cpSync(join(fixture.root, name), join(root, name))
   writeFileSync(join(root, "loose.txt"), "pack me\n")
@@ -59,7 +59,7 @@ test.describe("archives (Stage C07)", () => {
   test("scenario 13: enter zip and tar.gz, extract, pack, test; refuse a zip-slip archive", async () => {
     test.setTimeout(120_000)
     const root = sampleFolder()
-    const dst = mkdtempSync(join(tmpdir(), "fastview-c07-dst-"))
+    const dst = mkdtempSync(join(tmpdir(), "panelyth-c07-dst-"))
     writeFileSync(join(dst, "keep.txt"), "") // goTo waits for a row
     const { app } = await launch("commander")
     try {

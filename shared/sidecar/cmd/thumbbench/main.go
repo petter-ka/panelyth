@@ -19,10 +19,10 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/preview"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/preview"
+	"panelyth/sidecar/internal/scan"
 )
 
 type latency struct {
@@ -63,7 +63,7 @@ type result struct {
 var quiet = slog.New(slog.DiscardHandler)
 
 func main() {
-	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "fastview-fixtures"), "fixture root")
+	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "panelyth-fixtures"), "fixture root")
 	out := flag.String("out", "", "write JSON here (default stdout)")
 	count := flag.Int("images", 120, "number of 12 MP images")
 	flag.Parse()
@@ -108,7 +108,7 @@ type env struct {
 }
 
 func setup(dir string) *env {
-	tmp := must(os.MkdirTemp("", "fastview-thumbbench-"))
+	tmp := must(os.MkdirTemp("", "panelyth-thumbbench-"))
 	store := must(index.Open(filepath.Join(tmp, "db", "index.db"), quiet))
 	disk := must(preview.OpenDiskCache(tmp))
 	root := must(store.EnsureDir(context.Background(), dir))

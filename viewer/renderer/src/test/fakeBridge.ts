@@ -5,12 +5,12 @@ import type {
   JobStartParams,
   EventChannel,
   EventMap,
-  FastViewApi,
+  PanelythApi,
   PreviewItem,
   CoverSlot,
   RpcEnvelope,
   SidecarStatus,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import { vi } from "vitest"
 
 export const readyStatus: SidecarStatus = {
@@ -50,7 +50,7 @@ export function makeItems(n: number, dirs = 0): ContentItem[] {
 }
 
 /**
- * Installs a fake window.fastview backed by a tiny in-memory "sidecar".
+ * Installs a fake window.panelyth backed by a tiny in-memory "sidecar".
  * `items` is what query pages return; `push` emits events like main does.
  */
 export function installFakeBridge(initial: SidecarStatus = readyStatus) {
@@ -150,7 +150,7 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
     media: {
       open: vi.fn(async (entryId: number) =>
         ok({
-          url: `fastview-media://m/${String(entryId).padStart(32, "0")}`,
+          url: `panelyth-media://m/${String(entryId).padStart(32, "0")}`,
           kind: "image" as const,
           mime: "image/jpeg",
           width: 4000,
@@ -355,7 +355,7 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
       return () => set.delete(listener)
     }),
   }
-  window.fastview = api as unknown as FastViewApi
+  window.panelyth = api as unknown as PanelythApi
 
   return {
     api,

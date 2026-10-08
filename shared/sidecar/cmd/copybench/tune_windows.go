@@ -2,7 +2,7 @@
 
 package main
 
-import "fastview/sidecar/internal/fileops"
+import "panelyth/sidecar/internal/fileops"
 
 func setNoBuffering(mb int) {
 	if mb >= 0 {

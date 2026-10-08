@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/scan"
 )
 
 var quiet = slog.New(slog.DiscardHandler)

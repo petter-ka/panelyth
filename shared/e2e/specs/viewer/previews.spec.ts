@@ -12,14 +12,14 @@ const MIN_VISIBLE = 8
 const toolbarOpen = (page: Page) =>
   page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
 
-/** Mounted image tiles, and how many of them show a decoded fastview-thumb: image. */
+/** Mounted image tiles, and how many of them show a decoded panelyth-thumb: image. */
 const thumbCounts = (page: Page): Promise<{ images: number; loaded: number }> =>
   page.evaluate(() => {
     const tiles = [...document.querySelectorAll('[data-testid="tile"][data-kind="image"]')]
     const loaded = tiles.filter((t) => {
       const img = t.querySelector("img")
       return (
-        !!img && img.complete && img.naturalWidth > 0 && img.src.startsWith("fastview-thumb://")
+        !!img && img.complete && img.naturalWidth > 0 && img.src.startsWith("panelyth-thumb://")
       )
     })
     return { images: tiles.length, loaded: loaded.length }
@@ -50,7 +50,7 @@ async function instrument(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as unknown as { __pv: { events: number; items: number; longTasks: number[] } }
     w.__pv = { events: 0, items: 0, longTasks: [] }
-    window.fastview!.onEvent("preview.ready", (p) => {
+    window.panelyth!.onEvent("preview.ready", (p) => {
       w.__pv.events++
       w.__pv.items += p.items.length
     })
@@ -69,7 +69,7 @@ const pv = (page: Page) =>
 /** The media folder is copied per test so tests can modify it. */
 function freshCopy(): string {
   const fx = ensureFixture("images-150", { files: 0, images: IMAGES })
-  const dir = join(mkdtempSync(join(tmpdir(), "fastview-imgs-")), "photos")
+  const dir = join(mkdtempSync(join(tmpdir(), "panelyth-imgs-")), "photos")
   cpSync(fx.root, dir, { recursive: true })
   return dir
 }
@@ -78,8 +78,8 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
   test("visible thumbnails appear incrementally, then come from the cache after a restart", async () => {
     test.setTimeout(240_000)
     const photos = freshCopy()
-    const cache = mkdtempSync(join(tmpdir(), "fastview-cache-"))
-    const env = { FASTVIEW_TEST_DIALOG_PATH: photos, FASTVIEW_CACHE_DIR: cache }
+    const cache = mkdtempSync(join(tmpdir(), "panelyth-cache-"))
+    const env = { PANELYTH_TEST_DIALOG_PATH: photos, PANELYTH_CACHE_DIR: cache }
 
     const first = await launchApp(env)
     let cold: Record<string, number>
@@ -130,7 +130,7 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
   test("a modified image gets a new thumbnail", async () => {
     test.setTimeout(180_000)
     const photos = freshCopy()
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: photos })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: photos })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -160,8 +160,8 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
   test("a corrupt cache file is regenerated", async () => {
     test.setTimeout(180_000)
     const photos = freshCopy()
-    const cache = mkdtempSync(join(tmpdir(), "fastview-cache-"))
-    const env = { FASTVIEW_TEST_DIALOG_PATH: photos, FASTVIEW_CACHE_DIR: cache }
+    const cache = mkdtempSync(join(tmpdir(), "panelyth-cache-"))
+    const env = { PANELYTH_TEST_DIALOG_PATH: photos, PANELYTH_CACHE_DIR: cache }
 
     const first = await launchApp(env)
     let src: string
@@ -210,9 +210,9 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
             img.src = src
           })
         return Promise.all([
-          probe(`fastview-thumb://t/${"0".repeat(64)}.jpg`),
-          probe("fastview-thumb://t/../../../Windows/win.ini"),
-          probe("fastview-thumb://t/abc.jpg"),
+          probe(`panelyth-thumb://t/${"0".repeat(64)}.jpg`),
+          probe("panelyth-thumb://t/../../../Windows/win.ini"),
+          probe("panelyth-thumb://t/abc.jpg"),
         ])
       })
       expect(statuses).toEqual(["error", "error", "error"])

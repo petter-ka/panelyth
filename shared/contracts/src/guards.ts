@@ -222,7 +222,7 @@ export function isQuerySnapshot(v: unknown): v is QuerySnapshot {
   return isRec(v) && isInt(v.queryId) && isInt(v.version) && isInt(v.total) && v.total >= 0
 }
 
-const THUMB_PREFIX = "fastview-thumb://t/"
+const THUMB_PREFIX = "panelyth-thumb://t/"
 
 function isThumb(v: unknown): v is Thumb {
   return (

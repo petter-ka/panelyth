@@ -4,4 +4,4 @@ export {
   initInterfaceSize,
   useInterfaceSizeStore,
   type InterfaceSize,
-} from "@fastview/ui"
+} from "@panelyth/ui"

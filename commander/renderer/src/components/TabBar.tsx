@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 import { useListingStore } from "../features/listing"
 import { setActivePanel, type Side } from "../features/panels"
 import {

@@ -1,6 +1,6 @@
 ---
 name: react-performance
-description: Implement the FastView viewer and commander React UIs with emphasis on virtualization, scrolling and render efficiency.
+description: Implement the Panelyth viewer and commander React UIs with emphasis on virtualization, scrolling and render efficiency.
 tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 

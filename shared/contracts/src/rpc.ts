@@ -263,7 +263,7 @@ export interface PreviewEnsureParams {
 }
 
 export interface Thumb {
-  /** fastview-thumb://t/<key>.<ext>, served by Electron main from the disk cache. */
+  /** panelyth-thumb://t/<key>.<ext>, served by Electron main from the disk cache. */
   url: string
   width: number
   height: number
@@ -418,7 +418,7 @@ export interface MediaResolveResult {
 }
 
 export interface MediaOpenResult {
-  /** fastview-media://m/<token> for the original, or null when only previews can be shown. */
+  /** panelyth-media://m/<token> for the original, or null when only previews can be shown. */
   url: string | null
   kind: EntryKind
   mime: string
@@ -525,7 +525,7 @@ export interface FileResolveResult {
 }
 
 /**
- * file.open (Stage C05, commander only): a read-only fastview-media token URL
+ * file.open (Stage C05, commander only): a read-only panelyth-media token URL
  * for any file. Text and hex views read byte windows with HTTP Range; no file
  * bytes cross IPC (ADR-0027).
  */
@@ -1301,7 +1301,7 @@ export interface SidecarMethodMap {
   "system.ping": { params: EmptyParams; result: PingResult }
   "system.info": { params: EmptyParams; result: SystemInfo }
   "system.shutdown": { params: EmptyParams; result: ShutdownResult }
-  /** Development/benchmark only; registered when FASTVIEW_DEV_METHODS=1. */
+  /** Development/benchmark only; registered when PANELYTH_DEV_METHODS=1. */
   "system.echo": { params: EchoParams; result: EchoResult }
   "dir.open": { params: DirOpenParams; result: DirOpenResult }
   "dir.openEntry": { params: DirOpenEntryParams; result: DirOpenResult }
@@ -1410,7 +1410,7 @@ export interface MainMethodMap {
   "app.switch": { params: AppSwitchParams; result: OkResult }
   "sidecar.getStatus": { params: EmptyParams; result: SidecarStatus }
   "dialog.openFolder": { params: EmptyParams; result: OpenFolderDialogResult }
-  /** Resolves through the sidecar and mints a fastview-media token. */
+  /** Resolves through the sidecar and mints a panelyth-media token. */
   "media.open": { params: MediaOpenParams; result: MediaOpenResult }
   /** Home, Desktop, Documents, Downloads, Pictures, Videos (those that exist). */
   "places.list": { params: EmptyParams; result: PlacesResult }

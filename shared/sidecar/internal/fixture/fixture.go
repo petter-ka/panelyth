@@ -35,7 +35,7 @@ type Expected struct {
 // returns the counts. A marker file makes repeated calls with the same spec
 // a no-op, so large fixtures are generated once per machine.
 func Generate(root string, spec Spec) (Expected, error) {
-	marker := filepath.Join(root, ".fastview-fixture")
+	marker := filepath.Join(root, ".panelyth-fixture")
 	want := fmt.Sprintf("%+v", spec)
 	exp := expected(spec)
 	if b, err := os.ReadFile(marker); err == nil && string(b) == want {

@@ -1,4 +1,4 @@
-import type { SidecarStatus } from "@fastview/contracts"
+import type { SidecarStatus } from "@panelyth/contracts"
 import type { IpcMainInvokeEvent } from "electron"
 import { describe, expect, it, vi } from "vitest"
 import {
@@ -12,7 +12,7 @@ import { RpcError } from "../src/main/sidecar/RpcClient"
 
 vi.mock("electron", () => ({}))
 
-const ORIGIN = "app://fastview"
+const ORIGIN = "app://panelyth"
 const COMMANDER = "app://commander"
 const status: SidecarStatus = {
   state: "ready",
@@ -34,14 +34,14 @@ const mainHandlers = (): MainHandlers => ({
   "sidecar.getStatus": vi.fn(() => status),
   "dialog.openFolder": vi.fn(async () => ({ path: "/picked" })),
   "file.open": vi.fn(async (_e, p: { entryId: number }) => ({
-    url: `fastview-media://m/${String(p.entryId).padStart(32, "1")}`,
+    url: `panelyth-media://m/${String(p.entryId).padStart(32, "1")}`,
     kind: "file" as const,
     mime: "application/octet-stream",
     sizeBytes: 10,
   })),
   "shell.edit": vi.fn(async () => ({ ok: true })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
-    url: `fastview-media://m/${String(p.entryId).padStart(32, "0")}`,
+    url: `panelyth-media://m/${String(p.entryId).padStart(32, "0")}`,
     kind: "image" as const,
     mime: "image/jpeg",
     width: 10,
@@ -773,7 +773,7 @@ describe("invoke router", () => {
 
   it.each([
     ["foreign origin", eventFrom("https://evil.example/")],
-    ["lookalike host", eventFrom("app://fastview.evil/index.html")],
+    ["lookalike host", eventFrom("app://panelyth.evil/index.html")],
     ["file origin", eventFrom("file:///C:/x.html")],
     ["subframe", eventFrom(`${ORIGIN}/index.html`, {})],
   ])("rejects untrusted sender: %s", async (_name, event) => {

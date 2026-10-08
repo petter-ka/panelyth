@@ -1,11 +1,11 @@
-# FastView — Product Family
+# Panelyth — Product Family
 
 Fast, local-first desktop apps for Windows, macOS and Linux, built on one platform and hosted by one shell
 (ADR-0025, ADR-0031):
 
-- **FastView** — the photo and video viewer: a tile view that stays fluid in folders with hundreds of thousands of
+- **Panelyth** — the photo and video viewer: a tile view that stays fluid in folders with hundreds of thousands of
   images, a persistent preview cache, a focused viewer and local video playback.
-- **FastView Commander** (working title, planned) — a keyboard-first, dual-panel file manager in the style of Total
+- **Panelyth Commander** (working title, planned) — a keyboard-first, dual-panel file manager in the style of Total
   Commander: two folders side by side, background file operations, find, archives, compare and multi-rename.
 
 The two apps live in one window. A left rail switches between them, and the other app opens
@@ -43,9 +43,9 @@ pnpm bench:go       # Go micro-benchmarks
 ```
 
 These commands build and run the shell with the viewer. The commander joins them in Stage C00, behind a feature
-flag (`FASTVIEW_COMMANDER=1`). Stage P01 lets `BENCH_STAGE` take platform and commander stage IDs (`P01`, `C03`).
+flag (`PANELYTH_COMMANDER=1`). Stage P01 lets `BENCH_STAGE` take platform and commander stage IDs (`P01`, `C03`).
 
-Logs: Electron `app.getPath("logs")/fastview.log` (main process and sidecar stderr).
+Logs: Electron `app.getPath("logs")/panelyth.log` (main process and sidecar stderr).
 
 ## Documentation map
 
@@ -69,7 +69,7 @@ docs/
     APP-SWITCHING.md           the switch between the apps and the state they share
     decisions/                 shared ADRs
     stages/                    platform stages P01…P06
-  viewer/                      FastView (photo and video viewer)
+  viewer/                      Panelyth (photo and video viewer)
     BRS.md                     viewer requirements (FR-01…FR-19)
     FEATURE-MATRIX.md
     ARCHITECTURE.md            workspace, tile view, preview pane, focused viewer
@@ -78,7 +78,7 @@ docs/
     TESTING.md                 viewer e2e scenarios and fixtures
     decisions/                 viewer ADRs
     stages/                    viewer stages 00…08.6
-  commander/                   FastView Commander (dual-panel file manager)
+  commander/                   Panelyth Commander (dual-panel file manager)
     BRS.md                     commander requirements (CFR-01…, CNFR-01…)
     FEATURE-MATRIX.md          Total Commander features → stages
     ARCHITECTURE.md            panels, listing, file operations, lister, archives

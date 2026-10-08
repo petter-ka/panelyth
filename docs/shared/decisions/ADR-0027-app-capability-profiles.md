@@ -49,7 +49,7 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
   entry kind for this profile: read-only, HTTP Range, one token per file. No file bytes cross IPC.
 - **Command line (`shell.run`, Stage C10):** runs a command through the OS shell, with an indexed folder as the working
   directory, only after Enter in the command line or a tool button. Main logs every command. Under
-  `FASTVIEW_TEST_SHELL=record` it records instead of running.
+  `PANELYTH_TEST_SHELL=record` it records instead of running.
 - Plus `app.switch` and the shared-context methods.
 
 ### Both profiles
@@ -76,7 +76,7 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
   view, so a compromised viewer cannot plant an editor for the commander to start.
 - **File bytes:** `file.open` → `file.resolve` (main-only; any regular file, links followed, folders refused) → a
   token bound to the commander's origin. Non-media files are served as `application/octet-stream` with `nosniff`.
-  `fetch()` of token URLs is allowed by the commander's CSP only (`connect-src 'self' fastview-media:`); the viewer's
+  `fetch()` of token URLs is allowed by the commander's CSP only (`connect-src 'self' panelyth-media:`); the viewer's
   CSP keeps `connect-src 'self'`. A request whose `Origin` is not the minting app's gets 403. The e2e test shows the
   viewer cannot read a commander token even when handed its URL.
 

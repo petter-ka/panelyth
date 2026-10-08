@@ -3,10 +3,10 @@
 The product has two apps in one shell, with a left app switcher rail and shared state between them (ADR-0025, ADR-0031,
 `docs/shared/APP-SWITCHING.md`), and three tracks:
 
-- **Viewer**: FastView, the photo and video viewer. Phases 0–8.6 are its delivery history; they also built most of
+- **Viewer**: Panelyth, the photo and video viewer. Phases 0–8.6 are its delivery history; they also built most of
   the shared platform.
 - **Platform**: shared work both apps need (P-stages).
-- **Commander**: FastView Commander, the dual-panel file manager (C-stages).
+- **Commander**: Panelyth Commander, the dual-panel file manager (C-stages).
 
 Stage documents: `docs/viewer/stages/`, `docs/shared/stages/`, `docs/commander/stages/`. Status and gates:
 `docs/DEVELOPMENT-STAGES.md`.
@@ -178,4 +178,4 @@ Command line, user commands, toolbar, thumbnails view, complete settings.
 
 ### C11 — Commander release
 
-Verification and documentation of FastView Commander 1.0, and the product release that turns it on for users.
+Verification and documentation of Panelyth Commander 1.0, and the product release that turns it on for users.

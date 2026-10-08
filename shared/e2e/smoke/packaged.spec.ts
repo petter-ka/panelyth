@@ -8,20 +8,20 @@ import { desktopDir, isAlive, waitForExit, waitForReady } from "../launch"
 // Stage P04: the packaged product launches, opens a folder, previews an
 // image, switches to the commander and back, lists, copies a file and quits
 // cleanly. Packaged builds ignore the test hooks of unpackaged ones (canned
-// dialogs, recorded shell calls, FASTVIEW_USER_DATA_DIR), so the test drives
+// dialogs, recorded shell calls, PANELYTH_USER_DATA_DIR), so the test drives
 // the UI and isolates the profile with --user-data-dir.
 
 /** The unpacked app electron-builder wrote for this OS (`pnpm package --dir`). */
 function packagedApp(): string {
-  const override = process.env.FASTVIEW_PACKAGED_APP
+  const override = process.env.PANELYTH_PACKAGED_APP
   if (override) return override
   const release = join(desktopDir, "release")
   const candidates = {
-    win32: [join(release, "win-unpacked", "FastView.exe")],
+    win32: [join(release, "win-unpacked", "Panelyth.exe")],
     darwin: [`mac-${process.arch}`, "mac", "mac-arm64", "mac-x64"].map((d) =>
-      join(release, d, "FastView.app", "Contents", "MacOS", "FastView"),
+      join(release, d, "Panelyth.app", "Contents", "MacOS", "Panelyth"),
     ),
-    linux: [join(release, "linux-unpacked", "fastview")],
+    linux: [join(release, "linux-unpacked", "panelyth")],
   }[process.platform as "win32" | "darwin" | "linux"]
   const found = candidates?.find((p) => existsSync(p))
   if (!found) throw new Error(`no packaged app under ${release}; run \`pnpm package --dir\``)
@@ -33,16 +33,16 @@ test("packaged: open, preview, switch, list, copy, quit", async () => {
     files: 0,
     images: { count: 4, width: 800, height: 600 },
   })
-  const scratch = mkdtempSync(join(tmpdir(), "fastview-smoke-"))
-  const dst = mkdtempSync(join(tmpdir(), "fastview-smoke-dst-"))
+  const scratch = mkdtempSync(join(tmpdir(), "panelyth-smoke-"))
+  const dst = mkdtempSync(join(tmpdir(), "panelyth-smoke-dst-"))
   const app = await _electron.launch({
     executablePath: packagedApp(),
     args: [`--user-data-dir=${join(scratch, "user-data")}`],
     env: {
       ...(process.env as Record<string, string>),
-      FASTVIEW_CACHE_DIR: join(scratch, "cache"),
-      FASTVIEW_CONFIG_DIR: join(scratch, "config"),
-      FASTVIEW_COMMANDER: "1",
+      PANELYTH_CACHE_DIR: join(scratch, "cache"),
+      PANELYTH_CONFIG_DIR: join(scratch, "config"),
+      PANELYTH_COMMANDER: "1",
     },
   })
   let sidecarPid: number

@@ -29,7 +29,7 @@ const EncodingSample = "Grüße aus Köln — naïve café\r\nzweite Zeile\r\nth
 // GenerateText writes the text fixtures under root; a marker makes repeated
 // calls with the same spec a no-op (the 2 GB log is written once per machine).
 func GenerateText(root string, spec TextSpec) error {
-	marker := filepath.Join(root, ".fastview-fixture")
+	marker := filepath.Join(root, ".panelyth-fixture")
 	want := fmt.Sprintf("text %+v", spec)
 	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
 		return nil
@@ -128,8 +128,8 @@ func writeEncodings(root string) error {
 		"binary.bin":    binary,
 		"long-line.txt": long,
 		"empty.txt":     {},
-		"tool.cmd":      []byte("@echo fastview-test\r\n"),
-		"tool.sh":       []byte("#!/bin/sh\necho fastview-test\n"),
+		"tool.cmd":      []byte("@echo panelyth-test\r\n"),
+		"tool.sh":       []byte("#!/bin/sh\necho panelyth-test\n"),
 	}
 	for name, b := range files {
 		if err := os.WriteFile(filepath.Join(root, name), b, 0o644); err != nil {

@@ -12,22 +12,22 @@ import (
 	"strconv"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/events"
-	"fastview/sidecar/internal/find"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/jobs"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/meta"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/preview"
-	"fastview/sidecar/internal/query"
-	"fastview/sidecar/internal/rpc"
-	"fastview/sidecar/internal/scan"
-	"fastview/sidecar/internal/video"
-	"fastview/sidecar/internal/watch"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/events"
+	"panelyth/sidecar/internal/find"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/jobs"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/meta"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/preview"
+	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/scan"
+	"panelyth/sidecar/internal/video"
+	"panelyth/sidecar/internal/watch"
 )
 
 // Event channels (mirrors shared/contracts/src/events.ts).
@@ -39,7 +39,7 @@ const (
 )
 
 // DefaultCacheMaxBytes is the preview cache ceiling unless
-// FASTVIEW_CACHE_MAX_BYTES overrides it.
+// PANELYTH_CACHE_MAX_BYTES overrides it.
 const DefaultCacheMaxBytes = 2 << 30
 
 // indexService wires store, scans, sessions, watcher and events together.

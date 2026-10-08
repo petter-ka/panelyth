@@ -9,12 +9,12 @@ import {
   IPC_INVOKE,
   type EventChannel,
   type EventMessage,
-  type FastViewApi,
+  type PanelythApi,
   type JobStartParams,
   type RendererMethod,
   type RpcEnvelope,
   type SelectionDescriptor,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 const invoke = <R>(method: RendererMethod, params?: unknown): Promise<RpcEnvelope<R>> =>
   ipcRenderer.invoke(IPC_INVOKE, method, params) as Promise<RpcEnvelope<R>>
@@ -78,12 +78,12 @@ ipcRenderer.on(IPC_EVENT, (_event, message: EventMessage) => {
     try {
       listener(message.p as never)
     } catch (error) {
-      console.error("fastview event listener failed", error)
+      console.error("panelyth event listener failed", error)
     }
   })
 })
 
-const api: FastViewApi = {
+const api: PanelythApi = {
   app: {
     exit: () => invoke("app.exit", {}),
   },
@@ -234,4 +234,4 @@ if (process.argv.includes(DEV_METHODS_ARG)) {
   api.dev = { echo: (payload) => invoke("system.echo", { payload }) }
 }
 
-contextBridge.exposeInMainWorld("fastview", api)
+contextBridge.exposeInMainWorld("panelyth", api)

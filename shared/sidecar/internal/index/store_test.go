@@ -9,8 +9,8 @@ import (
 	"slices"
 	"testing"
 
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 func openTest(t *testing.T) (*Store, string) {

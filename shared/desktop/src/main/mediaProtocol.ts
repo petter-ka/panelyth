@@ -3,14 +3,14 @@ import type {
   FileResolveResult,
   MediaOpenResult,
   MediaResolveResult,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import { protocol } from "electron"
 import { randomBytes } from "node:crypto"
 import { createReadStream } from "node:fs"
 import { stat } from "node:fs/promises"
 import { Readable } from "node:stream"
 
-export const MEDIA_SCHEME = "fastview-media"
+export const MEDIA_SCHEME = "panelyth-media"
 
 interface MediaTarget {
   path: string
@@ -24,7 +24,7 @@ interface MediaTarget {
 
 /**
  * Opaque tokens for originals (ADR-0009, ARCHITECTURE-ANALYSIS §8). The
- * renderer only ever holds fastview-media://m/<token>; tokens map to paths
+ * renderer only ever holds panelyth-media://m/<token>; tokens map to paths
  * the sidecar validated, and the map is a bounded LRU.
  */
 export class MediaTokens {
@@ -54,9 +54,9 @@ export class MediaTokens {
   }
 }
 
-const URL_PATTERN = /^fastview-media:\/\/m\/([0-9a-f]{32})$/
+const URL_PATTERN = /^panelyth-media:\/\/m\/([0-9a-f]{32})$/
 
-/** Extracts the token from a fastview-media URL, or null for anything else. */
+/** Extracts the token from a panelyth-media URL, or null for anything else. */
 export function parseMediaUrl(url: string): string | null {
   return URL_PATTERN.exec(url)?.[1] ?? null
 }

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"fastview/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fileops"
 )
 
 // ErrPattern is returned for an unusable batch-rename pattern.

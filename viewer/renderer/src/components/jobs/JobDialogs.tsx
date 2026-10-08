@@ -1,5 +1,5 @@
-import type { JobItemError, SelectionDescriptor, Tag } from "@fastview/contracts"
-import { MAX_TAG_CHARS } from "@fastview/contracts"
+import type { JobItemError, SelectionDescriptor, Tag } from "@panelyth/contracts"
+import { MAX_TAG_CHARS } from "@panelyth/contracts"
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react"
 import { bridge } from "../../bridge"
 import {

@@ -29,7 +29,7 @@ import {
   toggleCursor,
   marksOf,
 } from "./marks"
-import { isMarked } from "@fastview/renderer-core"
+import { isMarked } from "@panelyth/renderer-core"
 import { toggleActivePanel, usePanelsStore, type Side } from "./panels"
 import { editCursor, openNewFile } from "./open"
 import { focusPanel, openLister, toggleQuickView, useViewersStore } from "./viewers"

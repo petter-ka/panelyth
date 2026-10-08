@@ -114,10 +114,10 @@ test.describe("commander listing (Stage C01)", () => {
 
   test("resizes columns and restores folders, sorts and widths after a restart", async () => {
     const root = mixedFolder()
-    const profile = mkdtempSync(join(tmpdir(), "fastview-e2e-profile-"))
+    const profile = mkdtempSync(join(tmpdir(), "panelyth-e2e-profile-"))
     const dirs = {
-      FASTVIEW_CONFIG_DIR: join(profile, "config"),
-      FASTVIEW_USER_DATA_DIR: join(profile, "user-data"),
+      PANELYTH_CONFIG_DIR: join(profile, "config"),
+      PANELYTH_USER_DATA_DIR: join(profile, "user-data"),
     }
     try {
       let { app } = await launch("commander", dirs)
@@ -154,7 +154,7 @@ test.describe("commander listing (Stage C01)", () => {
 
   test("shows not found, inline path errors and an empty folder", async () => {
     const root = mixedFolder()
-    const empty = mkdtempSync(join(tmpdir(), "fastview-c01-empty-"))
+    const empty = mkdtempSync(join(tmpdir(), "panelyth-c01-empty-"))
     const { app } = await launch("commander")
     try {
       const c = await commanderOf(app)
@@ -394,10 +394,10 @@ test.describe("switching with the shared context (Stage C01)", () => {
 
   test("a restart opens the last used app in the last folder", async () => {
     const root = mixedFolder()
-    const profile = mkdtempSync(join(tmpdir(), "fastview-e2e-profile-"))
+    const profile = mkdtempSync(join(tmpdir(), "panelyth-e2e-profile-"))
     const dirs = {
-      FASTVIEW_CONFIG_DIR: join(profile, "config"),
-      FASTVIEW_USER_DATA_DIR: join(profile, "user-data"),
+      PANELYTH_CONFIG_DIR: join(profile, "config"),
+      PANELYTH_USER_DATA_DIR: join(profile, "user-data"),
     }
     try {
       let { app, page } = await launch("", dirs)

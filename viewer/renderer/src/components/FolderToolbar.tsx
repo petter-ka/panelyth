@@ -1,5 +1,5 @@
-import type { Crumb, EntryKind, SortDirection, SortField, Tag } from "@fastview/contracts"
-import { Tooltip } from "@fastview/ui"
+import type { Crumb, EntryKind, SortDirection, SortField, Tag } from "@panelyth/contracts"
+import { Tooltip } from "@panelyth/ui"
 import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react"
 import { SEARCH_INPUT_ID } from "../app/shortcuts"
 import { bridge } from "../bridge"

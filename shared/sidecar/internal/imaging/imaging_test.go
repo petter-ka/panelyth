@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fastview/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/fixture"
 )
 
 func writeFile(t *testing.T, name string, data []byte) string {

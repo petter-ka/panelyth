@@ -1,6 +1,6 @@
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/preview
+pkg: panelyth/sidecar/internal/preview
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkFindCoverSources/media-32         	   13735	     87231 ns/op	   52654 B/op	     697 allocs/op
 BenchmarkFindCoverSources/media-32         	   10000	    117940 ns/op	   52688 B/op	     697 allocs/op
@@ -9,4 +9,4 @@ BenchmarkFindCoverSources/none-32          	    1358	    952718 ns/op	  436823 B
 BenchmarkFindCoverSources/none-32          	    1167	   1015555 ns/op	  436830 B/op	    6220 allocs/op
 BenchmarkFindCoverSources/none-32          	    1228	    994302 ns/op	  436989 B/op	    6220 allocs/op
 PASS
-ok  	fastview/sidecar/internal/preview	13.503s
+ok  	panelyth/sidecar/internal/preview	13.503s

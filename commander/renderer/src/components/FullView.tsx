@@ -1,6 +1,6 @@
-import type { ContentItem } from "@fastview/contracts"
-import { isMarked, usePageItem, type PageStore } from "@fastview/renderer-core"
-import { Tooltip, useInterfaceSizeStore, type InterfaceSize } from "@fastview/ui"
+import type { ContentItem } from "@panelyth/contracts"
+import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
+import { Tooltip, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
 import {
   columnOrderingFeature,
   columnPinningFeature,
@@ -87,7 +87,7 @@ const COLUMN_LABEL: Record<ColumnId, string> = {
   date: "Date",
   attr: "Attr",
 }
-const COLUMN_DRAG_TYPE = "application/x-fastview-column"
+const COLUMN_DRAG_TYPE = "application/x-panelyth-column"
 
 // TanStack owns sizing, visibility, ordering, pinning and the sort indicators.
 // Its row model holds only the virtual window's indexes; rows read their data

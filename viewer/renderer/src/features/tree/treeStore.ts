@@ -1,4 +1,4 @@
-import type { Crumb, Volume } from "@fastview/contracts"
+import type { Crumb, Volume } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge } from "../../bridge"
 import { describeError, useFolderStore } from "../folder/folderStore"

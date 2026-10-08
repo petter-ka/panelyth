@@ -1,4 +1,4 @@
-import { configureMedia, startViewerImageMonitoring } from "@fastview/media-ui"
+import { configureMedia, startViewerImageMonitoring } from "@panelyth/media-ui"
 import { bridge, isBridgeAvailable } from "../bridge"
 
 // The shared media components (ADR-0025, shared/media-ui) on the

@@ -11,12 +11,12 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/imaging"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/natsort"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/natsort"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Folder covers (Stage 08.6, ADR-0024): a folder tile shows up to MaxCovers

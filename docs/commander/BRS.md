@@ -1,6 +1,6 @@
-# BRS — FastView Commander Business Requirements Specification
+# BRS — Panelyth Commander Business Requirements Specification
 
-FastView Commander (working title) is the second app of the FastView product (ADR-0025). It runs next to the viewer
+Panelyth Commander (working title) is the second app of the Panelyth product (ADR-0025). It runs next to the viewer
 in the same shell and window, and a left app rail switches between them with shared state (ADR-0031,
 `docs/shared/APP-SWITCHING.md`). Requirements shared with the viewer (FR-20 design system, FR-21 packaging, FR-22 app
 switch and shared state, NFR-01–NFR-14) are in `docs/shared/REQUIREMENTS.md` and apply here. IDs in this document:
@@ -11,7 +11,7 @@ switch and shared state, NFR-01–NFR-14) are in `docs/shared/REQUIREMENTS.md` a
 
 A keyboard-first, dual-panel file manager for Windows, macOS and Linux in the style of Total Commander. It shows two
 folders side by side and moves, copies, compares, renames, packs and inspects files between them. It runs on the
-FastView platform: the Go sidecar, the Electron shell, the contracts and the design system.
+Panelyth platform: the Go sidecar, the Electron shell, the contracts and the design system.
 
 ## 2. Primary user outcome
 
@@ -274,7 +274,7 @@ panel and job progress are announced to screen readers.
 
 ## 7. Definition of success
 
-FastView Commander is successful when:
+Panelyth Commander is successful when:
 
 - both panels list large folders immediately and move the cursor without lag;
 - every core Total Commander workflow (navigate, mark, copy, move, rename, delete, find, pack, compare) works from the

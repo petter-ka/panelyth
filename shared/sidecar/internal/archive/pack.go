@@ -16,7 +16,7 @@ import (
 	"strings"
 	"sync"
 
-	"fastview/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fileops"
 )
 
 // PackItem is one marked entry: a file or folder packed under its name.

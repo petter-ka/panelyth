@@ -1,4 +1,4 @@
-import { SORT_FIELDS, type SortKey } from "@fastview/contracts"
+import { SORT_FIELDS, type SortKey } from "@panelyth/contracts"
 import type { TileSize } from "../tiles/layout"
 
 /**
@@ -18,9 +18,9 @@ export interface Workspace {
 }
 
 export const WORKSPACE_KEY = "workspace"
-const MIRROR_KEY = "fastview.workspace"
+const MIRROR_KEY = "panelyth.workspace"
 /** Stage 03/04 stored only the tile size, under its own key. */
-const LEGACY_TILE_SIZE_KEY = "fastview.tileSize"
+const LEGACY_TILE_SIZE_KEY = "panelyth.tileSize"
 
 export const DEFAULT_WORKSPACE: Workspace = {
   v: 1,

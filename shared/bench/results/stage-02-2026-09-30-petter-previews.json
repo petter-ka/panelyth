@@ -9,7 +9,7 @@
     "os": "windows"
   },
   "fixture": {
-    "dir": "C:\\Users\\hunki\\AppData\\Local\\Temp\\fastview-fixtures\\images-12mp-120",
+    "dir": "C:\\Users\\hunki\\AppData\\Local\\Temp\\panelyth-fixtures\\images-12mp-120",
     "sourceMP": 12,
     "spec": {
       "Count": 120,

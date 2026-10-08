@@ -101,7 +101,7 @@ name   name   name   name   name              name   name   name   name
 | Folder tiles open by id (`dir.openEntry`, new sidecar method; the renderer never builds paths) | `shared/sidecar/internal/app/library.go`, contracts, preload |
 | Temporary Stage 01–02 table removed | — |
 
-Also added: a main-process IPC call counter (`globalThis.__fastviewIpcCounts`, main only, not reachable from the renderer) that e2e tests use to count `preview.ensure` calls, and a debug-level log line per `preview.ensure` call in the sidecar.
+Also added: a main-process IPC call counter (`globalThis.__panelythIpcCounts`, main only, not reachable from the renderer) that e2e tests use to count `preview.ensure` calls, and a debug-level log line per `preview.ensure` call in the sidecar.
 
 ## Found and fixed while measuring
 
@@ -169,7 +169,7 @@ Startup: ready-to-show p50 233 ms, sidecar hello p50 117 ms, idle memory 337 MB 
 - During a fling, rows show loading placeholders until their page arrives (by design: scrolling never waits for data). On slow disks this is more visible. Stage P05 can tune prefetch distance by scroll velocity.
 - The benchmark scroll is programmatic; trackpad and wheel inertia on macOS and Linux are Stage P04 checks.
 - Multi-selection, context menus and the preview pane are Stage 05 and later; Enter on an image does nothing until the Stage 04 viewer.
-- A `fastview-thumb` image that fails twice shows the "unavailable" glyph until the folder is reopened.
+- A `panelyth-thumb` image that fails twice shows the "unavailable" glyph until the folder is reopened.
 
 ## Exit checklist
 

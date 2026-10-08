@@ -29,8 +29,8 @@ async function instrument(page: Page): Promise<void> {
     new PerformanceObserver((list) => {
       for (const e of list.getEntries()) longTasks.push(e.duration)
     }).observe({ type: "longtask" })
-    window.fastview!.onEvent("index.progress", () => events.progress++)
-    window.fastview!.onEvent("query.invalidated", () => events.invalidated++)
+    window.panelyth!.onEvent("index.progress", () => events.progress++)
+    window.panelyth!.onEvent("query.invalidated", () => events.invalidated++)
     let last = performance.now()
     const tick = (t: number): void => {
       frames.maxGap = Math.max(frames.maxGap, t - last)
@@ -56,7 +56,7 @@ test.describe("file index (Stage 01)", () => {
   test("indexes a 100k-file folder in batches without freezing the renderer", async () => {
     test.setTimeout(300_000)
     const fx = ensureFixture("flat-100k", { files: 100_000, nonMediaEvery: 10 })
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: fx.root })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: fx.root })
     try {
       await waitForReady(page)
       await instrument(page)
@@ -100,7 +100,7 @@ test.describe("file index (Stage 01)", () => {
   test("a recursive scan can be stopped and keeps what it found", async () => {
     test.setTimeout(300_000)
     const fx = ensureFixture("tree-50k", { files: 200, depth: 3, fanout: 6, nonMediaEvery: 10 })
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: fx.root })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: fx.root })
     try {
       await waitForReady(page)
       await page.getByLabel("Include subfolders").check()
@@ -118,8 +118,8 @@ test.describe("file index (Stage 01)", () => {
   test("reopening a folder reuses the existing index immediately", async () => {
     test.setTimeout(180_000)
     const fx = ensureFixture("flat-5k", { files: 5_000, nonMediaEvery: 10 })
-    const cache = mkdtempSync(join(tmpdir(), "fastview-cache-"))
-    const env = { FASTVIEW_TEST_DIALOG_PATH: fx.root, FASTVIEW_CACHE_DIR: cache }
+    const cache = mkdtempSync(join(tmpdir(), "panelyth-cache-"))
+    const env = { PANELYTH_TEST_DIALOG_PATH: fx.root, PANELYTH_CACHE_DIR: cache }
 
     const first = await launchApp(env)
     try {
@@ -136,9 +136,9 @@ test.describe("file index (Stage 01)", () => {
     try {
       await waitForReady(second.page)
       const reopened = await second.page.evaluate(async (path) => {
-        const dir = await window.fastview!.dir.open({ path, recursive: false })
+        const dir = await window.panelyth!.dir.open({ path, recursive: false })
         if (!dir.ok) throw new Error(dir.e.message)
-        const q = await window.fastview!.query.open({
+        const q = await window.panelyth!.query.open({
           dirId: dir.r.dirId,
           recursive: false,
           sort: [],
@@ -159,9 +159,9 @@ test.describe("file index (Stage 01)", () => {
   })
 
   test("the open folder updates when files are added", async () => {
-    const dir = mkdtempSync(join(tmpdir(), "fastview-watch-"))
+    const dir = mkdtempSync(join(tmpdir(), "panelyth-watch-"))
     for (const n of ["a.jpg", "b.png"]) writeFileSync(join(dir, n), "x")
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: dir })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -176,8 +176,8 @@ test.describe("file index (Stage 01)", () => {
   })
 
   test("a missing folder shows an actionable error", async () => {
-    const missing = join(tmpdir(), "fastview-does-not-exist-" + Date.now())
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: missing })
+    const missing = join(tmpdir(), "panelyth-does-not-exist-" + Date.now())
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: missing })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()

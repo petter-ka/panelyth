@@ -15,7 +15,7 @@
         "sizeBytes": 1013,
         "thumb": {
           "height": 48,
-          "url": "fastview-thumb://t/\u003ckey\u003e.jpg",
+          "url": "panelyth-thumb://t/\u003ckey\u003e.jpg",
           "width": 64
         }
       },
@@ -31,7 +31,7 @@
         "sizeBytes": 1279,
         "thumb": {
           "height": 48,
-          "url": "fastview-thumb://t/\u003ckey\u003e.jpg",
+          "url": "panelyth-thumb://t/\u003ckey\u003e.jpg",
           "width": 64
         }
       }

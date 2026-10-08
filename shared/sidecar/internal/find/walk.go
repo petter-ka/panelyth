@@ -10,9 +10,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
 )
 
 // Options tunes a walk; zero values get defaults.

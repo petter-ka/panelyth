@@ -1,9 +1,9 @@
 {
-  "name": "@fastview/ui",
+  "name": "@panelyth/ui",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "FastView design system shared by the viewer and the commander (ADR-0031)",
+  "description": "Panelyth design system shared by the viewer and the commander (ADR-0031)",
   "exports": {
     ".": "./src/index.ts",
     "./styles.css": "./src/styles.css"
@@ -13,7 +13,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastview/renderer-core": "workspace:*",
+    "@panelyth/renderer-core": "workspace:*",
     "@radix-ui/react-dialog": "1.1.23",
     "zustand": "5.0.15"
   },
@@ -22,7 +22,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
-    "@fastview/contracts": "workspace:*",
+    "@panelyth/contracts": "workspace:*",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",
     "@types/react": "19.3.0",

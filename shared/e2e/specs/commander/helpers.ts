@@ -11,7 +11,7 @@ export type Side = "left" | "right"
 
 /** A small mixed folder: two subfolders, images, a text file and a hidden file. */
 export function mixedFolder(): string {
-  const root = mkdtempSync(join(tmpdir(), "fastview-c01-"))
+  const root = mkdtempSync(join(tmpdir(), "panelyth-c01-"))
   mkdirSync(join(root, "alpha"))
   mkdirSync(join(root, "beta"))
   writeFileSync(join(root, "alpha", "inner.txt"), "x")
@@ -24,7 +24,7 @@ export function mixedFolder(): string {
 }
 
 export function folderOf(files: number): string {
-  const root = mkdtempSync(join(tmpdir(), `fastview-c01-${files}-`))
+  const root = mkdtempSync(join(tmpdir(), `panelyth-c01-${files}-`))
   for (let i = 0; i < files; i++)
     writeFileSync(join(root, `f${String(i).padStart(5, "0")}.txt`), "")
   return root
@@ -36,8 +36,8 @@ export async function launch(
   dirs: Record<string, string> = {},
 ) {
   const launched = await launchApp({
-    FASTVIEW_COMMANDER: "1",
-    FASTVIEW_START_APP: start,
+    PANELYTH_COMMANDER: "1",
+    PANELYTH_START_APP: start,
     ...dirs,
   })
   await waitForReady(launched.page)

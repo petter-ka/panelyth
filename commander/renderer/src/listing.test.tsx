@@ -1,5 +1,5 @@
-import { ENTRY_ATTRS, type Crumb } from "@fastview/contracts"
-import { useInterfaceSizeStore } from "@fastview/ui"
+import { ENTRY_ATTRS, type Crumb } from "@panelyth/contracts"
+import { useInterfaceSizeStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"
@@ -72,7 +72,7 @@ beforeEach(() => {
 afterEach(() => {
   stop?.()
   stop = null
-  delete window.fastview
+  delete window.panelyth
   vi.useRealTimers()
   vi.restoreAllMocks()
 })

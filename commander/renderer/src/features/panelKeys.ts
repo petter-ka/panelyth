@@ -1,4 +1,4 @@
-import { eventChord } from "@fastview/renderer-core"
+import { eventChord } from "@panelyth/renderer-core"
 import type { KeyboardEvent } from "react"
 import { runPanelAction } from "./commands"
 import { actionFor } from "./keymap"

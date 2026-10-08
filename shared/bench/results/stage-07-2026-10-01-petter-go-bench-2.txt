@@ -1,6 +1,6 @@
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/index
+pkg: panelyth/sidecar/internal/index
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkSearch100k/common-32         	      27	  41830589 ns/op	 1668774 B/op	   55657 allocs/op
 BenchmarkSearch100k/common-32         	      28	  41260514 ns/op	 1668405 B/op	   55651 allocs/op
@@ -52,10 +52,10 @@ database/sql.(*DB).retry(0x16119e245980?, 0x16119e245938)
 	C:/Program Files/Go/src/database/sql/sql.go:1581 +0x42 fp=0x16119e245910 sp=0x16119e2458c8 pc=0x7ff7c644c762
 database/sql.(*DB).QueryContext(0x16119e2e6e40?, {0x7ff7c6a2bf40?, 0x7ff7c6ac45e0?}, {0x16119e2dc300?, 0x2?}, {0x1611a04d8200?, 0x0?, 0x16119e5de720?})
 	C:/Program Files/Go/src/database/sql/sql.go:1746 +0x98 fp=0x16119e2459a0 sp=0x16119e245910 pc=0x7ff7c644d718
-fastview/sidecar/internal/index.(*Store).QueryIDs(0x16119e2ea060, {0x7ff7c6a2bf40, 0x7ff7c6ac45e0}, {0x1, 0x0, {0x16119e2223c0, 0x1, 0x1}, {0x0, 0x0, ...}, ...}, ...)
-	C:/work/viewer/native/fastview-go/internal/index/query.go:269 +0xd88 fp=0x16119e245d48 sp=0x16119e2459a0 pc=0x7ff7c666d8e8
-fastview/sidecar/internal/index.BenchmarkSearch100k.func1(0x16119e3cc908)
-	C:/work/viewer/native/fastview-go/internal/index/query_test.go:212 +0x225 fp=0x16119e245f10 sp=0x16119e245d48 pc=0x7ff7c667dae5
+panelyth/sidecar/internal/index.(*Store).QueryIDs(0x16119e2ea060, {0x7ff7c6a2bf40, 0x7ff7c6ac45e0}, {0x1, 0x0, {0x16119e2223c0, 0x1, 0x1}, {0x0, 0x0, ...}, ...}, ...)
+	C:/work/viewer/native/panelyth-go/internal/index/query.go:269 +0xd88 fp=0x16119e245d48 sp=0x16119e2459a0 pc=0x7ff7c666d8e8
+panelyth/sidecar/internal/index.BenchmarkSearch100k.func1(0x16119e3cc908)
+	C:/work/viewer/native/panelyth-go/internal/index/query_test.go:212 +0x225 fp=0x16119e245f10 sp=0x16119e245d48 pc=0x7ff7c667dae5
 testing.(*B).runN(0x16119e3cc908, 0x1)
 	C:/Program Files/Go/src/testing/benchmark.go:219 +0x190 fp=0x16119e245fa0 sp=0x16119e245f10 pc=0x7ff7c638be10
 testing.(*B).run1.func1()
@@ -568,8 +568,8 @@ testing.(*B).run(0x16119e3cc608?)
 	C:/Program Files/Go/src/testing/benchmark.go:288 +0x5b fp=0x16119e3c99e8 sp=0x16119e3c99b8 pc=0x7ff7c638c3db
 testing.(*B).Run(0x16119e3cc308, {0x7ff7c669238f?, 0x1?}, 0x16119e39e2d0)
 	C:/Program Files/Go/src/testing/benchmark.go:868 +0x4df fp=0x16119e3c9ab8 sp=0x16119e3c99e8 pc=0x7ff7c638eb1f
-fastview/sidecar/internal/index.BenchmarkSearch100k(0x16119e3cc308)
-	C:/work/viewer/native/fastview-go/internal/index/query_test.go:210 +0x7f9 fp=0x16119e3c9f10 sp=0x16119e3c9ab8 pc=0x7ff7c66773f9
+panelyth/sidecar/internal/index.BenchmarkSearch100k(0x16119e3cc308)
+	C:/work/viewer/native/panelyth-go/internal/index/query_test.go:210 +0x7f9 fp=0x16119e3c9f10 sp=0x16119e3c9ab8 pc=0x7ff7c66773f9
 testing.(*B).runN(0x16119e3cc308, 0x1)
 	C:/Program Files/Go/src/testing/benchmark.go:219 +0x190 fp=0x16119e3c9fa0 sp=0x16119e3c9f10 pc=0x7ff7c638be10
 testing.(*B).run1.func1()
@@ -607,15 +607,15 @@ runtime.goexit({})
 created by database/sql.OpenDB in goroutine 50
 	C:/Program Files/Go/src/database/sql/sql.go:846 +0x135
 exit status 2
-FAIL	fastview/sidecar/internal/index	10.015s
+FAIL	panelyth/sidecar/internal/index	10.015s
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/library
+pkg: panelyth/sidecar/internal/library
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkFavorite100k-32    	       6	 313910733 ns/op	 7667390 B/op	   14585 allocs/op
 BenchmarkFavorite100k-32    	--- FAIL: BenchmarkFavorite100k-32
     meta_test.go:205: database disk image is malformed (11)
 BenchmarkFavorite100k-32    	       6	 309102800 ns/op	 7762796 B/op	   14565 allocs/op
 PASS
-ok  	fastview/sidecar/internal/library	6.198s
+ok  	panelyth/sidecar/internal/library	6.198s
 FAIL

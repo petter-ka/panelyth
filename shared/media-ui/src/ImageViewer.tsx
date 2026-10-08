@@ -1,4 +1,4 @@
-import type { Thumb } from "@fastview/contracts"
+import type { Thumb } from "@panelyth/contracts"
 import { useEffect, useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react"
 import { requestOriginal, retry, useViewerImage, type FitLane } from "./viewerImages"
 import {
@@ -293,8 +293,8 @@ export function ImageViewer({
             {failCode === "NOT_FOUND"
               ? "The file was moved or deleted."
               : failCode === "PERMISSION_DENIED"
-                ? "FastView doesn't have permission to read this file."
-                : "The file may be damaged or in a format FastView can't read."}
+                ? "Panelyth doesn't have permission to read this file."
+                : "The file may be damaged or in a format Panelyth can't read."}
           </p>
           <button
             type="button"

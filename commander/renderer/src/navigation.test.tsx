@@ -1,5 +1,5 @@
-import type { Crumb } from "@fastview/contracts"
-import { useInterfaceSizeStore } from "@fastview/ui"
+import type { Crumb } from "@panelyth/contracts"
+import { useInterfaceSizeStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"

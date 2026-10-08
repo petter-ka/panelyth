@@ -1,5 +1,5 @@
 import { BrowserWindow } from "electron"
-import { DEV_METHODS_ARG } from "@fastview/contracts"
+import { DEV_METHODS_ARG } from "@panelyth/contracts"
 import { perfMark } from "./perf"
 import { hardenWebContents } from "./security"
 

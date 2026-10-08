@@ -9,10 +9,10 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/jobs"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/jobs"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage C04: new folders, trash availability, destinations by folder id,

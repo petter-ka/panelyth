@@ -107,7 +107,7 @@ shell.edit({ entryId })            // commander, F4: the editor from commander.s
 fs.mkfile({ parentDirId, name })   // commander, Shift+F4 → { entryId, created }
 ```
 
-> As built (Stage C05, ADR-0027): `file.open` mints a read-only `fastview-media://m/<token>` for any file kind (a
+> As built (Stage C05, ADR-0027): `file.open` mints a read-only `panelyth-media://m/<token>` for any file kind (a
 > folder is refused); files that are not media are served as `application/octet-stream` with `nosniff`. The token is
 > bound to the commander's origin, and only the commander's CSP allows `fetch()` of token URLs (`connect-src`), so the
 > viewer can never read a token's bytes. Main resolves entries through the main-only sidecar methods `file.resolve`
@@ -115,7 +115,7 @@ fs.mkfile({ parentDirId, name })   // commander, Shift+F4 → { entryId, created
 > from the viewer opens folders and media only, never a program; from the commander it opens any kind, and a program
 > only with `allowProgram` (otherwise `PERMISSION_DENIED` with `details.reason: "program"`, which the commander answers
 > per its "Run programs with Enter" setting). `shell.edit` starts the editor without a shell; under
-> `FASTVIEW_TEST_SHELL=record` both are recorded instead.
+> `PANELYTH_TEST_SHELL=record` both are recorded instead.
 
 ## Events
 

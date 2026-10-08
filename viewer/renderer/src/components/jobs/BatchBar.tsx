@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 import {
   askTags,
   setFavorite,

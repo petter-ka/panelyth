@@ -13,11 +13,11 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/scan"
 )
 
 var ctx = context.Background()

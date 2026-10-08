@@ -23,9 +23,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"fastview/sidecar/internal/find"
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/index"
+	"panelyth/sidecar/internal/find"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/index"
 )
 
 type nameRun struct {
@@ -63,7 +63,7 @@ type result struct {
 }
 
 func main() {
-	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "fastview-fixtures"), "fixture root")
+	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "panelyth-fixtures"), "fixture root")
 	out := flag.String("out", "", "write the JSON result here (default stdout)")
 	runs := flag.Int("runs", 3, "runs per measurement")
 	only := flag.String("only", "", "run one part: name, content or cancel")
@@ -263,7 +263,7 @@ func sampleHeap() func() float64 {
 
 // genContent writes count text files of size bytes (numbered log lines).
 func genContent(root string, count int, size int64) error {
-	marker := filepath.Join(root, ".fastview-fixture")
+	marker := filepath.Join(root, ".panelyth-fixture")
 	want := fmt.Sprintf("content %d x %d", count, size)
 	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
 		return nil

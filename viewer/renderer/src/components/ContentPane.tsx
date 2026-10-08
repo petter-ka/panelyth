@@ -35,10 +35,10 @@ function Body() {
     return (
       <EmptyState
         tone="danger"
-        title="The FastView backend stopped"
+        title="The Panelyth backend stopped"
         description={
           lastError ??
-          "The background service could not be started. Restart FastView; details are in the log."
+          "The background service could not be started. Restart Panelyth; details are in the log."
         }
       />
     )

@@ -17,7 +17,7 @@ function writeResult(result: object): void {
 const nav = (page: Page) => page.getByRole("toolbar", { name: "Navigation" })
 
 async function openVia(dialogPath: string, env: Record<string, string> = {}) {
-  const launched = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: dialogPath, ...env })
+  const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dialogPath, ...env })
   await waitForReady(launched.page)
   await nav(launched.page).getByRole("button", { name: "Open folder…" }).click()
   return launched
@@ -29,8 +29,8 @@ const folderPath = (page: Page) =>
 const shellLog = (app: ElectronApplication) =>
   app.evaluate(
     () =>
-      (globalThis as { __fastviewShellLog?: { action: string; value: string }[] })
-        .__fastviewShellLog ?? [],
+      (globalThis as { __panelythShellLog?: { action: string; value: string }[] })
+        .__panelythShellLog ?? [],
   )
 
 /** Collects long tasks in the renderer until `stop` resolves. */
@@ -83,7 +83,7 @@ test.describe("navigation", () => {
 test.describe("sidebar tree", () => {
   test("a folder with 10,000 subfolders expands lazily without freezing", async () => {
     test.setTimeout(180_000)
-    const base = join(tmpdir(), "fastview-fixtures", "subdirs-10k")
+    const base = join(tmpdir(), "panelyth-fixtures", "subdirs-10k")
     const many = join(base, "many")
     if (!existsSync(join(base, ".done"))) {
       for (let i = 0; i < 10_000; i++)
@@ -192,10 +192,10 @@ test.describe("workspace", () => {
   test("pane resize is smooth and the workspace survives a restart", async () => {
     test.setTimeout(120_000)
     const fx = ensureFixture("flat-10k", { files: 10_000, nonMediaEvery: 10 })
-    const config = mkdtempSync(join(tmpdir(), "fastview-e2e-config-"))
+    const config = mkdtempSync(join(tmpdir(), "panelyth-e2e-config-"))
     const first = await openVia(fx.root, {
-      FASTVIEW_CONFIG_DIR: config,
-      FASTVIEW_USER_DATA_DIR: mkdtempSync(join(tmpdir(), "fastview-e2e-ud-")),
+      PANELYTH_CONFIG_DIR: config,
+      PANELYTH_USER_DATA_DIR: mkdtempSync(join(tmpdir(), "panelyth-e2e-ud-")),
     })
     let sidebarWidth!: number
     try {
@@ -243,8 +243,8 @@ test.describe("workspace", () => {
 
     // New Electron profile (empty localStorage): only library.db remembers.
     const second = await launchApp({
-      FASTVIEW_CONFIG_DIR: config,
-      FASTVIEW_USER_DATA_DIR: mkdtempSync(join(tmpdir(), "fastview-e2e-ud-")),
+      PANELYTH_CONFIG_DIR: config,
+      PANELYTH_USER_DATA_DIR: mkdtempSync(join(tmpdir(), "panelyth-e2e-ud-")),
     })
     try {
       const { page } = second

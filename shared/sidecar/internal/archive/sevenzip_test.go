@@ -123,10 +123,10 @@ func writeFake(t *testing.T, name string, lines ...string) string {
 }
 
 func TestSevenZipWithoutTheTool(t *testing.T) {
-	t.Setenv("FASTVIEW_7Z", "off")
+	t.Setenv("PANELYTH_7Z", "off")
 	tool := LocateTool(os.Getenv)
 	if tool.Available() {
-		t.Fatal("FASTVIEW_7Z=off still found a tool")
+		t.Fatal("PANELYTH_7Z=off still found a tool")
 	}
 	p := writeFake(t, "a.7z", "x.txt|x")
 	if _, err := Read(context.Background(), p, Format7z, tool); !errors.Is(err, ErrNoTool) {

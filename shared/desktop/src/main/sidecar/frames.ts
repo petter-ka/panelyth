@@ -1,4 +1,4 @@
-import { MAX_FRAME_BYTES } from "@fastview/contracts"
+import { MAX_FRAME_BYTES } from "@panelyth/contracts"
 
 const HEADER_BYTES = 4
 

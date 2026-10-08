@@ -6,8 +6,8 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/imaging"
-	"fastview/sidecar/internal/index"
+	"panelyth/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/index"
 )
 
 // Cleaner enforces the cache size ceiling (LRU) and removes orphan files,

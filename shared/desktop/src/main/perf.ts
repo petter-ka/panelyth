@@ -23,4 +23,4 @@ export function perfMarks(): Readonly<Partial<Record<PerfMarkName, number>>> {
 
 // Exposed on globalThis for the benchmark harness; main process only, never
 // reachable from the renderer.
-;(globalThis as { __fastviewPerf?: () => typeof marks }).__fastviewPerf = () => ({ ...marks })
+;(globalThis as { __panelythPerf?: () => typeof marks }).__panelythPerf = () => ({ ...marks })

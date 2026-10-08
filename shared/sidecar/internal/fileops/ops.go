@@ -12,7 +12,7 @@ import (
 
 // PartialSuffix marks unfinished copies. The leading dot keeps them out of
 // the index (hidden-entry rule); startup recovery removes leftovers.
-const PartialSuffix = ".fastview-partial"
+const PartialSuffix = ".panelyth-partial"
 
 // Item error codes (mirror shared/contracts JobItemErrorCode).
 const (

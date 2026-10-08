@@ -1,4 +1,4 @@
-import { MAX_RENAME_PATTERN_CHARS } from "@fastview/contracts"
+import { MAX_RENAME_PATTERN_CHARS } from "@panelyth/contracts"
 
 // Batch-rename preview. Mirrors shared/sidecar/internal/jobs/pattern.go:
 // {name} is the original name without its extension, {n} / {n:000} a

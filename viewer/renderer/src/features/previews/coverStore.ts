@@ -5,8 +5,8 @@ import type {
   PreviewPriority,
   PreviewProfile,
   Thumb,
-} from "@fastview/contracts"
-import { MAX_COVER_DIRS } from "@fastview/contracts"
+} from "@panelyth/contracts"
+import { MAX_COVER_DIRS } from "@panelyth/contracts"
 import { useSyncExternalStore } from "react"
 import { bridge, isBridgeAvailable } from "../../bridge"
 

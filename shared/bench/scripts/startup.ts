@@ -2,7 +2,7 @@
 // throughput and shutdown latency. Runs the production build (`pnpm build`).
 //
 //   pnpm bench:startup            (from repo root; builds first)
-//   RUNS=20 pnpm --filter @fastview/bench startup
+//   RUNS=20 pnpm --filter @panelyth/bench startup
 //
 // Writes bench/results/stage-00-<date>-<host>.json. Never fabricates values:
 // anything that could not be measured is recorded as null.
@@ -13,12 +13,12 @@ import { cpus, hostname, platform, release, tmpdir, totalmem } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { resultPath } from "../../../scripts/results.mjs"
-import type { FastViewApi, SidecarStatus } from "@fastview/contracts"
+import type { PanelythApi, SidecarStatus } from "@panelyth/contracts"
 import { _electron, type ElectronApplication, type Page } from "playwright"
 
 declare global {
   interface Window {
-    fastview?: FastViewApi
+    panelyth?: PanelythApi
   }
 }
 
@@ -52,17 +52,17 @@ function stats(values: number[]) {
 }
 
 async function launch(extraEnv: Record<string, string> = {}) {
-  const scratch = mkdtempSync(join(tmpdir(), "fastview-bench-"))
+  const scratch = mkdtempSync(join(tmpdir(), "panelyth-bench-"))
   const started = performance.now()
   const app = await _electron.launch({
     executablePath: electronPath,
     args: [desktopDir],
     env: {
       ...(process.env as Record<string, string>),
-      FASTVIEW_CACHE_DIR: join(scratch, "cache"),
-      FASTVIEW_CONFIG_DIR: join(scratch, "config"),
-      FASTVIEW_USER_DATA_DIR: join(scratch, "user-data"),
-      FASTVIEW_RENDERER_URL: "",
+      PANELYTH_CACHE_DIR: join(scratch, "cache"),
+      PANELYTH_CONFIG_DIR: join(scratch, "config"),
+      PANELYTH_USER_DATA_DIR: join(scratch, "user-data"),
+      PANELYTH_RENDERER_URL: "",
       ...extraEnv,
     },
   })
@@ -72,7 +72,7 @@ async function launch(extraEnv: Record<string, string> = {}) {
 
 async function status(page: Page): Promise<SidecarStatus> {
   return page.evaluate(async () => {
-    const res = await window.fastview!.sidecar.getStatus()
+    const res = await window.panelyth!.sidecar.getStatus()
     if (!res.ok) throw new Error(res.e.message)
     return res.r
   })
@@ -153,7 +153,7 @@ async function startupRuns() {
     let main: MainMarks = {}
     for (let tries = 0; tries < 200 && main["ready-to-show"] === undefined; tries++) {
       main = await app.evaluate(
-        () => (globalThis as { __fastviewPerf?: () => MainMarks }).__fastviewPerf?.() ?? {},
+        () => (globalThis as { __panelythPerf?: () => MainMarks }).__panelythPerf?.() ?? {},
       )
       if (main["ready-to-show"] === undefined) await sleep(10)
     }
@@ -191,7 +191,7 @@ async function startupRuns() {
 }
 
 async function steadyState() {
-  const { app, page } = await launch({ FASTVIEW_DEV_METHODS: "1" })
+  const { app, page } = await launch({ PANELYTH_DEV_METHODS: "1" })
   const s = await waitReady(page)
   await sleep(IDLE_MS)
 
@@ -206,16 +206,16 @@ async function steadyState() {
   const sidecarKb = s.pid !== null ? processMemoryKb(s.pid) : null
   const electronKb = metrics.reduce((sum, m) => sum + m.workingSetKb, 0)
   const info = await page.evaluate(async () => {
-    const r = await window.fastview!.system.info()
+    const r = await window.panelyth!.system.info()
     return r.ok ? r.r : null
   })
 
   const pingSeq = await page.evaluate(async (n) => {
     const out: number[] = []
-    for (let i = 0; i < 50; i++) await window.fastview!.system.ping() // warm-up
+    for (let i = 0; i < 50; i++) await window.panelyth!.system.ping() // warm-up
     for (let i = 0; i < n; i++) {
       const t = performance.now()
-      const r = await window.fastview!.system.ping()
+      const r = await window.panelyth!.system.ping()
       out.push(performance.now() - t)
       if (!r.ok) throw new Error(r.e.message)
     }
@@ -233,7 +233,7 @@ async function steadyState() {
           while (next < n) {
             next++
             const t = performance.now()
-            const r = await window.fastview!.system.ping()
+            const r = await window.panelyth!.system.ping()
             out.push(performance.now() - t)
             if (!r.ok) throw new Error(r.e.message)
           }
@@ -250,7 +250,7 @@ async function steadyState() {
       const out: number[] = []
       for (let i = 0; i < n; i++) {
         const t = performance.now()
-        const r = await window.fastview!.dev!.echo(payload)
+        const r = await window.panelyth!.dev!.echo(payload)
         out.push(performance.now() - t)
         if (!r.ok || r.r.payload.length !== size) throw new Error("echo failed")
       }
@@ -287,7 +287,7 @@ async function steadyState() {
 
 /**
  * Idle working set of an empty sandboxed Electron window (bench/empty-electron),
- * measured the same way. FastView's memory budget is the delta over this
+ * measured the same way. Panelyth's memory budget is the delta over this
  * floor, because the floor is Electron's and varies by OS and version.
  */
 async function emptyElectronBaseline() {

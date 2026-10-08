@@ -1,5 +1,5 @@
-import type { SidecarState } from "@fastview/contracts"
-import { THEME_OPTIONS, Tooltip, useThemeStore } from "@fastview/ui"
+import type { SidecarState } from "@panelyth/contracts"
+import { THEME_OPTIONS, Tooltip, useThemeStore } from "@panelyth/ui"
 import { useCarryNotice } from "../features/carry"
 import { useFilesStore } from "../features/files"
 import { useSidecarStore } from "../features/sidecar"

@@ -3,7 +3,7 @@
 ## Status
 
 Accepted (2026-10-05). Product direction from the owner: a Total Commander-style file manager is built beside the
-FastView viewer.
+Panelyth viewer.
 
 **Partly superseded by ADR-0031 (same day).** The owner then asked for an in-app switch with shared state, so both apps
 run in **one shell, one window and one sidecar** with shared data. Superseded here: "Two apps, one platform, one
@@ -13,8 +13,8 @@ IDs, and the shared packages `packages/ui` and `packages/renderer-core`.
 
 ## Context
 
-- FastView was built as one app: the Electron shell (`apps/desktop`), the React renderer (`apps/renderer`),
-  `packages/contracts` and the Go sidecar (`native/fastview-go`). Most of it is not viewer-specific:
+- Panelyth was built as one app: the Electron shell (`apps/desktop`), the React renderer (`apps/renderer`),
+  `packages/contracts` and the Go sidecar (`native/panelyth-go`). Most of it is not viewer-specific:
   - sidecar: scanner, index, query sessions, selection descriptors, jobs, watcher, preview cache, decoders, library;
   - Electron main: sidecar supervision, IPC router and validation, protocols, security, logging;
   - renderer: design system, UI primitives, bridge, keymap, theme, settings and sidecar stores.
@@ -34,7 +34,7 @@ IDs, and the shared packages `packages/ui` and `packages/renderer-core`.
 
 > Superseded by ADR-0031: one shell hosts both apps, one sidecar serves both, and the data is shared.
 
-- **FastView** (the viewer, existing) and **FastView Commander** (working title) are separate Electron apps. Each has
+- **Panelyth** (the viewer, existing) and **Panelyth Commander** (working title) are separate Electron apps. Each has
   its own window, main entry, preload, renderer, settings, installer and release cadence.
 - They share the Go sidecar binary, `packages/contracts` and the shared packages that Stage P01 extracts: Electron
   main building blocks, the design system and UI primitives, and the renderer core (bridge, sidecar/theme/keymap/settings
@@ -47,8 +47,8 @@ IDs, and the shared packages `packages/ui` and `packages/renderer-core`.
 
   | App | Cache root (`index.db`, previews) | Config root (`library.db`) |
   |---|---|---|
-  | Viewer | `<UserCacheDir>/FastView/` (unchanged) | `<UserConfigDir>/FastView/` (unchanged) |
-  | Commander | `<UserCacheDir>/FastView Commander/` | `<UserConfigDir>/FastView Commander/` |
+  | Viewer | `<UserCacheDir>/Panelyth/` (unchanged) | `<UserConfigDir>/Panelyth/` (unchanged) |
+  | Commander | `<UserCacheDir>/Panelyth Commander/` | `<UserConfigDir>/Panelyth Commander/` |
 
   Two sidecars never write one SQLite file, so ADR-0016's one-writer rule holds per process, and the viewer's data
   stays where it is. Sharing the preview cache between the apps is a later option; it needs cross-process cleanup
@@ -79,7 +79,7 @@ packages/contracts                                 wire types, guards, golden fi
 packages/desktop-core                              sidecar process, RPC client, IPC router, protocols, security
 packages/ui                                        tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice
 packages/renderer-core                             bridge, page store, selection algebra, keymap, theme, settings
-native/fastview-go                                 one sidecar module, app profiles
+native/panelyth-go                                 one sidecar module, app profiles
 ```
 
 The rename of the viewer's packages is mechanical and lands in one commit with every test green.
@@ -116,7 +116,7 @@ It duplicates the platform, and every fix would have to be ported by hand.
 
 ## Open points (decided in Stage P01)
 
-- Package boundaries and names (`@fastview/desktop-core`, `@fastview/ui`, `@fastview/renderer-core`).
+- Package boundaries and names (`@panelyth/desktop-core`, `@panelyth/ui`, `@panelyth/renderer-core`).
 - Shared React packages ship as TypeScript source bundled by each app's Vite build (the `packages/contracts` pattern,
   ADR-0013), unless P01 measures a reason to prebuild them.
 - The final product name of the commander.

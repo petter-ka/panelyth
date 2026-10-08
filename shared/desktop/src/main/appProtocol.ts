@@ -54,7 +54,7 @@ export function resolveInside(root: string, pathname: string): string | null {
 }
 
 /**
- * Serves each app's built renderer from its own host: app://fastview/ for the
+ * Serves each app's built renderer from its own host: app://panelyth/ for the
  * viewer, app://commander/ for the commander (ADR-0031). distDirs maps host → dir.
  */
 export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): void {

@@ -6,10 +6,10 @@ import (
 	"io/fs"
 	"path/filepath"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/scan"
 )
 
 // KindDirSize calculates folder sizes (Stage C02): the bytes of every file

@@ -7,7 +7,7 @@
 import { readFile, rm, stat } from "node:fs/promises"
 import { EOL } from "node:os"
 import { basename, isAbsolute } from "node:path"
-import type { Place, PlaceId, SidecarMethodMap } from "@fastview/contracts"
+import type { Place, PlaceId, SidecarMethodMap } from "@panelyth/contracts"
 import type { MainHandlers } from "./ipc/router"
 import { RpcError } from "./sidecar/RpcClient"
 
