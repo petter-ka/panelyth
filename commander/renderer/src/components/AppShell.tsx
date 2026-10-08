@@ -147,11 +147,15 @@ export function AppShell() {
     }
   }, [])
 
-  // Shown again by the app switch: focus the active panel.
+  // Shown again by the app switch: focus the active panel, unless the user
+  // is already typing in a field here (a slow start can report "shown"
+  // after a path is being typed, and the blur would close the path editor).
   useEffect(() => {
     if (!isBridgeAvailable()) return
     return bridge.on("app.visibility", ({ app, visible }) => {
-      if (app === "commander" && visible) lists.current[usePanelsStore.getState().active]?.focus()
+      if (app !== "commander" || !visible) return
+      if (document.activeElement instanceof HTMLInputElement) return
+      lists.current[usePanelsStore.getState().active]?.focus()
     })
   }, [])
 

@@ -160,6 +160,18 @@ describe("listing (Stage C01)", () => {
     expect(useListingStore.getState().left.cursor).toBe(before + 2)
   })
 
+  it("being shown does not take the focus from a path being typed", async () => {
+    const fake = await start()
+    await waitFor(() => expect(rows("left").length).toBeGreaterThan(0))
+    await act(async () => fireEvent.click(screen.getByTestId("path-right")))
+    const input = screen.getByRole("textbox", { name: "Path" })
+    input.focus()
+    fireEvent.change(input, { target: { value: "C:\\big" } })
+    await act(async () => fake.emit("app.visibility", { app: "commander", visible: true }))
+    expect(screen.getByRole("textbox", { name: "Path" })).toHaveFocus()
+    expect(screen.getByRole("textbox", { name: "Path" })).toHaveValue("C:\\big")
+  })
+
   it("moves one cursor with arrows, PgUp/PgDn and Home/End", async () => {
     await start()
     await waitFor(() => expect(rows("left").length).toBeGreaterThan(5))

@@ -108,9 +108,12 @@ not run by hand here.
   pause point. The fileops test checks the clone itself (complete, full progress, same bytes); the jobs pause test
   forces the streaming copy on macOS (`fileops.ForcePortableCopy`).
 - Linux runner: the C07 archive scenario pressed F8 before closing the lister had returned the focus to the panel;
-  the spec waits for the focus. Timing budgets are set for the reference machine; on the shared runners the C03
-  tab switch measured 76 ms (budget 50) and the C06 quick filter 350 ms (budget 300). Under `CI` a budget's gate is
-  twice the budget (`budgetGate`, `shared/e2e/launch.ts`); the measured values are recorded either way.
+  the spec waits for the focus. Timing budgets are set for the reference machine; the shared runners missed them by
+  2-4x (Linux: C03 tab switch 76 ms, budget 50; Windows: C06 find first result 1,327 ms, budget 300; macOS: tab
+  switch 168 ms). A doubled CI gate was tried first and was not enough. Timing and long-task budgets now go through
+  `expectWithinBudget` (`shared/e2e/launch.ts`): they fail on the reference machine and developer machines, and under
+  `CI` an over-budget value is a GitHub warning annotation. Structural checks (bounded mounted rows, heap growth, the
+  dead drive never blocking) stay hard everywhere. Budgets are measured on the reference machine (P05).
 
 ### First macOS e2e run
 
@@ -122,6 +125,14 @@ not run by hand here.
 - Specs: the C04 large-file copy completes at once on APFS (a clone), so it is paused only while still running (the
   cancelled second copy already allowed this); the shortcut list shows "⌘I" on macOS; Ctrl+click is a right-click on
   macOS, so the C02 spec clicks with Cmd there (`ControlOrMeta`). Plain Ctrl key presses already count as Mod on macOS.
+
+### First Windows e2e run
+
+- **The path editor closed while typing** (commander, all platforms): a late "app shown" event focused the panel's
+  list, the path text box lost focus and its editor closed (the dead-network-drive spec: a slow start, then
+  `goTo` found no text box). Being shown no longer takes the focus from a text field (`listing.test.tsx`).
+- `library.db` stays locked for a moment after the app closes on Windows: the C01 specs remove their profile with
+  retries, as the C03 specs already did.
 
 ### Linux results
 

@@ -4,6 +4,7 @@ import { expect, test, type ElectronApplication } from "@playwright/test"
 import {
   commanderEnv,
   commanderPage,
+  expectWithinBudget,
   launchApp,
   repoRoot,
   shellState,
@@ -103,7 +104,7 @@ test.describe("app switch (ADR-0031)", () => {
       }
       writeResult(result)
       test.info().annotations.push({ type: "metrics", description: JSON.stringify(result) })
-      expect(firstSwitchMs).toBeLessThan(800)
+      expectWithinBudget(firstSwitchMs, 800, "C00 first switch (ms)")
     } finally {
       await app.close()
     }

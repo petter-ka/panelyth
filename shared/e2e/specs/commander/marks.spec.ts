@@ -3,7 +3,7 @@ import { appendFileSync, rmSync } from "node:fs"
 import { basename, join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { repoRoot, shellState } from "../../launch"
+import { expectWithinBudget, repoRoot, shellState } from "../../launch"
 import { commanderOf, cursorTo, goTo, launch, mixedFolder } from "./helpers"
 
 // Stage C02: keyboard, marks and quick search, and the shared context part 2
@@ -376,8 +376,12 @@ test.describe("C02 benchmarks", () => {
         },
       }
       writeResult(result)
-      expect(held.longTasks).toBe(0)
-      expect(search.p95Ms).toBeLessThan(100) // budget 50 ms on the reference machine
+      expectWithinBudget(held.longTasks, 1, "C02 held arrow, long tasks")
+      expectWithinBudget(
+        search.p95Ms,
+        100,
+        "C02 quick search p95 (ms; budget 50 on the reference machine)",
+      )
     } finally {
       await app.close()
     }

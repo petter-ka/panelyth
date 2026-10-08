@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import type { SidecarStatus } from "@fastview/contracts"
-import { _electron, type ElectronApplication, type Page } from "@playwright/test"
+import { _electron, expect, type ElectronApplication, type Page } from "@playwright/test"
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..")
 export const desktopDir = join(repoRoot, "shared", "desktop")
@@ -121,8 +121,19 @@ export const commanderEnv = (
 })
 
 /**
- * The gate for a timing budget from a PERFORMANCE.md. Budgets hold on the
- * reference machine; shared CI runners get twice as long. Specs record the
- * measured values either way.
+ * A timing budget (milliseconds, or a long-task count) from a PERFORMANCE.md.
+ * Budgets hold on the reference machine and fail the test there and on
+ * developer machines. Shared CI runners are 2-4x slower and uneven (Stage
+ * P04), so under CI an over-budget value is reported as a GitHub warning
+ * annotation instead; the specs record every measured value either way.
  */
-export const budgetGate = (budgetMs: number): number => (process.env.CI ? 2 * budgetMs : budgetMs)
+export function expectWithinBudget(value: number, budget: number, what: string): void {
+  if (process.env.CI) {
+    if (!(value < budget))
+      console.log(
+        `::warning title=Over budget::${what}: ${value} (budget < ${budget}, reference machine)`,
+      )
+    return
+  }
+  expect(value, what).toBeLessThan(budget)
+}

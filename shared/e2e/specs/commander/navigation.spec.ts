@@ -2,7 +2,7 @@ import { appendFileSync, mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
-import { budgetGate, repoRoot } from "../../launch"
+import { expectWithinBudget, repoRoot } from "../../launch"
 import { commanderOf, folderOf, goTo, launch, mixedFolder, type Side } from "./helpers"
 
 // Stage C03: drives, tabs, hotlist, history and session
@@ -256,8 +256,8 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
         coldP95Ms: p95(cold),
         budgetP95Ms: 50,
       })
-      expect(p95(warm)).toBeLessThan(budgetGate(50))
-      expect(p95(cold)).toBeLessThan(budgetGate(50))
+      expectWithinBudget(p95(warm), 50, "C03 tab switch, warm p95 (ms)")
+      expectWithinBudget(p95(cold), 50, "C03 tab switch, cold p95 (ms)")
     } finally {
       await app.close()
       rmSync(a, { recursive: true, force: true })
