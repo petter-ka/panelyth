@@ -1,9 +1,0 @@
-{"at":"2026-10-08T14:07:11.652Z","test":"session-restore","restoreMs":925,"budgetMs":1300}
-{"at":"2026-10-08T14:07:37.314Z","test":"tab-switch-1k","warmP95Ms":47.3,"warmMedianMs":34.4,"coldMedianMs":43.5,"coldP95Ms":51.3,"budgetP95Ms":50}
-{"at":"2026-10-08T14:07:40.473Z","test":"drive-menu-dead-share","menuOpenMs":8,"otherPanelCursorMs":3,"deadShareListedAfterMs":1327,"shareDelayMs":8000}
-{"at":"2026-10-08T14:08:10.747Z","test":"tab-switch-1k","warmP95Ms":39.3,"warmMedianMs":29.9,"coldMedianMs":45.5,"coldP95Ms":47.7,"budgetP95Ms":50}
-{"at":"2026-10-08T14:08:36.164Z","test":"tab-switch-1k","warmP95Ms":46.7,"warmMedianMs":35.2,"coldMedianMs":38.8,"coldP95Ms":45.7,"budgetP95Ms":50}
-{"at":"2026-10-08T14:12:34.556Z","test":"session-restore","restoreMs":697,"budgetMs":1300}
-{"at":"2026-10-08T14:12:58.818Z","test":"tab-switch-1k","warmP95Ms":48.3,"warmMedianMs":29.6,"coldMedianMs":44.5,"coldP95Ms":46.1,"budgetP95Ms":50}
-{"at":"2026-10-08T14:13:01.073Z","test":"drive-menu-dead-share","menuOpenMs":10,"otherPanelCursorMs":4,"deadShareListedAfterMs":1311,"shareDelayMs":8000}
-{"at":"2026-10-08T14:13:31.336Z","test":"tab-switch-1k","warmP95Ms":74.5,"warmMedianMs":35.2,"coldMedianMs":42.9,"coldP95Ms":46.2,"budgetP95Ms":50}

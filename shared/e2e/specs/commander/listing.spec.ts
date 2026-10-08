@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { expectWithinBudget, repoRoot, shellState } from "../../launch"
+import { expectWithinBudget, removeTemp, repoRoot, shellState } from "../../launch"
 import {
   commanderOf,
   cursorTo,
@@ -149,8 +149,7 @@ test.describe("commander listing (Stage C01)", () => {
       await app.close()
     } finally {
       rmSync(root, { recursive: true, force: true })
-      // Windows keeps the closed sidecar's library.db locked for a moment.
-      rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 })
+      removeTemp(profile) // Windows can keep library.db locked after the app closed
     }
   })
 
@@ -420,8 +419,7 @@ test.describe("switching with the shared context (Stage C01)", () => {
       await app.close()
     } finally {
       rmSync(root, { recursive: true, force: true })
-      // Windows keeps the closed sidecar's library.db locked for a moment.
-      rmSync(profile, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 })
+      removeTemp(profile) // Windows can keep library.db locked after the app closed
     }
   })
 })

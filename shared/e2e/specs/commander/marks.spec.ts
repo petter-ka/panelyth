@@ -185,6 +185,8 @@ test.describe("switching with marks (Stage C02)", () => {
       await page
         .locator('[data-testid="tile"][aria-label="a3.png"]')
         .click({ modifiers: ["ControlOrMeta"] }) // Ctrl+click is a right-click on macOS
+      // The selection has settled before the switch carries it.
+      await expect.poll(() => selectedTiles(page)).toEqual(["a1.jpg", "a3.png"])
       await page.getByTestId("app-switch").click()
       await expect.poll(() => shellState(app)).toMatchObject({ active: "commander" })
       await expect.poll(() => marked(c)).toEqual(["a1", "a3"])

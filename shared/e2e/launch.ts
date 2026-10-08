@@ -1,4 +1,4 @@
-import { mkdtempSync } from "node:fs"
+import { mkdtempSync, rmSync } from "node:fs"
 import { createRequire } from "node:module"
 import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
@@ -136,4 +136,18 @@ export function expectWithinBudget(value: number, budget: number, what: string):
     return
   }
   expect(value, what).toBeLessThan(budget)
+}
+
+/**
+ * Removes a test's temporary folder. On Windows a profile's database can stay
+ * locked for a while after the app closed; a folder left in the temp area is
+ * harmless, so cleanup never fails a test (the packaged smoke test checks
+ * that the sidecar exits with the app).
+ */
+export function removeTemp(path: string): void {
+  try {
+    rmSync(path, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 })
+  } catch (error) {
+    console.warn(`left ${path}: ${(error as Error).message}`)
+  }
 }

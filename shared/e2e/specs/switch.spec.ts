@@ -114,7 +114,9 @@ test.describe("app switch (ADR-0031)", () => {
     const { app, page } = await launchApp(commanderEnv())
     try {
       await waitForReady(page)
-      await page.keyboard.press("Control+Shift+M")
+      // By the rail: a key pressed this early can arrive before the viewer
+      // takes keys (slow runners); the shortcut is covered above.
+      await page.getByRole("button", { name: "Switch to Commander" }).click()
       const commander = await commanderPage(app)
       await expect(commander.getByTestId("theme-toggle")).toHaveText("Theme: Dark")
       await commander.getByTestId("theme-toggle").click()
