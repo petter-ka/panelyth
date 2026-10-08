@@ -119,3 +119,10 @@ export const commanderEnv = (
   FASTVIEW_COMMANDER: "1",
   FASTVIEW_START_APP: startApp,
 })
+
+/**
+ * The gate for a timing budget from a PERFORMANCE.md. Budgets hold on the
+ * reference machine; shared CI runners get twice as long. Specs record the
+ * measured values either way.
+ */
+export const budgetGate = (budgetMs: number): number => (process.env.CI ? 2 * budgetMs : budgetMs)

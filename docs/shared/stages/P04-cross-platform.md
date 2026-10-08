@@ -108,8 +108,9 @@ not run by hand here.
   pause point. The fileops test checks the clone itself (complete, full progress, same bytes); the jobs pause test
   forces the streaming copy on macOS (`fileops.ForcePortableCopy`).
 - Linux runner: the C07 archive scenario pressed F8 before closing the lister had returned the focus to the panel;
-  the spec waits for the focus. The C03 tab-switch benchmark measured 76 ms (budget 50 ms on the reference machine);
-  under `CI` the gate is twice the budget, and the measured values are recorded either way.
+  the spec waits for the focus. Timing budgets are set for the reference machine; on the shared runners the C03
+  tab switch measured 76 ms (budget 50) and the C06 quick filter 350 ms (budget 300). Under `CI` a budget's gate is
+  twice the budget (`budgetGate`, `shared/e2e/launch.ts`); the measured values are recorded either way.
 
 ### Linux results
 

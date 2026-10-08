@@ -2,7 +2,7 @@ import { appendFileSync, mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
-import { repoRoot } from "../../launch"
+import { budgetGate, repoRoot } from "../../launch"
 import { commanderOf, folderOf, goTo, launch, mixedFolder, type Side } from "./helpers"
 
 // Stage C03: drives, tabs, hotlist, history and session
@@ -256,11 +256,8 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
         coldP95Ms: p95(cold),
         budgetP95Ms: 50,
       })
-      // The budget holds on the reference machine; shared CI runners get
-      // twice as long (the measured values are recorded above either way).
-      const gate = process.env.CI ? 100 : 50
-      expect(p95(warm)).toBeLessThan(gate)
-      expect(p95(cold)).toBeLessThan(gate)
+      expect(p95(warm)).toBeLessThan(budgetGate(50))
+      expect(p95(cold)).toBeLessThan(budgetGate(50))
     } finally {
       await app.close()
       rmSync(a, { recursive: true, force: true })
