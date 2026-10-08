@@ -131,6 +131,13 @@ not run by hand here.
 - **The path editor closed while typing** (commander, all platforms): a late "app shown" event focused the panel's
   list, the path text box lost focus and its editor closed (the dead-network-drive spec: a slow start, then
   `goTo` found no text box). Being shown no longer takes the focus from a text field (`listing.test.tsx`).
+- **Carried marks overwrote the user's marks** (commander, all platforms): switching back from the viewer asks Go
+  for the viewer's selection and applied it as marks even when keys had changed the marks during that round-trip
+  (Windows: Ctrl+Num− and a mask right after the switch were undone). The carried marks now apply only while the
+  marks are unchanged (`marks.test.tsx`).
+- Windows runners: on-access scanning of the freshly created 100k-file fixtures stalled a listing for minutes and
+  slowed the first start; CI excludes the workspace and temp folders from Defender, and the first start may take
+  45 s under `CI`.
 - `library.db` stays locked for a moment after the app closes on Windows: the C01 specs remove their profile with
   retries, as the C03 specs already did.
 

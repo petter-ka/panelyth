@@ -52,7 +52,8 @@ export async function waitForReady(
   page: Page,
   notPid: number | null = null,
 ): Promise<SidecarStatus> {
-  const deadline = Date.now() + 10_000
+  // The first start on a CI runner can be slow (a fresh binary, cold caches).
+  const deadline = Date.now() + (process.env.CI ? 45_000 : 10_000)
   for (;;) {
     const status = await sidecarStatus(page)
     if (status.state === "ready" && status.pid !== notPid) return status

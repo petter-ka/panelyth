@@ -358,6 +358,32 @@ describe("the shared context, part 2 (Stage C02)", () => {
     expect(count("left")).toBe(0)
   })
 
+  it("marks changed while the carried selection resolves are not overwritten", async () => {
+    const fake = await start()
+    fake.setContext({ app: "viewer", dirId: 10, focusId: null }, [10_000_100, 10_000_101])
+    let answer: () => void = () => undefined
+    const selection = fake.api.context.selection.getMockImplementation()!
+    fake.api.context.selection.mockImplementationOnce(
+      (version: number, queryId: number) =>
+        new Promise((resolve) => {
+          answer = () => resolve(selection(version, queryId))
+        }),
+    )
+    let applied: Promise<void> = Promise.resolve()
+    await act(async () => {
+      applied = applyContext()
+    })
+    // The user marks everything before Go answers.
+    await key({ key: "*", code: "NumpadMultiply" })
+    const marked = count("left")
+    expect(marked).toBeGreaterThan(2)
+    await act(async () => {
+      answer()
+      await applied
+    })
+    expect(count("left")).toBe(marked)
+  })
+
   it("shows a notice when the selection was too large", async () => {
     const fake = await start()
     fake.setContext({ app: "viewer", dirId: 10, selectionTooLarge: true })

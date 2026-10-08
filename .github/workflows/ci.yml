@@ -64,6 +64,17 @@ jobs:
       - name: Allow the Chromium sandbox (Linux)
         if: runner.os == 'Linux'
         run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      # The tests create 100k-file fixtures and a fresh sidecar binary; on-access
+      # scanning of new files stalled listings and the first start (Stage P04).
+      - name: Exclude the workspace and temp from Defender (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          try {
+            Add-MpPreference -ExclusionPath $env:GITHUB_WORKSPACE, $env:TEMP, $env:RUNNER_TEMP -ErrorAction Stop
+          } catch {
+            Write-Host "Defender exclusions unavailable: $_"
+          }
       - name: Unit and Go tests
         run: pnpm test
       - name: Build
