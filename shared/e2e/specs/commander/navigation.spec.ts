@@ -228,6 +228,7 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
   })
 
   test("benchmark: tab switch, parked and reopened", async () => {
+    test.setTimeout(90_000) // six cold switches wait 3.3 s each for the parked session to close
     const a = folderOf(1000)
     const b = folderOf(1000)
     const { app } = await launch("commander")

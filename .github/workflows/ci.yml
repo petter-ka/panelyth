@@ -78,6 +78,7 @@ jobs:
       - name: Unit and Go tests
         run: pnpm test
       - name: Build
+        id: build
         run: pnpm build
       # The viewer's specs still click the "Open folder…" button that the
       # startup folder (Stage 08.5) and C06 removed from the first screen; they
@@ -91,9 +92,13 @@ jobs:
           else
             pnpm --filter @fastview/e2e exec playwright test $specs
           fi
+      # Packaging runs even when an e2e spec failed: the release builds
+      # depend on it, and it needs only the build.
       - name: Package (unpacked)
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: pnpm package --dir
       - name: Packaged smoke test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
