@@ -11,7 +11,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { repoRoot } from "../../launch"
+import { expectWithinBudget, repoRoot } from "../../launch"
 import { commanderOf, goTo, launch } from "./helpers"
 
 // Stage C07: archives (docs/commander/stages/C07-archives.md; scenario 13 of
@@ -81,6 +81,8 @@ test.describe("archives (Stage C07)", () => {
       await expect(c.getByTestId("lister")).toContainText("read me first")
       await c.keyboard.press("Escape")
       await expect(c.getByTestId("lister")).toHaveCount(0)
+      // Closing the lister gives the panel its focus back (keys go nowhere before).
+      await expect(grid(c)).toBeFocused()
 
       // Archives are read-only.
       await c.keyboard.press("F8")
@@ -193,7 +195,7 @@ test.describe("archives (Stage C07)", () => {
         ms: Math.round(ms),
         budgetMs: 1000,
       })
-      expect(ms).toBeLessThan(1000)
+      expectWithinBudget(ms, 1000, "C07 100k-entry zip open (ms)")
     } finally {
       await app.close()
     }

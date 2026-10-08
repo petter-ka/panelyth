@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { repoRoot } from "../../launch"
+import { expectWithinBudget, repoRoot } from "../../launch"
 import { commanderOf, goTo, launch, type Side } from "./helpers"
 
 // Stage C06: find files, branch view and quick filter
@@ -253,9 +253,9 @@ test.describe("C06 benchmarks", () => {
       }
       writeResult(result)
       // Budgets: docs/commander/PERFORMANCE.md.
-      expect(filterMs).toBeLessThan(300)
+      expectWithinBudget(filterMs, 300, "C06 quick filter on 100k (ms)")
       expect(findMs.firstResultMs).toBeGreaterThanOrEqual(0)
-      expect(findMs.firstResultMs).toBeLessThan(300)
+      expectWithinBudget(findMs.firstResultMs, 300, "C06 find, first result (ms)")
     } finally {
       await app.close()
     }

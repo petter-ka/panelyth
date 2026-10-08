@@ -1,0 +1,94 @@
+# Builds the Windows and macOS packages when a GitHub release is published and
+# attaches them to it (ADR-0032). The tag names the version: v1.2.3 → 1.2.3.
+# Unsigned until Stage P06: Windows SmartScreen warns, and macOS needs
+# right-click → Open (or `xattr -dr com.apple.quarantine FastView.app`).
+# Run by hand (workflow_dispatch) to build the packages as workflow artifacts
+# without a release.
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version for a manual build (semver, without v)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: package (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    env:
+      # No signing identity until Stage P06 (mac uses an ad-hoc signature).
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # git describe names the sidecar's version
+      - name: Version
+        id: version
+        shell: bash
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+          INPUT: ${{ inputs.version }}
+        run: |
+          if [ -n "$TAG" ]; then
+            v="${TAG#v}"
+          elif [ -n "$INPUT" ]; then
+            v="$INPUT"
+          else
+            v="0.0.0-dev.${GITHUB_RUN_NUMBER}"
+          fi
+          if ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$v' is not a semver version (tag the release as v1.2.3)"
+            exit 1
+          fi
+          echo "version=$v" >> "$GITHUB_OUTPUT"
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: shared/sidecar/go.mod
+          cache-dependency-path: shared/sidecar/go.sum
+      - run: pnpm install --frozen-lockfile
+      - name: Package
+        run: pnpm package "-c.extraMetadata.version=${{ steps.version.outputs.version }}"
+      - name: Packaged smoke test
+        run: pnpm test:smoke
+      - name: Attach to the release
+        if: github.event_name == 'release'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          shopt -s nullglob
+          files=(shared/desktop/release/*.exe shared/desktop/release/*.dmg shared/desktop/release/*.zip)
+          if [ ${#files[@]} -eq 0 ]; then
+            echo "::error::no packages in shared/desktop/release"
+            exit 1
+          fi
+          gh release upload "$TAG" "${files[@]}" --clobber
+      - name: Upload packages
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: fastview-${{ steps.version.outputs.version }}-${{ runner.os }}
+          path: |
+            shared/desktop/release/*.exe
+            shared/desktop/release/*.dmg
+            shared/desktop/release/*.zip
+          if-no-files-found: error

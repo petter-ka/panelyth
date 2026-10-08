@@ -36,6 +36,9 @@ var volatile = map[string]any{
 	"createdMs": 1, "accessedMs": 1, "lastOpenedAt": 1, "paths": []any{"/fixtures/golden/file"},
 	"startedMs": 1, "finishedMs": 1, "file": "/cache/FastView/v1/tmp/clip.png",
 	"firstMatchMs": 1, "dirPath": "/fixtures/golden",
+	// Watcher rescans (inotify reports the test's own writes) take scan ids at
+	// timing-dependent moments.
+	"scanId": 1,
 }
 
 // platformDependent values are replaced even when null (Linux has no birth time).
@@ -497,6 +500,13 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)
+	}
+
+	// A started job's answer races the queue: it may already be running.
+	for _, name := range []string{"res-jobs.start.json", "res-jobs.start-ask.json", "res-jobs.start-dirid.json"} {
+		if r, ok := golden[name].(map[string]any)["r"].(map[string]any); ok && r["state"] == "running" {
+			r["state"] = "queued"
+		}
 	}
 
 	for name, v := range golden {

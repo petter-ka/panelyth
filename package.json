@@ -11,6 +11,8 @@
     "build": "pnpm build:sidecar && pnpm -r --filter @fastview/renderer --filter @fastview/commander --filter @fastview/desktop build",
     "build:sidecar": "node scripts/build-sidecar.mjs",
     "start": "node scripts/start.mjs",
+    "package": "node scripts/package.mjs",
+    "test:smoke": "pnpm --filter @fastview/e2e smoke",
     "typecheck": "pnpm -r typecheck",
     "lint": "eslint . && prettier --check . && node scripts/go.mjs fmt-check && node scripts/go.mjs vet",
     "format": "prettier --write . && node scripts/go.mjs fmt",

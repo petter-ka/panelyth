@@ -7,10 +7,11 @@ import (
 	"os"
 )
 
-// FileTimes: Linux has no portable birth time through stat(2); statx is a
-// Stage P04 refinement. Access time is read where the platform exposes it.
+// FileTimes: stat(2) has no birth time on Linux; infos from EntryInfo and
+// Stat (statx, Stage P04) carry it. Access time is read where the platform
+// exposes it.
 func FileTimes(fi fs.FileInfo) Times {
-	return Times{AccessNs: accessNs(fi)}
+	return Times{BirthNs: birthNs(fi), AccessNs: accessNs(fi)}
 }
 
 // listVolumes lists "/" plus user-visible mounts from /proc/self/mountinfo.

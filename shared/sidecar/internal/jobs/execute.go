@@ -227,7 +227,7 @@ func extOf(name string, isDir bool) string {
 func rowFor(dest index.DirInfo, t index.Target, name, key, path string) index.Row {
 	r := index.Row{ParentID: dest.ID, ParentKey: dest.Key, Kind: t.Kind, Name: name, PathKey: key,
 		Ext: extOf(name, t.Kind == media.KindDir), Path: path}
-	if fi, err := os.Stat(path); err == nil {
+	if fi, err := fsx.Stat(path); err == nil {
 		r.MtimeNs = fi.ModTime().UnixNano()
 		r.BtimeNs = fsx.FileTimes(fi).BirthNs
 		if !fi.IsDir() {

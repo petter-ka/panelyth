@@ -4,7 +4,7 @@ import { join } from "node:path"
 import type { CommanderApi } from "@fastview/contracts"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { repoRoot } from "../../launch"
+import { expectWithinBudget, repoRoot } from "../../launch"
 import { commanderOf, cursorTo, goTo, launch } from "./helpers"
 
 // Stage C05: quick view, lister, open and edit
@@ -406,8 +406,8 @@ test.describe("quick view and lister (Stage C05)", () => {
       writeResult(record)
       console.log(JSON.stringify(record))
       // Budgets (docs/commander/PERFORMANCE.md "Viewers and tools").
-      expect(quickP95).toBeLessThan(100)
-      expect(result.openMs).toBeLessThan(200)
+      expectWithinBudget(quickP95, 100, "C05 quick view follow p95 (ms)")
+      expectWithinBudget(result.openMs, 200, "C05 lister open on 2 GB (ms)")
       expect(result.heapAfterMb - result.heapBeforeMb).toBeLessThan(32)
     } finally {
       await app.close()

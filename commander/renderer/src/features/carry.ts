@@ -10,7 +10,7 @@ import {
   startListingEvents,
   useListingStore,
 } from "./listing"
-import { applyMarks, marksDescriptor } from "./marks"
+import { applyMarks, marksDescriptor, useMarksStore } from "./marks"
 import { usePanelsStore, type Side } from "./panels"
 import { restorePanels } from "./session"
 
@@ -66,8 +66,11 @@ async function applySelection(side: Side, ctx: SharedContext): Promise<void> {
   }
   const query = useListingStore.getState()[side].query
   if (!query || ctx.selectionCount === 0 || !useSwitchSettings.getState().carry.selection) return
+  const before = useMarksStore.getState()[side]
   const d = await bridge.contextSelection(ctx.version, query.queryId).catch(() => null)
-  if (d) applyMarks(side, d)
+  // Keys changed the marks while Go resolved the selection: the user's
+  // marks win over the carried ones.
+  if (d && useMarksStore.getState()[side] === before) applyMarks(side, d)
 }
 
 /**

@@ -18,7 +18,7 @@
     "name": "folder 1",
     "path": "/fixtures/golden",
     "recursive": false,
-    "scanId": 3
+    "scanId": 1
   },
   "t": "res"
 }

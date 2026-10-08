@@ -4,6 +4,7 @@ import { expect, test, type ElectronApplication } from "@playwright/test"
 import {
   commanderEnv,
   commanderPage,
+  expectWithinBudget,
   launchApp,
   repoRoot,
   shellState,
@@ -103,7 +104,7 @@ test.describe("app switch (ADR-0031)", () => {
       }
       writeResult(result)
       test.info().annotations.push({ type: "metrics", description: JSON.stringify(result) })
-      expect(firstSwitchMs).toBeLessThan(800)
+      expectWithinBudget(firstSwitchMs, 800, "C00 first switch (ms)")
     } finally {
       await app.close()
     }
@@ -113,7 +114,9 @@ test.describe("app switch (ADR-0031)", () => {
     const { app, page } = await launchApp(commanderEnv())
     try {
       await waitForReady(page)
-      await page.keyboard.press("Control+Shift+M")
+      // By the rail: a key pressed this early can arrive before the viewer
+      // takes keys (slow runners); the shortcut is covered above.
+      await page.getByRole("button", { name: "Switch to Commander" }).click()
       const commander = await commanderPage(app)
       await expect(commander.getByTestId("theme-toggle")).toHaveText("Theme: Dark")
       await commander.getByTestId("theme-toggle").click()

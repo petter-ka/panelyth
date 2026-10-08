@@ -177,6 +177,23 @@ describe("marks (Stage C02)", () => {
     await waitFor(() => expect(markedNames("left")).toContain("Photo2"))
   })
 
+  it("a mask matched while the folder refreshes is matched again, not dropped", async () => {
+    const fake = await start()
+    const match = fake.api.query.match.getMockImplementation()!
+    // The first answer is for the version before a rescan committed.
+    fake.api.query.match.mockImplementationOnce(async (queryId: number, mask: string) => {
+      const res = await match(queryId, mask)
+      fake.relist(fake.lastDescriptor().dirId!)
+      return res
+    })
+    await key({ key: "+", code: "NumpadAdd" })
+    const input = screen.getByRole("textbox", { name: "Mask" })
+    fireEvent.change(input, { target: { value: "*.jpg" } })
+    await act(async () => fireEvent.submit(input.closest("form")!))
+    await waitFor(() => expect(markedNames("left").sort()).toEqual(["Photo2", "photo"]))
+    expect(fake.api.query.match).toHaveBeenCalledTimes(2)
+  })
+
   it("Space on a folder marks it and calculates its size; the status line shows marked sizes", async () => {
     const fake = await start()
     await key({ key: "ArrowDown" })
@@ -339,6 +356,32 @@ describe("the shared context, part 2 (Stage C02)", () => {
     fake.setContext({ app: "viewer", dirId: 10, focusId: null }, [10_000_100])
     await act(async () => applyContext())
     expect(count("left")).toBe(0)
+  })
+
+  it("marks changed while the carried selection resolves are not overwritten", async () => {
+    const fake = await start()
+    fake.setContext({ app: "viewer", dirId: 10, focusId: null }, [10_000_100, 10_000_101])
+    let answer: () => void = () => undefined
+    const selection = fake.api.context.selection.getMockImplementation()!
+    fake.api.context.selection.mockImplementationOnce(
+      (version: number, queryId: number) =>
+        new Promise((resolve) => {
+          answer = () => resolve(selection(version, queryId))
+        }),
+    )
+    let applied: Promise<void> = Promise.resolve()
+    await act(async () => {
+      applied = applyContext()
+    })
+    // The user marks everything before Go answers.
+    await key({ key: "*", code: "NumpadMultiply" })
+    const marked = count("left")
+    expect(marked).toBeGreaterThan(2)
+    await act(async () => {
+      answer()
+      await applied
+    })
+    expect(count("left")).toBe(marked)
   })
 
   it("shows a notice when the selection was too large", async () => {

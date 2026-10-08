@@ -57,13 +57,15 @@ func TestFastPathAndPortableCopyAgree(t *testing.T) {
 	data := randomFile(t, src, 5<<20+123)
 	mtime := time.Date(2019, 3, 4, 5, 6, 7, 0, time.UTC)
 	atime := time.Date(2021, 1, 2, 3, 4, 5, 0, time.UTC)
-	if err := os.Chtimes(src, atime, mtime); err != nil {
-		t.Fatal(err)
-	}
 	setReadOnly(t, src)
 	t.Cleanup(func() { _ = os.Chmod(src, 0o644) })
 	for _, portable := range []bool{false, true} {
 		t.Run(fmt.Sprintf("portable=%v", portable), func(t *testing.T) {
+			// Per run: reading the source for the previous copy may have
+			// moved its access time (Linux relatime).
+			if err := os.Chtimes(src, atime, mtime); err != nil {
+				t.Fatal(err)
+			}
 			noFastPath = portable
 			t.Cleanup(func() { noFastPath = false })
 			dst := filepath.Join(dir, fmt.Sprintf("out-%v.bin", portable))
@@ -359,6 +361,22 @@ func TestGatePausesAndCancels(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			dst := filepath.Join(dir, fmt.Sprintf("out-%v.bin", portable))
+			if !portable && runtime.GOOS == "darwin" {
+				// APFS clones the file in one step: no bytes stream, so there
+				// is no pause point (the gate runs once, after the clone). The
+				// clone completes and reports it all.
+				if err := CopyFile(ctx, src, dst, false, &CopyOptions{Progress: func(n int64) { copied.Add(n) }}); err != nil {
+					t.Fatal(err)
+				}
+				if copied.Load() != 64<<20 {
+					t.Fatalf("progress %d after a clone", copied.Load())
+				}
+				if a, b := mustRead(t, src), mustRead(t, dst); !bytes.Equal(a, b) {
+					t.Fatal("clone differs")
+				}
+				close(release)
+				return
+			}
 			done := make(chan error, 1)
 			go func() {
 				done <- CopyFile(ctx, src, dst, false, &CopyOptions{Gate: gate, Progress: func(n int64) { copied.Add(n) }})
@@ -385,4 +403,13 @@ func TestGatePausesAndCancels(t *testing.T) {
 			close(release)
 		})
 	}
+}
+
+func mustRead(t testing.TB, path string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }

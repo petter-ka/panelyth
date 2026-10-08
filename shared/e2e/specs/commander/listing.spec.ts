@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { repoRoot, shellState } from "../../launch"
+import { expectWithinBudget, removeTemp, repoRoot, shellState } from "../../launch"
 import {
   commanderOf,
   cursorTo,
@@ -84,11 +84,10 @@ test.describe("commander listing (Stage C01)", () => {
         await expect(
           grid.getByRole("columnheader", { name: new RegExp(`^${column}`) }),
         ).toHaveAttribute("aria-sort", "ascending")
-        const rows = await names()
-        expect(rows.slice(0, 2).sort(), column).toEqual([
-          expect.stringContaining("alpha"),
-          expect.stringContaining("beta"),
-        ])
+        // The header flips before the new page renders: poll the rows.
+        await expect
+          .poll(async () => (await names()).slice(0, 2).sort(), { message: column })
+          .toEqual([expect.stringContaining("alpha"), expect.stringContaining("beta")])
       }
       // Again reverses; folders stay first.
       await header("Name").click()
@@ -96,7 +95,7 @@ test.describe("commander listing (Stage C01)", () => {
         "aria-sort",
         "descending",
       )
-      expect((await names())[0]).toContain("beta")
+      await expect.poll(async () => (await names())[0]).toContain("beta")
       expect((await names())[2]).toContain("notes")
       // Ctrl+F6 sorts by size; again reverses.
       await grid.focus()
@@ -149,7 +148,7 @@ test.describe("commander listing (Stage C01)", () => {
       await app.close()
     } finally {
       rmSync(root, { recursive: true, force: true })
-      rmSync(profile, { recursive: true, force: true })
+      removeTemp(profile) // Windows can keep library.db locked after the app closed
     }
   })
 
@@ -297,9 +296,13 @@ test.describe("commander listing (Stage C01)", () => {
         sort100kMs: sortMs,
       }
       writeResult(result)
-      expect(result.cached1kP95Ms).toBeLessThan(150) // budget 50 ms on the reference machine
-      expect(responsiveness.firstRowsMs).toBeLessThan(1000) // budget 300 ms
-      expect(responsiveness.keyP95Ms).toBeLessThan(100)
+      expectWithinBudget(
+        result.cached1kP95Ms,
+        150,
+        "C01 cached 1k enter p95 (ms; budget 50 on the reference machine)",
+      )
+      expectWithinBudget(responsiveness.firstRowsMs, 1000, "C01 100k first rows (ms; budget 300)")
+      expectWithinBudget(responsiveness.keyP95Ms, 100, "C01 keys in the other panel p95 (ms)")
     } finally {
       await app.close()
       rmSync(small, { recursive: true, force: true })
@@ -415,7 +418,7 @@ test.describe("switching with the shared context (Stage C01)", () => {
       await app.close()
     } finally {
       rmSync(root, { recursive: true, force: true })
-      rmSync(profile, { recursive: true, force: true })
+      removeTemp(profile) // Windows can keep library.db locked after the app closed
     }
   })
 })

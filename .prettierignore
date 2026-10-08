@@ -8,3 +8,4 @@ shared/contracts/fixtures/
 shared/e2e/test-results/
 shared/e2e/playwright-report/
 *.md
+shared/desktop/release/

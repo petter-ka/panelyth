@@ -11,6 +11,9 @@ Thumbs.db
 shared/desktop/resources/bin/
 shared/sidecar/bin/
 
+# packaged builds (pnpm package)
+shared/desktop/release/
+
 # playwright
 shared/e2e/test-results/
 shared/e2e/playwright-report/

@@ -145,8 +145,9 @@ export const visibleRows = (c: Page, side: Side) =>
 
 export async function commanderOf(app: ElectronApplication): Promise<Page> {
   const c = await commanderPage(app)
+  // The first start on a CI runner can be slow (a fresh binary, cold caches).
   await expect(c.getByTestId("sidecar-status")).toHaveAttribute("data-state", "ready", {
-    timeout: 15_000,
+    timeout: process.env.CI ? 45_000 : 15_000,
   })
   return c
 }

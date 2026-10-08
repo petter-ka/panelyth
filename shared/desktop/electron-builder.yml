@@ -1,0 +1,68 @@
+# One product package per OS: the shell with both apps (ADR-0031, ADR-0032).
+# Build first (`pnpm build`, plus `pnpm build:sidecar --arch …` for every
+# target arch), then `pnpm package` from the repository root.
+appId: app.fastview.desktop
+productName: FastView
+copyright: Copyright © FastView contributors
+directories:
+  output: release
+  buildResources: build
+extraMetadata:
+  # The workspace name (@fastview/desktop) would name the app's data folders.
+  name: fastview
+  productName: FastView
+  main: dist/main/main.cjs
+files:
+  - dist/**
+  - "!dist/**/*.map"
+  - package.json
+# The renderers are served from disk through app://fastview/ and
+# app://commander/, the sidecar runs as a child process: all outside the asar
+# (paths.ts).
+extraResources:
+  - from: ../../viewer/renderer/dist
+    to: renderer
+  - from: ../../commander/renderer/dist
+    to: commander
+  - from: resources/bin/${platform}-${arch}
+    to: bin
+asar: true
+# No native Node modules: the sidecar is a separate Go binary.
+npmRebuild: false
+nodeGypRebuild: false
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  deleteAppDataOnUninstall: false
+
+mac:
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  category: public.app-category.photography
+  # Ad-hoc signature until Stage P06 adds a Developer ID and notarization:
+  # Apple silicon refuses to run unsigned code.
+  identity: "-"
+  hardenedRuntime: false
+  notarize: false
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64]
+    - target: tar.gz
+      arch: [x64]
+  category: Graphics
+  executableName: fastview
+
+# Updates are a Stage P06 decision: no app-update.yml.
+publish: null

@@ -2,7 +2,7 @@ import { appendFileSync, mkdtempSync, rmSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
-import { repoRoot } from "../../launch"
+import { expectWithinBudget, repoRoot } from "../../launch"
 import { commanderOf, folderOf, goTo, launch, mixedFolder, type Side } from "./helpers"
 
 // Stage C03: drives, tabs, hotlist, history and session
@@ -193,6 +193,11 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
         // The viewer shows the bookmark and the commander's recent folder.
         const page = await viewerOf(app)
         const sidebar = page.getByTestId("sidebar-list")
+        // The tree reveals the open folder and the list is virtualized: on
+        // Linux, "/" lists ~20 folders above /tmp, so the bookmark rows at the
+        // top may be scrolled out and unmounted (Stage P04).
+        await expect(sidebar.getByRole("treeitem").first()).toBeVisible()
+        await sidebar.evaluate((el) => el.scrollTo({ top: 0 }))
         await expect(sidebar.getByRole("treeitem", { name: "alpha" }).first()).toBeVisible()
         await expect(sidebar.getByRole("treeitem", { name: basename(root) }).first()).toBeVisible()
 
@@ -223,6 +228,7 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
   })
 
   test("benchmark: tab switch, parked and reopened", async () => {
+    test.setTimeout(90_000) // six cold switches wait 3.3 s each for the parked session to close
     const a = folderOf(1000)
     const b = folderOf(1000)
     const { app } = await launch("commander")
@@ -251,8 +257,8 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
         coldP95Ms: p95(cold),
         budgetP95Ms: 50,
       })
-      expect(p95(warm)).toBeLessThan(50)
-      expect(p95(cold)).toBeLessThan(50)
+      expectWithinBudget(p95(warm), 50, "C03 tab switch, warm p95 (ms)")
+      expectWithinBudget(p95(cold), 50, "C03 tab switch, cold p95 (ms)")
     } finally {
       await app.close()
       rmSync(a, { recursive: true, force: true })

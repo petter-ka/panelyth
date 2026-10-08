@@ -11,9 +11,13 @@ import (
 	"log/slog"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
+	"unicode"
+	"unicode/utf8"
 
 	"fastview/sidecar/internal/fsx"
 	"fastview/sidecar/internal/index"
@@ -260,7 +264,7 @@ func listDir(ctx context.Context, j job, chunk int, out chan<- msg, skipped, err
 			// meaning: visible folders, visible media, and visible other files
 			// ("not shown"); hidden entries and links count nowhere.
 			name := e.Name()
-			info, err := e.Info()
+			info, err := fsx.EntryInfo(f, e)
 			if err != nil {
 				continue // vanished between read and stat
 			}
@@ -299,6 +303,10 @@ func listDir(ctx context.Context, j job, chunk int, out chan<- msg, skipped, err
 			rows = append(rows, row)
 		}
 		if len(rows) > 0 {
+			// Directory order is the filesystem's (upper-cased name order on
+			// NTFS, hashed on ext4): NTFS order per chunk gives the same ids
+			// on every OS.
+			slices.SortFunc(rows, func(a, b index.Row) int { return compareUpper(a.Name, b.Name) })
 			select {
 			case out <- msg{rows: rows}:
 			case <-ctx.Done():
@@ -405,4 +413,41 @@ func errorCode(err error) string {
 	default:
 		return "INTERNAL"
 	}
+}
+
+// compareUpper orders names the way NTFS lists them: by upper-cased runes,
+// then bytewise for names that differ only in case. It does not allocate.
+func compareUpper(a, b string) int {
+	i, j := 0, 0
+	for i < len(a) && j < len(b) {
+		if ca, cb := a[i], b[j]; ca < utf8.RuneSelf && cb < utf8.RuneSelf {
+			if 'a' <= ca && ca <= 'z' {
+				ca -= 'a' - 'A'
+			}
+			if 'a' <= cb && cb <= 'z' {
+				cb -= 'a' - 'A'
+			}
+			if ca != cb {
+				return int(ca) - int(cb)
+			}
+			i, j = i+1, j+1
+			continue
+		}
+		ra, na := utf8.DecodeRuneInString(a[i:])
+		rb, nb := utf8.DecodeRuneInString(b[j:])
+		if ua, ub := unicode.ToUpper(ra), unicode.ToUpper(rb); ua != ub {
+			if ua < ub {
+				return -1
+			}
+			return 1
+		}
+		i, j = i+na, j+nb
+	}
+	switch {
+	case i < len(a):
+		return 1
+	case j < len(b):
+		return -1
+	}
+	return strings.Compare(a, b)
 }

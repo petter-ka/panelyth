@@ -138,6 +138,40 @@ describe("listing (Stage C01)", () => {
     expect(pages.length).toBeLessThanOrEqual(5)
   })
 
+  it("keys pressed while a refresh looks up the cursor's entry are not undone", async () => {
+    const fake = await start()
+    await waitFor(() => expect(rows("left").length).toBeGreaterThan(5))
+    await key("left", { key: "ArrowDown" })
+    const before = useListingStore.getState().left.cursor
+    // Go answers the refresh's lookup only after two more keys.
+    let answer: () => void = () => undefined
+    const indexOf = fake.api.query.indexOf.getMockImplementation()!
+    fake.api.query.indexOf.mockImplementationOnce(
+      (queryId: number, entryId: number) =>
+        new Promise((resolve) => {
+          answer = () => resolve(indexOf(queryId, entryId))
+        }),
+    )
+    await act(async () => fake.relist(10))
+    await key("left", { key: "ArrowDown" })
+    await key("left", { key: "ArrowDown" })
+    expect(useListingStore.getState().left.cursor).toBe(before + 2)
+    await act(async () => answer())
+    expect(useListingStore.getState().left.cursor).toBe(before + 2)
+  })
+
+  it("being shown does not take the focus from a path being typed", async () => {
+    const fake = await start()
+    await waitFor(() => expect(rows("left").length).toBeGreaterThan(0))
+    await act(async () => fireEvent.click(screen.getByTestId("path-right")))
+    const input = screen.getByRole("textbox", { name: "Path" })
+    input.focus()
+    fireEvent.change(input, { target: { value: "C:\\big" } })
+    await act(async () => fake.emit("app.visibility", { app: "commander", visible: true }))
+    expect(screen.getByRole("textbox", { name: "Path" })).toHaveFocus()
+    expect(screen.getByRole("textbox", { name: "Path" })).toHaveValue("C:\\big")
+  })
+
   it("moves one cursor with arrows, PgUp/PgDn and Home/End", async () => {
     await start()
     await waitFor(() => expect(rows("left").length).toBeGreaterThan(5))

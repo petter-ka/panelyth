@@ -980,9 +980,13 @@ async function applyInvalidation(side: Side, snapshot: QuerySnapshot): Promise<v
     moveCursor(side, getPanel(side).cursor)
     return
   }
+  const cursorBefore = getPanel(side).cursor
   const at = await bridge.indexOf(snapshot.queryId, focusId).catch(() => null)
   const now = getPanel(side)
   if (!at || now.query?.queryId !== snapshot.queryId) return
+  // Keys moved the cursor while Go looked the entry up: the user's move wins
+  // over following the old entry (a file operation's focus still applies).
+  if (pending === null && now.cursor !== cursorBefore) return
   if (at.index >= 0) {
     if (pending !== null && pendingFocus[side] === pending) {
       pendingFocus[side] = null

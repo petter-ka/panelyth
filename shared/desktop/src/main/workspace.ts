@@ -87,7 +87,13 @@ export function workspaceHandlers(deps: WorkspaceDeps): Pick<MainHandlers, Works
         }
       })
       const exists = await Promise.all(candidates.map((p) => isDir(p.path)))
-      const places: Place[] = candidates.filter((_, i) => exists[i])
+      // XDG user dirs set to the home folder are disabled (xdg-user-dirs
+      // writes that for folders that do not exist), and Electron then
+      // returns home for them: list home once (Stage P04).
+      const home = candidates.find((p) => p.id === "home")?.path
+      const places: Place[] = candidates.filter(
+        (p, i) => exists[i] && (p.id === "home" || p.path !== home),
+      )
       return { places }
     },
     "shell.open": async (_event, { entryId, allowProgram }, app) => {
