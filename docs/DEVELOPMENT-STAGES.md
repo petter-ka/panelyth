@@ -93,8 +93,8 @@ A stage is complete only when:
 request while C07's manual items stay open. ADR-0032 is accepted: electron-builder packages the product (Windows NSIS,
 macOS DMG and zip, Linux AppImage and tar.gz), `release.yml` builds Windows and macOS for every published GitHub
 release, and `ci.yml` runs the suites and a packaged smoke test on all three OSes. The Linux pass fixed read-only
-copies on Unix, filesystem-dependent entry ids, created times on Linux (`statx`), duplicate quick-access places and a
-dropped mark-by-mask during refreshes. Open: the viewer's e2e specs (since C06), the first Windows and macOS CI run,
+copies on Unix, filesystem-dependent entry ids, created times on Linux (`statx`), duplicate quick-access places, and (in the commander)
+a dropped mark-by-mask and undone cursor keys during folder refreshes. Open: the viewer's e2e specs (since C06), the first Windows and macOS CI run,
 and the volume, Unicode, media-tool and budget items of the stage.
 
 Previously active:

@@ -88,6 +88,10 @@ not run by hand here.
   commit makes a new query version, and `markByMask` discarded an answer for an older version. It now matches again
   against the new version (up to 4 attempts). Found by `marks.spec.ts` "each carry-over option…", which failed in
   3 of 7 runs here.
+- **Keys were undone by a refresh** (commander, all platforms): an invalidated panel looks its cursor entry up in Go
+  and moved the cursor back to it, overwriting keys pressed during the round-trip (seen as a lost ArrowDown in the C01
+  100k spec: the right panel's cached folder refreshed while the test pressed keys; 5 of 6 runs failed after another
+  test). The lookup now leaves a cursor the user moved meanwhile (a file operation's pending focus still applies).
 - The C03 spec "bookmarks and recent locations are one list" assumed the bookmark rows were mounted; the viewer's
   sidebar is virtualized and reveals the open folder, and on Linux `/` lists about 20 folders above `/tmp`. The spec
   scrolls the list to the top first.
@@ -96,8 +100,8 @@ not run by hand here.
 
 - Go: all packages pass, also under `-race`. The real-trash tests (`FASTVIEW_TEST_TRASH=1`) pass with the
   freedesktop trash. Skipped by design: long paths (Windows), the permission test (runs as root here), 7-Zip.
-- Unit: contracts 72, renderer-core 12, media-ui 5, desktop 110, ui 26, viewer 164, commander 122.
-- E2E: the commander and app-switch specs pass (37 of 37 idle). The C03 tab-switch and C06 find benchmarks missed their
+- Unit: contracts 72, renderer-core 12, media-ui 5, desktop 110, ui 26, viewer 164, commander 123.
+- E2E: the commander and app-switch specs pass (37 of 37, 4.9 min). The C03 tab-switch and C06 find benchmarks missed their
   budgets only while another suite loaded the same 4 vCPUs; idle they pass.
 - The packaged smoke test passes.
 
