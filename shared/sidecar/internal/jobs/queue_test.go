@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"strings"
 	"testing"
@@ -121,9 +120,6 @@ func TestQueueCap(t *testing.T) {
 }
 
 func TestPauseResumeAndCancelMidFile(t *testing.T) {
-	if runtime.GOOS == "darwin" {
-		t.Cleanup(fileops.ForcePortableCopy()) // an APFS clone has no pause point
-	}
 	e := newEnv(t)
 	write(t, filepath.Join(e.root, "big.mp4"), 96<<20)
 	dest := filepath.Join(e.root, "dest")
