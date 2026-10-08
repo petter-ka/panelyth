@@ -502,6 +502,13 @@ func TestGoldenFrames(t *testing.T) {
 		t.Fatalf("run: %v", err)
 	}
 
+	// A started job's answer races the queue: it may already be running.
+	for _, name := range []string{"res-jobs.start.json", "res-jobs.start-ask.json", "res-jobs.start-dirid.json"} {
+		if r, ok := golden[name].(map[string]any)["r"].(map[string]any); ok && r["state"] == "running" {
+			r["state"] = "queued"
+		}
+	}
+
 	for name, v := range golden {
 		got, _ := json.MarshalIndent(v, "", "  ")
 		got = append(got, '\n')
