@@ -81,6 +81,8 @@ test.describe("archives (Stage C07)", () => {
       await expect(c.getByTestId("lister")).toContainText("read me first")
       await c.keyboard.press("Escape")
       await expect(c.getByTestId("lister")).toHaveCount(0)
+      // Closing the lister gives the panel its focus back (keys go nowhere before).
+      await expect(grid(c)).toBeFocused()
 
       // Archives are read-only.
       await c.keyboard.press("F8")

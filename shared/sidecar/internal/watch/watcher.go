@@ -7,6 +7,7 @@ package watch
 import (
 	"log/slog"
 	"path/filepath"
+	"slices"
 	"sync"
 	"time"
 
@@ -57,41 +58,81 @@ func New(log *slog.Logger, onDirty func(dirID int64), quiet, maxWait time.Durati
 // SetLimit changes how many folders are watched at once (at least 1).
 func (w *Watcher) SetLimit(n int) {
 	w.mu.Lock()
-	defer w.mu.Unlock()
 	w.limit = max(n, 1)
-	w.evictLocked()
+	evicted := w.evictLocked()
+	w.mu.Unlock()
+	w.remove(evicted)
 }
 
 // Watch adds a directory (or marks it most recently opened).
+//
+// fsnotify's Add and Remove run outside w.mu: on Windows they wait for the
+// watcher's I/O goroutine, which may itself be waiting to deliver an event
+// to loop, and loop needs w.mu to handle it (a deadlock while the watched
+// folder keeps changing; Stage P04).
 func (w *Watcher) Watch(dirID int64, path string) {
 	if w.fs == nil {
 		return
 	}
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	for i, d := range w.dirs {
-		if d.path == path {
-			d.dirID = dirID
-			w.dirs = append(append(w.dirs[:i:i], w.dirs[i+1:]...), d)
-			return
-		}
+	if w.touch(dirID, path) {
+		return
 	}
 	if err := w.fs.Add(path); err != nil {
 		w.log.Warn("cannot watch folder; refresh manually", "path", path, "err", err)
 		return
 	}
-	w.dirs = append(w.dirs, &watched{dirID: dirID, path: path})
-	w.evictLocked()
+	w.mu.Lock()
+	var evicted []string
+	if !w.touchLocked(dirID, path) { // not added by a concurrent Watch meanwhile
+		w.dirs = append(w.dirs, &watched{dirID: dirID, path: path})
+		evicted = w.evictLocked()
+	}
+	w.mu.Unlock()
+	w.remove(evicted)
 }
 
-func (w *Watcher) evictLocked() {
+// touch marks a watched path most recently opened; false if not watched.
+func (w *Watcher) touch(dirID int64, path string) bool {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	return w.touchLocked(dirID, path)
+}
+
+func (w *Watcher) touchLocked(dirID int64, path string) bool {
+	for i, d := range w.dirs {
+		if d.path == path {
+			d.dirID = dirID
+			w.dirs = append(append(w.dirs[:i:i], w.dirs[i+1:]...), d)
+			return true
+		}
+	}
+	return false
+}
+
+// evictLocked drops the least recently opened folders over the limit and
+// returns their paths, to be removed from fsnotify after unlocking.
+func (w *Watcher) evictLocked() []string {
+	var paths []string
 	for len(w.dirs) > w.limit {
 		old := w.dirs[0]
 		w.dirs = w.dirs[1:]
 		if old.timer != nil {
 			old.timer.Stop()
 		}
-		_ = w.fs.Remove(old.path)
+		paths = append(paths, old.path)
+	}
+	return paths
+}
+
+// remove stops watching evicted paths, unless a Watch took one back meanwhile.
+func (w *Watcher) remove(paths []string) {
+	for _, p := range paths {
+		w.mu.Lock()
+		back := slices.ContainsFunc(w.dirs, func(d *watched) bool { return d.path == p })
+		w.mu.Unlock()
+		if !back {
+			_ = w.fs.Remove(p)
+		}
 	}
 }
 

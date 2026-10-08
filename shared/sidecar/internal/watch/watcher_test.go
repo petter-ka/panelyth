@@ -15,13 +15,16 @@ func TestBurstBecomesOneRelist(t *testing.T) {
 	dir := t.TempDir()
 	var calls atomic.Int32
 	var last atomic.Int64
-	w := New(slog.New(slog.DiscardHandler), func(id int64) { calls.Add(1); last.Store(id) }, 100*time.Millisecond, time.Second)
+	// A quiet window well above any pause inside the burst: on CI runners
+	// (Windows with Defender) 200 writes can stall for more than 100 ms, or
+	// their events arrive in batches, and the test is about coalescing.
+	w := New(slog.New(slog.DiscardHandler), func(id int64) { calls.Add(1); last.Store(id) }, 500*time.Millisecond, 5*time.Second)
 	defer w.Close()
 	w.Watch(7, dir)
 	for i := range 200 {
 		_ = os.WriteFile(filepath.Join(dir, fmt.Sprintf("f%d.jpg", i)), nil, 0o644)
 	}
-	time.Sleep(600 * time.Millisecond)
+	time.Sleep(1500 * time.Millisecond)
 	if n := calls.Load(); n != 1 {
 		t.Fatalf("200 events should cause 1 re-listing, got %d", n)
 	}

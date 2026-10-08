@@ -94,6 +94,15 @@ var (
 	testAfterCopy func(target string)
 )
 
+// ForcePortableCopy makes copies stream through the portable copy until the
+// returned restore runs: tests in other packages that pause mid-file need
+// its pause points (an APFS clone is one instant step). Not for concurrent use.
+func ForcePortableCopy() (restore func()) {
+	old := noFastPath
+	noFastPath = true
+	return func() { noFastPath = old }
+}
+
 var bufPool = sync.Pool{New: func() any { b := make([]byte, BufferSize); return &b }}
 
 func (o *CopyOptions) gate(ctx context.Context) error {

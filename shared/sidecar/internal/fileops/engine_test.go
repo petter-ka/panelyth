@@ -361,6 +361,21 @@ func TestGatePausesAndCancels(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			defer cancel()
 			dst := filepath.Join(dir, fmt.Sprintf("out-%v.bin", portable))
+			if !portable && runtime.GOOS == "darwin" {
+				// APFS clones the file in one step: no bytes stream, so there
+				// is no pause point. The clone completes and reports it all.
+				if err := CopyFile(ctx, src, dst, false, &CopyOptions{Gate: gate, Progress: func(n int64) { copied.Add(n) }}); err != nil {
+					t.Fatal(err)
+				}
+				if copied.Load() != 64<<20 {
+					t.Fatalf("progress %d after a clone", copied.Load())
+				}
+				if a, b := mustRead(t, src), mustRead(t, dst); !bytes.Equal(a, b) {
+					t.Fatal("clone differs")
+				}
+				close(release)
+				return
+			}
 			done := make(chan error, 1)
 			go func() {
 				done <- CopyFile(ctx, src, dst, false, &CopyOptions{Gate: gate, Progress: func(n int64) { copied.Add(n) }})
@@ -387,4 +402,13 @@ func TestGatePausesAndCancels(t *testing.T) {
 			close(release)
 		})
 	}
+}
+
+func mustRead(t testing.TB, path string) []byte {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
 }
