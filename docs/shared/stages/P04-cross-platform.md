@@ -112,6 +112,17 @@ not run by hand here.
   tab switch measured 76 ms (budget 50) and the C06 quick filter 350 ms (budget 300). Under `CI` a budget's gate is
   twice the budget (`budgetGate`, `shared/e2e/launch.ts`); the measured values are recorded either way.
 
+### First macOS e2e run
+
+- **macOS file watching** (carried over from ADR-0020): fsnotify's kqueue backend opened every file of a watched
+  folder, synchronously inside `dir.open`, and kept the descriptors it had opened when one failed. After `flat-100k`,
+  the next folder could not be opened (C06 and C02 benchmarks: "no rows for …/tree-50k"), the 100k listing painted in
+  1.2 s, and tab switches took 168 ms. The sidecar now watches each folder through one kqueue descriptor on the folder
+  (ADR-0020 amended); Linux and Windows keep fsnotify behind the same small backend interface.
+- Specs: the C04 large-file copy completes at once on APFS (a clone), so it is paused only while still running (the
+  cancelled second copy already allowed this); the shortcut list shows "⌘I" on macOS; Ctrl+click is a right-click on
+  macOS, so the C02 spec clicks with Cmd there (`ControlOrMeta`). Plain Ctrl key presses already count as Mod on macOS.
+
 ### Linux results
 
 - Go: all packages pass, also under `-race`. The real-trash tests (`FASTVIEW_TEST_TRASH=1`) pass with the
@@ -129,6 +140,7 @@ not run by hand here.
 - Windows and macOS: the first CI run is the first run of the packaging and smoke test there, and of the e2e suites on
   macOS. The macOS `clonefile` path, "Put Back", FSEvents vs kqueue, and NFC/NFD names are verified in that run or by
   hand on a Mac.
+- macOS: "Put Back", NFC/NFD names and the e2e run after the watcher change are still to be confirmed.
 - Not started: volume tests (removable, network, labels), Unicode normalization and per-volume case sensitivity for
   `path_key`, Windows UNC and reserved names, ffmpeg/ffprobe and 7-Zip discovery per OS, trackpad and wheel inertia,
   startup and idle-memory budgets per OS (`BENCH_STAGE=P04`).

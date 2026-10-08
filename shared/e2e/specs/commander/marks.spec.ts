@@ -65,7 +65,7 @@ test.describe("marks and quick search (Stage C02)", () => {
       // Ctrl+click toggles; Alt+Num+ marks the cursor's extension.
       await grid(c)
         .locator("[data-id]", { hasText: "a1" })
-        .click({ modifiers: ["Control"] })
+        .click({ modifiers: ["ControlOrMeta"] }) // Ctrl+click is a right-click on macOS
       await expect.poll(() => marked(c)).toEqual([])
       await cursorTo(c, "left", "a2")
       await c.keyboard.press("Alt+NumpadAdd")
@@ -143,7 +143,9 @@ test.describe("marks and quick search (Stage C02)", () => {
       await expect(help.locator('[data-action="mark.invert"]')).toContainText("Num*")
       await help.getByRole("button", { name: "Change shortcut for Invert marks" }).click()
       await c.keyboard.press("Control+i")
-      await expect(help.locator('[data-action="mark.invert"]')).toContainText("Ctrl+I")
+      await expect(help.locator('[data-action="mark.invert"]')).toContainText(
+        process.platform === "darwin" ? "⌘I" : "Ctrl+I",
+      )
       await c.keyboard.press("Escape")
       await grid(c).focus()
       await c.keyboard.press("Control+i")
@@ -182,7 +184,7 @@ test.describe("switching with marks (Stage C02)", () => {
       await page.locator('[data-testid="tile"][aria-label="a1.jpg"]').click()
       await page
         .locator('[data-testid="tile"][aria-label="a3.png"]')
-        .click({ modifiers: ["Control"] })
+        .click({ modifiers: ["ControlOrMeta"] }) // Ctrl+click is a right-click on macOS
       await page.getByTestId("app-switch").click()
       await expect.poll(() => shellState(app)).toMatchObject({ active: "commander" })
       await expect.poll(() => marked(c)).toEqual(["a1", "a3"])

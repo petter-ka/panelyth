@@ -6,12 +6,9 @@ package watch
 
 import (
 	"log/slog"
-	"path/filepath"
 	"slices"
 	"sync"
 	"time"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 // DefaultLimit covers the viewer's folder, both commander panels and one more.
@@ -32,7 +29,7 @@ type Watcher struct {
 	quiet   time.Duration
 	maxWait time.Duration
 
-	fs *fsnotify.Watcher // nil if the platform watcher is unavailable
+	fs backend // nil if the platform watcher is unavailable
 
 	mu    sync.Mutex
 	limit int
@@ -44,7 +41,7 @@ type Watcher struct {
 // still works as a no-op (the folder is browsable, only live updates are lost).
 func New(log *slog.Logger, onDirty func(dirID int64), quiet, maxWait time.Duration) *Watcher {
 	w := &Watcher{log: log, onDirty: onDirty, quiet: quiet, maxWait: maxWait, limit: DefaultLimit, done: make(chan struct{})}
-	fw, err := fsnotify.NewWatcher()
+	fw, err := newBackend()
 	if err != nil {
 		log.Warn("file watching unavailable", "err", err)
 		close(w.done)
@@ -66,9 +63,9 @@ func (w *Watcher) SetLimit(n int) {
 
 // Watch adds a directory (or marks it most recently opened).
 //
-// fsnotify's Add and Remove run outside w.mu: on Windows they wait for the
-// watcher's I/O goroutine, which may itself be waiting to deliver an event
-// to loop, and loop needs w.mu to handle it (a deadlock while the watched
+// The backend's Add and Remove run outside w.mu: on Windows fsnotify's wait
+// for its I/O goroutine, which may itself be waiting to deliver an event to
+// loop, and loop needs w.mu to handle it (a deadlock while the watched
 // folder keeps changing; Stage P04).
 func (w *Watcher) Watch(dirID int64, path string) {
 	if w.fs == nil {
@@ -110,7 +107,7 @@ func (w *Watcher) touchLocked(dirID int64, path string) bool {
 }
 
 // evictLocked drops the least recently opened folders over the limit and
-// returns their paths, to be removed from fsnotify after unlocking.
+// returns their paths, to be removed from the backend after unlocking.
 func (w *Watcher) evictLocked() []string {
 	var paths []string
 	for len(w.dirs) > w.limit {
@@ -140,12 +137,12 @@ func (w *Watcher) loop() {
 	defer close(w.done)
 	for {
 		select {
-		case ev, ok := <-w.fs.Events:
+		case dir, ok := <-w.fs.changed():
 			if !ok {
 				return
 			}
-			w.event(ev)
-		case err, ok := <-w.fs.Errors:
+			w.event(dir)
+		case err, ok := <-w.fs.errors():
 			if !ok {
 				return
 			}
@@ -160,12 +157,12 @@ func (w *Watcher) loop() {
 	}
 }
 
-func (w *Watcher) event(ev fsnotify.Event) {
+// event schedules a re-listing of the watched directory dir.
+func (w *Watcher) event(dir string) {
 	w.mu.Lock()
 	defer w.mu.Unlock()
-	parent := filepath.Dir(ev.Name)
 	for _, d := range w.dirs {
-		if d.path == parent {
+		if d.path == dir {
 			w.scheduleLocked(d)
 			return
 		}

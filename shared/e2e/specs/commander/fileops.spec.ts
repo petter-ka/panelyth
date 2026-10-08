@@ -92,11 +92,15 @@ test.describe("file operations (Stage C04)", () => {
       await expect(c.getByTestId("copy-dialog")).toBeVisible()
       await expect(c.getByRole("dialog")).toContainText("Copy big.bin")
       await expect(c.getByLabel("Destination")).toHaveValue(dst)
-      const row = await confirmJob(c, ["running"])
-      await row.getByRole("button", { name: "Pause" }).click()
-      const pausedAt = Date.now()
-      await lastJobState(c, ["paused", "completed"])
-      const pauseMs = Date.now() - pausedAt
+      // On APFS the copy is a clone and completes at once: nothing to pause.
+      const row = await confirmJob(c, ["running", "completed"])
+      let pauseMs = 0
+      if ((await row.getAttribute("data-state")) === "running") {
+        await row.getByRole("button", { name: "Pause" }).click()
+        const pausedAt = Date.now()
+        await lastJobState(c, ["paused", "completed"])
+        pauseMs = Date.now() - pausedAt
+      }
       const state = await row.getAttribute("data-state")
       if (state === "paused") {
         const partial = readdirSync(dst).find((n) => n.endsWith(".fastview-partial"))
