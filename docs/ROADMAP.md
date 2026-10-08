@@ -113,7 +113,7 @@ the commander queries `all` (ADR-0026).
 
 Queue lanes, per-item conflict questions, pause and resume, speed and ETA, OS fast paths, verification (ADR-0029).
 
-### P04 — Cross-platform hardening (formerly Phase 9)
+### P04 — Cross-platform hardening (formerly Phase 9; in progress since 2026-10-08)
 
 Packaged builds of both apps on Windows, macOS and Linux; path, volume, trash, watching and media capability tests.
 

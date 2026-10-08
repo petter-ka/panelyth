@@ -51,7 +51,7 @@ A stage is complete only when:
 | P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | in progress (minimal part done) |
 | P02 | Index scope: all entries, filtered per query | P01 | partly done (query core in code; session budgets and visible-app watching open) |
 | P03 | File-operation engine v2 | P02 | implementation done (2026-10-06); Linux/macOS paths in P04 |
-| P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | planned |
+| P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | **active**: packaging, CI, release builds and the Linux pass done (2026-10-08) |
 | P05 | Performance hardening (formerly 10) | P04 | planned |
 | P06 | Release engineering (formerly 11) | P05 | planned |
 
@@ -66,7 +66,7 @@ A stage is complete only when:
 | C04 | File operations | C03, P03 | implementation done (2026-10-06); the NVDA pass remains |
 | C05 | Quick view, lister, open and edit | C04 | implementation done (2026-10-06); the NVDA pass remains |
 | C06 | Find files, branch view and quick filter | C05 | implementation done (2026-10-07); the NVDA pass remains |
-| C07 | Archives | C06 | **active**: implementation done (2026-10-07); the NVDA pass and a run with a real 7-Zip remain |
+| C07 | Archives | C06 | implementation done (2026-10-07); the NVDA pass and a run with a real 7-Zip remain |
 | C08 | Compare, synchronize and checksums | C07 | planned |
 | C09 | Multi-rename, attributes and properties | C08 | planned |
 | C10 | Command line, tools and customization | C09 | planned |
@@ -89,6 +89,15 @@ A stage is complete only when:
 
 ## Active stage
 
+`P04 — Cross-platform hardening` (`docs/shared/stages/P04-cross-platform.md`), started 2026-10-08 at the owner's
+request while C07's manual items stay open. ADR-0032 is accepted: electron-builder packages the product (Windows NSIS,
+macOS DMG and zip, Linux AppImage and tar.gz), `release.yml` builds Windows and macOS for every published GitHub
+release, and `ci.yml` runs the suites and a packaged smoke test on all three OSes. The Linux pass fixed read-only
+copies on Unix, filesystem-dependent entry ids, created times on Linux (`statx`), duplicate quick-access places and a
+dropped mark-by-mask during refreshes. Open: the viewer's e2e specs (since C06), the first Windows and macOS CI run,
+and the volume, Unicode, media-tool and budget items of the stage.
+
+Previously active:
 `C07 — Archives` (`docs/commander/stages/C07-archives.md`), started 2026-10-07 right after C06 (find files, branch
 view and quick filter; implementation done 2026-10-07). ADR-0030 is accepted: zip, tar, tar.gz, tar.bz2 and .gz are
 read with the standard library, 7z, rar and others through an optional 7-Zip; an open archive is a query-session

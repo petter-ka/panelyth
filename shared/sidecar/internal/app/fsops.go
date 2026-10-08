@@ -189,7 +189,7 @@ func (s *indexService) fsMkfile(ctx context.Context, p fsMkfileParams) (fsMkfile
 			return fsMkfileResult{}, rpc.NewError(rpc.CodeInternal, err.Error())
 		}
 	}
-	fi, err := os.Stat(path)
+	fi, err := fsx.Stat(path)
 	if err != nil {
 		return fsMkfileResult{}, statError(err, "file")
 	}

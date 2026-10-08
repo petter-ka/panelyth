@@ -225,7 +225,7 @@ func listDir(ctx context.Context, c *Compiled, j dirJob, chunk int, cnt *counter
 		var found []index.Found
 		for _, e := range ents {
 			name := e.Name()
-			info, err := e.Info()
+			info, err := fsx.EntryInfo(f, e)
 			if err != nil {
 				continue // vanished between read and stat
 			}

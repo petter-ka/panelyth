@@ -177,6 +177,23 @@ describe("marks (Stage C02)", () => {
     await waitFor(() => expect(markedNames("left")).toContain("Photo2"))
   })
 
+  it("a mask matched while the folder refreshes is matched again, not dropped", async () => {
+    const fake = await start()
+    const match = fake.api.query.match.getMockImplementation()!
+    // The first answer is for the version before a rescan committed.
+    fake.api.query.match.mockImplementationOnce(async (queryId: number, mask: string) => {
+      const res = await match(queryId, mask)
+      fake.relist(fake.lastDescriptor().dirId!)
+      return res
+    })
+    await key({ key: "+", code: "NumpadAdd" })
+    const input = screen.getByRole("textbox", { name: "Mask" })
+    fireEvent.change(input, { target: { value: "*.jpg" } })
+    await act(async () => fireEvent.submit(input.closest("form")!))
+    await waitFor(() => expect(markedNames("left").sort()).toEqual(["Photo2", "photo"]))
+    expect(fake.api.query.match).toHaveBeenCalledTimes(2)
+  })
+
   it("Space on a folder marks it and calculates its size; the status line shows marked sizes", async () => {
     const fake = await start()
     await key({ key: "ArrowDown" })

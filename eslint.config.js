@@ -16,6 +16,7 @@ export default tseslint.config(
       "**/node_modules/**",
       "**/coverage/**",
       "shared/sidecar/**",
+      "shared/desktop/release/**",
       "shared/e2e/test-results/**",
       "shared/e2e/playwright-report/**",
     ],

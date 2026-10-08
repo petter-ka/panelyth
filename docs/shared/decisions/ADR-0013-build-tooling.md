@@ -23,7 +23,7 @@ Amended 2026-10-05 (ADR-0031): the code moved into `shared/` (`desktop`, `contra
   separate `shared/desktop` and `viewer/renderer` packages that Stage 00 prescribes.
 - **Go sidecar** builds with `CGO_ENABLED=0 go build -trimpath` for the host into
   `shared/desktop/resources/bin/<platform>-<arch>/fastview-sidecar[.exe]` (`pnpm build:sidecar`). Packaged
-  builds read it from `resources/bin`. The packager choice is deferred to Stage P04.
+  builds read it from `resources/bin`. The packager is electron-builder (ADR-0032, Stage P04).
 - **TypeScript is pinned to 6.0.x**, because `typescript-eslint` 8.x supports `<6.1`. Move to TypeScript 7 (the
   native compiler) once the lint toolchain supports it.
 - **Formatting and lint**: Prettier (`semi: false`), ESLint flat config with typescript-eslint and

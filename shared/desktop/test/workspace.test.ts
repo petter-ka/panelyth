@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { EOL, tmpdir } from "node:os"
 import { join } from "node:path"
 import type { IpcMainInvokeEvent } from "electron"
@@ -16,6 +16,13 @@ const sel = {
   exclude: [],
 }
 
+/** A folder per place (videos missing); home is the temp folder itself. */
+function place(dir: string, id: string): string {
+  const path = join(dir, id)
+  if (id !== "videos") mkdirSync(path, { recursive: true })
+  return path
+}
+
 function setup(overrides: Partial<WorkspaceDeps> = {}) {
   const dir = mkdtempSync(join(tmpdir(), "fv-ws-"))
   const deps: WorkspaceDeps = {
@@ -24,7 +31,7 @@ function setup(overrides: Partial<WorkspaceDeps> = {}) {
         ? { path: join(dir, "a.jpg"), kind: "image", program: false }
         : { paths: [join(dir, "a.jpg"), join(dir, "b.jpg")], truncated: true },
     ) as unknown as WorkspaceDeps["call"],
-    getPath: vi.fn((id) => (id === "videos" ? join(dir, "missing") : dir)),
+    getPath: vi.fn((id) => (id === "home" ? dir : place(dir, id))),
     openPath: vi.fn(async () => ""),
     showItemInFolder: vi.fn(),
     writeClipboard: vi.fn(),
@@ -48,6 +55,12 @@ describe("workspace handlers", () => {
       "pictures",
     ])
     expect(places[0]).toEqual({ id: "home", label: "Home", path: dir })
+  })
+
+  it("lists home once when user folders resolve to it (XDG disabled folders)", async () => {
+    const { h, dir } = setup({ getPath: () => dir })
+    const { places } = await h["places.list"](ev, {}, "viewer")
+    expect(places).toEqual([{ id: "home", label: "Home", path: dir }])
   })
 
   it("skips places the platform does not define", async () => {

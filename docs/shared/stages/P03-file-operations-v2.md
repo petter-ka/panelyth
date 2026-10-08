@@ -150,7 +150,8 @@ Measurements (reference machine: i9-13900K, C: NVMe ~98% full, D: and E: SATA HD
 
 ## Open
 
-- Linux and macOS fast paths, link copies with privilege, and Windows names off Windows: Stage P04.
+- Linux and macOS fast paths, link copies with privilege, and Windows names off Windows: Stage P04. The Linux path and
+  Windows names off Windows pass there (2026-10-08); a read-only bug on Unix was fixed.
 - Renderer long tasks during copies and pause latency from the UI: measured in Stage C04.
 - A 4.1 GB leftover of the first, aborted baseline run is at `%TEMP%\fastview-copybench` on the reference machine (the
   agent's removal was blocked by a safety check); delete it by hand.

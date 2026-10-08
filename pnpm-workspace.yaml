@@ -12,3 +12,7 @@ packages:
 onlyBuiltDependencies:
   - electron
   - esbuild
+
+# Squirrel.Windows only; the Windows package is NSIS (ADR-0032).
+ignoredBuiltDependencies:
+  - electron-winstaller

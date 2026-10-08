@@ -129,20 +129,25 @@ export function invertMarks(side: Side): void {
   setMarks(side, invert(getMarks(side), entryTotal(side)))
 }
 
+/** Match attempts while the folder refreshes (each refresh is a new version). */
+const MASK_ATTEMPTS = 4
+
 /** Num+ / Num−: mark or unmark the files matching a mask (Go matches, files only). */
 export async function markByMask(side: Side, mask: string, mark: boolean): Promise<number> {
   const query = listing(side).query
   if (!query || mask.trim() === "") return 0
-  const res = await bridge.match(query.queryId, mask.trim())
-  if (
-    listing(side).query?.queryId !== query.queryId ||
-    res.version !== listing(side).query?.version
-  ) {
-    return 0
+  for (let attempt = 0; attempt < MASK_ATTEMPTS; attempt++) {
+    const res = await bridge.match(query.queryId, mask.trim())
+    const now = listing(side).query
+    if (now?.queryId !== query.queryId) return 0 // another folder: the mask was for this one
+    // A refresh (a rescan commits in batches) made a new version while Go
+    // matched: the ranges index the old rows, so match the new version.
+    if (res.version !== now.version) continue
+    const m = getMarks(side)
+    setMarks(side, mark ? addRanges(m, res.ranges) : removeRanges(m, res.ranges))
+    return res.count
   }
-  const m = getMarks(side)
-  setMarks(side, mark ? addRanges(m, res.ranges) : removeRanges(m, res.ranges))
-  return res.count
+  return 0
 }
 
 /** Alt+Num+: everything with the cursor entry's extension. */

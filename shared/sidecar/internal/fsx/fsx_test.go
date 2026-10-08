@@ -127,7 +127,7 @@ func TestFileTimes(t *testing.T) {
 	if err := os.WriteFile(f, nil, 0o644); err != nil {
 		t.Fatal(err)
 	}
-	fi, _ := os.Stat(f)
+	fi, _ := Stat(f)
 	tm := FileTimes(fi)
 	switch runtime.GOOS {
 	case "windows", "darwin":
@@ -135,9 +135,14 @@ func TestFileTimes(t *testing.T) {
 			t.Fatalf("birth time missing: %d", tm.BirthNs)
 		}
 	default:
-		if tm.BirthNs != 0 {
-			t.Fatalf("linux reports no birth time, got %d", tm.BirthNs)
+		// statx (Stage P04): zero only where the filesystem keeps none.
+		if tm.BirthNs != 0 && tm.BirthNs < before {
+			t.Fatalf("birth time %d before the file was created", tm.BirthNs)
 		}
+		t.Logf("birth time reported: %v", tm.BirthNs != 0)
+	}
+	if plain, _ := os.Stat(f); FileTimes(plain).AccessNs != tm.AccessNs {
+		t.Fatalf("access time differs from os.Stat")
 	}
 }
 

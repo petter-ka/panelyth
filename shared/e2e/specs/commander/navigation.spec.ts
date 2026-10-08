@@ -193,6 +193,11 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
         // The viewer shows the bookmark and the commander's recent folder.
         const page = await viewerOf(app)
         const sidebar = page.getByTestId("sidebar-list")
+        // The tree reveals the open folder and the list is virtualized: on
+        // Linux, "/" lists ~20 folders above /tmp, so the bookmark rows at the
+        // top may be scrolled out and unmounted (Stage P04).
+        await expect(sidebar.getByRole("treeitem").first()).toBeVisible()
+        await sidebar.evaluate((el) => el.scrollTo({ top: 0 }))
         await expect(sidebar.getByRole("treeitem", { name: "alpha" }).first()).toBeVisible()
         await expect(sidebar.getByRole("treeitem", { name: basename(root) }).first()).toBeVisible()
 

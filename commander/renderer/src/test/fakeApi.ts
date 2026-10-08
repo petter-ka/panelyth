@@ -458,7 +458,11 @@ export function installFakeCommander(options: FakeOptions) {
           if (split(exc).some((m) => glob(m, r.name))) return
           hits.push(i)
         })
-        return ok({ version: 1, ranges: rangesOf(hits), count: hits.length })
+        return ok({
+          version: versions.get(queryId) ?? 1,
+          ranges: rangesOf(hits),
+          count: hits.length,
+        })
       }),
     },
     selection: {

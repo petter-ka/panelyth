@@ -57,13 +57,15 @@ func TestFastPathAndPortableCopyAgree(t *testing.T) {
 	data := randomFile(t, src, 5<<20+123)
 	mtime := time.Date(2019, 3, 4, 5, 6, 7, 0, time.UTC)
 	atime := time.Date(2021, 1, 2, 3, 4, 5, 0, time.UTC)
-	if err := os.Chtimes(src, atime, mtime); err != nil {
-		t.Fatal(err)
-	}
 	setReadOnly(t, src)
 	t.Cleanup(func() { _ = os.Chmod(src, 0o644) })
 	for _, portable := range []bool{false, true} {
 		t.Run(fmt.Sprintf("portable=%v", portable), func(t *testing.T) {
+			// Per run: reading the source for the previous copy may have
+			// moved its access time (Linux relatime).
+			if err := os.Chtimes(src, atime, mtime); err != nil {
+				t.Fatal(err)
+			}
 			noFastPath = portable
 			t.Cleanup(func() { noFastPath = false })
 			dst := filepath.Join(dir, fmt.Sprintf("out-%v.bin", portable))

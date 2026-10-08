@@ -383,7 +383,7 @@ func (s *indexService) propsGet(ctx context.Context, p entryParams) (propsResult
 		SizeBytes: d.Size, ModifiedMs: d.MtimeNs / int64(time.Millisecond), CreatedMs: msPtr(d.BtimeNs)}
 	// Live stat: properties show the file as it is now, and access time is
 	// not indexed.
-	if fi, err := os.Stat(d.Path); err == nil {
+	if fi, err := fsx.Stat(d.Path); err == nil {
 		t := fsx.FileTimes(fi)
 		res.Exists = true
 		res.ModifiedMs = fi.ModTime().UnixMilli()
