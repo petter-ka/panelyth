@@ -36,7 +36,7 @@ describe("AppShell", () => {
     installFakeBridge({ ...readyStatus, state: "failed", pid: null, lastError: "crashed 3 times" })
     startSidecarMonitoring()
     render(<AppShell />)
-    expect(await screen.findByText("The FastView backend stopped")).toBeInTheDocument()
+    expect(await screen.findByText("The Panelyth backend stopped")).toBeInTheDocument()
     expect(screen.getByText("crashed 3 times")).toBeInTheDocument()
   })
 
@@ -66,7 +66,7 @@ describe("AppShell", () => {
     await userEvent.click(toggle)
     expect(toggle).toHaveTextContent("Theme: Light")
     expect(document.documentElement).not.toHaveClass("dark")
-    expect(localStorage.getItem("fastview.theme")).toBe("light")
+    expect(localStorage.getItem("panelyth.theme")).toBe("light")
     await userEvent.click(toggle)
     expect(toggle).toHaveTextContent("Theme: System")
     await userEvent.click(toggle)
@@ -75,7 +75,7 @@ describe("AppShell", () => {
   })
 
   it("restores a stored preference instead of the default", () => {
-    localStorage.setItem("fastview.theme", "light")
+    localStorage.setItem("panelyth.theme", "light")
     installFakeBridge()
     initTheme()
     render(<AppShell />)

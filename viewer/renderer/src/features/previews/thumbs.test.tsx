@@ -14,7 +14,7 @@ import {
   startThumbMonitoring,
 } from "./thumbStore"
 
-const url = (id: number) => `fastview-thumb://t/${String(id).padStart(64, "0")}.jpg`
+const url = (id: number) => `panelyth-thumb://t/${String(id).padStart(64, "0")}.jpg`
 let stop: (() => void)[] = []
 
 function setup(items = makeItems(5, 1)) {

@@ -1,4 +1,4 @@
-import type { SidecarStatus } from "@fastview/contracts"
+import type { SidecarStatus } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 

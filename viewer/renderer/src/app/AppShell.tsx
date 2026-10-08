@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AppSwitcher, Tooltip, TooltipProvider } from "@fastview/ui"
+import { AppSwitcher, Tooltip, TooltipProvider } from "@panelyth/ui"
 import { Group, Panel, Separator, type PanelImperativeHandle } from "react-resizable-panels"
 import { bridge, canSwitchApps } from "../bridge"
 import { ContentPane } from "../components/ContentPane"
@@ -231,8 +231,8 @@ export function AppShell() {
         <DialogWindow
           open={confirmExit}
           onOpenChange={setConfirmExit}
-          title="Close FastView?"
-          description="FastView will close."
+          title="Close Panelyth?"
+          description="Panelyth will close."
         >
           <div className="flex justify-end gap-2">
             <Button autoFocus onClick={() => setConfirmExit(false)}>

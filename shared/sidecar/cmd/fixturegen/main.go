@@ -14,7 +14,7 @@ import (
 	"os"
 	"time"
 
-	"fastview/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/fixture"
 )
 
 func main() {

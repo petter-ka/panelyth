@@ -1,6 +1,6 @@
-import { FIND_ENCODINGS } from "@fastview/contracts"
-import { usePageItem } from "@fastview/renderer-core"
-import { Button, DialogWindow } from "@fastview/ui"
+import { FIND_ENCODINGS } from "@panelyth/contracts"
+import { usePageItem } from "@panelyth/renderer-core"
+import { Button, DialogWindow } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react"
 import {

@@ -1,12 +1,12 @@
-# BRS — FastView (Viewer) Business Requirements Specification
+# BRS — Panelyth (Viewer) Business Requirements Specification
 
-This document covers the FastView photo and video viewer. Requirements shared by every app of the product family
+This document covers the Panelyth photo and video viewer. Requirements shared by every app of the product family
 (FR-20 design system, FR-21 packaging, FR-22 app switch and shared state, NFR-01–NFR-14) live in `docs/shared/REQUIREMENTS.md` (ADR-0025). The
 commander has its own BRS: `docs/commander/BRS.md`.
 
 ## 1. Product definition
 
-FastView is a native-feeling desktop image and video viewer/browser for Windows, macOS and Linux.
+Panelyth is a native-feeling desktop image and video viewer/browser for Windows, macOS and Linux.
 
 It is optimized for browsing local collections, especially folders containing tens or hundreds of thousands of files.
 
@@ -428,7 +428,7 @@ Architecture should allow:
 
 ## 11. Definition of success
 
-FastView is successful when:
+Panelyth is successful when:
 
 - large folders open incrementally
 - revisiting a folder benefits from persistent preview caching

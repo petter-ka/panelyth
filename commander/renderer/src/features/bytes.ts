@@ -1,5 +1,5 @@
 // Byte windows of one file for the lister and quick view (Stage C05,
-// ADR-0027): the bytes come through the file's fastview-media token URL with
+// ADR-0027): the bytes come through the file's panelyth-media token URL with
 // HTTP Range, never over IPC. Reads are served from fixed-size chunks in a
 // small LRU, so a multi-GB file opens instantly and memory stays bounded
 // however far the view scrolls.

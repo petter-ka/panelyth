@@ -28,15 +28,15 @@ import (
 	"sync/atomic"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/jobs"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/jobs"
+	"panelyth/sidecar/internal/scan"
 )
 
 type run struct {
 	Workload   string  `json:"workload"`
-	Engine     string  `json:"engine"` // "fastview" or the OS tool
+	Engine     string  `json:"engine"` // "panelyth" or the OS tool
 	Files      int     `json:"files"`
 	Bytes      int64   `json:"bytes"`
 	Ms         float64 `json:"ms"`
@@ -70,7 +70,7 @@ type bench struct {
 }
 
 func main() {
-	work := flag.String("work", filepath.Join(os.TempDir(), "fastview-copybench"), "work folder (source volume)")
+	work := flag.String("work", filepath.Join(os.TempDir(), "panelyth-copybench"), "work folder (source volume)")
 	dest := flag.String("dest", "", "a folder on another volume (cross-volume copy), optional")
 	out := flag.String("out", "", "result file (JSON); stdout when empty")
 	largeMB := flag.Int("large-mb", 4096, "size of the large file")
@@ -361,7 +361,7 @@ func (b *bench) copies(work, name string, n, size, reps int) []run {
 	var heap float64
 	failed := 0
 	for r := range reps {
-		fastview := func() {
+		panelyth := func() {
 			dst := filepath.Join(work, name, fmt.Sprintf("fv%d", r))
 			if err := os.MkdirAll(dst, 0o755); err != nil {
 				fatal(err)
@@ -383,11 +383,11 @@ func (b *bench) copies(work, name string, n, size, reps int) []run {
 				_ = os.RemoveAll(filepath.Join(work, name, fmt.Sprintf("mt%d", r)))
 			}
 		}
-		alternate(r, fastview, tool)
+		alternate(r, panelyth, tool)
 	}
 	_ = os.RemoveAll(filepath.Join(work, name))
 	out := []run{
-		{Workload: name, Engine: "fastview", Files: n, Bytes: total, Ms: ms(median(fv)), MBPerSec: mbps(total, median(fv)), PeakHeapMB: heap, Failed: failed},
+		{Workload: name, Engine: "panelyth", Files: n, Bytes: total, Ms: ms(median(fv)), MBPerSec: mbps(total, median(fv)), PeakHeapMB: heap, Failed: failed},
 		{Workload: name, Engine: osName(1), Files: n, Bytes: total, Ms: ms(median(osT)), MBPerSec: mbps(total, median(osT))},
 	}
 	if len(osMT) > 0 {
@@ -428,7 +428,7 @@ func (b *bench) large(work, dest string, size int64, reps int) []run {
 		var heap float64
 		failed := 0
 		for r := range reps {
-			fastview := func() {
+			panelyth := func() {
 				dst := filepath.Join(t.dir, fmt.Sprintf("fv%d", r))
 				if err := os.MkdirAll(dst, 0o755); err != nil {
 					fatal(err)
@@ -443,10 +443,10 @@ func (b *bench) large(work, dest string, size int64, reps int) []run {
 				osT = append(osT, d)
 				_ = os.RemoveAll(osDst)
 			}
-			alternate(r, fastview, tool)
+			alternate(r, panelyth, tool)
 		}
 		out = append(out,
-			run{Workload: t.name, Engine: "fastview", Files: 1, Bytes: size, Ms: ms(median(fv)), MBPerSec: mbps(size, median(fv)), PeakHeapMB: heap, Failed: failed},
+			run{Workload: t.name, Engine: "panelyth", Files: 1, Bytes: size, Ms: ms(median(fv)), MBPerSec: mbps(size, median(fv)), PeakHeapMB: heap, Failed: failed},
 			run{Workload: t.name, Engine: osName(1), Files: 1, Bytes: size, Ms: ms(median(osT)), MBPerSec: mbps(size, median(osT))},
 		)
 	}
@@ -463,7 +463,7 @@ func (b *bench) deletes(work string) []run {
 		total := writeFiles(dir, 10_000, 1<<10)
 		ids := b.indexDir(dir)
 		s, d, h := b.job(jobs.Spec{Kind: kind, IDs: ids})
-		out = append(out, run{Workload: "delete-10k-" + string(kind), Engine: "fastview", Files: 10_000, Bytes: total,
+		out = append(out, run{Workload: "delete-10k-" + string(kind), Engine: "panelyth", Files: 10_000, Bytes: total,
 			Ms: ms(d), MBPerSec: mbps(total, d), PeakHeapMB: h, Failed: s.Failed})
 		if kind == jobs.KindTrash {
 			n, err := purgeTrash(dir)

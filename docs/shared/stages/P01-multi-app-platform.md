@@ -12,7 +12,7 @@ Done, because Stage C00 needs it:
   `WebContentsView` laid over it (`shared/desktop/src/main/shell.ts`), created on the first switch and kept alive
   hidden. `app.switch` and `app.visibility` work; the shell owns the window title; a crashed commander view reloads
   alone. This resolves ADR-0031's `WebContentsView` open point.
-- **Capability profiles per app view** (scope 4). Main maps the calling frame's origin (`app://fastview` or
+- **Capability profiles per app view** (scope 4). Main maps the calling frame's origin (`app://panelyth` or
   `app://commander`, or each dev server) to its app and checks the method against `APP_METHODS[app]`
   (`shared/contracts/src/rpc.ts`). Each app has its own preload (`preload.cjs`, `commander.cjs`).
 - **Tooling** (scope 5). `BENCH_STAGE` accepts `NN`, `NN.N`, `PNN`, `CNN`; the e2e harness has `commanderPage`,
@@ -55,7 +55,7 @@ suites passed after the move, except tests that were already failing.
 | Package | Moves from the viewer | Notes |
 |---|---|---|
 | `shared/ui` | `styles/index.css` (tokens, themes, interface size), `components/ui/*`, `Notice`, icons, `tokens.test.ts` | Tailwind must scan the package's sources |
-| `shared/renderer-core` | bridge core (envelope → `FastViewError`), page store, selection algebra, keymap engine (actions registered per app), theme, interface size, settings and sidecar stores | feature stores stay in the apps |
+| `shared/renderer-core` | bridge core (envelope → `PanelythError`), page store, selection algebra, keymap engine (actions registered per app), theme, interface size, settings and sidecar stores | feature stores stay in the apps |
 
 - Packages ship TypeScript source bundled by each app's Vite build (the `shared/contracts` pattern), unless this
   stage measures a reason to prebuild them.

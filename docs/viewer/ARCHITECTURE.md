@@ -1,7 +1,7 @@
 # Viewer Architecture
 
-The FastView viewer is one app of the product (ADR-0025). It runs on the shared platform described in
-`docs/shared/ARCHITECTURE.md`: an app view in the FastView shell with the viewer capability profile (ADR-0027,
+The Panelyth viewer is one app of the product (ADR-0025). It runs on the shared platform described in
+`docs/shared/ARCHITECTURE.md`: an app view in the Panelyth shell with the viewer capability profile (ADR-0027,
 ADR-0031), the sidecar it shares with the commander (queried with the `media` scope, ADR-0026), and a React renderer.
 This document covers what is specific to the viewer.
 
@@ -47,7 +47,7 @@ persisted with the workspace and managed entirely in React/UI state.
   `docs/viewer/stages/03-tile-view.md`). Virtualization is by row with a constant row height per tile size.
 - Page data comes from the page store (`useSyncExternalStore`), filled by `query.page` over a query session
   (ADR-0017). Thumbnails are requested once per settled range with `preview.ensure` and arrive as `preview.ready`
-  events with `fastview-thumb:` URLs.
+  events with `panelyth-thumb:` URLs.
 - Folder tiles show up to four covers found by a shallow, bounded read in Go (`folder.covers`, ADR-0024).
 - Budgets and rendering strategy: `docs/viewer/PERFORMANCE.md`.
 
@@ -55,7 +55,7 @@ persisted with the workspace and managed entirely in React/UI state.
 
 - The pane follows the settled selection (150 ms), embeds the shared `ImageViewer` for images and the `VideoPlayer`
   for videos (Stage 06). The focused viewer is a full-window overlay that reuses `ImageViewer` (Stage 04).
-- Images load progressively: tile thumbnail → `viewer-fit` preview → original through a `fastview-media:` token URL
+- Images load progressively: tile thumbnail → `viewer-fit` preview → original through a `panelyth-media:` token URL
   when zoomed past the preview (ADR-0009). Videos always play from a token URL with HTTP Range.
 - Both components move to a shared package when the commander's quick view needs them (Stage C05).
 

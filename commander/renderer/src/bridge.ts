@@ -39,11 +39,11 @@ import type {
   SharedContext,
   SidecarStatus,
   Volume,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 /** A failed call, with the sidecar's error code and details (e.g. `{ reason: "notReady" }`). */
-export class FastViewError extends Error {
-  override name = "FastViewError"
+export class PanelythError extends Error {
+  override name = "PanelythError"
   constructor(
     readonly code: ErrorCode,
     message: string,
@@ -55,18 +55,18 @@ export class FastViewError extends Error {
 
 /** The commander's narrow API (ADR-0027); everything goes through here. */
 function api(): CommanderApi {
-  const value = window.fastview
-  if (!value) throw new Error("FastView bridge unavailable")
+  const value = window.panelyth
+  if (!value) throw new Error("Panelyth bridge unavailable")
   return value
 }
 
 async function unwrap<T>(call: () => Promise<RpcEnvelope<T>>): Promise<T> {
   const res = await call()
-  if (!res.ok) throw new FastViewError(res.e.code, res.e.message, res.e.details)
+  if (!res.ok) throw new PanelythError(res.e.code, res.e.message, res.e.details)
   return res.r
 }
 
-export const isBridgeAvailable = (): boolean => window.fastview !== undefined
+export const isBridgeAvailable = (): boolean => window.panelyth !== undefined
 
 let library: Promise<LibraryState> | null = null
 

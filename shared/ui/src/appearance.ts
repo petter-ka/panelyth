@@ -44,8 +44,8 @@ export interface SharedAppearance {
   interfaceSize: InterfaceSize
 }
 
-const THEME_KEY = "fastview.theme"
-const SIZE_KEY = "fastview.interfaceSize"
+const THEME_KEY = "panelyth.theme"
+const SIZE_KEY = "panelyth.interfaceSize"
 
 const isTheme = (v: unknown): v is ThemePreference => THEME_OPTIONS.some((o) => o.value === v)
 const isInterfaceSize = (v: unknown): v is InterfaceSize =>

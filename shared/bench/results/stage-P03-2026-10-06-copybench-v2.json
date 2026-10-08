@@ -4,13 +4,13 @@
   "date": "2026-10-06T10:13:32+02:00",
   "goos": "windows",
   "cpus": 32,
-  "work": "C:/Users/hunki/AppData/Local/Temp/fastview-copybench-v2",
-  "dest": "D:/fastview-copybench-v2",
+  "work": "C:/Users/hunki/AppData/Local/Temp/panelyth-copybench-v2",
+  "dest": "D:/panelyth-copybench-v2",
   "largeMB": 4096,
   "runs": [
     {
       "workload": "small-10k-10KB",
-      "engine": "fastview",
+      "engine": "panelyth",
       "files": 10000,
       "bytes": 102400000,
       "ms": 6217.255,
@@ -35,7 +35,7 @@
     },
     {
       "workload": "medium-1k-1MB",
-      "engine": "fastview",
+      "engine": "panelyth",
       "files": 1000,
       "bytes": 1048576000,
       "ms": 1633.279,
@@ -60,7 +60,7 @@
     },
     {
       "workload": "large-same-volume",
-      "engine": "fastview",
+      "engine": "panelyth",
       "files": 1,
       "bytes": 4294967296,
       "ms": 49968.207,
@@ -77,7 +77,7 @@
     },
     {
       "workload": "large-cross-volume",
-      "engine": "fastview",
+      "engine": "panelyth",
       "files": 1,
       "bytes": 4294967296,
       "ms": 42629.02,
@@ -94,7 +94,7 @@
     },
     {
       "workload": "delete-10k-delete",
-      "engine": "fastview",
+      "engine": "panelyth",
       "files": 10000,
       "bytes": 10240000,
       "ms": 1703.158,
@@ -103,7 +103,7 @@
     },
     {
       "workload": "delete-10k-trash",
-      "engine": "fastview",
+      "engine": "panelyth",
       "files": 10000,
       "bytes": 10240000,
       "ms": 277333.759,

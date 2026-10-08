@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fastview/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/imaging"
 )
 
 // DiskCache stores preview files under <cacheRoot>/thumbnails/ab/cd/<key>.<ext>

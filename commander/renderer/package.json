@@ -1,9 +1,9 @@
 {
-  "name": "@fastview/commander",
+  "name": "@panelyth/commander",
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "description": "FastView Commander renderer (an app view in the shared shell, ADR-0031)",
+  "description": "Panelyth Commander renderer (an app view in the shared shell, ADR-0031)",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -11,9 +11,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastview/media-ui": "workspace:*",
-    "@fastview/renderer-core": "workspace:*",
-    "@fastview/ui": "workspace:*",
+    "@panelyth/media-ui": "workspace:*",
+    "@panelyth/renderer-core": "workspace:*",
+    "@panelyth/ui": "workspace:*",
     "@tanstack/react-table": "9.2.6",
     "@tanstack/react-virtual": "3.14.13",
     "date-fns": "4.4.0",
@@ -23,7 +23,7 @@
     "zustand": "5.0.15"
   },
   "devDependencies": {
-    "@fastview/contracts": "workspace:*",
+    "@panelyth/contracts": "workspace:*",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",

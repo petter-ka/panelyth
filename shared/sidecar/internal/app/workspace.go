@@ -8,14 +8,14 @@ import (
 	"os"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/query"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage 05 workspace methods: sidebar filesystem, library.db user data,

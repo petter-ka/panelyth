@@ -33,7 +33,7 @@ function gofmt() {
   return join(dirname(go), process.platform === "win32" ? "gofmt.exe" : "gofmt")
 }
 
-const fixtureRoot = () => process.env.FASTVIEW_FIXTURES ?? join(tmpdir(), "fastview-fixtures")
+const fixtureRoot = () => process.env.PANELYTH_FIXTURES ?? join(tmpdir(), "panelyth-fixtures")
 
 const run = (cmd, args) => execFileSync(cmd, args, { cwd: goRoot, stdio: "inherit" })
 

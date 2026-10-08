@@ -7,10 +7,10 @@ import (
 	"strings"
 	"sync"
 
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/natsort"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/natsort"
+	"panelyth/sidecar/internal/scan"
 )
 
 // result is one found entry as the source sorts it.

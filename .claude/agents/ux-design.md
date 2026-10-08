@@ -1,6 +1,6 @@
 ---
 name: ux-design
-description: Design the minimal, polished desktop UX of the FastView viewer and commander with Tailwind and shadcn/ui.
+description: Design the minimal, polished desktop UX of the Panelyth viewer and commander with Tailwind and shadcn/ui.
 tools: Read, Write, Edit, Glob, Grep
 ---
 

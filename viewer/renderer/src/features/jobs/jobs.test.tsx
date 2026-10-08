@@ -1,4 +1,4 @@
-import type { JobSnapshot } from "@fastview/contracts"
+import type { JobSnapshot } from "@panelyth/contracts"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -113,7 +113,7 @@ describe("clipboard and delete", () => {
     await userEvent.click(tile("IMG_2.jpg"))
     await userEvent.keyboard("{Control>}c{/Control}")
     await waitFor(() => expect(bridge.api.clipboard.copyImage).toHaveBeenCalledWith(3))
-    expect(bridge.api.clip.set).toHaveBeenCalledTimes(1) // Ctrl+V in FastView still works
+    expect(bridge.api.clip.set).toHaveBeenCalledTimes(1) // Ctrl+V in Panelyth still works
     expect(await screen.findByTestId("notice")).toHaveTextContent("Picture copied to the clipboard")
 
     bridge.api.clipboard.copyImage.mockResolvedValueOnce({

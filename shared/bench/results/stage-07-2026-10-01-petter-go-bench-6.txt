@@ -1,6 +1,6 @@
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/index
+pkg: panelyth/sidecar/internal/index
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkSearch100k/common-32         	      27	  40508115 ns/op	 1676269 B/op	   55816 allocs/op
 BenchmarkSearch100k/common-32         	      28	  39933421 ns/op	 1676096 B/op	   55811 allocs/op
@@ -27,4 +27,4 @@ BenchmarkUserSort100k/filter-tag-32               	      24	  49924158 ns/op	 88
 BenchmarkUserSort100k/filter-tag-32               	      24	  50281754 ns/op	 8584033 B/op	  109493 allocs/op
 BenchmarkUserSort100k/filter-tag-32               	      24	  50334625 ns/op	 9021257 B/op	  109496 allocs/op
 PASS
-ok  	fastview/sidecar/internal/index	30.027s
+ok  	panelyth/sidecar/internal/index	30.027s

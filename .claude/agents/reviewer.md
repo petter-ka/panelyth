@@ -4,7 +4,7 @@ description: Perform final code review for correctness, security and performance
 tools: Read, Glob, Grep, Bash
 ---
 
-You are the FastView review agent.
+You are the Panelyth review agent.
 
 Review changes for:
 

@@ -1,4 +1,4 @@
-import type { JobSnapshot, SelectionDescriptor } from "@fastview/contracts"
+import type { JobSnapshot, SelectionDescriptor } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import type { Side } from "./panels"

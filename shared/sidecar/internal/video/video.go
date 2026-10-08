@@ -83,7 +83,7 @@ func New(ffmpeg, ffprobe string) *Tools {
 		cache: map[string]*cacheEntry{}}
 }
 
-// Locate finds the tools: FASTVIEW_FFMPEG (path to ffmpeg, ffprobe is its
+// Locate finds the tools: PANELYTH_FFMPEG (path to ffmpeg, ffprobe is its
 // sibling; "off" disables video tools), then next to the sidecar executable
 // (packaged builds), then PATH.
 func Locate(getenv func(string) string) *Tools {
@@ -93,7 +93,7 @@ func Locate(getenv func(string) string) *Tools {
 		}
 		return name
 	}
-	if v := getenv("FASTVIEW_FFMPEG"); v != "" {
+	if v := getenv("PANELYTH_FFMPEG"); v != "" {
 		if v == "off" {
 			return New("", "")
 		}

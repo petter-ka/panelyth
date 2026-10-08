@@ -1,6 +1,6 @@
 import { useId, useState, type KeyboardEvent } from "react"
-import { setSwitchSettings, useSwitchSettings } from "@fastview/renderer-core"
-import { Tooltip } from "@fastview/ui"
+import { setSwitchSettings, useSwitchSettings } from "@panelyth/renderer-core"
+import { Tooltip } from "@panelyth/ui"
 import { bridge, canSwitchApps } from "../bridge"
 import { useLibraryStore } from "../features/library/libraryStore"
 import { openShortcutHelp } from "../features/shortcuts/shortcutStore"
@@ -171,7 +171,7 @@ function ViewerSettings() {
       <section aria-label="Confirmation and reminders" className="border-t border-border">
         <SwitchRow
           label="Confirm on Escape exit"
-          description="Ask before closing FastView when no image or video is fullscreen."
+          description="Ask before closing Panelyth when no image or video is fullscreen."
           checked={preferences.confirmOnEscapeExit}
           disabled={!libraryLoaded}
           onChange={(value) => setPreference("confirmOnEscapeExit", value)}

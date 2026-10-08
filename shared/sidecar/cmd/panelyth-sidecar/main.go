@@ -1,4 +1,4 @@
-// Command fastview-sidecar is the FastView backend process. Electron main
+// Command panelyth-sidecar is the Panelyth backend process. Electron main
 // spawns it and talks to it over framed stdin/stdout; it exits when stdin
 // closes, on system.shutdown, or on SIGINT/SIGTERM.
 package main
@@ -10,8 +10,8 @@ import (
 	"os/signal"
 	"syscall"
 
-	"fastview/sidecar/internal/app"
-	"fastview/sidecar/internal/logging"
+	"panelyth/sidecar/internal/app"
+	"panelyth/sidecar/internal/logging"
 )
 
 // version is set at build time: -ldflags "-X main.version=..."
@@ -22,7 +22,7 @@ func main() {
 }
 
 func run() int {
-	logLevel := flag.String("log-level", os.Getenv("FASTVIEW_LOG_LEVEL"), "debug|info|warn|error")
+	logLevel := flag.String("log-level", os.Getenv("PANELYTH_LOG_LEVEL"), "debug|info|warn|error")
 	flag.Parse()
 
 	// Keep the real stdout for frames only. Anything else that writes to

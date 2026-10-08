@@ -1,4 +1,4 @@
-import { Kbd, Tooltip } from "@fastview/ui"
+import { Kbd, Tooltip } from "@panelyth/ui"
 import { runPanelAction } from "../features/commands"
 import type { ActionId } from "../features/keymap"
 import { usePanelsStore } from "../features/panels"

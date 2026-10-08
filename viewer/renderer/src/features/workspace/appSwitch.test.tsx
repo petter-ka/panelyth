@@ -1,5 +1,5 @@
-import { DEFAULT_SWITCH_SETTINGS, type SharedContext } from "@fastview/contracts"
-import { useSwitchSettings } from "@fastview/renderer-core"
+import { DEFAULT_SWITCH_SETTINGS, type SharedContext } from "@panelyth/contracts"
+import { useSwitchSettings } from "@panelyth/renderer-core"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AppShell } from "../../app/AppShell"
@@ -27,7 +27,7 @@ function setup(commanderEnabled: boolean) {
   const bridge = installFakeBridge()
   const switchApp = vi.fn(async () => ({ ok: true as const, r: { ok: true as const } }))
   if (commanderEnabled) {
-    ;(window.fastview!.app as unknown as { switch?: typeof switchApp }).switch = switchApp
+    ;(window.panelyth!.app as unknown as { switch?: typeof switchApp }).switch = switchApp
   }
   stop = [startSidecarMonitoring()]
   render(<Harness />)
@@ -96,7 +96,7 @@ describe("the shared context (Stage C01)", () => {
         },
       })),
     }
-    ;(window.fastview as unknown as { context: typeof context }).context = context
+    ;(window.panelyth as unknown as { context: typeof context }).context = context
     stop.push(startContextSync())
     return {
       ...fake,

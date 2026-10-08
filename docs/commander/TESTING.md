@@ -34,13 +34,13 @@ Commander-specific scenarios, fixtures and safety tests. Layers, harness, isolat
 - A commander-only method called from the viewer's app view is rejected, even though both share one main process.
 - No action accepts a renderer-supplied path; destinations resolve from panel locations in Go.
 - Programs never start on Enter without the confirmation (default setting); `shell.run` runs only on Enter in the
-  command line. Under `FASTVIEW_TEST_SHELL=record`, both are recorded and never executed.
+  command line. Under `PANELYTH_TEST_SHELL=record`, both are recorded and never executed.
 - Recursive operations never follow links (a fixture with link cycles).
 - Archive extraction never writes outside the target (zip-slip, absolute paths, links in tar).
 
 ## Fixtures
 
-Built by `shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached under `<tmp>/fastview-fixtures/`:
+Built by `shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached under `<tmp>/panelyth-fixtures/`:
 
 | Fixture | Contents | Stages |
 |---|---|---|

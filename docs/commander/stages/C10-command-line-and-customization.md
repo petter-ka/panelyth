@@ -41,7 +41,7 @@ settings. The command line is the most sensitive feature and gets a security rev
 ## Tests
 
 - Safety: commands never run without Enter or a button press; parameter expansion quotes paths correctly on each OS;
-  recorded under `FASTVIEW_TEST_SHELL=record`.
+  recorded under `PANELYTH_TEST_SHELL=record`.
 - E2E: scenario 17; thumbnails view scroll; settings persistence.
 - The viewer's tile suites after the component move.
 

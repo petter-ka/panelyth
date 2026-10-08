@@ -34,14 +34,14 @@ filtered per query) and ADR-0027 (a capability profile per app view).
   `WebContentsView` with its own renderer bundle, its own preload and its own capability profile (ADR-0027).
 - One app view is visible at a time. The other is created on the first switch and then kept alive, hidden, so later
   switches are instant. The viewer's startup never loads commander code.
-- The window title follows the visible app ("FastView — Pictures", "FastView Commander — Pictures").
+- The window title follows the visible app ("Panelyth — Pictures", "Panelyth Commander — Pictures").
 
 ### One sidecar, shared data
 
 - One Go sidecar serves both apps: one `index.db` storing every entry (ADR-0026 as amended), one preview cache, one job
   manager, one internal file clipboard, one `library.db`.
-- Data stays where the viewer keeps it today: `<UserCacheDir>/FastView/` and `<UserConfigDir>/FastView/`. The separate
-  `FastView Commander/` directories of ADR-0025 are dropped.
+- Data stays where the viewer keeps it today: `<UserCacheDir>/Panelyth/` and `<UserConfigDir>/Panelyth/`. The separate
+  `Panelyth Commander/` directories of ADR-0025 are dropped.
 - Settings are namespaced: `shared.*` for state both apps use, the viewer's existing keys for the viewer,
   `commander.*` for the commander.
 
@@ -63,23 +63,23 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 
 ```text
 shared/                   used by both apps
-  desktop/                the shell: Electron main, one preload per app (@fastview/desktop)
-  contracts/              wire types, guards, golden fixtures (@fastview/contracts)
-  sidecar/                the Go sidecar for both apps (module fastview/sidecar)
-  e2e/                    Playwright harness; specs/viewer/, later specs/commander/ (@fastview/e2e)
-  bench/                  startup benchmark, empty-Electron baseline, results/ (@fastview/bench)
+  desktop/                the shell: Electron main, one preload per app (@panelyth/desktop)
+  contracts/              wire types, guards, golden fixtures (@panelyth/contracts)
+  sidecar/                the Go sidecar for both apps (module panelyth/sidecar)
+  e2e/                    Playwright harness; specs/viewer/, later specs/commander/ (@panelyth/e2e)
+  bench/                  startup benchmark, empty-Electron baseline, results/ (@panelyth/bench)
   ui/                     (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, app switcher rail
   renderer-core/          (Stage P01) bridge, page store, selection algebra, keymap, theme, settings, sidecar store
   media-ui/               (Stage C05) image viewer, video player; tile components (Stage C10)
 viewer/
-  renderer/               the viewer's React app (@fastview/renderer)
+  renderer/               the viewer's React app (@panelyth/renderer)
 commander/
   renderer/               (Stage C00) the commander's React app
 scripts/                  repository tooling (dev, build, Go wrapper, bench results)
 ```
 
 The folders were reorganized on 2026-10-05 (from `apps/desktop`, `apps/renderer`, `packages/contracts`,
-`native/fastview-go`, `tests/e2e` and `bench`).
+`native/panelyth-go`, `tests/e2e` and `bench`).
 
 A separate `desktop-core` package (ADR-0025) is not needed: there is one main process.
 

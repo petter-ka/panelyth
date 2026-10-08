@@ -332,7 +332,7 @@ test.describe("C02 benchmarks", () => {
       // Folder sizes of tree-50k (Go's job timestamps).
       await goTo(c, "right", tree.root)
       const sizes = await c.evaluate(async () => {
-        const api = window.fastview as unknown as {
+        const api = window.panelyth as unknown as {
           onEvent(
             ch: string,
             l: (p: {

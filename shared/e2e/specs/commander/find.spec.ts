@@ -18,7 +18,7 @@ function writeResult(result: object): void {
 
 /** docs/{readme,deep/notes,deep/wide}.txt, src/main.go, img.jpg and a binary file. */
 function findTree(): string {
-  const root = mkdtempSync(join(tmpdir(), "fastview-c06-"))
+  const root = mkdtempSync(join(tmpdir(), "panelyth-c06-"))
   mkdirSync(join(root, "docs", "deep"), { recursive: true })
   mkdirSync(join(root, "src"))
   writeFileSync(join(root, "docs", "readme.txt"), "hello world")
@@ -76,7 +76,7 @@ test.describe("find files, branch view, quick filter (Stage C06)", () => {
   test("scenario 12: find by name and content, feed to panel and copy, branch view", async () => {
     test.setTimeout(120_000)
     const root = findTree()
-    const dst = mkdtempSync(join(tmpdir(), "fastview-c06-dst-"))
+    const dst = mkdtempSync(join(tmpdir(), "panelyth-c06-dst-"))
     // goTo waits for a row.
     writeFileSync(join(dst, "keep.txt"), "")
     const { app } = await launch("commander")

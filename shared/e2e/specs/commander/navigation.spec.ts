@@ -32,7 +32,7 @@ const p95 = (xs: number[]): number => {
 /** The viewer's app view page (the shell's other view, ADR-0031). */
 async function viewerOf(app: ElectronApplication): Promise<Page> {
   for (const deadline = Date.now() + 10_000; Date.now() < deadline;) {
-    const page = app.windows().find((w) => w.url().startsWith("app://fastview"))
+    const page = app.windows().find((w) => w.url().startsWith("app://panelyth"))
     if (page) return page
     await new Promise((r) => setTimeout(r, 25))
   }
@@ -41,12 +41,12 @@ async function viewerOf(app: ElectronApplication): Promise<Page> {
 
 /** A fresh profile reused across launches (library.db, the Electron profile). */
 function profile() {
-  const dir = mkdtempSync(join(tmpdir(), "fastview-e2e-profile-"))
+  const dir = mkdtempSync(join(tmpdir(), "panelyth-e2e-profile-"))
   return {
     dir,
     env: {
-      FASTVIEW_CONFIG_DIR: join(dir, "config"),
-      FASTVIEW_USER_DATA_DIR: join(dir, "user-data"),
+      PANELYTH_CONFIG_DIR: join(dir, "config"),
+      PANELYTH_USER_DATA_DIR: join(dir, "user-data"),
     },
   }
 }
@@ -268,10 +268,10 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
 
   test("benchmark: the drive menu with a dead network drive never blocks", async () => {
     const root = mixedFolder()
-    const slow = process.platform === "win32" ? "Q:\\" : "/mnt/fastview-dead-share"
+    const slow = process.platform === "win32" ? "Q:\\" : "/mnt/panelyth-dead-share"
     const { app } = await launch("commander", {
-      FASTVIEW_DEV_METHODS: "1",
-      FASTVIEW_DEV_SLOW_VOLUME: `${slow}=8000`,
+      PANELYTH_DEV_METHODS: "1",
+      PANELYTH_DEV_SLOW_VOLUME: `${slow}=8000`,
     })
     try {
       const c = await commanderOf(app)

@@ -1,11 +1,11 @@
 # Platform Requirements (shared)
 
-Requirements that every app of the FastView product family inherits (ADR-0025). App-specific requirements live in:
+Requirements that every app of the Panelyth product family inherits (ADR-0025). App-specific requirements live in:
 
-- `docs/viewer/BRS.md`: the FastView viewer (FR-01–FR-19);
-- `docs/commander/BRS.md`: FastView Commander (CFR-01…, CNFR-01…).
+- `docs/viewer/BRS.md`: the Panelyth viewer (FR-01–FR-19);
+- `docs/commander/BRS.md`: Panelyth Commander (CFR-01…, CNFR-01…).
 
-The IDs below come from the original FastView BRS, so the references in ADRs, stage documents and code stay valid.
+The IDs below come from the original Panelyth BRS, so the references in ADRs, stage documents and code stay valid.
 New platform requirements continue the numbering (NFR-13…).
 
 ## 1. Functional requirements (platform)

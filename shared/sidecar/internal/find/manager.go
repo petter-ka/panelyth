@@ -7,8 +7,8 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/scan"
 )
 
 // States reported in Progress.State.

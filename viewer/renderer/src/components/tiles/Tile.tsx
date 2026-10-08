@@ -1,4 +1,4 @@
-import type { ContentItem } from "@fastview/contracts"
+import type { ContentItem } from "@panelyth/contracts"
 import { memo, useState } from "react"
 import { bridge } from "../../bridge"
 import { openFolderEntry } from "../../features/folder/folderStore"

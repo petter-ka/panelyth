@@ -16,7 +16,7 @@ import {
   type SelectionDescriptor,
   type SharedContext,
   type Volume,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import { vi } from "vitest"
 import { setRangeFetch } from "../features/bytes"
 
@@ -113,7 +113,7 @@ export interface FakeOptions {
   programs?: number[]
 }
 
-/** What main would have done for shell.open / shell.edit (FASTVIEW_TEST_SHELL=record). */
+/** What main would have done for shell.open / shell.edit (PANELYTH_TEST_SHELL=record). */
 export interface ShellRecord {
   action: "open" | "edit"
   entryId: number
@@ -662,7 +662,7 @@ export function installFakeCommander(options: FakeOptions) {
     }
     return undefined
   }
-  const tokenOf = (id: number): string => `fastview-media://m/${id.toString(16).padStart(32, "0")}`
+  const tokenOf = (id: number): string => `panelyth-media://m/${id.toString(16).padStart(32, "0")}`
   const viewers = {
     media: {
       open: vi.fn(async (id: number) => {
@@ -686,7 +686,7 @@ export function installFakeCommander(options: FakeOptions) {
         ok({
           items: p.items.map(({ id }) => ({
             id,
-            url: `fastview-thumb://t/${id.toString(16).padStart(64, "f")}.jpg`,
+            url: `panelyth-thumb://t/${id.toString(16).padStart(64, "f")}.jpg`,
             width: 800,
             height: 600,
           })),
@@ -776,7 +776,7 @@ export function installFakeCommander(options: FakeOptions) {
     }),
   })
   const full = Object.assign(api, viewers, { fs })
-  window.fastview = full as unknown as CommanderApi
+  window.panelyth = full as unknown as CommanderApi
 
   return {
     api: full,

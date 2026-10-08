@@ -1,5 +1,5 @@
-import type { SharedContext } from "@fastview/contracts"
-import { useSwitchSettings } from "@fastview/renderer-core"
+import type { SharedContext } from "@panelyth/contracts"
+import { useSwitchSettings } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import {

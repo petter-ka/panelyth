@@ -36,7 +36,7 @@ for (const arch of values.arch.split(",")) {
   const goarch = { x64: "amd64", arm64: "arm64" }[arch]
   if (!goarch) throw new Error(`unsupported arch ${arch}`)
   const outDir = join(root, "shared", "desktop", "resources", "bin", `${platform}-${arch}`)
-  const out = join(outDir, `fastview-sidecar${platform === "win32" ? ".exe" : ""}`)
+  const out = join(outDir, `panelyth-sidecar${platform === "win32" ? ".exe" : ""}`)
   mkdirSync(outDir, { recursive: true })
   const started = performance.now()
   execFileSync(
@@ -48,7 +48,7 @@ for (const arch of values.arch.split(",")) {
       `-s -w -X main.version=${version}`,
       "-o",
       out,
-      "./cmd/fastview-sidecar",
+      "./cmd/panelyth-sidecar",
     ],
     {
       cwd: goRoot,

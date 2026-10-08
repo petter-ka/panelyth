@@ -16,9 +16,9 @@ import (
 
 	"golang.org/x/text/encoding/charmap"
 
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/scan"
 )
 
 func write(t *testing.T, path string, body []byte) {

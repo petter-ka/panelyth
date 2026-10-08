@@ -1,4 +1,4 @@
-import type { SortKey } from "@fastview/contracts"
+import type { SortKey } from "@panelyth/contracts"
 import { bridge } from "../bridge"
 import {
   hasNavigated,

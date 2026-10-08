@@ -40,10 +40,10 @@ the calling web contents, and method groups are tagged with the apps that may ca
 - One invoke channel `fv:invoke(method, params)` and one push channel `fv:event`.
 - Main checks the sender (main frame, own origin compared by scheme+host, since `URL.origin` is `"null"` for
   `app:`), the method allowlist (`RENDERER_METHODS`, plus `DEV_RENDERER_METHODS` only when unpackaged
-  and `FASTVIEW_DEV_METHODS=1`) and params, then forwards to Go or answers locally.
+  and `PANELYTH_DEV_METHODS=1`) and params, then forwards to Go or answers locally.
 - Every call resolves to an `RpcEnvelope`. Errors never cross IPC as exceptions, and the renderer bridge turns
-  envelopes into `FastViewError`.
-- Preload exposes typed, namespaced functions (`window.fastview.system.ping()` …) and `onEvent` for known
+  envelopes into `PanelythError`.
+- Preload exposes typed, namespaced functions (`window.panelyth.system.ping()` …) and `onEvent` for known
   channels only. There is no generic invoke and no `ipcRenderer`.
 
 ### Source of truth

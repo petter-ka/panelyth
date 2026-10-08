@@ -292,10 +292,10 @@ func TestFreedesktopTrash(t *testing.T) {
 }
 
 func TestTrashOnThisPlatform(t *testing.T) {
-	if os.Getenv("FASTVIEW_TEST_TRASH") != "1" {
-		t.Skip("moves a file into the real OS trash; set FASTVIEW_TEST_TRASH=1")
+	if os.Getenv("PANELYTH_TEST_TRASH") != "1" {
+		t.Skip("moves a file into the real OS trash; set PANELYTH_TEST_TRASH=1")
 	}
-	item := filepath.Join(t.TempDir(), "fastview-trash-test.txt")
+	item := filepath.Join(t.TempDir(), "panelyth-trash-test.txt")
 	write(t, item, 1)
 	err := Trash(item)
 	if Code(err) == CodeTrashUnavailable {
@@ -307,13 +307,13 @@ func TestTrashOnThisPlatform(t *testing.T) {
 }
 
 func TestTrashManyOnThisPlatform(t *testing.T) {
-	if os.Getenv("FASTVIEW_TEST_TRASH") != "1" {
-		t.Skip("moves files into the real OS trash; set FASTVIEW_TEST_TRASH=1")
+	if os.Getenv("PANELYTH_TEST_TRASH") != "1" {
+		t.Skip("moves files into the real OS trash; set PANELYTH_TEST_TRASH=1")
 	}
 	dir := t.TempDir()
 	var paths []string
 	for i := range 3 {
-		p := filepath.Join(dir, "fastview-trash-many-"+string(rune('a'+i))+".txt")
+		p := filepath.Join(dir, "panelyth-trash-many-"+string(rune('a'+i))+".txt")
 		write(t, p, 1)
 		paths = append(paths, p)
 	}

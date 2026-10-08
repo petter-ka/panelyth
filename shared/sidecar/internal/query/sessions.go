@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/scan"
 )
 
 // ErrUnknownSession is returned for closed or evicted sessions; the renderer

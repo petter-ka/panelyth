@@ -45,7 +45,7 @@ import {
   trustedOrigin,
 } from "./security"
 import { AppShell, startAppFrom } from "./shell"
-import { COMMANDER_ENABLED_ARG, type AppId } from "@fastview/contracts"
+import { COMMANDER_ENABLED_ARG, type AppId } from "@panelyth/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
@@ -55,13 +55,13 @@ import { perfMark } from "./perf"
 perfMark("main-loaded")
 
 // Dev-only RPC methods (system.echo) exist for benchmarks; never in packaged builds.
-const devMethods = !app.isPackaged && process.env.FASTVIEW_DEV_METHODS === "1"
+const devMethods = !app.isPackaged && process.env.PANELYTH_DEV_METHODS === "1"
 
 // The commander stays hidden behind a feature flag until Stage C11 (ADR-0031).
-const commanderEnabled = process.env.FASTVIEW_COMMANDER === "1"
+const commanderEnabled = process.env.PANELYTH_COMMANDER === "1"
 // Tests and benchmarks may choose the app shown at start. Unpackaged only;
 // otherwise the last used app opens (shared.context, ADR-0031).
-const envStartApp = app.isPackaged ? undefined : process.env.FASTVIEW_START_APP
+const envStartApp = app.isPackaged ? undefined : process.env.PANELYTH_START_APP
 const forcedStartApp: AppId | null = !commanderEnabled
   ? "viewer"
   : envStartApp === "commander" || envStartApp === "viewer"
@@ -72,20 +72,20 @@ const START_APP_WAIT_MS = 400
 
 // Tests and benchmarks run each launch with a fresh profile (localStorage,
 // logs) so stored preferences cannot leak between runs. Unpackaged only.
-const userDataOverride = app.isPackaged ? undefined : process.env.FASTVIEW_USER_DATA_DIR
+const userDataOverride = app.isPackaged ? undefined : process.env.PANELYTH_USER_DATA_DIR
 if (userDataOverride) app.setPath("userData", userDataOverride)
 
 registerAppScheme()
 
-// Benchmark hook (main process only, like __fastviewPerf).
-;(globalThis as { __fastviewIpcCounts?: () => Record<string, number> }).__fastviewIpcCounts =
+// Benchmark hook (main process only, like __panelythPerf).
+;(globalThis as { __panelythIpcCounts?: () => Record<string, number> }).__panelythIpcCounts =
   ipcInvokeCounts
 
 // E2E tests must not launch apps, open file managers or touch the user's
 // clipboard: unpackaged builds can record those calls instead.
-const recordShell = !app.isPackaged && process.env.FASTVIEW_TEST_SHELL === "record"
+const recordShell = !app.isPackaged && process.env.PANELYTH_TEST_SHELL === "record"
 const shellLog: { action: string; value: string }[] = []
-;(globalThis as { __fastviewShellLog?: typeof shellLog }).__fastviewShellLog = shellLog
+;(globalThis as { __panelythShellLog?: typeof shellLog }).__panelythShellLog = shellLog
 
 let sidecar: SidecarProcess | null = null
 let appShell: AppShell | null = null
@@ -144,7 +144,7 @@ async function lastUsedApp(): Promise<AppId | null> {
 }
 
 // Test hook (main process only): which app is shown and whether the commander view exists.
-;(globalThis as { __fastviewShellState?: () => object }).__fastviewShellState = () => ({
+;(globalThis as { __panelythShellState?: () => object }).__panelythShellState = () => ({
   active: appShell?.activeApp ?? null,
   commanderCreated: appShell?.webContentsOf("commander") != null,
   commanderEnabled,
@@ -169,7 +169,7 @@ async function boot(): Promise<void> {
     binaryPath: sidecarBinaryPath(),
     logger,
     logLevel: app.isPackaged ? "info" : "debug",
-    env: devMethods ? { FASTVIEW_DEV_METHODS: "1" } : { FASTVIEW_DEV_METHODS: "" },
+    env: devMethods ? { PANELYTH_DEV_METHODS: "1" } : { PANELYTH_DEV_METHODS: "" },
   })
   sidecar = sc
   // The thumbnail root comes from the sidecar's hello, never from the renderer.
@@ -252,7 +252,7 @@ async function boot(): Promise<void> {
     "sidecar.getStatus": () => sc.getStatus(),
     "dialog.openFolder": async (event) => {
       // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.
-      const canned = app.isPackaged ? undefined : process.env.FASTVIEW_TEST_DIALOG_PATH
+      const canned = app.isPackaged ? undefined : process.env.PANELYTH_TEST_DIALOG_PATH
       if (canned !== undefined) return { path: canned || null }
       const win = BrowserWindow.fromWebContents(event.sender)
       const options = { title: "Open folder", properties: ["openDirectory" as const] }

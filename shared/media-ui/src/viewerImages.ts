@@ -1,4 +1,4 @@
-import type { ErrorCode, MediaOpenResult, PreviewPriority, Thumb } from "@fastview/contracts"
+import type { ErrorCode, MediaOpenResult, PreviewPriority, Thumb } from "@panelyth/contracts"
 import { useSyncExternalStore } from "react"
 import { errorCode, isMediaAvailable, mediaPort } from "./port"
 
@@ -6,7 +6,7 @@ import { errorCode, isMediaAvailable, mediaPort } from "./port"
  * Image layers for the viewer, per entry id (outside React state):
  * - fit: the Go-generated viewer-fit preview (≤ 2560 px long edge, cached),
  * - media: display size and, for browser-native formats, the original's
- *   fastview-media URL.
+ *   panelyth-media URL.
  * Layers are decoded ahead of display (img.decode(), off the main thread)
  * so swapping never shows a half-decoded or blank frame.
  */

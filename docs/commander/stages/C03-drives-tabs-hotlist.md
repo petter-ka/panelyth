@@ -74,7 +74,7 @@ Built:
   `volumes.changed` with the new list, coalesced. `library.db` migration 4 adds `bookmarks.group_name`;
   `library.updateBookmark` (a taken path fails with `details.reason: "duplicate"`) and `library.reorderBookmarks`;
   every bookmark change sends `bookmarks.changed` with the whole list (at most 500 rows) to both apps. Dev mode only:
-  `FASTVIEW_DEV_SLOW_VOLUME=path=ms` adds a network drive whose space read hangs (the drive-menu benchmark).
+  `PANELYTH_DEV_SLOW_VOLUME=path=ms` adds a network drive whose space read hangs (the drive-menu benchmark).
 - **Main and contracts:** the commander profile gains the four bookmark methods; validators for the group (≤ 128),
   `updateBookmark` and `reorderBookmarks` (≤ 500 ids); `Bookmark.group`, `Volume.notReady`; the two events are
   forwarded with guards (golden fixtures for both; `evt-volumes.changed.json` is built from the Go type, since the
@@ -125,7 +125,7 @@ known theme-label failures (new: bookmarks from the commander, recent re-read on
 `specs/commander/navigation.spec.ts` 4 of 4 (scenario 7 across a restart, bookmarks and recent locations shared both
 ways through the switch, the two benchmarks); the C00 surface check updated. All commander e2e specs (C00–C03): 20 of 21 on the full run; the one failure (C01 100k, its first 1k folder never painted within 30 s) passed twice on rerun. C01 and C02 benchmarks after C03: 100k first rows 178–240 ms (budget 300), uncached 1k 137–139 ms, cached 1k p95 13 ms; held arrow p95 frame 7 ms with no long tasks, quick search p95 10 ms, mark all 12 ms.
 
-Environment: the generated fixtures under `%TEMP%\fastview-fixtures` (flat-100k, tree-50k, …) had been emptied at
+Environment: the generated fixtures under `%TEMP%\panelyth-fixtures` (flat-100k, tree-50k, …) had been emptied at
 00:29 on 2026-10-06, before this stage's work, while their marker files stayed, so `fixturegen` reported them as
 present and every 100k test listed an empty folder. They were deleted and regenerated. `fixturegen` should check the
 contents, not only the marker (a test-tooling fix, not done here).

@@ -12,7 +12,7 @@
 // names; letters are lowercase, "+" is "Plus". Shift is not part of a chord
 // for symbol keys, because the symbol already depends on it ("+" vs "=").
 
-import * as core from "@fastview/renderer-core"
+import * as core from "@panelyth/renderer-core"
 
 export type Scope = "global" | "viewer"
 
@@ -213,7 +213,7 @@ export {
   IS_MAC,
   MAX_CHORDS_PER_ACTION,
   parseChord,
-} from "@fastview/renderer-core"
+} from "@panelyth/renderer-core"
 
 export const SHORTCUTS_KEY = "shortcuts"
 

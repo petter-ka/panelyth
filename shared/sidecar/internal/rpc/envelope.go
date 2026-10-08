@@ -110,6 +110,6 @@ type Hello struct {
 	GoVersion  string `json:"goVersion"`
 	CacheRoot  string `json:"cacheRoot"`
 	ConfigRoot string `json:"configRoot"`
-	// ThumbnailRoot is where Electron main resolves fastview-thumb URLs.
+	// ThumbnailRoot is where Electron main resolves panelyth-thumb URLs.
 	ThumbnailRoot string `json:"thumbnailRoot"`
 }

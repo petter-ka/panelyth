@@ -21,10 +21,10 @@ import (
 	"slices"
 	"time"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/query"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/scan"
 )
 
 type scanResult struct {
@@ -71,7 +71,7 @@ type result struct {
 }
 
 func main() {
-	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "fastview-fixtures"), "fixture root")
+	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "panelyth-fixtures"), "fixture root")
 	out := flag.String("out", "", "write JSON result here (default stdout)")
 	flag.Parse()
 	log := slog.New(slog.DiscardHandler)
@@ -88,7 +88,7 @@ func main() {
 	mixedSpec := fixture.Spec{Files: 100_000, NonMediaEvery: 2, HiddenEvery: 5}
 	mixedExp := must(fixture.Generate(mixed, mixedSpec))
 
-	dbDir := must(os.MkdirTemp("", "fastview-indexbench-"))
+	dbDir := must(os.MkdirTemp("", "panelyth-indexbench-"))
 	defer os.RemoveAll(dbDir)
 	store := must(index.Open(filepath.Join(dbDir, "index.db"), log))
 	defer store.Close()

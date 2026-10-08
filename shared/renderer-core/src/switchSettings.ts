@@ -3,7 +3,7 @@ import {
   readSwitchSettings,
   SHARED_SWITCH_KEY,
   type SharedSwitchSettings,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import { create } from "zustand"
 
 /**

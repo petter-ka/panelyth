@@ -51,7 +51,7 @@ export interface HelloFrame {
   goVersion: string
   cacheRoot: string
   configRoot: string
-  /** Root of the preview files that fastview-thumb URLs resolve into. */
+  /** Root of the preview files that panelyth-thumb URLs resolve into. */
   thumbnailRoot: string
 }
 

@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
-	"fastview/sidecar/internal/index"
+	"panelyth/sidecar/internal/index"
 )
 
 // Manager owns running scans. At most one foreground scan (the folder the

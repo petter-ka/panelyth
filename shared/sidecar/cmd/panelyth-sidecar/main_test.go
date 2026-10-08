@@ -8,14 +8,14 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // TestMain lets the test binary act as the sidecar when re-executed, so the
 // process-level behaviour (stdout discipline, exit codes, EOF shutdown) is
 // tested against the real entrypoint.
 func TestMain(m *testing.M) {
-	if os.Getenv("FASTVIEW_SIDECAR_UNDER_TEST") == "1" {
+	if os.Getenv("PANELYTH_SIDECAR_UNDER_TEST") == "1" {
 		os.Args = []string{os.Args[0], "-log-level", "debug"}
 		os.Exit(run())
 	}
@@ -33,9 +33,9 @@ func startSidecar(t *testing.T) *proc {
 	t.Helper()
 	cmd := exec.Command(os.Args[0], "-test.run=^$")
 	cmd.Env = append(os.Environ(),
-		"FASTVIEW_SIDECAR_UNDER_TEST=1",
-		"FASTVIEW_CACHE_DIR="+t.TempDir(),
-		"FASTVIEW_CONFIG_DIR="+t.TempDir(),
+		"PANELYTH_SIDECAR_UNDER_TEST=1",
+		"PANELYTH_CACHE_DIR="+t.TempDir(),
+		"PANELYTH_CONFIG_DIR="+t.TempDir(),
 	)
 	stdin, err := cmd.StdinPipe()
 	if err != nil {
@@ -121,6 +121,6 @@ func TestDevMethodsDisabledByDefault(t *testing.T) {
 	p.send(t, map[string]any{"t": "req", "id": 1, "m": "system.echo", "p": map[string]any{"payload": "x"}})
 	res := p.read(t)
 	if e, _ := res["e"].(map[string]any); e["code"] != "METHOD_NOT_FOUND" {
-		t.Fatalf("system.echo must not exist without FASTVIEW_DEV_METHODS: %v", res)
+		t.Fatalf("system.echo must not exist without PANELYTH_DEV_METHODS: %v", res)
 	}
 }

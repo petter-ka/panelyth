@@ -5,7 +5,7 @@ import (
 	"strings"
 	"sync"
 
-	"fastview/sidecar/internal/index"
+	"panelyth/sidecar/internal/index"
 )
 
 // Name lookups over a session (Stage C02): quick search (Locate), marking by

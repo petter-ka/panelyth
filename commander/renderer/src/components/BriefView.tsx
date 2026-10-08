@@ -1,5 +1,5 @@
-import { isMarked, usePageItem, type PageStore } from "@fastview/renderer-core"
-import { useInterfaceSizeStore, type InterfaceSize } from "@fastview/ui"
+import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
+import { useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   forwardRef,

@@ -57,12 +57,12 @@ const ipcCounts = (app: ElectronApplication): Promise<Record<string, number>> =>
   app.evaluate(
     () =>
       (
-        globalThis as { __fastviewIpcCounts?: () => Record<string, number> }
-      ).__fastviewIpcCounts?.() ?? {},
+        globalThis as { __panelythIpcCounts?: () => Record<string, number> }
+      ).__panelythIpcCounts?.() ?? {},
   )
 
 async function openFolderAt(dir: string, size?: "small" | "medium" | "large") {
-  const launched = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: dir })
+  const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
   await waitForReady(launched.page)
   if (size)
     await launched.page
@@ -151,7 +151,7 @@ function imagesCopy(): string {
     files: 0,
     images: { count: 150, width: 1600, height: 1200, pngAlphaEvery: 10, rotatedEvery: 7 },
   })
-  const dir = join(mkdtempSync(join(tmpdir(), "fastview-tiles-")), "photos")
+  const dir = join(mkdtempSync(join(tmpdir(), "panelyth-tiles-")), "photos")
   cpSync(fx.root, dir, { recursive: true })
   return dir
 }
@@ -171,7 +171,7 @@ function ensureFolderFixture(): string {
     files: 0,
     images: { count: 6, width: 1600, height: 1200 },
   })
-  const root = join(tmpdir(), "fastview-fixtures", `folders-${COVER_FOLDERS}`)
+  const root = join(tmpdir(), "panelyth-fixtures", `folders-${COVER_FOLDERS}`)
   const marker = join(root, ".fixture-done")
   if (existsSync(marker)) return root
   rmSync(root, { recursive: true, force: true })
@@ -290,14 +290,14 @@ test.describe("tile view (Stage 03)", () => {
     // Regression guard: a no-op programmatic scroll on mount (scroll reset,
     // scroll anchoring) used to flag isScrolling and hold the first request
     // for ~230 ms. Timed inside the page from the click.
-    const launched = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: imagesCopy() })
+    const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: imagesCopy() })
     try {
       await waitForReady(launched.page)
       await launched.page.evaluate(() => {
         const t = { click: 0, mounted: 0, ready: 0 }
         ;(window as unknown as { __t: typeof t }).__t = t
         document.addEventListener("click", () => (t.click ||= performance.now()), true)
-        window.fastview!.onEvent("preview.ready", () => (t.ready ||= performance.now()))
+        window.panelyth!.onEvent("preview.ready", () => (t.ready ||= performance.now()))
         new MutationObserver(() => {
           if (!t.mounted && document.querySelector('[data-testid="tile"][data-kind="image"]'))
             t.mounted = performance.now()
@@ -419,10 +419,10 @@ test.describe("tile view (Stage 03)", () => {
 
   test("the tile size control changes tiles and is remembered", async () => {
     const dir = imagesCopy()
-    const profile = mkdtempSync(join(tmpdir(), "fastview-profile-"))
+    const profile = mkdtempSync(join(tmpdir(), "panelyth-profile-"))
     const first = await launchApp({
-      FASTVIEW_TEST_DIALOG_PATH: dir,
-      FASTVIEW_USER_DATA_DIR: profile,
+      PANELYTH_TEST_DIALOG_PATH: dir,
+      PANELYTH_USER_DATA_DIR: profile,
     })
     try {
       await waitForReady(first.page)
@@ -434,8 +434,8 @@ test.describe("tile view (Stage 03)", () => {
       await first.app.close()
     }
     const second = await launchApp({
-      FASTVIEW_TEST_DIALOG_PATH: dir,
-      FASTVIEW_USER_DATA_DIR: profile,
+      PANELYTH_TEST_DIALOG_PATH: dir,
+      PANELYTH_USER_DATA_DIR: profile,
     })
     try {
       await waitForReady(second.page)

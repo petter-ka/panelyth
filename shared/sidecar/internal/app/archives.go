@@ -7,13 +7,13 @@ import (
 	"path/filepath"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/jobs"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/query"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/jobs"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage C07 (ADR-0030): archives browsed like folders, their entries
@@ -81,11 +81,11 @@ func archiveError(err error) error {
 	case errors.Is(err, context.Canceled), errors.Is(err, context.DeadlineExceeded):
 		return err
 	case errors.Is(err, archive.ErrNotArchive):
-		return reasoned(rpc.CodeUnsupportedMedia, "notArchive", "This file is not an archive FastView can open.")
+		return reasoned(rpc.CodeUnsupportedMedia, "notArchive", "This file is not an archive Panelyth can open.")
 	case errors.Is(err, archive.ErrNoTool):
 		return reasoned(rpc.CodeUnsupportedMedia, "noTool", "This archive needs 7-Zip, which was not found. Install 7-Zip to open it.")
 	case errors.Is(err, archive.ErrEncrypted):
-		return reasoned(rpc.CodeCorruptMedia, "encrypted", "The archive is protected by a password; FastView can't open it.")
+		return reasoned(rpc.CodeCorruptMedia, "encrypted", "The archive is protected by a password; Panelyth can't open it.")
 	case errors.Is(err, archive.ErrCorrupt):
 		return reasoned(rpc.CodeCorruptMedia, "corrupt", "The archive is damaged and can't be read.")
 	case errors.Is(err, archive.ErrTooLarge):

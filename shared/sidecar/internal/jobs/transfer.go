@@ -9,12 +9,12 @@ import (
 	"sync"
 	"sync/atomic"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Copy and move (ADR-0021, ADR-0029). Each item is planned on the job's

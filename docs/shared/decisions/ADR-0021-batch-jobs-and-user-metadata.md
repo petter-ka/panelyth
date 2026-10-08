@@ -30,12 +30,12 @@ queue of 32, one file at a time, three policies), ADR-0029 applies.
 - **Cancellation** is checked between items and every 4 MiB inside a file copy. A cancelled copy removes its partial
   file. Items finished before the cancel stay done; nothing is rolled back.
 - **Journal:** `index.db` gains a `jobs` table (created with `IF NOT EXISTS`, no schema bump). On startup, jobs left
-  `running` are marked `interrupted`, and `*.fastview-partial` leftovers in their destination folder are removed.
+  `running` are marked `interrupted`, and `*.panelyth-partial` leftovers in their destination folder are removed.
   There is no automatic resume.
 
 ### File operations
 
-- **Copy** writes to `.<name>.fastview-partial` in the destination, then renames it to the final name. It preserves
+- **Copy** writes to `.<name>.panelyth-partial` in the destination, then renames it to the final name. It preserves
   mtime. A folder is copied as a whole into a partial folder and renamed at the end.
 - **Move** is `os.Rename`. Across volumes (EXDEV / `ERROR_NOT_SAME_DEVICE`), it is a copy, then a size check, then
   deletion of the source.
@@ -52,7 +52,7 @@ queue of 32, one file at a time, three policies), ADR-0029 applies.
 - Go owns the trash code, and all of it is pure Go (ADR-0019):
   - Windows: `SHFileOperationW` (`FO_DELETE | FOF_ALLOWUNDO`, silent), one item per call so errors are per item.
     It runs **only on fixed drives**. On removable and network drives the shell would delete permanently without
-    warning, so FastView reports `TRASH_UNAVAILABLE` instead and the UI offers permanent delete.
+    warning, so Panelyth reports `TRASH_UNAVAILABLE` instead and the UI offers permanent delete.
   - Linux and other Unix: the freedesktop.org Trash spec. Items go to `$XDG_DATA_HOME/Trash` on the home volume and to
     `$topdir/.Trash-$uid` elsewhere, each with a `.trashinfo` file. If neither works, the item fails with `TRASH_UNAVAILABLE`.
   - macOS: a rename into `~/.Trash` (home volume) or `/Volumes/X/.Trashes/$uid`. Finder's "Put Back" is not

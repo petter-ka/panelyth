@@ -1,4 +1,4 @@
-import { configureMedia } from "@fastview/media-ui"
+import { configureMedia } from "@panelyth/media-ui"
 import { bridge, isBridgeAvailable } from "../../bridge"
 
 // The shared media components (ADR-0025, moved to shared/media-ui in Stage
@@ -12,4 +12,4 @@ configureMedia({
   onPreviewReady: (listener) => bridge.on("preview.ready", listener),
 })
 
-export * from "@fastview/media-ui"
+export * from "@panelyth/media-ui"

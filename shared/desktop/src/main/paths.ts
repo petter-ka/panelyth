@@ -6,17 +6,17 @@ const exe = process.platform === "win32" ? ".exe" : ""
 /**
  * Sidecar binary location. Packaged builds ship it in resources/bin;
  * unpackaged builds use the output of `pnpm build:sidecar`.
- * FASTVIEW_SIDECAR_PATH overrides both (tests).
+ * PANELYTH_SIDECAR_PATH overrides both (tests).
  */
 export function sidecarBinaryPath(): string {
-  const override = process.env.FASTVIEW_SIDECAR_PATH
+  const override = process.env.PANELYTH_SIDECAR_PATH
   if (override) return resolve(override)
-  const name = `fastview-sidecar${exe}`
+  const name = `panelyth-sidecar${exe}`
   if (app.isPackaged) return join(process.resourcesPath, "bin", name)
   return join(app.getAppPath(), "resources", "bin", `${process.platform}-${process.arch}`, name)
 }
 
-/** Built renderer assets served through app://fastview/. */
+/** Built renderer assets served through app://panelyth/. */
 export function rendererDistPath(): string {
   if (app.isPackaged) return join(process.resourcesPath, "renderer")
   return resolve(app.getAppPath(), "..", "..", "viewer", "renderer", "dist")
@@ -25,7 +25,7 @@ export function rendererDistPath(): string {
 /** Dev server URL; set by scripts/dev.mjs. Ignored in packaged builds. */
 export function rendererDevUrl(): string | null {
   if (app.isPackaged) return null
-  return process.env.FASTVIEW_RENDERER_URL || null
+  return process.env.PANELYTH_RENDERER_URL || null
 }
 
 /** The commander's built renderer, served through app://commander/ (ADR-0031). */
@@ -37,7 +37,7 @@ export function commanderDistPath(): string {
 /** The commander's dev server URL; set by scripts/dev.mjs. */
 export function commanderDevUrl(): string | null {
   if (app.isPackaged) return null
-  return process.env.FASTVIEW_COMMANDER_URL || null
+  return process.env.PANELYTH_COMMANDER_URL || null
 }
 
 export function preloadPath(): string {

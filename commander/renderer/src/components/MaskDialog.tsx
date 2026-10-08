@@ -1,4 +1,4 @@
-import { Button, DialogWindow } from "@fastview/ui"
+import { Button, DialogWindow } from "@panelyth/ui"
 import { useState } from "react"
 import { useUiStore } from "../features/commands"
 import { markByMask } from "../features/marks"

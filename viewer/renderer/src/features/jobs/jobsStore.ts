@@ -4,10 +4,10 @@ import type {
   JobSnapshot,
   JobStartParams,
   SelectionDescriptor,
-} from "@fastview/contracts"
-import { isSelectionDescriptor } from "@fastview/contracts"
+} from "@panelyth/contracts"
+import { isSelectionDescriptor } from "@panelyth/contracts"
 import { create } from "zustand"
-import { bridge, FastViewError, isBridgeAvailable } from "../../bridge"
+import { bridge, PanelythError, isBridgeAvailable } from "../../bridge"
 import { formatCount, plural } from "../../lib/format"
 import { useFolderStore } from "../folder/folderStore"
 import { useSettingsStore } from "../settings/settingsStore"
@@ -139,7 +139,7 @@ export function jobLabel(s: JobsState, job: JobSnapshot): string {
 }
 
 function describe(error: unknown): string {
-  if (error instanceof FastViewError) {
+  if (error instanceof PanelythError) {
     if (error.code === "BUSY") return "Too many operations are waiting. Try again in a moment."
     if (error.code === "NOT_FOUND") return "The folder changed. Select the items again."
     return error.message
@@ -156,7 +156,7 @@ export function currentSelection(): { selection: SelectionDescriptor; count: num
   return { selection: toDescriptor(sel, query.queryId, query.version), count }
 }
 
-export const SELECTION_DRAG_TYPE = "application/x-fastview-selection"
+export const SELECTION_DRAG_TYPE = "application/x-panelyth-selection"
 
 /** Adds the current selection descriptor to an internal tile drag. */
 export function beginSelectionDrag(dataTransfer: DataTransfer): boolean {

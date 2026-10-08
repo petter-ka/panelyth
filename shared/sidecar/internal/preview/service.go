@@ -10,10 +10,10 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/imaging"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/video"
+	"panelyth/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/video"
 )
 
 // Item is one preview outcome sent to the renderer: either URL (+ size) or

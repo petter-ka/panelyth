@@ -8,7 +8,7 @@ import (
 func TestResolveDirsOverrides(t *testing.T) {
 	cache := t.TempDir()
 	config := t.TempDir()
-	env := map[string]string{"FASTVIEW_CACHE_DIR": cache, "FASTVIEW_CONFIG_DIR": config}
+	env := map[string]string{"PANELYTH_CACHE_DIR": cache, "PANELYTH_CONFIG_DIR": config}
 	d, err := ResolveDirs(func(k string) string { return env[k] })
 	if err != nil {
 		t.Fatal(err)
@@ -29,7 +29,7 @@ func TestResolveDirsDefaultsAreSeparate(t *testing.T) {
 	if d.CacheRoot == d.ConfigRoot {
 		t.Fatal("disposable cache and user data must not share a root")
 	}
-	if filepath.Base(d.CacheRoot) != "v1" || filepath.Base(filepath.Dir(d.CacheRoot)) != "FastView" {
+	if filepath.Base(d.CacheRoot) != "v1" || filepath.Base(filepath.Dir(d.CacheRoot)) != "Panelyth" {
 		t.Fatalf("unexpected cache root %q", d.CacheRoot)
 	}
 }

@@ -27,10 +27,10 @@ database/sql.(*Rows).Next.func1(0x36d0232840b0, 0x36d02315598f, 0x36d02315598e)
 	C:/Program Files/Go/src/database/sql/sql.go:3054 +0x6c fp=0x36d023155970 sp=0x36d023155930 pc=0x7ff6bd3c42ac
 database/sql.(*Rows).Next(0x36d0232840b0)
 	C:/Program Files/Go/src/database/sql/sql.go:3055 +0x52 fp=0x36d0231559a0 sp=0x36d023155970 pc=0x7ff6bd3c1052
-fastview/sidecar/internal/index.(*Store).QueryIDs(0x36d0231fa060, {0x7ff6bd99bf40, 0x7ff6bda345e0}, {0x1, 0x0, {0x36d0232c4000, 0x1, 0x1}, {0x0, 0x0, ...}, ...}, ...)
-	C:/work/viewer/native/fastview-go/internal/index/query.go:275 +0xebe fp=0x36d023155d48 sp=0x36d0231559a0 pc=0x7ff6bd5dda1e
-fastview/sidecar/internal/index.BenchmarkSearch100k.func1(0x36d0232dc608)
-	C:/work/viewer/native/fastview-go/internal/index/query_test.go:212 +0x225 fp=0x36d023155f10 sp=0x36d023155d48 pc=0x7ff6bd5edae5
+panelyth/sidecar/internal/index.(*Store).QueryIDs(0x36d0231fa060, {0x7ff6bd99bf40, 0x7ff6bda345e0}, {0x1, 0x0, {0x36d0232c4000, 0x1, 0x1}, {0x0, 0x0, ...}, ...}, ...)
+	C:/work/viewer/native/panelyth-go/internal/index/query.go:275 +0xebe fp=0x36d023155d48 sp=0x36d0231559a0 pc=0x7ff6bd5dda1e
+panelyth/sidecar/internal/index.BenchmarkSearch100k.func1(0x36d0232dc608)
+	C:/work/viewer/native/panelyth-go/internal/index/query_test.go:212 +0x225 fp=0x36d023155f10 sp=0x36d023155d48 pc=0x7ff6bd5edae5
 testing.(*B).runN(0x36d0232dc608, 0x1)
 	C:/Program Files/Go/src/testing/benchmark.go:219 +0x190 fp=0x36d023155fa0 sp=0x36d023155f10 pc=0x7ff6bd2fbe10
 testing.(*B).run1.func1()
@@ -539,8 +539,8 @@ testing.(*B).run1(0x36d0232dc608)
 	C:/Program Files/Go/src/testing/benchmark.go:247 +0xb1 fp=0x36d0232179e8 sp=0x36d0232178f8 pc=0x7ff6bd2fbf91
 testing.(*B).Run(0x36d0232dc308, {0x7ff6bd602893?, 0x1?}, 0x36d0232ae2d0)
 	C:/Program Files/Go/src/testing/benchmark.go:867 +0x4d1 fp=0x36d023217ab8 sp=0x36d0232179e8 pc=0x7ff6bd2feb11
-fastview/sidecar/internal/index.BenchmarkSearch100k(0x36d0232dc308)
-	C:/work/viewer/native/fastview-go/internal/index/query_test.go:210 +0x7f9 fp=0x36d023217f10 sp=0x36d023217ab8 pc=0x7ff6bd5e73f9
+panelyth/sidecar/internal/index.BenchmarkSearch100k(0x36d0232dc308)
+	C:/work/viewer/native/panelyth-go/internal/index/query_test.go:210 +0x7f9 fp=0x36d023217f10 sp=0x36d023217ab8 pc=0x7ff6bd5e73f9
 testing.(*B).runN(0x36d0232dc308, 0x1)
 	C:/Program Files/Go/src/testing/benchmark.go:219 +0x190 fp=0x36d023217fa0 sp=0x36d023217f10 pc=0x7ff6bd2fbe10
 testing.(*B).run1.func1()
@@ -578,14 +578,14 @@ runtime.goexit({})
 created by database/sql.OpenDB in goroutine 50
 	C:/Program Files/Go/src/database/sql/sql.go:846 +0x135
 exit status 2
-FAIL	fastview/sidecar/internal/index	1.742s
+FAIL	panelyth/sidecar/internal/index	1.742s
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/library
+pkg: panelyth/sidecar/internal/library
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkFavorite100k-32    	       6	 308166233 ns/op	 7718502 B/op	   14593 allocs/op
 BenchmarkFavorite100k-32    	       6	 304602100 ns/op	 7786428 B/op	   14571 allocs/op
 BenchmarkFavorite100k-32    	       6	 307704683 ns/op	 7758820 B/op	   14555 allocs/op
 PASS
-ok  	fastview/sidecar/internal/library	6.760s
+ok  	panelyth/sidecar/internal/library	6.760s
 FAIL

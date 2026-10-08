@@ -1,6 +1,6 @@
 import type { DragEvent } from "react"
 import { DRAG_TYPE, dragSource, dragStart, dropOn, type CopyTarget } from "../features/files"
-import { isMarked } from "@fastview/renderer-core"
+import { isMarked } from "@panelyth/renderer-core"
 import { moveCursor, pageStoreOf, parentRows, useListingStore } from "../features/listing"
 import { markNone, marksDescriptor, marksOf } from "../features/marks"
 import type { Side } from "../features/panels"

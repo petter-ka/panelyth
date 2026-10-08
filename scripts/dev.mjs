@@ -14,7 +14,7 @@ const commander = join(root, "commander", "renderer")
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 
 execFileSync(process.execPath, [join(root, "scripts", "build-sidecar.mjs")], { stdio: "inherit" })
-execFileSync(pnpm, ["--filter", "@fastview/desktop", "build"], {
+execFileSync(pnpm, ["--filter", "@panelyth/desktop", "build"], {
   cwd: root,
   stdio: "inherit",
   shell: true,
@@ -40,9 +40,9 @@ const child = spawn(electronPath, [desktop], {
   stdio: "inherit",
   env: {
     ...process.env,
-    FASTVIEW_RENDERER_URL: viewer.url,
-    FASTVIEW_COMMANDER_URL: commanderDev.url,
-    FASTVIEW_COMMANDER: process.env.FASTVIEW_COMMANDER ?? "1",
+    PANELYTH_RENDERER_URL: viewer.url,
+    PANELYTH_COMMANDER_URL: commanderDev.url,
+    PANELYTH_COMMANDER: process.env.PANELYTH_COMMANDER ?? "1",
   },
 })
 child.on("exit", async (code) => {

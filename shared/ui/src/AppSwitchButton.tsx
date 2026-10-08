@@ -1,4 +1,4 @@
-import type { AppId } from "@fastview/contracts"
+import type { AppId } from "@panelyth/contracts"
 import { Tooltip } from "./Tooltip"
 
 const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }

@@ -1,4 +1,4 @@
-import type { AppId } from "@fastview/contracts"
+import type { AppId } from "@panelyth/contracts"
 import { CommanderGlyph, ViewerGlyph } from "./AppSwitchButton"
 import { Tooltip } from "./Tooltip"
 
@@ -11,7 +11,7 @@ export interface AppSwitcherProps {
   onSwitch(): void
 }
 
-/** A shared left rail for switching between FastView and FastView Commander. */
+/** A shared left rail for switching between Panelyth and Panelyth Commander. */
 export function AppSwitcher({ current, shortcut, onSwitch }: AppSwitcherProps) {
   return (
     <nav

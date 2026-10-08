@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // Stage C07: an archive is a folder of its own session source; its entries

@@ -19,7 +19,7 @@ test.describe("commander foundation (Stage C00)", () => {
       const title = await app.evaluate(({ BrowserWindow }) =>
         BrowserWindow.getAllWindows()[0]!.getTitle(),
       )
-      expect(title).toBe("FastView Commander")
+      expect(title).toBe("Panelyth Commander")
 
       // Tab moves the active panel; the key reaches the commander, not the viewer behind it.
       await page.keyboard.press("Tab")
@@ -36,7 +36,7 @@ test.describe("commander foundation (Stage C00)", () => {
       await expect(page.getByTestId("panel-left")).toBeVisible()
       const probe = await page.evaluate(() => {
         const w = window as unknown as Record<string, unknown>
-        const api = (window.fastview ?? {}) as unknown as Record<string, Record<string, unknown>>
+        const api = (window.panelyth ?? {}) as unknown as Record<string, Record<string, unknown>>
         return {
           require: typeof w.require,
           process: typeof w.process,

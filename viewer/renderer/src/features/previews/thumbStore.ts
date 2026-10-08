@@ -5,8 +5,8 @@ import type {
   PreviewPriority,
   PreviewProfile,
   Thumb,
-} from "@fastview/contracts"
-import { MAX_ENSURE_ITEMS } from "@fastview/contracts"
+} from "@panelyth/contracts"
+import { MAX_ENSURE_ITEMS } from "@panelyth/contracts"
 import { useSyncExternalStore } from "react"
 import { bridge, isBridgeAvailable } from "../../bridge"
 
@@ -14,7 +14,7 @@ import { bridge, isBridgeAvailable } from "../../bridge"
  * Thumbnail state per entry id, kept outside React state (CLAUDE.md): one
  * subscriber set per id, so a finished preview re-renders exactly one tile.
  * Only URLs are stored, never image bytes; Chromium loads and caches the
- * files through fastview-thumb:.
+ * files through panelyth-thumb:.
  */
 export type ThumbState =
   { status: "ready"; thumb: Thumb } | { status: "failed"; code: ErrorCode } | { status: "pending" }

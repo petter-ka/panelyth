@@ -20,8 +20,8 @@ import (
 	"runtime"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/fixture"
 )
 
 type listRun struct {
@@ -54,7 +54,7 @@ type result struct {
 }
 
 func main() {
-	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "fastview-fixtures"), "fixture root")
+	fixtures := flag.String("fixtures", filepath.Join(os.TempDir(), "panelyth-fixtures"), "fixture root")
 	out := flag.String("out", "", "write the JSON result here (default stdout)")
 	runs := flag.Int("runs", 3, "runs per measurement")
 	tgzBytes := flag.Int64("tgz-bytes", 1<<30, "content of big.tar.gz")

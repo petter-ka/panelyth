@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/scan"
 )
 
 // The viewer's hot path through a session: open a 10k-file folder and page

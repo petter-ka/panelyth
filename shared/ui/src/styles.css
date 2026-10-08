@@ -1,5 +1,5 @@
 /*
- * FastView design system (shared by the viewer and the commander; ADR-0014,
+ * Panelyth design system (shared by the viewer and the commander; ADR-0014,
  * docs/shared/DESIGN-SYSTEM.md). Each app's entry CSS imports Tailwind first,
  * then this file, and adds `@source` for this package's components.
  */

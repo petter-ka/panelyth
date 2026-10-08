@@ -1,4 +1,4 @@
-import type { PreviewProfile } from "@fastview/contracts"
+import type { PreviewProfile } from "@panelyth/contracts"
 
 // Tile view geometry (docs/viewer/stages/03-tile-view.md, ADR-0004). Thumbnail boxes keep
 // their selected size; interface size scales the surrounding labels and gaps.

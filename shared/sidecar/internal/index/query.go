@@ -11,8 +11,8 @@ import (
 
 	"golang.org/x/text/unicode/norm"
 
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // SortField is a whitelisted ordering; field names never reach SQL directly.

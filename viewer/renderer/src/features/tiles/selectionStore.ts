@@ -1,10 +1,10 @@
-import type { SelectionDescriptor } from "@fastview/contracts"
+import type { SelectionDescriptor } from "@panelyth/contracts"
 import {
   inRanges,
   markCount,
   normalize,
   toDescriptor as marksToDescriptor,
-} from "@fastview/renderer-core"
+} from "@panelyth/renderer-core"
 import { create } from "zustand"
 
 /**

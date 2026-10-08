@@ -70,16 +70,16 @@ export const IPC_INVOKE = "fv:invoke"
 export const IPC_EVENT = "fv:event"
 
 /** Renderer argument that tells preload to expose dev-only methods. */
-export const DEV_METHODS_ARG = "--fastview-dev-methods"
+export const DEV_METHODS_ARG = "--panelyth-dev-methods"
 
 /** Renderer argument: the commander is enabled, so preload exposes app.switch (ADR-0031). */
-export const COMMANDER_ENABLED_ARG = "--fastview-commander"
+export const COMMANDER_ENABLED_ARG = "--panelyth-commander"
 
 /**
- * Shape of `window.fastview`, exposed by preload through contextBridge.
+ * Shape of `window.panelyth`, exposed by preload through contextBridge.
  * Narrow and typed: there is no generic invoke and no raw ipcRenderer.
  */
-export interface FastViewApi {
+export interface PanelythApi {
   app: {
     /** Request an orderly application exit. */
     exit(): Promise<RpcEnvelope<OkResult>>
@@ -103,7 +103,7 @@ export interface FastViewApi {
     cancelScan(scanId: number): Promise<RpcEnvelope<CancelScanResult>>
   }
   media: {
-    /** Opens an image/video for viewing: a fastview-media URL and display size. */
+    /** Opens an image/video for viewing: a panelyth-media URL and display size. */
     open(entryId: number): Promise<RpcEnvelope<MediaOpenResult>>
   }
   preview: {
@@ -200,7 +200,7 @@ export interface FastViewApi {
 }
 
 /**
- * Shape of `window.fastview` in the commander's app view (ADR-0027): only the
+ * Shape of `window.panelyth` in the commander's app view (ADR-0027): only the
  * methods in COMMANDER_METHODS.
  */
 export interface CommanderApi {

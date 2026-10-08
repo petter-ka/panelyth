@@ -1,6 +1,6 @@
-import type { Crumb, PlaceId } from "@fastview/contracts"
+import type { Crumb, PlaceId } from "@panelyth/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 import {
   memo,
   useEffect,
@@ -457,7 +457,7 @@ export function SidebarPane() {
   return (
     <nav aria-label="Locations" className="flex h-full min-h-0 flex-col bg-chrome">
       <div className="flex h-11 shrink-0 items-center border-b border-border px-4 text-[0.8125rem] font-semibold">
-        FastView
+        Panelyth
       </div>
       <ContextMenuRoot onOpenChange={(open) => !open && setMenuRow(null)}>
         {/* Rows record the target in onContextMenu (bubbles before the trigger opens). */}

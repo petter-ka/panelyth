@@ -6,9 +6,9 @@ import (
 	"errors"
 	"time"
 
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/natsort"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/natsort"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Batch jobs (Stage 07, ADR-0021): the journal, resolving job targets, and
@@ -173,7 +173,7 @@ func applyMove(ctx context.Context, tx *sql.Tx, m Moved) error {
 	isDir := m.Kind == media.KindDir
 	if m.OldKey != m.NewKey {
 		// Whatever the index still holds at the destination is stale (a
-		// replaced file, or a folder deleted outside FastView).
+		// replaced file, or a folder deleted outside Panelyth).
 		if isDir {
 			lo, hi := pathkey.SubtreeRange(m.NewKey)
 			if _, err := tx.ExecContext(ctx, `DELETE FROM entries WHERE (path_key = ? OR (path_key >= ? AND path_key < ?)) AND id <> ?`,

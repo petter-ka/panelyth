@@ -45,7 +45,7 @@ const src = (w: number, h: number, s: number) => [
  * damaged MP4.
  */
 function videoFixture(): string {
-  const root = join(tmpdir(), "fastview-fixtures", "videos-v1")
+  const root = join(tmpdir(), "panelyth-fixtures", "videos-v1")
   if (existsSync(join(root, ".done"))) return root
   mkdirSync(root, { recursive: true })
   const h264 = join(root, "clip_00.mp4")
@@ -79,7 +79,7 @@ function videoFixture(): string {
 }
 
 function copyOfVideos(): string {
-  const dir = join(mkdtempSync(join(tmpdir(), "fastview-media-")), "videos")
+  const dir = join(mkdtempSync(join(tmpdir(), "panelyth-media-")), "videos")
   cpSync(videoFixture(), dir, { recursive: true })
   return dir
 }
@@ -118,7 +118,7 @@ async function instrument(page: Page): Promise<void> {
   await page.evaluate(() => {
     const w = window as unknown as { __m: { readyItems: number; longTasks: number[] } }
     w.__m = { readyItems: 0, longTasks: [] }
-    window.fastview!.onEvent("preview.ready", (p) => {
+    window.panelyth!.onEvent("preview.ready", (p) => {
       w.__m.readyItems += p.items.length
     })
     new PerformanceObserver((l) =>
@@ -139,8 +139,8 @@ test.describe("video playback + media preview (Stage 06)", () => {
   test("video posters are generated without blocking, then reused after a restart", async () => {
     test.setTimeout(240_000)
     const videos = copyOfVideos()
-    const cache = join(mkdtempSync(join(tmpdir(), "fastview-media-cache-")), "cache")
-    const env = { FASTVIEW_TEST_DIALOG_PATH: videos, FASTVIEW_CACHE_DIR: cache }
+    const cache = join(mkdtempSync(join(tmpdir(), "panelyth-media-cache-")), "cache")
+    const env = { PANELYTH_TEST_DIALOG_PATH: videos, PANELYTH_CACHE_DIR: cache }
 
     const first = await launchApp(env)
     let coldMs: number
@@ -198,7 +198,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
 
   test("plays in the preview pane from a token URL; seek, volume and browsing stay responsive", async () => {
     test.setTimeout(180_000)
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: copyOfVideos() })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -218,7 +218,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
         .toBeGreaterThanOrEqual(1)
       const selectToMetadataMs = Date.now() - t0
       expect(await video.evaluate((v: HTMLVideoElement) => v.currentSrc)).toMatch(
-        /^fastview-media:\/\/m\/[0-9a-f]{32}$/,
+        /^panelyth-media:\/\/m\/[0-9a-f]{32}$/,
       )
       await expect(page.getByTestId("video-time")).toHaveText("0:00 / 0:08")
       await expect(page.getByTestId("preview-details")).toContainText("1920 × 1080")
@@ -272,7 +272,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
 
   test("Enter plays a video; full screen is allowed for the player only", async () => {
     test.setTimeout(120_000)
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: copyOfVideos() })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -295,7 +295,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
 
   test("double-clicking a video tile plays it full screen; Esc returns to the pane, still playing", async () => {
     test.setTimeout(120_000)
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: copyOfVideos() })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -320,7 +320,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
 
   test("unsupported and damaged videos say why and offer a way out", async () => {
     test.setTimeout(120_000)
-    const { app, page } = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: copyOfVideos() })
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
       await toolbarOpen(page).click()
@@ -339,8 +339,8 @@ test.describe("video playback + media preview (Stage 06)", () => {
       await player.getByRole("button", { name: "Open with default app" }).click()
       const log = await app.evaluate(
         () =>
-          (globalThis as unknown as { __fastviewShellLog: { action: string; value: string }[] })
-            .__fastviewShellLog,
+          (globalThis as unknown as { __panelythShellLog: { action: string; value: string }[] })
+            .__panelythShellLog,
       )
       expect(log.at(-1)).toMatchObject({ action: "open" })
       expect(log.at(-1)!.value).toMatch(/legacy\.mkv$/)

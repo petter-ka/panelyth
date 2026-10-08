@@ -1,4 +1,4 @@
-import type { ContentItem, QuerySnapshot } from "@fastview/contracts"
+import type { ContentItem, QuerySnapshot } from "@panelyth/contracts"
 import { useSyncExternalStore } from "react"
 
 /**

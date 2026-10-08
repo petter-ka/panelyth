@@ -1,7 +1,7 @@
 import { appendFileSync, mkdtempSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import type { CommanderApi } from "@fastview/contracts"
+import type { CommanderApi } from "@panelyth/contracts"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
 import { expectWithinBudget, repoRoot } from "../../launch"
@@ -58,8 +58,8 @@ async function cursorToFile(c: Page, name: string): Promise<void> {
 const shellLog = (app: ElectronApplication) =>
   app.evaluate(
     () =>
-      (globalThis as unknown as { __fastviewShellLog: { action: string; value: string }[] })
-        .__fastviewShellLog,
+      (globalThis as unknown as { __panelythShellLog: { action: string; value: string }[] })
+        .__panelythShellLog,
   )
 
 async function openInLister(c: Page, name: string): Promise<void> {
@@ -176,7 +176,7 @@ test.describe("quick view and lister (Stage C05)", () => {
     try {
       const c = await commanderOf(app)
       // The viewer's page by its origin: firstWindow() may be either app's view.
-      const viewer = app.windows().find((p) => p.url().startsWith("app://fastview"))!
+      const viewer = app.windows().find((p) => p.url().startsWith("app://panelyth"))!
       expect(viewer).toBeDefined()
       await goTo(c, "left", root)
       const before = (await shellLog(app)).length
@@ -215,7 +215,7 @@ test.describe("quick view and lister (Stage C05)", () => {
       const textId = Number(await fileRow(c, "utf8.txt").getAttribute("data-id"))
       // The commander's token for the file: readable by the commander only.
       const token = await c.evaluate(async (id) => {
-        const r = await (window.fastview as unknown as CommanderApi).file.open(id)
+        const r = await (window.panelyth as unknown as CommanderApi).file.open(id)
         if (!r.ok) throw new Error(r.e.message)
         const res = await fetch(r.r.url, { headers: { Range: "bytes=0-4" } })
         return { url: r.r.url, status: res.status, body: await res.text() }
@@ -226,7 +226,7 @@ test.describe("quick view and lister (Stage C05)", () => {
       // The viewer's view: no file.open, no shell.edit, and shell.open / media.open refuse the text file.
       const fromViewer = await viewer.evaluate(
         async ({ id, url }) => {
-          const api = window.fastview as unknown as Record<string, Record<string, unknown>>
+          const api = window.panelyth as unknown as Record<string, Record<string, unknown>>
           const open = await (
             api.shell!.open as (id: number) => Promise<{ ok: boolean; e?: { message: string } }>
           )(id)
@@ -416,7 +416,7 @@ test.describe("quick view and lister (Stage C05)", () => {
 })
 
 test("the token protocol refuses fetch() from another origin and never exposes paths", async () => {
-  const dir = mkdtempSync(join(tmpdir(), "fastview-c05-"))
+  const dir = mkdtempSync(join(tmpdir(), "panelyth-c05-"))
   writeFileSync(join(dir, "a.txt"), "hello")
   const { app } = await launch("commander")
   try {
@@ -424,14 +424,14 @@ test("the token protocol refuses fetch() from another origin and never exposes p
     await goTo(c, "left", dir)
     const id = Number(await fileRow(c, "a.txt").getAttribute("data-id"))
     const r = await c.evaluate(async (id) => {
-      const res = await (window.fastview as unknown as CommanderApi).file.open(id)
+      const res = await (window.panelyth as unknown as CommanderApi).file.open(id)
       return res.ok ? res.r : null
     }, id)
     expect(r).toMatchObject({ kind: "file", mime: "application/octet-stream", sizeBytes: 5 })
     expect(JSON.stringify(r)).not.toContain(dir)
     // Another origin (the viewer's) is refused by the protocol itself.
     const status = await app.evaluate(async ({ net }, url) => {
-      const res = await net.fetch(url, { headers: { Origin: "app://fastview" } })
+      const res = await net.fetch(url, { headers: { Origin: "app://panelyth" } })
       return res.status
     }, r!.url)
     expect(status).toBe(403)

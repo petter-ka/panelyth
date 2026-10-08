@@ -39,7 +39,7 @@ test.describe("app switch (ADR-0031)", () => {
       await waitForReady(page)
       await expect(page.getByRole("toolbar", { name: "Navigation" })).toBeVisible()
       await expect(page.getByTestId("app-switch")).toHaveCount(0)
-      expect(await page.evaluate(() => Object.keys(window.fastview!.app))).toEqual(["exit"])
+      expect(await page.evaluate(() => Object.keys(window.panelyth!.app))).toEqual(["exit"])
       await page.keyboard.press("Control+Shift+M")
       await page.waitForTimeout(300)
       expect(await shellState(app)).toMatchObject({ active: "viewer", commanderCreated: false })
@@ -64,7 +64,7 @@ test.describe("app switch (ADR-0031)", () => {
       await expect(commander.getByTestId("panel-left")).toBeVisible()
       const firstSwitchMs = Date.now() - t0
       expect(await shellState(app)).toMatchObject({ active: "commander", commanderCreated: true })
-      expect(await title(app)).toBe("FastView Commander")
+      expect(await title(app)).toBe("Panelyth Commander")
 
       // Keys reach the commander after the switch.
       await commander.keyboard.press("Tab")
@@ -73,7 +73,7 @@ test.describe("app switch (ADR-0031)", () => {
       // Back by icon, then forth and back by key.
       await commander.getByRole("button", { name: "Switch to Viewer" }).click()
       await expect.poll(() => shellState(app)).toMatchObject({ active: "viewer" })
-      expect(await title(app)).toBe("FastView")
+      expect(await title(app)).toBe("Panelyth")
       const later: number[] = []
       for (const [from, to] of [
         [page, "commander"],

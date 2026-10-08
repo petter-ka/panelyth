@@ -1,6 +1,6 @@
-import type { ContentItem } from "@fastview/contracts"
+import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
-import { bridge, FastViewError } from "../bridge"
+import { bridge, PanelythError } from "../bridge"
 import { notice, READ_ONLY } from "./files"
 import {
   focusEntry,
@@ -33,12 +33,12 @@ const set = useOpenStore.setState
 const get = useOpenStore.getState
 
 const reasonOf = (error: unknown): string | undefined =>
-  error instanceof FastViewError
+  error instanceof PanelythError
     ? ((error.details as { reason?: unknown } | undefined)?.reason as string | undefined)
     : undefined
 
 const messageOf = (error: unknown): string =>
-  error instanceof FastViewError ? error.message : String(error)
+  error instanceof PanelythError ? error.message : String(error)
 
 /** The cursor entry of a panel; null on ".." or while its page loads. */
 export function cursorItem(side: Side): ContentItem | null {

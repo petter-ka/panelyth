@@ -1,7 +1,7 @@
 # Commander Architecture
 
-Status: **in progress** (C00 done, C01–C07 implemented; Stages C08–C11 planned). FastView Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
-an app view in the FastView shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
+Status: **in progress** (C00 done, C01–C07 implemented; Stages C08–C11 planned). Panelyth Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
+an app view in the Panelyth shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
 shares the viewer's sidecar, index (queried with the `all` scope, ADR-0026), preview cache, jobs, clipboard and
 `library.db`. Switching between the apps and the state they share: `docs/shared/APP-SWITCHING.md`. This document
 covers what is specific to the commander.

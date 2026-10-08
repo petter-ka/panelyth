@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"testing"
 
-	"fastview/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fileops"
 )
 
 // TestMain: these tests cover the job engine (pause and cancel mid-file,

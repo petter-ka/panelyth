@@ -1,5 +1,5 @@
-// The only module that touches window.fastview. Feature code imports from
-// here and receives plain results or FastViewError, never envelopes.
+// The only module that touches window.panelyth. Feature code imports from
+// here and receives plain results or PanelythError, never envelopes.
 import type {
   ClipMode,
   ClipState,
@@ -38,21 +38,21 @@ import type {
   ErrorCode,
   EventChannel,
   EventMap,
-  FastViewApi,
+  PanelythApi,
   PingResult,
   RpcEnvelope,
   SidecarStatus,
   SystemInfo,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 declare global {
   interface Window {
-    fastview?: FastViewApi
+    panelyth?: PanelythApi
   }
 }
 
-export class FastViewError extends Error {
-  override name = "FastViewError"
+export class PanelythError extends Error {
+  override name = "PanelythError"
   constructor(
     readonly code: ErrorCode,
     message: string,
@@ -62,25 +62,25 @@ export class FastViewError extends Error {
   }
 }
 
-function api(): FastViewApi {
-  const bridge = window.fastview
-  if (!bridge) throw new FastViewError("SIDECAR_UNAVAILABLE", "FastView bridge is not available")
+function api(): PanelythApi {
+  const bridge = window.panelyth
+  if (!bridge) throw new PanelythError("SIDECAR_UNAVAILABLE", "Panelyth bridge is not available")
   return bridge
 }
 
 async function unwrap<R>(call: () => Promise<RpcEnvelope<R>>): Promise<R> {
   const envelope = await call()
   if (envelope.ok) return envelope.r
-  throw new FastViewError(envelope.e.code, envelope.e.message, envelope.e.retryable)
+  throw new PanelythError(envelope.e.code, envelope.e.message, envelope.e.retryable)
 }
 
 export function isBridgeAvailable(): boolean {
-  return window.fastview !== undefined
+  return window.panelyth !== undefined
 }
 
 /** True while the commander is enabled: preload then exposes app.switch (ADR-0031). */
 export function canSwitchApps(): boolean {
-  return window.fastview?.app.switch !== undefined
+  return window.panelyth?.app.switch !== undefined
 }
 
 export const bridge = {
@@ -90,7 +90,7 @@ export const bridge = {
   /** Shows the commander in the same window (ADR-0031). */
   switchToCommander: async (): Promise<void> => {
     const switchApp = api().app.switch
-    if (!switchApp) throw new FastViewError("METHOD_NOT_FOUND", "the commander is not enabled")
+    if (!switchApp) throw new PanelythError("METHOD_NOT_FOUND", "the commander is not enabled")
     await unwrap(() => switchApp("commander"))
   },
   ping: (): Promise<PingResult> => unwrap(() => api().system.ping()),

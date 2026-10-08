@@ -8,13 +8,13 @@ import (
 	"path/filepath"
 	"strings"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
-	"fastview/sidecar/internal/rpc"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/scan"
 )
 
 // Stage C04 methods: new folders (F7) and whether a folder's volume has a

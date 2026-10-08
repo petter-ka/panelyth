@@ -1,5 +1,5 @@
 @import "tailwindcss";
-@import "@fastview/ui/styles.css";
+@import "@panelyth/ui/styles.css";
 
 /* Shared components (the app switch button, the media components) use Tailwind classes too. */
 @source "../../../shared/ui/src";

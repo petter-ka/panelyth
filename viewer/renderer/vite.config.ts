@@ -5,7 +5,7 @@ import { defineConfig } from "vite"
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
-  // Served from app://fastview/ in production.
+  // Served from app://panelyth/ in production.
   base: "/",
   build: {
     outDir: "dist",

@@ -1,4 +1,4 @@
-import type { ContentItem } from "@fastview/contracts"
+import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { onSessionChanged, pageStoreOf, parentRows, useListingStore } from "./listing"
 import { otherSide, usePanelsStore, type Side } from "./panels"

@@ -7,7 +7,7 @@ import { launchApp, repoRoot, waitForReady } from "../../launch"
 
 // Stage 08.6: copying pictures to the OS clipboard and additive selection.
 // Main records clipboard writes instead of touching the user's clipboard
-// (FASTVIEW_TEST_SHELL=record): a picture is logged as "WxH" from its PNG.
+// (PANELYTH_TEST_SHELL=record): a picture is logged as "WxH" from its PNG.
 
 const toolbarOpen = (page: Page) =>
   page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
@@ -18,8 +18,8 @@ const tile = (page: Page, name: string) =>
 const shellLog = (app: ElectronApplication) =>
   app.evaluate(
     () =>
-      (globalThis as { __fastviewShellLog?: { action: string; value: string }[] })
-        .__fastviewShellLog ?? [],
+      (globalThis as { __panelythShellLog?: { action: string; value: string }[] })
+        .__panelythShellLog ?? [],
   )
 
 const pictures = async (app: ElectronApplication) =>
@@ -36,13 +36,13 @@ function imagesCopy(): string {
     files: 0,
     images: { count: 150, width: 1600, height: 1200, pngAlphaEvery: 10, rotatedEvery: 7 },
   })
-  const dir = join(mkdtempSync(join(tmpdir(), "fastview-polish-")), "photos")
+  const dir = join(mkdtempSync(join(tmpdir(), "panelyth-polish-")), "photos")
   cpSync(fx.root, dir, { recursive: true })
   return dir
 }
 
 async function open() {
-  const launched = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: imagesCopy() })
+  const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: imagesCopy() })
   await waitForReady(launched.page)
   await toolbarOpen(launched.page).click()
   await expect(tile(launched.page, "photo_0000.jpg")).toBeVisible({ timeout: 30_000 })

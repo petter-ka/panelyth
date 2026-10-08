@@ -5,7 +5,7 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Capability | Total Commander default | Stage | First release |
 |---|---|---|---|
 | Two panels, Tab to switch, swap panels | Tab, Ctrl+U | C00–C02 | ✓ |
-| Switch to the viewer with shared folder, cursor and marks | — (FastView) Ctrl+Shift+M | C00–C02 | ✓ |
+| Switch to the viewer with shared folder, cursor and marks | — (Panelyth) Ctrl+Shift+M | C00–C02 | ✓ |
 | Full (detailed) view with columns — TanStack Table + virtual rows | Ctrl+F2 | C01 | ✓ |
 | Brief view (names in columns) | Ctrl+F1 | C03 | ✓ |
 | Thumbnails view | Ctrl+Shift+F1 | C10 | ✓ |

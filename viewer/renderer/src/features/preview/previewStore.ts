@@ -1,4 +1,4 @@
-import type { ContentItem } from "@fastview/contracts"
+import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { getItem, onPagesLoaded } from "../tiles/pageStore"
 import { focusAndSelect, selectionCount, useSelectionStore } from "../tiles/selectionStore"

@@ -9,7 +9,7 @@ import { startSidecarMonitoring, useSidecarStore } from "../system/sidecarStore"
 import { resetCovers, startCoverMonitoring } from "./coverStore"
 import { resetThumbs, setThumbProfile, startThumbMonitoring } from "./thumbStore"
 
-const url = (n: number) => `fastview-thumb://t/${String(n).padStart(64, "0")}.jpg`
+const url = (n: number) => `panelyth-thumb://t/${String(n).padStart(64, "0")}.jpg`
 let stop: (() => void)[] = []
 
 // Two folders (ids 1, 2) followed by three images.

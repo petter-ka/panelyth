@@ -1,7 +1,7 @@
-import type { ArchiveWarning, ConflictPolicy, SelectionDescriptor } from "@fastview/contracts"
-import { isMarked } from "@fastview/renderer-core"
+import type { ArchiveWarning, ConflictPolicy, SelectionDescriptor } from "@panelyth/contracts"
+import { isMarked } from "@panelyth/renderer-core"
 import { create } from "zustand"
-import { bridge, FastViewError } from "../bridge"
+import { bridge, PanelythError } from "../bridge"
 import { focusEntry, pageStoreOf, parentRows, useListingStore } from "./listing"
 import { cursorDescriptor, marksDescriptor, marksOf, markNone } from "./marks"
 import { otherSide, setActivePanel, usePanelsStore, type Side } from "./panels"
@@ -147,7 +147,7 @@ async function sizeOf(
 }
 
 function errorText(error: unknown): string {
-  if (error instanceof FastViewError) return error.message
+  if (error instanceof PanelythError) return error.message
   return String(error)
 }
 
@@ -299,9 +299,9 @@ export async function startCopy(now: boolean): Promise<boolean> {
     }
   } catch (error) {
     const reason =
-      error instanceof FastViewError ? (error.details as { reason?: string })?.reason : ""
+      error instanceof PanelythError ? (error.details as { reason?: string })?.reason : ""
     const message =
-      error instanceof FastViewError &&
+      error instanceof PanelythError &&
       (error.code === "NOT_FOUND" || error.code === "INVALID_PATH")
         ? "This folder doesn't exist. Check the destination."
         : reason === "notReady"
@@ -490,7 +490,7 @@ export async function clipboardPaste(side: Side): Promise<void> {
     await bridge.clipPaste(dirId, "ask")
   } catch (error) {
     notice(
-      error instanceof FastViewError && error.code === "INVALID_ARGUMENT"
+      error instanceof PanelythError && error.code === "INVALID_ARGUMENT"
         ? "The clipboard is empty."
         : errorText(error),
     )
@@ -514,7 +514,7 @@ export async function copyAsText(side: Side, namesOnly: boolean): Promise<void> 
 // Drag and drop -----------------------------------------------------------------------------
 
 /** The data type of a panel drag (marks or the cursor entry of a side). */
-export const DRAG_TYPE = "application/x-fastview-panel"
+export const DRAG_TYPE = "application/x-panelyth-panel"
 
 export function dragStart(side: Side, e: DragEvent): boolean {
   if (!operand(side) || !e.dataTransfer) return false

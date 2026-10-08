@@ -1,5 +1,5 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, type KeyboardEvent } from "react"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 import { useUiStore } from "../features/commands"
 import { useQuickSearch } from "../features/quicksearch"
 import {

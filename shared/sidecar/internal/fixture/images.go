@@ -26,7 +26,7 @@ type ImageSpec struct {
 // GenerateImages writes deterministic photo-like images. Like Generate it is
 // a no-op when the marker matches.
 func GenerateImages(root string, spec ImageSpec) error {
-	marker := filepath.Join(root, ".fastview-fixture")
+	marker := filepath.Join(root, ".panelyth-fixture")
 	want := fmt.Sprintf("images %+v", spec)
 	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
 		return nil

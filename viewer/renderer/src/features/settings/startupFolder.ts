@@ -1,4 +1,4 @@
-import type { LibraryState, Place } from "@fastview/contracts"
+import type { LibraryState, Place } from "@panelyth/contracts"
 import { openFolder, useFolderStore } from "../folder/folderStore"
 import { useLibraryStore } from "../library/libraryStore"
 import { parseViewerPreferences, VIEWER_SETTINGS_KEY } from "./settingsStore"

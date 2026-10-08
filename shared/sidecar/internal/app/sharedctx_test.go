@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/rpc"
 )
 
 // newContextService opens an index service with library.db in configDir.

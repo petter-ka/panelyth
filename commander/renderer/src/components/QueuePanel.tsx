@@ -1,5 +1,5 @@
-import type { ConflictDecision, JobConflictSide, JobSnapshot } from "@fastview/contracts"
-import { Button, DialogWindow, Tooltip } from "@fastview/ui"
+import type { ConflictDecision, JobConflictSide, JobSnapshot } from "@panelyth/contracts"
+import { Button, DialogWindow, Tooltip } from "@panelyth/ui"
 import { useState } from "react"
 import { formatBytes, formatCount, formatDate } from "../features/format"
 import {

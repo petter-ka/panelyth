@@ -1,6 +1,6 @@
 import { TILE_SIZE_ORDER, type TileSize } from "../../features/tiles/layout"
 import { useLayoutStore } from "../../features/tiles/layoutStore"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 
 const LABEL: Record<TileSize, { short: string; long: string }> = {
   small: { short: "S", long: "Small tiles" },

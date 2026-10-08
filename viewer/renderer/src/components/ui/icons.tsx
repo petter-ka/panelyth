@@ -10,7 +10,7 @@ export {
   PauseIcon,
   PlayIcon,
   VolumeIcon,
-} from "@fastview/media-ui"
+} from "@panelyth/media-ui"
 
 type IconProps = SVGProps<SVGSVGElement> & { size?: number }
 

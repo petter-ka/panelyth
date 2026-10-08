@@ -1,5 +1,5 @@
 {
-  "name": "@fastview/renderer",
+  "name": "@panelyth/renderer",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -10,9 +10,9 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@fastview/media-ui": "workspace:*",
-    "@fastview/renderer-core": "workspace:*",
-    "@fastview/ui": "workspace:*",
+    "@panelyth/media-ui": "workspace:*",
+    "@panelyth/renderer-core": "workspace:*",
+    "@panelyth/ui": "workspace:*",
     "@radix-ui/react-context-menu": "2.3.7",
     "@radix-ui/react-dialog": "1.1.23",
     "@radix-ui/react-dropdown-menu": "2.1.24",
@@ -23,7 +23,7 @@
     "zustand": "5.0.15"
   },
   "devDependencies": {
-    "@fastview/contracts": "workspace:*",
+    "@panelyth/contracts": "workspace:*",
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/react": "16.3.3",

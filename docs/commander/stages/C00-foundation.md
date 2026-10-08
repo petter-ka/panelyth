@@ -5,7 +5,7 @@ Depends on: P01 (the minimal part done the same day). Unblocks: C01.
 
 ## Objective
 
-The commander as a second app view in the FastView shell, reachable from the viewer through the switch icon at the
+The commander as a second app view in the Panelyth shell, reachable from the viewer through the switch icon at the
 top (and back), with the dual-panel shell (empty panels, function-key bar) and shared appearance. It is measured from
 day one, and the viewer stays as fast as before.
 
@@ -32,7 +32,7 @@ day one, and the viewer stays as fast as before.
     spot;
   - Ctrl/Cmd+Shift+M (`app.switch` in the `shell` scope);
   - window title per app; focus on the target's main surface; disabled behind modal dialogs;
-  - feature flag: on in development builds and with `FASTVIEW_COMMANDER=1`, off for users until Stage C11.
+  - feature flag: on in development builds and with `PANELYTH_COMMANDER=1`, off for users until Stage C11.
 - **Shared appearance:** theme and interface size move to `shared.appearance` (migrating the viewer's current values)
   and apply live in both apps.
 - **Tooling:** `pnpm dev`, `pnpm build` and `pnpm test:e2e` include the commander renderer; `launchApp({ app:
@@ -80,11 +80,11 @@ commander (view creation → interactive); later switches; idle memory with both
 
 Built:
 
-- `commander/renderer` (`@fastview/commander`): app bar with the switch, two panels (header, active marking, empty
+- `commander/renderer` (`@panelyth/commander`): app bar with the switch, two panels (header, active marking, empty
   state), the resizable divider persisted as `commander.layout`, the function-key bar (Exit works; the file commands
   are disabled with a tooltip), and a status bar (backend state, theme).
 - `shared/desktop`: the commander's preload (`commander.cjs`), the `app://commander` origin, the shell switch
-  (`shell.ts`), the feature flag `FASTVIEW_COMMANDER=1` (on in `pnpm dev`) and `FASTVIEW_START_APP` for tests.
+  (`shell.ts`), the feature flag `PANELYTH_COMMANDER=1` (on in `pnpm dev`) and `PANELYTH_START_APP` for tests.
 - The viewer: the switch icon first in the navigation toolbar and the `app.switch` keymap action
   (Ctrl/Cmd+Shift+M, also while typing), both only while the commander is enabled.
 - `shared/ui`: the switch button, and theme and interface size shared through `shared.appearance` (migrated from the

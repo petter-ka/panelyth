@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fileops"
 )
 
 // Item error codes of archive jobs (mirror shared/contracts JobItemErrorCode).
@@ -183,7 +183,7 @@ func (x *extractor) entry(h *Header, data io.Reader) error {
 		return x.dir(rel, h)
 	}
 	if h.Encrypted {
-		x.o.fail(rel, &fileops.Error{Code: CodeEncrypted, Err: errors.New("the entry is encrypted; FastView can't extract it")})
+		x.o.fail(rel, &fileops.Error{Code: CodeEncrypted, Err: errors.New("the entry is encrypted; Panelyth can't extract it")})
 		return nil
 	}
 	err := x.file(rel, h, data)

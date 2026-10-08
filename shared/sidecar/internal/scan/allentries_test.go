@@ -9,9 +9,9 @@ import (
 	"slices"
 	"testing"
 
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
 )
 
 // Stage P02 (ADR-0026): the scanner stores every entry with attributes.

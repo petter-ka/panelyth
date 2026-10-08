@@ -6,7 +6,7 @@ import tseslint from "typescript-eslint"
 // Synchronous IPC is banned everywhere (CLAUDE.md, ADR-0002).
 const noSyncIpc = {
   selector: "MemberExpression[property.name=/^(sendSync|invokeSync)$/]",
-  message: "Synchronous IPC is forbidden in FastView.",
+  message: "Synchronous IPC is forbidden in Panelyth.",
 }
 
 export default tseslint.config(

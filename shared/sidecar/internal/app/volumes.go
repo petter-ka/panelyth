@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/fsx"
 )
 
 // Event channels of Stage C03 (mirrors shared/contracts/src/events.ts).

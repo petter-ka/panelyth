@@ -9,7 +9,7 @@ import (
 	"encoding/hex"
 	"errors"
 
-	"fastview/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/imaging"
 )
 
 // Profile names a preview size. Part of the cache key and the protocol.
@@ -77,8 +77,8 @@ func ParseKey(s string) (Key, error) {
 }
 
 // URL is the renderer-facing address served by Electron main's
-// fastview-thumb protocol. It is derived from the key; main resolves it to a
+// panelyth-thumb protocol. It is derived from the key; main resolves it to a
 // file without asking the sidecar.
 func URL(k Key, f imaging.Format) string {
-	return "fastview-thumb://t/" + k.Hex() + "." + string(f)
+	return "panelyth-thumb://t/" + k.Hex() + "." + string(f)
 }

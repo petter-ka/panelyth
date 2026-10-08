@@ -17,13 +17,13 @@ function writeResult(result: object): void {
 /** A private copy of a real-image fixture (tests may add files to it). */
 function copyOf(name: string, images: { count: number; width: number; height: number }): string {
   const fx = ensureFixture(name, { files: 0, images })
-  const dir = join(mkdtempSync(join(tmpdir(), "fastview-viewer-")), "photos")
+  const dir = join(mkdtempSync(join(tmpdir(), "panelyth-viewer-")), "photos")
   cpSync(fx.root, dir, { recursive: true })
   return dir
 }
 
 async function openFolderAt(dir: string) {
-  const launched = await launchApp({ FASTVIEW_TEST_DIALOG_PATH: dir })
+  const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
   await waitForReady(launched.page)
   await toolbarOpen(launched.page).click()
   await expect(
@@ -160,7 +160,7 @@ test.describe("image viewer (Stage 04)", () => {
         .getByTestId("viewer-original-layer")
         .evaluate((img: HTMLImageElement) => ({ w: img.naturalWidth, src: img.src }))
       expect(natural.w).toBe(4000)
-      expect(natural.src).toMatch(/^fastview-media:\/\/m\/[0-9a-f]{32}$/)
+      expect(natural.src).toMatch(/^panelyth-media:\/\/m\/[0-9a-f]{32}$/)
       await expect(page.getByTestId("viewer-zoom")).toHaveText(/^100%$|^\d+%$/)
     } finally {
       await app.close()

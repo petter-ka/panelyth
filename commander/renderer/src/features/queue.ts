@@ -1,4 +1,4 @@
-import type { ConflictDecision, JobItemError, JobSnapshot } from "@fastview/contracts"
+import type { ConflictDecision, JobItemError, JobSnapshot } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 

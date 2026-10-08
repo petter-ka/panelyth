@@ -122,7 +122,7 @@ in vitest workers, Playwright and pnpm itself) at random points since 2026-10-05
 The Stage 08 and 08.5 gates are still open: their implementation is done (2026-10-01), but their automated coverage
 was never added (`docs/viewer/stages/08-product-polish.md`, `docs/viewer/stages/08.5-viewer-settings.md`).
 
-Carried over from Stage 07: the intermittent modernc SQLite heap fault, which reproduces outside FastView and needs a
+Carried over from Stage 07: the intermittent modernc SQLite heap fault, which reproduces outside Panelyth and needs a
 driver/hardware decision (`docs/viewer/stages/07-batch-and-metadata.md`).
 
 Carried over: idle memory is still near the budget edge (Stage 08: 52.9 MB over the Electron floor, budget 60). Cold

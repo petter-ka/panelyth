@@ -47,7 +47,7 @@ describe("shared appearance", () => {
     expect(useThemeStore.getState().preference).toBe("beige")
     expect(document.documentElement.dataset.theme).toBe("beige")
     expect(document.documentElement.dataset.interfaceSize).toBe("small")
-    expect(localStorage.getItem("fastview.theme")).toBe("beige")
+    expect(localStorage.getItem("panelyth.theme")).toBe("beige")
     expect(save).not.toHaveBeenCalled()
   })
 
@@ -92,7 +92,7 @@ describe("startSharedAppearanceSync", () => {
   })
 
   it("migrates this app's local values the first time", async () => {
-    localStorage.setItem("fastview.theme", "beige")
+    localStorage.setItem("panelyth.theme", "beige")
     initTheme()
     const p = port({})
     const stop = startSharedAppearanceSync(p)

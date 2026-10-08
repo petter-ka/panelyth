@@ -20,9 +20,9 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
+	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
 )
 
 type file struct {

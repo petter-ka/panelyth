@@ -7,9 +7,9 @@ import type {
   SortDirection,
   SortField,
   SortKey,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 import { create } from "zustand"
-import { bridge, FastViewError, isBridgeAvailable } from "../../bridge"
+import { bridge, PanelythError, isBridgeAvailable } from "../../bridge"
 import { noteRecent } from "../library/libraryStore"
 import { resetThumbs } from "../previews/thumbStore"
 import { resetCovers } from "../previews/coverStore"
@@ -108,16 +108,16 @@ export function resetFolderStore(): void {
 
 /** Plain-language messages for errors the user can act on. */
 export function describeError(error: unknown): string {
-  if (error instanceof FastViewError) {
+  if (error instanceof PanelythError) {
     switch (error.code) {
       case "NOT_FOUND":
         return "This folder no longer exists."
       case "PERMISSION_DENIED":
-        return "FastView doesn't have permission to open this folder."
+        return "Panelyth doesn't have permission to open this folder."
       case "INVALID_PATH":
-        return "That location isn't a folder FastView can open."
+        return "That location isn't a folder Panelyth can open."
       case "SIDECAR_UNAVAILABLE":
-        return "The FastView backend isn't running. Restart FastView and try again."
+        return "The Panelyth backend isn't running. Restart Panelyth and try again."
     }
     return error.message
   }

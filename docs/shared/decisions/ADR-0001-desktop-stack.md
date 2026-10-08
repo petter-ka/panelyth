@@ -9,7 +9,7 @@ ADR-0031).
 
 ## Context
 
-FastView needs:
+Panelyth needs:
 
 - Windows/macOS/Linux packaging
 - high-quality desktop UX

@@ -1,4 +1,4 @@
-import type { Bookmark, Place, RecentFolder, SidecarStatus, Volume } from "@fastview/contracts"
+import type { Bookmark, Place, RecentFolder, SidecarStatus, Volume } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge } from "../../bridge"
 import { useSidecarStore } from "../system/sidecarStore"

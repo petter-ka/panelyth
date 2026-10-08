@@ -1,6 +1,6 @@
-import { DEFAULT_SWITCH_SETTINGS, ENTRY_ATTRS, type Crumb } from "@fastview/contracts"
-import { useSwitchSettings } from "@fastview/renderer-core"
-import { useInterfaceSizeStore } from "@fastview/ui"
+import { DEFAULT_SWITCH_SETTINGS, ENTRY_ATTRS, type Crumb } from "@panelyth/contracts"
+import { useSwitchSettings } from "@panelyth/renderer-core"
+import { useInterfaceSizeStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"
@@ -16,7 +16,7 @@ import { closeQuickSearch, useQuickSearch } from "./features/quicksearch"
 import { useSizeJobs } from "./features/sizes"
 import { folder, installFakeCommander, item, type FakeOptions } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
-import { markCount } from "@fastview/renderer-core"
+import { markCount } from "@panelyth/renderer-core"
 
 // Stage C02: keyboard, marks and quick search
 // (docs/commander/stages/C02-keyboard-marks-quick-search.md).
@@ -91,7 +91,7 @@ beforeEach(() => {
 afterEach(() => {
   stops.forEach((s) => s())
   stops = []
-  delete window.fastview
+  delete window.panelyth
   vi.restoreAllMocks()
 })
 

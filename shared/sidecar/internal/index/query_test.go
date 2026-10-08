@@ -7,7 +7,7 @@ import (
 	"slices"
 	"testing"
 
-	"fastview/sidecar/internal/media"
+	"panelyth/sidecar/internal/media"
 )
 
 func seedSearch(t *testing.T) (*Store, DirInfo) {

@@ -128,7 +128,7 @@ func (l *Library) migrate() error {
 		return err
 	}
 	if current > len(migrations) {
-		return fmt.Errorf("library.db is from a newer FastView (schema %d > %d)", current, len(migrations))
+		return fmt.Errorf("library.db is from a newer Panelyth (schema %d > %d)", current, len(migrations))
 	}
 	for v := current + 1; v <= len(migrations); v++ {
 		tx, err := l.db.Begin()

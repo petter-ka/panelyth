@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fileops"
 )
 
 // TestBenchLargeCopyVsOS is the controlled large-file comparison of Stage
@@ -22,13 +22,13 @@ import (
 // disk settling in between, because on a busy or nearly full drive the
 // write-back of one copy otherwise lands in the next one's time.
 //
-//	FASTVIEW_BENCH_LARGE=1 [FASTVIEW_BENCH_DEST=D:\somewhere] [FASTVIEW_BENCH_MB=4096] go test ./internal/jobs -run BenchLargeCopyVsOS -v -timeout 30m
+//	PANELYTH_BENCH_LARGE=1 [PANELYTH_BENCH_DEST=D:\somewhere] [PANELYTH_BENCH_MB=4096] go test ./internal/jobs -run BenchLargeCopyVsOS -v -timeout 30m
 func TestBenchLargeCopyVsOS(t *testing.T) {
-	if os.Getenv("FASTVIEW_BENCH_LARGE") != "1" {
-		t.Skip("writes several GB; set FASTVIEW_BENCH_LARGE=1")
+	if os.Getenv("PANELYTH_BENCH_LARGE") != "1" {
+		t.Skip("writes several GB; set PANELYTH_BENCH_LARGE=1")
 	}
 	mb := 4096
-	if v, err := strconv.Atoi(os.Getenv("FASTVIEW_BENCH_MB")); err == nil && v > 0 {
+	if v, err := strconv.Atoi(os.Getenv("PANELYTH_BENCH_MB")); err == nil && v > 0 {
 		mb = v
 	}
 	e := newEnv(t)
@@ -49,11 +49,11 @@ func TestBenchLargeCopyVsOS(t *testing.T) {
 	}
 	_ = f.Close()
 	ids := e.ids(e.index(src), "big.mp4")
-	dest := os.Getenv("FASTVIEW_BENCH_DEST")
+	dest := os.Getenv("PANELYTH_BENCH_DEST")
 	if dest == "" {
 		dest = e.root
 	} else {
-		dest = filepath.Join(dest, "fastview-bench-large")
+		dest = filepath.Join(dest, "panelyth-bench-large")
 		t.Cleanup(func() { _ = os.RemoveAll(dest) })
 	}
 	settle := func() { time.Sleep(10 * time.Second) }

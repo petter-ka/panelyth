@@ -19,10 +19,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"fastview/sidecar/internal/fsx"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/media"
-	"fastview/sidecar/internal/pathkey"
+	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // Options tunes a scan. Zero values get defaults.

@@ -3,12 +3,12 @@ import type {
   MediaOpenResult,
   PreviewEnsureParams,
   PreviewEnsureResult,
-} from "@fastview/contracts"
+} from "@panelyth/contracts"
 
 /**
  * What the media components need from an app's bridge. Each app configures
  * it once with its own narrow API (the viewer's or the commander's preload),
- * so this package never touches window.fastview itself.
+ * so this package never touches window.panelyth itself.
  */
 export interface MediaPort {
   isAvailable(): boolean
@@ -26,7 +26,7 @@ export function configureMedia(value: MediaPort): void {
 }
 
 export function mediaPort(): MediaPort {
-  if (!port) throw new Error("@fastview/media-ui: configureMedia() was not called")
+  if (!port) throw new Error("@panelyth/media-ui: configureMedia() was not called")
   return port
 }
 

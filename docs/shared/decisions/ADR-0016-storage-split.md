@@ -25,8 +25,8 @@ purge. Favorites, ratings, tags, bookmarks and settings (FR-18, NFR-09) must not
 
 | Database | Location | Contents | Disposable |
 |---|---|---|---|
-| `index.db` | `<UserCacheDir>/FastView/v1/db/index.db` | filesystem mirror, scans, preview-cache index | yes: rebuilt on demand |
-| `library.db` | `<UserConfigDir>/FastView/library.db` | favorites, ratings, tags, collections, bookmarks, recent, settings | no |
+| `index.db` | `<UserCacheDir>/Panelyth/v1/db/index.db` | filesystem mirror, scans, preview-cache index | yes: rebuilt on demand |
+| `library.db` | `<UserConfigDir>/Panelyth/library.db` | favorites, ratings, tags, collections, bookmarks, recent, settings | no |
 
 - `library.db` rows are keyed by `path_key`, and `index.db` attaches it for sorting and filtering by user data.
 - Changing the index schema incompatibly bumps the cache version directory (`v1` → `v2`), and the old index is

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"fastview/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/fixture"
 )
 
 func tools(t *testing.T) *Tools {
@@ -155,7 +155,7 @@ func TestCancelKillsProcess(t *testing.T) {
 
 func TestUnavailable(t *testing.T) {
 	tl := Locate(func(k string) string {
-		if k == "FASTVIEW_FFMPEG" {
+		if k == "PANELYTH_FFMPEG" {
 			return "off"
 		}
 		return ""

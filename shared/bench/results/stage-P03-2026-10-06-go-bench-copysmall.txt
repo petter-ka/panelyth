@@ -2,7 +2,7 @@
 # Before (v1 engine, same machine, 2026-10-06): 359.6 / 390.8 / 405.6 ms/op = 36.45 / 33.54 / 32.31 MB/s
 goos: windows
 goarch: amd64
-pkg: fastview/sidecar/internal/jobs
+pkg: panelyth/sidecar/internal/jobs
 cpu: 13th Gen Intel(R) Core(TM) i9-13900K
 BenchmarkCopySmallFiles-32    	       5	 103349880 ns/op	 126.82 MB/s
 BenchmarkCopySmallFiles-32    	       5	 114609680 ns/op	 114.36 MB/s
@@ -10,4 +10,4 @@ BenchmarkCopySmallFiles-32    	       5	 102244520 ns/op	 128.19 MB/s
 BenchmarkCopySmallFiles-32    	       5	 106833820 ns/op	 122.69 MB/s
 BenchmarkCopySmallFiles-32    	       5	 136632200 ns/op	  95.93 MB/s
 PASS
-ok  	fastview/sidecar/internal/jobs	4.623s
+ok  	panelyth/sidecar/internal/jobs	4.623s

@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
-import type { CommanderApi } from "@fastview/contracts"
+import type { CommanderApi } from "@panelyth/contracts"
 
 declare global {
   interface Window {
-    fastview?: CommanderApi
+    panelyth?: CommanderApi
   }
 }

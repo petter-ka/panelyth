@@ -28,7 +28,7 @@ function memorySource(bytes: Uint8Array) {
     reads.push([start, end])
     return bytes.slice(start, end + 1)
   })
-  return { source: new ByteSource("fastview-media://m/test", bytes.length), reads }
+  return { source: new ByteSource("panelyth-media://m/test", bytes.length), reads }
 }
 
 afterEach(() => setRangeFetch(null))

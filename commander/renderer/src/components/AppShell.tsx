@@ -1,5 +1,5 @@
-import { chordAllowedWhileTyping, eventChord } from "@fastview/renderer-core"
-import { AppSwitcher, ShortcutsDialog, TooltipProvider } from "@fastview/ui"
+import { chordAllowedWhileTyping, eventChord } from "@panelyth/renderer-core"
+import { AppSwitcher, ShortcutsDialog, TooltipProvider } from "@panelyth/ui"
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"

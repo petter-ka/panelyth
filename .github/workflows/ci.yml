@@ -92,9 +92,9 @@ jobs:
         run: |
           specs="specs/commander specs/switch.spec.ts"
           if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a -s "-screen 0 1920x1080x24" pnpm --filter @fastview/e2e exec playwright test $specs
+            xvfb-run -a -s "-screen 0 1920x1080x24" pnpm --filter @panelyth/e2e exec playwright test $specs
           else
-            pnpm --filter @fastview/e2e exec playwright test $specs
+            pnpm --filter @panelyth/e2e exec playwright test $specs
           fi
       # Packaging runs even when an e2e spec failed: the release builds
       # depend on it, and it needs only the build.

@@ -8,12 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
-	"fastview/sidecar/internal/fixture"
-	"fastview/sidecar/internal/imaging"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/rpc"
-	"fastview/sidecar/internal/scan"
-	"fastview/sidecar/internal/video"
+	"panelyth/sidecar/internal/fixture"
+	"panelyth/sidecar/internal/imaging"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/rpc"
+	"panelyth/sidecar/internal/scan"
+	"panelyth/sidecar/internal/video"
 )
 
 func TestMediaResolveVideo(t *testing.T) {

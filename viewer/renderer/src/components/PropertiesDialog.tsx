@@ -1,4 +1,4 @@
-import type { Properties, SelectionInfo } from "@fastview/contracts"
+import type { Properties, SelectionInfo } from "@panelyth/contracts"
 import { useEffect, useState, type ReactNode } from "react"
 import { bridge } from "../bridge"
 import { describeError } from "../features/folder/folderStore"

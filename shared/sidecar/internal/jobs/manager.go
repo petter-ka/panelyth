@@ -15,10 +15,10 @@ import (
 	"sync"
 	"time"
 
-	"fastview/sidecar/internal/archive"
-	"fastview/sidecar/internal/index"
-	"fastview/sidecar/internal/library"
-	"fastview/sidecar/internal/scan"
+	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/scan"
 )
 
 // Kind names a job type (mirrors shared/contracts JobKind).

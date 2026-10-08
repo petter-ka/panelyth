@@ -23,7 +23,7 @@ globalThis.ResizeObserver ??= class {
 
 afterEach(() => {
   cleanup()
-  delete window.fastview
+  delete window.panelyth
   localStorage.clear()
   document.documentElement.className = ""
 })

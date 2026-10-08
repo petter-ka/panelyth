@@ -1,4 +1,4 @@
-import type { SidecarStatus, SystemInfo } from "@fastview/contracts"
+import type { SidecarStatus, SystemInfo } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../../bridge"
 
@@ -51,7 +51,7 @@ function applyStatus(status: SidecarStatus): void {
  */
 export function startSidecarMonitoring(): () => void {
   if (!isBridgeAvailable()) {
-    useSidecarStore.setState({ error: "FastView bridge is not available" })
+    useSidecarStore.setState({ error: "Panelyth bridge is not available" })
     return () => {}
   }
   const unsubscribe = bridge.on("sidecar.status", applyStatus)

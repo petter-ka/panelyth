@@ -1,5 +1,5 @@
-import type { SelectionInfo } from "@fastview/contracts"
-import { hasMarks, markCount } from "@fastview/renderer-core"
+import type { SelectionInfo } from "@panelyth/contracts"
+import { hasMarks, markCount } from "@panelyth/renderer-core"
 import { useEffect, useState } from "react"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { formatBytes, formatCount } from "../features/format"

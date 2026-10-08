@@ -1,7 +1,7 @@
 # Builds the Windows and macOS packages when a GitHub release is published and
 # attaches them to it (ADR-0032). The tag names the version: v1.2.3 → 1.2.3.
 # Unsigned until Stage P06: Windows SmartScreen warns, and macOS needs
-# right-click → Open (or `xattr -dr com.apple.quarantine FastView.app`).
+# right-click → Open (or `xattr -dr com.apple.quarantine Panelyth.app`).
 # Run by hand (workflow_dispatch) to build the packages as workflow artifacts
 # without a release.
 name: Release
@@ -86,7 +86,7 @@ jobs:
         if: github.event_name != 'release'
         uses: actions/upload-artifact@v4
         with:
-          name: fastview-${{ steps.version.outputs.version }}-${{ runner.os }}
+          name: panelyth-${{ steps.version.outputs.version }}-${{ runner.os }}
           path: |
             shared/desktop/release/*.exe
             shared/desktop/release/*.dmg

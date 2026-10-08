@@ -1,5 +1,5 @@
-import type { Volume, VolumeKind } from "@fastview/contracts"
-import { Tooltip } from "@fastview/ui"
+import type { Volume, VolumeKind } from "@panelyth/contracts"
+import { Tooltip } from "@panelyth/ui"
 import { useEffect, useMemo } from "react"
 import {
   closeDriveMenu,

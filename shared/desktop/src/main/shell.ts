@@ -1,13 +1,13 @@
 import { WebContentsView, type BrowserWindow, type WebContents } from "electron"
-import { readSwitchSettings, SHARED_SWITCH_KEY, type AppId } from "@fastview/contracts"
+import { readSwitchSettings, SHARED_SWITCH_KEY, type AppId } from "@panelyth/contracts"
 import { broadcast } from "./ipc/router"
 import { perfMark } from "./perf"
 import { hardenWebContents } from "./security"
 import { securePreferences } from "./window"
 
 export const APP_TITLES: Record<AppId, string> = {
-  viewer: "FastView",
-  commander: "FastView Commander",
+  viewer: "Panelyth",
+  commander: "Panelyth Commander",
 }
 
 /**

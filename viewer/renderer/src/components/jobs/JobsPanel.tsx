@@ -1,4 +1,4 @@
-import type { JobSnapshot } from "@fastview/contracts"
+import type { JobSnapshot } from "@panelyth/contracts"
 import {
   cancelJob,
   clearJobError,
@@ -11,7 +11,7 @@ import {
   useJobsStore,
   visibleJobs,
 } from "../../features/jobs/jobsStore"
-import { Tooltip } from "@fastview/ui"
+import { Tooltip } from "@panelyth/ui"
 import { formatBytes } from "../../lib/format"
 import { CloseIcon } from "../ui/icons"
 

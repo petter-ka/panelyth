@@ -1,7 +1,7 @@
-import type { Bookmark } from "@fastview/contracts"
-import { Button, DialogWindow } from "@fastview/ui"
+import type { Bookmark } from "@panelyth/contracts"
+import { Button, DialogWindow } from "@panelyth/ui"
 import { useState } from "react"
-import { FastViewError } from "../bridge"
+import { PanelythError } from "../bridge"
 import {
   addCurrentFolder,
   moveBookmark,
@@ -113,11 +113,11 @@ function BookmarkForm({ bookmark, groups }: { bookmark: Bookmark; groups: string
       setError(null)
     } catch (e) {
       const reason =
-        (e instanceof FastViewError && (e.details as { reason?: string })?.reason) || ""
+        (e instanceof PanelythError && (e.details as { reason?: string })?.reason) || ""
       setError(
         reason === "duplicate"
           ? "Another hotlist entry has this folder."
-          : e instanceof FastViewError && e.code === "INVALID_PATH"
+          : e instanceof PanelythError && e.code === "INVALID_PATH"
             ? "Enter a full folder path."
             : "The entry could not be saved.",
       )

@@ -1,4 +1,4 @@
-// Package rpc implements the FastView control-plane protocol between the
+// Package rpc implements the Panelyth control-plane protocol between the
 // Electron main process and the Go sidecar: length-prefixed JSON frames on
 // stdin/stdout (see decisions/ADR-0002 and ADR-0012).
 package rpc

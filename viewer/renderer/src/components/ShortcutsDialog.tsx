@@ -1,4 +1,4 @@
-import { ShortcutsDialog as SharedShortcutsDialog } from "@fastview/ui"
+import { ShortcutsDialog as SharedShortcutsDialog } from "@panelyth/ui"
 import { useMemo } from "react"
 import { canSwitchApps } from "../bridge"
 import { ACTIONS, type ActionDef, type ActionId } from "../features/shortcuts/keymap"

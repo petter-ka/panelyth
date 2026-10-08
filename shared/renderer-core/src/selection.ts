@@ -1,4 +1,4 @@
-import type { SelectionDescriptor } from "@fastview/contracts"
+import type { SelectionDescriptor } from "@panelyth/contracts"
 
 /**
  * The selection algebra of ADR-0017, shared by the viewer's selection and the

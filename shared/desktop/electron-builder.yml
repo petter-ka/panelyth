@@ -1,22 +1,22 @@
 # One product package per OS: the shell with both apps (ADR-0031, ADR-0032).
 # Build first (`pnpm build`, plus `pnpm build:sidecar --arch …` for every
 # target arch), then `pnpm package` from the repository root.
-appId: app.fastview.desktop
-productName: FastView
-copyright: Copyright © FastView contributors
+appId: app.panelyth.desktop
+productName: Panelyth
+copyright: Copyright © Panelyth contributors
 directories:
   output: release
   buildResources: build
 extraMetadata:
-  # The workspace name (@fastview/desktop) would name the app's data folders.
-  name: fastview
-  productName: FastView
+  # The workspace name (@panelyth/desktop) would name the app's data folders.
+  name: panelyth
+  productName: Panelyth
   main: dist/main/main.cjs
 files:
   - dist/**
   - "!dist/**/*.map"
   - package.json
-# The renderers are served from disk through app://fastview/ and
+# The renderers are served from disk through app://panelyth/ and
 # app://commander/, the sidecar runs as a child process: all outside the asar
 # (paths.ts).
 extraResources:
@@ -62,7 +62,7 @@ linux:
     - target: tar.gz
       arch: [x64]
   category: Graphics
-  executableName: fastview
+  executableName: panelyth
 
 # Updates are a Stage P06 decision: no app-update.yml.
 publish: null

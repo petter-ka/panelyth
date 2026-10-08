@@ -15,7 +15,7 @@ which codecs Chromium happens to support.
 
 - Go runs **ffprobe and ffmpeg as subprocesses** (`internal/video`). They are separate executables, so the sidecar
   stays pure Go.
-- **Discovery**, in this order: `FASTVIEW_FFMPEG` (path to ffmpeg, with ffprobe next to it; `off` disables both), then
+- **Discovery**, in this order: `PANELYTH_FFMPEG` (path to ffmpeg, with ffprobe next to it; `off` disables both), then
   the sidecar's own directory (packaged builds), then `PATH`. This happens once at startup and is logged.
 - **Probe:** `ffprobe -show_entries` (JSON) gives duration, the display size (rotation applied, attached cover art
   ignored) and the video and audio codec names. Results are cached in memory per source identity

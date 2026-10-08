@@ -50,7 +50,7 @@ keyboard-operable and lazy on huge filesystems.
 | search (folder / subtree, debounced, count) | Search box (200 ms debounce, Enter commits now, Esc clears, Ctrl+F focuses). The summary line reads "N results for “x”", also while indexing |
 | filters: kind chips + extensions with counts | Folders / Images / Videos chips and a "File types" menu. Counts come from `query.facets`, which uses the scope and search but ignores the filters, and refreshes at most once a second while scanning. "Clear" resets search and filters |
 | multi-key sort | Sort menu: primary field and order, "Then by" field and order. Order labels say what they mean ("Newest first", "Largest first", "A to Z"). Folders always come first. Also available from the empty-area context menu |
-| tile size, sort, pane layout persisted | Workspace persistence above; the Stage 03 `fastview.tileSize` key is migrated |
+| tile size, sort, pane layout persisted | Workspace persistence above; the Stage 03 `panelyth.tileSize` key is migrated |
 | multi-selection | Click, Ctrl/Cmd+click, Shift+click, Ctrl+Shift+click; Shift+arrows, Ctrl+arrows (move focus only) + Ctrl+Space; Ctrl/Cmd+A; Esc; clicking empty space clears. The status bar shows "N selected, size" (the count is exact locally; the size comes from `selection.info`, debounced 150 ms) |
 | context menus limited to working actions | Tile: Open, Open with default app, Show in file manager, Copy path(s), Select all, Properties. Empty area: Sort by ▸, Tile size ▸, Refresh, Select all, Folder properties. Tree/sidebar: Open, Show in file manager, Copy path, Add/Remove bookmark, Refresh. No copy/move/delete/rename (Stage 07) |
 | properties | Dialog (Alt+Enter or menu). For one entry: type, location, size in bytes, dimensions, created/modified/accessed from a live stat, and for folders the child counts from the last listing. For a selection: counts by kind and total size (folder contents not included) |
@@ -64,7 +64,7 @@ Backend and IPC:
   `clipboard.copyText`. Clipboard writes go through main because the renderer's permission handler denies everything.
   Paths for indexed entries are resolved by Go and never sent to the renderer for these actions, and the index only
   holds folders and media files, so "Open with default app" can't launch an executable. Unpackaged builds with
-  `FASTVIEW_TEST_SHELL=record` record these calls instead of performing them (e2e).
+  `PANELYTH_TEST_SHELL=record` record these calls instead of performing them (e2e).
 - `query.open` gained `search` and `exts`, validated in main and Go; `dir.open` returns `crumbs`.
 - Go packages: `internal/library` (library.db) and `internal/fsx` (file times, volumes, lazy listing, crumbs, and the
   hidden-file rule moved from `scan`). `index` gained `Facets`, `Summarize`, `EntryPaths` and `Entry`, which use one

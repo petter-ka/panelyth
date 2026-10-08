@@ -1,4 +1,4 @@
-import { COLOR_LABELS, type ColorLabel } from "@fastview/contracts"
+import { COLOR_LABELS, type ColorLabel } from "@panelyth/contracts"
 
 // Color labels (Stage 08, ADR-0022): stored as 1..7, 0 = none. Colors come
 // from the --label-* tokens, so both themes keep them distinguishable.
