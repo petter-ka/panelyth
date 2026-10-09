@@ -526,12 +526,7 @@ export const eventGuards: EventGuards = {
   "job.conflict": (v): v is EventMap["job.conflict"] =>
     isRec(v) && isInt(v.jobId) && isJobConflict(v.conflict),
   "app.visibility": (v): v is EventMap["app.visibility"] =>
-    isRec(v) &&
-    (v.app === "viewer" || v.app === "commander") &&
-    typeof v.visible === "boolean" &&
-    (v.openMedia === undefined || typeof v.openMedia === "boolean"),
-  "app.mediaLaunch": (v): v is EventMap["app.mediaLaunch"] =>
-    isRec(v) && isInt(v.requestId) && v.requestId > 0,
+    isRec(v) && (v.app === "viewer" || v.app === "commander") && typeof v.visible === "boolean",
   "settings.changed": (v): v is EventMap["settings.changed"] =>
     isRec(v) && isStr(v.key) && v.key.startsWith("shared."),
   "volumes.changed": (v): v is EventMap["volumes.changed"] =>

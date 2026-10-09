@@ -229,6 +229,8 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     )
   const effectiveSizing: ColumnSizingState = { ...columns, name: effectiveNameWidth }
 
+  // TanStack Virtual returns methods that React Compiler cannot safely memoize.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count,
     getScrollElement: () => body.current,

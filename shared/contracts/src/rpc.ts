@@ -1400,13 +1400,6 @@ export const APP_IDS = ["viewer", "commander"] as const satisfies readonly AppId
 
 export interface AppSwitchParams {
   to: AppId
-  /** Commander only: open the carried media entry and return here when it closes. */
-  openMedia?: boolean
-}
-
-export interface AppMediaReadyParams {
-  requestId: number
-  ready: boolean
 }
 
 /** Methods answered by Electron main itself (never forwarded to Go). */
@@ -1415,8 +1408,6 @@ export interface MainMethodMap {
   "app.exit": { params: EmptyParams; result: OkResult }
   /** Shows the other app's view in the same window (ADR-0031). */
   "app.switch": { params: AppSwitchParams; result: OkResult }
-  /** A viewer confirms it staged a Commander-requested media surface. */
-  "app.mediaReady": { params: AppMediaReadyParams; result: OkResult }
   "sidecar.getStatus": { params: EmptyParams; result: SidecarStatus }
   "dialog.openFolder": { params: EmptyParams; result: OpenFolderDialogResult }
   /** Resolves through the sidecar and mints a panelyth-media token. */
@@ -1449,7 +1440,6 @@ export type Result<M extends Method> = MethodMap[M]["result"]
 export const VIEWER_METHODS = [
   "app.exit",
   "app.switch",
-  "app.mediaReady",
   "system.ping",
   "system.info",
   "sidecar.getStatus",
@@ -1610,7 +1600,6 @@ export const APP_METHODS: Record<AppId, readonly RendererMethod[]> = {
 export const MAIN_METHODS = [
   "app.exit",
   "app.switch",
-  "app.mediaReady",
   "sidecar.getStatus",
   "dialog.openFolder",
   "media.open",

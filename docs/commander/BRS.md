@@ -135,10 +135,9 @@ an explicit command.
 
 ### CFR-17 — Open, edit and run (C05)
 
-- Enter or double-click on an image or video opens it in the built-in Viewer by default: images open in the focused
-  image viewer and videos start in the full-window player. Viewer prepares the media surface before the app switch, so
-  its workspace is not flashed behind the media. Closing the image or leaving video playback returns to Commander.
-  Settings can route images and videos to the system default app instead.
+- Enter or double-click on an image or video opens the shared media overlay directly over Commander, keeping the
+  Commander workspace mounted underneath. Closing the image or video reveals the same Commander session. Settings
+  can route images and videos to the system default app instead.
 - Other files open with their default app. Programs need confirmation by default (ADR-0027).
 - F4 opens the file in the configured external editor (default: the OS's default app for text). Shift+F4 creates a new
   text file and opens it.

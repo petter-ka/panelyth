@@ -38,6 +38,8 @@ import { MaskDialog } from "./MaskDialog"
 import { Panel, type PanelHandle } from "./Panel"
 import { SettingsDialog } from "./SettingsDialog"
 import { StatusBar } from "./StatusBar"
+import { MediaViewerOverlay } from "@panelyth/media-ui"
+import { closeMediaViewer, stepMediaViewer } from "../features/viewers"
 
 const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.platform)
 export const SWITCH_SHORTCUT = IS_MAC ? "⌘⇧M" : "Ctrl+Shift+M"
@@ -56,6 +58,7 @@ export function AppShell() {
   const split = usePanelsStore((s) => s.split)
   const layoutToken = usePanelsStore((s) => s.layoutToken)
   const quick = useViewersStore(quickTarget)
+  const mediaViewer = useViewersStore((s) => s.mediaViewer)
   const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
 
   // The active panel's list holds keyboard focus (unless a menu just took it:
@@ -232,6 +235,15 @@ export function AppShell() {
         <NewFileDialog />
         <FindDialog />
         <Lister />
+        {mediaViewer && (
+          <MediaViewerOverlay
+            key={mediaViewer.item.id}
+            item={mediaViewer.item}
+            lane="cmd-open"
+            onClose={closeMediaViewer}
+            onStep={(direction) => void stepMediaViewer(direction)}
+          />
+        )}
       </div>
     </TooltipProvider>
   )

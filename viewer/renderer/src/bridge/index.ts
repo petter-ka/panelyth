@@ -93,12 +93,6 @@ export const bridge = {
     if (!switchApp) throw new PanelythError("METHOD_NOT_FOUND", "the commander is not enabled")
     await unwrap(() => switchApp("commander"))
   },
-  /** Acknowledge that a hidden Viewer has staged the Commander media request. */
-  reportMediaReady: async (requestId: number, ready: boolean): Promise<void> => {
-    const report = api().app.mediaReady
-    if (!report) throw new PanelythError("METHOD_NOT_FOUND", "media handoff is not available")
-    await unwrap(() => report(requestId, ready))
-  },
   ping: (): Promise<PingResult> => unwrap(() => api().system.ping()),
   info: (): Promise<SystemInfo> => unwrap(() => api().system.info()),
   sidecarStatus: (): Promise<SidecarStatus> => unwrap(() => api().sidecar.getStatus()),

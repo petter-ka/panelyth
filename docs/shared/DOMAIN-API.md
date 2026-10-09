@@ -133,10 +133,8 @@ onIndexProgress(progress)
 Both apps (ADR-0031, `docs/shared/APP-SWITCHING.md`):
 
 ```ts
-app.switch({ to: "viewer" | "commander", openMedia?: boolean }) // renderer → main: switch; Commander may request media launch
-onAppMediaLaunch({ requestId })                       // main → Viewer: stage requested media while hidden
-app.mediaReady({ requestId, ready })                  // Viewer → main: finish the media handoff handshake
-onAppVisibility({ app, visible, openMedia? })         // main → renderer; openMedia is the launch fallback
+app.switch({ to: "viewer" | "commander" })            // renderer → main: switch app views
+onAppVisibility({ app, visible })                     // main → renderer: app view shown or hidden
 context.publish({ app, dirId, focusId, selection? })  // the visible app, as itself (main checks both); selection on the switch only
 context.get()                                         // { version, app, dirId, path, focusId, selectionCount, selectionTooLarge }
 selection.fromContext({ version, queryId })           // C02: the carried selection as ranges of this session

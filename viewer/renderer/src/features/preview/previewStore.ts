@@ -85,27 +85,6 @@ export function playInPane(index: number, { fullscreen = false } = {}): boolean 
   return true
 }
 
-/** Stages a fullscreen video surface without starting playback while Viewer is hidden. */
-export function stageVideoInPane(index: number): boolean {
-  const item = getItem(index)
-  if (item?.kind !== "video") return false
-  focusAndSelect(index, item.id)
-  if (timer) clearTimeout(timer)
-  apply()
-  expandPane("preview")
-  set({ play: { id: item.id, token: null, fullscreen: true } })
-  return true
-}
-
-/** Starts the video after the staged Viewer becomes the active app. */
-export function startStagedPlayback(): void {
-  set((s) =>
-    s.play?.fullscreen && s.play.token === null
-      ? { play: { ...s.play, token: (s.play.token ?? 0) + 1 } }
-      : s,
-  )
-}
-
 /** Leaves the app-level fullscreen surface while keeping ordinary playback in the pane. */
 export function closeVideoFullscreen(): void {
   set((s) => (s.play?.fullscreen ? { play: { ...s.play, fullscreen: false } } : s))

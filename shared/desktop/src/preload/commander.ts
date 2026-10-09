@@ -97,7 +97,7 @@ ipcRenderer.on(IPC_EVENT, (_event, message: EventMessage) => {
 const api: CommanderApi = {
   app: {
     exit: () => invoke("app.exit", {}),
-    switch: (to, options) => invoke("app.switch", { to, ...options }),
+    switch: (to) => invoke("app.switch", { to }),
   },
   system: {
     ping: () => invoke("system.ping", {}),

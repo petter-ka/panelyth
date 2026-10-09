@@ -217,7 +217,6 @@ const api: PanelythApi = {
 // The app switch and the shared context exist only while the commander is enabled (ADR-0031).
 if (process.argv.includes(COMMANDER_ENABLED_ARG)) {
   api.app.switch = (to) => invoke("app.switch", { to })
-  api.app.mediaReady = (requestId, ready) => invoke("app.mediaReady", { requestId, ready })
   api.context = {
     publish: (dirId, focusId, sel) =>
       invoke("context.publish", {

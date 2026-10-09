@@ -1,13 +1,13 @@
 # Stage C05 — Quick View, Lister, Open and Edit
 
-Status: **Implementation done** (2026-10-06; Commander-to-Viewer media routing added 2026-10-09); the gate waits on
+Status: **Implementation done** (2026-10-06; shared Commander media overlay added 2026-10-09); the gate waits on
 the items under "Open". Track: commander.
 Depends on: C04 (implementation done). Unblocks: C06.
 
 ## Objective
 
 Look inside files without leaving the panels: a quick view that follows the cursor, a full-window lister for text,
-hex, images and videos, an external editor, and opening files safely. Images and videos use the built-in Viewer by
+hex, images and videos, an external editor, and opening files safely. Images and videos use the shared overlay by
 default, with a Commander setting to use the system default app.
 
 ## Decisions applied
@@ -25,8 +25,9 @@ default, with a Commander setting to use the system default app.
 - **Lister (F3):** full window; Text (wrap, encodings, Ctrl+F find), Hex, Image, Video (1–4 switch modes); N / P next and
   previous file; Esc returns with the cursor unchanged. Text and hex read byte windows through the token protocol;
   the scroll position maps to a byte offset, so huge files open instantly with bounded memory.
-- **Open (Enter / double-click):** images and videos open in the built-in Viewer by default and return to Commander
-  when closed; a Commander setting routes them to the system default app instead. Other files open with their default
+- **Open (Enter / double-click):** images and videos open in the shared `MediaViewerOverlay` over Commander and
+  reveal the same Commander session when closed; a Commander setting routes them to the system default app instead.
+  Other files open with their default
   app (`shell.open` for any kind in the commander profile). Programs ask first (setting: ask, always, never).
 - **Edit (F4):** opens the file in the configured editor (default: the OS default app for text). **Shift+F4:** asks
   for a name, creates the text file and opens it.
@@ -58,8 +59,8 @@ scrolling the lister.
 ## Acceptance criteria
 
 - Quick view and lister budgets pass (`docs/commander/PERFORMANCE.md`).
-- Enter or double-click on media opens it in Viewer by default, closes back to Commander, and respects the system-app
-  override in Commander Settings.
+- Enter or double-click on media opens the shared overlay over Commander, closes back to the same Commander session,
+  and respects the system-app override in Commander Settings.
 - The viewer's behavior and numbers are unchanged after the component move.
 - ADR-0027's launching part is accepted.
 
@@ -101,9 +102,9 @@ scrolling the lister.
   panel's next and previous file, Esc back with the cursor unchanged, a byte-offset scroll bar and the position.
   Text and hex read 64 KiB chunks through the token URL (a 4 MiB LRU per file); lines over 4 KiB show as segments.
   Encoding detection: BOM, UTF-16 without a mark, UTF-8 validity, then Windows-1252; zero or many control bytes mean
-  binary. Enter or double-click opens an image or video in the Viewer by default (image overlay or full-window video),
-  and closing it or pressing Esc returns to Commander. Viewer stages this surface before the switch; video remains full
-  screen if Chromium denies native fullscreen. Settings → "Open images and videos with" can select the system default app.
+  binary. Enter or double-click opens an image or video in the shared `MediaViewerOverlay` directly over Commander;
+  closing it or pressing Esc reveals the same Commander session. Video remains full-window if Chromium denies native
+  fullscreen. Settings → "Open images and videos with" can select the system default app.
   Other files open with their default app; a program asks first (Cancel focused) per Settings → "Run programs with
   Enter" (ask, always, never). F4 edits the cursor file, Shift+F4 creates a text file, opens it in the editor and
   puts the cursor on it. Settings gain "Run programs with Enter" and "Editor (F4)"; the function-key bar runs F3 and

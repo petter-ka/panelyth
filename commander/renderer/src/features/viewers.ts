@@ -24,12 +24,19 @@ export interface ListerState {
   mode: ListerMode | null
 }
 
+export interface MediaViewerState {
+  side: Side
+  index: number
+  item: ContentItem
+}
+
 interface ViewersState {
   /** The panel quick view follows; it shows in the other panel. */
   quick: Side | null
   /** The settled cursor entry (null on ".." or an empty folder). */
   quickItem: ContentItem | null
   lister: ListerState | null
+  mediaViewer: MediaViewerState | null
   /** Increments when focus should go back to the active panel's list. */
   panelFocus: number
 }
@@ -38,6 +45,7 @@ export const useViewersStore = create<ViewersState>(() => ({
   quick: null,
   quickItem: null,
   lister: null,
+  mediaViewer: null,
   panelFocus: 0,
 }))
 
@@ -94,6 +102,44 @@ export function toggleQuickView(side: Side): void {
 }
 
 export const closeQuickView = (): void => set({ quick: null, quickItem: null })
+
+/** Opens a shared full-window media surface above Commander. */
+export function openMediaViewer(
+  item: ContentItem,
+  side = usePanelsStore.getState().active,
+): boolean {
+  if (item.kind !== "image" && item.kind !== "video") return false
+  const panel = useListingStore.getState()[side]
+  const index = panel.cursor - parentRows(panel)
+  set({ mediaViewer: { side, index, item } })
+  return true
+}
+
+export function closeMediaViewer(): void {
+  if (!get().mediaViewer) return
+  set((s) => ({ mediaViewer: null, panelFocus: s.panelFocus + 1 }))
+}
+
+/** Steps to the adjacent image or video in the source panel. */
+export async function stepMediaViewer(direction: -1 | 1): Promise<boolean> {
+  const current = get().mediaViewer
+  if (!current) return false
+  const store = pageStoreOf(current.side)
+  const total = store.getTotal()
+  for (
+    let index = current.index + direction, scanned = 0;
+    index >= 0 && index < total && scanned < MAX_STEP_SCAN;
+    index += direction, scanned++
+  ) {
+    const item = await store.ensureIndex(index)
+    if (get().mediaViewer !== current) return false
+    if (item?.kind === "image" || item?.kind === "video") {
+      set({ mediaViewer: { ...current, index, item } })
+      return true
+    }
+  }
+  return false
+}
 
 /** Tab with quick view open: focus goes back to the panel. */
 export const focusPanel = (): void => set((s) => ({ panelFocus: s.panelFocus + 1 }))
@@ -200,5 +246,5 @@ export async function listerStep(direction: 1 | -1): Promise<boolean> {
 
 /** Tests. */
 export function resetViewers(): void {
-  set({ quick: null, quickItem: null, lister: null, panelFocus: 0 })
+  set({ quick: null, quickItem: null, lister: null, mediaViewer: null, panelFocus: 0 })
 }

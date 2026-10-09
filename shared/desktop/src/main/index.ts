@@ -239,14 +239,9 @@ async function boot(): Promise<void> {
       app.quit()
       return { ok: true }
     },
-    "app.switch": async (_event, { to, openMedia }, app) => {
+    "app.switch": (_event, { to }) => {
       if (!appShell?.enabled) throw new Error("the commander is not enabled")
-      await appShell.requestSwitch(to, { openMedia: app === "commander" && openMedia === true })
-      return { ok: true }
-    },
-    "app.mediaReady": (_event, { requestId, ready }, app) => {
-      if (app !== "viewer") throw new Error("only the viewer can report media readiness")
-      appShell?.reportMediaReady(requestId, ready)
+      appShell.requestSwitch(to)
       return { ok: true }
     },
     ...workspaceHandlers(workspaceDeps),

@@ -1,5 +1,5 @@
 import { setSwitchSettings, useSwitchSettings } from "@panelyth/renderer-core"
-import { useEffect, useId, useState, type KeyboardEvent, type ReactNode } from "react"
+import { useId, useState, type KeyboardEvent, type ReactNode } from "react"
 import { THEME_OPTIONS, useInterfaceSizeStore, useThemeStore } from "./appearance"
 import { Button } from "./button"
 import { DialogWindow } from "./dialog"
@@ -183,15 +183,7 @@ function AppearanceSettings() {
   )
 }
 
-export function SharedSettingsDialog({
-  currentApp,
-  open,
-  onClose,
-  showGeneral,
-  settingsReady,
-  appSettings,
-  onOpenShortcuts,
-}: {
+interface SharedSettingsDialogProps {
   currentApp: AppId
   open: boolean
   onClose(): void
@@ -199,7 +191,21 @@ export function SharedSettingsDialog({
   settingsReady: boolean
   appSettings: ReactNode
   onOpenShortcuts(): void
-}) {
+}
+
+export function SharedSettingsDialog(props: SharedSettingsDialogProps) {
+  return <SharedSettingsDialogContent key={`${props.currentApp}:${props.open}`} {...props} />
+}
+
+function SharedSettingsDialogContent({
+  currentApp,
+  open,
+  onClose,
+  showGeneral,
+  settingsReady,
+  appSettings,
+  onOpenShortcuts,
+}: SharedSettingsDialogProps) {
   const [tab, setTab] = useState<SettingsTab>(currentApp)
   const appLabel = currentApp === "viewer" ? "Viewer" : "Commander"
   const tabs: readonly { id: SettingsTab; label: string }[] = [
@@ -208,10 +214,6 @@ export function SharedSettingsDialog({
     { id: "appearance", label: "Appearance" },
     { id: "shortcuts", label: "Shortcuts" },
   ]
-
-  useEffect(() => {
-    if (open) setTab(currentApp)
-  }, [currentApp, open])
 
   const selectAdjacentTab = (e: KeyboardEvent<HTMLDivElement>): void => {
     const index = tabs.findIndex((item) => item.id === tab)

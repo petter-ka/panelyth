@@ -293,16 +293,7 @@ const entryParams: Validator = (p) =>
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
   "app.switch": (p) =>
-    shapeWithOptional(p, ["to"], ["openMedia"]) &&
-    (p.to === "viewer" || p.to === "commander") &&
-    (p.openMedia === undefined || typeof p.openMedia === "boolean") &&
-    (p.openMedia !== true || p.to === "viewer")
-      ? null
-      : "expected { to, openMedia? }",
-  "app.mediaReady": (p) =>
-    shape(p, ["requestId", "ready"]) && isId(p.requestId) && typeof p.ready === "boolean"
-      ? null
-      : "expected { requestId, ready }",
+    shape(p, ["to"]) && (p.to === "viewer" || p.to === "commander") ? null : "expected { to }",
   "system.ping": empty,
   "system.info": empty,
   "sidecar.getStatus": empty,

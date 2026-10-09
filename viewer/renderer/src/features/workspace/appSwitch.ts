@@ -4,7 +4,7 @@ import { startSharedAppearanceSync } from "@panelyth/ui"
 import { bridge, canSwitchApps, isBridgeAvailable } from "../../bridge"
 import { openFolderEntry, useFolderStore } from "../folder/folderStore"
 import { notify } from "../clipboard/clipboard"
-import { ensureIndex, getItem } from "../tiles/pageStore"
+import { getItem } from "../tiles/pageStore"
 import {
   focusSelectAndReveal,
   selectIndexRanges,
@@ -12,28 +12,6 @@ import {
   toDescriptor,
   useSelectionStore,
 } from "../tiles/selectionStore"
-import {
-  closeVideoFullscreen,
-  stageVideoInPane,
-  startStagedPlayback,
-  stopPreviewPlayback,
-  usePreviewStore,
-} from "../preview/previewStore"
-import { closeViewer, openViewerAt, useViewerStore } from "../viewer/viewerStore"
-
-interface MediaReturnState {
-  kind: "image" | "video"
-  entryId: number
-}
-
-let mediaReturn: MediaReturnState | null = null
-
-function returnToCommanderAfterMedia(): void {
-  if (!mediaReturn) return
-  mediaReturn = null
-  stopPreviewPlayback()
-  switchToCommander()
-}
 
 /**
  * The connection point to the commander (ADR-0031, docs/shared/APP-SWITCHING.md).
@@ -98,83 +76,21 @@ async function publishContext(onSwitch: boolean): Promise<void> {
  * the viewer can show it (the media session simply doesn't contain other
  * files). Nothing moves when the viewer already shows that folder.
  */
-export async function applyCommanderContext(
-  openMedia = false,
-  publishVisibleContext = true,
-): Promise<boolean> {
+export async function applyCommanderContext(): Promise<void> {
   const ctx = await bridge.getContext().catch(() => null)
-  let preparedMedia = false
-  if (ctx && ctx.app === "commander" && ctx.dirId > 0 && (ctx.version > seenVersion || openMedia)) {
-    seenVersion = Math.max(seenVersion, ctx.version)
+  if (ctx && ctx.app === "commander" && ctx.dirId > 0 && ctx.version > seenVersion) {
+    seenVersion = ctx.version
     const { carry } = useSwitchSettings.getState()
-    if ((carry.folder || openMedia) && useFolderStore.getState().folder?.dirId !== ctx.dirId) {
+    const folderChanged = useFolderStore.getState().folder?.dirId !== ctx.dirId
+    if (carry.folder && folderChanged) {
       // A folder deleted in between shows the usual "not found" state.
       await openFolderEntry(ctx.dirId)
     }
-    if (ctx.focusId !== null && (carry.focus || openMedia)) await selectEntry(ctx.focusId)
+    if (ctx.focusId !== null && carry.focus && folderChanged) await selectEntry(ctx.focusId)
     if (useFolderStore.getState().folder?.dirId === ctx.dirId) await applySelection(ctx)
-    if (openMedia && ctx.focusId !== null)
-      preparedMedia = await openContextMedia(ctx.dirId, ctx.focusId)
   }
   // This app is visible now, so the context names it (the next start opens it).
-  if (publishVisibleContext && visible) await publishContext(false).catch(() => undefined)
-  return preparedMedia
-}
-
-async function openContextMedia(dirId: number, entryId: number): Promise<boolean> {
-  if (useFolderStore.getState().folder?.dirId !== dirId) return false
-  const query = useFolderStore.getState().query
-  if (!query) return false
-  const at = await bridge.indexOf(query.queryId, entryId).catch(() => null)
-  if (!at || at.index < 0 || useFolderStore.getState().query?.queryId !== query.queryId)
-    return false
-  const item = await ensureIndex(at.index).catch(() => undefined)
-  if (
-    useFolderStore.getState().folder?.dirId !== dirId ||
-    !item ||
-    item.id !== entryId ||
-    (item.kind !== "image" && item.kind !== "video")
-  )
-    return false
-
-  // A previous Viewer session may have left another media surface mounted.
-  mediaReturn = null
-  closeViewer()
-  stopPreviewPlayback()
-  if (document.fullscreenElement) await document.exitFullscreen().catch(() => undefined)
-
-  const launch: MediaReturnState = { kind: item.kind, entryId }
-  const opened = item.kind === "image" ? openViewerAt(at.index) : stageVideoInPane(at.index)
-  if (opened) mediaReturn = launch
-  return opened
-}
-
-function waitForStagedMediaSurface(): Promise<boolean> {
-  if (!mediaReturn) return Promise.resolve(false)
-  const { entryId, kind } = mediaReturn
-  const selector =
-    kind === "image"
-      ? `[data-testid="viewer"][data-entry-id="${entryId}"]`
-      : `[data-testid="video-fullscreen-overlay"][data-entry-id="${entryId}"]`
-  const ready = (): boolean => document.querySelector(selector) !== null
-  if (ready()) return Promise.resolve(true)
-  return new Promise((resolve) => {
-    const observer = new MutationObserver(() => {
-      if (ready()) finish(true)
-    })
-    const timeout = setTimeout(() => finish(false), 8_000)
-    const finish = (result: boolean): void => {
-      clearTimeout(timeout)
-      observer.disconnect()
-      resolve(result)
-    }
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-      attributes: true,
-      attributeFilter: ["data-entry-id"],
-    })
-  })
+  if (visible) await publishContext(false).catch(() => undefined)
 }
 
 /**
@@ -217,62 +133,11 @@ async function selectEntry(entryId: number): Promise<void> {
 /** Follows the switch: publish the folder while visible, apply the commander's context when shown. */
 export function startContextSync(): () => void {
   if (!canSwitchApps()) return () => undefined
-  const offMediaLaunch = bridge.on("app.mediaLaunch", ({ requestId }) => {
-    void (async () => {
-      let ready = false
-      try {
-        ready = await applyCommanderContext(true, false)
-        if (ready) ready = await waitForStagedMediaSurface()
-      } catch {
-        ready = false
-      }
-      await bridge.reportMediaReady(requestId, ready).catch(() => undefined)
-    })()
-  })
-  const offVisibility = bridge.on("app.visibility", ({ app, visible: shown, openMedia }) => {
+  const offVisibility = bridge.on("app.visibility", ({ app, visible: shown }) => {
     if (app !== "viewer") return
     visible = shown
-    if (shown) {
-      startStagedPlayback()
-      void applyCommanderContext(openMedia === true)
-        .catch(() => false)
-        .then(() => startStagedPlayback())
-    } else {
-      if (mediaReturn?.kind === "video") {
-        if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined)
-        stopPreviewPlayback()
-      }
-      mediaReturn = null
-    }
+    if (shown) void applyCommanderContext()
   })
-  const offViewer = useViewerStore.subscribe((s, prev) => {
-    if (mediaReturn?.kind === "image" && prev.open && !s.open) {
-      // Let closeViewer finish updating the focused tile before publishing it.
-      queueMicrotask(returnToCommanderAfterMedia)
-    }
-  })
-  const offPreview = usePreviewStore.subscribe((s, prev) => {
-    if (mediaReturn?.kind === "video" && prev.play?.fullscreen && s.play?.fullscreen === false) {
-      returnToCommanderAfterMedia()
-    }
-  })
-  const onKeyDown = (event: KeyboardEvent): void => {
-    if (
-      event.key === "Escape" &&
-      mediaReturn?.kind === "video" &&
-      usePreviewStore.getState().play?.fullscreen
-    ) {
-      event.preventDefault()
-      event.stopImmediatePropagation()
-      if (document.fullscreenElement) {
-        void document
-          .exitFullscreen()
-          .catch(() => undefined)
-          .finally(closeVideoFullscreen)
-      } else closeVideoFullscreen()
-    }
-  }
-  window.addEventListener("keydown", onKeyDown, true)
   const offFolder = useFolderStore.subscribe((s, prev) => {
     if (visible && s.folder && s.folder.dirId !== prev.folder?.dirId) {
       void publishContext(false).catch(() => undefined)
@@ -280,11 +145,6 @@ export function startContextSync(): () => void {
   })
   return () => {
     offVisibility()
-    offMediaLaunch()
-    offViewer()
-    offPreview()
-    window.removeEventListener("keydown", onKeyDown, true)
-    mediaReturn = null
     offFolder()
   }
 }
@@ -293,5 +153,4 @@ export function startContextSync(): () => void {
 export function resetContextSync(): void {
   seenVersion = 0
   visible = true
-  mediaReturn = null
 }

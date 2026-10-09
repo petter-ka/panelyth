@@ -76,8 +76,8 @@ export function resetBridgeCache(): void {
 }
 
 export const bridge = {
-  switchTo: async (to: AppId, options?: { openMedia?: boolean }): Promise<void> => {
-    await unwrap(() => api().app.switch(to, options))
+  switchTo: async (to: AppId): Promise<void> => {
+    await unwrap(() => api().app.switch(to))
   },
   exit: async (): Promise<void> => {
     await unwrap(() => api().app.exit())

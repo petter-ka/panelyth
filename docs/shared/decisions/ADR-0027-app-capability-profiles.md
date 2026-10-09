@@ -5,7 +5,7 @@
 Proposed (2026-10-05). **The per-view allowlists are accepted (P01, 2026-10-05):** main maps the calling frame's
 origin to its app and checks `APP_METHODS[app]`. **The launching part is accepted (Stage C05, 2026-10-06):** open,
 programs after confirmation, the editor and file bytes through tokens, as built below. The command line is decided in
-Stage C10. Amended (2026-10-09): Commander routes Enter/double-click media to the built-in Viewer by default, with a
+Stage C10. Amended (2026-10-09): Commander routes Enter/double-click media to the shared overlay by default, with a
 setting for the system default app. Revised by ADR-0031: both apps run in one shell, so the profile belongs to each
 app view (web contents), not to a separate app process.
 
@@ -17,7 +17,7 @@ app view (web contents), not to a separate app process.
     media, so "open" can never launch an executable;
   - `media.resolve` serves only images and videos through the token protocol (ADR-0009);
   - nothing runs commands.
-- The commander must open any file on Enter, use its built-in Viewer for images and videos by default (or the system
+- The commander must open any file on Enter, use its shared media overlay for images and videos by default (or the system
   default app when selected in Settings), start programs on request, run command lines, and read any file's bytes for
   its text/hex viewer and quick view.
 - Both apps share one main process and one sidecar (ADR-0031). The commander's powers must not reach the viewer's
@@ -43,7 +43,7 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
 
 ### Commander profile
 
-- **Open (`shell.open`)** accepts any entry kind. Commander routes images and videos to the built-in Viewer by
+- **Open (`shell.open`)** accepts any entry kind. Commander routes images and videos to the shared `MediaViewerOverlay`
   default; `shell.open` opens those with the system default app when selected in Settings, and other file kinds use it
   directly. It takes an entry id resolved by the sidecar, never a renderer-supplied path, and runs only from a user
   action (Enter, double-click, menu).

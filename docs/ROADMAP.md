@@ -154,8 +154,8 @@ F5 copy, F6 move, rename, new folder, trash and permanent delete, queue panel, c
 ### C05 — Quick view, lister, open and edit (implementation updated 2026-10-09)
 
 Quick view, F3 lister (text, hex, images, video), F4 editor, opening files with confirmation for programs. Enter or
-double-click on media opens the built-in Viewer and returns to Commander when closed; Settings can choose the system
-default app instead.
+double-click on media opens the shared media overlay over Commander and reveals the same Commander session when
+closed; Settings can choose the system default app instead.
 
 ### C06 — Find files, branch view and quick filter (implementation done 2026-10-07)
 

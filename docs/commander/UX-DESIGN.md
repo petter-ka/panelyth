@@ -132,8 +132,8 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   lister's header has the modes (unavailable ones disabled), the encoding, Wrap (W), Find and Close; F3 / Shift+F3
   find the next and previous match; its footer shows the position. Enter on a program asks "Run this program?" with
   Cancel focused (Settings → "Run programs with Enter": ask, always, never); Settings → "Editor (F4)" names the
-  editor. Enter or double-click on an image or video opens it in the built-in Viewer by default; Viewer stages the
-  media surface before appearing, and closing the image or leaving video playback returns to the same Commander session.
+  editor. Enter or double-click on an image or video opens the shared media overlay directly over Commander, keeping
+  its workspace mounted underneath; closing the image or video reveals the same Commander session.
   Settings → "Open images and videos with" can use
   the system default app instead. Shift+F4 asks for a name (`new.txt`, the name selected without its extension).
 

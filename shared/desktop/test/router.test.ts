@@ -31,7 +31,6 @@ function eventFrom(url: string, parent: object | null = null): IpcMainInvokeEven
 const mainHandlers = (): MainHandlers => ({
   "app.exit": vi.fn(async () => ({ ok: true })),
   "app.switch": vi.fn(() => ({ ok: true })),
-  "app.mediaReady": vi.fn(() => ({ ok: true })),
   "sidecar.getStatus": vi.fn(() => status),
   "dialog.openFolder": vi.fn(async () => ({ path: "/picked" })),
   "file.open": vi.fn(async (_e, p: { entryId: number }) => ({

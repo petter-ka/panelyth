@@ -2,7 +2,7 @@ import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
 import { notice, READ_ONLY } from "./files"
-import { openMediaInViewer } from "./carry"
+import { openMediaViewer } from "./viewers"
 import {
   focusEntry,
   pageStoreOf,
@@ -51,14 +51,12 @@ export function cursorItem(side: Side): ContentItem | null {
 /** Enter on a file. */
 export async function openWithApp(item: ContentItem, side?: Side): Promise<void> {
   const settings = useSettingsStore.getState().settings
-  if (settings.mediaOpen === "viewer" && (item.kind === "image" || item.kind === "video")) {
-    try {
-      if (await openMediaInViewer(item.id, side)) return
-    } catch (error) {
-      notice(`${item.name} can't be opened in Panelyth Viewer: ${messageOf(error)}`)
-      return
-    }
-  }
+  if (
+    settings.mediaOpen === "viewer" &&
+    (item.kind === "image" || item.kind === "video") &&
+    openMediaViewer(item, side)
+  )
+    return
 
   const mode = settings.runPrograms
   try {

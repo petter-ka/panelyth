@@ -5,7 +5,7 @@
 Accepted (2026-10-05). Product direction from the owner: the two apps connect in the UI and share state such as the
 current folder and the selected file. Amended (2026-10-06, owner direction): the app switch is a shared left rail
 with both app icons, the current app highlighted and the other app directly selectable. Specification:
-`docs/shared/APP-SWITCHING.md`. Amended 2026-10-09: Commander can launch media in the Viewer and return on close.
+`docs/shared/APP-SWITCHING.md`. Amended 2026-10-09: Commander opens media in a shared overlay above its own view.
 
 It supersedes ADR-0025's process model: separate Electron apps, one sidecar per app, separate data per app,
 capabilities per app process, and the `apps/*-desktop` and `packages/desktop-core` parts of its code layout. ADR-0025's
@@ -54,9 +54,9 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 - The app being left publishes its **context** (folder, focused entry, selection) to the sidecar; the app being shown
   applies it. Context uses entry ids and selection descriptors of the shared index, so a large selection carries over
   as ranges, never as a path list.
-- Commander can request a one-shot media launch while switching to Viewer. Enter or double-click on a picture or
-  video opens the Viewer feature for that entry; closing it returns to Commander. Commander Settings can route media
-  to the system default app instead.
+- Enter or double-click on a picture or video in Commander opens the shared media overlay above Commander. Its
+  workspace stays mounted, so closing the overlay reveals the same panel state without an app switch. Commander
+  Settings can route media to the system default app instead.
 - Shared: current folder (and with it the drive), focused entry, selection (bounded), last used app, theme and interface
   size, carry-over options, bookmarks (= the commander's hotlist), recent locations, user metadata, the index, the
   preview cache, jobs and the internal clipboard. App-specific: layouts, views, sorts, the viewer's workspace and tile

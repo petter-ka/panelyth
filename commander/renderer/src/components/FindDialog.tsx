@@ -362,6 +362,8 @@ function ResultsTab() {
   const error = useFindStore((s) => s.error)
   const scroll = useRef<HTMLDivElement>(null)
   const total = run?.total ?? 0
+  // TanStack Virtual returns methods that React Compiler cannot safely memoize.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: total,
     getScrollElement: () => scroll.current,

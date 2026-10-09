@@ -378,6 +378,8 @@ export function SidebarPane() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const activeFolderKey = folderPath === null ? null : nodeKey(folderPath)
 
+  // TanStack Virtual returns methods that React Compiler cannot safely memoize.
+  // eslint-disable-next-line react-hooks/incompatible-library
   const virtualizer = useVirtualizer({
     count: rows.length,
     getScrollElement: () => scrollRef.current,
