@@ -2,6 +2,7 @@ import { BrowserWindow } from "electron"
 import { DEV_METHODS_ARG } from "@panelyth/contracts"
 import { perfMark } from "./perf"
 import { hardenWebContents } from "./security"
+import { appIconPath } from "./paths"
 
 export interface WindowOptions {
   preload: string
@@ -37,6 +38,7 @@ export function createMainWindow(options: WindowOptions): BrowserWindow {
     minWidth: 720,
     minHeight: 480,
     show: false,
+    icon: appIconPath(),
     // The dark chrome token (the default theme), so there is no white flash.
     backgroundColor: "#242424",
     webPreferences: securePreferences(options.preload, options.devTools, [

@@ -2,6 +2,7 @@ import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
 import { notice, READ_ONLY } from "./files"
+import { openMediaInViewer } from "./carry"
 import {
   focusEntry,
   pageStoreOf,
@@ -14,11 +15,11 @@ import {
 import type { Side } from "./panels"
 import { useSettingsStore } from "./settings"
 
-// Open and edit (Stage C05, ADR-0027): Enter opens a file with its default
-// app; a program opens only after the user confirmed it (setting "Run
-// programs with Enter": ask, always, never). F4 opens the editor from
-// settings, Shift+F4 creates a text file and opens it. Main resolves every
-// entry id to its path and decides what is a program; nothing here sends a path.
+// Open and edit (Stage C05, ADR-0027): media opens in Panelyth Viewer by
+// default; other files use their system app. Program launching follows the
+// "Run programs with Enter" setting (ask, always, never). F4 opens the
+// configured editor; Shift+F4 creates a text file and opens it. Main resolves
+// every entry id to its path and decides what is a program.
 
 interface OpenState {
   /** The confirmation before a program runs. */
@@ -48,8 +49,18 @@ export function cursorItem(side: Side): ContentItem | null {
 }
 
 /** Enter on a file. */
-export async function openWithApp(item: ContentItem): Promise<void> {
-  const mode = useSettingsStore.getState().settings.runPrograms
+export async function openWithApp(item: ContentItem, side?: Side): Promise<void> {
+  const settings = useSettingsStore.getState().settings
+  if (settings.mediaOpen === "viewer" && (item.kind === "image" || item.kind === "video")) {
+    try {
+      if (await openMediaInViewer(item.id, side)) return
+    } catch (error) {
+      notice(`${item.name} can't be opened in Panelyth Viewer: ${messageOf(error)}`)
+      return
+    }
+  }
+
+  const mode = settings.runPrograms
   try {
     await bridge.shellOpen(item.id, mode === "always" ? true : undefined)
   } catch (error) {
@@ -136,7 +147,7 @@ export async function createTextFile(name: string): Promise<boolean> {
 
 /** Enter on a file goes through openWithApp (listing.enter keeps folders). */
 export function startOpen(): () => void {
-  setFileOpener((_side, item) => openWithApp(item))
+  setFileOpener((side, item) => openWithApp(item, side))
   setArchiveFailureHandler((_side, item, why, message) => archiveFailed(item, why, message))
   return () => {
     setFileOpener(null)

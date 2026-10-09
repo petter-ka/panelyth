@@ -17,7 +17,13 @@ const os = { darwin: "--mac", win32: "--win", linux: "--linux" }[process.platfor
 
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 const run = (cmd, args, cwd = root) =>
-  execFileSync(cmd, args, { cwd, stdio: "inherit", shell: process.platform === "win32" })
+  execFileSync(cmd, args, {
+    cwd,
+    stdio: "inherit",
+    // Windows needs cmd.exe for pnpm.cmd. Keep node.exe direct so paths with
+    // spaces (for example C:\Program Files\nodejs\node.exe) stay quoted.
+    shell: process.platform === "win32" && cmd.toLowerCase().endsWith(".cmd"),
+  })
 
 run(pnpm, ["build"])
 run(process.execPath, [join(root, "scripts", "build-sidecar.mjs"), "--arch", archs])

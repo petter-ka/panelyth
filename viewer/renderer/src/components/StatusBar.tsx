@@ -6,10 +6,9 @@ import { useFolderStore } from "../features/folder/folderStore"
 import { openShortcutHelp, useShortcutHint } from "../features/shortcuts/shortcutStore"
 import { measurePing, useSidecarStore } from "../features/system/sidecarStore"
 import { THEME_OPTIONS, useThemeStore } from "../features/theme/themeStore"
-import { useSettingsStore } from "../features/settings/settingsStore"
 import { selectionCount, toDescriptor, useSelectionStore } from "../features/tiles/selectionStore"
 import { formatBytes, formatCount } from "../lib/format"
-import { KeyboardIcon, SettingsIcon } from "./ui/icons"
+import { KeyboardIcon } from "./ui/icons"
 
 const LABEL: Record<SidecarState, string> = {
   starting: "Backend starting",
@@ -74,7 +73,6 @@ export function StatusBar() {
   const themeLabel =
     THEME_OPTIONS.find((option) => option.value === preference)?.label ?? preference
   const shortcutHint = useShortcutHint("help.shortcuts")
-  const openSettings = useSettingsStore((s) => s.openSettings)
 
   return (
     <footer className="flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
@@ -112,16 +110,6 @@ export function StatusBar() {
           className="grid place-items-center rounded px-1 hover:text-text"
         >
           <KeyboardIcon size={14} />
-        </button>
-      </Tooltip>
-      <Tooltip content="Settings">
-        <button
-          type="button"
-          onClick={openSettings}
-          aria-label="Settings"
-          className="grid place-items-center rounded px-1 hover:text-text"
-        >
-          <SettingsIcon size={14} />
         </button>
       </Tooltip>
       <Tooltip content="Change theme">

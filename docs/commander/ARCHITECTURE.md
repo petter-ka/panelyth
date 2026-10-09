@@ -127,8 +127,11 @@ Enter on a folder
   mark is recognized too; zero or many control bytes mean binary (hex). Quick view replaces the other panel, which
   stays mounted and inert, and follows the active panel; Tab moves into it and back. The lister is a full-window
   dialog with its own keymap scope (`lister`: Esc, N / P, 1–4, W, Ctrl+F, F3 / Shift+F3). Images and videos use the
-  shared components with the commander's preview lanes (`cmd-quick`, `cmd-lister`). Enter on a file goes through
-  `listing.enter`'s file opener (`features/open.ts`).
+  shared components with the commander's preview lanes (`cmd-quick`, `cmd-lister`). Enter on an image or video
+  publishes the panel's folder and entry to the Viewer, which opens its focused image view or full-screen player and
+  returns to Commander when closed. Main waits for Viewer to stage the media surface before revealing it; video uses
+  a full-window app overlay and starts after show. The Commander setting can route media to the system default app. Other files go
+  through `listing.enter`'s file opener (`features/open.ts`).
 
 ## Methods and events by stage
 
@@ -140,7 +143,7 @@ Enter on a folder
 | C02 | `query.locate`, `query.match`; `dirSize` jobs (`ContentItem.dirSizeBytes`); the selection in `context.publish` and `selection.fromContext` (both apps); `shared.switch` |
 | C03 | `library.updateBookmark`, `library.reorderBookmarks` (bookmark groups); events `volumes.changed`, `bookmarks.changed`; `Volume.notReady`, space read per volume with a timeout |
 | P03 / C04 | jobs v2: `jobs.pause`, `jobs.resume`, `jobs.startNow`, `jobs.resolve`, `job.conflict`; copy and move by `destinationDirId` with `mask` and `name`; `fs.mkdir`, `fs.canTrash`; `clipboard.copyPaths` `namesOnly` |
-| C05 | `file.open` (token URL for any file kind; main-only `file.resolve`), `shell.open` with `allowProgram`, `shell.edit`, `fs.mkfile`; `media.open`, `preview.ensure`, `props.get` and the `preview.ready` event for the commander; `entry.path.program` |
+| C05 | `file.open` (token URL for any file kind; main-only `file.resolve`), `shell.open` with `allowProgram`, `shell.edit`, `fs.mkfile`; `media.open`, `preview.ensure`, `props.get` and the `preview.ready` event for the commander; `app.switch` media launch with `app.mediaLaunch` / `app.mediaReady` staging; `entry.path.program` |
 | C06 | `find.start`, `find.cancel` (a session source); branch listings (recursive, all scope) |
 | C07 | `archive.open`, `archive.close`, `archive.check`, `archive.tools`; `query.open { archiveId, archiveDirId }` (a session source with its own rows); job kinds `extract`, `pack`, `testArchive` (ADR-0030 "As built") |
 | C08 | `compare.dirs` (a diff session), sync jobs, `hash.create`, `hash.verify` jobs |
@@ -155,8 +158,8 @@ The shared `library.db` (ADR-0016, ADR-0031): the commander's own settings under
 with tabs, `columns`, `confirmations`, `editor`, `shortcuts`, per-panel history). As of Stage C03:
 `commander.panels` `{ v: 2, active, left/right: { tabs: [{ path, name, sort, showHidden, view, locked, history,
 historyIndex, cursorId }], active, columns } }` (v1 from C01–C02 is still read) and `commander.settings`
-(Settings: size and date format, hidden files in new panels, where letters go; from C05 `runPrograms` (ask, always,
-never) and `editor`, which main reads for F4); the hotlist is the shared bookmarks
+(Settings: size and date format, hidden files in new panels, where letters go; from C05 `mediaOpen` (viewer or system),
+`runPrograms` (ask, always, never) and `editor`, which main reads for F4); the hotlist is the shared bookmarks
 table (with groups), and recent locations are shared with the viewer. Theme and interface size come from
 `shared.appearance`. Settings are written debounced and flushed on exit, as in the viewer.
 

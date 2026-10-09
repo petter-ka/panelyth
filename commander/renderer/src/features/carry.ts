@@ -100,6 +100,24 @@ export async function switchToViewer(): Promise<void> {
   await bridge.switchTo("viewer")
 }
 
+/** Opens one panel media entry in the viewer's focused media surface. */
+export async function openMediaInViewer(
+  entryId: number,
+  side: Side = usePanelsStore.getState().active,
+): Promise<boolean> {
+  const panel = useListingStore.getState()[side]
+  if (panel.dirId === null || panel.archive) return false
+
+  // Branch and search rows may be outside the panel's current folder. The
+  // viewer needs the media's containing folder as its query context.
+  const dirId =
+    panel.branch || panel.find ? (await bridge.openContaining(entryId)).dirId : panel.dirId
+  const selection = panel.branch || panel.find ? null : marksDescriptor(side)
+  await bridge.publishContext(dirId, entryId, selection)
+  await bridge.switchTo("viewer", { openMedia: true })
+  return true
+}
+
 /**
  * Start: read the context first, so a folder carried over from the viewer
  * opens directly instead of after the persisted one; then follow events.

@@ -34,7 +34,7 @@ Build/package the product (both apps) for:
 - Linux
 
 Platform-specific paths, volume discovery and cache directories are abstracted. One package per OS contains the
-shell with both apps and the sidecar (ADR-0031); a feature flag keeps the commander hidden until it ships.
+shell with both apps and the sidecar (ADR-0031); packaged builds enable the commander and show the app switcher rail.
 
 ### FR-22 — App switch and shared state
 
@@ -46,6 +46,8 @@ The two apps connect in the UI (ADR-0031, `docs/shared/APP-SWITCHING.md`):
   cursor, and the same selection (up to 10,000 entries); each part can be turned off;
 - shared between the apps: the last used app, theme and interface size, bookmarks (the commander's hotlist), recent
   locations, user metadata, listings and thumbnails, jobs and the internal file clipboard;
+- Settings is available from the left rail in either app. Shared appearance and switching options are available in
+  both; Viewer and Commander options appear only in their own app.
 - each app keeps its own layout, views and sorts.
 
 ## 2. Non-functional requirements

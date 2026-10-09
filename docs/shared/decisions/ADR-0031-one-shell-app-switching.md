@@ -5,7 +5,7 @@
 Accepted (2026-10-05). Product direction from the owner: the two apps connect in the UI and share state such as the
 current folder and the selected file. Amended (2026-10-06, owner direction): the app switch is a shared left rail
 with both app icons, the current app highlighted and the other app directly selectable. Specification:
-`docs/shared/APP-SWITCHING.md`.
+`docs/shared/APP-SWITCHING.md`. Amended 2026-10-09: Commander can launch media in the Viewer and return on close.
 
 It supersedes ADR-0025's process model: separate Electron apps, one sidecar per app, separate data per app,
 capabilities per app process, and the `apps/*-desktop` and `packages/desktop-core` parts of its code layout. ADR-0025's
@@ -48,11 +48,15 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 ### The switch and the shared context
 
 - Each app shows the same vertical rail at the left with Viewer and Commander icons; the current app is highlighted
-  and the other can be selected directly. The entire rail is hidden while the commander is not released. **Ctrl/Cmd+Shift+M**
+  and the other can be selected directly. Packaged builds enable the rail; unpackaged development can hide it with
+  `PANELYTH_COMMANDER`. **Ctrl/Cmd+Shift+M**
   also switches apps (action `app.switch`, `shell` keymap scope, remappable).
 - The app being left publishes its **context** (folder, focused entry, selection) to the sidecar; the app being shown
   applies it. Context uses entry ids and selection descriptors of the shared index, so a large selection carries over
   as ranges, never as a path list.
+- Commander can request a one-shot media launch while switching to Viewer. Enter or double-click on a picture or
+  video opens the Viewer feature for that entry; closing it returns to Commander. Commander Settings can route media
+  to the system default app instead.
 - Shared: current folder (and with it the drive), focused entry, selection (bounded), last used app, theme and interface
   size, carry-over options, bookmarks (= the commander's hotlist), recent locations, user metadata, the index, the
   preview cache, jobs and the internal clipboard. App-specific: layouts, views, sorts, the viewer's workspace and tile
@@ -85,8 +89,8 @@ A separate `desktop-core` package (ADR-0025) is not needed: there is one main pr
 
 ### Packaging
 
-One product, one installer per OS. The commander stays hidden behind a feature flag (the app switcher rail doesn't appear)
-until Stage C11 enables it.
+One product, one installer per OS. Packaged builds include and enable the commander, including the app switcher rail.
+Unpackaged development builds keep the `PANELYTH_COMMANDER=1` feature flag so the viewer can still be run alone.
 
 ## Why
 
@@ -103,8 +107,8 @@ until Stage C11 enables it.
   scans and keeps it inside its budgets.
 - Main routes every call by the calling web contents to that app's profile (ADR-0027). Tests assert each app view's
   exact preload surface.
-- Releases are coupled: one product version contains both apps. A feature flag decides whether users see the
-  commander.
+- Releases are coupled: one product version contains both apps. Packaged releases enable the commander; development
+  builds can run viewer-only with the feature flag off.
 - Playwright must drive `WebContentsView` pages; Stage P01 verifies the harness before converting the window.
 - Opening both apps in two windows side by side is possible later (one more window with the other app view).
 

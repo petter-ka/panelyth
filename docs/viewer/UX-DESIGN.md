@@ -55,7 +55,7 @@ Never eagerly recurse through the full filesystem.
 
 Two rows (Stage 05):
 
-- **Navigation:** app switch (to the commander; Stage C00, hidden until the commander ships) · sidebar toggle · back ·
+- **Navigation:** app switch (to the commander; shown in packaged builds) · sidebar toggle · back ·
   forward · up · refresh · breadcrumb (last four folders, earlier ones behind "…") · search · Open folder… · preview
   toggle.
 - **View:** kind chips with counts (Folders / Images / Videos) · File types ▾ · Clear · spacer · Include subfolders ·
@@ -198,7 +198,8 @@ Videos show the cached poster, with a centered play button until the first play.
   player has focus: Space/K play/pause, ←/→ ±5 s, ↑/↓ volume, M mute, F full screen, Home/End, and Esc leaves full screen.
 Double-clicking the video area enters or leaves fullscreen. In the preview pane, image double-click still toggles fit.
 Enter on a video tile plays it in the pane (opening the pane if it was collapsed). Double-click on a video tile plays it
-full screen (Stage 08.6); Esc returns to the pane and playback continues. Images keep opening the focused viewer. Volume and mute carry over to the next video for the session. Video tiles show the poster with a small
+in a full-window app overlay; Esc returns to the pane and playback continues. The overlay does not depend on native
+fullscreen support. Images keep opening the focused viewer. Volume and mute carry over to the next video for the session. Video tiles show the poster with a small
 play badge.
 
 Failures say what happened: "This video can't be played here" names the codec ("H.265 (HEVC) video isn't supported

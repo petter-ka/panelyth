@@ -135,7 +135,11 @@ an explicit command.
 
 ### CFR-17 — Open, edit and run (C05)
 
-- Enter on a file opens it with its default app. Programs need confirmation by default (ADR-0027).
+- Enter or double-click on an image or video opens it in the built-in Viewer by default: images open in the focused
+  image viewer and videos start in the full-window player. Viewer prepares the media surface before the app switch, so
+  its workspace is not flashed behind the media. Closing the image or leaving video playback returns to Commander.
+  Settings can route images and videos to the system default app instead.
+- Other files open with their default app. Programs need confirmation by default (ADR-0027).
 - F4 opens the file in the configured external editor (default: the OS's default app for text). Shift+F4 creates a new
   text file and opens it.
 
@@ -191,8 +195,9 @@ an explicit command.
 ### CFR-26 — Settings and session (C00, C03, C10)
 
 - Persist, in the shared `library.db` under `commander.*` keys: panel split, panel locations, tabs, views, sorts,
-  column widths, hidden-files toggle, per-panel history, keymap overrides, confirmations, the external editor and the
-  function-bar visibility. Theme, interface size, bookmarks and recent locations are shared with the viewer.
+  column widths, hidden-files toggle, per-panel history, keymap overrides, confirmations, `mediaOpen`, the external
+  editor and the function-bar visibility. Theme, interface size, bookmarks and recent locations are shared with the
+  viewer.
 - On start, both panels reopen where the user left them.
 
 ### CFR-27 — Drag and drop and clipboard (C04)

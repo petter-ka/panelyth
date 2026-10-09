@@ -57,8 +57,9 @@ perfMark("main-loaded")
 // Dev-only RPC methods (system.echo) exist for benchmarks; never in packaged builds.
 const devMethods = !app.isPackaged && process.env.PANELYTH_DEV_METHODS === "1"
 
-// The commander stays hidden behind a feature flag until Stage C11 (ADR-0031).
-const commanderEnabled = process.env.PANELYTH_COMMANDER === "1"
+// Packaged builds include and enable the commander; development can still hide
+// it with the feature flag (ADR-0031).
+const commanderEnabled = app.isPackaged || process.env.PANELYTH_COMMANDER === "1"
 // Tests and benchmarks may choose the app shown at start. Unpackaged only;
 // otherwise the last used app opens (shared.context, ADR-0031).
 const envStartApp = app.isPackaged ? undefined : process.env.PANELYTH_START_APP
@@ -238,9 +239,14 @@ async function boot(): Promise<void> {
       app.quit()
       return { ok: true }
     },
-    "app.switch": (_event, { to }) => {
+    "app.switch": async (_event, { to, openMedia }, app) => {
       if (!appShell?.enabled) throw new Error("the commander is not enabled")
-      appShell.requestSwitch(to)
+      await appShell.requestSwitch(to, { openMedia: app === "commander" && openMedia === true })
+      return { ok: true }
+    },
+    "app.mediaReady": (_event, { requestId, ready }, app) => {
+      if (app !== "viewer") throw new Error("only the viewer can report media readiness")
+      appShell?.reportMediaReady(requestId, ready)
       return { ok: true }
     },
     ...workspaceHandlers(workspaceDeps),

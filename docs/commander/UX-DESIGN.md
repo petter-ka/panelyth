@@ -132,7 +132,10 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   lister's header has the modes (unavailable ones disabled), the encoding, Wrap (W), Find and Close; F3 / Shift+F3
   find the next and previous match; its footer shows the position. Enter on a program asks "Run this program?" with
   Cancel focused (Settings → "Run programs with Enter": ask, always, never); Settings → "Editor (F4)" names the
-  editor. Shift+F4 asks for a name (`new.txt`, the name selected without its extension).
+  editor. Enter or double-click on an image or video opens it in the built-in Viewer by default; Viewer stages the
+  media surface before appearing, and closing the image or leaving video playback returns to the same Commander session.
+  Settings → "Open images and videos with" can use
+  the system default app instead. Shift+F4 asks for a name (`new.txt`, the name selected without its extension).
 
 ## Default keyboard map
 
@@ -143,7 +146,7 @@ entry is remappable.
 |---|---|---|
 | Tab | Switch active panel | C00 |
 | ↑ ↓ PgUp PgDn Home End | Move the cursor | C01 |
-| Enter | Open folder / archive / file | C01, C05, C07 |
+| Enter | Open folder / archive; open media in Viewer or other files with their default app | C01, C05, C07 |
 | Backspace, Ctrl+PgUp | Parent folder | C01 |
 | Ctrl+\ | Root of the drive | C02 |
 | Ctrl+F3 / F4 / F5 / F6 | Sort by name / extension / date / size | C01 |

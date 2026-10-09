@@ -59,7 +59,10 @@ your appearance settings.
 
 - The inactive app has accessible name "Switch to Commander" / "Switch to Viewer", with `aria-keyshortcuts`; the
   selected app has `aria-current="page"` and is disabled.
-- While the commander is not released, the whole rail is hidden (feature flag), so the viewer has no empty gutter.
+- A Settings button sits at the bottom of the rail in both apps. General and Appearance settings are shared; the app
+  section shows Viewer options in Viewer and Commander options in Commander.
+- The rail appears whenever the commander is enabled. Packaged builds enable it; unpackaged builds can hide it by
+  leaving `PANELYTH_COMMANDER` unset.
 
 ### Behavior
 
@@ -68,6 +71,7 @@ your appearance settings.
   a Ctrl/Cmd chord (ADR-0022 "while typing" rule).
 - The switch is instant, with no animation. The window title changes to the visible app ("Panelyth — Pictures",
   "Panelyth Commander — Pictures").
+- Settings opens in the active app, with shared settings and that app's own options.
 - Focus lands on the target's main surface: the viewer's tile view, or the commander's active panel.
 - While a modal dialog is open, the switch is unavailable: the rail sits behind the dialog's backdrop and the key does
   nothing.
@@ -114,6 +118,18 @@ The app being left publishes its context; the app being shown applies it.
 - Marks become the viewer's selection, minus entries the viewer doesn't show (other files, hidden files).
 - If the active panel shows an archive, find results, a branch view or a compare result, the viewer opens the folder
   that contains the cursor entry and carries no selection.
+
+### Open media from Commander
+
+- Enter or double-click on an image or video opens that entry in the built-in Viewer by default. Commander publishes
+  the entry and its containing folder, then requests a one-shot media launch. While Commander stays visible, main asks
+  the hidden Viewer to prepare the image overlay or full-window video surface and waits for its readiness reply before
+  revealing it. This avoids showing the Viewer workspace between the two apps. Video playback starts after Viewer is
+  shown; its full-window surface does not depend on Chromium's native fullscreen request.
+- Closing the image viewer or leaving video playback (Esc from full screen or the player) returns to the same
+  Commander session, with the media entry focused. Playback is stopped before the Viewer is hidden.
+- Settings → Commander → "Open images and videos with" can instead open media with the system default app. This
+  choice is stored in `commander.settings`; it does not change manual app switching or the shared carry-over options.
 
 ### Always
 
@@ -164,13 +180,17 @@ The disposable `index.db` and the preview cache are shared too (one sidecar), so
 |---|---|---|
 | `app.switch({ to })` | renderer → main | show the other app view, creating it on demand |
 | `app.visibility { app, visible }` | main → renderer | this app view was shown or hidden |
+| `app.mediaLaunch { requestId }` | main → Viewer | prepare a Commander-requested media surface while Viewer is hidden |
+| `app.mediaReady({ requestId, ready })` | Viewer → main | report whether the requested media surface was staged; main then reveals Viewer |
 | `context.publish({ app, dirId, focusId, selection? })` | renderer → sidecar | the visible app's context; main accepts it only from the visible app's view and only with that app's own id. The switch sends `selection` (a descriptor, or null for none); Go resolves it to at most 10,000 ids and keeps them, with the version that carried them, in memory. A folder change omits `selection` and leaves the carried one readable, so the app being shown can publish its own folder before it reads the selection |
 | `context.get()` | renderer → sidecar | `{ version, app, dirId, path, focusId, selectionCount, selectionTooLarge }`; `version` 0 = nothing published in this run, `app` and `path` then come from the last run; the selection fields describe this version only |
 | `selection.fromContext({ version, queryId })` | renderer → sidecar | the carried selection as ranges of the target's current session version; entries the session doesn't list are dropped |
 
-Context carries entry ids and descriptors; display paths are never used for actions (ADR-0027). The switch sequence:
-the leaving app calls `context.publish`, then `app.switch`; main shows the other view and sends `app.visibility`; the
-shown app calls `context.get`, navigates if needed, then `selection.fromContext` once its session is open.
+Context carries entry ids and descriptors; display paths are never used for actions (ADR-0027). A regular switch
+publishes context and calls `app.switch`; main shows the other view and sends `app.visibility`, and the shown app applies
+the context. For a Commander media launch, main sends `app.mediaLaunch` first; Viewer loads the context, stages the
+media surface and answers `app.mediaReady` before main switches visibility. `app.visibility.openMedia` remains a
+fallback when preparation fails or times out.
 
 ## Security
 
@@ -184,6 +204,7 @@ shown app calls `context.get`, navigates if needed, then `selection.fromContext`
 | Metric | Budget |
 |---|---|
 | Switch to an existing app view → visible and focused | ≤ 1 frame (16 ms); with a folder change, plus the target's listing budget |
+| Commander media launch → Viewer visible | only after Viewer has mounted the requested media surface; playback starts on show |
 | First switch (the app view is created) → interactive | < 800 ms |
 | Selection carry-over of 10,000 entries | < 100 ms |
 | Idle memory, one app (the other never opened) | unchanged: < 60 MB over an empty Electron window |
@@ -210,9 +231,11 @@ shown app calls `context.get`, navigates if needed, then `selection.fromContext`
 | C01 | carry-over of the folder and the focused entry; the last app and folder on start |
 | C02 | selection carry-over; the carry-over settings |
 | C03 | shared bookmarks (hotlist) and recent locations |
+| C05 | opening a Commander media entry in the Viewer and returning on close |
 
 ## Later
 
-- Context actions: "Show in Commander" on a viewer tile, "Open in Viewer" on a commander folder or image.
+- Context actions: "Show in Commander" on a viewer tile and "Open in Viewer" on a commander folder (opening media
+  from Commander already uses the Viewer through Enter or double-click).
 - Both apps in two windows side by side (a second window hosting the other app view).
 - Drag and drop between the apps.

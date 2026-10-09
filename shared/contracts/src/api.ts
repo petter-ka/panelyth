@@ -85,6 +85,8 @@ export interface PanelythApi {
     exit(): Promise<RpcEnvelope<OkResult>>
     /** Show the other app (present only while the commander is enabled; ADR-0031). */
     switch?(to: AppId): Promise<RpcEnvelope<OkResult>>
+    /** Confirm a hidden Viewer media surface is ready to show. */
+    mediaReady?(requestId: number, ready: boolean): Promise<RpcEnvelope<OkResult>>
   }
   system: {
     ping(): Promise<RpcEnvelope<PingResult>>
@@ -206,7 +208,7 @@ export interface PanelythApi {
 export interface CommanderApi {
   app: {
     exit(): Promise<RpcEnvelope<OkResult>>
-    switch(to: AppId): Promise<RpcEnvelope<OkResult>>
+    switch(to: AppId, options?: { openMedia?: boolean }): Promise<RpcEnvelope<OkResult>>
   }
   system: {
     ping(): Promise<RpcEnvelope<PingResult>>

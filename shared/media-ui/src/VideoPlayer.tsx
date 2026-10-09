@@ -1,5 +1,12 @@
 import type { Thumb } from "@panelyth/contracts"
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type ReactNode,
+} from "react"
 import {
   formatTime,
   problemFromCode,
@@ -33,6 +40,10 @@ interface VideoPlayerProps {
   playToken: number | null
   /** With playToken: also enter full screen (double-click on the tile). */
   playFullscreen?: boolean
+  /** Use the app's full viewport overlay when native fullscreen is unavailable. */
+  appFullscreen?: boolean
+  /** Leaves the app-level fullscreen surface. */
+  onExitFullscreen?: () => void
   /** Preview lane for Try again (the viewer's preview pane by default). */
   lane?: FitLane
 }
@@ -55,6 +66,8 @@ export function VideoPlayer({
   placeholder,
   playToken,
   playFullscreen = false,
+  appFullscreen = false,
+  onExitFullscreen,
   lane = "pane",
 }: VideoPlayerProps) {
   const { fit, media } = useViewerImage(entryId)
@@ -95,16 +108,16 @@ export function VideoPlayer({
     }
   }, [url])
 
-  // Double-click on the tile: go full screen right away, while the click
-  // still counts as a user gesture (the media URL may arrive later).
+  // Run during the double-click commit so Chromium still sees the tile gesture.
+  // Commander launches also use the app-level overlay if this request is denied.
   const fullscreenToken = useRef<number | null>(null)
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = rootRef.current
     if (playToken === null || !playFullscreen || !root || fullscreenToken.current === playToken)
       return
     fullscreenToken.current = playToken
     root.focus()
-    if (document.fullscreenElement !== root) void root.requestFullscreen().catch(() => undefined) // denied: play in the pane
+    if (document.fullscreenElement !== root) void root.requestFullscreen().catch(() => undefined)
   }, [playToken, playFullscreen])
 
   // Enter / double-click on the tile: play once the URL is known.
@@ -116,6 +129,10 @@ export function VideoPlayer({
     rootRef.current?.focus()
     void v.play().catch(() => undefined)
   }, [playToken, url])
+
+  useEffect(() => {
+    if (playToken === null) videoRef.current?.pause()
+  }, [playToken])
 
   useEffect(() => {
     const onChange = (): void => setFullscreen(document.fullscreenElement === rootRef.current)
@@ -137,6 +154,15 @@ export function VideoPlayer({
     setCurrent(t)
   }
   const toggleFullscreen = (): void => {
+    if (appFullscreen) {
+      if (document.fullscreenElement) {
+        void document
+          .exitFullscreen()
+          .catch(() => undefined)
+          .finally(() => onExitFullscreen?.())
+      } else onExitFullscreen?.()
+      return
+    }
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined)
     else void rootRef.current?.requestFullscreen().catch(() => undefined)
   }
@@ -159,7 +185,7 @@ export function VideoPlayer({
       m: () => setMuted(!muted),
       f: toggleFullscreen,
       // Electron leaves leaving HTML full screen to the page.
-      ...(fullscreen ? { Escape: toggleFullscreen } : {}),
+      ...(fullscreen || appFullscreen ? { Escape: toggleFullscreen } : {}),
     }
     const action = keys[e.key]
     if (!action || e.ctrlKey || e.metaKey || e.altKey) return
@@ -332,7 +358,9 @@ export function VideoPlayer({
         />
         <span
           className={unavailable ? "inline-flex" : "contents"}
-          data-tooltip-content={fullscreen ? "Exit full screen (F)" : "Full screen (F)"}
+          data-tooltip-content={
+            fullscreen || appFullscreen ? "Exit full screen (F)" : "Full screen (F)"
+          }
         >
           <button
             type="button"
@@ -340,9 +368,9 @@ export function VideoPlayer({
             onClick={toggleFullscreen}
             disabled={unavailable}
             style={unavailable ? { pointerEvents: "none" } : undefined}
-            aria-label={fullscreen ? "Exit full screen" : "Full screen"}
+            aria-label={fullscreen || appFullscreen ? "Exit full screen" : "Full screen"}
           >
-            {fullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+            {fullscreen || appFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
           </button>
         </span>
       </div>

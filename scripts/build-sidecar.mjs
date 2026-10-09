@@ -43,6 +43,9 @@ for (const arch of values.arch.split(",")) {
     goBinary(),
     [
       "build",
+      // The script supplies its own version; avoid Go's separate Git metadata
+      // lookup, which can fail for checkouts owned by another OS user.
+      "-buildvcs=false",
       "-trimpath",
       "-ldflags",
       `-s -w -X main.version=${version}`,

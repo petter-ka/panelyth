@@ -639,12 +639,12 @@ export function swapPanels(): void {
 type FileOpener = (side: Side, item: ContentItem) => Promise<void>
 let fileOpener: FileOpener | null = null
 
-/** Enter on a file (Stage C05, features/open.ts): opens it with its default app. */
+/** Enter on a file (Stage C05, features/open.ts): routes media to Viewer by default. */
 export function setFileOpener(opener: FileOpener | null): void {
   fileOpener = opener
 }
 
-/** Enter and double-click: folders open in the panel; files open with their default app. */
+/** Enter and double-click: folders open in the panel; files use the configured opener. */
 export function enter(side: Side): Promise<void> {
   const p = getPanel(side)
   const index = p.cursor - parentRows(p)

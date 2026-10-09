@@ -19,7 +19,7 @@ interface PreviewState {
    * Set by Enter / double-click on a video: the player starts playing, in
    * full screen when asked (double-click).
    */
-  play: { id: number; token: number; fullscreen: boolean } | null
+  play: { id: number; token: number | null; fullscreen: boolean } | null
 }
 
 export const usePreviewStore = create<PreviewState>(() => ({ item: null, count: 0, play: null }))
@@ -83,6 +83,37 @@ export function playInPane(index: number, { fullscreen = false } = {}): boolean 
   expandPane("preview")
   set((s) => ({ play: { id: item.id, token: (s.play?.token ?? 0) + 1, fullscreen } }))
   return true
+}
+
+/** Stages a fullscreen video surface without starting playback while Viewer is hidden. */
+export function stageVideoInPane(index: number): boolean {
+  const item = getItem(index)
+  if (item?.kind !== "video") return false
+  focusAndSelect(index, item.id)
+  if (timer) clearTimeout(timer)
+  apply()
+  expandPane("preview")
+  set({ play: { id: item.id, token: null, fullscreen: true } })
+  return true
+}
+
+/** Starts the video after the staged Viewer becomes the active app. */
+export function startStagedPlayback(): void {
+  set((s) =>
+    s.play?.fullscreen && s.play.token === null
+      ? { play: { ...s.play, token: (s.play.token ?? 0) + 1 } }
+      : s,
+  )
+}
+
+/** Leaves the app-level fullscreen surface while keeping ordinary playback in the pane. */
+export function closeVideoFullscreen(): void {
+  set((s) => (s.play?.fullscreen ? { play: { ...s.play, fullscreen: false } } : s))
+}
+
+/** Stops a playback launched by another app before returning to that app. */
+export function stopPreviewPlayback(): void {
+  if (get().play !== null) set({ play: null })
 }
 
 export function startPreviewTracking(): () => void {

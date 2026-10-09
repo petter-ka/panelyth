@@ -16,6 +16,8 @@ export type DateFormat = "locale" | "iso"
 export type LettersMode = "quickSearch" | "altLetters"
 /** "Run programs with Enter" (ADR-0027, Stage C05): ask first (default), always, never. */
 export type RunPrograms = "ask" | "always" | "never"
+/** How Enter / double-click opens images and videos. */
+export type MediaOpen = "viewer" | "system"
 
 export interface PanelSettings {
   sizeFormat: SizeFormat
@@ -23,6 +25,7 @@ export interface PanelSettings {
   /** Hidden and system entries shown in panels that have no stored state yet. */
   showHidden: boolean
   letters: LettersMode
+  mediaOpen: MediaOpen
   runPrograms: RunPrograms
   /** F4's editor: an absolute program path; "" = the system's text editor. Main reads it from library.db. */
   editor: string
@@ -33,6 +36,7 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   dateFormat: "locale",
   showHidden: false,
   letters: "quickSearch",
+  mediaOpen: "viewer",
   runPrograms: "ask",
   editor: "",
 }
@@ -56,6 +60,7 @@ export function readSettings(value: unknown): PanelSettings {
     dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
     showHidden: v.showHidden === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
+    mediaOpen: v.mediaOpen === "system" ? "system" : "viewer",
     runPrograms: v.runPrograms === "always" || v.runPrograms === "never" ? v.runPrograms : "ask",
     editor: typeof v.editor === "string" ? v.editor.slice(0, MAX_EDITOR_CHARS) : "",
   }

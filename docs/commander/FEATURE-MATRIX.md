@@ -29,7 +29,8 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Quick view panel | Ctrl+Q | C05 | ✓ |
 | Lister: text, hex, images, video | F3 | C05 | ✓ |
 | External editor, new text file | F4, Shift+F4 | C05 | ✓ |
-| Open with default app; run programs | Enter | C05 | ✓ (confirmation by default) |
+| Open media in the built-in Viewer or system default | Enter / double-click; Commander setting | C05 | ✓ (Viewer by default; close returns to Commander) |
+| Open other files with default app; run programs | Enter | C05 | ✓ (program confirmation by default) |
 | Find files (name, content, size, date, attributes) | Alt+F7 | C06 | ✓ |
 | Feed results to panel | — | C06 | ✓ |
 | Branch view (flat subtree) | Ctrl+B | C06 | ✓ |

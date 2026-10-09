@@ -17,7 +17,7 @@ import {
 } from "../features/keymap"
 import { useDrivesStore } from "../features/drives"
 import { useHotlistStore } from "../features/hotlist"
-import { useSettingsStore } from "../features/settings"
+import { setSettingsOpen, useSettingsStore } from "../features/settings"
 import { useFilesStore } from "../features/files"
 import { useFindStore } from "../features/find"
 import { useOpenStore } from "../features/open"
@@ -88,7 +88,10 @@ export function AppShell() {
   useEffect(() => {
     const focusActive = (): void => {
       // After the dialog's own focus restore (Radix defers it with a timeout).
-      setTimeout(() => lists.current[usePanelsStore.getState().active]?.focus(), 0)
+      setTimeout(() => {
+        if (document.querySelector('[role="dialog"], [role="menu"]')) return
+        lists.current[usePanelsStore.getState().active]?.focus()
+      }, 0)
     }
     const offMask = useUiStore.subscribe((s, prev) => {
       if (prev.mask && !s.mask) focusActive()
@@ -162,7 +165,12 @@ export function AppShell() {
   return (
     <TooltipProvider>
       <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto_auto_auto]">
-        <AppSwitcher current="commander" shortcut={SWITCH_SHORTCUT} onSwitch={switchToViewer} />
+        <AppSwitcher
+          current="commander"
+          shortcut={SWITCH_SHORTCUT}
+          onSwitch={switchToViewer}
+          onSettings={() => setSettingsOpen(true)}
+        />
         <QuickActionBar />
         <Group
           key={layoutToken}

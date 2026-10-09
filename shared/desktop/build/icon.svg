@@ -1,0 +1,124 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient
+      id="background"
+      x1="84"
+      y1="64"
+      x2="940"
+      y2="960"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#27372b" />
+      <stop offset="0.52" stop-color="#18231d" />
+      <stop offset="1" stop-color="#101713" />
+    </linearGradient>
+    <radialGradient
+      id="glow"
+      cx="0"
+      cy="0"
+      r="1"
+      gradientTransform="matrix(488 514 -514 488 300 206)"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#c6f36b" stop-opacity="0.2" />
+      <stop offset="1" stop-color="#c6f36b" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient
+      id="lightTile"
+      x1="276"
+      y1="254"
+      x2="494"
+      y2="490"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#fbf8e9" />
+      <stop offset="1" stop-color="#dce7d0" />
+    </linearGradient>
+    <linearGradient
+      id="limeTile"
+      x1="620"
+      y1="256"
+      x2="782"
+      y2="494"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#d7ff86" />
+      <stop offset="1" stop-color="#acd95b" />
+    </linearGradient>
+    <linearGradient
+      id="deepLimeTile"
+      x1="260"
+      y1="582"
+      x2="500"
+      y2="780"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#b9e574" />
+      <stop offset="1" stop-color="#8ebd4d" />
+    </linearGradient>
+    <linearGradient
+      id="bottomTile"
+      x1="570"
+      y1="574"
+      x2="790"
+      y2="790"
+      gradientUnits="userSpaceOnUse"
+    >
+      <stop stop-color="#f0f1df" />
+      <stop offset="1" stop-color="#cfdcc6" />
+    </linearGradient>
+    <filter
+      id="tileShadow"
+      x="156"
+      y="166"
+      width="712"
+      height="710"
+      color-interpolation-filters="sRGB"
+      filterUnits="userSpaceOnUse"
+    >
+      <feGaussianBlur stdDeviation="19" />
+    </filter>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#background)" />
+  <rect width="1024" height="1024" fill="url(#glow)" />
+  <rect
+    x="18"
+    y="18"
+    width="988"
+    height="988"
+    rx="214"
+    stroke="#f4f5e9"
+    stroke-opacity="0.08"
+    stroke-width="4"
+  />
+
+  <g opacity="0.36" filter="url(#tileShadow)">
+    <rect x="263" y="263" width="230" height="230" rx="54" fill="#000" />
+    <rect x="531" y="263" width="230" height="230" rx="54" fill="#000" />
+    <rect x="263" y="531" width="230" height="230" rx="54" fill="#000" />
+    <rect x="531" y="531" width="230" height="230" rx="54" fill="#000" />
+  </g>
+
+  <g>
+    <rect x="263" y="250" width="230" height="230" rx="54" fill="url(#lightTile)" />
+    <rect x="531" y="250" width="230" height="230" rx="54" fill="url(#limeTile)" />
+    <rect x="263" y="518" width="230" height="230" rx="54" fill="url(#deepLimeTile)" />
+    <rect x="531" y="518" width="230" height="230" rx="54" fill="url(#bottomTile)" />
+  </g>
+
+  <path
+    d="M263 304c0-29.8 24.2-54 54-54h122"
+    stroke="#fff"
+    stroke-opacity="0.62"
+    stroke-width="7"
+    stroke-linecap="round"
+  />
+  <path
+    d="M585 250h122c29.8 0 54 24.2 54 54"
+    stroke="#fff"
+    stroke-opacity="0.42"
+    stroke-width="7"
+    stroke-linecap="round"
+  />
+</svg>

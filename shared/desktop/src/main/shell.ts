@@ -38,6 +38,11 @@ export class AppShell {
   private commander: WebContentsView | null = null
   private active: AppId = "viewer"
   private switchedByUser = false
+  private nextMediaRequestId = 1
+  private readonly pendingMedia = new Map<
+    number,
+    { resolve: (ready: boolean) => void; timeout: ReturnType<typeof setTimeout> }
+  >()
 
   constructor(
     private readonly window: BrowserWindow,
@@ -48,6 +53,11 @@ export class AppShell {
     window.on("page-title-updated", (event) => event.preventDefault())
     window.on("resize", () => this.layout())
     window.on("closed", () => {
+      for (const pending of this.pendingMedia.values()) {
+        clearTimeout(pending.timeout)
+        pending.resolve(false)
+      }
+      this.pendingMedia.clear()
       const wc = this.commander?.webContents
       if (wc && !wc.isDestroyed()) wc.close()
       this.commander = null
@@ -68,9 +78,19 @@ export class AppShell {
   }
 
   /** app.switch from a renderer. */
-  requestSwitch(to: AppId): void {
+  async requestSwitch(to: AppId, options: { openMedia?: boolean } = {}): Promise<void> {
     this.switchedByUser = true
-    this.switchTo(to)
+    const prepared = to === "viewer" && options.openMedia ? await this.prepareViewerMedia() : false
+    this.switchTo(to, { openMedia: options.openMedia === true && !prepared })
+  }
+
+  /** Resolves when the hidden Viewer has mounted the requested media surface. */
+  reportMediaReady(requestId: number, ready: boolean): void {
+    const pending = this.pendingMedia.get(requestId)
+    if (!pending) return
+    clearTimeout(pending.timeout)
+    this.pendingMedia.delete(requestId)
+    pending.resolve(ready)
   }
 
   webContentsOf(app: AppId): WebContents | null {
@@ -79,7 +99,7 @@ export class AppShell {
   }
 
   /** Shows the given app; creates the commander view the first time. */
-  switchTo(to: AppId): void {
+  switchTo(to: AppId, options: { openMedia?: boolean } = {}): void {
     if (this.window.isDestroyed()) return
     if (to === "commander") {
       const view = this.ensureCommander()
@@ -95,8 +115,34 @@ export class AppShell {
     this.window.setTitle(APP_TITLES[to])
     for (const app of ["viewer", "commander"] as const) {
       const wc = this.webContentsOf(app)
-      if (wc && !wc.isDestroyed()) broadcast([wc], "app.visibility", { app, visible: app === to })
+      if (wc && !wc.isDestroyed())
+        broadcast([wc], "app.visibility", {
+          app,
+          visible: app === to,
+          ...(app === "viewer" && to === "viewer" && options.openMedia ? { openMedia: true } : {}),
+        })
     }
+  }
+
+  private prepareViewerMedia(): Promise<boolean> {
+    const viewer = this.webContentsOf("viewer")
+    if (!viewer || viewer.isDestroyed() || this.active !== "commander")
+      return Promise.resolve(false)
+    let requestId = this.nextMediaRequestId++
+    if (!Number.isSafeInteger(this.nextMediaRequestId)) this.nextMediaRequestId = 1
+    while (this.pendingMedia.has(requestId)) {
+      requestId = this.nextMediaRequestId++
+      if (!Number.isSafeInteger(this.nextMediaRequestId)) this.nextMediaRequestId = 1
+    }
+    const result = new Promise<boolean>((resolve) => {
+      const timeout = setTimeout(() => {
+        this.pendingMedia.delete(requestId)
+        resolve(false)
+      }, 10_000)
+      this.pendingMedia.set(requestId, { resolve, timeout })
+    })
+    broadcast([viewer], "app.mediaLaunch", { requestId })
+    return result
   }
 
   private ensureCommander(): WebContentsView | null {

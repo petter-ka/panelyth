@@ -60,6 +60,7 @@ export function AppShell() {
   const [previewCollapsed, setPreviewCollapsed] = useState(panes?.preview === 0)
   const commanderEnabled = canSwitchApps()
   const appSwitchShortcut = useShortcutHint("app.switch")
+  const openSettings = useSettingsStore((s) => s.openSettings)
   useGlobalShortcuts()
 
   const requestExit = useCallback(() => {
@@ -130,6 +131,7 @@ export function AppShell() {
             current="viewer"
             shortcut={appSwitchShortcut ?? "Ctrl+Shift+M"}
             onSwitch={switchToCommander}
+            onSettings={openSettings}
           />
         )}
         {/* A layout applied from library.db (or reset) remounts the group with it. */}

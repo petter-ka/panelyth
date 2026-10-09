@@ -125,5 +125,7 @@ its placement and behavior consistent in both apps:
 - the inactive app's tooltip shows "Switch to Commander (Ctrl+Shift+M)" or "Switch to Viewer (Ctrl+Shift+M)" with
   the current keymap chord; its accessible name omits the key and `aria-keyshortcuts` exposes it;
 - the selected app has `aria-current="page"` and is disabled; switching apps has no transition;
-- the whole rail is hidden while the commander isn't released (feature flag); it is unavailable behind a modal
-  dialog's backdrop.
+- packaged builds show the rail; unpackaged builds can hide it with the commander feature flag. It is unavailable
+  behind a modal dialog's backdrop.
+- a Settings button sits at the bottom of the rail in both apps; shared settings appear in both dialogs and the
+  active app's own settings appear only in its dialog.

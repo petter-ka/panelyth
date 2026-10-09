@@ -1,6 +1,14 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { Tooltip } from "@panelyth/ui"
-import { useCallback, useRef, useState, type KeyboardEvent, type RefObject } from "react"
+import { createPortal } from "react-dom"
+import {
+  useCallback,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type RefObject,
+} from "react"
 import {
   formatTime,
   ImageViewer,
@@ -8,7 +16,7 @@ import {
   VideoPlayer,
   type ImageViewerController,
 } from "../features/media/mediaUi"
-import { usePreviewStore } from "../features/preview/previewStore"
+import { closeVideoFullscreen, usePreviewStore } from "../features/preview/previewStore"
 import { useThumb } from "../features/previews/thumbStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { formatBytes, formatCount } from "../lib/format"
@@ -173,18 +181,65 @@ function PaneVideo({
   play,
 }: {
   item: ContentItem
-  play: { token: number; fullscreen: boolean } | null
+  play: { token: number | null; fullscreen: boolean } | null
 }) {
   const thumb = useThumb(item.id)
+  const host = useRef<HTMLDivElement>(null)
+  const [rect, setRect] = useState({ top: 0, left: 0, width: 0, height: 0 })
+  const appFullscreen = play?.fullscreen ?? false
+
+  useLayoutEffect(() => {
+    const element = host.current
+    if (!element) return
+    const update = (): void => {
+      const bounds = element.getBoundingClientRect()
+      setRect({ top: bounds.top, left: bounds.left, width: bounds.width, height: bounds.height })
+    }
+    const observer = new ResizeObserver(update)
+    observer.observe(element)
+    window.addEventListener("resize", update)
+    update()
+    return () => {
+      observer.disconnect()
+      window.removeEventListener("resize", update)
+    }
+  }, [item.id])
+
   return (
-    <VideoPlayer
-      key={item.id}
-      entryId={item.id}
-      name={item.name}
-      placeholder={thumb?.status === "ready" ? thumb.thumb : null}
-      playToken={play?.token ?? null}
-      playFullscreen={play?.fullscreen ?? false}
-    />
+    <>
+      <div ref={host} className="h-full w-full" aria-hidden="true" />
+      {createPortal(
+        <div
+          className="fixed bg-canvas"
+          data-testid={appFullscreen ? "video-fullscreen-overlay" : undefined}
+          data-entry-id={item.id}
+          style={
+            appFullscreen
+              ? { inset: 0, zIndex: 100 }
+              : {
+                  top: rect.top,
+                  left: rect.left,
+                  width: rect.width,
+                  height: rect.height,
+                  zIndex: 1,
+                  visibility: rect.width > 0 && rect.height > 0 ? "visible" : "hidden",
+                }
+          }
+        >
+          <VideoPlayer
+            key={item.id}
+            entryId={item.id}
+            name={item.name}
+            placeholder={thumb?.status === "ready" ? thumb.thumb : null}
+            playToken={play?.token ?? null}
+            playFullscreen={appFullscreen}
+            appFullscreen={appFullscreen}
+            onExitFullscreen={closeVideoFullscreen}
+          />
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 

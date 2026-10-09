@@ -69,7 +69,9 @@ export interface EventMap {
   /** A job with the "ask" policy waits on this item (Stage P03); answer with jobs.resolve. */
   "job.conflict": { jobId: number; conflict: JobConflict }
   /** From main: this app view was shown or hidden by the app switch (ADR-0031). */
-  "app.visibility": { app: AppId; visible: boolean }
+  "app.visibility": { app: AppId; visible: boolean; openMedia?: boolean }
+  /** From main: prepare a media surface in the viewer before showing it. */
+  "app.mediaLaunch": { requestId: number }
   /** From main: a shared.* setting changed, so the other app can apply it (ADR-0031). */
   "settings.changed": { key: string; value: unknown }
   /** Drives came or went (Stage C03): the new list, coalesced. */
@@ -91,6 +93,7 @@ export const EVENT_CHANNELS = [
   "job.progress",
   "job.conflict",
   "app.visibility",
+  "app.mediaLaunch",
   "settings.changed",
   "volumes.changed",
   "bookmarks.changed",

@@ -3,6 +3,12 @@ import { join, resolve } from "node:path"
 
 const exe = process.platform === "win32" ? ".exe" : ""
 
+/** The app-window icon; electron-builder uses the native .ico/.icns variants. */
+export function appIconPath(): string {
+  if (app.isPackaged) return join(process.resourcesPath, "icon.png")
+  return join(app.getAppPath(), "build", "icon.png")
+}
+
 /**
  * Sidecar binary location. Packaged builds ship it in resources/bin;
  * unpackaged builds use the output of `pnpm build:sidecar`.

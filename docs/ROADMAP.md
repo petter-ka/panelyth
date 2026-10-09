@@ -26,7 +26,7 @@ Only one stage is active at a time. Default order:
 | 7 | C03 — Drives, tabs, hotlist, history, session | commander | implementation done (2026-10-06): navigation complete; shared bookmarks and recent |
 | 8 | P03 — File-operation engine v2 | platform | implementation done (2026-10-06): queue, conflicts, throughput (the viewer gains speed too) |
 | 9 | C04 — File operations | commander | implementation done (2026-10-06): F5 / F6 / F7 / F8 |
-| 10 | C05 — Quick view, lister, open and edit | commander | implementation done (2026-10-06): shared media components |
+| 10 | C05 — Quick view, lister, open and edit | commander | implementation done (media routing added 2026-10-09) |
 | 11 | C06 — Find files, branch view, quick filter | commander | implementation done (2026-10-07): session sources (ADR-0017) |
 | 12 | C07 — Archives | commander | active (implementation done 2026-10-07): ADR-0030 accepted; archives as session sources |
 | 13 | C08 — Compare, synchronize, checksums | commander | |
@@ -34,12 +34,11 @@ Only one stage is active at a time. Default order:
 | 15 | C10 — Command line, tools, customization | commander | the most sensitive feature last |
 | 16 | P04 — Cross-platform hardening | platform | both apps |
 | 17 | P05 — Performance hardening | platform | both apps |
-| 18 | P06 — Release engineering | platform | ships the product with the commander hidden |
-| 19 | C11 — Commander release | commander | turns the commander on for users |
+| 18 | P06 — Release engineering | platform | packages both app views with the commander enabled |
+| 19 | C11 — Commander release | commander | completes the commander-specific release checks and acceptance |
 
-**Viewer-first alternative:** to release the viewer before the commander is ready, run P04–P06 right after P01 and
-ship the shell with the commander hidden (feature flag), then continue with P02 and the commander. C11 then repeats
-the commander-specific P04–P06 checks and turns the flag on.
+Packaged builds include the commander. Development can still run the viewer alone by leaving
+`PANELYTH_COMMANDER` unset; C11 completes the commander-specific release checks after C08–C10.
 
 ## Viewer track
 
@@ -124,7 +123,7 @@ Profile real use of both apps; tune scanner, SQLite, decoder, cache, IPC, render
 ### P06 — Release engineering (formerly Phase 11)
 
 Signing, notarization, update strategy, installers, migrations, notices and release documentation for the product
-(both apps in one shell; the commander behind a feature flag).
+(both apps in one shell, with the commander enabled in packaged builds).
 
 ## Commander track
 
@@ -152,9 +151,11 @@ view, full session restore.
 
 F5 copy, F6 move, rename, new folder, trash and permanent delete, queue panel, conflict dialog, drag and drop.
 
-### C05 — Quick view, lister, open and edit (implementation done 2026-10-06)
+### C05 — Quick view, lister, open and edit (implementation updated 2026-10-09)
 
-Quick view, F3 lister (text, hex, images, video), F4 editor, opening files with confirmation for programs.
+Quick view, F3 lister (text, hex, images, video), F4 editor, opening files with confirmation for programs. Enter or
+double-click on media opens the built-in Viewer and returns to Commander when closed; Settings can choose the system
+default app instead.
 
 ### C06 — Find files, branch view and quick filter (implementation done 2026-10-07)
 

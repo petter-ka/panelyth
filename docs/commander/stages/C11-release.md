@@ -4,8 +4,8 @@ Status: **Planned**. Track: commander. Depends on: C10, P04, P05, P06.
 
 ## Objective
 
-Make Panelyth Commander 1.0 available to users: turn its feature flag on in a product release from the shared
-pipeline, so the app switcher rail appears in the viewer, verified on all three OSes.
+Complete Panelyth Commander 1.0 release acceptance for the packaged app, with the app switcher rail visible in the
+viewer, verified on all three OSes.
 
 ## Scope
 

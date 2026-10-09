@@ -32,7 +32,7 @@ updates and the ffmpeg/ffprobe build to ship stay Stage P06 decisions.
 - Targets: Windows NSIS installer (x64, per-user, installation folder selectable); macOS DMG and zip for arm64 and x64;
   Linux AppImage and tar.gz (x64).
 - Until P06: no signing identity (macOS gets an ad-hoc signature, which Apple silicon requires to run code at all), no
-  notarization, `publish: null` (no update metadata). The commander stays behind `PANELYTH_COMMANDER=1` (C11).
+  notarization, `publish: null` (no update metadata). Packaged builds include and enable the commander (ADR-0031).
 - **Release builds**: `.github/workflows/release.yml` packages Windows and macOS when a GitHub release is published,
   runs the packaged smoke test on each, and attaches the installers to the release. The tag names the version (`v1.2.3`
   → `1.2.3`). Run by hand, it uploads the packages as workflow artifacts instead.

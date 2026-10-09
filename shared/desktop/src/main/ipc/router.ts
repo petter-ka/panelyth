@@ -154,6 +154,9 @@ const ARCHIVE_JOB_KINDS: ReadonlySet<unknown> = new Set(["extract", "pack", "tes
 
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
   const p = params as Record<string, unknown>
+  if (app === "viewer" && method === "app.switch" && p.openMedia === true) {
+    return "only the commander can launch media in the viewer"
+  }
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
   if (
     app === "viewer" &&

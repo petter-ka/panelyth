@@ -64,7 +64,7 @@ A stage is complete only when:
 | C02 | Keyboard, marks and quick search | C01 | implementation done; the NVDA pass and the C01 open items remain |
 | C03 | Drives, tabs, hotlist, history and session | C02 | implementation done (2026-10-06); the NVDA pass remains |
 | C04 | File operations | C03, P03 | implementation done (2026-10-06); the NVDA pass remains |
-| C05 | Quick view, lister, open and edit | C04 | implementation done (2026-10-06); the NVDA pass remains |
+| C05 | Quick view, lister, open and edit | C04 | implementation done (media routing added 2026-10-09); the NVDA pass remains |
 | C06 | Find files, branch view and quick filter | C05 | implementation done (2026-10-07); the NVDA pass remains |
 | C07 | Archives | C06 | implementation done (2026-10-07); the NVDA pass and a run with a real 7-Zip remain |
 | C08 | Compare, synchronize and checksums | C07 | planned |

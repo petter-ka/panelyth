@@ -1,5 +1,6 @@
-import { DialogWindow } from "@panelyth/ui"
+import { SharedSettingsDialog } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
+import { setHelpOpen } from "../features/keymap"
 import {
   MAX_EDITOR_CHARS,
   setSettingsOpen,
@@ -7,6 +8,7 @@ import {
   useSettingsStore,
   type PanelSettings,
 } from "../features/settings"
+import { useSidecarStore } from "../features/sidecar"
 
 interface Choice<K extends keyof PanelSettings> {
   setting: K
@@ -67,63 +69,81 @@ function EditorField() {
   )
 }
 
-/**
- * The commander's settings (Stage C03: Panels; Stage C05: Files). Changes
- * apply at once and are stored under commander.settings. More tabs arrive
- * with Stage C10; theme and interface size are shared with the viewer.
- */
-export function SettingsDialog() {
-  const open = useSettingsStore((s) => s.open)
+function CommanderSettings() {
   const showHidden = useSettingsStore((s) => s.settings.showHidden)
   return (
-    <DialogWindow open={open} onOpenChange={setSettingsOpen} title="Settings">
-      <Section>
-        <Radios
-          setting="sizeFormat"
-          label="Sizes"
-          options={[
-            { value: "units", label: "Units (1.5 KB)" },
-            { value: "bytes", label: "Bytes (1,234,567)" },
-          ]}
+    <Section>
+      <Radios
+        setting="sizeFormat"
+        label="Sizes"
+        options={[
+          { value: "units", label: "Units (1.5 KB)" },
+          { value: "bytes", label: "Bytes (1,234,567)" },
+        ]}
+      />
+      <Radios
+        setting="dateFormat"
+        label="Dates"
+        options={[
+          { value: "locale", label: "As the system shows them" },
+          { value: "iso", label: "ISO (2026-10-06 14:05)" },
+        ]}
+      />
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={showHidden}
+          onChange={(e) => updateSettings({ showHidden: e.target.checked })}
         />
-        <Radios
-          setting="dateFormat"
-          label="Dates"
-          options={[
-            { value: "locale", label: "As the system shows them" },
-            { value: "iso", label: "ISO (2026-10-06 14:05)" },
-          ]}
-        />
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showHidden}
-            onChange={(e) => updateSettings({ showHidden: e.target.checked })}
-          />
-          Show hidden and system files in new panels
-        </label>
-        <Radios
-          setting="letters"
-          label="Typed letters"
-          options={[
-            { value: "quickSearch", label: "Start quick search" },
-            {
-              value: "altLetters",
-              label: "Start quick search with Alt (letters go to the command line)",
-            },
-          ]}
-        />
-        <Radios
-          setting="runPrograms"
-          label="Run programs with Enter"
-          options={[
-            { value: "ask", label: "Ask first" },
-            { value: "always", label: "Always" },
-            { value: "never", label: "Never" },
-          ]}
-        />
-        <EditorField />
-      </Section>
-    </DialogWindow>
+        Show hidden and system files in new panels
+      </label>
+      <Radios
+        setting="letters"
+        label="Typed letters"
+        options={[
+          { value: "quickSearch", label: "Start quick search" },
+          {
+            value: "altLetters",
+            label: "Start quick search with Alt (letters go to the command line)",
+          },
+        ]}
+      />
+      <Radios
+        setting="mediaOpen"
+        label="Open images and videos with"
+        options={[
+          { value: "viewer", label: "Panelyth Viewer" },
+          { value: "system", label: "System default app" },
+        ]}
+      />
+      <Radios
+        setting="runPrograms"
+        label="Run programs with Enter"
+        options={[
+          { value: "ask", label: "Ask first" },
+          { value: "always", label: "Always" },
+          { value: "never", label: "Never" },
+        ]}
+      />
+      <EditorField />
+    </Section>
+  )
+}
+
+/** Shared settings shell; Commander options appear only in the Commander view. */
+export function SettingsDialog() {
+  const open = useSettingsStore((s) => s.open)
+  const settingsReady = useSidecarStore((s) => s.status?.state === "ready")
+
+  return (
+    <SharedSettingsDialog
+      currentApp="commander"
+      open={open}
+      onClose={() => setSettingsOpen(false)}
+      showGeneral
+      settingsReady={settingsReady}
+      appSettings={<CommanderSettings />}
+      onOpenShortcuts={() => setHelpOpen(true)}
+    />
   )
 }
