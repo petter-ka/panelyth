@@ -1,5 +1,5 @@
 import { chordAllowedWhileTyping, eventChord } from "@panelyth/renderer-core"
-import { AppSwitcher, ShortcutsDialog, TooltipProvider } from "@panelyth/ui"
+import { AppSwitcher, GlyphSprite, ShortcutsDialog, TooltipProvider } from "@panelyth/ui"
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
@@ -167,6 +167,7 @@ export function AppShell() {
 
   return (
     <TooltipProvider>
+      <GlyphSprite />
       <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto_auto_auto]">
         <AppSwitcher
           current="commander"

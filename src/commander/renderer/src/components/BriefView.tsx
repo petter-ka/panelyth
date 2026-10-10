@@ -1,5 +1,5 @@
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
-import { useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
+import { TypeGlyph, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   forwardRef,
@@ -20,7 +20,7 @@ import type { Side } from "../features/panels"
 import { clickRow, focusGrid, ROW_HEIGHT, type FullViewHandle } from "./FullView"
 import { panelDnd } from "./panelDnd"
 import { RenameField, useRenaming } from "./RenameField"
-import { TypeGlyph } from "./TypeGlyph"
+import { useRightButton } from "./useRightButton"
 
 /** Fixed column width per interface size; nothing is measured per name (ADR-0028). */
 export const BRIEF_COLUMN: Record<InterfaceSize, number> = { small: 180, medium: 200, large: 240 }
@@ -113,6 +113,8 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
     return el ? Number(el.dataset.row) : null
   }
 
+  const rightButton = useRightButton(side)
+
   return (
     <div
       ref={box}
@@ -129,7 +131,10 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
       onMouseDown={(e) => {
         const row = rowAt(e)
         if (row !== null && e.button === 0) clickRow(side, cursor, row, e)
+        rightButton.onMouseDown(e)
       }}
+      onMouseMove={rightButton.onMouseMove}
+      onContextMenu={rightButton.onContextMenu}
       onDoubleClick={(e) => {
         if (rowAt(e) !== null) void enter(side)
       }}
@@ -220,12 +225,12 @@ const BriefItem = memo(function BriefItem({
         </>
       ) : shown && renaming ? (
         <>
-          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} marked={marked} />
+          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} />
           <RenameField onDone={() => focusGrid(side)} />
         </>
       ) : shown ? (
         <>
-          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} marked={marked} />
+          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} />
           <span className="truncate">
             {prefix && <span className="text-muted">{prefix}</span>}
             {shown.kind === "dir" ? `[${shown.name}]` : shown.name}

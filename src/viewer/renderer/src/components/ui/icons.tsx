@@ -86,33 +86,6 @@ export const CheckIcon = (p: IconProps) => (
     <path d="m3.5 8.5 3 3 6-7" />
   </Icon>
 )
-export const FolderIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M2 4.75C2 4.34 2.34 4 2.75 4h3.1l1.4 1.5h6c.41 0 .75.34.75.75v5.5c0 .41-.34.75-.75.75H2.75A.75.75 0 0 1 2 11.75v-7Z" />
-  </Icon>
-)
-export const DriveIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <rect x="2" y="4.5" width="12" height="7" rx="1.25" />
-    <path d="M4.5 9h.01M7 9h4.5" />
-  </Icon>
-)
-export const StarIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="m8 2.5 1.7 3.4 3.8.55-2.75 2.68.65 3.77L8 11.1l-3.4 1.8.65-3.77L2.5 6.45l3.8-.55L8 2.5Z" />
-  </Icon>
-)
-export const ClockIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <circle cx="8" cy="8" r="5.5" />
-    <path d="M8 5v3l2 1.5" />
-  </Icon>
-)
-export const HomeIcon = (p: IconProps) => (
-  <Icon {...p}>
-    <path d="M2.5 7.5 8 3l5.5 4.5M4 6.5V13h8V6.5" />
-  </Icon>
-)
 export const SortIcon = (p: IconProps) => (
   <Icon {...p}>
     <path d="M5 3v10M2.5 10.5 5 13l2.5-2.5M11 13V3M8.5 5.5 11 3l2.5 2.5" />
@@ -127,6 +100,12 @@ export const PanelLeftIcon = (p: IconProps) => (
   <Icon {...p}>
     <rect x="2" y="3" width="12" height="10" rx="1.25" />
     <path d="M6 3v10" />
+  </Icon>
+)
+export const PanelBottomLeftIcon = (p: IconProps) => (
+  <Icon {...p}>
+    <rect x="2" y="3" width="12" height="10" rx="1.25" />
+    <path d="M6.5 3v10M2 8.5h4.5" />
   </Icon>
 )
 export const PanelRightIcon = (p: IconProps) => (

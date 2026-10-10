@@ -1,3 +1,4 @@
+import type { GlyphName } from "@panelyth/ui"
 import { ENTRY_ATTRS, type ContentItem } from "@panelyth/contracts"
 import { formatRelative } from "date-fns"
 import type { DateFormat, SizeFormat } from "./settings"
@@ -86,7 +87,17 @@ export function formatAttrs(attrs = 0, windows = IS_WINDOWS): string {
 export const isMuted = (item: ContentItem): boolean =>
   ((item.attrs ?? 0) & (ENTRY_ATTRS.hidden | ENTRY_ATTRS.system)) !== 0
 
-export type Glyph = "folder" | "image" | "video" | "archive" | "text" | "program" | "link" | "other"
+export type Glyph = GlyphName
+
+// Pictures and videos the index does not treat as media (no decoder or no
+// Chromium playback, so their kind is "file") still get the picture or video icon.
+const IMAGES = new Set([
+  ..."avif heic heif svg ico psd raw dng cr2 cr3 nef arw orf rw2 tga jxl eps ai".split(" "),
+])
+const VIDEOS = new Set([
+  ..."avi wmv mpg mpeg mpe m2v flv f4v 3gp 3g2 ts mts m2ts vob ogv asf divx rm rmvb".split(" "),
+])
+const AUDIO = new Set(["mp3", "wav", "flac", "aac", "m4a", "ogg", "opus", "wma", "aiff", "mid"])
 
 const ARCHIVES = new Set(["zip", "7z", "rar", "tar", "gz", "tgz", "bz2", "xz", "zst"])
 const TEXTS = new Set(["txt", "md", "log", "csv", "json", "xml", "yaml", "yml", "ini", "toml"])
@@ -104,6 +115,10 @@ export function glyphOf(item: ContentItem): Glyph {
     case "link":
       return "link"
   }
+  if (item.ext === "pdf") return "pdf"
+  if (IMAGES.has(item.ext)) return "image"
+  if (VIDEOS.has(item.ext)) return "video"
+  if (AUDIO.has(item.ext)) return "audio"
   if (ARCHIVES.has(item.ext)) return "archive"
   if (TEXTS.has(item.ext)) return "text"
   if (PROGRAMS.has(item.ext) || ((item.attrs ?? 0) & ENTRY_ATTRS.executable) !== 0) return "program"

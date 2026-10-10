@@ -1,6 +1,6 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
-import { Tooltip, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
+import { Tooltip, TypeGlyph, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
 import {
   columnOrderingFeature,
   columnPinningFeature,
@@ -71,7 +71,7 @@ import { useSettingsStore } from "../features/settings"
 import { panelDnd } from "./panelDnd"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
 import { RenameField, useRenaming } from "./RenameField"
-import { TypeGlyph } from "./TypeGlyph"
+import { useRightButton } from "./useRightButton"
 
 /** Fixed row height per interface size, so no row is ever measured (ADR-0028). */
 export const ROW_HEIGHT: Record<InterfaceSize, number> = { small: 20, medium: 22, large: 26 }
@@ -353,9 +353,11 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     return el ? Number(el.dataset.row) : null
   }
 
-  const onMouseDown = (e: MouseEvent): void => {
+  const rightButton = useRightButton(side)
+  const onMouseDown = (e: MouseEvent<HTMLElement>): void => {
     const row = rowAt(e)
     if (row !== null && e.button === 0) clickRow(side, cursor, row, e)
+    rightButton.onMouseDown(e)
   }
 
   const fitColumn = (id: ColumnId): void => {
@@ -480,6 +482,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
 
   const openColumnMenu = (event: MouseEvent, id: ColumnId): void => {
     event.preventDefault()
+    event.stopPropagation() // not the entry menu of the body
     const bounds = grid.current?.getBoundingClientRect()
     if (!bounds) return
     const width = 260
@@ -609,6 +612,8 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
         ref={body}
         className="relative min-h-0 flex-1 overflow-auto"
         onMouseDown={onMouseDown}
+        onMouseMove={rightButton.onMouseMove}
+        onContextMenu={rightButton.onContextMenu}
         onDoubleClick={(e) => {
           if (rowAt(e) !== null) void enter(side)
         }}
@@ -896,7 +901,7 @@ function Cells({
         >
           {column.id === "name" ? (
             <>
-              <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} marked={marked} />
+              <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} />
               {renaming ? (
                 <RenameField onDone={() => focusGrid(side)} />
               ) : (

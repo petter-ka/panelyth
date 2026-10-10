@@ -14,7 +14,9 @@ import { BriefView } from "./BriefView"
 import { DriveBar, DriveMenu } from "./DriveBar"
 import { FullView, type FullViewHandle } from "./FullView"
 import { HistoryMenu, HotlistMenu } from "./HotlistMenus"
+import { HoldRing } from "./HoldRing"
 import { PathBar, type PathBarHandle } from "./PathBar"
+import { RowMenu } from "./RowMenu"
 import { StatusLine } from "./StatusLine"
 import { TabBar } from "./TabBar"
 
@@ -134,7 +136,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
       <DriveBar side={side} />
       <TabBar side={side} />
       <PathBar ref={pathBar} side={side} active={active} onDone={() => list.current?.focus()} />
-      <div className="relative flex min-h-0 flex-1 flex-col">
+      <div data-menu-area className="relative flex min-h-0 flex-1 flex-col">
         {view === "brief" ? (
           <BriefView ref={list} side={side} active={active} label={`${label} contents`} />
         ) : (
@@ -144,6 +146,8 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
         <DriveMenu side={side} />
         <HotlistMenu side={side} />
         <HistoryMenu side={side} />
+        <RowMenu side={side} />
+        <HoldRing side={side} />
         {message && (
           <div className="pointer-events-none absolute inset-x-0 top-14 text-center text-xs text-muted">
             {message.title}

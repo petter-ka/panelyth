@@ -54,9 +54,11 @@ for. People coming from Total Commander find their keys where they expect them.
   currently virtualized cells. Right-click a header to sort, move, hide or show columns, reset widths and pin columns
   to the logical start or end. Name always stays visible.
 - **Rows:** fixed height per interface size (S 20 px, M 22 px, L 26 px).
-  - a compact type glyph (folder, image, video, archive, text, program, link, other), color-coded with the shared
-    label palette; marked entries use the selection accent, and hidden or system entries use muted glyphs (no
-    per-file OS icons in the first release);
+  - a 16 px type icon in the macOS style, filled and in color: a blue folder, a picture, a film frame, a music note,
+    a PDF page, an archive, a text page, a program, a link and a blank page for everything else. Picture and video
+    icons also cover formats the index does not treat as media (avi, wmv, heic, svg and so on). The icons are drawn
+    in the repository and shared through one SVG sprite, so a row holds only a reference; hidden and system entries
+    show them faded (no per-file OS icons in the first release);
   - a subtle `raised` surface on hover; the cursor keeps its outline and marked entries keep their accent;
   - name and extension in separate columns; folders show `<DIR>` in Size until calculated;
   - size, date and attributes use muted secondary text; sizes use B/KB/MB/GB units by default, with a setting to
@@ -193,8 +195,17 @@ Commander).
 ## Mouse
 
 - Click moves the cursor; Ctrl+click toggles a mark; Shift+click marks a range (the viewer's additive Shift rules,
-  Stage 08.6). A setting switches to right-button marking (classic Total Commander).
-- Double-click opens. Right-click opens the context menu for the marked entries.
+  Stage 08.6).
+- Right-click moves the cursor and toggles the mark; dragging with the right button marks the rows passed over (or
+  unmarks them, when the first row was marked). Holding the right button still for half a second opens the context
+  menu instead, and leaves the marks alone; a small ring beside the pointer fills while the button is held. Settings → "Right mouse button" switches to "Opens the menu" (a
+  right-click opens it at once).
+- The context menu lists the panel's commands with their shortcuts (open, view, edit, copy, move, rename, delete, the
+  clipboard, copy paths and names, pack, unpack, new folder, refresh). Like the keys, it acts on the marked entries,
+  or on the cursor entry when nothing is marked; its heading says which. On ".." and the empty area it lists the
+  folder's commands (paste, new folder, new text file, refresh, mark all, invert). The Menu key and Shift+F10 open it
+  for the cursor entry.
+- Double-click opens.
 - Drag from one panel to the other copies (Shift moves); dropping on a tab or a drive button targets that folder.
 
 ## States and messages

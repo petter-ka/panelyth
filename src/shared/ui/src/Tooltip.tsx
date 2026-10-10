@@ -14,6 +14,11 @@ import {
 import { createPortal } from "react-dom"
 
 const TARGET = "[data-tooltip-content]"
+/**
+ * Inside a target: the part the popup is placed against, when that is smaller
+ * than the target (a tile's fitted picture). The innermost one wins.
+ */
+const ANCHOR = "[data-tooltip-anchor]"
 const DEFAULT_DELAY = 500
 
 type TooltipSide = "auto" | "top" | "bottom" | "left" | "right"
@@ -271,7 +276,8 @@ export function TooltipProvider({ children, delay = DEFAULT_DELAY }: TooltipProv
       return
     }
 
-    const anchorRect = anchor.getBoundingClientRect()
+    const parts = anchor.querySelectorAll(ANCHOR)
+    const anchorRect = (parts[parts.length - 1] ?? anchor).getBoundingClientRect()
     const popupRect = tooltip.getBoundingClientRect()
     let side: TooltipPosition["side"]
     if (active.side === "left" || active.side === "right") {

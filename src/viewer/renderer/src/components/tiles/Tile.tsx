@@ -24,6 +24,7 @@ import {
 } from "../../features/tiles/selectionStore"
 import { openViewerAt } from "../../features/viewer/viewerStore"
 import { playInPane } from "../../features/preview/previewStore"
+import { useSettingsStore } from "../../features/settings/settingsStore"
 import { HeartIcon, PlayIcon } from "../ui/icons"
 import { formatBytes, formatDate } from "../../lib/format"
 import { FolderGlyph, UnavailableGlyph, VideoGlyph } from "./glyphs"
@@ -50,7 +51,8 @@ interface TileVisualState {
 
 function frameClass({ selected, focused, dragOver }: TileVisualState): string {
   return [
-    dragOver || selected ? "outline-2 -outline-offset-2 outline-accent" : "",
+    // Selected: a thick border with a glow and shadow (styles/index.css).
+    selected ? "tile-selected" : dragOver ? "outline-2 -outline-offset-2 outline-accent" : "",
     focused && !selected ? "outline-1 -outline-offset-1 outline-dashed outline-accent/70" : "",
   ].join(" ")
 }
@@ -101,6 +103,7 @@ function FolderThumb({
       data-testid="folder-cover"
       data-covers={cover.length}
       data-preview-frame
+      data-tooltip-anchor
     >
       {cover.map((c, slot) =>
         typeof c === "object" ? (
@@ -190,6 +193,7 @@ function MediaThumb({
           className={`relative shrink-0 overflow-hidden rounded-[3px] ${frameClass(visual)}`}
           style={previewSize}
           data-preview-frame
+          data-tooltip-anchor
         >
           {img}
           <UserBadge item={item} />
@@ -202,6 +206,7 @@ function MediaThumb({
         className={`relative shrink-0 overflow-hidden rounded-[3px] ${frameClass(visual)}`}
         style={previewSize}
         data-preview-frame
+        data-tooltip-anchor
       >
         {img}
         <span
@@ -284,14 +289,18 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
   const [dragOver, setDragOver] = useState(false)
   const focused = useSelectionStore((s) => s.focusIndex === index)
   const selected = useSelectionStore((s) => item !== undefined && isSelected(s, index, item.id))
+  // Settings can hide file names; the line stays, so the grid's geometry never changes.
+  const showFileNames = useSettingsStore((s) => s.preferences.showFileNames)
+  const named = item !== undefined && (showFileNames || item.kind === "dir")
   const m = TILE_METRICS[size]
   const draggable = item?.kind === "image" || item?.kind === "video"
   const isFolderDropTarget = item?.kind === "dir"
   const nameSize = size === "small" ? "h-[1.125rem] text-[0.75rem]" : "h-[1.25rem] text-[0.8125rem]"
 
   const visual = { selected, focused, dragOver }
+  // Not clipped once the item is there: a selected frame's shadow reaches past the slot.
   const thumbBoxClass = item
-    ? "relative flex items-center justify-center overflow-hidden rounded-[3px]"
+    ? "relative flex items-center justify-center rounded-[3px]"
     : [
         "relative flex items-center justify-center overflow-hidden rounded-[3px] bg-skeleton",
         frameClass(visual),
@@ -365,7 +374,12 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
         else if (item?.kind === "video") playInPane(index, { fullscreen: true })
       }}
     >
-      <div className={thumbBoxClass} style={{ width: m.tile, height: m.tile }} data-thumb-box>
+      <div
+        className={thumbBoxClass}
+        style={{ width: m.tile, height: m.tile }}
+        data-thumb-box
+        data-tooltip-anchor
+      >
         {item && <TileThumb item={item} box={m.tile} visual={visual} />}
       </div>
       <div
@@ -374,9 +388,9 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
         onDragStart={(e) => {
           if (!beginSelectionDrag(e.dataTransfer)) e.preventDefault()
         }}
-        className={`mt-1 truncate rounded-[3px] px-1 text-center leading-5 ${nameSize} ${selected ? "bg-raised text-text" : "text-text"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
+        className={`mt-1 truncate rounded-[3px] px-1 text-center leading-5 ${nameSize} ${selected && named ? "bg-raised text-text" : "text-text"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
       >
-        {item?.name ?? ""}
+        {named ? item.name : ""}
       </div>
     </div>
   )

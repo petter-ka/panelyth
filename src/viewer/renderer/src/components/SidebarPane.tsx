@@ -1,6 +1,6 @@
 import type { Crumb, PlaceId } from "@panelyth/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Tooltip } from "@panelyth/ui"
+import { Tooltip, TypeGlyph } from "@panelyth/ui"
 import {
   memo,
   useEffect,
@@ -35,7 +35,8 @@ import {
   toggle,
   useTreeStore,
 } from "../features/tree/treeStore"
-import { ChevronRightIcon, ClockIcon, DriveIcon, FolderIcon, HomeIcon, StarIcon } from "./ui/icons"
+import { setPreviewPlace, usePaneStore } from "../features/workspace/workspace"
+import { ChevronRightIcon, PanelBottomLeftIcon, PanelRightIcon } from "./ui/icons"
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -67,13 +68,15 @@ type SidebarRow =
   | { type: "tree"; id: string; key: string; depth: number; expanded: boolean }
   | { type: "note"; id: string; label: string; depth: number }
 
+const folderIcon = <TypeGlyph glyph="folder" size={14} />
+
 const PLACE_ICON: Record<PlaceId, ReactNode> = {
-  home: <HomeIcon size={14} />,
-  desktop: <FolderIcon size={14} />,
-  documents: <FolderIcon size={14} />,
-  downloads: <FolderIcon size={14} />,
-  pictures: <FolderIcon size={14} />,
-  videos: <FolderIcon size={14} />,
+  home: <TypeGlyph glyph="home" size={14} />,
+  desktop: folderIcon,
+  documents: folderIcon,
+  downloads: folderIcon,
+  pictures: folderIcon,
+  videos: folderIcon,
 }
 
 /** Display name for a recent/bookmarked path (display only; never used for I/O). */
@@ -112,7 +115,7 @@ function useRows(): SidebarRow[] {
           id: `bookmark-${b.id}`,
           label: b.label,
           path: b.path,
-          icon: <StarIcon size={14} />,
+          icon: <TypeGlyph glyph="bookmark" size={14} />,
           bookmarkId: b.id,
         })
       }
@@ -125,7 +128,7 @@ function useRows(): SidebarRow[] {
           id: `recent-${r.path}`,
           label: baseName(r.path),
           path: r.path,
-          icon: <ClockIcon size={14} />,
+          icon: <TypeGlyph glyph="recent" size={14} />,
         })
       }
     }
@@ -300,7 +303,12 @@ const RowView = memo(function RowView({
       ].join(" ")}
       style={{ paddingLeft: (6 + depth * INDENT) * interfaceScale }}
       onMouseDown={() => onFocusRow(row.id)}
-      onClick={() => path && onOpen(path)}
+      onClick={() => {
+        if (!path) return
+        onOpen(path)
+        // A click opens the folder in the tree too: its subfolders show.
+        if (row.type === "tree" && node?.hasChildren && !row.expanded) void expand(row.key)
+      }}
       onDragOver={(e) => {
         if (!path || !canAcceptSelectionDrop(e.dataTransfer)) return
         e.preventDefault()
@@ -343,9 +351,9 @@ const RowView = memo(function RowView({
       <span className={`shrink-0 ${active ? "text-accent" : "text-muted"}`}>
         {row.type === "tree" ? (
           depth === 0 ? (
-            <DriveIcon size={14} />
+            <TypeGlyph glyph="drive" size={14} />
           ) : (
-            <FolderIcon size={14} />
+            folderIcon
           )
         ) : (
           row.icon
@@ -356,6 +364,38 @@ const RowView = memo(function RowView({
     </div>
   )
 })
+
+const PREVIEW_PLACES = [
+  { place: "left", label: "Preview under the folders", icon: <PanelBottomLeftIcon size={14} /> },
+  { place: "right", label: "Preview in a column on the right", icon: <PanelRightIcon size={14} /> },
+] as const
+
+/** Next to the title: where the preview sits (ADR-0023). */
+function PreviewPlaceSwitch() {
+  const current = usePaneStore((s) => s.previewPlace)
+  return (
+    <div
+      role="radiogroup"
+      aria-label="Preview position"
+      className="flex items-center rounded-md border border-border p-px"
+    >
+      {PREVIEW_PLACES.map(({ place, label, icon }) => (
+        <Tooltip key={place} content={label}>
+          <button
+            type="button"
+            role="radio"
+            aria-checked={current === place}
+            aria-label={label}
+            onClick={() => setPreviewPlace(place)}
+            className="grid h-5 w-6 place-items-center rounded-[5px] text-muted hover:text-text aria-checked:bg-raised aria-checked:text-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+          >
+            {icon}
+          </button>
+        </Tooltip>
+      ))}
+    </div>
+  )
+}
 
 /**
  * Sidebar: quick access, bookmarks, recent folders and the lazy folder tree
@@ -458,8 +498,9 @@ export function SidebarPane() {
 
   return (
     <nav aria-label="Locations" className="flex h-full min-h-0 flex-col bg-chrome">
-      <div className="flex h-11 shrink-0 items-center border-b border-border px-4 text-[0.8125rem] font-semibold">
+      <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4 text-[0.8125rem] font-semibold">
         Panelyth
+        <PreviewPlaceSwitch />
       </div>
       <ContextMenuRoot onOpenChange={(open) => !open && setMenuRow(null)}>
         {/* Rows record the target in onContextMenu (bubbles before the trigger opens). */}

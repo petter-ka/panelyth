@@ -67,8 +67,9 @@ an explicit command.
 - Insert marks and moves down; Space marks (and calculates a folder's size); Shift+arrows mark a range.
 - Num+ marks by mask (dialog: `*.jpg;*.png`), Num− unmarks by mask, Num* inverts, Ctrl+A / Ctrl+Num+ marks all,
   Ctrl+Num− unmarks all, Alt+Num+ marks all files with the cursor's extension.
-- Mouse: click moves the cursor; Ctrl+click toggles a mark; Shift+click marks a range. A setting switches to
-  right-button marking (classic Total Commander).
+- Mouse: click moves the cursor; Ctrl+click toggles a mark; Shift+click marks a range. The right button marks
+  (classic Total Commander): a right-click toggles a mark, dragging marks or unmarks the rows passed over, and holding
+  it opens the context menu. A setting makes a right-click open the menu at once instead.
 - Marks are selection descriptors (ADR-0017), so marking 100k entries costs one range.
 
 ### CFR-07 — Quick search and quick filter (C02, C06)

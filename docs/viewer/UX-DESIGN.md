@@ -129,9 +129,10 @@ name   name   name                name   name   name   name   name   name
   (`contain`, never cropped) and leave unused space transparent; folder covers fill the square. Folder and unsupported
   tiles use a symbol in the same slot. Loading tiles show the `skeleton` color, with no shimmer animation. The name is
   one ellipsized line, with the full name, size and date in the tooltip.
-- **Focus and selection:** a 2 px `accent` (amber) outline follows the fitted image or video preview; glyph fallbacks
-  and folder covers use the square slot. The name uses `text` on a subtle selected background. Keyboard focus and
-  selection are distinguishable (focus ring vs filled selection).
+- **Focus and selection:** a selected tile's fitted image or video preview gets a 4 px `accent` (amber) border with
+  an `accent` glow and a drop shadow, so it reads at a glance on any picture; glyph fallbacks and folder covers use
+  the square slot. The name uses `text` on a subtle selected background (not when file names are hidden). Keyboard
+  focus alone is a thin dashed ring, so focus and selection stay distinguishable.
 - **Keyboard:** ←/→ move one tile, ↑/↓ one row, Home/End, Page Up/Down, Enter opens, Space selects.
 - **Tile size control:** a three-state segmented control (S / M / L) at the end of the content toolbar, with
   tooltips. Ctrl/Cmd + scroll wheel steps through sizes.

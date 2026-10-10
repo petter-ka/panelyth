@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   AppSwitchButton,
+  TooltipProvider,
   applySharedAppearance,
   connectSharedAppearance,
   startSharedAppearanceSync,
@@ -108,5 +109,32 @@ describe("startSharedAppearanceSync", () => {
       interfaceSize: "medium",
     })
     stop()
+  })
+})
+
+describe("Tooltip", () => {
+  const rect = (left: number, top: number, width: number, height: number): DOMRect =>
+    ({ left, top, width, height, right: left + width, bottom: top + height }) as DOMRect
+
+  it("is placed against the marked part of its target, the innermost one", async () => {
+    render(
+      <TooltipProvider delay={0}>
+        <div data-testid="tile" data-tooltip-content="IMG_1.jpg">
+          <div data-testid="slot" data-tooltip-anchor>
+            <div data-testid="picture" data-tooltip-anchor />
+          </div>
+          <div>IMG_1.jpg</div>
+        </div>
+      </TooltipProvider>,
+    )
+    // A 180 px tile whose fitted picture is a 60 px wide strip, lower in the slot.
+    screen.getByTestId("tile").getBoundingClientRect = () => rect(100, 100, 180, 204)
+    screen.getByTestId("slot").getBoundingClientRect = () => rect(100, 100, 180, 180)
+    screen.getByTestId("picture").getBoundingClientRect = () => rect(160, 150, 60, 80)
+    fireEvent.pointerOver(screen.getByTestId("picture"))
+    const popup = await screen.findByRole("tooltip")
+    // Centered on the picture and just above it, not above the tile.
+    expect(popup.style.left).toBe("190px")
+    expect(popup.style.top).toBe("142px")
   })
 })

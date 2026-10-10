@@ -64,6 +64,19 @@ interface UiState {
   editPath: Record<Side, number>
   /** Increments to ask a panel's path bar to edit the quick filter (Ctrl+S, Stage C06). */
   editFilter: Record<Side, number>
+  /** The entry (or folder) context menu; modal, above everything in the window. */
+  rowMenu: RowMenuState | null
+  /** Where the right button is being held (inside the panel's view area), while the hold ring shows. */
+  hold: { side: Side; left: number; top: number } | null
+}
+
+export interface RowMenuState {
+  side: Side
+  /** Window coordinates. */
+  left: number
+  top: number
+  /** Opened on an entry (file commands), or on "..", or the empty area (folder commands only). */
+  entry: boolean
 }
 
 export const useUiStore = create<UiState>(() => ({
@@ -71,7 +84,22 @@ export const useUiStore = create<UiState>(() => ({
   lastMask: "*.*",
   editPath: { left: 0, right: 0 },
   editFilter: { left: 0, right: 0 },
+  rowMenu: null,
+  hold: null,
 }))
+
+/** Shows the hold ring at a window position inside the panel area around `from`, or hides it. */
+export function setHold(side: Side, from: Element | null, x = 0, y = 0): void {
+  const bounds = from?.closest("[data-menu-area]")?.getBoundingClientRect()
+  if (bounds) useUiStore.setState({ hold: { side, left: x - bounds.left, top: y - bounds.top } })
+  else if (useUiStore.getState().hold?.side === side) useUiStore.setState({ hold: null })
+}
+
+/** Opens the context menu at a window position. */
+export function openRowMenu(side: Side, x: number, y: number, entry: boolean): void {
+  closeQuickSearch()
+  useUiStore.setState({ rowMenu: { side, left: x, top: y, entry } })
+}
 
 const panel = (side: Side) => useListingStore.getState()[side]
 

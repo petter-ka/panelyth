@@ -15,6 +15,8 @@ export interface ViewerPreferences {
   confirmOverwrite: boolean
   remindSaveChanges: boolean
   wheelMode: WheelMode
+  /** The name line under image and video tiles; folders always show theirs. */
+  showFileNames: boolean
 }
 
 export const DEFAULT_VIEWER_PREFERENCES: ViewerPreferences = {
@@ -25,6 +27,7 @@ export const DEFAULT_VIEWER_PREFERENCES: ViewerPreferences = {
   confirmOverwrite: true,
   remindSaveChanges: true,
   wheelMode: "zoom",
+  showFileNames: true,
 }
 
 const modes: readonly StartupFolderMode[] = ["lastUsed", "specified", "systemDefault"]
@@ -55,6 +58,7 @@ export function parseViewerPreferences(value: unknown): ViewerPreferences {
         ? v.remindSaveChanges
         : DEFAULT_VIEWER_PREFERENCES.remindSaveChanges,
     wheelMode: v.wheelMode === "previousNext" ? "previousNext" : "zoom",
+    showFileNames: v.showFileNames !== false,
   }
 }
 

@@ -86,6 +86,23 @@ describe("sidebar", () => {
     expect(within(videos).getByRole("button", { name: "Expand videos" })).toHaveClass("invisible")
   })
 
+  it("a click on a tree folder opens it and shows its subfolders", async () => {
+    const bridge = await setup()
+    const root = await sidebar().findByRole("treeitem", { name: "/" })
+    await userEvent.click(within(root).getByRole("button", { name: "Expand /" }))
+    await userEvent.click(await treeNode("photos"))
+    await waitFor(() =>
+      expect(bridge.api.dir.open).toHaveBeenCalledWith({ path: "/photos", recursive: false }),
+    )
+    await waitFor(async () =>
+      expect(await treeNode("photos")).toHaveAttribute("aria-expanded", "true"),
+    )
+    expect(await treeNode("Trip")).toBeInTheDocument()
+    // A second click keeps it open; only the arrow collapses.
+    await userEvent.click(await treeNode("photos"))
+    expect(await treeNode("photos")).toHaveAttribute("aria-expanded", "true")
+  })
+
   it("reveals the open folder: ancestors expand and the folder is marked", async () => {
     const bridge = await setup()
     await act(() => openFolder("/photos/Trip"))

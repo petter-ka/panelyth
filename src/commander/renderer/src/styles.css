@@ -4,3 +4,30 @@
 /* Shared components (the app switch button, the media components) use Tailwind classes too. */
 @source "../../../shared/ui/src";
 @source "../../../shared/media-ui/src";
+
+/*
+ * The right-button hold ring (components/HoldRing.tsx): it appears after a
+ * short delay, so a plain right-click never flashes it, and fills until the
+ * context menu opens. --hold is the hold time.
+ */
+.hold-ring {
+  animation: hold-ring-in 80ms linear 120ms both;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hold-ring circle:last-child {
+    animation: hold-ring-fill calc(var(--hold) - 120ms) linear 120ms both;
+  }
+}
+
+@keyframes hold-ring-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes hold-ring-fill {
+  from {
+    stroke-dashoffset: 44;
+  }
+}

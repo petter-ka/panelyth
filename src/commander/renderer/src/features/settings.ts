@@ -18,6 +18,8 @@ export type LettersMode = "quickSearch" | "altLetters"
 export type RunPrograms = "ask" | "always" | "never"
 /** How Enter / double-click opens images and videos. */
 export type MediaOpen = "viewer" | "system"
+/** The right mouse button: marks (hold for the menu; classic Total Commander), or opens the menu at once. */
+export type RightButton = "mark" | "menu"
 
 export interface PanelSettings {
   sizeFormat: SizeFormat
@@ -26,6 +28,7 @@ export interface PanelSettings {
   showHidden: boolean
   letters: LettersMode
   mediaOpen: MediaOpen
+  rightButton: RightButton
   runPrograms: RunPrograms
   /** F4's editor: an absolute program path; "" = the system's text editor. Main reads it from library.db. */
   editor: string
@@ -37,6 +40,7 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   showHidden: false,
   letters: "quickSearch",
   mediaOpen: "viewer",
+  rightButton: "mark",
   runPrograms: "ask",
   editor: "",
 }
@@ -61,6 +65,7 @@ export function readSettings(value: unknown): PanelSettings {
     showHidden: v.showHidden === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
     mediaOpen: v.mediaOpen === "system" ? "system" : "viewer",
+    rightButton: v.rightButton === "menu" ? "menu" : "mark",
     runPrograms: v.runPrograms === "always" || v.runPrograms === "never" ? v.runPrograms : "ask",
     editor: typeof v.editor === "string" ? v.editor.slice(0, MAX_EDITOR_CHARS) : "",
   }

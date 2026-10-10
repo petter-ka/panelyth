@@ -109,6 +109,14 @@ function CommanderSettings() {
         ]}
       />
       <Radios
+        setting="rightButton"
+        label="Right mouse button"
+        options={[
+          { value: "mark", label: "Marks entries (hold for the menu)" },
+          { value: "menu", label: "Opens the menu" },
+        ]}
+      />
+      <Radios
         setting="mediaOpen"
         label="Open images and videos with"
         options={[

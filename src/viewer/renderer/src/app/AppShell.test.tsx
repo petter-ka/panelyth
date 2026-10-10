@@ -1,13 +1,15 @@
-import { act, render, screen, waitFor } from "@testing-library/react"
+import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it } from "vitest"
 import { startSidecarMonitoring, useSidecarStore } from "../features/system/sidecarStore"
+import { usePaneStore } from "../features/workspace/workspace"
 import { initTheme } from "../features/theme/themeStore"
 import { installFakeBridge, readyStatus } from "../test/fakeBridge"
 import { AppShell } from "./AppShell"
 
 beforeEach(() => {
   useSidecarStore.setState({ status: null, info: null, pingMs: null, error: null })
+  usePaneStore.setState({ previewPlace: "left" })
 })
 
 describe("AppShell", () => {
@@ -20,6 +22,32 @@ describe("AppShell", () => {
     expect(screen.getByRole("complementary", { name: "Preview" })).toBeInTheDocument()
     expect(await screen.findByText("No folder open")).toBeInTheDocument()
     expect(screen.queryByTestId("grid-placeholder")).not.toBeInTheDocument()
+  })
+
+  it("the switch next to the title moves the preview to a column on the right, and back", async () => {
+    installFakeBridge()
+    startSidecarMonitoring()
+    render(<AppShell />)
+    // The columns are rebuilt on a switch, so the buttons are looked up each time.
+    const place = (name: string) =>
+      within(screen.getByRole("radiogroup", { name: "Preview position" })).getByRole("radio", {
+        name,
+      })
+    expect(place("Preview under the folders")).toBeChecked()
+    // Under the folders: the preview shares the left column with the sidebar.
+    const leftColumn = () =>
+      screen.getByRole("navigation", { name: "Locations" }).closest("#sidebar")
+    const preview = () => screen.getByRole("complementary", { name: "Preview" })
+    expect(leftColumn()).toContainElement(preview())
+
+    await userEvent.click(place("Preview in a column on the right"))
+    expect(place("Preview in a column on the right")).toBeChecked()
+    expect(leftColumn()).not.toContainElement(preview())
+    expect(preview().closest("#preview")?.parentElement).toBe(leftColumn()?.parentElement)
+    expect(screen.getByRole("separator", { name: "Resize preview column" })).toBeInTheDocument()
+
+    await userEvent.click(place("Preview under the folders"))
+    expect(leftColumn()).toContainElement(preview())
   })
 
   it("shows the grid placeholder while starting, then follows pushed status", async () => {

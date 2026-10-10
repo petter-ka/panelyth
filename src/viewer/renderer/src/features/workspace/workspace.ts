@@ -9,20 +9,28 @@ import {
   readMirror,
   WORKSPACE_KEY,
   writeMirror,
+  type PreviewPlace,
   type Workspace,
 } from "./mirror"
 
 /** Pane layout lives here; tile size and sort live in their own stores. */
 interface PaneState {
   panes: Record<string, number> | null
+  previewPlace: PreviewPlace
   /** Increments when a layout from library.db must be pushed into the panel group. */
   applyToken: number
 }
 
 export const usePaneStore = create<PaneState>(() => ({
   panes: initialWorkspace.panes,
+  previewPlace: initialWorkspace.previewPlace,
   applyToken: 0,
 }))
+
+/** The switch in the sidebar header: the preview under the tree, or as a column on the right. */
+export function setPreviewPlace(previewPlace: PreviewPlace): void {
+  if (usePaneStore.getState().previewPlace !== previewPlace) usePaneStore.setState({ previewPlace })
+}
 
 /** Called by the panel group after a user resize (pointer released). */
 export function setPanes(panes: Record<string, number>): void {
@@ -46,6 +54,7 @@ export function startWorkspacePersistence(): () => void {
   const current = (): Workspace => ({
     v: 1,
     panes: usePaneStore.getState().panes,
+    previewPlace: usePaneStore.getState().previewPlace,
     tileSize: useLayoutStore.getState().tileSize,
     sort: useFolderStore.getState().sort,
     at,
@@ -79,8 +88,16 @@ export function startWorkspacePersistence(): () => void {
     if (JSON.stringify(stored.sort) !== JSON.stringify(useFolderStore.getState().sort)) {
       restoreSort(stored.sort)
     }
-    if (JSON.stringify(stored.panes) !== JSON.stringify(usePaneStore.getState().panes)) {
-      usePaneStore.setState((s) => ({ panes: stored.panes, applyToken: s.applyToken + 1 }))
+    const now = usePaneStore.getState()
+    if (
+      JSON.stringify(stored.panes) !== JSON.stringify(now.panes) ||
+      stored.previewPlace !== now.previewPlace
+    ) {
+      usePaneStore.setState((s) => ({
+        panes: stored.panes,
+        previewPlace: stored.previewPlace,
+        applyToken: s.applyToken + 1,
+      }))
     }
     at = stored.at // the store updates above are not user changes
     writeMirror(stored)
@@ -117,7 +134,7 @@ export function startWorkspacePersistence(): () => void {
       if (s.sort !== prev.sort) onChange()
     }),
     usePaneStore.subscribe((s, prev) => {
-      if (s.panes !== prev.panes) onChange()
+      if (s.panes !== prev.panes || s.previewPlace !== prev.previewPlace) onChange()
     }),
   ]
   return () => {

@@ -104,7 +104,9 @@ Built:
 
 Deviations from the scope above:
 
-- Right-button marking (a setting) is not built; it belongs to the complete settings of Stage C10.
+- Right-button marking was not built with the stage. Added 2026-10-10 at the owner's request, as the default, with
+  the context menu on hold (`components/useRightButton.ts`, `components/RowMenu.tsx`, `rightbutton.test.tsx`;
+  Settings → "Right mouse button" switches to a plain right-click menu). Customizing the menu stays in Stage C10.
 - A new session (sort or hidden-files change) starts unmarked; Go rebases marks only across versions of the same
   session.
 - The viewer publishes a selection only when more than one tile is selected (a single selected tile is the focused

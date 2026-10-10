@@ -87,6 +87,16 @@ function ViewerSettings() {
         />
       </section>
 
+      <section aria-label="Tiles" className="border-t border-border">
+        <SwitchRow
+          label="Show file names under tiles"
+          description="Folders always show their name. A hidden name still appears when you point at the tile."
+          checked={preferences.showFileNames}
+          disabled={!libraryLoaded}
+          onChange={(value) => setPreference("showFileNames", value)}
+        />
+      </section>
+
       <section
         aria-labelledby="wheel-behavior-label"
         className="space-y-2 border-t border-border pt-3"

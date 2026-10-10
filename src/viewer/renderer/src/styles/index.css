@@ -4,3 +4,17 @@
 /* Shared components (the app switch button, the media components) use Tailwind classes too. */
 @source "../../../../shared/ui/src";
 @source "../../../../shared/media-ui/src";
+
+/*
+ * A selected tile's preview frame (components/tiles/Tile.tsx): a 4 px accent
+ * border drawn over the picture's edge, lifted by an accent glow and a drop
+ * shadow so it stands out on any picture and on the canvas.
+ */
+.tile-selected {
+  outline: 4px solid var(--accent);
+  outline-offset: -4px;
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 12px 1px color-mix(in srgb, var(--accent) 60%, transparent),
+    0 6px 16px rgb(0 0 0 / 0.45);
+}

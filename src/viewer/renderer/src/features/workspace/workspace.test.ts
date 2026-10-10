@@ -4,7 +4,7 @@ import { resetFolderStore, setSort, useFolderStore } from "../folder/folderStore
 import { resetLibraryStore, useLibraryStore } from "../library/libraryStore"
 import { resetLayoutStore, useLayoutStore } from "../tiles/layoutStore"
 import { parseWorkspace, readMirror } from "./mirror"
-import { setPanes, startWorkspacePersistence, usePaneStore } from "./workspace"
+import { setPanes, setPreviewPlace, startWorkspacePersistence, usePaneStore } from "./workspace"
 
 let stop: () => void = () => {}
 
@@ -13,7 +13,7 @@ beforeEach(() => {
   resetLibraryStore()
   resetLayoutStore()
   resetFolderStore()
-  usePaneStore.setState({ panes: null, applyToken: 0 })
+  usePaneStore.setState({ panes: null, previewPlace: "left", applyToken: 0 })
 })
 afterEach(() => {
   stop()
@@ -33,14 +33,17 @@ describe("workspace persistence", () => {
           { field: "size", direction: "desc" },
         ],
         panes: { sidebar: 20, content: "x", preview: -5 },
+        previewPlace: "top",
       }),
     ).toEqual({
       v: 1,
       tileSize: "medium",
       sort: [{ field: "size", direction: "desc" }],
       panes: { sidebar: 20 },
+      previewPlace: "left",
       at: 0,
     })
+    expect(parseWorkspace({ v: 1, previewPlace: "right" })?.previewPlace).toBe("right")
   })
 
   it("migrates the Stage 03 tile size key", () => {
@@ -76,6 +79,7 @@ describe("workspace persistence", () => {
     setPanes({ sidebar: 30, content: 45, preview: 25 })
     setSort("size", "asc")
     useLayoutStore.getState().setTileSize("medium")
+    setPreviewPlace("right")
     await vi.advanceTimersByTimeAsync(299)
     expect(bridge.api.library.setSetting).not.toHaveBeenCalled()
     await vi.advanceTimersByTimeAsync(1)
@@ -83,6 +87,7 @@ describe("workspace persistence", () => {
     expect(bridge.api.library.setSetting).toHaveBeenCalledWith("workspace", {
       v: 1,
       panes: { sidebar: 30, content: 45, preview: 25 },
+      previewPlace: "right",
       tileSize: "medium",
       sort: [{ field: "size", direction: "asc" }],
       at: expect.any(Number),

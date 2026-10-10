@@ -7,10 +7,14 @@ import type { TileSize } from "../tiles/layout"
  * without waiting for the sidecar. No store imports here: stores read their
  * initial values from this module.
  */
+/** Where the preview sits: under the folder tree, or in a full-height column on the right. */
+export type PreviewPlace = "left" | "right"
+
 export interface Workspace {
   v: 1
   /** Pane sizes in percent by panel id (react-resizable-panels layout); collapsed = 0. */
   panes: Record<string, number> | null
+  previewPlace: PreviewPlace
   tileSize: TileSize
   sort: SortKey[]
   /** When it last changed (epoch ms): on startup the newer of mirror and library.db wins. */
@@ -25,6 +29,7 @@ const LEGACY_TILE_SIZE_KEY = "panelyth.tileSize"
 export const DEFAULT_WORKSPACE: Workspace = {
   v: 1,
   panes: null,
+  previewPlace: "left",
   tileSize: "medium",
   sort: [{ field: "name", direction: "asc" }],
   at: 0,
@@ -59,6 +64,7 @@ export function parseWorkspace(value: unknown): Workspace | null {
   return {
     v: 1,
     panes,
+    previewPlace: w.previewPlace === "right" ? "right" : "left",
     tileSize: isTileSize(w.tileSize) ? w.tileSize : DEFAULT_WORKSPACE.tileSize,
     sort: sort.length > 0 ? sort : DEFAULT_WORKSPACE.sort,
     at: typeof w.at === "number" && Number.isFinite(w.at) ? w.at : 0,

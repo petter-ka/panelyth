@@ -10,6 +10,7 @@ import { resetThumbs, startThumbMonitoring } from "../../features/previews/thumb
 import { profileFor, rowHeight, tilesPerRow, type TileSize } from "../../features/tiles/layout"
 import { resetLayoutStore, useLayoutStore } from "../../features/tiles/layoutStore"
 import { useSelectionStore } from "../../features/tiles/selectionStore"
+import { DEFAULT_VIEWER_PREFERENCES, useSettingsStore } from "../../features/settings/settingsStore"
 import { startSidecarMonitoring, useSidecarStore } from "../../features/system/sidecarStore"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
@@ -74,6 +75,7 @@ beforeEach(() => {
   resetLayoutStore()
   resetFolderStore()
   resetThumbs()
+  useSettingsStore.setState({ preferences: DEFAULT_VIEWER_PREFERENCES })
   useSidecarStore.setState({ status: null, info: null, pingMs: null, error: null })
 })
 afterEach(() => {
@@ -133,6 +135,37 @@ describe("TileView", () => {
     ).items.map((i) => i.id)
     expect(ids.some((id) => id <= 5)).toBe(false)
     expect(tiles()[0]).toHaveAttribute("data-kind", "dir")
+  })
+
+  it("hides file names when Settings say so; folders keep theirs and the grid does not move", async () => {
+    mockViewport(1000, 800)
+    await openWith(makeItems(20, 2))
+    await waitFor(() => expect(tiles().length).toBeGreaterThan(2))
+    const name = (tile: HTMLElement) => tile.lastElementChild!.textContent
+    const folder = tiles()[0]!
+    const file = tiles().find((t) => t.dataset.kind !== "dir")!
+    const fileName = file.getAttribute("aria-label")!
+    expect(name(file)).toBe(fileName)
+    const height = view().firstElementChild!.getAttribute("style")
+
+    // A selected tile highlights its name line, but not an empty one.
+    await userEvent.click(file)
+    expect(file.lastElementChild).toHaveClass("bg-raised")
+
+    act(() => useSettingsStore.getState().setPreference("showFileNames", false))
+    expect(name(file)).toBe("")
+    expect(file).toHaveAttribute("aria-selected", "true")
+    expect(file.lastElementChild).not.toHaveClass("bg-raised")
+    await userEvent.click(folder)
+    expect(folder.lastElementChild).toHaveClass("bg-raised")
+    expect(name(folder)).toBe(folder.getAttribute("aria-label"))
+    // Still named for assistive tech and in the tooltip; the rows keep their height.
+    expect(file).toHaveAttribute("aria-label", fileName)
+    expect(file.getAttribute("data-tooltip-content")).toContain(fileName)
+    expect(view().firstElementChild!.getAttribute("style")).toBe(height)
+
+    act(() => useSettingsStore.getState().setPreference("showFileNames", true))
+    expect(name(file)).toBe(fileName)
   })
 
   it("moves by tile with ←/→ and by row with ↑/↓", async () => {

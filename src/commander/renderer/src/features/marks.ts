@@ -4,6 +4,7 @@ import {
   fromRanges,
   hasMarks,
   invert,
+  isMarked,
   markCount,
   NO_MARKS,
   removeRanges,
@@ -112,6 +113,26 @@ export function dropAnchor(side: Side): void {
   const m = getMarks(side)
   if (m.anchor !== null)
     useMarksStore.setState({ [side]: { ...m, anchor: null, base: fromMarks(m) } })
+}
+
+/** Whether a view row is marked; null for ".." and rows past the end (never marked). */
+export function rowMarked(side: Side, row: number): boolean | null {
+  const p = listing(side)
+  const index = row - parentRows(p)
+  if (index < 0 || row >= rowCount(p)) return null
+  return isMarked(getMarks(side), index, pageStoreOf(side).getItem(index)?.id)
+}
+
+/**
+ * Right-button marking: `base` (the marks when the button went down) with the
+ * view rows `from`..`to` all marked or all unmarked. One range, whatever the length.
+ */
+export function paintRows(side: Side, base: Marks, from: number, to: number, mark: boolean): void {
+  const parent = parentRows(listing(side))
+  const last = Math.max(from, to) - parent
+  if (last < 0) return
+  const range: [number, number][] = [[Math.max(0, Math.min(from, to) - parent), last + 1]]
+  setMarks(side, mark ? addRanges(base, range) : removeRanges(base, range))
 }
 
 const entryTotal = (side: Side): number => listing(side).query?.total ?? 0

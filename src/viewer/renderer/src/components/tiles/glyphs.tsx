@@ -1,25 +1,15 @@
-// Minimal line glyphs for tiles without a thumbnail. currentColor, no fills
-// that would compete with photos on the canvas.
+import { TypeGlyph } from "@panelyth/ui"
+
+// Glyphs for tiles without a thumbnail. Folders and videos use the shared
+// color type icons (src/shared/ui, the commander's rows show the same ones).
 
 interface GlyphProps {
   size: number
 }
 
-export function FolderGlyph({ size }: GlyphProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path
-        d="M3 6.5A1.5 1.5 0 0 1 4.5 5h4.2l2 2h8.8A1.5 1.5 0 0 1 21 8.5v9a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 17.5v-11Z"
-        stroke="currentColor"
-        strokeWidth="1.25"
-        strokeLinejoin="round"
-      />
-    </svg>
-  )
-}
+export const FolderGlyph = ({ size }: GlyphProps) => <TypeGlyph glyph="folder" size={size} />
 
-// The video glyph lives with the shared VideoPlayer (Stage C05).
-export { VideoGlyph } from "@panelyth/media-ui"
+export const VideoGlyph = ({ size }: GlyphProps) => <TypeGlyph glyph="video" size={size} />
 
 export function UnavailableGlyph({ size }: GlyphProps) {
   return (
