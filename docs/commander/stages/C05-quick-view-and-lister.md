@@ -19,7 +19,7 @@ default, with a Commander setting to use the system default app.
 ## Scope
 
 - **Shared media components:** move `ImageViewer`, `VideoPlayer` and their request logic (`viewerImages`, video
-  preferences) from the viewer into `shared/media-ui`. The viewer's suites must pass unchanged (regression gate).
+  preferences) from the viewer into `src/shared/media-ui`. The viewer's suites must pass unchanged (regression gate).
 - **Quick view (Ctrl+Q):** the other panel shows the cursor entry after it settles (150 ms): images and videos with
   the shared components; text (the first window, encoding detected); other files as hex plus properties.
 - **Lister (F3):** full window; Text (wrap, encodings, Ctrl+F find), Hex, Image, Video (1–4 switch modes); N / P next and
@@ -72,7 +72,7 @@ scrolling the lister.
 ## Results (2026-10-06)
 
 - **Shared media components:** `ImageViewer`, `VideoPlayer`, their request logic (`viewerImages`), the video
-  preferences store and the zoom and transform math moved (with history) to `shared/media-ui`. The package reaches
+  preferences store and the zoom and transform math moved (with history) to `src/shared/media-ui`. The package reaches
   the sidecar through a small port (`configureMedia`: open media, ensure previews, open with the default app,
   `preview.ready`) that each app configures with its own bridge. The viewer keeps its old module paths as re-exports
   (`features/viewer/viewerImages.ts`, `features/media/video.ts`), so its suites run unchanged; preview lanes are free
@@ -122,7 +122,7 @@ Found and fixed while testing: a commander token URL could be `fetch()`ed from t
 (the request carried no `Origin`, so the per-token origin check never applied); the CSP is now per app. Also, the
 viewer could write `commander.*` settings, so it could have planted the editor that F4 starts.
 
-Measurements (reference machine; `shared/bench/results/stage-C05-2026-10-06-e2e-viewers.jsonl`; `text-2g` is a
+Measurements (reference machine; `src/shared/bench/results/stage-C05-2026-10-06-e2e-viewers.jsonl`; `text-2g` is a
 2,147,483,724-byte log):
 
 | Metric | Result | Budget |
@@ -159,7 +159,7 @@ Measurements (reference machine; `shared/bench/results/stage-C05-2026-10-06-e2e-
   (known), and the C04 copy scenario, the viewer's full-screen Esc test and the tile-width test, which all three
   passed on rerun.
 - **Lint:** ESLint shows only the two pre-existing viewer errors (`SettingsDialog.tsx`, `startupFolder.test.ts`);
-  Prettier only the pre-existing `shared/renderer-core/src/pageStore.test.tsx`; gofmt and vet clean.
+  Prettier only the pre-existing `src/shared/renderer-core/src/pageStore.test.tsx`; gofmt and vet clean.
 
 ## Open
 

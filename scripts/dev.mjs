@@ -8,9 +8,9 @@ import { dirname, join } from "node:path"
 import { fileURLToPath, pathToFileURL } from "node:url"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
-const desktop = join(root, "shared", "desktop")
-const renderer = join(root, "viewer", "renderer")
-const commander = join(root, "commander", "renderer")
+const desktop = join(root, "src", "shared", "desktop")
+const renderer = join(root, "src", "viewer", "renderer")
+const commander = join(root, "src", "commander", "renderer")
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 
 execFileSync(process.execPath, [join(root, "scripts", "build-sidecar.mjs")], { stdio: "inherit" })

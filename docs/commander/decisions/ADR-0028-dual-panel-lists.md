@@ -66,7 +66,7 @@ sizes and only the bounded mounted window is rendered while the user resizes or 
 ### Data
 
 - Rows read page data from an external page store (`useSyncExternalStore`, ADR-0011), shared with the viewer through
-  `shared/renderer-core`. A listing never lives in React state as one array.
+  `src/shared/renderer-core`. A listing never lives in React state as one array.
 - Each visible tab of a panel holds one query session (ADR-0017; per-profile cap in ADR-0026).
 
 ### Cursor and marks

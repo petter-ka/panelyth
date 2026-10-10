@@ -43,13 +43,13 @@ the folders. Write paths from the repository root. `docs/README.md` has the map 
 
 ## Code layout
 
-Code follows the same split as the docs (ADR-0031 "Code layout"):
+Code lives under `src/` and follows the same split as the docs (ADR-0031 "Code layout"):
 
-- `shared/`: `desktop` (the Electron shell), `contracts`, `sidecar` (Go), `e2e` (Playwright harness; specs per app
+- `src/shared/`: `desktop` (the Electron shell), `contracts`, `sidecar` (Go), `e2e` (Playwright harness; specs per app
   under `specs/viewer/`, `specs/commander/`), `bench`; later `ui`, `renderer-core`, `media-ui`
-- `viewer/renderer`: the viewer's React app
-- `commander/`: the commander's code (from Stage C00)
-- `scripts/`: repository tooling
+- `src/viewer/renderer`: the viewer's React app
+- `src/commander/`: the commander's code (from Stage C00)
+- `scripts/`: repository tooling (stays in the root)
 
 ## Stack
 
@@ -90,7 +90,7 @@ Use current stable releases at implementation time. Do not hardcode obsolete ver
 - commander: the Full (table) view uses `@tanstack/react-table` (columns, headers, sizing; manual sorting, row model of the visible window only) with `@tanstack/react-virtual` rows; the Brief (list) and Thumbnails (tile) views use `@tanstack/react-virtual` alone; fixed row heights; the cursor and the marked set are separate (ADR-0028)
 - use fixed or predictably measurable tile and row geometry where possible
 - keep scrolling independent from data fetching
-- shared code lives in `shared/*`; never copy platform code into an app
+- shared code lives in `src/shared/*`; never copy platform code into an app
 
 ### Go
 

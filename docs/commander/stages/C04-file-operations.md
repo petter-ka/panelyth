@@ -120,7 +120,7 @@ theme-label failures. E2E: `specs/commander/fileops.spec.ts` 4 of 4 (scenarios 8
 commander specs 25 of 25 (the C02 benchmark failed once right after the copy benchmark's 2 GB of writes and passed
 alone); the viewer's `jobs.spec.ts` unchanged.
 
-Measurements (reference machine; `shared/bench/results/stage-C04-2026-10-06-e2e-fileops.jsonl`):
+Measurements (reference machine; `src/shared/bench/results/stage-C04-2026-10-06-e2e-fileops.jsonl`):
 
 | Metric | Result | Budget |
 |---|---|---|

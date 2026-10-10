@@ -93,7 +93,7 @@ Built:
   `query.indexOf`. Main accepts `context.publish` only from the visible app and only with its own app id, and rejects
   `scope: "all"` from the viewer (ADR-0027). At start, main reads `shared.context` (waiting at most 400 ms) and shows
   the commander first when it was the last used app.
-- **Commander:** per panel a query session in the `all` scope and a `shared/renderer-core` page store
+- **Commander:** per panel a query session in the `all` scope and a `src/shared/renderer-core` page store
   (`features/listing.ts`). The Full view (`components/FullView.tsx`): TanStack Table v9 for columns, header sort
   indicators and column sizing, its row model fed only the visible window's row indexes; rows of fixed height
   (S 20 / M 22 / L 26 px) virtualized with TanStack Virtual, each reading its entry from the page store; column widths
@@ -134,7 +134,7 @@ commander foundation spec's surface check was updated; the 2 failing `theme.spec
 `tiles.spec.ts › wider windows fit more tiles per row` is flaky on this machine at HEAD too (1 of 3 runs fails at
 HEAD, 2 of 3 here).
 
-Measurements (reference machine; `shared/bench/results/stage-C01-2026-10-05-e2e-listing.jsonl`; 4 runs, the first
+Measurements (reference machine; `src/shared/bench/results/stage-C01-2026-10-05-e2e-listing.jsonl`; 4 runs, the first
 right after a build, with a cold file cache):
 
 | Metric | Result | Budget |

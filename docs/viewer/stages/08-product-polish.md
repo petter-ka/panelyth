@@ -42,7 +42,7 @@ anything on the scrolling surface.
 | Check | Result |
 |---|---|
 | Tile scroll (e2e, unchanged spec) | 100k medium 1920 px: p95 frame 7 ms, 0 long tasks, ≤ 60 tiles; small 2560 px: p95 7 ms, 0 long tasks, ≤ 180 tiles; first thumbnail 186 ms (`stage-03-2026-10-01-e2e-tiles.jsonl`, 09:29Z rows) |
-| Startup / memory | `shared/bench/results/stage-08-2026-10-01-petter-startup.json`: ready-to-show p50 222 ms, sidecar ready p50 124 ms, ping p95 0.3 ms, exit p95 17 ms, idle 352 MB, **+52.9 MB over the Electron floor** (budget 60; Stage 06: 56.7). All budgets pass |
+| Startup / memory | `src/shared/bench/results/stage-08-2026-10-01-petter-startup.json`: ready-to-show p50 222 ms, sidecar ready p50 124 ms, ping p95 0.3 ms, exit p95 17 ms, idle 352 MB, **+52.9 MB over the Electron floor** (budget 60; Stage 06: 56.7). All budgets pass |
 | Regression suites | Go all packages; renderer 157, desktop 84, contracts 47; e2e 41/41 |
 
 ## Performance rule

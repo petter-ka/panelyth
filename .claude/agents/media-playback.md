@@ -5,7 +5,7 @@ tools: Read, Write, Edit, Glob, Grep, Bash
 ---
 
 Focus on image viewer and local video preview: the viewer's pane and focused viewer, and the commander's quick view
-and lister through the shared media components (`shared/media-ui`, Stage C05).
+and lister through the shared media components (`src/shared/media-ui`, Stage C05).
 
 Rules:
 - no full media files in React state

@@ -7,7 +7,7 @@ Status: **Partly done** (no stage record yet). Track: platform. Depends on: P01.
 In the code, with tests (`internal/scan/allentries_test.go`, `internal/index/scope_test.go`, golden fixtures
 `res-query.open-all.json`, `res-query.page-all.json`): the schema with `file` and `link` kinds and `attrs`, the
 scanner storing every entry, and the query descriptor's `scope`, `showHidden`, `nameMask` and sort by `attrs`.
-The kind checks exist too: main's `shell.open` refuses `file` and `link` entries (`shared/desktop/test/workspace.test.ts`),
+The kind checks exist too: main's `shell.open` refuses `file` and `link` entries (`src/shared/desktop/test/workspace.test.ts`),
 and `media.resolve` serves only images and videos. Stage C01 added the main-process check that keeps the viewer on
 the `media` scope.
 
@@ -44,7 +44,7 @@ commander can list everything, while the viewer keeps seeing exactly what it see
   folders are re-listed when it is shown.
 - **Kind checks in main:** `shell.open` and the media token protocol check the entry kind returned by the sidecar
   against the calling app view's profile (ADR-0027).
-- **Contracts:** new kinds and fields in `shared/contracts`, guards, golden fixtures regenerated.
+- **Contracts:** new kinds and fields in `src/shared/contracts`, guards, golden fixtures regenerated.
 
 ## Non-goals
 

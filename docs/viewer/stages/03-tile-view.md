@@ -91,14 +91,14 @@ name   name   name   name   name              name   name   name   name
 
 | Item | Where |
 |---|---|
-| Layout rules (fixed S/M/L metrics, tiles per row, fixed row height, profile per size × DPR) | `viewer/renderer/src/features/tiles/layout.ts` |
+| Layout rules (fixed S/M/L metrics, tiles per row, fixed row height, profile per size × DPR) | `src/viewer/renderer/src/features/tiles/layout.ts` |
 | Virtualized view (one ResizeObserver, rows re-render only when tiles per row change, scroll anchored to the first visible item, keyboard, Ctrl + wheel) | `components/tiles/TileView.tsx` |
 | Tile (fixed box + name line, thumbnail / folder / video / unavailable glyphs, selection and focus outlines inside the box, tooltip with size and date) | `components/tiles/Tile.tsx`, `glyphs.tsx` |
 | Page store outside React state (256-item pages, ± 1 page, LRU of 24 pages, ≤ 3 requests in flight, requests for scrolled-past pages never started, invalidation refetches only pages in view, expired session reopened in place) | `features/tiles/pageStore.ts` |
 | Thumbnails: profile follows tile size × DPR; pages seed cached URLs; one `preview.ensure` per settled range (visible → overscan → next screen in scroll direction), lane `tiles` | `features/previews/thumbStore.ts` |
 | Single selection by entry id, focus by index | `features/tiles/selectionStore.ts` |
 | Tile size (S/M/L segmented control, persisted) | `components/tiles/TileSizeControl.tsx`, `features/tiles/layoutStore.ts` |
-| Folder tiles open by id (`dir.openEntry`, new sidecar method; the renderer never builds paths) | `shared/sidecar/internal/app/library.go`, contracts, preload |
+| Folder tiles open by id (`dir.openEntry`, new sidecar method; the renderer never builds paths) | `src/shared/sidecar/internal/app/library.go`, contracts, preload |
 | Temporary Stage 01–02 table removed | — |
 
 Also added: a main-process IPC call counter (`globalThis.__panelythIpcCounts`, main only, not reachable from the renderer) that e2e tests use to count `preview.ensure` calls, and a debug-level log line per `preview.ensure` call in the sidecar.
@@ -120,7 +120,7 @@ Also added: a main-process IPC call counter (`globalThis.__panelythIpcCounts`, m
 
 ## Benchmarks
 
-Windows 11, i9-13900K, ~144 Hz display, production build. Results: `shared/bench/results/stage-03-2026-09-30-e2e-{tiles,previews,index}.jsonl` and `stage-03-2026-09-30-petter-startup.json`.
+Windows 11, i9-13900K, ~144 Hz display, production build. Results: `src/shared/bench/results/stage-03-2026-09-30-e2e-{tiles,previews,index}.jsonl` and `stage-03-2026-09-30-petter-startup.json`.
 
 ### Responsive layout (medium tiles)
 

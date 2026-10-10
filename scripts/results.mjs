@@ -8,13 +8,14 @@ import { fileURLToPath } from "node:url"
 export const resultsDir = join(
   dirname(fileURLToPath(import.meta.url)),
   "..",
+  "src",
   "shared",
   "bench",
   "results",
 )
 
 /**
- * shared/bench/results/stage-<BENCH_STAGE>-<date>-<host>-<kind>[-n].json.
+ * src/shared/bench/results/stage-<BENCH_STAGE>-<date>-<host>-<kind>[-n].json.
  * BENCH_STAGE is required so results are never filed under the wrong stage.
  */
 export function resultPath(kind, ext = "json") {

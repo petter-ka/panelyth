@@ -129,7 +129,7 @@ documents above; the switch and shared-state budgets are in `docs/shared/APP-SWI
 
 ## Benchmark results
 
-Result files go to `shared/bench/results/stage-<id>-<date>-<host>-<kind>.<ext>` and are never overwritten
+Result files go to `src/shared/bench/results/stage-<id>-<date>-<host>-<kind>.<ext>` and are never overwritten
 (`scripts/results.mjs`). `<id>` is the stage ID: viewer numbers (`03`, `08.6`), platform `P01`…, commander `C00`….
 `BENCH_STAGE` accepts two digits today; Stage P01 extends it to the other forms.
 

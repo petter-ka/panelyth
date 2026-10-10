@@ -8,18 +8,18 @@ coverage/
 Thumbs.db
 
 # built sidecar binaries
-shared/desktop/resources/bin/
-shared/sidecar/bin/
+src/shared/desktop/resources/bin/
+src/shared/sidecar/bin/
 
 # packaged builds (pnpm package)
-shared/desktop/release/
+src/shared/desktop/release/
 
 # playwright
-shared/e2e/test-results/
-shared/e2e/playwright-report/
+src/shared/e2e/test-results/
+src/shared/e2e/playwright-report/
 
 # go
 *.test
 *.prof
 *.out
-!shared/bench/results/**
+!src/shared/bench/results/**

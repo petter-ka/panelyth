@@ -18,7 +18,7 @@ day one, and the viewer stays as fast as before.
 
 ## Scope
 
-- **Commander app view:** `commander/renderer` and `shared/desktop/src/preload/commander.ts`; the commander's
+- **Commander app view:** `src/commander/renderer` and `src/shared/desktop/src/preload/commander.ts`; the commander's
   capability profile in main; the view is created on the first switch and then kept alive hidden
   (`docs/shared/APP-SWITCHING.md`).
 - **Commander UI:**
@@ -51,7 +51,7 @@ day one, and the viewer stays as fast as before.
 
 - Renderer: the commander AppShell renders two panels; Tab moves the active panel; the divider persists; the switch
   button shows the other app's glyph, tooltip and shortcut.
-- E2E (`shared/e2e/specs/commander/foundation.spec.ts`, `shared/e2e/specs/switch.spec.ts`):
+- E2E (`src/shared/e2e/specs/commander/foundation.spec.ts`, `src/shared/e2e/specs/switch.spec.ts`):
   - switch viewer → commander → viewer by icon and by key; the commander view is created once; titles and focus
     follow;
   - a theme or interface-size change in one app shows in the other;
@@ -80,28 +80,28 @@ commander (view creation → interactive); later switches; idle memory with both
 
 Built:
 
-- `commander/renderer` (`@panelyth/commander`): app bar with the switch, two panels (header, active marking, empty
+- `src/commander/renderer` (`@panelyth/commander`): app bar with the switch, two panels (header, active marking, empty
   state), the resizable divider persisted as `commander.layout`, the function-key bar (Exit works; the file commands
   are disabled with a tooltip), and a status bar (backend state, theme).
-- `shared/desktop`: the commander's preload (`commander.cjs`), the `app://commander` origin, the shell switch
+- `src/shared/desktop`: the commander's preload (`commander.cjs`), the `app://commander` origin, the shell switch
   (`shell.ts`), the feature flag `PANELYTH_COMMANDER=1` (on in `pnpm dev`) and `PANELYTH_START_APP` for tests.
 - The viewer: the switch icon first in the navigation toolbar and the `app.switch` keymap action
   (Ctrl/Cmd+Shift+M, also while typing), both only while the commander is enabled.
-- `shared/ui`: the switch button, and theme and interface size shared through `shared.appearance` (migrated from the
+- `src/shared/ui`: the switch button, and theme and interface size shared through `shared.appearance` (migrated from the
   viewer's local values on first start; live in both apps through the `settings.changed` event).
 
 Deviations from the scope above:
 
 - The commander has a theme toggle in its status bar instead of the shared settings dialog, and its Ctrl/Cmd+Shift+M
-  is fixed rather than remappable. Both need the keymap engine and dialogs in `shared/renderer-core` (the open part of
+  is fixed rather than remappable. Both need the keymap engine and dialogs in `src/shared/renderer-core` (the open part of
   P01).
 
-Tests: contracts 49, desktop 88 (per-view allowlists, `app.switch` validation, shared-setting broadcast), `shared/ui`
+Tests: contracts 49, desktop 88 (per-view allowlists, `app.switch` validation, shared-setting broadcast), `src/shared/ui`
 26, commander 6, viewer 151 + 2 failing (the theme-label tests that already failed), Go all. E2E 48 of 50: the new
 `specs/commander/foundation.spec.ts` (2) and `specs/switch.spec.ts` (3) pass; the 2 failures are the existing
 `theme.spec.ts` label tests.
 
-Measurements (reference machine; `shared/bench/results/stage-C00-2026-10-05-*`):
+Measurements (reference machine; `src/shared/bench/results/stage-C00-2026-10-05-*`):
 
 | Metric | Result | Budget |
 |---|---|---|

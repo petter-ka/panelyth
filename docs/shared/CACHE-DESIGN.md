@@ -1,7 +1,7 @@
 # Preview Cache Design
 
-> **Implemented in Stage 02** (`shared/sidecar/internal/preview`, `internal/imaging`,
-> `shared/desktop/src/main/thumbProtocol.ts`). Deviations from this document:
+> **Implemented in Stage 02** (`src/shared/sidecar/internal/preview`, `internal/imaging`,
+> `src/shared/desktop/src/main/thumbProtocol.ts`). Deviations from this document:
 > - Alpha previews are **PNG**, not WebP (no pure-Go WebP encoder, ADR-0019).
 > - The key also includes the JPEG quality; the URL is `panelyth-thumb://t/<key>.<jpg|png>`, resolved by Electron
 >   main under the `thumbnailRoot` announced in the sidecar's `hello`.

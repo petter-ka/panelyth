@@ -130,7 +130,7 @@ Environment: the generated fixtures under `%TEMP%\panelyth-fixtures` (flat-100k,
 present and every 100k test listed an empty folder. They were deleted and regenerated. `fixturegen` should check the
 contents, not only the marker (a test-tooling fix, not done here).
 
-Measurements (reference machine, `shared/bench/results/stage-C03-2026-10-06-e2e-navigation.jsonl`; 60 Hz display):
+Measurements (reference machine, `src/shared/bench/results/stage-C03-2026-10-06-e2e-navigation.jsonl`; 60 Hz display):
 
 | Metric | Result | Budget |
 |---|---|---|

@@ -85,8 +85,8 @@ Built:
   `selection.rebase`, `selection.fromContext`, `jobs.start` and `jobs.cancel`; main lets the commander start only
   `dirSize` jobs until C04. `shared.switch` (carry-over options, "Start with") is read by main at start.
 - **Shared packages:** the selection algebra (incl. invert, add/remove ranges), the keymap engine (with numeric-keypad
-  chords `Num+`, `Num-`, `Num*`) and the switch-settings store moved to `shared/renderer-core`; `Button`, `Kbd`,
-  `DialogWindow` and the shortcuts dialog to `shared/ui`. The viewer uses them unchanged in behavior.
+  chords `Num+`, `Num-`, `Num*`) and the switch-settings store moved to `src/shared/renderer-core`; `Button`, `Kbd`,
+  `DialogWindow` and the shortcuts dialog to `src/shared/ui`. The viewer uses them unchanged in behavior.
 - **Commander:** marks per panel as descriptors (`features/marks.ts`), rebased in Go when the listing changes and
   reset by a new session; Insert, Space (on a folder also its size), Shift+arrows / Shift+click with the viewer's
   additive rules, Ctrl+click, Ctrl+A / Ctrl+Num+, Ctrl+Num−, Num*, Num+ / Num− with a mask dialog (the last mask is
@@ -122,7 +122,7 @@ Tests: Go all (new: `query.locate` prefix/substring/wildcards/wrap, `query.match
 `dirSize` job with sizes, a junction loop not followed, cancel under 200 ms, sizes kept by rescans and counted by
 `selection.info`, the carried selection surviving a folder publish; golden fixtures for `query.locate`,
 `query.match`, `selection.fromContext` and the new context fields); contracts 55; desktop 95 (new: `dirSize` only for
-the commander, the C02 validators, "Start with"); `shared/renderer-core` 12 (algebra, keypad chords, scoped
+the commander, the C02 validators, "Start with"); `src/shared/renderer-core` 12 (algebra, keypad chords, scoped
 resolution); commander 40 (new: 14 in `marks.test.tsx`); viewer 165 + 2 failing (the known theme-label tests; new:
 selection carry-over, notice, options, Settings → General). E2E: `specs/commander/marks.spec.ts` 6 of 6 (scenarios 5
 and 6, swap and history, remapping in F1, the axe check of the grid with no violations, selection carried both ways
@@ -139,7 +139,7 @@ same commands passed on rerun and Go was unaffected. One crash source was ours (
 session version made the page store refetch forever) and is fixed; the rest remain. With Stage 07's SQLite heap
 fault this points at the machine (an i9-13900K), not the code.
 
-Measurements (reference machine, `shared/bench/results/stage-C02-2026-10-05-e2e-marks.jsonl`; 60 Hz display):
+Measurements (reference machine, `src/shared/bench/results/stage-C02-2026-10-05-e2e-marks.jsonl`; 60 Hz display):
 
 | Metric | Result | Budget |
 |---|---|---|

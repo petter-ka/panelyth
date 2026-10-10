@@ -17,5 +17,5 @@ Process:
 
 Do not silently expand scope into a later stage.
 
-When the stage touches shared code (`shared/*`, the sidecar, `shared/contracts`), validate both apps once the
+When the stage touches shared code (`src/shared/*`, the sidecar, `src/shared/contracts`), validate both apps once the
 commander exists.

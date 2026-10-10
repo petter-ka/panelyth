@@ -96,7 +96,7 @@ total as the final count (Go's count is shown now; the list follows with the las
 and `tree-50k` fixtures on the reference machine had lost files (94,117 and 64 left) and were regenerated; earlier
 C01 and C02 measurements on them should be read with that in mind.
 
-Measurements (reference machine, 32 threads, warm cache; `shared/bench/results/stage-C06-2026-10-07-petter-find.json`
+Measurements (reference machine, 32 threads, warm cache; `src/shared/bench/results/stage-C06-2026-10-07-petter-find.json`
 and `stage-C06-2026-10-07-e2e-find.jsonl`):
 
 | Metric | Result | Budget |
@@ -132,7 +132,7 @@ Sequential read speed here is the page cache (5.5–6.4 GB/s); cold-disk content
 - **Lint and typecheck:** clean (four known `react-hooks/incompatible-library` warnings for TanStack Virtual).
 
 Fixed before this stage started (regressions of the UI commits `b76d479` and `cea2a74`): the typecheck
-(`FullView.tsx` header column, `@types/react-dom` for `shared/ui`, the `Tooltip` content type), four lint errors,
+(`FullView.tsx` header column, `@types/react-dom` for `src/shared/ui`, the `Tooltip` content type), four lint errors,
 and renderer tests that followed the old markup (grid body, column widths, size units, the app rail, tooltips
 instead of `title`, the theme label). Image tiles now show their label, favorite and rating badge while the
 thumbnail loads (it was missing until the thumbnail arrived).

@@ -99,9 +99,9 @@ P04–P06 (2026-10-05). Viewer numbers 09–11 are retired; the next viewer stag
 
 ### P01 — Multi-app platform: one shell, app views, shared packages
 
-The window hosts one app view per app with its own capability profile; `shared/ui` and
-`shared/renderer-core` are extracted. The folder layout (`shared/`, `viewer/`, `commander/`) is already done.
-The viewer is unchanged.
+The window hosts one app view per app with its own capability profile; `src/shared/ui` and
+`src/shared/renderer-core` are extracted. The folder layout (`src/shared/`, `src/viewer/`, `src/commander/`) is already
+done. The viewer is unchanged.
 
 ### P02 — Index scope: all entries, filtered per query
 

@@ -66,7 +66,7 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
 
 - **Profiles in code:** `VIEWER_METHODS` (the viewer's list), `COMMANDER_ONLY_METHODS` (`file.open`, `shell.edit`,
   `fs.mkfile`) and `COMMANDER_METHODS`; main handlers receive the calling app, so `shell.open` applies the profile in
-  one place (`shared/desktop/src/main/workspace.ts`).
+  one place (`src/shared/desktop/src/main/workspace.ts`).
 - **Programs:** the sidecar's `entry.path` reports `program` (`fsx.IsProgram`): on Windows executables, scripts,
   installers, shortcuts and control panel items by extension; elsewhere the execute bit, scripts, packages and
   `.desktop` files, and macOS app bundles (folders that `open` launches). The viewer's `shell.open` refuses programs
@@ -93,6 +93,6 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
 ## Consequences
 
 - Router and e2e tests are per app view. Each view's e2e asserts its exact preload surface (the
-  `shared/e2e/specs/viewer/foundation.spec.ts` pattern), and a commander-only method called from the viewer view is rejected.
+  `src/shared/e2e/specs/viewer/foundation.spec.ts` pattern), and a commander-only method called from the viewer view is rejected.
 - The command line is the most sensitive feature, so it comes last in the commander plan (Stage C10) and gets a
   security review.

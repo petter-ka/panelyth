@@ -87,21 +87,21 @@ panelyth/
 │           ├── platform/        cache/config dirs, OS specifics
 │           └── (later) index/ scan/ query/ preview/ cache/ media/ jobs/ watch/ volumes/ library/
 │
-├── shared/e2e/                   Playwright `_electron` specs + perf specs
-├── shared/bench/
+├── src/shared/e2e/                   Playwright `_electron` specs + perf specs
+├── src/shared/bench/
 │   ├── scripts/                 startup/idle/ipc harness
 │   └── results/                 JSON results, committed (env + fixture + numbers)
-├── scripts/build-sidecar.mjs    go build → shared/desktop/resources/bin/<os>-<arch>/
+├── scripts/build-sidecar.mjs    go build → src/shared/desktop/resources/bin/<os>-<arch>/
 ├── docs/  decisions/  stages/   (existing)
 ```
 
 Notes:
 
-- `shared/desktop` and `viewer/renderer` stay separate packages as the Stage 00 document says. That rules out the
+- `src/shared/desktop` and `src/viewer/renderer` stay separate packages as the Stage 00 document says. That rules out the
   single-package `electron-vite` layout. Both packages build with plain Vite (main/preload in library mode),
   which satisfies the "Vite-based Electron setup" rule.
-- `shared/contracts` is the only thing the renderer and desktop share. The renderer never imports from
-  `shared/desktop`.
+- `src/shared/contracts` is the only thing the renderer and desktop share. The renderer never imports from
+  `src/shared/desktop`.
 - Go stays a single module with `internal/` packages. The sidecar is a single static binary per OS/arch.
 
 ---
@@ -603,7 +603,7 @@ collisions), and `churn` (files mutated during a scan). Fixtures are generated i
 
 ### 10.3 Results
 
-`shared/bench/results/<stage>-<date>-<host>.json` holds `{env, fixture, metric, p50, p95, n, commit}`. The `/benchmark` command
+`src/shared/bench/results/<stage>-<date>-<host>.json` holds `{env, fixture, metric, p50, p95, n, commit}`. The `/benchmark` command
 compares the latest result against the stored baseline. Missing measurements are reported as missing and never estimated.
 
 ### 10.4 Provisional numeric budgets
@@ -704,7 +704,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   store. Proposal: `library.settings`, loaded once at startup and written with a debounce. Stage 00 may use `localStorage` for the theme only.
 - **M6 — Renderer store.** "Use selectors for global stores" implies a store library, and no ADR exists. Proposal: **Zustand**
   (about 1 KB, selector-based) plus `useSyncExternalStore` for `PageStore`.
-- **M7 — Contract source of truth.** TS types and Go structs will drift. Proposal: TS `shared/contracts` is canonical, Go
+- **M7 — Contract source of truth.** TS types and Go structs will drift. Proposal: TS `src/shared/contracts` is canonical, Go
   mirrors it by hand, and golden JSON fixtures produced by Go tests are type-checked or validated in TS. There is also a protocol version in `hello`.
 - **M8 — Build and packaging tooling.** This covers Vite for main and preload, the packager choice (electron-builder vs Forge, a Stage P04 decision),
   and the sidecar location in `resources/bin/<os>-<arch>/`.
@@ -739,12 +739,12 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
 - `pnpm-workspace.yaml`, root `package.json` scripts: `dev`, `build`, `build:sidecar`, `lint`, `typecheck`, `test`,
   `test:go`, `test:e2e`, `bench:startup`
 - `tsconfig.base.json` (strict), ESLint flat config, Prettier (`semi: false`), `.editorconfig`, `.gitignore`, `.gitattributes`
-- `scripts/build-sidecar.mjs`: `go build -trimpath` for the host OS/arch, output to `shared/desktop/resources/bin/<os>-<arch>/`
+- `scripts/build-sidecar.mjs`: `go build -trimpath` for the host OS/arch, output to `src/shared/desktop/resources/bin/<os>-<arch>/`
 
-**shared/contracts**
+**src/shared/contracts**
 - `rpc.ts` (`system.ping`, `system.info`), `events.ts` (`sidecar.status`), `errors.ts`, `api.ts` (`PanelythApi`)
 
-**Go (`shared/sidecar`)**
+**Go (`src/shared/sidecar`)**
 - `internal/rpc`: frame reader/writer (4 MiB cap), envelope types, dispatcher with generic
   `Register[P, R]`, in-flight semaphore, per-request context and `cancel` frames, and a single writer goroutine with an event coalescer skeleton
 - `internal/logging`: slog JSON handler to stderr, with level from a flag or environment variable
@@ -756,7 +756,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   (cancel root ctx, drain handlers ≤ 2 s, exit 0)
 - `cmd/panelyth-sidecar/main.go`
 
-**Electron (`shared/desktop`)**
+**Electron (`src/shared/desktop`)**
 - `window.ts`: secure `webPreferences`, CSP, navigation/window-open/permission guards, `ready-to-show`
 - `appProtocol.ts`: `app://panelyth/` serves renderer `dist` in production, with a traversal guard
 - `sidecar/`: `SidecarProcess` (spawn with `windowsHide`, stderr → log, status machine, restart with backoff, ordered
@@ -766,7 +766,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
 - `log.ts`: size-capped rotating log in `app.getPath('logs')`
 - Single-instance lock. Quit path: `before-quit` → preventDefault → sidecar shutdown → `app.exit()`
 
-**React (`viewer/renderer`)**
+**React (`src/viewer/renderer`)**
 - Vite + React + TS strict, Tailwind with CSS-variable tokens and light/dark/system theme (theme stored in `localStorage` for now)
 - `bridge/`: the only module that touches `window.panelyth`
 - `AppShell`: a **static** three-region layout (resizing arrives in Stage 05). Sidebar placeholder, content empty state
@@ -794,7 +794,7 @@ These fix contradiction C10. The numbers are proposed and get calibrated in Stag
   - quitting the app leaves no sidecar process
 - A static check that no `sendSync` or `ipcRenderer.sendSync` appears anywhere, enforced as an ESLint `no-restricted-syntax` rule
 
-**Benchmarks (`shared/bench/scripts/startup.ts`, results → `shared/bench/results/stage-00-*.json`)**
+**Benchmarks (`src/shared/bench/scripts/startup.ts`, results → `src/shared/bench/results/stage-00-*.json`)**
 - Launch → `ready-to-show` → `app:first-render` → sidecar `hello` (10 runs, p50/p95)
 - Idle memory after 10 s: `app.getAppMetrics()` summed, plus sidecar RSS
 - `system.ping` round trip: 1000 sequential and 1000 with 32 concurrent (p50/p95/p99)
@@ -814,7 +814,7 @@ Folder opening, scanning, SQLite, previews, custom thumbnail/media protocols, re
 - [ ] Go tests pass, `gofmt` is clean and `go vet` is clean
 - [ ] renderer and desktop typecheck and lint
 - [ ] no synchronous IPC (lint rule + e2e)
-- [ ] startup, idle-memory and ping baselines recorded in `shared/bench/results/`
+- [ ] startup, idle-memory and ping baselines recorded in `src/shared/bench/results/`
 
 ### Risks
 
@@ -825,4 +825,4 @@ Folder opening, scanning, SQLite, previews, custom thumbnail/media protocols, re
 ### Docs to update at Stage 00 exit
 
 `docs/viewer/stages/00-foundation.md` (rewritten to STAGE-TEMPLATE plus the checklist), `docs/DEVELOPMENT-STAGES.md` (00 done → 01 active),
-`docs/ROADMAP.md`, the new ADRs for M6/M7/M8 and the ADR for shadcn/Tailwind, and `shared/bench/results/`.
+`docs/ROADMAP.md`, the new ADRs for M6/M7/M8 and the ADR for shadcn/Tailwind, and `src/shared/bench/results/`.

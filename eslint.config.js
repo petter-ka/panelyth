@@ -15,10 +15,10 @@ export default tseslint.config(
       "**/dist/**",
       "**/node_modules/**",
       "**/coverage/**",
-      "shared/sidecar/**",
-      "shared/desktop/release/**",
-      "shared/e2e/test-results/**",
-      "shared/e2e/playwright-report/**",
+      "src/shared/sidecar/**",
+      "src/shared/desktop/release/**",
+      "src/shared/e2e/test-results/**",
+      "src/shared/e2e/playwright-report/**",
     ],
   },
   js.configs.recommended,
@@ -34,7 +34,11 @@ export default tseslint.config(
     },
   },
   {
-    files: ["viewer/renderer/**/*.{ts,tsx}", "commander/**/*.{ts,tsx}", "shared/ui/**/*.{ts,tsx}"],
+    files: [
+      "src/viewer/renderer/**/*.{ts,tsx}",
+      "src/commander/**/*.{ts,tsx}",
+      "src/shared/ui/**/*.{ts,tsx}",
+    ],
     languageOptions: { globals: globals.browser },
     plugins: { "react-hooks": reactHooks },
     rules: {
@@ -52,11 +56,11 @@ export default tseslint.config(
   },
   {
     files: [
-      "shared/desktop/**/*.ts",
+      "src/shared/desktop/**/*.ts",
       "scripts/**/*.mjs",
-      "shared/e2e/**/*.ts",
-      "shared/bench/**/*.ts",
-      "shared/contracts/**/*.ts",
+      "src/shared/e2e/**/*.ts",
+      "src/shared/bench/**/*.ts",
+      "src/shared/contracts/**/*.ts",
     ],
     languageOptions: { globals: globals.node },
   },

@@ -55,7 +55,7 @@ implemented and where it was refined.
 
 ## As built (Stage C07)
 
-- **Package:** `shared/sidecar/internal/archive`: readers (zip, tar, tar.gz, tar.bz2, single .gz), the listing, the
+- **Package:** `src/shared/sidecar/internal/archive`: readers (zip, tar, tar.gz, tar.bz2, single .gz), the listing, the
   extractor, pack, test, the 7-Zip adapter, the session source and the manager of open archives.
 - **Listing:** read once per open archive into compact entries (about 76 bytes per entry for a 100k-entry zip;
   budget 100). Folders the archive does not store are created from file paths; a folder's size is the sum of its

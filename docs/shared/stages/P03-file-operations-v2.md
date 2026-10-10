@@ -134,7 +134,7 @@ e2e fixtures had again been partly emptied (`images-12mp-120`, `images-48mp-3`, 
 markers kept, contents gone; see C03's record); they were deleted and regenerated.
 
 Measurements (reference machine: i9-13900K, C: NVMe ~98% full, D: and E: SATA HDDs, Windows 11, Defender on;
-`shared/bench/results/stage-P03-2026-10-06-*`):
+`src/shared/bench/results/stage-P03-2026-10-06-*`):
 
 | Metric | Result | Budget |
 |---|---|---|

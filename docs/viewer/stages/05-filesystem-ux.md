@@ -97,7 +97,7 @@ Backend and IPC:
 
 ## Benchmarks
 
-Windows 11, i9-13900K, production build. Results: `shared/bench/results/stage-05-2026-09-30-e2e-workspace.jsonl`,
+Windows 11, i9-13900K, production build. Results: `src/shared/bench/results/stage-05-2026-09-30-e2e-workspace.jsonl`,
 `stage-05-2026-09-30-petter-index*.json`, `stage-05-2026-09-30-petter-startup*.json`.
 
 | Metric | Result | Target |

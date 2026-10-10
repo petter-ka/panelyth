@@ -10,7 +10,7 @@ updates and the ffmpeg/ffprobe build to ship stay Stage P06 decisions.
 - One product package per OS holds the shell with both apps (ADR-0031): main, two preloads, the viewer's and the
   commander's renderers, and the Go sidecar.
 - The renderers are served from disk through `app://panelyth/` and `app://commander/`; the sidecar is a child process.
-  `shared/desktop/src/main/paths.ts` already reads all three from `process.resourcesPath` in packaged builds
+  `src/shared/desktop/src/main/paths.ts` already reads all three from `process.resourcesPath` in packaged builds
   (`renderer/`, `commander/`, `bin/`).
 - No native Node modules: the sidecar is pure Go (`CGO_ENABLED=0`, ADR-0019), so it cross-compiles for every target
   arch from one machine.
@@ -21,11 +21,11 @@ updates and the ffmpeg/ffprobe build to ship stay Stage P06 decisions.
 
 ## Decision
 
-- **electron-builder**, configured in `shared/desktop/electron-builder.yml`, run by `pnpm package`
+- **electron-builder**, configured in `src/shared/desktop/electron-builder.yml`, run by `pnpm package`
   (`scripts/package.mjs`): it builds the JS bundles and the sidecar for every arch the host OS's targets name, then
-  packages. Output: `shared/desktop/release/` (ignored by git).
+  packages. Output: `src/shared/desktop/release/` (ignored by git).
 - Layout: `app.asar` holds `dist/` (main and preloads, without source maps) and `package.json`; `extraResources`
-  copies `viewer/renderer/dist` → `renderer/`, `commander/renderer/dist` → `commander/` and
+  copies `src/viewer/renderer/dist` → `renderer/`, `src/commander/renderer/dist` → `commander/` and
   `resources/bin/<platform>-<arch>/` → `bin/`, so each package carries only its arch's sidecar.
 - `name` becomes `panelyth` and `productName` `Panelyth` in the packaged `package.json` (the workspace name would name
   the data folders `@panelyth/desktop`).
@@ -38,7 +38,7 @@ updates and the ffmpeg/ffprobe build to ship stay Stage P06 decisions.
   → `1.2.3`). Run by hand, it uploads the packages as workflow artifacts instead.
 - **CI**: `.github/workflows/ci.yml` runs lint, typecheck and the Go race tests on Linux, and the unit, Go, e2e and
   packaged smoke tests on Windows, macOS and Linux.
-- The packaged smoke test (`shared/e2e/smoke/`, `pnpm test:smoke`) drives the packaged app through its UI: packaged
+- The packaged smoke test (`src/shared/e2e/smoke/`, `pnpm test:smoke`) drives the packaged app through its UI: packaged
   builds ignore the unpackaged test hooks (canned dialogs, recorded shell calls, `PANELYTH_USER_DATA_DIR`), so the
   profile is isolated with `--user-data-dir`.
 

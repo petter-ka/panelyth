@@ -66,24 +66,26 @@ filtered per query) and ADR-0027 (a capability profile per app view).
 ### Code layout
 
 ```text
-shared/                   used by both apps
-  desktop/                the shell: Electron main, one preload per app (@panelyth/desktop)
-  contracts/              wire types, guards, golden fixtures (@panelyth/contracts)
-  sidecar/                the Go sidecar for both apps (module panelyth/sidecar)
-  e2e/                    Playwright harness; specs/viewer/, later specs/commander/ (@panelyth/e2e)
-  bench/                  startup benchmark, empty-Electron baseline, results/ (@panelyth/bench)
-  ui/                     (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, app switcher rail
-  renderer-core/          (Stage P01) bridge, page store, selection algebra, keymap, theme, settings, sidecar store
-  media-ui/               (Stage C05) image viewer, video player; tile components (Stage C10)
-viewer/
-  renderer/               the viewer's React app (@panelyth/renderer)
-commander/
-  renderer/               (Stage C00) the commander's React app
+src/
+  shared/                 used by both apps
+    desktop/              the shell: Electron main, one preload per app (@panelyth/desktop)
+    contracts/            wire types, guards, golden fixtures (@panelyth/contracts)
+    sidecar/              the Go sidecar for both apps (module panelyth/sidecar)
+    e2e/                  Playwright harness; specs/viewer/, later specs/commander/ (@panelyth/e2e)
+    bench/                startup benchmark, empty-Electron baseline, results/ (@panelyth/bench)
+    ui/                   (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, app switcher rail
+    renderer-core/        (Stage P01) bridge, page store, selection algebra, keymap, theme, settings, sidecar store
+    media-ui/             (Stage C05) image viewer, video player; tile components (Stage C10)
+  viewer/
+    renderer/             the viewer's React app (@panelyth/renderer)
+  commander/
+    renderer/             (Stage C00) the commander's React app
 scripts/                  repository tooling (dev, build, Go wrapper, bench results)
 ```
 
 The folders were reorganized on 2026-10-05 (from `apps/desktop`, `apps/renderer`, `packages/contracts`,
-`native/panelyth-go`, `tests/e2e` and `bench`).
+`native/panelyth-go`, `tests/e2e` and `bench`). On 2026-10-10 `shared/`, `viewer/` and `commander/` moved under `src/`;
+`scripts/` stays in the repository root.
 
 A separate `desktop-core` package (ADR-0025) is not needed: there is one main process.
 

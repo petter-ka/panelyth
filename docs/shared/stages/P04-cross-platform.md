@@ -48,12 +48,12 @@ not run by hand here.
 
 ### Packaging and release (ADR-0032)
 
-- Packager: **electron-builder** (`shared/desktop/electron-builder.yml`), run by `pnpm package`
+- Packager: **electron-builder** (`src/shared/desktop/electron-builder.yml`), run by `pnpm package`
   (`scripts/package.mjs`), which builds the bundles and the sidecar for each target arch
   (`pnpm build:sidecar --arch x64,arm64 [--platform …]` now cross-compiles). Windows NSIS (x64), macOS DMG and zip
   (arm64, x64; ad-hoc signed), Linux AppImage and tar.gz (x64). The sidecar ships per arch in `resources/bin/`, the
   renderers in `resources/renderer/` and `resources/commander/`, as `paths.ts` already expected.
-- Packaged smoke test: `shared/e2e/smoke/packaged.spec.ts` (`pnpm test:smoke`, after `pnpm package --dir`): launch
+- Packaged smoke test: `src/shared/e2e/smoke/packaged.spec.ts` (`pnpm test:smoke`, after `pnpm package --dir`): launch
   with a fresh profile, list a folder in the commander, copy an image with F5 (bytes compared), switch to the viewer
   (the folder carries over), preview the image (fit layer decoded), quit; the sidecar process exits with the shell.
   Passes on Linux (3.1 s).
@@ -111,7 +111,7 @@ not run by hand here.
   the spec waits for the focus. Timing budgets are set for the reference machine; the shared runners missed them by
   2-4x (Linux: C03 tab switch 76 ms, budget 50; Windows: C06 find first result 1,327 ms, budget 300; macOS: tab
   switch 168 ms). A doubled CI gate was tried first and was not enough. Timing and long-task budgets now go through
-  `expectWithinBudget` (`shared/e2e/launch.ts`): they fail on the reference machine and developer machines, and under
+  `expectWithinBudget` (`src/shared/e2e/launch.ts`): they fail on the reference machine and developer machines, and under
   `CI` an over-budget value is a GitHub warning annotation. Structural checks (bounded mounted rows, heap growth, the
   dead drive never blocking) stay hard everywhere. Budgets are measured on the reference machine (P05).
 

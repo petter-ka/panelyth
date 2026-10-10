@@ -97,7 +97,7 @@ Deviations from the scope above:
 Found and fixed while measuring: packing a zip created a deflate compressor (about 1 MB of state) per entry; pooling
 them per level made packing 10k files 2.8 times faster (1.66 s → 0.60 s).
 
-Measurements (reference machine, 32 threads, warm cache; `shared/bench/results/stage-C07-2026-10-07-petter-archives-2.json`,
+Measurements (reference machine, 32 threads, warm cache; `src/shared/bench/results/stage-C07-2026-10-07-petter-archives-2.json`,
 `-archives.json` before the pooling fix, `stage-C07-2026-10-07-e2e-archives.jsonl`,
 `stage-C07-2026-10-07-petter-sessions.json`). The OS tool is Windows' `tar.exe` (bsdtar).
 

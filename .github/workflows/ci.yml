@@ -1,5 +1,5 @@
-# Stage P04: lint once, unit and Go tests, the e2e suites of both apps and
-# the packaged smoke test on Windows, macOS and Linux.
+# Stage P04: lint once, unit and Go tests and the packaged smoke test on
+# Windows, macOS and Linux. The e2e suites are disabled (see the test job).
 name: CI
 
 on:
@@ -27,14 +27,14 @@ jobs:
           cache: pnpm
       - uses: actions/setup-go@v5
         with:
-          go-version-file: shared/sidecar/go.mod
-          cache-dependency-path: shared/sidecar/go.sum
+          go-version-file: src/shared/sidecar/go.mod
+          cache-dependency-path: src/shared/sidecar/go.sum
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
       # ADR-0013: race runs need cgo, which only the Linux runner has set up.
       - name: Go race tests
-        working-directory: shared/sidecar
+        working-directory: src/shared/sidecar
         env:
           CGO_ENABLED: "1"
         run: go test -race -count=1 -timeout=900s ./...
@@ -56,8 +56,8 @@ jobs:
           cache: pnpm
       - uses: actions/setup-go@v5
         with:
-          go-version-file: shared/sidecar/go.mod
-          cache-dependency-path: shared/sidecar/go.sum
+          go-version-file: src/shared/sidecar/go.mod
+          cache-dependency-path: src/shared/sidecar/go.sum
       - run: pnpm install --frozen-lockfile
       # Ubuntu 24.04 restricts unprivileged user namespaces, which Chromium's
       # sandbox needs; the unpackaged Electron has no setuid helper either.
@@ -80,22 +80,23 @@ jobs:
       - name: Build
         id: build
         run: pnpm build
-      # The viewer's specs still click the "Open folder…" button that the
-      # startup folder (Stage 08.5) and C06 removed from the first screen; they
-      # join this step once repaired (open item, docs/shared/stages/P04).
-      - name: E2E (commander and app switch)
-        # Windows: reported, not blocking, until its timing races are fixed
-        # (open item in docs/shared/stages/P04-cross-platform.md). Linux and
-        # macOS block.
-        continue-on-error: ${{ runner.os == 'Windows' }}
-        shell: bash
-        run: |
-          specs="specs/commander specs/switch.spec.ts"
-          if [ "$RUNNER_OS" = "Linux" ]; then
-            xvfb-run -a -s "-screen 0 1920x1080x24" pnpm --filter @panelyth/e2e exec playwright test $specs
-          else
-            pnpm --filter @panelyth/e2e exec playwright test $specs
-          fi
+      # Disabled: the e2e suites use too many runner minutes. Uncomment to restore.
+      # # The viewer's specs still click the "Open folder…" button that the
+      # # startup folder (Stage 08.5) and C06 removed from the first screen; they
+      # # join this step once repaired (open item, docs/shared/stages/P04).
+      # - name: E2E (commander and app switch)
+      #   # Windows: reported, not blocking, until its timing races are fixed
+      #   # (open item in docs/shared/stages/P04-cross-platform.md). Linux and
+      #   # macOS block.
+      #   continue-on-error: ${{ runner.os == 'Windows' }}
+      #   shell: bash
+      #   run: |
+      #     specs="specs/commander specs/switch.spec.ts"
+      #     if [ "$RUNNER_OS" = "Linux" ]; then
+      #       xvfb-run -a -s "-screen 0 1920x1080x24" pnpm --filter @panelyth/e2e exec playwright test $specs
+      #     else
+      #       pnpm --filter @panelyth/e2e exec playwright test $specs
+      #     fi
       # Packaging runs even when an e2e spec failed: the release builds
       # depend on it, and it needs only the build.
       - name: Package (unpacked)
@@ -115,5 +116,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: e2e-results-${{ matrix.os }}
-          path: shared/e2e/test-results/
+          path: src/shared/e2e/test-results/
           if-no-files-found: ignore

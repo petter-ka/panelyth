@@ -69,7 +69,7 @@ in amber). The image sits on the neutral canvas. A failure shows "This image can
 
 ## Benchmarks
 
-Windows 11, i9-13900K, production build, 1440×900 window. Results: `shared/bench/results/stage-04-2026-09-30-e2e-viewer.jsonl`,
+Windows 11, i9-13900K, production build, 1440×900 window. Results: `src/shared/bench/results/stage-04-2026-09-30-e2e-viewer.jsonl`,
 `stage-04-2026-09-30-petter-startup.json`.
 
 | Metric | Result | Target |

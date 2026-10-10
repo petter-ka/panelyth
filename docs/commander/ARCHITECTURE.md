@@ -9,9 +9,9 @@ covers what is specific to the commander.
 ## Processes and packages
 
 ```text
-shared/desktop                the shell: preload/commander and the commander capability profile in main
-commander/renderer     React app (shared/ui, shared/renderer-core, shared/media-ui)
-shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare
+src/shared/desktop                the shell: preload/commander and the commander capability profile in main
+src/commander/renderer     React app (src/shared/ui, src/shared/renderer-core, src/shared/media-ui)
+src/shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare
 ```
 
 ## Renderer composition
@@ -30,7 +30,7 @@ AppShell
 features/
  panels      panel and tab state, active panel, layout
  listing     session lifecycle per visible tab (open, page, invalidate, close)
- cursor      cursor, anchor and marks per tab (selection algebra from shared/renderer-core)
+ cursor      cursor, anchor and marks per tab (selection algebra from src/shared/renderer-core)
  quicksearch type-ahead over the session (query.locate)
  drives · hotlist · history
  jobs        queue, dialogs, conflict resolution (extends the shared job store)
@@ -113,7 +113,7 @@ Enter on a folder
 
 ## Quick view and lister
 
-- Images and videos use the shared `ImageViewer` and `VideoPlayer` (moved to `shared/media-ui` in Stage C05) with
+- Images and videos use the shared `ImageViewer` and `VideoPlayer` (moved to `src/shared/media-ui` in Stage C05) with
   the shared preview cache and token protocol.
 - Text and hex read **byte windows** through the token protocol with HTTP Range (ADR-0027). The scroll position maps
   to a byte offset, and lines are found inside the loaded window, so a multi-GB file opens instantly with bounded

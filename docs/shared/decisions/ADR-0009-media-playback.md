@@ -36,7 +36,7 @@ image originals; Stage 06 adds video. `media.open` (renderer) returns only the t
 `file.open` (commander only) mints tokens for any file kind, bound to the commander's origin; the scheme is
 registered with `corsEnabled`, answers `OPTIONS` preflights for `Range`, and only the commander's CSP may `fetch()`
 it. The lister and quick view read 64 KiB chunks with Range (a 4 MiB LRU per open file). `ImageViewer` and
-`VideoPlayer` moved to `shared/media-ui` and serve both apps (ADR-0025).
+`VideoPlayer` moved to `src/shared/media-ui` and serve both apps (ADR-0025).
 
 ## Rules
 

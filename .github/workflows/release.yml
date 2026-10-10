@@ -61,8 +61,8 @@ jobs:
           cache: pnpm
       - uses: actions/setup-go@v5
         with:
-          go-version-file: shared/sidecar/go.mod
-          cache-dependency-path: shared/sidecar/go.sum
+          go-version-file: src/shared/sidecar/go.mod
+          cache-dependency-path: src/shared/sidecar/go.sum
       - run: pnpm install --frozen-lockfile
       - name: Package
         run: pnpm package "-c.extraMetadata.version=${{ steps.version.outputs.version }}"
@@ -76,9 +76,9 @@ jobs:
           TAG: ${{ github.event.release.tag_name }}
         run: |
           shopt -s nullglob
-          files=(shared/desktop/release/*.exe shared/desktop/release/*.dmg shared/desktop/release/*.zip)
+          files=(src/shared/desktop/release/*.exe src/shared/desktop/release/*.dmg src/shared/desktop/release/*.zip)
           if [ ${#files[@]} -eq 0 ]; then
-            echo "::error::no packages in shared/desktop/release"
+            echo "::error::no packages in src/shared/desktop/release"
             exit 1
           fi
           gh release upload "$TAG" "${files[@]}" --clobber
@@ -88,7 +88,7 @@ jobs:
         with:
           name: panelyth-${{ steps.version.outputs.version }}-${{ runner.os }}
           path: |
-            shared/desktop/release/*.exe
-            shared/desktop/release/*.dmg
-            shared/desktop/release/*.zip
+            src/shared/desktop/release/*.exe
+            src/shared/desktop/release/*.dmg
+            src/shared/desktop/release/*.zip
           if-no-files-found: error

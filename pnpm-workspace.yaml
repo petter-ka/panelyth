@@ -1,13 +1,13 @@
 packages:
-  - shared/desktop
-  - shared/contracts
-  - shared/e2e
-  - shared/bench
-  - shared/ui
-  - shared/renderer-core
-  - shared/media-ui
-  - viewer/renderer
-  - commander/renderer
+  - src/shared/desktop
+  - src/shared/contracts
+  - src/shared/e2e
+  - src/shared/bench
+  - src/shared/ui
+  - src/shared/renderer-core
+  - src/shared/media-ui
+  - src/viewer/renderer
+  - src/commander/renderer
 
 onlyBuiltDependencies:
   - electron

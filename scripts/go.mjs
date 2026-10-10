@@ -6,7 +6,7 @@ import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 import { resultPath } from "./results.mjs"
 
-const goRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "shared", "sidecar")
+const goRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "src", "shared", "sidecar")
 
 /** `go` from PATH, falling back to the per-user Windows install location. */
 export function goBinary() {

@@ -36,7 +36,7 @@ pnpm lint           # eslint + prettier + gofmt + go vet
 pnpm typecheck
 pnpm test           # contracts, desktop, renderer, Go
 pnpm test:e2e       # Playwright against the built Electron app
-BENCH_STAGE=02 pnpm bench:startup   # startup / idle memory / IPC → shared/bench/results/ (never overwrites)
+BENCH_STAGE=02 pnpm bench:startup   # startup / idle memory / IPC → src/shared/bench/results/ (never overwrites)
 BENCH_STAGE=02 pnpm bench:index     # scan / write batches / paging on 100k files
 BENCH_STAGE=02 pnpm bench:previews  # thumbnail throughput, cache hits, coalescing
 pnpm bench:go       # Go micro-benchmarks

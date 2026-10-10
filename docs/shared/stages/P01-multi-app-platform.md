@@ -9,23 +9,23 @@ Done, because Stage C00 needs it:
 
 - **Folder layout** (scope 1) and **comment follow-ups** (scope 6).
 - **Shell with app views** (scope 3). The viewer stays the window's own web contents; the commander is a
-  `WebContentsView` laid over it (`shared/desktop/src/main/shell.ts`), created on the first switch and kept alive
+  `WebContentsView` laid over it (`src/shared/desktop/src/main/shell.ts`), created on the first switch and kept alive
   hidden. `app.switch` and `app.visibility` work; the shell owns the window title; a crashed commander view reloads
   alone. This resolves ADR-0031's `WebContentsView` open point.
 - **Capability profiles per app view** (scope 4). Main maps the calling frame's origin (`app://panelyth` or
   `app://commander`, or each dev server) to its app and checks the method against `APP_METHODS[app]`
-  (`shared/contracts/src/rpc.ts`). Each app has its own preload (`preload.cjs`, `commander.cjs`).
+  (`src/shared/contracts/src/rpc.ts`). Each app has its own preload (`preload.cjs`, `commander.cjs`).
 - **Tooling** (scope 5). `BENCH_STAGE` accepts `NN`, `NN.N`, `PNN`, `CNN`; the e2e harness has `commanderPage`,
   `shellState` and `commanderEnv`; `pnpm build` and `pnpm dev` include the commander.
-- **Part of scope 2:** `shared/ui` with the design tokens (`styles.css`, moved from the viewer with its token test),
+- **Part of scope 2:** `src/shared/ui` with the design tokens (`styles.css`, moved from the viewer with its token test),
   the theme and interface-size stores (now synced through `shared.appearance`) and the app switch button. The viewer
   re-exports them, so its imports did not change.
 
 Moved since, by the commander stages that needed them (2026-10-05): the page store (C01), the selection algebra, the
-keymap engine and the switch-settings store (`shared/renderer-core`, C02), and `Button`, `Kbd`, `DialogWindow` and the
-shortcuts dialog (`shared/ui`, C02); the viewer re-exports or wraps them, so its imports and behavior did not change.
+keymap engine and the switch-settings store (`src/shared/renderer-core`, C02), and `Button`, `Kbd`, `DialogWindow` and the
+shortcuts dialog (`src/shared/ui`, C02); the viewer re-exports or wraps them, so its imports and behavior did not change.
 
-Still open: the rest of scope 2 (`shared/renderer-core`: bridge core, settings and sidecar stores; the remaining UI
+Still open: the rest of scope 2 (`src/shared/renderer-core`: bridge core, settings and sidecar stores; the remaining UI
 primitives: menus, icons) and its bundle-size check.
 
 ## Objective
@@ -46,18 +46,19 @@ permissions, and extract the shared renderer packages, without changing what the
 
 ### 1. Folder layout — done early (2026-10-05)
 
-The code already moved into `shared/`, `viewer/` and `commander/` (ADR-0031 "Code layout"): `shared/desktop`,
-`shared/contracts`, `shared/sidecar`, `shared/e2e`, `shared/bench`, `viewer/renderer`. Package names were kept. All
+The code already moved into `shared/`, `viewer/` and `commander/` (ADR-0031 "Code layout"; under `src/` since
+2026-10-10): `src/shared/desktop`, `src/shared/contracts`, `src/shared/sidecar`, `src/shared/e2e`, `src/shared/bench`,
+`src/viewer/renderer`. Package names were kept. All
 suites passed after the move, except tests that were already failing.
 
 ### 2. Extract the shared renderer packages
 
 | Package | Moves from the viewer | Notes |
 |---|---|---|
-| `shared/ui` | `styles/index.css` (tokens, themes, interface size), `components/ui/*`, `Notice`, icons, `tokens.test.ts` | Tailwind must scan the package's sources |
-| `shared/renderer-core` | bridge core (envelope → `PanelythError`), page store, selection algebra, keymap engine (actions registered per app), theme, interface size, settings and sidecar stores | feature stores stay in the apps |
+| `src/shared/ui` | `styles/index.css` (tokens, themes, interface size), `components/ui/*`, `Notice`, icons, `tokens.test.ts` | Tailwind must scan the package's sources |
+| `src/shared/renderer-core` | bridge core (envelope → `PanelythError`), page store, selection algebra, keymap engine (actions registered per app), theme, interface size, settings and sidecar stores | feature stores stay in the apps |
 
-- Packages ship TypeScript source bundled by each app's Vite build (the `shared/contracts` pattern), unless this
+- Packages ship TypeScript source bundled by each app's Vite build (the `src/shared/contracts` pattern), unless this
   stage measures a reason to prebuild them.
 - Dependency rules (lint): apps may import packages; packages never import apps; renderer packages never import
   `electron` or `node:*`.
@@ -66,7 +67,7 @@ suites passed after the move, except tests that were already failing.
 
 - The main window becomes a `BaseWindow` with one `WebContentsView` per app. This stage hosts only the viewer view, plus
   a test-only second view (enabled by an environment variable in unpackaged builds) to prove switching.
-- One preload per app (`shared/desktop/src/preload/viewer.ts` now, `preload/commander.ts` in C00).
+- One preload per app (`src/shared/desktop/src/preload/viewer.ts` now, `preload/commander.ts` in C00).
 - `app.switch({ to })` (renderer → main) and `app.visibility { app, visible }` (main → renderer): show one view, hide
   the other, move keyboard focus, update the window title. A view is created on the first switch to it and then kept
   alive.
@@ -78,13 +79,13 @@ suites passed after the move, except tests that were already failing.
 
 - Contracts tag each method with the apps that may call it. Main keys every call by the sender's web contents and
   checks it against that view's profile; each preload exposes only its app's methods.
-- The viewer's surface stays exactly as it is, plus `app.switch` (`shared/e2e/specs/viewer/foundation.spec.ts` changes only by
+- The viewer's surface stays exactly as it is, plus `app.switch` (`src/shared/e2e/specs/viewer/foundation.spec.ts` changes only by
   that entry).
 
 ### 5. Tooling
 
 - `BENCH_STAGE` accepts `NN`, `NN.N`, `PNN` and `CNN`, and the e2e result helpers take the same IDs.
-- `shared/e2e/launch.ts`: `launchApp({ app })` chooses the app shown at start; helpers return each app view's page.
+- `src/shared/e2e/launch.ts`: `launchApp({ app })` chooses the app shown at start; helpers return each app view's page.
 - `pnpm` scripts: the existing commands keep working; the commander renderer joins them in C00.
 
 ### 6. Documentation follow-ups — done early (2026-10-05)
@@ -129,7 +130,7 @@ No regression beyond run-to-run noise (about ±5 %). The bundle must not grow.
 - Playwright access to `WebContentsView` pages: verify first; fall back to CDP targets if needed.
 - Focus and keyboard routing between views, drag and drop from the OS into a view, and DevTools per view behave
   differently from `BrowserWindow`. Mitigation: a spike before converting the window.
-- Tailwind class scanning across packages: verify that `shared/ui` styles reach the bundle.
+- Tailwind class scanning across packages: verify that `src/shared/ui` styles reach the bundle.
 - Hidden coupling (shared code importing viewer feature stores). Mitigation: move pure logic first, and keep feature
   stores in the app.
 

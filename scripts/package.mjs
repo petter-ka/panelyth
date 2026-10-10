@@ -3,14 +3,14 @@
 // runs electron-builder. Extra arguments go to electron-builder, for example
 // `pnpm package --dir` (unpacked, for the smoke test) or
 // `pnpm package -c.extraMetadata.version=1.2.3`.
-// Output: shared/desktop/release/.
+// Output: src/shared/desktop/release/.
 import { execFileSync } from "node:child_process"
 import { createRequire } from "node:module"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
-const desktop = join(root, "shared", "desktop")
+const desktop = join(root, "src", "shared", "desktop")
 const archs = { darwin: "arm64,x64", win32: "x64", linux: "x64" }[process.platform]
 if (!archs) throw new Error(`no package targets for ${process.platform}`)
 const os = { darwin: "--mac", win32: "--win", linux: "--linux" }[process.platform]

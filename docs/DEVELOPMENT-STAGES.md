@@ -77,15 +77,15 @@ A stage is complete only when:
 | Stage | Completed | Record |
 |---|---|---|
 | 00 — Foundation | 2026-09-30 | `docs/viewer/stages/00-foundation.md` |
-| 01 — File index | 2026-09-30 | `docs/viewer/stages/01-file-index.md`, `shared/bench/results/stage-01-*` |
-| 02 — Thumbnail pipeline + cache | 2026-09-30 | `docs/viewer/stages/02-thumbnail-pipeline.md`, `shared/bench/results/stage-02-*` |
-| 03 — Virtualized tile view | 2026-09-30 | `docs/viewer/stages/03-tile-view.md`, `shared/bench/results/stage-03-*` |
-| 04 — Image viewer | 2026-09-30 | `docs/viewer/stages/04-viewer.md`, `shared/bench/results/stage-04-*` |
-| 05 — Filesystem UX + navigation + search + sort | 2026-09-30 | `docs/viewer/stages/05-filesystem-ux.md`, `shared/bench/results/stage-05-*` |
-| 06 — Video playback + media preview | 2026-10-01 | `docs/viewer/stages/06-media-playback.md`, `shared/bench/results/stage-06-*` |
-| 07 — Batch operations + metadata foundations | 2026-10-01 | `docs/viewer/stages/07-batch-and-metadata.md`, `shared/bench/results/stage-07-*` |
-| 08.6 — UI polish v2 | 2026-10-05 | `docs/viewer/stages/08.6-ui-polish-v2.md`, `shared/bench/results/stage-08.6-*` |
-| C00 — Commander foundation and the app switch | 2026-10-05 | `docs/commander/stages/C00-foundation.md`, `shared/bench/results/stage-C00-*` |
+| 01 — File index | 2026-09-30 | `docs/viewer/stages/01-file-index.md`, `src/shared/bench/results/stage-01-*` |
+| 02 — Thumbnail pipeline + cache | 2026-09-30 | `docs/viewer/stages/02-thumbnail-pipeline.md`, `src/shared/bench/results/stage-02-*` |
+| 03 — Virtualized tile view | 2026-09-30 | `docs/viewer/stages/03-tile-view.md`, `src/shared/bench/results/stage-03-*` |
+| 04 — Image viewer | 2026-09-30 | `docs/viewer/stages/04-viewer.md`, `src/shared/bench/results/stage-04-*` |
+| 05 — Filesystem UX + navigation + search + sort | 2026-09-30 | `docs/viewer/stages/05-filesystem-ux.md`, `src/shared/bench/results/stage-05-*` |
+| 06 — Video playback + media preview | 2026-10-01 | `docs/viewer/stages/06-media-playback.md`, `src/shared/bench/results/stage-06-*` |
+| 07 — Batch operations + metadata foundations | 2026-10-01 | `docs/viewer/stages/07-batch-and-metadata.md`, `src/shared/bench/results/stage-07-*` |
+| 08.6 — UI polish v2 | 2026-10-05 | `docs/viewer/stages/08.6-ui-polish-v2.md`, `src/shared/bench/results/stage-08.6-*` |
+| C00 — Commander foundation and the app switch | 2026-10-05 | `docs/commander/stages/C00-foundation.md`, `src/shared/bench/results/stage-C00-*` |
 
 ## Active stage
 

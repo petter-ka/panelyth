@@ -48,10 +48,10 @@ the calling web contents, and method groups are tagged with the apps that may ca
 
 ### Source of truth
 
-- `shared/contracts` (TypeScript) is **canonical**. Go structs mirror it.
-- Drift is caught by **golden fixtures**: `shared/sidecar/internal/app/golden_test.go` captures real
-  frames into `shared/contracts/fixtures/*.json` (`go test ./internal/app -run TestGoldenFrames -update`),
-  and `shared/contracts/test/fixtures.test.ts` validates them with the runtime guards in `guards.ts`.
+- `src/shared/contracts` (TypeScript) is **canonical**. Go structs mirror it.
+- Drift is caught by **golden fixtures**: `src/shared/sidecar/internal/app/golden_test.go` captures real
+  frames into `src/shared/contracts/fixtures/*.json` (`go test ./internal/app -run TestGoldenFrames -update`),
+  and `src/shared/contracts/test/fixtures.test.ts` validates them with the runtime guards in `guards.ts`.
   Changing a contract therefore requires touching both sides and regenerating the fixtures.
 
 ## Why
