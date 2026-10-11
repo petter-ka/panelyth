@@ -50,8 +50,8 @@ for. People coming from Total Commander find their keys where they expect them.
   show that folder, relative to the panel's, muted before the name.
 - **Column header:** Name, Ext, Size, Date, Attr (the Full view is a TanStack Table, ADR-0028). The sort column shows
   ↑ or ↓; clicking a header sorts in Go, never in the browser. Widths and layouts persist per panel. Drag a column
-  header to reorder it, or drag its edge to resize it. Double-click the edge to fit the header and
-  currently virtualized cells. Right-click a header to sort, move, hide or show columns, reset widths and pin columns
+  header's edge to resize it; headers themselves do not drag. Double-click the edge to fit the header and
+  currently virtualized cells. Right-click a header to sort, move, hide or show columns (drag the entries of the "Show columns" list to reorder them), reset widths and pin columns
   to the logical start or end. Name always stays visible.
 - **Rows:** fixed height per interface size (S 20 px, M 22 px, L 26 px).
   - a 16 px type icon in the macOS style, filled and in color: a blue folder, a picture, a film frame, a music note,

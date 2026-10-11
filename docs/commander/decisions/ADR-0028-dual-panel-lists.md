@@ -44,7 +44,7 @@ sizes and only the bounded mounted window is rendered while the user resizes or 
 
 - **`@tanstack/react-table`** (headless) owns the table model: column definitions (Name, Ext, Size, Date, Attr),
   header rendering, sort state, sizing, visibility, order and pinning. Every column can be resized; Name fills the
-  remaining width until the user sets a width. Header drag reorders columns, double-clicking a resize edge fits the
+  remaining width until the user sets a width. Dragging the column menu's list entries reorders columns (headers do not drag), double-clicking a resize edge fits the
   header and currently virtualized cells, and the header context menu exposes sorting, visibility, movement, pinning
   and width reset. Layout and widths persist per panel. It renders into our own markup with design tokens; no table
   styles come with it.

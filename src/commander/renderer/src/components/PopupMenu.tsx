@@ -26,12 +26,16 @@ export interface MenuEntry {
   checked?: boolean
   /** Keep the menu open after selecting (useful for multiple visibility toggles). */
   keepOpen?: boolean
+  /** Makes the entry draggable; entries with a dragId reorder among themselves via onReorder. */
+  dragId?: string
   onSelect?: () => void
 }
 
 interface PopupMenuProps {
   label: string
   entries: readonly MenuEntry[]
+  /** A dragged entry (its dragId) was dropped before or after another. */
+  onReorder?(source: string, target: string, after: boolean): void
   onClose(): void
   testId?: string
   /** Extra content under the entries ("Updating…"). */
@@ -39,6 +43,8 @@ interface PopupMenuProps {
   className?: string
   style?: CSSProperties
 }
+
+const MENU_DRAG_TYPE = "application/x-panelyth-menu-entry"
 
 const selectable = (e: MenuEntry | undefined): boolean =>
   !!e && !e.heading && !e.separator && !e.disabled
@@ -51,6 +57,7 @@ const selectable = (e: MenuEntry | undefined): boolean =>
 export function PopupMenu({
   label,
   entries,
+  onReorder,
   onClose,
   testId,
   footer,
@@ -63,6 +70,8 @@ export function PopupMenu({
     return current >= 0 ? current : entries.findIndex(selectable)
   }, [entries])
   const [focus, setFocus] = useState(firstSelectable)
+  /** The entry a drag is over, and which side of it the drop would land. */
+  const [dropAt, setDropAt] = useState<{ id: string; after: boolean } | null>(null)
   const shown = selectable(entries[focus]) ? focus : firstSelectable
 
   // Takes the keys while open and gives them back on close (the panel's
@@ -169,7 +178,33 @@ export function PopupMenu({
             data-focused={index === shown}
             onMouseEnter={() => selectable(entry) && setFocus(index)}
             onClick={() => choose(index)}
-            className={`flex h-7 cursor-default items-center gap-3 px-3 ${entry.disabled ? "text-muted" : "text-text"} data-[focused=true]:bg-accent/20`}
+            draggable={entry.dragId !== undefined && onReorder !== undefined}
+            onDragStart={(e) => {
+              if (entry.dragId === undefined) return
+              e.dataTransfer.setData(MENU_DRAG_TYPE, entry.dragId)
+              e.dataTransfer.effectAllowed = "move"
+            }}
+            onDragOver={(e) => {
+              if (entry.dragId === undefined || !e.dataTransfer.types.includes(MENU_DRAG_TYPE))
+                return
+              e.preventDefault()
+              e.dataTransfer.dropEffect = "move"
+              const bounds = e.currentTarget.getBoundingClientRect()
+              setDropAt({ id: entry.id, after: e.clientY > bounds.top + bounds.height / 2 })
+            }}
+            onDragLeave={(e) => {
+              if (e.currentTarget === e.target) setDropAt(null)
+            }}
+            onDragEnd={() => setDropAt(null)}
+            onDrop={(e) => {
+              const source = e.dataTransfer.getData(MENU_DRAG_TYPE)
+              const after = dropAt?.after ?? false
+              setDropAt(null)
+              if (!source || entry.dragId === undefined) return
+              e.preventDefault()
+              onReorder?.(source, entry.dragId, after)
+            }}
+            className={`flex h-7 cursor-default items-center gap-3 border-y-2 border-transparent px-3 ${entry.disabled ? "text-muted" : "text-text"} data-[focused=true]:bg-accent/20 ${dropAt?.id === entry.id ? (dropAt.after ? "border-b-accent" : "border-t-accent") : ""}`}
           >
             <span className="w-3 shrink-0 text-accent" aria-hidden="true">
               {entry.checked === true ? "✓" : entry.current ? "•" : ""}

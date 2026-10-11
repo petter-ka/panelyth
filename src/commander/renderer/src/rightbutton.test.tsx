@@ -10,7 +10,7 @@ import { resetCarry, startPanels } from "./features/carry"
 import { useUiStore } from "./features/commands"
 import { resetFiles, useFilesStore } from "./features/files"
 import { resetKeymap } from "./features/keymap"
-import { resetListing } from "./features/listing"
+import { resetListing, useListingStore } from "./features/listing"
 import { resetMarks, startMarks, useMarksStore } from "./features/marks"
 import { usePanelsStore } from "./features/panels"
 import { closeQuickSearch } from "./features/quicksearch"
@@ -169,6 +169,43 @@ describe("the right mouse button", () => {
     expect(screen.queryByTestId("row-menu-backdrop")).toBeNull()
     expect(fireEvent.wheel(row("file000001"), { deltaY: 100 })).toBe(true)
     expect(cursorRow()).toHaveTextContent("file000003")
+  })
+
+  it("column headers do not drag; the column menu's list reorders by drag and drop", async () => {
+    await start()
+    const header = grid().querySelector<HTMLElement>("[data-column-header=ext]")!
+    expect(header.draggable).toBe(false)
+    await act(async () => fireEvent.contextMenu(header, RIGHT))
+    const items = () =>
+      Array.from(
+        screen.getByTestId("column-menu-left").querySelectorAll<HTMLElement>("[id*=item-]"),
+      ).filter((el) => el.id.includes("item-") && el.draggable)
+    expect(items().map((el) => el.textContent)).toEqual(
+      ["Name", "Ext", "Size", "Date", "Attr"].map((l) => expect.stringContaining(l)),
+    )
+    const store = new Map<string, string>()
+    const dataTransfer = {
+      setData: (k: string, v: string) => store.set(k, v),
+      getData: (k: string) => store.get(k) ?? "",
+      get types() {
+        return [...store.keys()]
+      },
+      effectAllowed: "",
+      dropEffect: "",
+    }
+    const [name, , , , attr] = items()
+    await act(async () => {
+      fireEvent.dragStart(attr!, { dataTransfer })
+      fireEvent.dragOver(name!, { dataTransfer, clientY: 0 })
+      fireEvent.drop(name!, { dataTransfer, clientY: 0 })
+    })
+    expect(useListingStore.getState().left.columnOrder).toEqual([
+      "attr",
+      "name",
+      "ext",
+      "size",
+      "date",
+    ])
   })
 
   it("the empty area and the Menu key open a menu in both modes", async () => {
