@@ -28,5 +28,13 @@ const run = (cmd, args, cwd = root) =>
 run(pnpm, ["build"])
 run(process.execPath, [join(root, "scripts", "build-sidecar.mjs"), "--arch", archs])
 
+// electron-builder packs the NSIS payload with 7-Zip at -mx=9 whatever
+// `compression` says (only "store" changes it), and the bundled 7za.exe crashed
+// with an access violation (0xC0000005) doing so on a Windows machine. A lower
+// level avoids that; set ELECTRON_BUILDER_COMPRESSION_LEVEL (0-9) to override.
+if (process.platform === "win32" && process.env.ELECTRON_BUILDER_COMPRESSION_LEVEL === undefined) {
+  process.env.ELECTRON_BUILDER_COMPRESSION_LEVEL = "5"
+}
+
 const builder = createRequire(join(desktop, "package.json")).resolve("electron-builder/cli.js")
 run(process.execPath, [builder, os, "--publish", "never", ...process.argv.slice(2)], desktop)
