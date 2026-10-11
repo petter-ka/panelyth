@@ -568,6 +568,9 @@ const messages: Messages = {
   "Rename…": "Átnevezés…",
   "Renaming {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elem átnevezése} other {# elem átnevezése}}",
+  Repeat: "Ismétlés",
+  "Repeat: off (L)": "Ismétlés: ki (L)",
+  "Repeat: on (L)": "Ismétlés: be (L)",
   "Replace existing items": "Meglévő elemek cseréje",
   Reset: "Visszaállítás",
   "Reset all": "Összes visszaállítása",

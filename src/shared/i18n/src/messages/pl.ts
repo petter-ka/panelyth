@@ -568,6 +568,9 @@ const messages: Messages = {
   "Rename…": "Zmień nazwę…",
   "Renaming {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Zmiana nazwy # elementu} few {Zmiana nazw # elementów} many {Zmiana nazw # elementów} other {Zmiana nazwy # elementu}}",
+  Repeat: "Powtarzaj",
+  "Repeat: off (L)": "Powtarzanie: wył. (L)",
+  "Repeat: on (L)": "Powtarzanie: wł. (L)",
   "Replace existing items": "Zastąp istniejące elementy",
   Reset: "Przywróć",
   "Reset all": "Przywróć wszystko",

@@ -569,6 +569,9 @@ const messages: Messages = {
   "Rename…": "Rinomina…",
   "Renaming {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Rinomina di # elemento} many {Rinomina di # elementi} other {Rinomina di # elementi}}",
+  Repeat: "Ripeti",
+  "Repeat: off (L)": "Ripeti: disattivato (L)",
+  "Repeat: on (L)": "Ripeti: attivo (L)",
   "Replace existing items": "Sostituisci elementi esistenti",
   Reset: "Ripristina",
   "Reset all": "Ripristina tutto",

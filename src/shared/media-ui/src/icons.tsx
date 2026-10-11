@@ -24,6 +24,12 @@ export const MuteIcon = (p: IconProps) => (
     <path d="m10.5 6 3 4M13.5 6l-3 4" />
   </Icon>
 )
+export const RepeatIcon = (p: IconProps) => (
+  <Icon name="repeat" {...p}>
+    <path d="M3 7.5V7a2.5 2.5 0 0 1 2.5-2.5H12M10 2.5l2 2-2 2" />
+    <path d="M13 8.5V9a2.5 2.5 0 0 1-2.5 2.5H4M6 9.5l-2 2 2 2" />
+  </Icon>
+)
 export const FullscreenIcon = (p: IconProps) => (
   <Icon name="fullscreen" {...p}>
     <path d="M2.75 6V2.75H6M10 2.75h3.25V6M13.25 10v3.25H10M6 13.25H2.75V10" />
