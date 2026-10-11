@@ -31,10 +31,6 @@ extraResources:
   - from: resources/bin/${platform}-${arch}
     to: bin
 asar: true
-# "normal" instead of the default "maximum" (7-Zip -mx=9): the bundled 7za.exe
-# crashed with an access violation (0xC0000005) packing the NSIS payload on a
-# Windows machine; the installer is only slightly larger.
-compression: normal
 # No native Node modules: the sidecar is a separate Go binary.
 npmRebuild: false
 nodeGypRebuild: false
