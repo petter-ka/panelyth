@@ -34,6 +34,10 @@ export function useScrollMemory(
       current.current = next
       const saved = next === null ? undefined : offsets.get(next)
       setScroll(node, axis, saved ?? 0)
+      // The virtualizer learns its offset from scroll events, which the
+      // browser delivers later; without this its cursor reveal (below) would
+      // run against the old offset and park the cursor at the list's edge.
+      node.dispatchEvent(new Event("scroll"))
     }
     const onScroll = (): void => {
       const at = current.current

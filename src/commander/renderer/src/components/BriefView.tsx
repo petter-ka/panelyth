@@ -55,12 +55,6 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
   const parent = parentRows(panel)
   const count = rowCount(panel)
   const store = pageStoreOf(side)
-  useScrollMemory(
-    box,
-    side,
-    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
-    "left",
-  )
 
   // The rows per column follow the panel's height (measured on resize only).
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
@@ -87,6 +81,12 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
     estimateSize: () => columnWidth,
     overscan: BRIEF_OVERSCAN,
   })
+  useScrollMemory(
+    box,
+    side,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    "left",
+  )
   useEffect(() => virtualizer.measure(), [columnWidth, virtualizer])
   const items = virtualizer.getVirtualItems()
   const firstColumn = items[0]?.index ?? 0

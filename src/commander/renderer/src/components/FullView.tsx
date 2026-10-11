@@ -199,12 +199,6 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   const parent = parentRows(panel)
   const count = rowCount(panel)
   const store = pageStoreOf(side)
-  useScrollMemory(
-    body,
-    side,
-    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
-    "top",
-  )
 
   const measureViewport = useCallback((): void => {
     const node = body.current
@@ -244,6 +238,12 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     estimateSize: () => rowHeight,
     overscan: OVERSCAN,
   })
+  useScrollMemory(
+    body,
+    side,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    "top",
+  )
   useEffect(() => virtualizer.measure(), [rowHeight, virtualizer])
   const items = virtualizer.getVirtualItems()
   const first = items[0]?.index ?? 0

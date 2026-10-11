@@ -19,8 +19,12 @@ describe("useScrollMemory", () => {
     rerender(<List folder={2} />)
     expect(list.scrollTop).toBe(0)
 
+    let seen = -1
+    list.addEventListener("scroll", () => (seen = list.scrollTop))
     rerender(<List folder={1} />)
     expect(list.scrollTop).toBe(840)
+    // A synchronous scroll event, so the virtualizer's offset is current.
+    expect(seen).toBe(840)
   })
 
   it("does not remember views that are not a plain folder", () => {
