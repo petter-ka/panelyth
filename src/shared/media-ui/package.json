@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@panelyth/i18n": "workspace:*",
+    "@panelyth/ui": "workspace:*",
     "zustand": "5.0.15"
   },
   "peerDependencies": {

@@ -1,3 +1,5 @@
+import { Icon, type IconName } from "@panelyth/ui"
+
 type CommanderActionIconName =
   | "view"
   | "preview"
@@ -12,6 +14,21 @@ type CommanderActionIconName =
   | "refresh"
   | "star"
 
+const ICON_NAMES: Record<CommanderActionIconName, IconName> = {
+  view: "eye",
+  preview: "preview",
+  edit: "pencil",
+  copy: "copy",
+  move: "move",
+  mkdir: "mkdir",
+  delete: "trash",
+  search: "search",
+  filter: "filter",
+  branch: "branch",
+  refresh: "refresh",
+  star: "star",
+}
+
 /** Small, consistent line icons for commander actions. */
 export function CommanderActionIcon({
   name,
@@ -21,18 +38,7 @@ export function CommanderActionIcon({
   className?: string
 }) {
   return (
-    <svg
-      width={16}
-      height={16}
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      className={className}
-    >
+    <Icon name={ICON_NAMES[name]} className={className}>
       {name === "view" && (
         <>
           <path d="M1.75 8s2.25-4 6.25-4 6.25 4 6.25 4-2.25 4-6.25 4-6.25-4-6.25-4Z" />
@@ -94,7 +100,7 @@ export function CommanderActionIcon({
       {name === "star" && (
         <path d="m8 2 1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.4l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2Z" />
       )}
-    </svg>
+    </Icon>
   )
 }
 

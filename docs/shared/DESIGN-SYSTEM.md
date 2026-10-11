@@ -18,6 +18,10 @@ Prefer:
 - clear selected/focused states
 - low-noise surfaces
 - consistent icons
+- a selectable icon library (Settings → Appearance, shared by both apps through `shared.appearance.iconSet`): the
+  built-in line icons (default), Fluent System Icons (MIT) or Material Symbols (Apache-2.0). Chrome icons are drawn by
+  the shared `Icon` in `src/shared/ui`; the other two sets are a subset of path data (`iconPaths.ts`), not the whole
+  libraries. The colored file-type glyphs (`TypeGlyph`) are not part of the choice.
 - restrained motion
 
 Avoid expensive backdrop blur and per-thumbnail animations on the scrolling surface.

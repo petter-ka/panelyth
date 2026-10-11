@@ -27,6 +27,16 @@ export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[]
 export const DEFAULT_THEME: ThemePreference = "dark"
 const ORDER: readonly ThemePreference[] = ["dark", "light", "system"]
 
+export type IconSet = "default" | "fluent" | "material"
+
+export const ICON_SET_OPTIONS: readonly { value: IconSet; label: string }[] = [
+  { value: "default", label: msg("Default") },
+  { value: "fluent", label: msg("Fluent System Icons") },
+  { value: "material", label: msg("Material Symbols") },
+]
+
+export const DEFAULT_ICON_SET: IconSet = "default"
+
 export type InterfaceSize = "small" | "medium" | "large"
 
 export const INTERFACE_SIZE_SCALE: Record<InterfaceSize, number> = {
@@ -43,16 +53,21 @@ export const SHARED_APPEARANCE_KEY = "shared.appearance"
 export interface SharedAppearance {
   theme: ThemePreference
   interfaceSize: InterfaceSize
+  /** The icon library of the chrome icons; the built-in set until chosen. */
+  iconSet: IconSet
   /** The interface language (ADR-0034); English until chosen. */
   language: Locale
 }
 
 const THEME_KEY = "panelyth.theme"
 const SIZE_KEY = "panelyth.interfaceSize"
+const ICON_SET_KEY = "panelyth.iconSet"
 
 const isTheme = (v: unknown): v is ThemePreference => THEME_OPTIONS.some((o) => o.value === v)
 const isInterfaceSize = (v: unknown): v is InterfaceSize =>
   v === "small" || v === "medium" || v === "large"
+
+const isIconSet = (v: unknown): v is IconSet => ICON_SET_OPTIONS.some((o) => o.value === v)
 
 function readLocal<T>(key: string, valid: (v: unknown) => v is T, fallback: T): T {
   try {
@@ -97,6 +112,7 @@ function current(): SharedAppearance {
   return {
     theme: useThemeStore.getState().preference,
     interfaceSize: useInterfaceSizeStore.getState().size,
+    iconSet: useIconSetStore.getState().iconSet,
     language: currentLocale(),
   }
 }
@@ -142,6 +158,20 @@ export const useInterfaceSizeStore = create<InterfaceSizeState>((set) => ({
   },
 }))
 
+interface IconSetState {
+  iconSet: IconSet
+  setIconSet(iconSet: IconSet): void
+}
+
+export const useIconSetStore = create<IconSetState>((set) => ({
+  iconSet: DEFAULT_ICON_SET,
+  setIconSet(iconSet) {
+    writeLocal(ICON_SET_KEY, iconSet)
+    set({ iconSet })
+    save?.(current())
+  },
+}))
+
 /** Applies the stored theme and follows OS changes while on "system". */
 export function initTheme(): () => void {
   const preference = readLocal(THEME_KEY, isTheme, DEFAULT_THEME)
@@ -160,6 +190,7 @@ export function initInterfaceSize(): void {
   const size = readLocal(SIZE_KEY, isInterfaceSize, DEFAULT_INTERFACE_SIZE)
   useInterfaceSizeStore.setState({ size })
   applyInterfaceSize(size)
+  useIconSetStore.setState({ iconSet: readLocal(ICON_SET_KEY, isIconSet, DEFAULT_ICON_SET) })
 }
 
 /** Where the app persists shared changes (library.setSetting of SHARED_APPEARANCE_KEY). */
@@ -173,7 +204,7 @@ export function connectSharedAppearance(persist: ((value: SharedAppearance) => v
  */
 export function applySharedAppearance(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false
-  const { theme, interfaceSize, language } = value as Partial<
+  const { theme, interfaceSize, iconSet, language } = value as Partial<
     Record<keyof SharedAppearance, unknown>
   >
   let applied = false
@@ -187,6 +218,11 @@ export function applySharedAppearance(value: unknown): boolean {
     writeLocal(SIZE_KEY, interfaceSize)
     applyInterfaceSize(interfaceSize)
     useInterfaceSizeStore.setState({ size: interfaceSize })
+    applied = true
+  }
+  if (isIconSet(iconSet)) {
+    writeLocal(ICON_SET_KEY, iconSet)
+    useIconSetStore.setState({ iconSet })
     applied = true
   }
   if (isLocale(language)) {

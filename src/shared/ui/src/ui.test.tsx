@@ -1,5 +1,5 @@
 import { resetLocale, useLocaleStore } from "@panelyth/i18n"
-import { fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   AppSwitchButton,
@@ -10,6 +10,8 @@ import {
   initInterfaceSize,
   initTheme,
   setLanguage,
+  Icon,
+  useIconSetStore,
   useInterfaceSizeStore,
   useThemeStore,
 } from "./index"
@@ -42,12 +44,14 @@ describe("shared appearance", () => {
     expect(save).toHaveBeenLastCalledWith({
       theme: "light",
       interfaceSize: "medium",
+      iconSet: "default",
       language: "en",
     })
     useInterfaceSizeStore.getState().setSize("large")
     expect(save).toHaveBeenLastCalledWith({
       theme: "light",
       interfaceSize: "large",
+      iconSet: "default",
       language: "en",
     })
   })
@@ -61,6 +65,22 @@ describe("shared appearance", () => {
     expect(document.documentElement.dataset.interfaceSize).toBe("small")
     expect(localStorage.getItem("panelyth.theme")).toBe("beige")
     expect(save).not.toHaveBeenCalled()
+  })
+
+  it("saves and applies the icon library", () => {
+    const save = vi.fn()
+    connectSharedAppearance(save)
+    useIconSetStore.getState().setIconSet("fluent")
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ iconSet: "fluent" }))
+    expect(localStorage.getItem("panelyth.iconSet")).toBe("fluent")
+    save.mockClear()
+    expect(applySharedAppearance({ iconSet: "material" })).toBe(true)
+    expect(useIconSetStore.getState().iconSet).toBe("material")
+    expect(save).not.toHaveBeenCalled()
+    expect(applySharedAppearance({ iconSet: "emoji" })).toBe(false)
+    expect(useIconSetStore.getState().iconSet).toBe("material")
+    initInterfaceSize()
+    expect(useIconSetStore.getState().iconSet).toBe("material")
   })
 
   it("ignores unusable values", () => {
@@ -128,6 +148,7 @@ describe("startSharedAppearanceSync", () => {
       expect(p.saveSetting).toHaveBeenCalledWith("shared.appearance", {
         theme: "beige",
         interfaceSize: "medium",
+        iconSet: "default",
         language: "en",
       }),
     )
@@ -135,6 +156,7 @@ describe("startSharedAppearanceSync", () => {
     expect(p.saveSetting).toHaveBeenLastCalledWith("shared.appearance", {
       theme: "light",
       interfaceSize: "medium",
+      iconSet: "default",
       language: "en",
     })
     stop()
@@ -165,5 +187,42 @@ describe("Tooltip", () => {
     // Centered on the picture and just above it, not above the tile.
     expect(popup.style.left).toBe("190px")
     expect(popup.style.top).toBe("142px")
+  })
+})
+
+describe("Icon", () => {
+  const renderIcon = () =>
+    render(
+      <Icon name="search" data-testid="icon">
+        <path d="M0 0" />
+      </Icon>,
+    )
+
+  beforeEach(() => {
+    localStorage.clear()
+    useIconSetStore.setState({ iconSet: "default" })
+  })
+
+  it("draws the built-in stroked icon by default", () => {
+    renderIcon()
+    const svg = screen.getByTestId("icon")
+    expect(svg).toHaveAttribute("viewBox", "0 0 16 16")
+    expect(svg).toHaveAttribute("stroke", "currentColor")
+    expect(svg.querySelector("path")).toHaveAttribute("d", "M0 0")
+  })
+
+  it.each(["fluent", "material"] as const)("draws the %s icon when selected", (iconSet) => {
+    useIconSetStore.setState({ iconSet })
+    renderIcon()
+    const svg = screen.getByTestId("icon")
+    expect(svg).toHaveAttribute("viewBox", "0 0 24 24")
+    expect(svg).toHaveAttribute("fill", "currentColor")
+    expect(svg.querySelector("path")?.getAttribute("d")).not.toBe("M0 0")
+  })
+
+  it("redraws when the library changes", () => {
+    renderIcon()
+    act(() => useIconSetStore.getState().setIconSet("material"))
+    expect(screen.getByTestId("icon")).toHaveAttribute("viewBox", "0 0 24 24")
   })
 })
