@@ -17,7 +17,7 @@ files:
   - "!dist/**/*.map"
   - package.json
 # The renderers are served from disk through app://panelyth/ and
-# app://commander/, the sidecar runs as a child process: all outside the asar
+# app://commander/ and app://documents/, the sidecar runs as a child process: all outside the asar
 # (paths.ts).
 extraResources:
   - from: build/icon.png
@@ -26,6 +26,8 @@ extraResources:
     to: renderer
   - from: ../../commander/renderer/dist
     to: commander
+  - from: ../docviewer/dist
+    to: documents
   - from: resources/bin/${platform}-${arch}
     to: bin
 asar: true

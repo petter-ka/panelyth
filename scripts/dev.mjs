@@ -11,6 +11,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const desktop = join(root, "src", "shared", "desktop")
 const renderer = join(root, "src", "viewer", "renderer")
 const commander = join(root, "src", "commander", "renderer")
+const documents = join(root, "src", "shared", "docviewer")
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 
 execFileSync(process.execPath, [join(root, "scripts", "build-sidecar.mjs")], { stdio: "inherit" })
@@ -32,8 +33,10 @@ async function devServer(dir, fallbackUrl) {
 
 const viewer = await devServer(renderer, "http://localhost:5173/")
 const commanderDev = await devServer(commander, "http://localhost:5174/")
+const documentsDev = await devServer(documents, "http://localhost:5175/")
 console.log(`viewer dev server: ${viewer.url}`)
 console.log(`commander dev server: ${commanderDev.url}`)
+console.log(`document window dev server: ${documentsDev.url}`)
 
 const electronPath = createRequire(join(desktop, "package.json"))("electron")
 const child = spawn(electronPath, [desktop], {
@@ -42,10 +45,15 @@ const child = spawn(electronPath, [desktop], {
     ...process.env,
     PANELYTH_RENDERER_URL: viewer.url,
     PANELYTH_COMMANDER_URL: commanderDev.url,
+    PANELYTH_DOCUMENTS_URL: documentsDev.url,
     PANELYTH_COMMANDER: process.env.PANELYTH_COMMANDER ?? "1",
   },
 })
 child.on("exit", async (code) => {
-  await Promise.all([viewer.server.close(), commanderDev.server.close()])
+  await Promise.all([
+    viewer.server.close(),
+    commanderDev.server.close(),
+    documentsDev.server.close(),
+  ])
   process.exit(code ?? 0)
 })

@@ -146,6 +146,7 @@ Claude Code should read these files in this order:
 | 0030 | Archives as folders | commander | Accepted (Stage C07) |
 | 0031 | One shell for both apps: app switching and shared state | shared | Accepted |
 | 0032 | Packaging and release builds (electron-builder) | shared | Accepted (Stage P04) |
+| 0033 | Document window: PDFs and text in a window of their own | shared | Accepted (owner request) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

@@ -141,7 +141,7 @@ export function corsHeaders(
   if (!target.fetchOrigin || origin !== target.fetchOrigin) return "denied"
   return {
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Expose-Headers": "Content-Range, Content-Length",
+    "Access-Control-Expose-Headers": "Content-Range, Content-Length, Accept-Ranges",
     Vary: "Origin",
   }
 }

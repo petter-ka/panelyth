@@ -11,6 +11,10 @@ export const COMMANDER_ORIGIN = `${APP_SCHEME}://${COMMANDER_HOST}`
 // panelyth-media: (Stages 04 and 06). Only the commander may also fetch()
 // token URLs: its lister reads byte windows (Stage C05, ADR-0027). The
 // viewer keeps connect-src 'self', so it can never read a token's bytes.
+/** The document window is served from its own origin (ADR-0033). */
+export const DOCUMENTS_HOST = "documents"
+export const DOCUMENTS_ORIGIN = `${APP_SCHEME}://${DOCUMENTS_HOST}`
+
 const connectTokens = (fetchTokens: boolean): string => (fetchTokens ? " panelyth-media:" : "")
 
 const prodCsp = (fetchTokens: boolean): string =>
@@ -40,6 +44,29 @@ const devCsp = (origins: readonly string[], fetchTokens: boolean): string =>
     "object-src 'none'",
     "base-uri 'none'",
   ].join("; ")
+
+/**
+ * The document window (ADR-0033): fetches its one token URL, runs the PDF
+ * worker from its own files (and the blob: pdf.js makes from them), and
+ * draws pages to canvases. No object/embed, no frames, no network.
+ */
+export function documentsCsp(devOrigins: string | readonly string[] | null = null): string {
+  const list = devOrigins === null ? [] : typeof devOrigins === "string" ? [devOrigins] : devOrigins
+  const dev = list.length > 0
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'wasm-unsafe-eval'${dev ? " 'unsafe-inline'" : ""}`,
+    `style-src 'self'${dev ? " 'unsafe-inline'" : ""}`,
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "worker-src 'self' blob:",
+    `connect-src 'self' panelyth-media: blob: data:${dev ? " " + list.map((o) => o.replace(/^http/, "ws")).join(" ") : ""}`,
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+    "frame-ancestors 'none'",
+  ].join("; ")
+}
 
 /** fetchTokens: the page may fetch() panelyth-media: URLs (the commander's view only). */
 export function contentSecurityPolicy(
@@ -97,6 +124,7 @@ export function hardenSession(
   origins: readonly string[],
   devUrls: readonly string[],
   tokenFetchOrigins: readonly string[] = [],
+  documentsDevOrigin: string | null = null,
 ): void {
   session.setPermissionRequestHandler((_wc, permission, callback, details) =>
     callback(allowPermission(permission, details.requestingUrl, origins)),
@@ -110,10 +138,10 @@ export function hardenSession(
     const devOrigins = devUrls.map((url) => new URL(url).origin)
     session.webRequest.onHeadersReceived((details, callback) => {
       const origin = originOf(details.url)
-      const csp = contentSecurityPolicy(
-        devOrigins,
-        origin !== null && tokenFetchOrigins.includes(origin),
-      )
+      const csp =
+        origin !== null && origin === documentsDevOrigin
+          ? documentsCsp(devOrigins)
+          : contentSecurityPolicy(devOrigins, origin !== null && tokenFetchOrigins.includes(origin))
       callback({
         responseHeaders: { ...details.responseHeaders, "Content-Security-Policy": [csp] },
       })

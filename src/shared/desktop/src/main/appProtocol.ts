@@ -1,7 +1,13 @@
 import { net, protocol } from "electron"
 import { extname, join, normalize, relative, isAbsolute } from "node:path"
 import { pathToFileURL } from "node:url"
-import { APP_SCHEME, COMMANDER_HOST, contentSecurityPolicy } from "./security"
+import {
+  APP_SCHEME,
+  COMMANDER_HOST,
+  DOCUMENTS_HOST,
+  contentSecurityPolicy,
+  documentsCsp,
+} from "./security"
 import { MEDIA_SCHEME } from "./mediaProtocol"
 import { THUMB_SCHEME } from "./thumbProtocol"
 
@@ -14,6 +20,9 @@ const MIME: Record<string, string> = {
   ".png": "image/png",
   ".ico": "image/x-icon",
   ".woff2": "font/woff2",
+  ".mjs": "text/javascript; charset=utf-8",
+  ".wasm": "application/wasm",
+  ".map": "application/json",
 }
 
 /** Must run before app `ready`. */
@@ -61,6 +70,7 @@ export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): v
   const csp = contentSecurityPolicy(null)
   // The commander's lister fetch()es token URLs; the viewer never may (ADR-0027).
   const commanderCsp = contentSecurityPolicy(null, true)
+  const documents = documentsCsp()
   protocol.handle(APP_SCHEME, async (request) => {
     const url = new URL(request.url)
     const root = Object.hasOwn(distDirs, url.host) ? distDirs[url.host] : undefined
@@ -72,7 +82,12 @@ export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): v
       status: 200,
       headers: {
         "Content-Type": MIME[extname(file).toLowerCase()] ?? "application/octet-stream",
-        "Content-Security-Policy": url.host === COMMANDER_HOST ? commanderCsp : csp,
+        "Content-Security-Policy":
+          url.host === COMMANDER_HOST
+            ? commanderCsp
+            : url.host === DOCUMENTS_HOST
+              ? documents
+              : csp,
         "X-Content-Type-Options": "nosniff",
       },
     })

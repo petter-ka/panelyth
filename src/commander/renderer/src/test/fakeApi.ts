@@ -115,7 +115,7 @@ export interface FakeOptions {
 
 /** What main would have done for shell.open / shell.edit (PANELYTH_TEST_SHELL=record). */
 export interface ShellRecord {
-  action: "open" | "edit"
+  action: "open" | "edit" | "document"
   entryId: number
 }
 
@@ -733,6 +733,12 @@ export function installFakeCommander(options: FakeOptions) {
           mime: "application/octet-stream",
           sizeBytes: bytes.length,
         })
+      }),
+    },
+    document: {
+      open: vi.fn(async (id: number, _theme?: string) => {
+        shell.push({ action: "document", entryId: id })
+        return ok({ ok: true })
       }),
     },
     shell: {

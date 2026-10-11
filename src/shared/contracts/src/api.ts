@@ -288,6 +288,10 @@ export interface CommanderApi {
   file: {
     open(entryId: number): Promise<RpcEnvelope<FileOpenResult>>
   }
+  /** ADR-0033: a PDF or text file in a document window of its own. */
+  document: {
+    open(entryId: number, theme?: string): Promise<RpcEnvelope<OkResult>>
+  }
   /** Stage C05: open with the default app (programs need allowProgram) and edit (F4). */
   shell: {
     open(entryId: number, allowProgram?: boolean): Promise<RpcEnvelope<OkResult>>

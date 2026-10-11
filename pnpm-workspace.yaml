@@ -6,6 +6,7 @@ packages:
   - src/shared/ui
   - src/shared/renderer-core
   - src/shared/media-ui
+  - src/shared/docviewer
   - src/viewer/renderer
   - src/commander/renderer
 

@@ -2,6 +2,7 @@ import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
 import { notice, READ_ONLY } from "./files"
+import { openDocumentWindow } from "./documents"
 import { openMediaViewer } from "./viewers"
 import {
   focusEntry,
@@ -57,6 +58,8 @@ export async function openWithApp(item: ContentItem, side?: Side): Promise<void>
     openMediaViewer(item, side)
   )
     return
+
+  if (await openDocumentWindow(item)) return
 
   const mode = settings.runPrograms
   try {

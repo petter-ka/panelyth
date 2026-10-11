@@ -536,6 +536,17 @@ export interface FileOpenResult {
   sizeBytes: number
 }
 
+/**
+ * document.open (commander only, ADR-0033): shows a PDF or text file in a
+ * document window of its own. Main resolves the entry, decides the document
+ * kind from the file's extension and gives the window a read-only token; the
+ * window has no preload and no IPC. `theme` is the commander's theme name (a-z and "-").
+ */
+export interface DocumentOpenParams {
+  entryId: number
+  theme?: string
+}
+
 export interface Properties {
   id: number
   kind: EntryKind
@@ -1418,6 +1429,8 @@ export interface MainMethodMap {
   "shell.open": { params: ShellOpenParams; result: OkResult }
   /** Commander (Stage C05): a read-only token URL for any file (lister, quick view). */
   "file.open": { params: MediaOpenParams; result: FileOpenResult }
+  /** Commander (ADR-0033): opens a PDF or text file in a document window. */
+  "document.open": { params: DocumentOpenParams; result: OkResult }
   /** Commander (Stage C05, F4): opens a file in the editor from settings, else the OS text editor. */
   "shell.edit": { params: EntryParams; result: OkResult }
   /** Shows an indexed entry in the system file manager. */
@@ -1499,6 +1512,7 @@ export const VIEWER_METHODS = [
 /** Methods only the commander's profile has (ADR-0027): any file's bytes, the editor, new files. */
 export const COMMANDER_ONLY_METHODS = [
   "file.open",
+  "document.open",
   "shell.edit",
   "fs.mkfile",
   "find.start",
@@ -1577,6 +1591,7 @@ export const COMMANDER_METHODS = [
   "preview.ensure",
   "props.get",
   "file.open",
+  "document.open",
   "shell.open",
   "shell.edit",
   "fs.mkfile",
@@ -1604,6 +1619,7 @@ export const MAIN_METHODS = [
   "dialog.openFolder",
   "media.open",
   "file.open",
+  "document.open",
   "places.list",
   "shell.open",
   "shell.edit",

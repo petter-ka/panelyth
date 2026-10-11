@@ -221,6 +221,10 @@ export const bridge = {
   properties: (entryId: number): Promise<Properties> => unwrap(() => api().props.get(entryId)),
   /** A read-only token URL for any file; its bytes are read with HTTP Range. */
   openFile: (entryId: number): Promise<FileOpenResult> => unwrap(() => api().file.open(entryId)),
+  /** A PDF or text file in a document window of its own (ADR-0033). */
+  openDocument: async (entryId: number, theme?: string): Promise<void> => {
+    await unwrap(() => api().document.open(entryId, theme))
+  },
   /** Opens with the default app; a program needs allowProgram (PERMISSION_DENIED, reason "program"). */
   shellOpen: async (entryId: number, allowProgram?: boolean): Promise<void> => {
     await unwrap(() => api().shell.open(entryId, allowProgram))
