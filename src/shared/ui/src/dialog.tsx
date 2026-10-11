@@ -2,6 +2,7 @@
 // returns to the trigger on close; Esc closes.
 import * as Dialog from "@radix-ui/react-dialog"
 import type { ReactNode } from "react"
+import { t } from "@panelyth/i18n"
 
 const CloseIcon = ({ size }: { size: number }) => (
   <svg
@@ -51,7 +52,7 @@ export function DialogWindow({
               {title}
             </Dialog.Title>
             <Dialog.Close
-              aria-label="Close"
+              aria-label={t("Close")}
               className="grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
             >
               <CloseIcon size={14} />

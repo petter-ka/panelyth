@@ -9,6 +9,7 @@ import { useSettingsStore } from "../features/settings"
 import { closeQuickView, useViewersStore } from "../features/viewers"
 import { HexView, TextView } from "./ByteViews"
 import { useByteFile } from "./useByteFile"
+import { msg, t } from "@panelyth/i18n"
 
 /** Asks for the viewer-fit preview and the original's URL (shared request logic). */
 export function useImageRequests(entryId: number, lane: string): void {
@@ -56,18 +57,26 @@ function useProperties(entryId: number): Properties | null {
 function PropertiesBlock({ item }: { item: ContentItem }) {
   const props = useProperties(item.id)
   const dateFormat = useSettingsStore((s) => s.settings.dateFormat)
+  // The keys are the English source labels: translated where they are shown.
   const rows: [string, string][] = [
-    ["Name", item.name],
-    ["Location", props?.path ?? ""],
+    [msg("Name"), item.name],
+    [msg("Location"), props?.path ?? ""],
   ]
   if (item.kind === "dir") {
-    if (props?.childFolders != null) rows.push(["Folders", props.childFolders.toLocaleString()])
-    if (item.dirSizeBytes !== undefined) rows.push(["Size", formatBytes(item.dirSizeBytes)])
+    if (props?.childFolders != null)
+      rows.push([msg("Folders"), props.childFolders.toLocaleString()])
+    if (item.dirSizeBytes !== undefined) rows.push([msg("Size"), formatBytes(item.dirSizeBytes)])
   } else {
-    rows.push(["Size", `${formatBytes(item.sizeBytes)} (${item.sizeBytes.toLocaleString()} bytes)`])
+    rows.push([
+      msg("Size"),
+      t("{size} ({bytes} bytes)", {
+        size: formatBytes(item.sizeBytes),
+        bytes: item.sizeBytes.toLocaleString(),
+      }),
+    ])
   }
-  rows.push(["Modified", formatDate(props?.modifiedMs ?? item.modifiedMs, dateFormat)])
-  if (props?.createdMs != null) rows.push(["Created", formatDate(props.createdMs, dateFormat)])
+  rows.push([msg("Modified"), formatDate(props?.modifiedMs ?? item.modifiedMs, dateFormat)])
+  if (props?.createdMs != null) rows.push([msg("Created"), formatDate(props.createdMs, dateFormat)])
   return (
     <dl
       className="grid shrink-0 grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 border-b border-border bg-chrome p-3 text-xs"
@@ -75,7 +84,7 @@ function PropertiesBlock({ item }: { item: ContentItem }) {
     >
       {rows.map(([k, v]) => (
         <div key={k} className="contents">
-          <dt className="text-muted">{k}</dt>
+          <dt className="text-muted">{t(k)}</dt>
           <Tooltip content={v}>
             <dd className={`truncate text-text ${k === "Name" ? "" : "font-mono"}`}>{v}</dd>
           </Tooltip>
@@ -88,14 +97,20 @@ function PropertiesBlock({ item }: { item: ContentItem }) {
 /** Text from the first window on (encoding detected), or hex plus properties for binary files. */
 function QuickFile({ item }: { item: ContentItem }) {
   const file = useByteFile(item.id)
-  if (file.status === "loading") return <Message text="Reading…" />
-  if (file.status === "failed") return <Message text={`This file can't be read: ${file.message}`} />
+  if (file.status === "loading") return <Message text={t("Reading…")} />
+  if (file.status === "failed")
+    return <Message text={t("This file can't be read: {reason}", { reason: file.message })} />
   const { source, detection } = file
   if (detection.binary) {
     return (
       <div className="flex min-h-0 flex-1 flex-col">
         <PropertiesBlock item={item} />
-        <HexView key={source.url} source={source} match={null} label={`Hex of ${item.name}`} />
+        <HexView
+          key={source.url}
+          source={source}
+          match={null}
+          label={t("Hex of {name}", { name: item.name })}
+        />
       </div>
     )
   }
@@ -107,7 +122,7 @@ function QuickFile({ item }: { item: ContentItem }) {
       floor={detection.bom}
       wrap={false}
       match={null}
-      label={`Text of ${item.name}`}
+      label={t("Text of {name}", { name: item.name })}
     />
   )
 }
@@ -124,7 +139,7 @@ function Message({ text }: { text: string }) {
 export function QuickView() {
   const item = useViewersStore((s) => s.quickItem)
   let body
-  if (!item) body = <Message text="No file under the cursor" />
+  if (!item) body = <Message text={t("No file under the cursor")} />
   else if (item.kind === "dir") body = <PropertiesBlock key={item.id} item={item} />
   else if (item.kind === "image") body = <QuickImage key={item.id} item={item} />
   else if (item.kind === "video") body = <QuickVideo key={item.id} item={item} />
@@ -133,22 +148,22 @@ export function QuickView() {
     <section
       id="quick-view"
       tabIndex={-1}
-      aria-label="Quick view"
+      aria-label={t("Quick view")}
       data-testid="quick-view"
       data-entry={item?.id ?? ""}
       data-kind={item?.kind ?? ""}
       className="flex h-full min-w-0 flex-col border-t-2 border-transparent bg-canvas outline-none"
     >
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2 text-xs">
-        <span className="text-muted">Quick view</span>
+        <span className="text-muted">{t("Quick view")}</span>
         <span className="min-w-0 flex-1 truncate text-text">{item?.name ?? ""}</span>
-        <Tooltip content="Close quick view (Ctrl+Q)">
+        <Tooltip content={t("Close quick view (Ctrl+Q)")}>
           <button
             type="button"
             onClick={closeQuickView}
             className="rounded px-1.5 py-0.5 text-muted hover:bg-raised hover:text-text"
           >
-            Close
+            {t("Close")}
           </button>
         </Tooltip>
       </div>

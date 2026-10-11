@@ -40,6 +40,7 @@ import { SettingsDialog } from "./SettingsDialog"
 import { StatusBar } from "./StatusBar"
 import { MediaViewerOverlay } from "@panelyth/media-ui"
 import { closeMediaViewer, stepMediaViewer } from "../features/viewers"
+import { t } from "@panelyth/i18n"
 
 const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.platform)
 export const SWITCH_SHORTCUT = IS_MAC ? "⌘⇧M" : "Ctrl+Shift+M"
@@ -201,7 +202,7 @@ export function AppShell() {
           </ResizablePanel>
           <Separator
             id="panels-separator"
-            aria-label="Resize panels"
+            aria-label={t("Resize panels")}
             className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
             onDoubleClick={resetSplit}
           />

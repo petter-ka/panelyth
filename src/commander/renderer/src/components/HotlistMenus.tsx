@@ -11,6 +11,7 @@ import {
 import { jumpHistory, useListingStore } from "../features/listing"
 import type { Side } from "../features/panels"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
+import { t } from "@panelyth/i18n"
 
 /** Recent locations shown in the history menu; library.db keeps more. */
 export const RECENT_SHOWN = 10
@@ -27,15 +28,20 @@ export function HotlistMenu({ side }: { side: Side }) {
     const out: MenuEntry[] = [
       {
         id: "add",
-        label: "Add the current folder",
+        label: t("Add the current folder"),
         disabled: !path || bookmarks.some((b) => b.path === path),
         accessKey: "a",
         onSelect: () => void addCurrentFolder(side).catch(() => undefined),
       },
-      { id: "edit", label: "Configure…", accessKey: "c", onSelect: () => setHotlistEditing(true) },
+      {
+        id: "edit",
+        label: t("Configure…"),
+        accessKey: "c",
+        onSelect: () => setHotlistEditing(true),
+      },
     ]
     for (const [group, list] of groupBookmarks(bookmarks)) {
-      out.push({ id: `g-${group}`, label: group || "Hotlist", heading: true })
+      out.push({ id: `g-${group}`, label: group || t("Hotlist"), heading: true })
       for (const b of list) {
         out.push({
           id: `b-${b.id}`,
@@ -47,14 +53,14 @@ export function HotlistMenu({ side }: { side: Side }) {
       }
     }
     if (bookmarks.length === 0) {
-      out.push({ id: "empty", label: "No folders yet", disabled: true })
+      out.push({ id: "empty", label: t("No folders yet"), disabled: true })
     }
     return out
   }, [bookmarks, path, side])
   if (!open) return null
   return (
     <PopupMenu
-      label="Directory hotlist"
+      label={t("Directory hotlist")}
       testId={`hotlist-${side}`}
       className="top-9 left-2"
       entries={entries}
@@ -100,7 +106,7 @@ export function HistoryMenu({ side }: { side: Side }) {
   if (!open) return null
   return (
     <PopupMenu
-      label="Folder history"
+      label={t("Folder history")}
       testId={`history-${side}`}
       className="top-9 left-2"
       entries={entries}

@@ -15,21 +15,27 @@ import { useListingStore } from "../features/listing"
 import type { Side } from "../features/panels"
 import { dropTarget } from "./panelDnd"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
+import { msg, t } from "@panelyth/i18n"
 
 const MARKERS: Partial<Record<VolumeKind, string>> = {
-  removable: "removable",
-  network: "network",
-  optical: "optical",
+  removable: msg("removable"),
+  network: msg("network"),
+  optical: msg("optical"),
 }
 
 export function spaceText(v: Volume): string {
-  if (v.notReady) return "not ready"
+  if (v.notReady) return t("not ready")
   if (v.freeBytes === undefined || !v.totalBytes) return ""
-  return `${formatBytes(v.freeBytes)} free of ${formatBytes(v.totalBytes)}`
+  return t("{free} free of {total}", {
+    free: formatBytes(v.freeBytes),
+    total: formatBytes(v.totalBytes),
+  })
 }
 
 const driveTitle = (v: Volume): string =>
-  [v.path, v.label, MARKERS[v.kind], spaceText(v)].filter(Boolean).join(" · ")
+  [v.path, v.label, MARKERS[v.kind] && t(MARKERS[v.kind]!), spaceText(v)]
+    .filter(Boolean)
+    .join(" · ")
 
 /** The volume holding the panel's folder (shared by the drive bar and the status line). */
 export function usePanelVolume(side: Side): Volume | null {
@@ -67,11 +73,11 @@ export function DriveBar({ side }: { side: Side }) {
           tabIndex={-1}
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          aria-label="Drive menu"
+          aria-label={t("Drive menu")}
           onClick={() => (menuOpen ? closeDriveMenu() : openDriveMenu(side))}
           className="mr-1 flex h-5 items-center gap-1 rounded px-1.5 font-medium text-text hover:bg-raised"
         >
-          {current ? driveName(current) : "Drives"}
+          {current ? driveName(current) : t("Drives")}
           <span aria-hidden="true" className="text-muted">
             ▾
           </span>
@@ -115,7 +121,7 @@ export function DriveMenu({ side }: { side: Side }) {
   const loading = useDrivesStore((s) => s.loading)
   const current = usePanelVolume(side)
   const entries = useMemo<MenuEntry[]>(() => {
-    const out: MenuEntry[] = [{ id: "h-drives", label: "Drives", heading: true }]
+    const out: MenuEntry[] = [{ id: "h-drives", label: t("Drives"), heading: true }]
     for (const v of volumes) {
       const name = driveName(v)
       out.push({
@@ -126,7 +132,7 @@ export function DriveMenu({ side }: { side: Side }) {
             {v.label && v.label !== name && <span className="text-muted">{v.label}</span>}
             {MARKERS[v.kind] && (
               <span className="rounded border border-border px-1 text-[0.625rem] text-muted">
-                {MARKERS[v.kind]}
+                {t(MARKERS[v.kind]!)}
               </span>
             )}
           </span>
@@ -138,11 +144,11 @@ export function DriveMenu({ side }: { side: Side }) {
       })
     }
     if (places.length > 0) {
-      out.push({ id: "h-places", label: "Places", heading: true })
+      out.push({ id: "h-places", label: t("Places"), heading: true })
       for (const p of places) {
         out.push({
           id: `place-${p.id}`,
-          label: p.label,
+          label: t(p.label),
           detail: p.path,
           onSelect: () => void openDrive(side, p.path),
         })
@@ -153,12 +159,14 @@ export function DriveMenu({ side }: { side: Side }) {
   if (!open) return null
   return (
     <PopupMenu
-      label={`Drives, ${side} panel`}
+      label={side === "left" ? t("Drives, left panel") : t("Drives, right panel")}
       testId={`drive-menu-${side}`}
       entries={entries}
       onClose={closeDriveMenu}
       footer={
-        loading && <p className="px-3 pt-1 pb-0.5 text-[0.6875rem] text-muted">Updating drives…</p>
+        loading && (
+          <p className="px-3 pt-1 pb-0.5 text-[0.6875rem] text-muted">{t("Updating drives…")}</p>
+        )
       }
     />
   )

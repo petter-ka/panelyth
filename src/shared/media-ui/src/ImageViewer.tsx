@@ -13,6 +13,7 @@ import {
   type ZoomState,
 } from "./zoom"
 import { cssTransform, IDENTITY, isIdentity, orientedSize, type ViewTransform } from "./transform"
+import { t } from "@panelyth/i18n"
 
 export interface ImageViewerController {
   fit(): void
@@ -288,20 +289,20 @@ export function ImageViewer({
       )}
       {failed && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-center">
-          <p className="text-sm font-medium">This image can't be displayed</p>
+          <p className="text-sm font-medium">{t("This image can't be displayed")}</p>
           <p className="max-w-sm text-xs text-muted">
             {failCode === "NOT_FOUND"
-              ? "The file was moved or deleted."
+              ? t("The file was moved or deleted.")
               : failCode === "PERMISSION_DENIED"
-                ? "Panelyth doesn't have permission to read this file."
-                : "The file may be damaged or in a format Panelyth can't read."}
+                ? t("Panelyth doesn't have permission to read this file.")
+                : t("The file may be damaged or in a format Panelyth can't read.")}
           </p>
           <button
             type="button"
             onClick={() => retry(entryId, lane)}
             className="mt-2 h-7 rounded-md border border-border bg-raised px-2.5 text-xs hover:border-muted"
           >
-            Try again
+            {t("Try again")}
           </button>
         </div>
       )}

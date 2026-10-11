@@ -12,6 +12,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@panelyth/i18n": "workspace:*",
     "zustand": "5.0.15"
   },
   "peerDependencies": {

@@ -5,9 +5,10 @@
 // Collapsed panes are skipped.
 
 const PANES = [
-  'nav[aria-label="Locations"]',
-  'main[aria-label="Content"]',
-  'aside[aria-label="Preview"]',
+  // data-pane, not aria-label: labels are translated (ADR-0034).
+  '[data-pane="locations"]',
+  '[data-pane="content"]',
+  '[data-pane="preview"]',
 ]
 
 const PRIMARY = '[role="tree"], [data-testid="tile-view"]'

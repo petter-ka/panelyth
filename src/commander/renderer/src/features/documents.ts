@@ -3,6 +3,7 @@ import { currentAppearance } from "@panelyth/ui"
 import { bridge } from "../bridge"
 import { notice } from "./files"
 import { useSettingsStore } from "./settings"
+import { currentLocale, t } from "@panelyth/i18n"
 
 // PDF and text files open in a document window of their own (ADR-0033),
 // unless Settings → Panels → "Open PDFs and text files with" names the system
@@ -22,11 +23,14 @@ export const opensInDocumentWindow = (item: ContentItem): boolean =>
 export async function openDocumentWindow(item: ContentItem): Promise<boolean> {
   if (!opensInDocumentWindow(item)) return false
   try {
-    await bridge.openDocument(item.id, currentAppearance().theme)
+    await bridge.openDocument(item.id, currentAppearance().theme, currentLocale())
     return true
   } catch (error) {
     notice(
-      `${item.name} can't be opened in a window: ${error instanceof Error ? error.message : String(error)}`,
+      t("{name} can't be opened in a window: {reason}", {
+        name: item.name,
+        reason: error instanceof Error ? error.message : String(error),
+      }),
     )
     return false
   }

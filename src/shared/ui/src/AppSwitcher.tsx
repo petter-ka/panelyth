@@ -1,6 +1,7 @@
 import type { AppId } from "@panelyth/contracts"
 import { CommanderGlyph, ViewerGlyph } from "./AppSwitchButton"
 import { Tooltip } from "./Tooltip"
+import { t } from "@panelyth/i18n"
 
 const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
 const APPS: AppId[] = ["viewer", "commander"]
@@ -16,26 +17,28 @@ export interface AppSwitcherProps {
 export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwitcherProps) {
   return (
     <nav
-      aria-label="Applications"
+      aria-label={t("Applications")}
       data-testid="app-switcher"
       className="row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
     >
       {APPS.map((app) => {
         const active = app === current
-        const label = `Switch to ${TITLES[app]}`
+        const label = t("Switch to {app}", { app: TITLES[app] })
         const Glyph = app === "viewer" ? ViewerGlyph : CommanderGlyph
 
         return (
           <Tooltip
             key={app}
             side="right"
-            content={active ? `${TITLES[app]} (current app)` : `${label} (${shortcut})`}
+            content={
+              active ? t("{app} (current app)", { app: TITLES[app] }) : `${label} (${shortcut})`
+            }
           >
             <button
               type="button"
               onClick={active ? undefined : onSwitch}
               disabled={active}
-              aria-label={active ? `${TITLES[app]} (current app)` : label}
+              aria-label={active ? t("{app} (current app)", { app: TITLES[app] }) : label}
               aria-current={active ? "page" : undefined}
               aria-keyshortcuts={active ? undefined : shortcut.replace("Ctrl", "Control")}
               data-target={app}
@@ -48,11 +51,11 @@ export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwit
         )
       })}
       <div className="mt-auto flex w-full justify-center border-t border-border pt-2">
-        <Tooltip side="right" content="Settings">
+        <Tooltip side="right" content={t("Settings")}>
           <button
             type="button"
             onClick={onSettings}
-            aria-label="Settings"
+            aria-label={t("Settings")}
             data-testid="app-settings"
             className="grid size-9 shrink-0 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
           >

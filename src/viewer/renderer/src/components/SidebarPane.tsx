@@ -48,6 +48,7 @@ import {
   DropdownRoot,
   DropdownTrigger,
 } from "./ui/menu"
+import { msg, t } from "@panelyth/i18n"
 
 const ROW_HEIGHT = 26
 const INDENT = 14
@@ -96,19 +97,19 @@ function useRows(): SidebarRow[] {
   return useMemo(() => {
     const rows: SidebarRow[] = []
     if (places.length > 0) {
-      rows.push({ type: "header", id: "h-places", label: "Quick access" })
+      rows.push({ type: "header", id: "h-places", label: t("Quick access") })
       for (const p of places) {
         rows.push({
           type: "link",
           id: `place-${p.id}`,
-          label: p.label,
+          label: t(p.label),
           path: p.path,
           icon: PLACE_ICON[p.id],
         })
       }
     }
     if (bookmarks.length > 0) {
-      rows.push({ type: "header", id: "h-bookmarks", label: "Bookmarks" })
+      rows.push({ type: "header", id: "h-bookmarks", label: t("Bookmarks") })
       for (const b of bookmarks) {
         rows.push({
           type: "link",
@@ -121,7 +122,7 @@ function useRows(): SidebarRow[] {
       }
     }
     if (recent.length > 0) {
-      rows.push({ type: "header", id: "h-recent", label: "Recent" })
+      rows.push({ type: "header", id: "h-recent", label: t("Recent") })
       for (const r of recent.slice(0, RECENT_SHOWN)) {
         rows.push({
           type: "link",
@@ -132,29 +133,29 @@ function useRows(): SidebarRow[] {
         })
       }
     }
-    rows.push({ type: "header", id: "h-folders", label: "Folders" })
-    for (const t of flatten(roots, expanded)) {
+    rows.push({ type: "header", id: "h-folders", label: t("Folders") })
+    for (const entry of flatten(roots, expanded)) {
       rows.push({
         type: "tree",
-        id: `tree-${t.key}`,
-        key: t.key,
-        depth: t.depth,
-        expanded: t.expanded,
+        id: `tree-${entry.key}`,
+        key: entry.key,
+        depth: entry.depth,
+        expanded: entry.expanded,
       })
-      if (t.expanded && t.node.children?.length === 0 && !t.node.loading) {
+      if (entry.expanded && entry.node.children?.length === 0 && !entry.node.loading) {
         rows.push({
           type: "note",
-          id: `note-${t.key}`,
-          label: t.node.error ?? "No subfolders",
-          depth: t.depth + 1,
+          id: `note-${entry.key}`,
+          label: entry.node.error ?? t("No subfolders"),
+          depth: entry.depth + 1,
         })
       }
-      if (t.expanded && t.node.truncated) {
+      if (entry.expanded && entry.node.truncated) {
         rows.push({
           type: "note",
-          id: `more-${t.key}`,
-          label: "Only the first 20,000 folders are shown",
-          depth: t.depth + 1,
+          id: `more-${entry.key}`,
+          label: t("Only the first 20,000 folders are shown"),
+          depth: entry.depth + 1,
         })
       }
     }
@@ -182,7 +183,7 @@ function FolderPathHeader({ crumbs }: { crumbs: Crumb[] }) {
       className="sticky top-0 z-10 flex h-8 shrink-0 items-center border-b border-border bg-chrome px-2"
       data-testid="sidebar-path-header"
     >
-      <nav aria-label="Selected folder path" className="min-w-0 flex-1 overflow-hidden">
+      <nav aria-label={t("Selected folder path")} className="min-w-0 flex-1 overflow-hidden">
         <ol className="flex min-w-0 items-center">
           {shown.map((crumb, index) => {
             const last = index === shown.length - 1
@@ -198,7 +199,7 @@ function FolderPathHeader({ crumbs }: { crumbs: Crumb[] }) {
                     <DropdownRoot>
                       <DropdownTrigger
                         className="rounded px-1 py-0.5 text-xs text-muted hover:bg-raised hover:text-text"
-                        aria-label={`Show ${hidden.length} parent folders`}
+                        aria-label={t("Show {count} parent folders", { count: hidden.length })}
                         onKeyDown={(event) => event.stopPropagation()}
                       >
                         …
@@ -337,7 +338,11 @@ const RowView = memo(function RowView({
         <button
           type="button"
           tabIndex={-1}
-          aria-label={row.expanded ? `Collapse ${label}` : `Expand ${label}`}
+          aria-label={
+            row.expanded
+              ? t("Collapse {name}", { name: label })
+              : t("Expand {name}", { name: label })
+          }
           className={`grid size-4 shrink-0 place-items-center rounded text-muted hover:text-text ${node?.hasChildren ? "" : "invisible"}`}
           onClick={(e) => {
             e.stopPropagation()
@@ -370,9 +375,28 @@ const RowView = memo(function RowView({
   )
 })
 
+// The quick-access places come named in English from main (home, desktop…);
+// these markers put their names into the translation catalogs.
+export const PLACE_NAMES = [
+  msg("Home"),
+  msg("Desktop"),
+  msg("Documents"),
+  msg("Downloads"),
+  msg("Pictures"),
+  msg("Videos"),
+]
+
 const PREVIEW_PLACES = [
-  { place: "left", label: "Preview under the folders", icon: <PanelBottomLeftIcon size={14} /> },
-  { place: "right", label: "Preview in a column on the right", icon: <PanelRightIcon size={14} /> },
+  {
+    place: "left",
+    label: msg("Preview under the folders"),
+    icon: <PanelBottomLeftIcon size={14} />,
+  },
+  {
+    place: "right",
+    label: msg("Preview in a column on the right"),
+    icon: <PanelRightIcon size={14} />,
+  },
 ] as const
 
 /** Next to the title: where the preview sits (ADR-0023). */
@@ -381,16 +405,16 @@ function PreviewPlaceSwitch() {
   return (
     <div
       role="radiogroup"
-      aria-label="Preview position"
+      aria-label={t("Preview position")}
       className="flex items-center rounded-md border border-border p-px"
     >
       {PREVIEW_PLACES.map(({ place, label, icon }) => (
-        <Tooltip key={place} content={label}>
+        <Tooltip key={place} content={t(label)}>
           <button
             type="button"
             role="radio"
             aria-checked={current === place}
-            aria-label={label}
+            aria-label={t(label)}
             onClick={() => setPreviewPlace(place)}
             className="grid h-5 w-6 place-items-center rounded-[5px] text-muted hover:text-text aria-checked:bg-raised aria-checked:text-accent focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
           >
@@ -502,7 +526,11 @@ export function SidebarPane() {
   const menuBookmarked = menuPath !== null && isBookmarked(bookmarks, menuPath)
 
   return (
-    <nav aria-label="Locations" className="flex h-full min-h-0 flex-col bg-chrome">
+    <nav
+      aria-label={t("Locations")}
+      data-pane="locations"
+      className="flex h-full min-h-0 flex-col bg-chrome"
+    >
       <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4 text-[0.8125rem] font-semibold">
         Panelyth
         <PreviewPlaceSwitch />
@@ -527,7 +555,7 @@ export function SidebarPane() {
             {folderCrumbs.length > 0 && <FolderPathHeader crumbs={folderCrumbs} />}
             <div
               role="tree"
-              aria-label="Folders"
+              aria-label={t("Folders")}
               tabIndex={0}
               aria-activedescendant={
                 focusIndex >= 0 ? `sidebar-${rows[focusIndex]!.id}` : undefined
@@ -578,27 +606,31 @@ export function SidebarPane() {
         </ContextMenuTrigger>
         {menuPath && menuRow && (
           <ContextMenuContent>
-            <ContextMenuItem onSelect={() => void openFolder(menuPath)}>Open</ContextMenuItem>
+            <ContextMenuItem onSelect={() => void openFolder(menuPath)}>
+              {t("Open")}
+            </ContextMenuItem>
             <ContextMenuItem
               onSelect={() => void bridge.revealPath(menuPath).catch(() => undefined)}
             >
-              Show in file manager
+              {t("Show in file manager")}
             </ContextMenuItem>
             <ContextMenuItem onSelect={() => void bridge.copyText(menuPath).catch(() => undefined)}>
-              Copy path
+              {t("Copy path")}
             </ContextMenuItem>
             <ContextMenuSeparator />
             {menuRow.type === "link" && menuRow.bookmarkId !== undefined ? (
               <ContextMenuItem onSelect={() => void removeBookmark(menuRow.bookmarkId!)}>
-                Remove bookmark
+                {t("Remove bookmark")}
               </ContextMenuItem>
             ) : (
               <ContextMenuItem onSelect={() => void toggleBookmark(menuPath)}>
-                {menuBookmarked ? "Remove bookmark" : "Add bookmark"}
+                {menuBookmarked ? t("Remove bookmark") : t("Add bookmark")}
               </ContextMenuItem>
             )}
             {menuRow.type === "tree" && (
-              <ContextMenuItem onSelect={() => void refreshNode(menuPath)}>Refresh</ContextMenuItem>
+              <ContextMenuItem onSelect={() => void refreshNode(menuPath)}>
+                {t("Refresh")}
+              </ContextMenuItem>
             )}
           </ContextMenuContent>
         )}

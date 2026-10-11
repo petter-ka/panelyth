@@ -8,6 +8,7 @@ import { marksDescriptor, useMarksStore } from "../features/marks"
 import type { Side } from "../features/panels"
 import { isRunning, stopSizes, useSizeJobs } from "../features/sizes"
 import { usePanelVolume } from "./DriveBar"
+import { t } from "@panelyth/i18n"
 
 /** Marked sizes are asked of Go at most this often while marks change. */
 const INFO_DELAY_MS = 150
@@ -68,45 +69,57 @@ export function StatusLine({ side }: { side: Side }) {
     >
       {listing ? (
         <>
-          <span>Listing… {formatCount(Math.max(total, progress.entries))} entries so far</span>
+          <span>
+            {t("Listing… {count} entries so far", {
+              count: formatCount(Math.max(total, progress.entries)),
+            })}
+          </span>
           <button
             type="button"
             tabIndex={-1}
             onClick={() => stopListing(side)}
             className="rounded px-1 text-text hover:bg-raised"
           >
-            Stop
+            {t("Stop")}
           </button>
         </>
       ) : marked > 0 ? (
         <span data-testid={`marked-${side}`}>
-          {formatCount(marked)} of {formatCount(total)} marked
-          {shown?.marked && ` · ${formatBytes(shown.marked.bytes)} of ${formatBytes(shown.all)}`}
+          {t("{marked} of {total} marked", {
+            marked: formatCount(marked),
+            total: formatCount(total),
+          })}
+          {shown?.marked &&
+            ` · ${t("{current} of {total}", { current: formatBytes(shown.marked.bytes), total: formatBytes(shown.all) })}`}
         </span>
       ) : (
         <span>
-          {formatCount(total)} {total === 1 ? "entry" : "entries"}
+          {t("{count, plural, one {# entry} other {# entries}}", { count: total })}
           {shown && total > 0 && ` · ${formatBytes(shown.all)}`}
         </span>
       )}
       {isRunning(sizeJob) && (
         <>
-          <span>· Calculating folder sizes…</span>
+          <span>· {t("Calculating folder sizes…")}</span>
           <button
             type="button"
             tabIndex={-1}
             onClick={() => stopSizes(side)}
             className="rounded px-1 text-text hover:bg-raised"
           >
-            Stop
+            {t("Stop")}
           </button>
         </>
       )}
       <span className="flex-1" />
       {volume?.freeBytes !== undefined && (
         <span data-testid={`free-${side}`}>
-          {formatBytes(volume.freeBytes)} free
-          {volume.totalBytes ? ` of ${formatBytes(volume.totalBytes)}` : ""}
+          {volume.totalBytes
+            ? t("{free} free of {total}", {
+                free: formatBytes(volume.freeBytes),
+                total: formatBytes(volume.totalBytes),
+              })
+            : t("{free} free", { free: formatBytes(volume.freeBytes) })}
         </span>
       )}
     </div>

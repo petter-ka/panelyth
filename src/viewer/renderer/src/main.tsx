@@ -1,3 +1,4 @@
+import { initLocale, LocaleBoundary } from "@panelyth/i18n"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { App } from "./app/App"
@@ -20,6 +21,8 @@ import { startWorkspacePersistence } from "./features/workspace/workspace"
 import { startAppearanceSync, startContextSync } from "./features/workspace/appSwitch"
 import "./styles/index.css"
 
+// The stored language loads before the first paint (ADR-0034).
+await initLocale()
 initTheme()
 initInterfaceSize()
 startSidecarMonitoring()
@@ -44,6 +47,8 @@ if (!root) throw new Error("#root missing")
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <LocaleBoundary>
+      <App />
+    </LocaleBoundary>
   </StrictMode>,
 )

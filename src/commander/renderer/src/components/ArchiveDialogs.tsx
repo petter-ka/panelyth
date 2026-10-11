@@ -16,14 +16,16 @@ import {
 } from "../features/archives"
 import { POLICIES } from "../features/files"
 import { formatBytes } from "../features/format"
+import { msg, t } from "@panelyth/i18n"
 
 const field =
   "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const WARNING_TEXT: Record<ArchiveWarning, string> = {
-  space: "The extracted files need more space than the destination drive has free.",
-  ratio:
+  space: msg("The extracted files need more space than the destination drive has free."),
+  ratio: msg(
     "The archive expands to more than 100 times its size. It may be a zip bomb; extract it only if you trust it.",
+  ),
 }
 
 /** The archive warnings of ADR-0030, shown before anything is written. */
@@ -32,7 +34,7 @@ export function ArchiveWarnings({ warnings }: { warnings: readonly ArchiveWarnin
   return (
     <ul role="alert" data-testid="archive-warnings" className="flex flex-col gap-1 text-danger">
       {warnings.map((w) => (
-        <li key={w}>{WARNING_TEXT[w]}</li>
+        <li key={w}>{t(WARNING_TEXT[w])}</li>
       ))}
     </ul>
   )
@@ -41,9 +43,9 @@ export function ArchiveWarnings({ warnings }: { warnings: readonly ArchiveWarnin
 function Destination({ value, onChange }: { value: string; onChange(v: string): void }) {
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-muted">Into the folder</span>
+      <span className="text-muted">{t("Into the folder")}</span>
       <input
-        aria-label="Destination"
+        aria-label={t("Destination")}
         className={field}
         value={value}
         spellCheck={false}
@@ -62,16 +64,16 @@ function Policy({
 }) {
   return (
     <label className="flex flex-1 flex-col gap-1">
-      <span className="text-muted">If the name exists</span>
+      <span className="text-muted">{t("If the name exists")}</span>
       <select
-        aria-label="If the name exists"
+        aria-label={t("If the name exists")}
         className={field}
         value={value}
         onChange={(e) => onChange(e.target.value as PackDialogState["conflict"])}
       >
         {POLICIES.map((p) => (
           <option key={p.value} value={p.value}>
-            {p.label}
+            {t(p.label)}
           </option>
         ))}
       </select>
@@ -95,7 +97,7 @@ function PackForm({ p }: { p: PackDialogState }) {
       onOpenChange={(open) => {
         if (!open) closePack()
       }}
-      title={`Pack ${p.what}`}
+      title={t("Pack {what}", { what: p.what })}
       contentClassName="w-[min(34rem,calc(100vw-2rem))]"
     >
       <form
@@ -108,9 +110,9 @@ function PackForm({ p }: { p: PackDialogState }) {
         }}
       >
         <label className="flex flex-col gap-1">
-          <span className="text-muted">Archive name</span>
+          <span className="text-muted">{t("Archive name")}</span>
           <input
-            aria-label="Archive name"
+            aria-label={t("Archive name")}
             className={field}
             value={p.name}
             spellCheck={false}
@@ -129,14 +131,14 @@ function PackForm({ p }: { p: PackDialogState }) {
         />
         <div className="flex gap-3">
           <fieldset className="flex flex-1 flex-col gap-1">
-            <legend className="mb-1 text-muted">Format</legend>
+            <legend className="mb-1 text-muted">{t("Format")}</legend>
             {FORMATS.map((f) => {
               const disabled = f.value === "7z" && sevenZip !== true
               return (
                 <label
                   key={f.value}
                   className={`flex items-center gap-2 ${disabled ? "text-muted" : ""}`}
-                  title={disabled ? "Needs 7-Zip, which was not found" : undefined}
+                  title={disabled ? t("Needs 7-Zip, which was not found") : undefined}
                 >
                   <input
                     type="radio"
@@ -153,16 +155,16 @@ function PackForm({ p }: { p: PackDialogState }) {
           </fieldset>
           <div className="flex flex-1 flex-col gap-3">
             <label className="flex flex-col gap-1">
-              <span className="text-muted">Compression</span>
+              <span className="text-muted">{t("Compression")}</span>
               <select
-                aria-label="Compression"
+                aria-label={t("Compression")}
                 className={field}
                 value={p.level}
                 onChange={(e) => updatePack({ level: Number(e.target.value) })}
               >
                 {LEVELS.map((l) => (
                   <option key={l.value} value={l.value}>
-                    {l.label}
+                    {t(l.label)}
                   </option>
                 ))}
               </select>
@@ -176,7 +178,7 @@ function PackForm({ p }: { p: PackDialogState }) {
             checked={p.deleteOriginals}
             onChange={(e) => updatePack({ deleteOriginals: e.target.checked })}
           />
-          Delete the originals after packing (move into the archive)
+          {t("Delete the originals after packing (move into the archive)")}
         </label>
         {p.error && (
           <p role="alert" className="text-danger">
@@ -184,9 +186,9 @@ function PackForm({ p }: { p: PackDialogState }) {
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={closePack}>Cancel</Button>
+          <Button onClick={closePack}>{t("Cancel")}</Button>
           <Button type="submit" variant="primary" disabled={busy}>
-            Pack
+            {t("Pack")}
           </Button>
         </div>
       </form>
@@ -205,15 +207,18 @@ function UnpackForm({ u }: { u: UnpackDialogState }) {
   const [busy, setBusy] = useState(false)
   const size =
     u.files === null || u.bytes === null
-      ? "Checking the size…"
-      : `${u.files.toLocaleString()} ${u.files === 1 ? "file" : "files"}, ${formatBytes(u.bytes)}`
+      ? t("Checking the size…")
+      : t("{count, plural, one {# file} other {# files}}, {size}", {
+          count: u.files,
+          size: formatBytes(u.bytes),
+        })
   return (
     <DialogWindow
       open
       onOpenChange={(open) => {
         if (!open) closeUnpack()
       }}
-      title={`Unpack ${u.what}`}
+      title={t("Unpack {what}", { what: u.what })}
       contentClassName="w-[min(34rem,calc(100vw-2rem))]"
     >
       <form
@@ -241,7 +246,7 @@ function UnpackForm({ u }: { u: UnpackDialogState }) {
             checked={u.subfolders}
             onChange={(e) => updateUnpack({ subfolders: e.target.checked })}
           />
-          Unpack each archive into its own folder
+          {t("Unpack each archive into its own folder")}
         </label>
         <label className="flex items-center gap-2">
           <input
@@ -249,7 +254,7 @@ function UnpackForm({ u }: { u: UnpackDialogState }) {
             checked={u.links}
             onChange={(e) => updateUnpack({ links: e.target.checked })}
           />
-          Create links stored in the archives (only those that stay inside the folder)
+          {t("Create links stored in the archives (only those that stay inside the folder)")}
         </label>
         <ArchiveWarnings warnings={u.warnings} />
         {u.error && (
@@ -258,9 +263,9 @@ function UnpackForm({ u }: { u: UnpackDialogState }) {
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={closeUnpack}>Cancel</Button>
+          <Button onClick={closeUnpack}>{t("Cancel")}</Button>
           <Button type="submit" variant="primary" disabled={busy} autoFocus>
-            {u.warnings.length > 0 ? "Unpack anyway" : "Unpack"}
+            {u.warnings.length > 0 ? t("Unpack anyway") : t("Unpack")}
           </Button>
         </div>
       </form>

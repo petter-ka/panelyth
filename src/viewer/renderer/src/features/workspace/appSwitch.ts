@@ -12,6 +12,7 @@ import {
   toDescriptor,
   useSelectionStore,
 } from "../tiles/selectionStore"
+import { t } from "@panelyth/i18n"
 
 /**
  * The connection point to the commander (ADR-0031, docs/shared/APP-SWITCHING.md).
@@ -99,7 +100,7 @@ export async function applyCommanderContext(): Promise<void> {
  */
 async function applySelection(ctx: SharedContext): Promise<void> {
   if (ctx.selectionTooLarge) {
-    notify("The selection is too large to carry over")
+    notify(t("The selection is too large to carry over"))
     return
   }
   const query = useFolderStore.getState().query

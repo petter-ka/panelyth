@@ -13,6 +13,7 @@ import {
 import { tabTarget } from "../features/files"
 import { dropTarget } from "./panelDnd"
 import { PopupMenu } from "./PopupMenu"
+import { t } from "@panelyth/i18n"
 
 /**
  * Folder tabs of a panel (Stage C03, CFR-08), shown once a panel has more
@@ -29,13 +30,13 @@ export function TabBar({ side }: { side: Side }) {
   return (
     <div
       role="tablist"
-      aria-label={`${side === "left" ? "Left" : "Right"} panel tabs`}
+      aria-label={side === "left" ? t("Left panel tabs") : t("Right panel tabs")}
       data-testid={`tabs-${side}`}
       className="relative flex h-7 shrink-0 items-end gap-px overflow-x-auto border-b border-border bg-chrome px-1 text-[0.6875rem]"
     >
       {tabs.map((tab, index) => {
         const selected = index === active
-        const name = (selected ? liveName : tab.name) || tab.path || "New tab"
+        const name = (selected ? liveName : tab.name) || tab.path || t("New tab")
         const files = dropTarget(side, () => tabTarget(side, index))
         return (
           <Tooltip key={tab.id} content={tab.path}>
@@ -75,7 +76,7 @@ export function TabBar({ side }: { side: Side }) {
               className={`group/tab flex h-6 max-w-40 min-w-0 cursor-default items-center gap-1 rounded-t border border-b-0 px-2 font-medium ${selected ? "border-border bg-canvas text-text" : "border-transparent text-muted hover:bg-raised hover:text-text"}`}
             >
               {tab.locked && (
-                <span aria-label="Locked" className="text-muted">
+                <span aria-label={t("Locked")} className="text-muted">
                   🔒︎
                 </span>
               )}
@@ -84,7 +85,7 @@ export function TabBar({ side }: { side: Side }) {
                 <button
                   type="button"
                   tabIndex={-1}
-                  aria-label={`Close ${name}`}
+                  aria-label={t("Close {name}", { name })}
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={(e) => {
                     e.stopPropagation()
@@ -101,25 +102,25 @@ export function TabBar({ side }: { side: Side }) {
       })}
       {menu !== null && tabs[menu] && (
         <PopupMenu
-          label="Tab"
+          label={t("Tab")}
           testId={`tab-menu-${side}`}
           className="top-7 left-2"
           onClose={() => setMenu(null)}
           entries={[
             {
               id: "lock",
-              label: tabs[menu].locked ? "Unlock tab" : "Lock tab",
+              label: tabs[menu].locked ? t("Unlock tab") : t("Lock tab"),
               onSelect: () => toggleLock(side, menu),
             },
             {
               id: "close",
-              label: "Close tab",
+              label: t("Close tab"),
               disabled: tabs[menu].locked,
               onSelect: () => void closeTab(side, menu),
             },
             {
               id: "others",
-              label: "Close other tabs",
+              label: t("Close other tabs"),
               onSelect: () => closeOtherTabs(side, menu),
             },
           ]}

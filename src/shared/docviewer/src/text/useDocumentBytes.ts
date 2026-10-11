@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import { MAX_TEXT_BYTES } from "./decode"
+import { t } from "@panelyth/i18n"
 
 export type BytesState =
   | { status: "loading" }
@@ -17,7 +18,8 @@ export function useDocumentBytes(src: string, sizeBytes: number): BytesState {
       headers: sizeBytes > MAX_TEXT_BYTES ? { Range: `bytes=0-${MAX_TEXT_BYTES - 1}` } : {},
     })
       .then(async (response) => {
-        if (!response.ok) throw new Error(`The file could not be read (${response.status}).`)
+        if (!response.ok)
+          throw new Error(t("The file could not be read ({status}).", { status: response.status }))
         const bytes = new Uint8Array(await response.arrayBuffer())
         setState({ status: "ready", bytes, truncated: sizeBytes > bytes.length })
       })
@@ -25,7 +27,7 @@ export function useDocumentBytes(src: string, sizeBytes: number): BytesState {
         if (abort.signal.aborted) return
         setState({
           status: "error",
-          message: error instanceof Error ? error.message : "The file could not be read.",
+          message: error instanceof Error ? error.message : t("The file could not be read."),
         })
       })
     return () => abort.abort()

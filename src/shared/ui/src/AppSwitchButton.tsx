@@ -1,5 +1,6 @@
 import type { AppId } from "@panelyth/contracts"
 import { Tooltip } from "./Tooltip"
+import { t } from "@panelyth/i18n"
 
 const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
 
@@ -39,7 +40,7 @@ export interface AppSwitchButtonProps {
  * one icon button, showing the other app.
  */
 export function AppSwitchButton({ target, shortcut, onSwitch }: AppSwitchButtonProps) {
-  const label = `Switch to ${TITLES[target]}`
+  const label = t("Switch to {app}", { app: TITLES[target] })
   return (
     <Tooltip content={`${label} (${shortcut})`} side="right">
       <button

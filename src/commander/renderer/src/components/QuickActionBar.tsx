@@ -7,6 +7,7 @@ import { useListingStore } from "../features/listing"
 import { usePanelsStore } from "../features/panels"
 import { quickTarget, useViewersStore } from "../features/viewers"
 import { CommanderActionIcon, type CommanderActionIconName } from "./CommanderActionIcon"
+import { msg, t } from "@panelyth/i18n"
 
 const ACTIONS: readonly {
   action: ActionId
@@ -14,13 +15,13 @@ const ACTIONS: readonly {
   icon: CommanderActionIconName
   dividerBefore?: boolean
 }[] = [
-  { action: "find.open", label: "Find files", icon: "search" },
-  { action: "view.filter", label: "Quick filter", icon: "filter" },
-  { action: "view.branch", label: "Branch view", icon: "branch" },
-  { action: "view.quick", label: "Quick view", icon: "preview", dividerBefore: true },
-  { action: "view.refresh", label: "Refresh", icon: "refresh" },
-  { action: "hotlist.open", label: "Directory hotlist", icon: "star" },
-  { action: "files.rename", label: "Rename", icon: "edit" },
+  { action: "find.open", label: msg("Find files"), icon: "search" },
+  { action: "view.filter", label: msg("Quick filter"), icon: "filter" },
+  { action: "view.branch", label: msg("Branch view"), icon: "branch" },
+  { action: "view.quick", label: msg("Quick view"), icon: "preview", dividerBefore: true },
+  { action: "view.refresh", label: msg("Refresh"), icon: "refresh" },
+  { action: "hotlist.open", label: msg("Directory hotlist"), icon: "star" },
+  { action: "files.rename", label: msg("Rename"), icon: "edit" },
 ]
 
 /** Compact icon shortcuts for common commands outside the function-key set. */
@@ -33,7 +34,7 @@ export function QuickActionBar() {
 
   return (
     <nav
-      aria-label="Quick actions"
+      aria-label={t("Quick actions")}
       className="flex h-9 shrink-0 items-center gap-1 border-b border-border bg-chrome px-1.5"
       data-testid="quick-actions"
     >
@@ -57,10 +58,10 @@ export function QuickActionBar() {
                 className="mx-1 h-4 w-px shrink-0 bg-border"
               />
             )}
-            <Tooltip content={shortcut ? `${label} (${shortcut})` : label}>
+            <Tooltip content={shortcut ? `${t(label)} (${shortcut})` : t(label)}>
               <button
                 type="button"
-                aria-label={label}
+                aria-label={t(label)}
                 aria-pressed={pressed}
                 onClick={() => runPanelAction(usePanelsStore.getState().active, action)}
                 className="group grid size-8 shrink-0 place-items-center rounded-md text-muted hover:bg-raised hover:text-text aria-pressed:bg-accent/10 aria-pressed:text-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent"

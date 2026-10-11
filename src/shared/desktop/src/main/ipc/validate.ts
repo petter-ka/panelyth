@@ -517,11 +517,12 @@ export const validators: Record<RendererMethod, Validator> = {
   "shell.edit": entryParams,
   "file.open": entryParams,
   "document.open": (p) =>
-    shapeWithOptional(p, ["entryId"], ["theme"]) &&
+    shapeWithOptional(p, ["entryId"], ["theme", "lang"]) &&
     isId(p.entryId) &&
-    (p.theme === undefined || (typeof p.theme === "string" && /^[a-z-]{1,32}$/.test(p.theme)))
+    (p.theme === undefined || (typeof p.theme === "string" && /^[a-z-]{1,32}$/.test(p.theme))) &&
+    (p.lang === undefined || (typeof p.lang === "string" && /^[a-z]{2,3}$/.test(p.lang)))
       ? null
-      : "expected { entryId, theme? }",
+      : "expected { entryId, theme?, lang? }",
   "shell.reveal": entryParams,
   "shell.revealPath": (p) => (shape(p, ["path"]) ? pathProblem(p.path) : "expected { path }"),
   "clipboard.copyPaths": (p) => {

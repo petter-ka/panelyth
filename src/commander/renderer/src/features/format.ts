@@ -1,12 +1,18 @@
 import type { GlyphName } from "@panelyth/ui"
 import { ENTRY_ATTRS, type ContentItem } from "@panelyth/contracts"
-import { formatRelative } from "date-fns"
+import { currentLocale, perLocale, type Locale } from "@panelyth/i18n"
+import { formatRelative, type Locale as DateFnsLocale } from "date-fns"
+import { de, enUS, es, fr, hu, it, pl, ru } from "date-fns/locale"
 import type { DateFormat, SizeFormat } from "./settings"
 
 const IS_WINDOWS = typeof navigator !== "undefined" && /win/i.test(navigator.platform)
 
-const integer = new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 })
-const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeStyle: "short" })
+// Numbers and dates follow the interface language (ADR-0034).
+const integer = perLocale((locale) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }))
+const dateTime = perLocale(
+  (locale) => new Intl.DateTimeFormat(locale, { dateStyle: "short", timeStyle: "short" }),
+)
+const DATE_FNS: Record<Locale, DateFnsLocale> = { en: enUS, hu, es, it, fr, pl, ru, de }
 
 /**
  * Size column: readable units by default, or bytes with thousands separators
@@ -15,7 +21,7 @@ const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: "short", timeSt
 export function formatSize(item: ContentItem, format: SizeFormat = "units"): string {
   const bytes = item.kind === "dir" ? item.dirSizeBytes : item.sizeBytes
   if (bytes === undefined) return "<DIR>"
-  return format === "units" ? formatBytes(bytes) : integer.format(bytes)
+  return format === "units" ? formatBytes(bytes) : integer().format(bytes)
 }
 
 const pad = (n: number): string => String(n).padStart(2, "0")
@@ -23,7 +29,7 @@ const pad = (n: number): string => String(n).padStart(2, "0")
 /** Configured date format for Quick View and Commander lists in `configured` mode. */
 export function formatDate(ms: number, format: DateFormat = "locale"): string {
   if (ms <= 0) return ""
-  if (format === "locale") return dateTime.format(ms)
+  if (format === "locale") return dateTime().format(ms)
   const d = new Date(ms)
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
@@ -40,12 +46,12 @@ export function formatListDate(
 ): string {
   if (ms <= 0) return ""
   return mode === "relative"
-    ? formatRelative(new Date(ms), new Date())
+    ? formatRelative(new Date(ms), new Date(), { locale: DATE_FNS[currentLocale()] })
     : formatDate(ms, configuredFormat)
 }
 
 export function formatCount(n: number): string {
-  return integer.format(n)
+  return integer().format(n)
 }
 
 const UNITS = ["B", "KB", "MB", "GB", "TB", "PB"]

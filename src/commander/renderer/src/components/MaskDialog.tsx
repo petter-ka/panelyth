@@ -2,6 +2,7 @@ import { Button, DialogWindow } from "@panelyth/ui"
 import { useState } from "react"
 import { useUiStore } from "../features/commands"
 import { markByMask } from "../features/marks"
+import { t } from "@panelyth/i18n"
 
 /**
  * Num+ / Num−: mark or unmark the files matching a mask (the nameMask syntax:
@@ -39,8 +40,8 @@ function MaskForm({
       onOpenChange={(open) => {
         if (!open) close()
       }}
-      title={mark ? "Mark files" : "Unmark files"}
-      description="Masks separated by ; — put exclusions after |, e.g. *.jpg;*.png|*_small.*"
+      title={mark ? t("Mark files") : t("Unmark files")}
+      description={t("Masks separated by ; — put exclusions after |, e.g. *.jpg;*.png|*_small.*")}
     >
       <form
         onSubmit={(e) => {
@@ -50,7 +51,7 @@ function MaskForm({
         className="flex flex-col gap-3"
       >
         <input
-          aria-label="Mask"
+          aria-label={t("Mask")}
           value={mask}
           spellCheck={false}
           onChange={(e) => setMask(e.target.value)}
@@ -58,9 +59,9 @@ function MaskForm({
           className="h-8 rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
         />
         <div className="flex justify-end gap-2">
-          <Button onClick={close}>Cancel</Button>
+          <Button onClick={close}>{t("Cancel")}</Button>
           <Button type="submit" variant="primary">
-            {mark ? "Mark" : "Unmark"}
+            {mark ? t("Mark") : t("Unmark")}
           </Button>
         </div>
       </form>

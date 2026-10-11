@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react"
 import { EmptyState } from "../components/EmptyState"
+import { t } from "@panelyth/i18n"
 
 interface Props {
   children: ReactNode
@@ -27,7 +28,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <EmptyState
           tone="danger"
-          title="Something went wrong"
+          title={t("Something went wrong")}
           description={this.state.error.message}
           action={
             <button
@@ -35,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
               className="h-7 rounded-md border border-border bg-raised px-2.5 text-xs hover:border-muted"
               onClick={() => location.reload()}
             >
-              Reload
+              {t("Reload")}
             </button>
           }
         />

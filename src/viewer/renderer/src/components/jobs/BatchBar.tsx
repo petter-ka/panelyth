@@ -10,6 +10,7 @@ import { useShortcutHint } from "../../features/shortcuts/shortcutStore"
 import { selectionCount, useSelectionStore } from "../../features/tiles/selectionStore"
 import { formatCount } from "../../lib/format"
 import { CopyIcon, HeartIcon, MoveIcon, TagIcon, TrashIcon } from "../ui/icons"
+import { t } from "@panelyth/i18n"
 
 function Action(props: { label: string; title?: string; onClick(): void; children: ReactNode }) {
   return (
@@ -39,28 +40,34 @@ export function BatchBar() {
   return (
     <div
       role="toolbar"
-      aria-label="Selection actions"
+      aria-label={t("Selection actions")}
       className="absolute bottom-3 left-3 z-10 flex items-center gap-0.5 rounded-lg border border-border bg-chrome p-1 shadow-lg shadow-black/30"
       data-testid="batch-bar"
     >
-      <span className="px-2 text-xs font-medium tabular-nums">{formatCount(count)} selected</span>
-      <Action label="Copy to…" onClick={() => void transferSelection("copy")}>
+      <span className="px-2 text-xs font-medium tabular-nums">
+        {t("{count} selected", { count: formatCount(count) })}
+      </span>
+      <Action label={t("Copy to…")} onClick={() => void transferSelection("copy")}>
         <CopyIcon size={14} />
       </Action>
-      <Action label="Move to…" onClick={() => void transferSelection("move")}>
+      <Action label={t("Move to…")} onClick={() => void transferSelection("move")}>
         <MoveIcon size={14} />
       </Action>
       <Action
-        label="Delete"
-        title={trashKey ? `Move to trash (${trashKey})` : "Move to trash"}
+        label={t("Delete")}
+        title={trashKey ? t("Move to trash ({key})", { key: trashKey }) : t("Move to trash")}
         onClick={() => void trashSelection()}
       >
         <TrashIcon size={14} />
       </Action>
-      <Action label="Tag…" onClick={askTags}>
+      <Action label={t("Tag…")} onClick={askTags}>
         <TagIcon size={14} />
       </Action>
-      <Action label="Favorite" title="Add to favorites" onClick={() => void setFavorite(true)}>
+      <Action
+        label={t("Favorite")}
+        title={t("Add to favorites")}
+        onClick={() => void setFavorite(true)}
+      >
         <HeartIcon size={14} />
       </Action>
     </div>

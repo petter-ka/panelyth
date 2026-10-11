@@ -49,6 +49,7 @@ import { openViewerAt } from "../../features/viewer/viewerStore"
 import { ContextMenuRoot, ContextMenuTrigger } from "../ui/menu"
 import { Tile } from "./Tile"
 import { TileMenu, type MenuTarget } from "./TileMenu"
+import { t } from "@panelyth/i18n"
 
 /** Pause after scrolling before thumbnails are requested (fast scrolls request nothing). */
 const SETTLE_MS = 80
@@ -546,7 +547,7 @@ export function TileView() {
             setMenuTarget(onTile ? "selection" : "background")
           }}
           role="grid"
-          aria-label="Folder contents"
+          aria-label={t("Folder contents")}
           aria-rowcount={rows}
           aria-colcount={perRow}
           aria-activedescendant={total > 0 ? `tile-${focusIndex}` : undefined}

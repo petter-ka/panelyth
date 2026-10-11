@@ -9,14 +9,15 @@ import { THEME_OPTIONS, useThemeStore } from "../features/theme/themeStore"
 import { selectionCount, toDescriptor, useSelectionStore } from "../features/tiles/selectionStore"
 import { formatBytes, formatCount } from "../lib/format"
 import { KeyboardIcon } from "./ui/icons"
+import { msg, t } from "@panelyth/i18n"
 
 const LABEL: Record<SidecarState, string> = {
-  starting: "Backend starting",
-  ready: "Backend ready",
-  restarting: "Backend restarting",
-  stopping: "Backend stopping",
-  stopped: "Backend stopped",
-  failed: "Backend unavailable",
+  starting: msg("Backend starting"),
+  ready: msg("Backend ready"),
+  restarting: msg("Backend restarting"),
+  stopping: msg("Backend stopping"),
+  stopped: msg("Backend stopped"),
+  failed: msg("Backend unavailable"),
 }
 
 const DOT: Record<SidecarState, string> = {
@@ -59,7 +60,8 @@ function SelectionSummary() {
   const bytes = size && size.key === selection ? `, ${formatBytes(size.bytes)}` : ""
   return (
     <span className="tabular-nums text-text" data-testid="selection-summary">
-      {formatCount(count)} selected{count > 1 ? bytes : ""}
+      {t("{count} selected", { count: formatCount(count) })}
+      {count > 1 ? bytes : ""}
     </span>
   )
 }
@@ -70,8 +72,9 @@ export function StatusBar() {
   const goVersion = useSidecarStore((s) => s.info?.goVersion ?? null)
   const preference = useThemeStore((s) => s.preference)
   const cycleTheme = useThemeStore((s) => s.cycle)
-  const themeLabel =
-    THEME_OPTIONS.find((option) => option.value === preference)?.label ?? preference
+  const themeLabel = t(
+    THEME_OPTIONS.find((option) => option.value === preference)?.label ?? preference,
+  )
   const shortcutHint = useShortcutHint("help.shortcuts")
 
   return (
@@ -83,17 +86,17 @@ export function StatusBar() {
         data-testid="sidecar-status"
       >
         <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT[state]}`} />
-        <span data-state={state}>{LABEL[state]}</span>
+        <span data-state={state}>{t(LABEL[state])}</span>
       </span>
       {state === "ready" && (
-        <Tooltip content="Measure backend round trip">
+        <Tooltip content={t("Measure backend round trip")}>
           <button
             type="button"
             onClick={() => void measurePing()}
             className="rounded px-1 tabular-nums hover:text-text"
             data-testid="ping"
           >
-            {pingMs === null ? "ping …" : `ping ${pingMs.toFixed(1)} ms`}
+            {pingMs === null ? t("ping …") : t("ping {ms} ms", { ms: pingMs.toFixed(1) })}
           </button>
         </Tooltip>
       )}
@@ -101,25 +104,29 @@ export function StatusBar() {
       <span className="flex-1" />
       <SelectionSummary />
       <Tooltip
-        content={shortcutHint ? `Keyboard shortcuts (${shortcutHint})` : "Keyboard shortcuts"}
+        content={
+          shortcutHint
+            ? t("Keyboard shortcuts ({shortcut})", { shortcut: shortcutHint })
+            : t("Keyboard shortcuts")
+        }
       >
         <button
           type="button"
           onClick={openShortcutHelp}
-          aria-label="Keyboard shortcuts"
+          aria-label={t("Keyboard shortcuts")}
           className="grid place-items-center rounded px-1 hover:text-text"
         >
           <KeyboardIcon size={14} />
         </button>
       </Tooltip>
-      <Tooltip content="Change theme">
+      <Tooltip content={t("Change theme")}>
         <button
           type="button"
           onClick={cycleTheme}
           className="rounded px-1 capitalize hover:text-text"
           data-testid="theme-toggle"
         >
-          Theme: {themeLabel}
+          {t("Theme: {theme}", { theme: themeLabel })}
         </button>
       </Tooltip>
     </footer>

@@ -1,6 +1,7 @@
 import { setSwitchSettings, useSwitchSettings } from "@panelyth/renderer-core"
 import { useId, useState, type KeyboardEvent, type ReactNode } from "react"
-import { THEME_OPTIONS, useInterfaceSizeStore, useThemeStore } from "./appearance"
+import { LOCALES, LOCALE_NAMES, t, type Locale, useLocaleStore } from "@panelyth/i18n"
+import { setLanguage, THEME_OPTIONS, useInterfaceSizeStore, useThemeStore } from "./appearance"
 import { Button } from "./button"
 import { DialogWindow } from "./dialog"
 import { Tooltip } from "./Tooltip"
@@ -102,37 +103,39 @@ function GeneralSettings({ settingsReady }: { settingsReady: boolean }) {
     setSwitchSettings({ carry: { ...carry, [part]: value } })
 
   return (
-    <section aria-label="Switching apps" data-testid="settings-general">
+    <section aria-label={t("Switching apps")} data-testid="settings-general">
       <h3 className="pb-1 text-[0.6875rem] font-medium text-muted">
-        When switching apps, carry over
+        {t("When switching apps, carry over")}
       </h3>
       <SwitchRow
-        label="The folder"
-        description="The other app opens the folder you are in."
+        label={t("The folder")}
+        description={t("The other app opens the folder you are in.")}
         checked={carry.folder}
         disabled={!settingsReady}
         onChange={(value) => setCarry("folder", value)}
       />
       <SwitchRow
-        label="The entry under the cursor"
-        description="The cursor or the selected tile lands on the same file."
+        label={t("The entry under the cursor")}
+        description={t("The cursor or the selected tile lands on the same file.")}
         checked={carry.focus}
         disabled={!settingsReady}
         onChange={(value) => setCarry("focus", value)}
       />
       <SwitchRow
-        label="The selection"
-        description="Marked files stay selected, up to 10,000; files the viewer doesn't show are left out."
+        label={t("The selection")}
+        description={t(
+          "Marked files stay selected, up to 10,000; files the viewer doesn't show are left out.",
+        )}
         checked={carry.selection}
         disabled={!settingsReady}
         onChange={(value) => setCarry("selection", value)}
       />
-      <h3 className="pt-4 pb-2 text-[0.6875rem] font-medium text-muted">Start with</h3>
+      <h3 className="pt-4 pb-2 text-[0.6875rem] font-medium text-muted">{t("Start with")}</h3>
       <ChoiceGroup
-        label="Start with"
+        label={t("Start with")}
         value={startWith}
         options={[
-          { value: "last", label: "Last used app" },
+          { value: "last", label: t("Last used app") },
           { value: "viewer", label: "Viewer" },
           { value: "commander", label: "Commander" },
         ]}
@@ -148,36 +151,54 @@ function AppearanceSettings() {
   const setPreference = useThemeStore((s) => s.setPreference)
   const interfaceSize = useInterfaceSizeStore((s) => s.size)
   const setInterfaceSize = useInterfaceSizeStore((s) => s.setSize)
+  const language = useLocaleStore((s) => s.locale)
   return (
-    <div className="space-y-4" aria-label="Appearance">
+    <div className="space-y-4" aria-label={t("Appearance")}>
       <section className="space-y-2">
-        <h3 className="text-xs font-medium">Theme</h3>
+        <h3 className="text-xs font-medium">{t("Theme")}</h3>
         <ChoiceGroup
-          label="Color theme"
+          label={t("Color theme")}
           value={preference}
           disabled={false}
-          options={THEME_OPTIONS}
+          options={THEME_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
           onChange={setPreference}
           layout="grid"
         />
         <p className="text-[0.6875rem] text-muted">
-          System follows your operating system's light or dark setting.
+          {t("System follows your operating system's light or dark setting.")}
         </p>
       </section>
       <section className="space-y-2 border-t border-border pt-3">
-        <h3 className="text-xs font-medium">Font and spacing</h3>
+        <h3 className="text-xs font-medium">{t("Font and spacing")}</h3>
         <ChoiceGroup
-          label="Font and spacing size"
+          label={t("Font and spacing size")}
           value={interfaceSize}
           disabled={false}
           options={[
-            { value: "small", label: "S", title: "Small" },
-            { value: "medium", label: "M", title: "Medium" },
-            { value: "large", label: "L", title: "Large" },
+            { value: "small", label: t("S"), title: t("Small") },
+            { value: "medium", label: t("M"), title: t("Medium") },
+            { value: "large", label: t("L"), title: t("Large") },
           ]}
           onChange={setInterfaceSize}
         />
-        <p className="text-[0.6875rem] text-muted">Adjusts interface text, padding, and spacing.</p>
+        <p className="text-[0.6875rem] text-muted">
+          {t("Adjusts interface text, padding, and spacing.")}
+        </p>
+      </section>
+      <section className="space-y-2 border-t border-border pt-3">
+        <h3 className="text-xs font-medium">{t("Language")}</h3>
+        <select
+          aria-label={t("Interface language")}
+          value={language}
+          onChange={(e) => void setLanguage(e.target.value as Locale)}
+          className="h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
+        >
+          {LOCALES.map((locale) => (
+            <option key={locale} value={locale}>
+              {LOCALE_NAMES[locale]}
+            </option>
+          ))}
+        </select>
       </section>
     </div>
   )
@@ -209,10 +230,10 @@ function SharedSettingsDialogContent({
   const [tab, setTab] = useState<SettingsTab>(currentApp)
   const appLabel = currentApp === "viewer" ? "Viewer" : "Commander"
   const tabs: readonly { id: SettingsTab; label: string }[] = [
-    ...(showGeneral ? [{ id: "general" as const, label: "General" }] : []),
+    ...(showGeneral ? [{ id: "general" as const, label: t("General") }] : []),
     { id: currentApp, label: appLabel },
-    { id: "appearance", label: "Appearance" },
-    { id: "shortcuts", label: "Shortcuts" },
+    { id: "appearance", label: t("Appearance") },
+    { id: "shortcuts", label: t("Shortcuts") },
   ]
 
   const selectAdjacentTab = (e: KeyboardEvent<HTMLDivElement>): void => {
@@ -234,13 +255,13 @@ function SharedSettingsDialogContent({
     <DialogWindow
       open={open}
       onOpenChange={(next) => !next && onClose()}
-      title="Settings"
+      title={t("Settings")}
       contentClassName="w-[min(38rem,calc(100vw-2rem))]"
     >
       <div className="-mx-4 -mt-4">
         <div
           role="tablist"
-          aria-label="Settings sections"
+          aria-label={t("Settings sections")}
           onKeyDown={selectAdjacentTab}
           className="flex gap-1 border-b border-border px-3 py-2"
         >
@@ -273,7 +294,9 @@ function SharedSettingsDialogContent({
           {tab === "shortcuts" && (
             <section className="space-y-3 text-xs">
               <p className="text-muted">
-                Review and customize the keys used for navigation, file actions, and the viewer.
+                {t(
+                  "Review and customize the keys used for navigation, file actions, and the viewer.",
+                )}
               </p>
               <Button
                 variant="primary"
@@ -282,7 +305,7 @@ function SharedSettingsDialogContent({
                   onOpenShortcuts()
                 }}
               >
-                Open keyboard shortcuts
+                {t("Open keyboard shortcuts")}
               </Button>
             </section>
           )}

@@ -1,6 +1,7 @@
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { memo, useEffect, useRef } from "react"
 import type { PDFDocumentProxy } from "./pdfjs"
+import { t } from "@panelyth/i18n"
 
 const THUMB_WIDTH = 120
 const GAP = 28
@@ -69,7 +70,7 @@ export function PdfThumbs({ doc, aspect, current, onSelect }: PdfThumbsProps) {
     <div
       ref={box}
       className="h-full w-40 shrink-0 overflow-y-auto border-r border-border bg-chrome"
-      aria-label="Pages"
+      aria-label={t("Pages")}
     >
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
         {virtualizer.getVirtualItems().map((row) => {
@@ -78,7 +79,7 @@ export function PdfThumbs({ doc, aspect, current, onSelect }: PdfThumbsProps) {
             <button
               key={row.key}
               type="button"
-              aria-label={`Page ${page}`}
+              aria-label={t("Page {page}", { page })}
               aria-current={page === current || undefined}
               onClick={() => onSelect(page)}
               className="absolute left-0 flex w-full flex-col items-center gap-1 pt-2 text-[0.6875rem] text-muted"

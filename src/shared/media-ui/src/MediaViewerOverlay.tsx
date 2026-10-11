@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "re
 import { ImageViewer, type ImageViewerController } from "./ImageViewer"
 import { VideoPlayer } from "./VideoPlayer"
 import { requestFit, requestMedia } from "./viewerImages"
+import { t } from "@panelyth/i18n"
 
 export interface MediaViewerOverlayProps {
   item: ContentItem
@@ -77,7 +78,7 @@ export function MediaViewerOverlay({
       ref={root}
       role="dialog"
       aria-modal="true"
-      aria-label={`Media viewer: ${item.name}`}
+      aria-label={t("Media viewer: {name}", { name: item.name })}
       tabIndex={-1}
       onKeyDown={onKeyDown}
       className="fixed inset-0 z-[100] flex flex-col bg-canvas text-text outline-none"
@@ -88,7 +89,7 @@ export function MediaViewerOverlay({
         <button
           type="button"
           className="grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text disabled:opacity-40"
-          aria-label="Previous media"
+          aria-label={t("Previous media")}
           disabled={!onStep}
           onClick={() => onStep?.(-1)}
         >
@@ -97,7 +98,7 @@ export function MediaViewerOverlay({
         <button
           type="button"
           className="grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text disabled:opacity-40"
-          aria-label="Next media"
+          aria-label={t("Next media")}
           disabled={!onStep}
           onClick={() => onStep?.(1)}
         >
@@ -105,14 +106,14 @@ export function MediaViewerOverlay({
         </button>
         <span className="min-w-0 flex-1 truncate text-xs font-medium">{item.name}</span>
         {isImage && (
-          <div role="toolbar" aria-label="Zoom" className="flex shrink-0 items-center gap-1">
+          <div role="toolbar" aria-label={t("Zoom")} className="flex shrink-0 items-center gap-1">
             <button
               type="button"
               className={zoomButton}
               aria-pressed={zoom.fit}
               onClick={() => imageController.current?.fit()}
             >
-              Fit
+              {t("Fit")}
             </button>
             <button
               type="button"
@@ -124,7 +125,7 @@ export function MediaViewerOverlay({
             <button
               type="button"
               className="grid size-7 place-items-center rounded-md text-text hover:bg-raised"
-              aria-label="Zoom out"
+              aria-label={t("Zoom out")}
               onClick={() => imageController.current?.zoomOut()}
             >
               −
@@ -135,7 +136,7 @@ export function MediaViewerOverlay({
             <button
               type="button"
               className="grid size-7 place-items-center rounded-md text-text hover:bg-raised"
-              aria-label="Zoom in"
+              aria-label={t("Zoom in")}
               onClick={() => imageController.current?.zoomIn()}
             >
               +
@@ -145,7 +146,7 @@ export function MediaViewerOverlay({
         <button
           type="button"
           className="h-7 rounded-md border border-border bg-raised px-2.5 text-xs hover:border-muted"
-          aria-label="Close media viewer"
+          aria-label={t("Close media viewer")}
           onClick={onClose}
         >
           Close

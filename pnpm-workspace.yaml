@@ -7,6 +7,7 @@ packages:
   - src/shared/renderer-core
   - src/shared/media-ui
   - src/shared/docviewer
+  - src/shared/i18n
   - src/viewer/renderer
   - src/commander/renderer
 

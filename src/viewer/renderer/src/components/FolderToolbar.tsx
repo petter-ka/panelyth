@@ -57,19 +57,20 @@ import {
   DropdownSeparator,
   DropdownTrigger,
 } from "./ui/menu"
+import { msg, t } from "@panelyth/i18n"
 
 export const SORT_LABELS: Record<SortField, string> = {
-  name: "Name",
-  modified: "Date modified",
-  created: "Date created",
-  size: "Size",
-  type: "Type",
-  dimensions: "Dimensions",
-  duration: "Duration",
-  favorite: "Favorite",
-  rating: "Rating",
-  tags: "Tags",
-  attrs: "Attributes",
+  name: msg("Name"),
+  modified: msg("Date modified"),
+  created: msg("Date created"),
+  size: msg("Size"),
+  type: msg("Type"),
+  dimensions: msg("Dimensions"),
+  duration: msg("Duration"),
+  favorite: msg("Favorite"),
+  rating: msg("Rating"),
+  tags: msg("Tags"),
+  attrs: msg("Attributes"),
 }
 
 /** Direction names that say what the order means for the field. */
@@ -78,18 +79,18 @@ export function directionLabel(field: SortField, direction: SortDirection): stri
   switch (field) {
     case "modified":
     case "created":
-      return asc ? "Oldest first" : "Newest first"
+      return asc ? t("Oldest first") : t("Newest first")
     case "size":
     case "dimensions":
-      return asc ? "Smallest first" : "Largest first"
+      return asc ? t("Smallest first") : t("Largest first")
     case "duration":
-      return asc ? "Shortest first" : "Longest first"
+      return asc ? t("Shortest first") : t("Longest first")
     case "favorite":
-      return asc ? "Favorites last" : "Favorites first"
+      return asc ? t("Favorites last") : t("Favorites first")
     case "rating":
-      return asc ? "Lowest first" : "Highest first"
+      return asc ? t("Lowest first") : t("Highest first")
     default:
-      return asc ? "A to Z" : "Z to A"
+      return asc ? t("A to Z") : t("Z to A")
   }
 }
 
@@ -131,7 +132,7 @@ function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
   const shown = crumbs.slice(hidden.length)
   return (
     <nav
-      aria-label="Folder path"
+      aria-label={t("Folder path")}
       className="flex min-w-0 flex-1 items-center"
       data-testid="breadcrumb"
     >
@@ -141,7 +142,7 @@ function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
             <DropdownRoot>
               <DropdownTrigger
                 className="rounded px-1.5 py-0.5 text-xs text-muted hover:bg-raised hover:text-text"
-                aria-label="Show parent folders"
+                aria-label={t("Show parent folders")}
               >
                 …
               </DropdownTrigger>
@@ -206,8 +207,8 @@ function SearchBox({ disabled }: { disabled: boolean }) {
       <input
         id={SEARCH_INPUT_ID}
         type="search"
-        aria-label="Search file names"
-        placeholder={recursive ? "Search this folder and subfolders" : "Search this folder"}
+        aria-label={t("Search file names")}
+        placeholder={recursive ? t("Search this folder and subfolders") : t("Search this folder")}
         disabled={disabled}
         value={text}
         onChange={(e) => {
@@ -226,7 +227,7 @@ function SearchBox({ disabled }: { disabled: boolean }) {
       {text && (
         <button
           type="button"
-          aria-label="Clear search"
+          aria-label={t("Clear search")}
           className="absolute right-1 grid size-5 place-items-center rounded text-muted hover:text-text"
           onClick={() => {
             setText("")
@@ -248,28 +249,33 @@ function NavBar() {
   return (
     <div
       role="toolbar"
-      aria-label="Navigation"
+      aria-label={t("Navigation")}
       className="flex h-11 shrink-0 items-center gap-1 border-b border-border bg-chrome px-2"
     >
-      <IconButton label="Show or hide sidebar" onClick={() => togglePane("sidebar")}>
+      <IconButton label={t("Show or hide sidebar")} onClick={() => togglePane("sidebar")}>
         <PanelLeftIcon />
       </IconButton>
-      <IconButton label="Back" action="nav.back" disabled={!back} onClick={() => void goBack()}>
+      <IconButton
+        label={t("Back")}
+        action="nav.back"
+        disabled={!back}
+        onClick={() => void goBack()}
+      >
         <ArrowLeftIcon />
       </IconButton>
       <IconButton
-        label="Forward"
+        label={t("Forward")}
         action="nav.forward"
         disabled={!forward}
         onClick={() => void goForward()}
       >
         <ArrowRightIcon />
       </IconButton>
-      <IconButton label="Up" action="nav.up" disabled={!up} onClick={() => void goUp()}>
+      <IconButton label={t("Up")} action="nav.up" disabled={!up} onClick={() => void goUp()}>
         <ArrowUpIcon />
       </IconButton>
       <IconButton
-        label="Refresh"
+        label={t("Refresh")}
         action="view.refresh"
         disabled={!folder}
         onClick={() => void refresh()}
@@ -297,7 +303,7 @@ function Filters({ disabled }: { disabled: boolean }) {
   const recursive = useFolderStore((s) => s.recursive)
   const filtered = useFolderStore(hasFilters)
   return (
-    <div role="group" aria-label="Filters" className="flex min-w-0 items-center gap-1">
+    <div role="group" aria-label={t("Filters")} className="flex min-w-0 items-center gap-1">
       {KIND_CHIPS.filter((c) => !(recursive && c.kind === "dir")).map((c) => {
         const on = kinds.includes(c.kind)
         const count = facets?.[c.facet]
@@ -323,11 +329,11 @@ function Filters({ disabled }: { disabled: boolean }) {
           className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[0.6875rem] disabled:opacity-50 ${exts.length > 0 ? "border-accent bg-accent text-accent-foreground" : "border-border enabled:hover:border-muted"}`}
         >
           <FilterIcon size={12} />
-          {exts.length > 0 ? exts.map((e) => e.toUpperCase()).join(", ") : "File types"}
+          {exts.length > 0 ? exts.map((e) => e.toUpperCase()).join(", ") : t("File types")}
           <ChevronDownIcon size={12} />
         </DropdownTrigger>
         <DropdownContent>
-          <DropdownLabel>Show only</DropdownLabel>
+          <DropdownLabel>{t("Show only")}</DropdownLabel>
           {facets?.exts.map((e) => (
             <DropdownCheckboxItem
               key={e.ext}
@@ -346,7 +352,7 @@ function Filters({ disabled }: { disabled: boolean }) {
           {exts.length > 0 && (
             <>
               <DropdownSeparator />
-              <DropdownItem onSelect={() => setExts([])}>All file types</DropdownItem>
+              <DropdownItem onSelect={() => setExts([])}>{t("All file types")}</DropdownItem>
             </>
           )}
         </DropdownContent>
@@ -358,7 +364,7 @@ function Filters({ disabled }: { disabled: boolean }) {
           className="shrink-0 rounded px-1.5 text-[0.6875rem] text-muted hover:text-text"
           onClick={clearFilters}
         >
-          Clear
+          {t("Clear")}
         </button>
       )}
     </div>
@@ -384,24 +390,27 @@ function UserFilters({ disabled }: { disabled: boolean }) {
         className={chip(favorite)}
       >
         <HeartIcon size={12} />
-        Favorites
+        {t("Favorites")}
       </button>
       <DropdownRoot>
-        <DropdownTrigger disabled={disabled} className={chip(minRating > 0)} aria-label="Rating">
-          {minRating > 0 ? `★${minRating}+` : "Rating"}
+        <DropdownTrigger
+          disabled={disabled}
+          className={chip(minRating > 0)}
+          aria-label={t("Rating")}
+        >
+          {minRating > 0 ? `★${minRating}+` : t("Rating")}
           <ChevronDownIcon size={12} />
         </DropdownTrigger>
         <DropdownContent>
           <DropdownRadioGroup
-            aria-label="Minimum rating"
+            aria-label={t("Minimum rating")}
             value={String(minRating)}
             onValueChange={(v) => setMinRating(Number(v))}
           >
-            <DropdownRadioItem value="0">Any rating</DropdownRadioItem>
+            <DropdownRadioItem value="0">{t("Any rating")}</DropdownRadioItem>
             {[1, 2, 3, 4, 5].map((r) => (
               <DropdownRadioItem key={r} value={String(r)}>
-                {"★".repeat(r)}
-                {r < 5 ? " or more" : ""}
+                {r < 5 ? t("{stars} or more", { stars: "★".repeat(r) }) : "★".repeat(r)}
               </DropdownRadioItem>
             ))}
           </DropdownRadioGroup>
@@ -412,33 +421,37 @@ function UserFilters({ disabled }: { disabled: boolean }) {
           if (open) bridge.tags().then(setKnown, () => setKnown([]))
         }}
       >
-        <DropdownTrigger disabled={disabled} className={chip(tags.length > 0)} aria-label="Tags">
+        <DropdownTrigger
+          disabled={disabled}
+          className={chip(tags.length > 0)}
+          aria-label={t("Tags")}
+        >
           <TagIcon size={12} />
-          {tags.length > 0 ? tags.join(", ") : "Tags"}
+          {tags.length > 0 ? tags.join(", ") : t("Tags")}
           <ChevronDownIcon size={12} />
         </DropdownTrigger>
         <DropdownContent>
-          <DropdownLabel>Files with all of</DropdownLabel>
-          {known === null && <DropdownLabel>Loading…</DropdownLabel>}
-          {known?.length === 0 && <DropdownLabel>No tags yet</DropdownLabel>}
-          {known?.map((t) => {
-            const on = tags.some((x) => x.toLowerCase() === t.name.toLowerCase())
+          <DropdownLabel>{t("Files with all of")}</DropdownLabel>
+          {known === null && <DropdownLabel>{t("Loading…")}</DropdownLabel>}
+          {known?.length === 0 && <DropdownLabel>{t("No tags yet")}</DropdownLabel>}
+          {known?.map((tag) => {
+            const on = tags.some((x) => x.toLowerCase() === tag.name.toLowerCase())
             return (
               <DropdownCheckboxItem
-                key={t.id}
+                key={tag.id}
                 checked={on}
                 onSelect={(ev) => ev.preventDefault()}
                 onCheckedChange={(checked) =>
                   setTagFilter(
                     checked
-                      ? [...tags, t.name]
-                      : tags.filter((x) => x.toLowerCase() !== t.name.toLowerCase()),
+                      ? [...tags, tag.name]
+                      : tags.filter((x) => x.toLowerCase() !== tag.name.toLowerCase()),
                   )
                 }
               >
-                {t.name}
+                {tag.name}
                 <span className="ml-auto pl-6 text-[0.6875rem] tabular-nums opacity-70">
-                  {formatCount(t.count)}
+                  {formatCount(tag.count)}
                 </span>
               </DropdownCheckboxItem>
             )
@@ -446,7 +459,7 @@ function UserFilters({ disabled }: { disabled: boolean }) {
           {tags.length > 0 && (
             <>
               <DropdownSeparator />
-              <DropdownItem onSelect={() => setTagFilter([])}>Any tags</DropdownItem>
+              <DropdownItem onSelect={() => setTagFilter([])}>{t("Any tags")}</DropdownItem>
             </>
           )}
         </DropdownContent>
@@ -476,21 +489,21 @@ export function SortMenuItems({ Group, Item, Label, Separator }: SortMenuSlots) 
   const fields = (Object.keys(SORT_LABELS) as SortField[]).filter((f) => f !== "attrs")
   return (
     <>
-      <Label>Sort by (folders first)</Label>
+      <Label>{t("Sort by (folders first)")}</Label>
       <Group
-        aria-label="Sort by"
+        aria-label={t("Sort by")}
         value={primary.field}
         onValueChange={(v) => setSort(v as SortField, primary.direction)}
       >
         {fields.map((f) => (
           <Item key={f} value={f}>
-            {SORT_LABELS[f]}
+            {t(SORT_LABELS[f])}
           </Item>
         ))}
       </Group>
       <Separator />
       <Group
-        aria-label="Order"
+        aria-label={t("Order")}
         value={primary.direction}
         onValueChange={(v) => setSort(primary.field, v as SortDirection)}
       >
@@ -498,20 +511,20 @@ export function SortMenuItems({ Group, Item, Label, Separator }: SortMenuSlots) 
         <Item value="desc">{directionLabel(primary.field, "desc")}</Item>
       </Group>
       <Separator />
-      <Label>Then by</Label>
+      <Label>{t("Then by")}</Label>
       <Group
-        aria-label="Then by"
+        aria-label={t("Then by")}
         value={secondary?.field ?? "none"}
         onValueChange={(v) =>
           setSecondarySort(v === "none" ? null : (v as SortField), secondary?.direction ?? "asc")
         }
       >
-        <Item value="none">Nothing</Item>
+        <Item value="none">{t("Nothing")}</Item>
         {fields
           .filter((f) => f !== primary.field)
           .map((f) => (
             <Item key={f} value={f}>
-              {SORT_LABELS[f]}
+              {t(SORT_LABELS[f])}
             </Item>
           ))}
       </Group>
@@ -519,7 +532,7 @@ export function SortMenuItems({ Group, Item, Label, Separator }: SortMenuSlots) 
         <>
           <Separator />
           <Group
-            aria-label="Then order"
+            aria-label={t("Then order")}
             value={secondary.direction}
             onValueChange={(v) => setSecondarySort(secondary.field, v as SortDirection)}
           >
@@ -540,13 +553,13 @@ function SortMenu({ disabled }: { disabled: boolean }) {
       <DropdownTrigger
         className={control}
         disabled={disabled}
-        aria-label="Sort"
+        aria-label={t("Sort")}
         data-testid="sort-menu"
       >
         <SortIcon size={14} className="text-muted" />
-        {SORT_LABELS[primary.field]}
+        {t(SORT_LABELS[primary.field])}
         <span className="text-muted">{primary.direction === "asc" ? "↑" : "↓"}</span>
-        {sort[1] && <span className="text-muted">+ {SORT_LABELS[sort[1].field]}</span>}
+        {sort[1] && <span className="text-muted">+ {t(SORT_LABELS[sort[1].field])}</span>}
         <ChevronDownIcon size={12} className="text-muted" />
       </DropdownTrigger>
       <DropdownContent align="end">
@@ -568,7 +581,7 @@ function ViewBar() {
   return (
     <div
       role="toolbar"
-      aria-label="View"
+      aria-label={t("View")}
       className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3"
     >
       <Filters disabled={!folder} />
@@ -581,7 +594,7 @@ function ViewBar() {
           disabled={!ready}
           onChange={(e) => setRecursive(e.target.checked)}
         />
-        Include subfolders
+        {t("Include subfolders")}
       </label>
       <SortMenu disabled={!folder} />
       <TileSizeControl />

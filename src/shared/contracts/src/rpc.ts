@@ -545,6 +545,8 @@ export interface FileOpenResult {
 export interface DocumentOpenParams {
   entryId: number
   theme?: string
+  /** The interface language (a locale code, ADR-0034). */
+  lang?: string
 }
 
 export interface Properties {

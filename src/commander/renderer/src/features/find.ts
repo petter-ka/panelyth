@@ -13,6 +13,7 @@ import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { goToEntry, isExpired, showFindResults, useListingStore } from "./listing"
 import type { Side } from "./panels"
+import { t } from "@panelyth/i18n"
 
 // Find files (Alt+F7, Stage C06). The search runs in Go and its results are
 // a query session (found order) paged like a folder; Feed to panel opens a
@@ -114,7 +115,7 @@ export const resultsStore: PageStore = createPageStore({
 })
 resultsStore.setExpiredHandler(() => {
   resultsStore.reset(null)
-  useFindStore.setState({ run: null, error: "The search results are no longer available." })
+  useFindStore.setState({ run: null, error: t("The search results are no longer available.") })
 })
 
 export const isRunning = (s: Pick<FindState, "run" | "progress">): boolean =>
@@ -148,22 +149,23 @@ export const splitRoots = (roots: string): string[] =>
 /** The form as find.start params, or what is wrong with it. */
 export function buildSpec(form: FindForm): { spec: FindStartParams } | { error: string } {
   const roots = splitRoots(form.roots)
-  if (roots.length === 0) return { error: "Enter a folder to search in." }
-  if (roots.length > MAX_FIND_ROOTS) return { error: `Search at most ${MAX_FIND_ROOTS} folders.` }
+  if (roots.length === 0) return { error: t("Enter a folder to search in.") }
+  if (roots.length > MAX_FIND_ROOTS)
+    return { error: t("Search at most {count} folders.", { count: MAX_FIND_ROOTS }) }
   const mask = form.mask.trim()
-  if (mask.length > MAX_NAME_MASK_CHARS) return { error: "The file mask is too long." }
-  if (form.text.length > MAX_FIND_TEXT_CHARS) return { error: "The text is too long." }
+  if (mask.length > MAX_NAME_MASK_CHARS) return { error: t("The file mask is too long.") }
+  if (form.text.length > MAX_FIND_TEXT_CHARS) return { error: t("The text is too long.") }
   const minSize = size(form.minSize, form.sizeUnit)
   const maxSize = size(form.maxSize, form.sizeUnit)
-  if (minSize === undefined || maxSize === undefined) return { error: "Enter sizes as numbers." }
+  if (minSize === undefined || maxSize === undefined) return { error: t("Enter sizes as numbers.") }
   if (minSize !== null && maxSize !== null && minSize > maxSize)
-    return { error: "The minimum size is larger than the maximum." }
+    return { error: t("The minimum size is larger than the maximum.") }
   const after = day(form.after)
   // "Before" includes the whole day.
   const before = day(form.before, 1)
-  if (after === undefined || before === undefined) return { error: "Enter valid dates." }
+  if (after === undefined || before === undefined) return { error: t("Enter valid dates.") }
   if (after !== null && before !== null && after >= before)
-    return { error: "The date range is empty." }
+    return { error: t("The date range is empty.") }
   let attrsSet = 0
   let attrsClear = 0
   for (const attr of FIND_ATTRS) {
@@ -193,7 +195,13 @@ export function buildSpec(form: FindForm): { spec: FindStartParams } | { error: 
 }
 
 const labelOf = (spec: FindStartParams): string =>
-  `${spec.mask}${spec.text ? ` containing “${spec.text}”` : ""} in ${spec.roots.join("; ")}`
+  spec.text
+    ? t("{mask} containing “{text}” in {roots}", {
+        mask: spec.mask,
+        text: spec.text,
+        roots: spec.roots.join("; "),
+      })
+    : t("{mask} in {roots}", { mask: spec.mask, roots: spec.roots.join("; ") })
 
 // History ---------------------------------------------------------------------
 

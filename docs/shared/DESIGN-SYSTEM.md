@@ -114,6 +114,11 @@ virtualizer). Theme and interface size are shared by both apps (`shared.appearan
 app view keeps a local mirror so the value applies before the first render, and a change in one app reaches the
 other at once.
 
+The interface language is part of the same value (ADR-0034): English (the default), Hungarian, Spanish, Italian,
+French, Polish, Russian or German, chosen in Settings → Appearance → Language and applied to both apps and to the
+document window. Every user-visible sentence goes through `t()` from `@panelyth/i18n`; text is never assembled from
+translated pieces, and a new message needs a translation in each language file (the catalog test fails otherwise).
+
 ## App switch rail
 
 The apps meet in a shared left rail (ADR-0031, `docs/shared/APP-SWITCHING.md`). The same `src/shared/ui` component keeps

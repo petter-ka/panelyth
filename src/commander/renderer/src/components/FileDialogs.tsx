@@ -15,6 +15,7 @@ import {
 } from "../features/files"
 import { formatBytes } from "../features/format"
 import { ArchiveWarnings } from "./ArchiveDialogs"
+import { t } from "@panelyth/i18n"
 
 const field =
   "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
@@ -40,7 +41,8 @@ export function CopyDialog() {
 
 function CopyForm({ c }: { c: CopyDialogState }) {
   const [busy, setBusy] = useState(false)
-  const verb = c.kind === "move" ? "Move" : "Copy"
+  const move = c.kind === "move"
+  const verb = move ? t("Move") : t("Copy")
   // F5 in an archive panel copies entries out (an extract job, Stage C07).
   const extract = c.kind === "extract"
   const here = c.name !== null
@@ -57,10 +59,15 @@ function CopyForm({ c }: { c: CopyDialogState }) {
       }}
       title={
         here
-          ? `Copy ${c.what} here`
+          ? t("Copy {what} here", { what: c.what })
           : extract
-            ? `Copy ${c.what}${amount(c.bytes)} out of the archive`
-            : `${verb} ${c.what}${amount(c.bytes)}`
+            ? t("Copy {what}{amount} out of the archive", {
+                what: c.what,
+                amount: amount(c.bytes),
+              })
+            : move
+              ? t("Move {what}{amount}", { what: c.what, amount: amount(c.bytes) })
+              : t("Copy {what}{amount}", { what: c.what, amount: amount(c.bytes) })
       }
       contentClassName="w-[min(34rem,calc(100vw-2rem))]"
     >
@@ -74,9 +81,9 @@ function CopyForm({ c }: { c: CopyDialogState }) {
       >
         {here ? (
           <label className="flex flex-col gap-1">
-            <span className="text-muted">New name</span>
+            <span className="text-muted">{t("New name")}</span>
             <input
-              aria-label="New name"
+              aria-label={t("New name")}
               className={field}
               value={c.name ?? ""}
               spellCheck={false}
@@ -91,9 +98,9 @@ function CopyForm({ c }: { c: CopyDialogState }) {
           </label>
         ) : (
           <label className="flex flex-col gap-1">
-            <span className="text-muted">{verb} to</span>
+            <span className="text-muted">{move ? t("Move to") : t("Copy to")}</span>
             <input
-              aria-label="Destination"
+              aria-label={t("Destination")}
               className={field}
               value={c.destination}
               spellCheck={false}
@@ -105,9 +112,9 @@ function CopyForm({ c }: { c: CopyDialogState }) {
         <div className="flex gap-3">
           {!here && !extract && (
             <label className="flex flex-1 flex-col gap-1">
-              <span className="text-muted">Only files matching</span>
+              <span className="text-muted">{t("Only files matching")}</span>
               <input
-                aria-label="File mask"
+                aria-label={t("File mask")}
                 className={field}
                 value={c.mask}
                 spellCheck={false}
@@ -116,9 +123,9 @@ function CopyForm({ c }: { c: CopyDialogState }) {
             </label>
           )}
           <label className="flex flex-1 flex-col gap-1">
-            <span className="text-muted">If the name exists</span>
+            <span className="text-muted">{t("If the name exists")}</span>
             <select
-              aria-label="If the name exists"
+              aria-label={t("If the name exists")}
               className={field}
               value={c.conflict}
               onChange={(e) =>
@@ -127,7 +134,7 @@ function CopyForm({ c }: { c: CopyDialogState }) {
             >
               {POLICIES.map((p) => (
                 <option key={p.value} value={p.value}>
-                  {p.label}
+                  {t(p.label)}
                 </option>
               ))}
             </select>
@@ -141,7 +148,7 @@ function CopyForm({ c }: { c: CopyDialogState }) {
                 checked={c.links}
                 onChange={(e) => updateCopy({ links: e.target.checked })}
               />
-              Create links stored in the archive (only those that stay inside the folder)
+              {t("Create links stored in the archive (only those that stay inside the folder)")}
             </label>
             <ArchiveWarnings warnings={c.warnings} />
           </>
@@ -152,7 +159,7 @@ function CopyForm({ c }: { c: CopyDialogState }) {
               checked={c.verify}
               onChange={(e) => updateCopy({ verify: e.target.checked })}
             />
-            Verify after copying (compare checksums)
+            {t("Verify after copying (compare checksums)")}
           </label>
         )}
         {c.error && (
@@ -161,14 +168,14 @@ function CopyForm({ c }: { c: CopyDialogState }) {
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={closeCopy}>Cancel</Button>
+          <Button onClick={closeCopy}>{t("Cancel")}</Button>
           {!here && !extract && (
             <Button
               disabled={busy}
               onClick={() => void submit(false)}
-              title="After the other jobs on these drives"
+              title={t("After the other jobs on these drives")}
             >
-              Queue
+              {t("Queue")}
             </Button>
           )}
           <Button type="submit" variant="primary" disabled={busy}>
@@ -189,7 +196,9 @@ export function DeleteDialog() {
   const r = useFilesStore((s) => s.remove)
   if (!r) return null
   const noTrash = !r.permanent && r.trash === false
-  const title = r.permanent ? `Delete ${r.what} permanently?` : `Move ${r.what} to the trash?`
+  const title = r.permanent
+    ? t("Delete {what} permanently?", { what: r.what })
+    : t("Move {what} to the trash?", { what: r.what })
   return (
     <DialogWindow
       open
@@ -199,10 +208,10 @@ export function DeleteDialog() {
       title={title}
       description={
         noTrash
-          ? "This drive has no trash. The items can only be deleted permanently."
+          ? t("This drive has no trash. The items can only be deleted permanently.")
           : r.permanent
-            ? "This can't be undone."
-            : "You can restore them from the trash."
+            ? t("This can't be undone.")
+            : t("You can restore them from the trash.")
       }
     >
       <form
@@ -215,14 +224,14 @@ export function DeleteDialog() {
         }}
       >
         <p className="text-muted">
-          {r.count.toLocaleString()} {r.count === 1 ? "item" : "items"}
+          {t("{count, plural, one {# item} other {# items}}", { count: r.count })}
           {r.bytes !== null && `, ${formatBytes(r.bytes)}`}
         </p>
         <div className="flex justify-end gap-2">
-          <Button onClick={closeDelete}>Cancel</Button>
+          <Button onClick={closeDelete}>{t("Cancel")}</Button>
           {noTrash ? (
             <Button type="submit" variant="danger" autoFocus>
-              Delete permanently…
+              {t("Delete permanently…")}
             </Button>
           ) : (
             <Button
@@ -231,7 +240,7 @@ export function DeleteDialog() {
               disabled={!r.permanent && r.trash === null}
               autoFocus
             >
-              {r.permanent ? "Delete permanently" : "Move to trash"}
+              {r.permanent ? t("Delete permanently") : t("Move to trash")}
             </Button>
           )}
         </div>
@@ -254,8 +263,8 @@ export function MkdirDialog() {
           closeMkdir()
         }
       }}
-      title="New folder"
-      description="Use / to create folders inside each other, e.g. 2026/Trip/Raw."
+      title={t("New folder")}
+      description={t("Use / to create folders inside each other, e.g. 2026/Trip/Raw.")}
     >
       <form
         className="flex flex-col gap-3 text-xs"
@@ -266,7 +275,7 @@ export function MkdirDialog() {
         }}
       >
         <input
-          aria-label="Folder name"
+          aria-label={t("Folder name")}
           className={field}
           value={name}
           spellCheck={false}
@@ -280,9 +289,9 @@ export function MkdirDialog() {
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={closeMkdir}>Cancel</Button>
+          <Button onClick={closeMkdir}>{t("Cancel")}</Button>
           <Button type="submit" variant="primary" disabled={name.trim() === ""}>
-            Create
+            {t("Create")}
           </Button>
         </div>
       </form>

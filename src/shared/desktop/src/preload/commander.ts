@@ -217,7 +217,8 @@ const api: CommanderApi = {
     open: (entryId) => invoke("file.open", { entryId }),
   },
   document: {
-    open: (entryId, theme) => invoke("document.open", { entryId, ...(theme && { theme }) }),
+    open: (entryId, theme, lang) =>
+      invoke("document.open", { entryId, ...(theme && { theme }), ...(lang && { lang }) }),
   },
   shell: {
     open: (entryId, allowProgram) =>

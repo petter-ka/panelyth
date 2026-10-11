@@ -8,6 +8,8 @@ export interface DocumentParams {
   /** The read-only panelyth-media token URL. */
   src: string
   theme: string | null
+  /** The interface language, a locale code; null = English. */
+  lang: string | null
 }
 
 const TOKEN_URL = /^panelyth-media:\/\/m\/[0-9a-f]{32}$/
@@ -28,6 +30,7 @@ export function parseParams(hash: string): DocumentParams | null {
     sizeBytes: Number.isFinite(size) && size >= 0 ? size : 0,
     src,
     theme: p.get("theme"),
+    lang: p.get("lang"),
   }
 }
 

@@ -5,7 +5,7 @@ import { copySelection, currentSelection, useJobsStore } from "../jobs/jobsStore
 import { getItem } from "../tiles/pageStore"
 import { selectionCount, useSelectionStore } from "../tiles/selectionStore"
 import { useFolderStore } from "../folder/folderStore"
-import { plural } from "../../lib/format"
+import { t } from "@panelyth/i18n"
 
 /**
  * Copying to the OS clipboard (Stage 08.6). Ctrl+C on one picture puts the
@@ -53,14 +53,14 @@ let copying: Promise<void> | null = null
 export function copyImage(entryId: number): Promise<void> {
   // Repeated Ctrl+C while a big picture is still being prepared: one copy.
   if (copying) return copying
-  const slow = setTimeout(() => notify("Copying picture…", "info", true), SLOW_MS)
+  const slow = setTimeout(() => notify(t("Copying picture…"), "info", true), SLOW_MS)
   copying = bridge
     .copyImage(entryId)
     .then(() => {
-      notify("Picture copied to the clipboard")
+      notify(t("Picture copied to the clipboard"))
     })
     .catch((error: unknown) => {
-      notify(`Couldn't copy the picture: ${errorText(error)}`, "error")
+      notify(t("Couldn't copy the picture: {reason}", { reason: errorText(error) }), "error")
     })
     .finally(() => {
       clearTimeout(slow)
@@ -92,7 +92,12 @@ export async function copySelectionToClipboard(): Promise<void> {
   if (count === 0) return
   await copySelection("copy")
   if (useJobsStore.getState().clip.mode === "copy")
-    notify(`${plural(count, "item", "items")} copied. Paste into another folder with Ctrl+V.`)
+    notify(
+      t(
+        "{count, plural, one {# item} other {# items}} copied. Paste into another folder with Ctrl+V.",
+        { count },
+      ),
+    )
 }
 
 /** Copies an entry's full path (resolved in main; the renderer never sees it). */
@@ -107,9 +112,9 @@ export async function copyEntryPath(entryId: number): Promise<void> {
       include: [entryId],
       exclude: [],
     })
-    if (count > 0) notify("Path copied")
+    if (count > 0) notify(t("Path copied"))
   } catch (error) {
-    notify(`Couldn't copy the path: ${errorText(error)}`, "error")
+    notify(t("Couldn't copy the path: {reason}", { reason: errorText(error) }), "error")
   }
 }
 
@@ -117,8 +122,8 @@ export async function copyEntryPath(entryId: number): Promise<void> {
 export async function copyName(name: string): Promise<void> {
   try {
     await bridge.copyText(name)
-    notify("Name copied")
+    notify(t("Name copied"))
   } catch (error) {
-    notify(`Couldn't copy the name: ${errorText(error)}`, "error")
+    notify(t("Couldn't copy the name: {reason}", { reason: errorText(error) }), "error")
   }
 }

@@ -9,6 +9,7 @@ import { GridPlaceholder } from "./GridPlaceholder"
 import { BatchBar } from "./jobs/BatchBar"
 import { JobsPanel } from "./jobs/JobsPanel"
 import { TileView } from "./tiles/TileView"
+import { t } from "@panelyth/i18n"
 
 /**
  * A failed open keeps the current folder on screen; the error is announced
@@ -35,23 +36,25 @@ function Body() {
     return (
       <EmptyState
         tone="danger"
-        title="The Panelyth backend stopped"
+        title={t("The Panelyth backend stopped")}
         description={
           lastError ??
-          "The background service could not be started. Restart Panelyth; details are in the log."
+          t(
+            "The background service could not be started. Restart Panelyth; details are in the log.",
+          )
         }
       />
     )
   }
   if (state !== "ready") return <GridPlaceholder />
   if (error && !hasItems) {
-    return <EmptyState tone="danger" title="Couldn't open the folder" description={error} />
+    return <EmptyState tone="danger" title={t("Couldn't open the folder")} description={error} />
   }
   if (!folder) {
     return (
       <EmptyState
-        title="No folder open"
-        description="Open a folder to start browsing images and videos."
+        title={t("No folder open")}
+        description={t("Open a folder to start browsing images and videos.")}
         action={
           <button
             type="button"
@@ -59,7 +62,7 @@ function Body() {
             disabled={opening}
             onClick={() => void openFolderDialog()}
           >
-            Open folder…
+            {t("Open folder…")}
           </button>
         }
       />
@@ -69,8 +72,8 @@ function Body() {
   if (scanning || opening) return <GridPlaceholder />
   return (
     <EmptyState
-      title="No images or videos here"
-      description="This folder has no supported images, videos or subfolders."
+      title={t("No images or videos here")}
+      description={t("This folder has no supported images, videos or subfolders.")}
     />
   )
 }
@@ -78,7 +81,11 @@ function Body() {
 export function ContentPane() {
   useOpenErrorNotice()
   return (
-    <main aria-label="Content" className="flex h-full min-h-0 min-w-0 flex-col">
+    <main
+      aria-label={t("Content")}
+      data-pane="content"
+      className="flex h-full min-h-0 min-w-0 flex-col"
+    >
       <FolderToolbar />
       <FolderSummary />
       {/* Canvas: the neutral field media is shown on. */}

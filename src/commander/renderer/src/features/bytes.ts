@@ -1,3 +1,4 @@
+import { t } from "@panelyth/i18n"
 // Byte windows of one file for the lister and quick view (Stage C05,
 // ADR-0027): the bytes come through the file's panelyth-media token URL with
 // HTTP Range, never over IPC. Reads are served from fixed-size chunks in a
@@ -14,7 +15,9 @@ export type RangeFetch = (url: string, start: number, end: number) => Promise<Ui
 const httpFetch: RangeFetch = async (url, start, end) => {
   const res = await fetch(url, { headers: { Range: `bytes=${start}-${end}` } })
   if (!res.ok)
-    throw new Error(res.status === 404 ? "The file can no longer be read." : `HTTP ${res.status}`)
+    throw new Error(
+      res.status === 404 ? t("The file can no longer be read.") : `HTTP ${res.status}`,
+    )
   return new Uint8Array(await res.arrayBuffer())
 }
 

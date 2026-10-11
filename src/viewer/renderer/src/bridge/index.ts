@@ -44,6 +44,7 @@ import type {
   SidecarStatus,
   SystemInfo,
 } from "@panelyth/contracts"
+import { t } from "@panelyth/i18n"
 
 declare global {
   interface Window {
@@ -64,7 +65,7 @@ export class PanelythError extends Error {
 
 function api(): PanelythApi {
   const bridge = window.panelyth
-  if (!bridge) throw new PanelythError("SIDECAR_UNAVAILABLE", "Panelyth bridge is not available")
+  if (!bridge) throw new PanelythError("SIDECAR_UNAVAILABLE", t("Panelyth bridge is not available"))
   return bridge
 }
 
@@ -90,7 +91,7 @@ export const bridge = {
   /** Shows the commander in the same window (ADR-0031). */
   switchToCommander: async (): Promise<void> => {
     const switchApp = api().app.switch
-    if (!switchApp) throw new PanelythError("METHOD_NOT_FOUND", "the commander is not enabled")
+    if (!switchApp) throw new PanelythError("METHOD_NOT_FOUND", t("The commander is not enabled"))
     await unwrap(() => switchApp("commander"))
   },
   ping: (): Promise<PingResult> => unwrap(() => api().system.ping()),

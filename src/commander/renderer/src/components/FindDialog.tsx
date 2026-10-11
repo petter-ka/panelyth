@@ -25,6 +25,7 @@ import {
 } from "../features/find"
 import { formatCount, formatSize } from "../features/format"
 import { useSettingsStore } from "../features/settings"
+import { msg, t } from "@panelyth/i18n"
 
 const field =
   "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
@@ -33,39 +34,39 @@ const ROW_HEIGHT = 22
 const PAGE_ROWS = 12
 
 const TABS: { id: FindTab; label: string }[] = [
-  { id: "general", label: "General" },
-  { id: "advanced", label: "Advanced" },
-  { id: "results", label: "Results" },
+  { id: "general", label: msg("General") },
+  { id: "advanced", label: msg("Advanced") },
+  { id: "results", label: msg("Results") },
 ]
 
 const DEPTHS: { value: number; label: string }[] = [
-  { value: -1, label: "All subfolders" },
-  { value: 0, label: "Only these folders" },
-  { value: 1, label: "1 level" },
-  { value: 2, label: "2 levels" },
-  { value: 3, label: "3 levels" },
-  { value: 5, label: "5 levels" },
-  { value: 10, label: "10 levels" },
+  { value: -1, label: msg("All subfolders") },
+  { value: 0, label: msg("Only these folders") },
+  { value: 1, label: msg("1 level") },
+  { value: 2, label: msg("2 levels") },
+  { value: 3, label: msg("3 levels") },
+  { value: 5, label: msg("5 levels") },
+  { value: 10, label: msg("10 levels") },
 ]
 
 const ENCODING_LABEL: Record<FindForm["encoding"], string> = {
-  auto: "Auto (UTF-8, UTF-16, Windows-1252)",
+  auto: msg("Auto (UTF-8, UTF-16, Windows-1252)"),
   "utf-8": "UTF-8",
   "utf-16le": "UTF-16 LE",
   "utf-16be": "UTF-16 BE",
-  "windows-1252": "Windows-1252 (Western)",
-  "windows-1250": "Windows-1250 (Central European)",
-  "windows-1251": "Windows-1251 (Cyrillic)",
+  "windows-1252": msg("Windows-1252 (Western)"),
+  "windows-1250": msg("Windows-1250 (Central European)"),
+  "windows-1251": msg("Windows-1251 (Cyrillic)"),
   "iso-8859-2": "ISO-8859-2",
   "koi8-r": "KOI8-R",
 }
 
 const ATTR_LABEL: Record<FindAttr, string> = {
-  readOnly: "Read-only",
-  hidden: "Hidden",
-  system: "System",
-  archive: "Archive",
-  executable: "Executable",
+  readOnly: msg("Read-only"),
+  hidden: msg("Hidden"),
+  system: msg("System"),
+  archive: msg("Archive"),
+  executable: msg("Executable"),
 }
 
 /** Alt+F7 (UX-DESIGN "Find files"): General, Advanced and Results tabs. */
@@ -81,24 +82,28 @@ export function FindDialog() {
       onOpenChange={(open) => {
         if (!open) closeFind()
       }}
-      title="Find files"
+      title={t("Find files")}
       contentClassName="w-[min(44rem,calc(100vw-2rem))]"
     >
       <div className="flex flex-col gap-3 text-xs" data-testid="find-dialog">
-        <div role="tablist" aria-label="Find files" className="flex gap-1 border-b border-border">
-          {TABS.map((t) => (
+        <div
+          role="tablist"
+          aria-label={t("Find files")}
+          className="flex gap-1 border-b border-border"
+        >
+          {TABS.map((tabDef) => (
             <button
-              key={t.id}
+              key={tabDef.id}
               type="button"
               role="tab"
-              id={`find-tab-${t.id}`}
-              aria-selected={tab === t.id}
-              aria-controls={`find-panel-${t.id}`}
-              disabled={t.id === "results" && !hasRun}
-              onClick={() => setFindTab(t.id)}
-              className={`-mb-px border-b-2 px-3 py-1.5 disabled:opacity-40 ${tab === t.id ? "border-accent text-text" : "border-transparent text-muted hover:text-text"}`}
+              id={`find-tab-${tabDef.id}`}
+              aria-selected={tab === tabDef.id}
+              aria-controls={`find-panel-${tabDef.id}`}
+              disabled={tabDef.id === "results" && !hasRun}
+              onClick={() => setFindTab(tabDef.id)}
+              className={`-mb-px border-b-2 px-3 py-1.5 disabled:opacity-40 ${tab === tabDef.id ? "border-accent text-text" : "border-transparent text-muted hover:text-text"}`}
             >
-              {t.label}
+              {t(tabDef.label)}
             </button>
           ))}
         </div>
@@ -122,9 +127,9 @@ export function FindDialog() {
               </p>
             )}
             <div className="flex justify-end gap-2">
-              <Button onClick={closeFind}>Cancel</Button>
+              <Button onClick={closeFind}>{t("Cancel")}</Button>
               <Button type="submit" variant="primary">
-                Start search
+                {t("Start search")}
               </Button>
             </div>
           </form>
@@ -166,9 +171,9 @@ function GeneralTab() {
   const hasText = form.text !== ""
   return (
     <>
-      <Field label="Search for">
+      <Field label={t("Search for")}>
         <input
-          aria-label="Search for"
+          aria-label={t("Search for")}
           className={field}
           value={form.mask}
           list="find-mask-history"
@@ -187,9 +192,9 @@ function GeneralTab() {
         Masks separated by ; — exclusions after |, e.g. *.log|old\ (a trailing \ excludes folders)
       </p>
       <div className="flex gap-3">
-        <Field label="Search in">
+        <Field label={t("Search in")}>
           <input
-            aria-label="Search in"
+            aria-label={t("Search in")}
             className={field}
             value={form.roots}
             spellCheck={false}
@@ -197,16 +202,16 @@ function GeneralTab() {
           />
         </Field>
         <div className="w-40">
-          <Field label="Depth">
+          <Field label={t("Depth")}>
             <select
-              aria-label="Depth"
+              aria-label={t("Depth")}
               className={field}
               value={form.depth}
               onChange={(e) => updateForm({ depth: Number(e.target.value) })}
             >
               {DEPTHS.map((d) => (
                 <option key={d.value} value={d.value}>
-                  {d.label}
+                  {t(d.label)}
                 </option>
               ))}
             </select>
@@ -214,13 +219,13 @@ function GeneralTab() {
         </div>
       </div>
       <Check
-        label="Search hidden and system files"
+        label={t("Search hidden and system files")}
         checked={form.hidden}
         onChange={(hidden) => updateForm({ hidden })}
       />
-      <Field label="Find text">
+      <Field label={t("Find text")}>
         <input
-          aria-label="Find text"
+          aria-label={t("Find text")}
           className={field}
           value={form.text}
           list="find-text-history"
@@ -229,8 +234,8 @@ function GeneralTab() {
         />
       </Field>
       <datalist id="find-text-history">
-        {history.texts.map((t) => (
-          <option key={t} value={t} />
+        {history.texts.map((text) => (
+          <option key={text} value={text} />
         ))}
       </datalist>
       <fieldset
@@ -238,31 +243,31 @@ function GeneralTab() {
         className="flex flex-wrap items-center gap-x-4 gap-y-2 disabled:opacity-50"
       >
         <Check
-          label="Case sensitive"
+          label={t("Case sensitive")}
           checked={form.caseSensitive}
           onChange={(caseSensitive) => updateForm({ caseSensitive })}
         />
         <Check
-          label="Whole words"
+          label={t("Whole words")}
           checked={form.wholeWords}
           onChange={(wholeWords) => updateForm({ wholeWords })}
         />
         <Check
-          label="Skip binary files"
+          label={t("Skip binary files")}
           checked={form.skipBinary}
           onChange={(skipBinary) => updateForm({ skipBinary })}
         />
         <label className="flex items-center gap-2">
-          <span className="text-muted">Encoding</span>
+          <span className="text-muted">{t("Encoding")}</span>
           <select
-            aria-label="Encoding"
+            aria-label={t("Encoding")}
             className={`${field} w-auto`}
             value={form.encoding}
             onChange={(e) => updateForm({ encoding: e.target.value as FindForm["encoding"] })}
           >
             {(["auto", ...FIND_ENCODINGS] as const).map((enc) => (
               <option key={enc} value={enc}>
-                {ENCODING_LABEL[enc]}
+                {t(ENCODING_LABEL[enc])}
               </option>
             ))}
           </select>
@@ -277,18 +282,18 @@ function AdvancedTab() {
   return (
     <>
       <div className="flex items-end gap-3">
-        <Field label="Size at least">
+        <Field label={t("Size at least")}>
           <input
-            aria-label="Size at least"
+            aria-label={t("Size at least")}
             inputMode="decimal"
             className={field}
             value={form.minSize}
             onChange={(e) => updateForm({ minSize: e.target.value })}
           />
         </Field>
-        <Field label="Size at most">
+        <Field label={t("Size at most")}>
           <input
-            aria-label="Size at most"
+            aria-label={t("Size at most")}
             inputMode="decimal"
             className={field}
             value={form.maxSize}
@@ -296,9 +301,9 @@ function AdvancedTab() {
           />
         </Field>
         <div className="w-24">
-          <Field label="Unit">
+          <Field label={t("Unit")}>
             <select
-              aria-label="Size unit"
+              aria-label={t("Size unit")}
               className={field}
               value={form.sizeUnit}
               onChange={(e) => updateForm({ sizeUnit: e.target.value as SizeUnit })}
@@ -311,19 +316,19 @@ function AdvancedTab() {
         </div>
       </div>
       <div className="flex gap-3">
-        <Field label="Modified from">
+        <Field label={t("Modified from")}>
           <input
             type="date"
-            aria-label="Modified from"
+            aria-label={t("Modified from")}
             className={field}
             value={form.after}
             onChange={(e) => updateForm({ after: e.target.value })}
           />
         </Field>
-        <Field label="Modified until">
+        <Field label={t("Modified until")}>
           <input
             type="date"
-            aria-label="Modified until"
+            aria-label={t("Modified until")}
             className={field}
             value={form.before}
             onChange={(e) => updateForm({ before: e.target.value })}
@@ -331,21 +336,21 @@ function AdvancedTab() {
         </Field>
       </div>
       <fieldset className="flex flex-col gap-1.5">
-        <legend className="mb-1 text-muted">Attributes</legend>
+        <legend className="mb-1 text-muted">{t("Attributes")}</legend>
         {FIND_ATTRS.map((attr) => (
           <label key={attr} className="flex items-center gap-2">
-            <span className="w-24">{ATTR_LABEL[attr]}</span>
+            <span className="w-24">{t(ATTR_LABEL[attr])}</span>
             <select
-              aria-label={ATTR_LABEL[attr]}
+              aria-label={t(ATTR_LABEL[attr])}
               className={`${field} w-40`}
               value={form.attrs[attr]}
               onChange={(e) =>
                 updateForm({ attrs: { ...form.attrs, [attr]: e.target.value as AttrRule } })
               }
             >
-              <option value="any">Any</option>
-              <option value="set">Set</option>
-              <option value="clear">Not set</option>
+              <option value="any">{t("Any")}</option>
+              <option value="set">{t("Set")}</option>
+              <option value="clear">{t("Not set")}</option>
             </select>
           </label>
         ))}
@@ -418,7 +423,7 @@ function ResultsTab() {
       <div
         ref={scroll}
         role="listbox"
-        aria-label="Search results"
+        aria-label={t("Search results")}
         tabIndex={0}
         aria-activedescendant={total > 0 ? `find-result-${cursor}` : undefined}
         onKeyDown={onKeyDown}
@@ -431,15 +436,15 @@ function ResultsTab() {
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <Button onClick={newSearch}>New search</Button>
+        <Button onClick={newSearch}>{t("New search")}</Button>
         <Button onClick={stopSearch} disabled={!running}>
-          Stop
+          {t("Stop")}
         </Button>
         <Button onClick={() => void goToResult(cursor)} disabled={total === 0}>
-          Go to file
+          {t("Go to file")}
         </Button>
         <Button variant="primary" onClick={() => void feedToPanel()} disabled={total === 0}>
-          Feed to panel
+          {t("Feed to panel")}
         </Button>
       </div>
     </div>
@@ -452,20 +457,34 @@ function statusText(
   progress: ReturnType<typeof useFindStore.getState>["progress"],
 ): string {
   // Go's count leads: the list follows with the next (debounced) session refresh.
-  const found = `${formatCount(Math.max(total, progress?.matches ?? 0))} found`
-  if (!progress) return running ? `Searching… ${found}` : found
-  const scanned = `${formatCount(progress.dirs)} folders`
-  const errors = progress.errors > 0 ? `, ${formatCount(progress.errors)} not readable` : ""
-  if (running) return `Searching ${progress.current || "…"} — ${found} in ${scanned}${errors}`
+  const found = t("{count} found", { count: formatCount(Math.max(total, progress?.matches ?? 0)) })
+  if (!progress) return running ? t("Searching… {found}", { found }) : found
+  const scanned = t("{count, plural, one {# folder} other {# folders}}", { count: progress.dirs })
+  const errors =
+    progress.errors > 0 ? t(", {count} not readable", { count: formatCount(progress.errors) }) : ""
+  if (running) {
+    return t("Searching {current} — {found} in {scanned}{errors}", {
+      current: progress.current || "…",
+      found,
+      scanned,
+      errors,
+    })
+  }
   const end =
     progress.state === "cancelled"
-      ? "Stopped"
+      ? t("Stopped")
       : progress.state === "failed"
-        ? "Failed"
+        ? t("Failed")
         : progress.truncated
-          ? "Stopped at the result limit"
-          : "Done"
-  return `${end}: ${found} in ${scanned}${errors} (${(progress.elapsedMs / 1000).toFixed(1)} s)`
+          ? t("Stopped at the result limit")
+          : t("Done")
+  return t("{end}: {found} in {scanned}{errors} ({seconds} s)", {
+    end,
+    found,
+    scanned,
+    errors,
+    seconds: (progress.elapsedMs / 1000).toFixed(1),
+  })
 }
 
 function ResultRow({ index, start, cursor }: { index: number; start: number; cursor: boolean }) {

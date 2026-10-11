@@ -32,6 +32,7 @@ import {
   ContextMenuSeparator,
   ContextMenuTrigger,
 } from "../ui/menu"
+import { t } from "@panelyth/i18n"
 
 const button =
   "h-7 rounded-md border border-border bg-raised px-2.5 text-xs enabled:hover:border-muted disabled:text-muted aria-pressed:border-accent aria-pressed:text-accent"
@@ -133,7 +134,7 @@ export function ViewerOverlay() {
       ref={rootRef}
       role="dialog"
       aria-modal="true"
-      aria-label={`Image viewer: ${item.name}`}
+      aria-label={t("Image viewer: {name}", { name: item.name })}
       tabIndex={-1}
       onKeyDown={onKeyDown}
       className="fixed inset-0 z-50 flex flex-col bg-canvas outline-none"
@@ -143,14 +144,14 @@ export function ViewerOverlay() {
     >
       <div
         role="toolbar"
-        aria-label="Viewer toolbar"
+        aria-label={t("Viewer toolbar")}
         className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3"
       >
         <HintButton
           type="button"
           className={button}
           onClick={close}
-          tooltip={hint("Back to folder", hints.close)}
+          tooltip={hint(t("Back to folder"), hints.close)}
         >
           ← Folder
         </HintButton>
@@ -166,17 +167,17 @@ export function ViewerOverlay() {
           type="button"
           className={button}
           onClick={() => void step(-1)}
-          tooltip={hint("Previous image", hints.previous)}
+          tooltip={hint(t("Previous image"), hints.previous)}
         >
-          Previous
+          {t("Previous")}
         </HintButton>
         <HintButton
           type="button"
           className={button}
           onClick={() => void step(1)}
-          tooltip={hint("Next image", hints.next)}
+          tooltip={hint(t("Next image"), hints.next)}
         >
-          Next
+          {t("Next")}
         </HintButton>
         <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
         <HintButton
@@ -184,15 +185,15 @@ export function ViewerOverlay() {
           className={button}
           aria-pressed={zoom.fit}
           onClick={() => controller.current?.fit()}
-          tooltip={hint("Fit to window", hints.fit)}
+          tooltip={hint(t("Fit to window"), hints.fit)}
         >
-          Fit
+          {t("Fit")}
         </HintButton>
         <HintButton
           type="button"
           className={button}
           onClick={() => controller.current?.actualSize()}
-          tooltip={hint("Actual size", hints.actual)}
+          tooltip={hint(t("Actual size"), hints.actual)}
         >
           1:1
         </HintButton>
@@ -200,8 +201,8 @@ export function ViewerOverlay() {
           type="button"
           className={`${button} w-7 px-0`}
           onClick={() => controller.current?.zoomOut()}
-          aria-label="Zoom out"
-          tooltip={hint("Zoom out", hints.zoomOut)}
+          aria-label={t("Zoom out")}
+          tooltip={hint(t("Zoom out"), hints.zoomOut)}
         >
           −
         </HintButton>
@@ -216,8 +217,8 @@ export function ViewerOverlay() {
           type="button"
           className={`${button} w-7 px-0`}
           onClick={() => controller.current?.zoomIn()}
-          aria-label="Zoom in"
-          tooltip={hint("Zoom in", hints.zoomIn)}
+          aria-label={t("Zoom in")}
+          tooltip={hint(t("Zoom in"), hints.zoomIn)}
         >
           +
         </HintButton>
@@ -226,8 +227,8 @@ export function ViewerOverlay() {
           type="button"
           className={iconButton}
           onClick={() => updateTransform((t) => rotateBy(t, -1))}
-          aria-label="Rotate left"
-          tooltip={hint("Rotate left", hints.rotateCcw)}
+          aria-label={t("Rotate left")}
+          tooltip={hint(t("Rotate left"), hints.rotateCcw)}
         >
           <RotateCcwIcon size={14} />
         </HintButton>
@@ -235,8 +236,8 @@ export function ViewerOverlay() {
           type="button"
           className={iconButton}
           onClick={() => updateTransform((t) => rotateBy(t, 1))}
-          aria-label="Rotate right"
-          tooltip={hint("Rotate right", hints.rotateCw)}
+          aria-label={t("Rotate right")}
+          tooltip={hint(t("Rotate right"), hints.rotateCw)}
         >
           <RotateCwIcon size={14} />
         </HintButton>
@@ -245,8 +246,8 @@ export function ViewerOverlay() {
           className={iconButton}
           aria-pressed={transform.flipH}
           onClick={() => updateTransform(flipHorizontal)}
-          aria-label="Flip horizontally"
-          tooltip={hint("Flip horizontally", hints.flip)}
+          aria-label={t("Flip horizontally")}
+          tooltip={hint(t("Flip horizontally"), hints.flip)}
         >
           <FlipIcon size={14} />
         </HintButton>
@@ -255,8 +256,8 @@ export function ViewerOverlay() {
           type="button"
           className={iconButton}
           onClick={() => void copyImage(item.id)}
-          aria-label="Copy picture"
-          tooltip={hint("Copy picture", hints.copy)}
+          aria-label={t("Copy picture")}
+          tooltip={hint(t("Copy picture"), hints.copy)}
         >
           <CopyIcon size={14} />
         </HintButton>
@@ -286,37 +287,39 @@ export function ViewerOverlay() {
           }}
         >
           <ContextMenuItem action="viewer.copy" onSelect={() => void copyImage(item.id)}>
-            Copy picture
+            {t("Copy picture")}
           </ContextMenuItem>
-          <ContextMenuItem onSelect={() => void copyEntryPath(item.id)}>Copy path</ContextMenuItem>
+          <ContextMenuItem onSelect={() => void copyEntryPath(item.id)}>
+            {t("Copy path")}
+          </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem
             onSelect={() => void bridge.openWithSystem(item.id).catch(() => undefined)}
           >
-            Open with default app
+            {t("Open with default app")}
           </ContextMenuItem>
           <ContextMenuItem onSelect={() => void bridge.reveal(item.id).catch(() => undefined)}>
-            Show in file manager
+            {t("Show in file manager")}
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem
             action="viewer.rotateCcw"
             onSelect={() => updateTransform((t) => rotateBy(t, -1))}
           >
-            Rotate left
+            {t("Rotate left")}
           </ContextMenuItem>
           <ContextMenuItem
             action="viewer.rotateCw"
             onSelect={() => updateTransform((t) => rotateBy(t, 1))}
           >
-            Rotate right
+            {t("Rotate right")}
           </ContextMenuItem>
           <ContextMenuItem action="viewer.flip" onSelect={() => updateTransform(flipHorizontal)}>
-            Flip horizontally
+            {t("Flip horizontally")}
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem action="viewer.close" onSelect={close}>
-            Back to folder
+            {t("Back to folder")}
           </ContextMenuItem>
         </ContextMenuContent>
       </ContextMenuRoot>

@@ -736,7 +736,7 @@ export function installFakeCommander(options: FakeOptions) {
       }),
     },
     document: {
-      open: vi.fn(async (id: number, _theme?: string) => {
+      open: vi.fn(async (id: number, _theme?: string, _lang?: string) => {
         shell.push({ action: "document", entryId: id })
         return ok({ ok: true })
       }),

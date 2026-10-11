@@ -21,13 +21,14 @@ export interface DocumentRequest {
   path: string
   sizeBytes: number
   theme?: string
+  lang?: string
 }
 
 /** The fragment the page reads; the path itself never leaves main, only the name. */
 export function documentUrl(
   base: string,
   kind: DocumentKind,
-  request: Pick<DocumentRequest, "tokenUrl" | "sizeBytes" | "theme"> & { name: string },
+  request: Pick<DocumentRequest, "tokenUrl" | "sizeBytes" | "theme" | "lang"> & { name: string },
 ): string {
   const params = new URLSearchParams({
     kind,
@@ -36,6 +37,7 @@ export function documentUrl(
     src: request.tokenUrl,
   })
   if (request.theme) params.set("theme", request.theme)
+  if (request.lang) params.set("lang", request.lang)
   return `${base}#${params.toString()}`
 }
 

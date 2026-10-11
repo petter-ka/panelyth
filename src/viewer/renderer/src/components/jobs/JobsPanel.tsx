@@ -14,16 +14,17 @@ import {
 import { Tooltip } from "@panelyth/ui"
 import { formatBytes } from "../../lib/format"
 import { CloseIcon } from "../ui/icons"
+import { msg, t } from "@panelyth/i18n"
 
 const STATE_TEXT = {
-  queued: "Waiting",
+  queued: msg("Waiting"),
   running: "",
   // Engine v2 states (Stage P03); the viewer never pauses or asks itself.
-  paused: "Paused",
-  asking: "Waiting for an answer",
-  completed: "Done",
-  cancelled: "Cancelled",
-  failed: "Failed",
+  paused: msg("Paused"),
+  asking: msg("Waiting for an answer"),
+  completed: msg("Done"),
+  cancelled: msg("Cancelled"),
+  failed: msg("Failed"),
 } as const
 
 function percent(job: JobSnapshot): number {
@@ -53,12 +54,12 @@ function JobRow({ job }: { job: JobSnapshot }) {
             className="shrink-0 rounded px-1.5 text-[0.6875rem] text-muted hover:bg-raised hover:text-text"
             onClick={() => void cancelJob(job.jobId)}
           >
-            Cancel
+            {t("Cancel")}
           </button>
         ) : (
           <button
             type="button"
-            aria-label="Dismiss"
+            aria-label={t("Dismiss")}
             className="grid size-5 shrink-0 place-items-center rounded text-muted hover:bg-raised hover:text-text"
             onClick={() => dismissJob(job.jobId)}
           >
@@ -72,12 +73,16 @@ function JobRow({ job }: { job: JobSnapshot }) {
       </div>
       <div className="flex items-center gap-2 text-[0.6875rem] text-muted tabular-nums">
         <span className="min-w-0 flex-1 truncate">
-          {STATE_TEXT[job.state] && <span className="mr-1">{STATE_TEXT[job.state]}:</span>}
+          {STATE_TEXT[job.state] && <span className="mr-1">{t(STATE_TEXT[job.state])}:</span>}
           {jobCounts(job)}
           {job.bytesTotal > 0 && active && (
             <>
               {" "}
-              · {formatBytes(job.bytesDone)} of {formatBytes(job.bytesTotal)}
+              ·{" "}
+              {t("{current} of {total}", {
+                current: formatBytes(job.bytesDone),
+                total: formatBytes(job.bytesTotal),
+              })}
             </>
           )}
           {active && job.current && (
@@ -92,7 +97,7 @@ function JobRow({ job }: { job: JobSnapshot }) {
             className="shrink-0 rounded px-1 text-text underline-offset-2 hover:underline"
             onClick={() => showJobErrors(job.jobId)}
           >
-            Details
+            {t("Details")}
           </button>
         )}
       </div>
@@ -115,16 +120,16 @@ export function JobsPanel() {
   const finished = shown.filter((j) => !isActive(j)).length
   return (
     <section
-      aria-label="Operations"
+      aria-label={t("Operations")}
       aria-live="polite"
       className="absolute right-3 bottom-3 z-10 flex max-h-[50%] w-80 flex-col overflow-hidden rounded-lg border border-border bg-chrome shadow-lg shadow-black/30"
       data-testid="jobs-panel"
     >
       <header className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-3 text-[0.6875rem] text-muted">
-        <span className="flex-1 font-medium text-text">Operations</span>
+        <span className="flex-1 font-medium text-text">{t("Operations")}</span>
         {finished > 0 && (
           <button type="button" className="rounded px-1 hover:text-text" onClick={dismissFinished}>
-            Clear finished
+            {t("Clear finished")}
           </button>
         )}
       </header>
@@ -133,7 +138,7 @@ export function JobsPanel() {
           <span className="flex-1">{error}</span>
           <button
             type="button"
-            aria-label="Dismiss"
+            aria-label={t("Dismiss")}
             className="text-muted hover:text-text"
             onClick={clearJobError}
           >

@@ -15,6 +15,7 @@ import {
 } from "./listing"
 import type { Side } from "./panels"
 import { useSettingsStore } from "./settings"
+import { t } from "@panelyth/i18n"
 
 // Open and edit (Stage C05, ADR-0027): media opens in Panelyth Viewer by
 // default; other files use their system app. Program launching follows the
@@ -66,11 +67,15 @@ export async function openWithApp(item: ContentItem, side?: Side): Promise<void>
     await bridge.shellOpen(item.id, mode === "always" ? true : undefined)
   } catch (error) {
     if (reasonOf(error) !== "program") {
-      notice(`${item.name} can't be opened: ${messageOf(error)}`)
+      notice(t("{name} can't be opened: {reason}", { name: item.name, reason: messageOf(error) }))
       return
     }
     if (mode === "never")
-      notice(`${item.name} is a program. Running programs with Enter is off in Settings.`)
+      notice(
+        t("{name} is a program. Running programs with Enter is off in Settings.", {
+          name: item.name,
+        }),
+      )
     else set({ program: { entryId: item.id, name: item.name } })
   }
 }
@@ -83,7 +88,7 @@ export async function runConfirmedProgram(): Promise<void> {
   try {
     await bridge.shellOpen(p.entryId, true)
   } catch (error) {
-    notice(`${p.name} can't be started: ${messageOf(error)}`)
+    notice(t("{name} can't be started: {reason}", { name: p.name, reason: messageOf(error) }))
   }
 }
 
@@ -94,20 +99,20 @@ export async function editCursor(side: Side): Promise<void> {
   const item = cursorItem(side)
   if (!item || item.kind === "dir") return
   if (useListingStore.getState()[side].archive) {
-    notice("Files inside an archive can't be edited. Copy them out with F5 first.")
+    notice(t("Files inside an archive can't be edited. Copy them out with F5 first."))
     return
   }
   try {
     await bridge.shellEdit(item.id)
   } catch (error) {
-    notice(`${item.name} can't be edited: ${messageOf(error)}`)
+    notice(t("{name} can't be edited: {reason}", { name: item.name, reason: messageOf(error) }))
   }
 }
 
 /** Shift+F4. */
 export function openNewFile(side: Side): void {
   const p = useListingStore.getState()[side]
-  if (p.archive) notice(READ_ONLY)
+  if (p.archive) notice(t(READ_ONLY))
   else if (p.dirId !== null) set({ newFile: { side, error: null } })
 }
 
@@ -118,10 +123,11 @@ export function openNewFile(side: Side): void {
  */
 export function archiveFailed(item: ContentItem, why: ArchiveOpenFailure, message: string): void {
   if (why === "other") {
-    notice(`${item.name} can't be opened: ${message}`)
+    notice(t("{name} can't be opened: {reason}", { name: item.name, reason: message }))
     return
   }
-  if (why === "noTool") notice(`7-Zip isn't installed, so ${item.name} opens with its default app.`)
+  if (why === "noTool")
+    notice(t("7-Zip isn't installed, so {name} opens with its default app.", { name: item.name }))
   void openWithApp(item)
 }
 
@@ -137,7 +143,7 @@ export async function createTextFile(name: string): Promise<boolean> {
     set({ newFile: null })
     void focusEntry(n.side, entryId)
     await bridge.shellEdit(entryId).catch((error: unknown) => {
-      notice(`${name.trim()} can't be edited: ${messageOf(error)}`)
+      notice(t("{name} can't be edited: {reason}", { name: name.trim(), reason: messageOf(error) }))
     })
     return true
   } catch (error) {

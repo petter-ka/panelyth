@@ -13,6 +13,7 @@ import {
 import { applyMarks, marksDescriptor, useMarksStore } from "./marks"
 import { usePanelsStore, type Side } from "./panels"
 import { restorePanels } from "./session"
+import { t } from "@panelyth/i18n"
 
 // The shared context (docs/shared/APP-SWITCHING.md): the folder, the entry
 // under the cursor (Stage C01) and the marks (Stage C02) carry over between
@@ -61,7 +62,7 @@ export async function publishContext(onSwitch: boolean): Promise<void> {
 /** The carried selection becomes the panel's marks (entries it lists, at most 10,000). */
 async function applySelection(side: Side, ctx: SharedContext): Promise<void> {
   if (ctx.selectionTooLarge) {
-    notice("The selection is too large to carry over")
+    notice(t("The selection is too large to carry over"))
     return
   }
   const query = useListingStore.getState()[side].query

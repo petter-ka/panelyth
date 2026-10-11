@@ -290,7 +290,7 @@ export interface CommanderApi {
   }
   /** ADR-0033: a PDF or text file in a document window of its own. */
   document: {
-    open(entryId: number, theme?: string): Promise<RpcEnvelope<OkResult>>
+    open(entryId: number, theme?: string, lang?: string): Promise<RpcEnvelope<OkResult>>
   }
   /** Stage C05: open with the default app (programs need allowProgram) and edit (F4). */
   shell: {

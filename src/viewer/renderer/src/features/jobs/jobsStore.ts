@@ -8,13 +8,14 @@ import type {
 import { isSelectionDescriptor } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError, isBridgeAvailable } from "../../bridge"
-import { formatCount, plural } from "../../lib/format"
+import { formatCount } from "../../lib/format"
 import { useFolderStore } from "../folder/folderStore"
 import { useSettingsStore } from "../settings/settingsStore"
 import { labelName } from "../labels/labels"
 import { singleSelectedId } from "../properties/propertiesStore"
 import { getItem } from "../tiles/pageStore"
 import { selectionCount, toDescriptor, useSelectionStore } from "../tiles/selectionStore"
+import { msg, t } from "@panelyth/i18n"
 
 /**
  * Batch operations (ADR-0021). Go runs the jobs and pushes coalesced
@@ -113,35 +114,38 @@ function upsert(snap: JobSnapshot): void {
   if (snap.state === "completed" && snap.kind === "move") void refreshClip()
 }
 
+// What each kind of job does, with the item count; main's job list names
+// jobs started before a reload this way.
 const KIND_LABEL: Record<JobKind, string> = {
-  copy: "Copying",
-  move: "Moving",
-  trash: "Moving to trash",
-  delete: "Deleting",
-  rename: "Renaming",
-  favorite: "Updating favorites",
-  rating: "Rating",
-  label: "Labeling",
-  tag: "Tagging",
-  dirSize: "Calculating folder sizes",
+  copy: msg("Copying {count, plural, one {# item} other {# items}}"),
+  move: msg("Moving {count, plural, one {# item} other {# items}}"),
+  trash: msg("Moving to trash {count, plural, one {# item} other {# items}}"),
+  delete: msg("Deleting {count, plural, one {# item} other {# items}}"),
+  rename: msg("Renaming {count, plural, one {# item} other {# items}}"),
+  favorite: msg("Updating favorites {count, plural, one {# item} other {# items}}"),
+  rating: msg("Rating {count, plural, one {# item} other {# items}}"),
+  label: msg("Labeling {count, plural, one {# item} other {# items}}"),
+  tag: msg("Tagging {count, plural, one {# item} other {# items}}"),
+  dirSize: msg("Calculating folder sizes {count, plural, one {# item} other {# items}}"),
   // The commander's archive jobs (Stage C07), shown when they reach this queue.
-  extract: "Extracting",
-  pack: "Packing",
-  testArchive: "Testing",
+  extract: msg("Extracting {count, plural, one {# item} other {# items}}"),
+  pack: msg("Packing {count, plural, one {# item} other {# items}}"),
+  testArchive: msg("Testing {count, plural, one {# item} other {# items}}"),
 }
 
 export function jobLabel(s: JobsState, job: JobSnapshot): string {
   const known = s.labels.get(job.jobId)
   if (known) return known
-  const items = plural(job.total, "item", "items")
-  const to = job.destination ? ` to ${job.destination}` : ""
-  return `${KIND_LABEL[job.kind]} ${items}${to}`
+  const action = t(KIND_LABEL[job.kind], { count: job.total })
+  return job.destination
+    ? t("{action} to {destination}", { action, destination: job.destination })
+    : action
 }
 
 function describe(error: unknown): string {
   if (error instanceof PanelythError) {
-    if (error.code === "BUSY") return "Too many operations are waiting. Try again in a moment."
-    if (error.code === "NOT_FOUND") return "The folder changed. Select the items again."
+    if (error.code === "BUSY") return t("Too many operations are waiting. Try again in a moment.")
+    if (error.code === "NOT_FOUND") return t("The folder changed. Select the items again.")
     return error.message
   }
   return String(error)
@@ -206,15 +210,18 @@ export async function confirmDropTransfer(
   kind: "copy" | "move",
 ): Promise<void> {
   closeJobDialog()
-  const verb = kind === "copy" ? "Copying" : "Moving"
   await start(
     { kind, source: { selection }, destination, conflict: "keepBoth" },
-    `${verb} ${items(count)} to ${folderName}`,
+    movingLabel(kind, count, folderName),
   )
 }
 
-const items = (n: number) => plural(n, "item", "items")
-const files = (n: number) => plural(n, "file", "files")
+/** "Copying 12 items to Trip" / "Moving …". */
+function movingLabel(kind: "copy" | "move", count: number, folder: string): string {
+  return kind === "copy"
+    ? t("Copying {count, plural, one {# item} other {# items}} to {folder}", { count, folder })
+    : t("Moving {count, plural, one {# item} other {# items}} to {folder}", { count, folder })
+}
 
 // Clipboard ----------------------------------------------------------------
 
@@ -283,9 +290,11 @@ async function pasteTo(
 ): Promise<void> {
   try {
     const snap = await bridge.paste(destination, conflict)
-    const verb = clip.mode === "cut" ? "Moving" : "Copying"
     set((s) => ({
-      labels: new Map(s.labels).set(snap.jobId, `${verb} ${items(clip.count)} to ${folderName}`),
+      labels: new Map(s.labels).set(
+        snap.jobId,
+        movingLabel(clip.mode === "cut" ? "move" : "copy", clip.count, folderName),
+      ),
       error: null,
     }))
     upsert(snap)
@@ -309,10 +318,9 @@ export async function transferSelection(kind: "copy" | "move"): Promise<void> {
   }
   if (!destination) return
   const name = destination.split(/[\\/]/).filter(Boolean).pop() ?? destination
-  const verb = kind === "copy" ? "Copying" : "Moving"
   await start(
     { kind, source: { selection: cur.selection }, destination, conflict: "keepBoth" },
-    `${verb} ${items(cur.count)} to ${name}`,
+    movingLabel(kind, cur.count, name),
   )
 }
 
@@ -322,7 +330,7 @@ export async function trashSelection(): Promise<void> {
   if (!cur) return
   await start(
     { kind: "trash", source: { selection: cur.selection } },
-    `Moving ${items(cur.count)} to trash`,
+    t("Moving {count, plural, one {# item} other {# items}} to trash", { count: cur.count }),
   )
 }
 
@@ -334,7 +342,7 @@ export function askDeletePermanently(): void {
 
 export async function deletePermanently(selection: SelectionDescriptor, count: number) {
   closeJobDialog()
-  await start({ kind: "delete", source: { selection } }, `Deleting ${items(count)}`)
+  await start({ kind: "delete", source: { selection } }, t(KIND_LABEL.delete, { count }))
 }
 
 // Rename -------------------------------------------------------------------
@@ -391,7 +399,7 @@ export async function batchRename(
   closeJobDialog()
   await start(
     { kind: "rename", source: { selection }, pattern, start: first },
-    `Renaming ${items(count)}`,
+    t(KIND_LABEL.rename, { count }),
   )
 }
 
@@ -403,8 +411,10 @@ export async function setFavorite(favorite: boolean): Promise<void> {
   await start(
     { kind: "favorite", source: { selection: cur.selection }, favorite },
     favorite
-      ? `Adding ${files(cur.count)} to favorites`
-      : `Removing ${files(cur.count)} from favorites`,
+      ? t("Adding {count, plural, one {# file} other {# files}} to favorites", { count: cur.count })
+      : t("Removing {count, plural, one {# file} other {# files}} from favorites", {
+          count: cur.count,
+        }),
   )
 }
 
@@ -414,8 +424,13 @@ export async function setRating(rating: number): Promise<void> {
   await start(
     { kind: "rating", source: { selection: cur.selection }, rating },
     rating === 0
-      ? `Clearing the rating of ${files(cur.count)}`
-      : `Rating ${files(cur.count)} ${"★".repeat(rating)}`,
+      ? t("Clearing the rating of {count, plural, one {# file} other {# files}}", {
+          count: cur.count,
+        })
+      : t("Rating {count, plural, one {# file} other {# files}} {stars}", {
+          count: cur.count,
+          stars: "★".repeat(rating),
+        }),
   )
 }
 
@@ -425,8 +440,13 @@ export async function setLabel(label: number): Promise<void> {
   await start(
     { kind: "label", source: { selection: cur.selection }, label },
     label === 0
-      ? `Clearing the label of ${files(cur.count)}`
-      : `Labeling ${files(cur.count)} ${labelName(label).toLowerCase()}`,
+      ? t("Clearing the label of {count, plural, one {# file} other {# files}}", {
+          count: cur.count,
+        })
+      : t("Labeling {count, plural, one {# file} other {# files}} {label}", {
+          count: cur.count,
+          label: labelName(label).toLowerCase(),
+        }),
   )
 }
 
@@ -443,7 +463,9 @@ export async function tagSelection(
 ): Promise<void> {
   await start(
     { kind: "tag", source: { selection }, tag, add },
-    add ? `Tagging ${files(count)} “${tag}”` : `Removing “${tag}” from ${files(count)}`,
+    add
+      ? t("Tagging {count, plural, one {# file} other {# files}} “{tag}”", { count, tag })
+      : t("Removing “{tag}” from {count, plural, one {# file} other {# files}}", { count, tag }),
   )
 }
 
@@ -482,9 +504,11 @@ export function closeJobDialog(): void {
 
 /** "3 of 12 done, 1 failed". */
 export function jobCounts(job: JobSnapshot): string {
-  const parts = [`${formatCount(job.done)} of ${formatCount(job.total)}`]
-  if (job.failed > 0) parts.push(`${formatCount(job.failed)} failed`)
-  if (job.skipped > 0) parts.push(`${formatCount(job.skipped)} skipped`)
+  const parts = [
+    t("{current} of {total}", { current: formatCount(job.done), total: formatCount(job.total) }),
+  ]
+  if (job.failed > 0) parts.push(t("{count} failed", { count: formatCount(job.failed) }))
+  if (job.skipped > 0) parts.push(t("{count} skipped", { count: formatCount(job.skipped) }))
   return parts.join(", ")
 }
 
