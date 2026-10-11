@@ -1,4 +1,4 @@
-import { startViewerImageMonitoring } from "@panelyth/media-ui"
+import { startVideoPrefsPersistence, startViewerImageMonitoring } from "@panelyth/media-ui"
 import { initInterfaceSize, initTheme } from "@panelyth/ui"
 import { initLocale, LocaleBoundary } from "@panelyth/i18n"
 import { StrictMode } from "react"
@@ -15,6 +15,8 @@ initTheme()
 initInterfaceSize()
 configureCommanderMedia()
 startViewerImageMonitoring()
+// Mute, volume and repeat are the same here as in the apps.
+startVideoPrefsPersistence()
 
 const root = document.getElementById("root")
 if (!root) throw new Error("#root missing")

@@ -80,15 +80,17 @@ export function unsupportedDetail(videoCodec: string, audioCodec: string): strin
 }
 
 /**
- * Volume and mute carry from one video to the next, not per file, and
- * persist across restarts (videoPrefsPersistence.ts, Stage 08).
+ * Volume, mute and repeat carry from one video to the next, not per file, and
+ * persist across restarts and across the apps and windows (videoPrefs.ts).
  */
-interface VideoPrefs {
+export interface VideoPrefs {
   volume: number
   muted: boolean
+  /** Repeat the video when it ends. */
+  loop: boolean
 }
 
-export const useVideoPrefs = create<VideoPrefs>(() => ({ volume: 1, muted: false }))
+export const useVideoPrefs = create<VideoPrefs>(() => ({ volume: 1, muted: false, loop: false }))
 
 export function setVolume(volume: number): void {
   const v = Math.min(1, Math.max(0, volume))
@@ -97,6 +99,10 @@ export function setVolume(volume: number): void {
 
 export function setMuted(muted: boolean): void {
   useVideoPrefs.setState((s) => ({ muted, volume: !muted && s.volume === 0 ? 0.5 : s.volume }))
+}
+
+export function setLoop(loop: boolean): void {
+  useVideoPrefs.setState({ loop })
 }
 
 export const SEEK_STEP_S = 5

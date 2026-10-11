@@ -12,6 +12,7 @@ import {
   problemFromCode,
   problemFromMediaError,
   SEEK_STEP_S,
+  setLoop,
   setMuted,
   setVolume,
   unsupportedDetail,
@@ -26,6 +27,7 @@ import {
   MuteIcon,
   PauseIcon,
   PlayIcon,
+  RepeatIcon,
   VideoGlyph,
   VolumeIcon,
 } from "./icons"
@@ -79,7 +81,7 @@ export function VideoPlayer({
   lane = "pane",
 }: VideoPlayerProps) {
   const { fit, media } = useViewerImage(entryId)
-  const { volume, muted } = useVideoPrefs()
+  const { volume, muted, loop } = useVideoPrefs()
   const rootRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -245,6 +247,7 @@ export function VideoPlayer({
       Home: () => seek(0),
       End: () => seek(total),
       m: () => setMuted(!muted),
+      l: () => setLoop(!loop),
       f: toggleFullscreen,
       // Electron leaves leaving HTML full screen to the page.
       ...(fullscreen || appFullscreen ? { Escape: toggleFullscreen } : {}),
@@ -297,6 +300,7 @@ export function VideoPlayer({
             playsInline
             className="absolute inset-0 size-full object-contain"
             data-testid="video-element"
+            loop={loop}
             onClick={toggle}
             onPlay={() => {
               if (lastSaved.current === 0) lastSaved.current = Date.now()
@@ -415,6 +419,19 @@ export function VideoPlayer({
           className="min-w-12 flex-1"
           testId="video-seek"
         />
+        <button
+          type="button"
+          className={control}
+          onClick={() => setLoop(!loop)}
+          aria-label={t("Repeat")}
+          aria-pressed={loop}
+          data-tooltip-content={loop ? t("Repeat: on (L)") : t("Repeat: off (L)")}
+          data-testid="video-repeat"
+        >
+          <span className={loop ? "text-accent" : "text-muted"}>
+            <RepeatIcon />
+          </span>
+        </button>
         <button
           type="button"
           className={control}

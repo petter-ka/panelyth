@@ -1,4 +1,8 @@
-import { configureMedia, startViewerImageMonitoring } from "@panelyth/media-ui"
+import {
+  configureMedia,
+  startVideoPrefsPersistence,
+  startViewerImageMonitoring,
+} from "@panelyth/media-ui"
 import { bridge, isBridgeAvailable } from "../bridge"
 
 // The shared media components (ADR-0025, src/shared/media-ui) on the
@@ -30,7 +34,8 @@ export function configureCommanderMedia(): void {
 /** Configures the port and applies preview.ready events; returns the stop function. */
 export function startMedia(): () => void {
   configureCommanderMedia()
-  return startViewerImageMonitoring()
+  const stops = [startViewerImageMonitoring(), startVideoPrefsPersistence()]
+  return () => stops.forEach((stop) => stop())
 }
 
 /** Tests: a fresh configuration on the next start. */
