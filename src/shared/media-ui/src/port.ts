@@ -17,6 +17,14 @@ export interface MediaPort {
   /** "Open with default app" on a video the built-in player can't play. */
   openWithSystem(entryId: number): Promise<void>
   onPreviewReady(listener: (payload: EventMap["preview.ready"]) => void): () => void
+  /**
+   * library.db settings, read fresh and written whole: where a long video
+   * stopped (resume.ts). Absent: positions are not remembered.
+   */
+  settings?: {
+    read(key: string): Promise<unknown>
+    write(key: string, value: unknown): Promise<void>
+  }
 }
 
 let port: MediaPort | null = null

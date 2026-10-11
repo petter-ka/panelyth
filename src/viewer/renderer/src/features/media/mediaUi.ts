@@ -10,6 +10,10 @@ configureMedia({
   ensurePreviews: (params) => bridge.ensurePreviews(params),
   openWithSystem: (entryId) => bridge.openWithSystem(entryId),
   onPreviewReady: (listener) => bridge.on("preview.ready", listener),
+  settings: {
+    read: async (key) => (await bridge.library()).settings[key],
+    write: (key, value) => bridge.setSetting(key, value),
+  },
 })
 
 export * from "@panelyth/media-ui"
