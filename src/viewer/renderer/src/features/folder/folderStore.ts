@@ -44,6 +44,8 @@ export interface OpenFolder {
 interface FolderState {
   folder: OpenFolder | null
   opening: boolean
+  /** What `opening` is for: a path (sidebar, breadcrumb) or a folder tile's entry id; else null. */
+  openingTarget: string | number | null
   error: string | null
   progress: IndexProgress | null
   query: QuerySnapshot | null
@@ -74,6 +76,7 @@ export const DEFAULT_SORT: SortKey[] = [{ field: "name", direction: "asc" }]
 const initialState = (): FolderState => ({
   folder: null,
   opening: false,
+  openingTarget: null,
   error: null,
   progress: null,
   query: null,
@@ -151,12 +154,12 @@ export async function openFolderDialog(): Promise<void> {
 type HistoryMode = { kind: "push" } | { kind: "jump"; index: number } | { kind: "replace" }
 
 export function openFolder(path: string, recursive = get().recursive): Promise<void> {
-  return open(() => bridge.openDir({ path, recursive }), { kind: "push" })
+  return open(() => bridge.openDir({ path, recursive }), { kind: "push" }, path)
 }
 
 /** Opens a folder tile by its index id. */
 export function openFolderEntry(entryId: number, recursive = get().recursive): Promise<void> {
-  return open(() => bridge.openDirEntry({ entryId, recursive }), { kind: "push" })
+  return open(() => bridge.openDirEntry({ entryId, recursive }), { kind: "push" }, entryId)
 }
 
 export function canGoBack(s: FolderState): boolean {
@@ -225,9 +228,10 @@ function recordHistory(s: FolderState, path: string, mode: HistoryMode) {
 async function open(
   request: () => ReturnType<typeof bridge.openDir>,
   mode: HistoryMode,
+  target: string | number | null = null,
 ): Promise<void> {
   const seq = ++openSeq
-  set({ opening: true, error: null })
+  set({ opening: true, openingTarget: target, error: null })
   try {
     const dir = await request()
     if (seq !== openSeq) return

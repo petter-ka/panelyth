@@ -1,7 +1,8 @@
 import type { ContentItem } from "@panelyth/contracts"
+import { Spinner } from "@panelyth/ui"
 import { memo, useState } from "react"
 import { bridge } from "../../bridge"
-import { openFolderEntry } from "../../features/folder/folderStore"
+import { openFolderEntry, useFolderStore } from "../../features/folder/folderStore"
 import { labelColor, labelName } from "../../features/labels/labels"
 import { reportBroken, useThumb } from "../../features/previews/thumbStore"
 import { reportBrokenCover, useCover } from "../../features/previews/coverStore"
@@ -291,6 +292,10 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
   const selected = useSelectionStore((s) => item !== undefined && isSelected(s, index, item.id))
   // Settings can hide file names; the line stays, so the grid's geometry never changes.
   const showFileNames = useSettingsStore((s) => s.preferences.showFileNames)
+  // This folder tile is being opened (a slow drive or network folder).
+  const opening = useFolderStore(
+    (s) => s.opening && item?.kind === "dir" && s.openingTarget === item.id,
+  )
   const named = item !== undefined && (showFileNames || item.kind === "dir")
   const m = TILE_METRICS[size]
   const draggable = item?.kind === "image" || item?.kind === "video"
@@ -381,6 +386,11 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
         data-tooltip-anchor
       >
         {item && <TileThumb item={item} box={m.tile} visual={visual} />}
+        {opening && (
+          <span className="absolute inset-0 grid place-items-center rounded-[3px] bg-canvas/60 text-text">
+            <Spinner size={28} />
+          </span>
+        )}
       </div>
       <div
         draggable={draggable}

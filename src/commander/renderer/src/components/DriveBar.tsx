@@ -1,5 +1,5 @@
 import type { Volume, VolumeKind } from "@panelyth/contracts"
-import { Tooltip } from "@panelyth/ui"
+import { Spinner, Tooltip } from "@panelyth/ui"
 import { useEffect, useMemo } from "react"
 import {
   closeDriveMenu,
@@ -52,6 +52,8 @@ export function DriveBar({ side }: { side: Side }) {
   const volumes = useDrivesStore((s) => s.volumes)
   const current = usePanelVolume(side)
   const menuOpen = useDrivesStore((s) => s.menu === side)
+  // The drive being opened (one that has to spin up or reconnect takes a while).
+  const opening = useListingStore((s) => (s[side].loading ? s[side].loadingTarget : null))
   return (
     <div
       role="toolbar"
@@ -83,11 +85,15 @@ export function DriveBar({ side }: { side: Side }) {
               type="button"
               tabIndex={-1}
               aria-pressed={pressed}
+              aria-busy={opening === v.path || undefined}
               data-not-ready={v.notReady || undefined}
               onClick={() => void openDrive(side, v.path)}
               {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
               className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
             >
+              {opening === v.path && (
+                <Spinner size={10} className="mr-1 inline-block align-[-1px]" />
+              )}
               {driveName(v)}
             </button>
           </Tooltip>
