@@ -94,7 +94,6 @@ const COLUMN_LABEL: Record<ColumnId, string> = {
   date: "Date",
   attr: "Attr",
 }
-const COLUMN_DRAG_TYPE = "application/x-panelyth-column"
 
 // TanStack owns sizing, visibility, ordering, pinning and the sort indicators.
 // Its row model holds only the virtual window's indexes; rows read their data
@@ -186,7 +185,6 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   const body = useRef<HTMLDivElement>(null)
   const [viewportWidth, setViewportWidth] = useState(0)
   const [columnMenu, setColumnMenu] = useState<ColumnMenuState | null>(null)
-  const [dragOver, setDragOver] = useState<ColumnId | null>(null)
   useImperativeHandle(ref, () => ({ focus: () => grid.current?.focus() }), [])
 
   const size = useInterfaceSizeStore((s) => s.size)
@@ -442,42 +440,15 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     }
   }
 
-  const handleColumnDrop = (source: ColumnId, target: ColumnId, after: boolean): void => {
-    const targetColumn = renderColumns.find((column) => column.id === target)
-    if (!targetColumn || source === target) return
-    const sourceColumn = renderColumns.find((column) => column.id === source)
-    if (sourceColumn?.pin === targetColumn.pin) {
-      reorderWithinRegion(source, target, targetColumn.pin, after)
-      return
-    }
+  /** Drag in the column menu's list: moves a column before or after another in the layout order. */
+  const reorderColumns = (source: string, target: string, after: boolean): void => {
+    if (source === target) return
     updateLayout((current) => {
-      const next: ColumnLayout = {
-        order: current.order.filter((id) => id !== source),
-        visibility: { ...current.visibility },
-        pinning: {
-          start: current.pinning.start.filter((id) => id !== source),
-          end: current.pinning.end.filter((id) => id !== source),
-        },
-      }
-      if (targetColumn.pin === "start") {
-        const at = next.pinning.start.indexOf(target)
-        next.pinning.start.splice(
-          at < 0 ? next.pinning.start.length : at + (after ? 1 : 0),
-          0,
-          source,
-        )
-      } else if (targetColumn.pin === "end") {
-        const at = next.pinning.end.indexOf(target)
-        next.pinning.end.splice(at < 0 ? next.pinning.end.length : at + (after ? 1 : 0), 0, source)
-      } else {
-        const center = next.order.filter(
-          (id) => !next.pinning.start.includes(id) && !next.pinning.end.includes(id),
-        )
-        const at = center.indexOf(target)
-        center.splice(at < 0 ? center.length : at + (after ? 1 : 0), 0, source)
-        next.order = [...next.pinning.start, ...center, ...next.pinning.end]
-      }
-      return next
+      const order = current.order.filter((key) => key !== source)
+      const at = order.indexOf(target as ColumnId)
+      if (at < 0 || !COLUMN_IDS.includes(source as ColumnId)) return current
+      order.splice(at + (after ? 1 : 0), 0, source as ColumnId)
+      return { ...current, order }
     })
   }
 
@@ -566,9 +537,10 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       ...(column?.pin
         ? [{ id: "unpin", label: "Unpin column", onSelect: () => pinColumn(id, false) }]
         : []),
-      { id: "columns-heading", label: "Show columns", heading: true },
-      ...COLUMN_IDS.map((columnId) => ({
+      { id: "columns-heading", label: "Show columns (drag to reorder)", heading: true },
+      ...columnOrder.map((columnId) => ({
         id: `visible-${columnId}`,
+        dragId: columnId,
         label: COLUMN_LABEL[columnId],
         checked: columnVisibility[columnId],
         disabled: columnId === "name",
@@ -654,46 +626,16 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
               return (
                 <Tooltip
                   key={id}
-                  content="Drag to reorder; right-click for column options. Drag the edge to resize; double-click to fit visible cells."
+                  content="Right-click for column options and order. Drag the edge to resize; double-click to fit visible cells."
                 >
                   <div
                     role="columnheader"
                     aria-sort={sorted ? (sorted === "asc" ? "ascending" : "descending") : "none"}
                     data-column={id}
                     data-column-header={id}
-                    data-drag-over={dragOver === id}
-                    draggable
                     onContextMenu={(event) => openColumnMenu(event, id)}
-                    onDragStart={(event) => {
-                      event.stopPropagation()
-                      if ((event.target as HTMLElement).closest('[data-testid^="resize-"]')) {
-                        event.preventDefault()
-                        return
-                      }
-                      event.dataTransfer.setData(COLUMN_DRAG_TYPE, id)
-                      event.dataTransfer.effectAllowed = "move"
-                    }}
-                    onDragOver={(event) => {
-                      if (!Array.from(event.dataTransfer.types).includes(COLUMN_DRAG_TYPE)) return
-                      event.preventDefault()
-                      event.stopPropagation()
-                      event.dataTransfer.dropEffect = "move"
-                      setDragOver(id)
-                    }}
-                    onDragLeave={(event) => {
-                      if (event.currentTarget === event.target) setDragOver(null)
-                    }}
-                    onDrop={(event) => {
-                      const source = event.dataTransfer.getData(COLUMN_DRAG_TYPE) as ColumnId
-                      if (!COLUMN_IDS.includes(source)) return
-                      event.preventDefault()
-                      event.stopPropagation()
-                      setDragOver(null)
-                      const bounds = event.currentTarget.getBoundingClientRect()
-                      handleColumnDrop(source, id, event.clientX > bounds.left + bounds.width / 2)
-                    }}
                     style={columnStyle(renderColumn, true)}
-                    className={`relative flex shrink-0 items-center ${dragOver === id ? "border-l-2 border-accent" : ""} ${renderColumn.pin ? "bg-chrome" : ""}`}
+                    className={`relative flex shrink-0 items-center ${renderColumn.pin ? "bg-chrome" : ""}`}
                   >
                     <button
                       type="button"
@@ -771,6 +713,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
           label={`${COLUMN_LABEL[columnMenu.id]} column options`}
           testId={`column-menu-${side}`}
           entries={menuEntries}
+          onReorder={reorderColumns}
           onClose={() => setColumnMenu(null)}
           style={{ left: columnMenu.left, top: columnMenu.top }}
         />
