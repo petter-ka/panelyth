@@ -19,6 +19,7 @@ import {
 } from "./mediaProtocol"
 import { handleThumbProtocol } from "./thumbProtocol"
 import { DocumentWindows } from "./documentWindow"
+import { MediaWindows } from "./mediaWindow"
 import {
   broadcast,
   forwardableEvent,
@@ -97,6 +98,7 @@ let sidecar: SidecarProcess | null = null
 let appShell: AppShell | null = null
 let mainWindow: BrowserWindow | null = null
 let documentWindows: DocumentWindows | null = null
+let mediaWindows: MediaWindows | null = null
 let logger: Logger = consoleLogger
 let shutdownState: "running" | "stopping" | "done" = "running"
 
@@ -199,6 +201,14 @@ async function boot(): Promise<void> {
     },
     () => mainWindow,
   )
+  mediaWindows = new MediaWindows(
+    {
+      url: documentsDevUrl() ?? `${DOCUMENTS_ORIGIN}/index.html`,
+      origin: documentsOrigin(),
+      devTools: !app.isPackaged,
+    },
+    () => mainWindow,
+  )
 
   const sc = new SidecarProcess({
     binaryPath: sidecarBinaryPath(),
@@ -281,6 +291,24 @@ async function boot(): Promise<void> {
     ...workspaceHandlers(workspaceDeps),
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),
+    // Both apps: an image or video in a frameless full-screen window (ADR-0033).
+    "media.openWindow": async (_event, { entryId, theme, lang }) => {
+      const r = await sc.call("media.resolve", { entryId })
+      // Main decides from the resolved entry; only displayable media gets a token.
+      if ((r.kind !== "image" && r.kind !== "video") || !r.original)
+        throw new Error("this file cannot be shown in a media window")
+      const { url } = toMediaOpenResult(r, mediaTokens)
+      if (!url) throw new Error("this file cannot be shown in a media window")
+      mediaWindows?.open({
+        kind: r.kind,
+        tokenUrl: url,
+        path: r.path,
+        mime: r.mime,
+        ...(theme && { theme }),
+        ...(lang && { lang }),
+      })
+      return { ok: true }
+    },
     // Commander only (the allowlist); the token may be fetch()ed by its origin alone.
     "file.open": async (_event, { entryId }) =>
       toFileOpenResult(await sc.call("file.resolve", { entryId }), mediaTokens, commanderOrigin()),

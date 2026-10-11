@@ -45,7 +45,7 @@ import {
   useInterfaceSizeStore,
 } from "../../features/theme/interfaceSizeStore"
 import { playInPane } from "../../features/preview/previewStore"
-import { openViewerAt } from "../../features/viewer/viewerStore"
+import { openFullscreenAt } from "../../features/viewer/viewerStore"
 import { ContextMenuRoot, ContextMenuTrigger } from "../ui/menu"
 import { Tile } from "./Tile"
 import { TileMenu, type MenuTarget } from "./TileMenu"
@@ -519,7 +519,7 @@ export function TileView() {
         const item = getItem(focusIndex)
         if (item?.kind === "dir") void openFolderEntry(item.id)
         else if (item?.kind === "video") playInPane(focusIndex)
-        else openViewerAt(focusIndex)
+        else openFullscreenAt(focusIndex)
       },
     }
     const action = keys[e.key]

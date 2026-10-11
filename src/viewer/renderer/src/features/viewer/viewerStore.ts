@@ -1,5 +1,8 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
+import { bridge } from "../../bridge"
+import { currentLocale } from "@panelyth/i18n"
+import { playInPane } from "../preview/previewStore"
 import { ensureIndex, getItem, getTotal } from "../tiles/pageStore"
 import { focusSelectAndReveal } from "../tiles/selectionStore"
 import { requestFit, requestMedia } from "./viewerImages"
@@ -53,6 +56,21 @@ export function openViewerAt(index: number): boolean {
   const item = getItem(index)
   if (!isViewable(item)) return false
   show(index, item)
+  return true
+}
+
+/**
+ * Double-click / Enter on an image or video tile: the file fills the screen in
+ * a frameless window of its own (ADR-0033). When that window can't open (an
+ * image the browser can't show directly, say) the in-app surface is used.
+ */
+export function openFullscreenAt(index: number): boolean {
+  const item = getItem(index)
+  if (item?.kind !== "image" && item?.kind !== "video") return false
+  void bridge.openMediaWindow(item.id, currentLocale()).catch(() => {
+    if (item.kind === "image") openViewerAt(index)
+    else playInPane(index, { fullscreen: true })
+  })
   return true
 }
 
