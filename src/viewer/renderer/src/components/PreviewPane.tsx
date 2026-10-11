@@ -19,8 +19,9 @@ import {
 import { closeVideoFullscreen, usePreviewStore } from "../features/preview/previewStore"
 import { useThumb } from "../features/previews/thumbStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
-import { formatBytes, formatCount } from "../lib/format"
+import { formatBytes } from "../lib/format"
 import { EmptyState } from "./EmptyState"
+import { t } from "@panelyth/i18n"
 
 const zoomButton =
   "h-6 rounded-md border border-border bg-raised px-2 text-[0.6875rem] enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
@@ -65,7 +66,8 @@ export function PreviewPane() {
 
   return (
     <aside
-      aria-label="Preview"
+      aria-label={t("Preview")}
+      data-pane="preview"
       className="flex h-full min-h-0 flex-col overflow-hidden border-t border-border"
       data-testid="preview-pane"
       data-entry-id={shown?.id}
@@ -73,22 +75,22 @@ export function PreviewPane() {
       <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3">
         <Tooltip content={shown?.name}>
           <span className="min-w-0 flex-1 truncate text-xs font-medium">
-            {shown?.name ?? "Preview"}
+            {shown?.name ?? t("Preview")}
           </span>
         </Tooltip>
         {isImage && (
-          <div role="toolbar" aria-label="Zoom" className="flex shrink-0 items-center gap-1">
-            <Tooltip content="Fit (0)">
+          <div role="toolbar" aria-label={t("Zoom")} className="flex shrink-0 items-center gap-1">
+            <Tooltip content={t("Fit (0)")}>
               <button
                 type="button"
                 className={zoomButton}
                 aria-pressed={zoom.fit}
                 onClick={() => controller.current?.fit()}
               >
-                Fit
+                {t("Fit")}
               </button>
             </Tooltip>
-            <Tooltip content="Actual size (1)">
+            <Tooltip content={t("Actual size (1)")}>
               <button
                 type="button"
                 className={zoomButton}
@@ -97,12 +99,12 @@ export function PreviewPane() {
                 1:1
               </button>
             </Tooltip>
-            <Tooltip content="Zoom out (−)">
+            <Tooltip content={t("Zoom out (−)")}>
               <button
                 type="button"
                 className={`${zoomButton} w-6 px-0`}
                 onClick={() => controller.current?.zoomOut()}
-                aria-label="Zoom out"
+                aria-label={t("Zoom out")}
               >
                 −
               </button>
@@ -114,12 +116,12 @@ export function PreviewPane() {
             >
               {Math.round(zoom.value * 100)}%
             </span>
-            <Tooltip content="Zoom in (+)">
+            <Tooltip content={t("Zoom in (+)")}>
               <button
                 type="button"
                 className={`${zoomButton} w-6 px-0`}
                 onClick={() => controller.current?.zoomIn()}
-                aria-label="Zoom in"
+                aria-label={t("Zoom in")}
               >
                 +
               </button>
@@ -131,16 +133,16 @@ export function PreviewPane() {
       <div className="min-h-0 flex-1 bg-canvas" onKeyDown={onKeyDown}>
         {suspended ? null : count > 1 ? (
           <EmptyState
-            title={`${formatCount(count)} items selected`}
-            description="Select a single image or video to preview it."
+            title={t("{count, plural, one {# item} other {# items}} selected", { count })}
+            description={t("Select a single image or video to preview it.")}
           />
         ) : !shown ? (
           <EmptyState
-            title="Nothing selected"
-            description="Select an image or video to preview it here."
+            title={t("Nothing selected")}
+            description={t("Select an image or video to preview it here.")}
           />
         ) : shown.kind === "dir" ? (
-          <EmptyState title={shown.name} description="Folder. Press Enter to open it." />
+          <EmptyState title={shown.name} description={t("Folder. Press Enter to open it.")} />
         ) : shown.kind === "image" ? (
           <div tabIndex={-1} className="h-full outline-none" aria-label={`Image: ${shown.name}`}>
             <PaneImage item={shown} controllerRef={controller} onZoomChange={onZoomChange} />

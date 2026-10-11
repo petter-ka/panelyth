@@ -7,6 +7,7 @@ import {
   runConfirmedProgram,
   useOpenStore,
 } from "../features/open"
+import { t } from "@panelyth/i18n"
 
 const field =
   "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
@@ -25,15 +26,17 @@ export function ProgramDialog() {
       onOpenChange={(open) => {
         if (!open) cancelProgram()
       }}
-      title="Run this program?"
-      description={`${p.name} is a program. Run it only if you trust where it came from.`}
+      title={t("Run this program?")}
+      description={t("{name} is a program. Run it only if you trust where it came from.", {
+        name: p.name,
+      })}
     >
       <div className="flex justify-end gap-2 text-xs" data-testid="program-dialog">
         <Button onClick={cancelProgram} autoFocus>
-          Cancel
+          {t("Cancel")}
         </Button>
         <Button variant="danger" onClick={() => void runConfirmedProgram()}>
-          Run
+          {t("Run")}
         </Button>
       </div>
     </DialogWindow>
@@ -51,8 +54,8 @@ export function NewFileDialog() {
       onOpenChange={(open) => {
         if (!open) closeNewFile()
       }}
-      title="New text file"
-      description="An existing file of that name opens as it is."
+      title={t("New text file")}
+      description={t("An existing file of that name opens as it is.")}
     >
       <form
         className="flex flex-col gap-3 text-xs"
@@ -62,7 +65,7 @@ export function NewFileDialog() {
         }}
       >
         <input
-          aria-label="File name"
+          aria-label={t("File name")}
           className={field}
           value={name}
           spellCheck={false}
@@ -80,9 +83,9 @@ export function NewFileDialog() {
           </p>
         )}
         <div className="flex justify-end gap-2">
-          <Button onClick={closeNewFile}>Cancel</Button>
+          <Button onClick={closeNewFile}>{t("Cancel")}</Button>
           <Button type="submit" variant="primary" disabled={name.trim() === ""}>
-            Create and edit
+            {t("Create and edit")}
           </Button>
         </div>
       </form>

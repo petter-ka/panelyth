@@ -1,5 +1,5 @@
 import { cancelScan, hasFilters, isScanning, useFolderStore } from "../features/folder/folderStore"
-import { plural } from "../lib/format"
+import { t } from "@panelyth/i18n"
 
 /** One line of indexing state under the toolbar. */
 export function FolderSummary() {
@@ -12,25 +12,47 @@ export function FolderSummary() {
 
   const scanning = isScanning(progress, folder)
   const parts: string[] = []
-  const found = search
-    ? `${plural(total, "result", "results")} for “${search}”`
-    : plural(total, "item", "items")
+  const items = t("{count, plural, one {# item} other {# items}}", { count: total })
+  const results = t("{count, plural, one {# result} other {# results}} for “{search}”", {
+    count: total,
+    search,
+  })
   if (scanning) {
-    parts.push(`Indexing… ${found} so far`)
+    parts.push(
+      t("Indexing… {found} so far", {
+        found: search ? results : items,
+      }),
+    )
   } else if (progress?.state === "cancelled") {
-    parts.push(`Indexing stopped. ${plural(total, "item", "items")} found so far`)
+    parts.push(
+      t("Indexing stopped. {count, plural, one {# item} other {# items}} found so far", {
+        count: total,
+      }),
+    )
   } else if (search) {
-    parts.push(`${plural(total, "result", "results")} for “${search}”`)
+    parts.push(results)
   } else if (filtered) {
-    parts.push(`${plural(total, "item", "items")} match the filters`)
+    parts.push(
+      t("{count, plural, one {# item matches} other {# items match}} the filters", {
+        count: total,
+      }),
+    )
   } else {
-    parts.push(plural(total, "item", "items"))
+    parts.push(items)
   }
   if (progress && progress.skipped > 0) {
-    parts.push(`${plural(progress.skipped, "other file", "other files")} not shown`)
+    parts.push(
+      t("{count, plural, one {# other file} other {# other files}} not shown", {
+        count: progress.skipped,
+      }),
+    )
   }
   if (progress && progress.errors > 0) {
-    parts.push(`${plural(progress.errors, "folder", "folders")} couldn't be read`)
+    parts.push(
+      t("{count, plural, one {# folder} other {# folders}} couldn't be read", {
+        count: progress.errors,
+      }),
+    )
   }
 
   return (
@@ -47,7 +69,7 @@ export function FolderSummary() {
           className="rounded px-1 text-text hover:underline"
           onClick={() => void cancelScan()}
         >
-          Stop
+          {t("Stop")}
         </button>
       )}
     </div>

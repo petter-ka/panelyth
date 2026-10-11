@@ -22,6 +22,7 @@ import { useSettingsStore } from "../features/settings/settingsStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { useShortcutHint } from "../features/shortcuts/shortcutStore"
 import { switchToCommander } from "../features/workspace/appSwitch"
+import { t } from "@panelyth/i18n"
 
 const separator =
   "relative w-px bg-border outline-none after:absolute after:inset-y-0 after:-left-1 after:w-2 data-[separator=active]:bg-accent data-[separator=hover]:bg-muted focus-visible:bg-accent"
@@ -190,7 +191,7 @@ export function AppShell() {
                   </Panel>
                   <Separator
                     id="tree-preview-separator"
-                    aria-label="Resize folder tree and preview"
+                    aria-label={t("Resize folder tree and preview")}
                     className={stackedSeparator}
                   />
                   <Panel
@@ -204,10 +205,12 @@ export function AppShell() {
                     <PreviewPane />
                   </Panel>
                 </Group>
-                <Tooltip content={previewCollapsed ? "Expand preview" : "Collapse preview"}>
+                <Tooltip content={previewCollapsed ? t("Expand preview") : t("Collapse preview")}>
                   <button
                     type="button"
-                    aria-label={previewCollapsed ? "Expand preview pane" : "Collapse preview pane"}
+                    aria-label={
+                      previewCollapsed ? t("Expand preview pane") : t("Collapse preview pane")
+                    }
                     aria-expanded={!previewCollapsed}
                     aria-controls="preview"
                     onClick={() => {
@@ -234,7 +237,11 @@ export function AppShell() {
               </div>
             )}
           </Panel>
-          <Separator id="sidebar-separator" aria-label="Resize left column" className={separator} />
+          <Separator
+            id="sidebar-separator"
+            aria-label={t("Resize left column")}
+            className={separator}
+          />
           <Panel id="content" minSize={360}>
             <ContentPane />
           </Panel>
@@ -242,7 +249,7 @@ export function AppShell() {
             <>
               <Separator
                 id="preview-separator"
-                aria-label="Resize preview column"
+                aria-label={t("Resize preview column")}
                 className={separator}
               />
               <Panel
@@ -269,12 +276,12 @@ export function AppShell() {
         <DialogWindow
           open={confirmExit}
           onOpenChange={setConfirmExit}
-          title="Close Panelyth?"
-          description="Panelyth will close."
+          title={t("Close Panelyth?")}
+          description={t("Panelyth will close.")}
         >
           <div className="flex justify-end gap-2">
             <Button autoFocus onClick={() => setConfirmExit(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
             <Button
               variant="primary"
@@ -283,7 +290,7 @@ export function AppShell() {
                 void bridge.quit().catch(() => undefined)
               }}
             >
-              Close app
+              {t("Close app")}
             </Button>
           </div>
         </DialogWindow>

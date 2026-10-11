@@ -18,6 +18,7 @@ import {
   previousLineStart,
   type Encoding,
 } from "../features/text"
+import { t } from "@panelyth/i18n"
 
 // Text and hex views over byte windows (Stage C05): only the visible rows
 // are read and rendered. The scroll position is a byte offset (text) or a
@@ -311,7 +312,7 @@ export const TextView = forwardRef<ByteViewHandle, TextViewProps>(function TextV
           ))
         )}
       </div>
-      <ByteScrollbar fraction={fraction} onJump={jump} label={`${label} position`} />
+      <ByteScrollbar fraction={fraction} onJump={jump} label={t("{label} position", { label })} />
     </div>
   )
 })
@@ -454,7 +455,7 @@ export const HexView = forwardRef<ByteViewHandle, HexViewProps>(function HexView
       <ByteScrollbar
         fraction={fraction}
         onJump={(f) => setTopRow(clampRow(Math.round(f * maxTop)))}
-        label={`${label} position`}
+        label={t("{label} position", { label })}
       />
     </div>
   )

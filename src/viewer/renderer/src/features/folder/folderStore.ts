@@ -24,6 +24,7 @@ import {
 import { resetViewerImages } from "../viewer/viewerImages"
 import { resetViewer } from "../viewer/viewerStore"
 import { readMirror } from "../workspace/mirror"
+import { t } from "@panelyth/i18n"
 
 export interface OpenFolder {
   dirId: number
@@ -114,13 +115,13 @@ export function describeError(error: unknown): string {
   if (error instanceof PanelythError) {
     switch (error.code) {
       case "NOT_FOUND":
-        return "This folder no longer exists."
+        return t("This folder no longer exists.")
       case "PERMISSION_DENIED":
-        return "Panelyth doesn't have permission to open this folder."
+        return t("Panelyth doesn't have permission to open this folder.")
       case "INVALID_PATH":
-        return "That location isn't a folder Panelyth can open."
+        return t("That location isn't a folder Panelyth can open.")
       case "SIDECAR_UNAVAILABLE":
-        return "The Panelyth backend isn't running. Restart Panelyth and try again."
+        return t("The Panelyth backend isn't running. Restart Panelyth and try again.")
     }
     return error.message
   }

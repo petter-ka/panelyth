@@ -40,6 +40,7 @@ import type {
   SidecarStatus,
   Volume,
 } from "@panelyth/contracts"
+import { t } from "@panelyth/i18n"
 
 /** A failed call, with the sidecar's error code and details (e.g. `{ reason: "notReady" }`). */
 export class PanelythError extends Error {
@@ -56,7 +57,7 @@ export class PanelythError extends Error {
 /** The commander's narrow API (ADR-0027); everything goes through here. */
 function api(): CommanderApi {
   const value = window.panelyth
-  if (!value) throw new Error("Panelyth bridge unavailable")
+  if (!value) throw new Error(t("Panelyth bridge unavailable"))
   return value
 }
 
@@ -222,8 +223,8 @@ export const bridge = {
   /** A read-only token URL for any file; its bytes are read with HTTP Range. */
   openFile: (entryId: number): Promise<FileOpenResult> => unwrap(() => api().file.open(entryId)),
   /** A PDF or text file in a document window of its own (ADR-0033). */
-  openDocument: async (entryId: number, theme?: string): Promise<void> => {
-    await unwrap(() => api().document.open(entryId, theme))
+  openDocument: async (entryId: number, theme?: string, lang?: string): Promise<void> => {
+    await unwrap(() => api().document.open(entryId, theme, lang))
   },
   /** Opens with the default app; a program needs allowProgram (PERMISSION_DENIED, reason "program"). */
   shellOpen: async (entryId: number, allowProgram?: boolean): Promise<void> => {

@@ -11,6 +11,7 @@ import { inArchive, notice, operand, otherPanelTarget, READ_ONLY } from "./files
 import { pageStoreOf, parentRows, useListingStore } from "./listing"
 import { marksDescriptor, markNone } from "./marks"
 import { otherSide, type Side } from "./panels"
+import { msg, t } from "@panelyth/i18n"
 
 // Pack (Alt+F5), unpack (Alt+F9) and test (Alt+Shift+F9), Stage C07
 // (ADR-0030). All three are jobs on the engine v2 queue; destinations are
@@ -32,10 +33,10 @@ export const FORMATS: readonly { value: ArchiveCreateFormat; label: string }[] =
 
 /** Compression levels offered (0 stores, 9 is slowest). */
 export const LEVELS: readonly { value: number; label: string }[] = [
-  { value: 0, label: "Store (no compression)" },
-  { value: 1, label: "Fastest" },
-  { value: 6, label: "Normal" },
-  { value: 9, label: "Maximum" },
+  { value: 0, label: msg("Store (no compression)") },
+  { value: 1, label: msg("Fastest") },
+  { value: 6, label: msg("Normal") },
+  { value: 9, label: msg("Maximum") },
 ]
 
 interface Target {
@@ -104,17 +105,17 @@ function describe(side: Side, d: SelectionDescriptor): string {
   const item = single(side)
   if (item) return item.name
   const n = countOf(d)
-  return `${n.toLocaleString()} ${n === 1 ? "item" : "items"}`
+  return t("{count, plural, one {# item} other {# items}}", { count: n })
 }
 
 /** The other panel's folder, unless it shows an archive (nothing is written into one). */
 function target(side: Side): Target | null {
   if (inArchive(otherSide(side))) {
-    notice("Archives are read-only. Choose a folder in the other panel.")
+    notice(t("Archives are read-only. Choose a folder in the other panel."))
     return null
   }
-  const t = otherPanelTarget(side)
-  return t ? { destination: t.path, destinationDirId: t.dirId } : null
+  const dest = otherPanelTarget(side)
+  return dest ? { destination: dest.path, destinationDirId: dest.dirId } : null
 }
 
 /** "photo.jpg" → "photo", "photos" (a folder) → "photos". */
@@ -140,10 +141,10 @@ async function knowSevenZip(): Promise<void> {
 }
 
 /** Resolves an edited destination to its folder id (dir.open of the typed path). */
-async function resolveDir(t: Target): Promise<number> {
-  if (t.destinationDirId !== null) return t.destinationDirId
-  const typed = t.destination.trim()
-  if (typed === "") throw new Error("Enter a destination folder.")
+async function resolveDir(dest: Target): Promise<number> {
+  if (dest.destinationDirId !== null) return dest.destinationDirId
+  const typed = dest.destination.trim()
+  if (typed === "") throw new Error(t("Enter a destination folder."))
   try {
     return (await bridge.openDir(typed)).dirId
   } catch (error) {
@@ -151,7 +152,7 @@ async function resolveDir(t: Target): Promise<number> {
       error instanceof PanelythError &&
       (error.code === "NOT_FOUND" || error.code === "INVALID_PATH")
     )
-      throw new Error("This folder doesn't exist. Check the destination.", { cause: error })
+      throw new Error(t("This folder doesn't exist. Check the destination."), { cause: error })
     throw error
   }
 }
@@ -161,12 +162,12 @@ async function resolveDir(t: Target): Promise<number> {
 /** Alt+F5: the marks (or the cursor entry) into a new archive in the other panel's folder. */
 export function openPack(side: Side): void {
   if (inArchive(side)) {
-    notice(READ_ONLY)
+    notice(t(READ_ONLY))
     return
   }
   const source = operand(side)
-  const t = source && target(side)
-  if (!source || !t) return
+  const dest = source && target(side)
+  if (!source || !dest) return
   const item = single(side)
   const base = item
     ? stem(item.name, item.kind === "dir")
@@ -176,7 +177,7 @@ export function openPack(side: Side): void {
       side,
       source,
       what: describe(side, source),
-      ...t,
+      ...dest,
       name: base + FORMAT_EXT.zip,
       format: "zip",
       level: 6,
@@ -206,7 +207,7 @@ export async function startPack(): Promise<boolean> {
   if (!p) return false
   try {
     const name = p.name.trim()
-    if (name === "") throw new Error("Enter a name for the archive.")
+    if (name === "") throw new Error(t("Enter a name for the archive."))
     const destinationDirId = await resolveDir(p)
     await bridge.startJob({
       kind: "pack",
@@ -232,18 +233,18 @@ export async function startPack(): Promise<boolean> {
 /** Alt+F9: whole archives into the other panel's folder. */
 export async function openUnpack(side: Side): Promise<void> {
   if (inArchive(side)) {
-    notice("Inside an archive, copy entries out with F5.")
+    notice(t("Inside an archive, copy entries out with F5."))
     return
   }
   const source = operand(side)
-  const t = source && target(side)
-  if (!source || !t) return
+  const dest = source && target(side)
+  if (!source || !dest) return
   set({
     unpack: {
       side,
       source,
       what: describe(side, source),
-      ...t,
+      ...dest,
       subfolders: false,
       links: true,
       conflict: "ask",
@@ -253,8 +254,8 @@ export async function openUnpack(side: Side): Promise<void> {
       error: null,
     },
   })
-  if (t.destinationDirId === null) return
-  const check = await bridge.checkArchive(source, t.destinationDirId).catch(() => null)
+  if (dest.destinationDirId === null) return
+  const check = await bridge.checkArchive(source, dest.destinationDirId).catch(() => null)
   const now = get().unpack
   if (check && now?.source === source) {
     set({ unpack: { ...now, files: check.files, bytes: check.bytes, warnings: check.warnings } })
@@ -300,7 +301,7 @@ const testing = new Set<number>()
 /** Alt+Shift+F9: reads the archives through; the result is announced. */
 export async function testArchives(side: Side): Promise<void> {
   if (inArchive(side)) {
-    notice("Test the archive itself: leave it with Backspace first.")
+    notice(t("Test the archive itself: leave it with Backspace first."))
     return
   }
   const source = operand(side)
@@ -308,17 +309,23 @@ export async function testArchives(side: Side): Promise<void> {
   try {
     const job = await bridge.startJob({ kind: "testArchive", source: { selection: source } })
     testing.add(job.jobId)
-    notice(`Testing ${describe(side, source)}…`)
+    notice(t("Testing {what}…", { what: describe(side, source) }))
   } catch (error) {
     notice(errorText(error))
   }
 }
 
 export function testResult(job: JobSnapshot): string {
-  const n = (k: number) => `${k.toLocaleString()} ${k === 1 ? "archive" : "archives"}`
-  if (job.state === "cancelled") return "The archive test was cancelled."
-  if (job.failed === 0) return `${n(job.done)} tested: no errors.`
-  return `${n(job.failed)} of ${n(job.total)} damaged or unreadable; details in the queue (Ctrl+J).`
+  if (job.state === "cancelled") return t("The archive test was cancelled.")
+  if (job.failed === 0) {
+    return t("{count, plural, one {# archive} other {# archives}} tested: no errors.", {
+      count: job.done,
+    })
+  }
+  return t(
+    "{failed, plural, one {# archive} other {# archives}} of {total, plural, one {# archive} other {# archives}} damaged or unreadable; details in the queue (Ctrl+J).",
+    { failed: job.failed, total: job.total },
+  )
 }
 
 /** Announces finished tests; started once by the app. */

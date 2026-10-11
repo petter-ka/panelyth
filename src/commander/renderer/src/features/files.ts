@@ -6,6 +6,7 @@ import { focusEntry, pageStoreOf, parentRows, useListingStore } from "./listing"
 import { cursorDescriptor, marksDescriptor, marksOf, markNone } from "./marks"
 import { otherSide, setActivePanel, usePanelsStore, type Side } from "./panels"
 import { useTabsStore } from "./tabs"
+import { msg, t } from "@panelyth/i18n"
 
 // File operations (Stage C04, CFR-11, CFR-12, CFR-27): F5 copy, F6 move,
 // Shift+F5 copy here under a new name, F2 / Shift+F6 rename in place, F7
@@ -18,20 +19,21 @@ import { useTabsStore } from "./tabs"
 export type CopyKind = "copy" | "move" | "extract"
 
 /** What every changing command says inside an archive (ADR-0030: read-only). */
-export const READ_ONLY = "Archives are read-only here. Copy files out with F5."
-const INTO_ARCHIVE = "Files can't be copied into an archive. Pack them with Alt+F5."
+/** Source text: translate with t() where it is shown (ADR-0034). */
+export const READ_ONLY = msg("Archives are read-only here. Copy files out with F5.")
+const INTO_ARCHIVE = msg("Files can't be copied into an archive. Pack them with Alt+F5.")
 
 /** Whether a panel shows an archive (Stage C07). */
 export const inArchive = (side: Side): boolean => useListingStore.getState()[side].archive !== null
 
 /** The conflict policies the copy dialog offers (UX-DESIGN "Dialogs"). */
 export const POLICIES: readonly { value: ConflictPolicy; label: string }[] = [
-  { value: "ask", label: "Ask" },
-  { value: "replace", label: "Overwrite" },
-  { value: "skip", label: "Skip" },
-  { value: "replaceOlder", label: "Overwrite older" },
-  { value: "renameNew", label: "Rename new" },
-  { value: "renameExisting", label: "Rename existing" },
+  { value: "ask", label: msg("Ask") },
+  { value: "replace", label: msg("Overwrite") },
+  { value: "skip", label: msg("Skip") },
+  { value: "replaceOlder", label: msg("Overwrite older") },
+  { value: "renameNew", label: msg("Rename new") },
+  { value: "renameExisting", label: msg("Rename existing") },
 ]
 
 export interface CopyDialogState {
@@ -132,7 +134,7 @@ function describe(side: Side, count: number): string {
     const item = cursorItem(side)
     if (item) return item.name
   }
-  return `${count.toLocaleString()} ${count === 1 ? "item" : "items"}`
+  return t("{count, plural, one {# item} other {# items}}", { count })
 }
 
 async function sizeOf(
@@ -176,12 +178,12 @@ export async function openCopy(
   const dest = target ?? otherPanelTarget(side)
   if (!source || !dest) return
   if (!target && inArchive(otherSide(side))) {
-    notice(INTO_ARCHIVE)
+    notice(t(INTO_ARCHIVE))
     return
   }
   if (inArchive(side)) {
     if (kind === "move") {
-      notice(READ_ONLY)
+      notice(t(READ_ONLY))
       return
     }
     kind = "extract"
@@ -225,7 +227,7 @@ export function openCopyHere(side: Side): void {
   const p = panel(side)
   if (!item || !source || p.dirId === null) return
   if (p.archive) {
-    notice(READ_ONLY)
+    notice(t(READ_ONLY))
     return
   }
   set({
@@ -273,7 +275,7 @@ export async function startCopy(now: boolean): Promise<boolean> {
   try {
     if (dirId === null) {
       const typed = c.destination.trim()
-      if (typed === "") throw new Error("Enter a destination folder.")
+      if (typed === "") throw new Error(t("Enter a destination folder."))
       dirId = (await bridge.openDir(typed)).dirId
     }
     const mask = c.mask.trim()
@@ -303,9 +305,9 @@ export async function startCopy(now: boolean): Promise<boolean> {
     const message =
       error instanceof PanelythError &&
       (error.code === "NOT_FOUND" || error.code === "INVALID_PATH")
-        ? "This folder doesn't exist. Check the destination."
+        ? t("This folder doesn't exist. Check the destination.")
         : reason === "notReady"
-          ? "The destination drive is not ready."
+          ? t("The destination drive is not ready.")
           : errorText(error)
     if (get().copy) set({ copy: { ...get().copy!, error: message } })
     return false
@@ -342,7 +344,7 @@ export async function openDelete(side: Side, permanent: boolean): Promise<void> 
   const p = panel(side)
   if (!source || p.dirId === null) return
   if (p.archive) {
-    notice(READ_ONLY)
+    notice(t(READ_ONLY))
     return
   }
   const count = source.ranges.reduce((n, [a, b]) => n + b - a, 0) + source.include.length
@@ -394,7 +396,7 @@ export async function confirmDelete(): Promise<void> {
 // New folder and rename ---------------------------------------------------------------------
 
 export function openMkdir(side: Side): void {
-  if (panel(side).archive) notice(READ_ONLY)
+  if (panel(side).archive) notice(t(READ_ONLY))
   else if (panel(side).dirId !== null) set({ mkdir: { side, error: null } })
 }
 
@@ -421,7 +423,7 @@ export function startRename(side: Side): void {
   const item = cursorItem(side)
   if (!item) return
   if (panel(side).archive) {
-    notice(READ_ONLY)
+    notice(t(READ_ONLY))
     return
   }
   set({
@@ -465,13 +467,15 @@ export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<vo
   const source = operand(side)
   if (!source) return
   if (panel(side).archive) {
-    notice(READ_ONLY)
+    notice(t(READ_ONLY))
     return
   }
   try {
     const state = await bridge.clipSet(source, mode)
     notice(
-      `${state.count.toLocaleString()} ${state.count === 1 ? "item" : "items"} ${mode === "cut" ? "cut" : "copied"}`,
+      mode === "cut"
+        ? t("{count, plural, one {# item} other {# items}} cut", { count: state.count })
+        : t("{count, plural, one {# item} other {# items}} copied", { count: state.count }),
     )
   } catch (error) {
     notice(errorText(error))
@@ -483,7 +487,7 @@ export async function clipboardPaste(side: Side): Promise<void> {
   const dirId = panel(side).dirId
   if (dirId === null) return
   if (panel(side).archive) {
-    notice(INTO_ARCHIVE)
+    notice(t(INTO_ARCHIVE))
     return
   }
   try {
@@ -491,7 +495,7 @@ export async function clipboardPaste(side: Side): Promise<void> {
   } catch (error) {
     notice(
       error instanceof PanelythError && error.code === "INVALID_ARGUMENT"
-        ? "The clipboard is empty."
+        ? t("The clipboard is empty.")
         : errorText(error),
     )
   }
@@ -503,9 +507,10 @@ export async function copyAsText(side: Side, namesOnly: boolean): Promise<void> 
   if (!source) return
   try {
     const res = await bridge.copyPaths(source, namesOnly)
-    notice(
-      `${res.count.toLocaleString()} ${namesOnly ? "names" : "paths"} copied${res.truncated ? " (the first 10,000)" : ""}`,
-    )
+    const copied = namesOnly
+      ? t("{count, plural, one {# name} other {# names}} copied", { count: res.count })
+      : t("{count, plural, one {# path} other {# paths}} copied", { count: res.count })
+    notice(res.truncated ? t("{copied} (the first 10,000)", { copied }) : copied)
   } catch (error) {
     notice(errorText(error))
   }

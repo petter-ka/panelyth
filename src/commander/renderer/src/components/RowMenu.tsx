@@ -7,43 +7,44 @@ import { enter, pageStoreOf, parentRows, useListingStore } from "../features/lis
 import { countOf, marksOf } from "../features/marks"
 import type { Side } from "../features/panels"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
+import { msg, t } from "@panelyth/i18n"
 
 type Item = { action: ActionId; label: string } | "separator"
 
 // Commands for the marked entries, or the cursor entry when nothing is marked.
 const ENTRY_ITEMS: readonly Item[] = [
-  { action: "files.view", label: "View" },
-  { action: "files.edit", label: "Edit" },
+  { action: "files.view", label: msg("View") },
+  { action: "files.edit", label: msg("Edit") },
   "separator",
-  { action: "files.copy", label: "Copy to the other panel…" },
-  { action: "files.move", label: "Move to the other panel…" },
-  { action: "files.rename", label: "Rename" },
-  { action: "files.trash", label: "Delete" },
+  { action: "files.copy", label: msg("Copy to the other panel…") },
+  { action: "files.move", label: msg("Move to the other panel…") },
+  { action: "files.rename", label: msg("Rename") },
+  { action: "files.trash", label: msg("Delete") },
   "separator",
-  { action: "clip.cut", label: "Cut" },
-  { action: "clip.copy", label: "Copy" },
-  { action: "clip.paste", label: "Paste" },
+  { action: "clip.cut", label: msg("Cut") },
+  { action: "clip.copy", label: msg("Copy") },
+  { action: "clip.paste", label: msg("Paste") },
   "separator",
-  { action: "copy.paths", label: "Copy full paths as text" },
-  { action: "copy.names", label: "Copy names as text" },
+  { action: "copy.paths", label: msg("Copy full paths as text") },
+  { action: "copy.names", label: msg("Copy names as text") },
   "separator",
-  { action: "archive.pack", label: "Pack…" },
-  { action: "archive.unpack", label: "Unpack…" },
+  { action: "archive.pack", label: msg("Pack…") },
+  { action: "archive.unpack", label: msg("Unpack…") },
   "separator",
-  { action: "files.mkdir", label: "New folder" },
-  { action: "view.refresh", label: "Refresh" },
+  { action: "files.mkdir", label: msg("New folder") },
+  { action: "view.refresh", label: msg("Refresh") },
 ]
 
 // Commands for the folder itself: "..", or the empty area below the entries.
 const FOLDER_ITEMS: readonly Item[] = [
-  { action: "clip.paste", label: "Paste" },
+  { action: "clip.paste", label: msg("Paste") },
   "separator",
-  { action: "files.mkdir", label: "New folder" },
-  { action: "files.newText", label: "New text file" },
-  { action: "view.refresh", label: "Refresh" },
+  { action: "files.mkdir", label: msg("New folder") },
+  { action: "files.newText", label: msg("New text file") },
+  { action: "view.refresh", label: msg("Refresh") },
   "separator",
-  { action: "mark.all", label: "Mark all" },
-  { action: "mark.invert", label: "Invert marks" },
+  { action: "mark.all", label: msg("Mark all") },
+  { action: "mark.invert", label: msg("Invert marks") },
 ]
 
 const MENU_WIDTH = 256
@@ -53,9 +54,9 @@ const SEPARATOR_HEIGHT = 9
 /** What the entry commands will act on: "12 marked", or the cursor entry's name. */
 function operandLabel(side: Side): string {
   const marks = marksOf(side)
-  if (hasMarks(marks)) return `${countOf(marks).toLocaleString()} marked`
+  if (hasMarks(marks)) return t("{count} marked", { count: countOf(marks).toLocaleString() })
   const p = useListingStore.getState()[side]
-  return pageStoreOf(side).getItem(p.cursor - parentRows(p))?.name ?? "Entry"
+  return pageStoreOf(side).getItem(p.cursor - parentRows(p))?.name ?? t("Entry")
 }
 
 /**
@@ -97,7 +98,7 @@ export function RowMenu({ side }: { side: Side }) {
     const chord = chords[item.action]?.[0]
     entries.push({
       id: item.action,
-      label: item.label,
+      label: t(item.label),
       detail: chord ? formatChord(chord) : undefined,
       onSelect: () => runPanelAction(side, item.action),
     })
@@ -113,7 +114,7 @@ export function RowMenu({ side }: { side: Side }) {
       onContextMenu={(e) => e.preventDefault()}
     >
       <PopupMenu
-        label={menu.entry ? "Entry commands" : "Folder commands"}
+        label={menu.entry ? t("Entry commands") : t("Folder commands")}
         testId={`row-menu-${side}`}
         entries={entries}
         onClose={() => useUiStore.setState({ rowMenu: null })}

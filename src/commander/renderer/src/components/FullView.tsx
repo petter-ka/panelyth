@@ -79,6 +79,7 @@ import { PopupMenu, type MenuEntry } from "./PopupMenu"
 import { RenameField, useRenaming } from "./RenameField"
 import { useRightButton } from "./useRightButton"
 import { useScrollMemory } from "./useScrollMemory"
+import { msg, t } from "@panelyth/i18n"
 
 /** Fixed row height per interface size, so no row is ever measured (ADR-0028). */
 export const ROW_HEIGHT: Record<InterfaceSize, number> = { small: 20, medium: 22, large: 26 }
@@ -88,11 +89,11 @@ const HEADER_HEIGHT = 24
 const GUTTER_WIDTH = 10
 const COLUMN_IDS: readonly ColumnId[] = ["name", "ext", "size", "date", "attr"]
 const COLUMN_LABEL: Record<ColumnId, string> = {
-  name: "Name",
-  ext: "Ext",
-  size: "Size",
-  date: "Date",
-  attr: "Attr",
+  name: msg("Name"),
+  ext: msg("Ext"),
+  size: msg("Size"),
+  date: msg("Date"),
+  attr: msg("Attr"),
 }
 
 // TanStack owns sizing, visibility, ordering, pinning and the sort indicators.
@@ -373,7 +374,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
 
   const fitColumn = (id: ColumnId): void => {
     const nodes = grid.current?.querySelectorAll<HTMLElement>(`[data-column="${id}"]`)
-    let fit = COLUMN_LABEL[id].length * 8 + 28
+    let fit = t(COLUMN_LABEL[id]).length * 8 + 28
     nodes?.forEach((node) => {
       const text = id === "name" ? node.querySelector<HTMLElement>(".truncate") : null
       fit = Math.max(fit, (text?.scrollWidth ?? node.scrollWidth) + (id === "name" ? 32 : 2))
@@ -485,37 +486,41 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     const column = renderColumns[visualIndex]
     const sorted = sort.field === COLUMN_SORT[id]
     const entries: MenuEntry[] = [
-      { id: "column-heading", label: `${COLUMN_LABEL[id]} column`, heading: true },
+      {
+        id: "column-heading",
+        label: t("{column} column", { column: t(COLUMN_LABEL[id]) }),
+        heading: true,
+      },
       {
         id: "fit",
-        label: "Fit to visible rows",
-        detail: "Double-click edge",
+        label: t("Fit to visible rows"),
+        detail: t("Double-click edge"),
         onSelect: () => fitColumn(id),
       },
-      { id: "reset-width", label: "Reset column width", onSelect: () => resetColumnWidth(id) },
-      { id: "sort-heading", label: "Sort", heading: true },
+      { id: "reset-width", label: t("Reset column width"), onSelect: () => resetColumnWidth(id) },
+      { id: "sort-heading", label: t("Sort"), heading: true },
       {
         id: "sort-asc",
-        label: "Sort ascending",
+        label: t("Sort ascending"),
         current: sorted && sort.direction === "asc",
         onSelect: () => setSort(side, { field: COLUMN_SORT[id], direction: "asc" }),
       },
       {
         id: "sort-desc",
-        label: "Sort descending",
+        label: t("Sort descending"),
         current: sorted && sort.direction === "desc",
         onSelect: () => setSort(side, { field: COLUMN_SORT[id], direction: "desc" }),
       },
-      { id: "layout-heading", label: "Column layout", heading: true },
+      { id: "layout-heading", label: t("Column layout"), heading: true },
       {
         id: "move-left",
-        label: "Move left",
+        label: t("Move left"),
         disabled: visualIndex <= 0 || renderColumns[visualIndex - 1]?.pin !== column?.pin,
         onSelect: () => moveColumn(id, -1),
       },
       {
         id: "move-right",
-        label: "Move right",
+        label: t("Move right"),
         disabled:
           visualIndex < 0 ||
           visualIndex >= renderColumns.length - 1 ||
@@ -524,24 +529,24 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       },
       {
         id: "pin-start",
-        label: "Pin to start",
+        label: t("Pin to start"),
         current: column?.pin === "start",
         onSelect: () => pinColumn(id, "start"),
       },
       {
         id: "pin-end",
-        label: "Pin to end",
+        label: t("Pin to end"),
         current: column?.pin === "end",
         onSelect: () => pinColumn(id, "end"),
       },
       ...(column?.pin
-        ? [{ id: "unpin", label: "Unpin column", onSelect: () => pinColumn(id, false) }]
+        ? [{ id: "unpin", label: t("Unpin column"), onSelect: () => pinColumn(id, false) }]
         : []),
-      { id: "columns-heading", label: "Show columns (drag to reorder)", heading: true },
+      { id: "columns-heading", label: t("Show columns (drag to reorder)"), heading: true },
       ...columnOrder.map((columnId) => ({
         id: `visible-${columnId}`,
         dragId: columnId,
-        label: COLUMN_LABEL[columnId],
+        label: t(COLUMN_LABEL[columnId]),
         checked: columnVisibility[columnId],
         disabled: columnId === "name",
         keepOpen: true,
@@ -555,7 +560,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       })),
       {
         id: "hide",
-        label: `Hide ${COLUMN_LABEL[id]}`,
+        label: t("Hide {column}", { column: t(COLUMN_LABEL[id]) }),
         disabled: id === "name",
         onSelect: () =>
           updateLayout((current) => ({
@@ -565,7 +570,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       },
       {
         id: "reset-layout",
-        label: "Reset all columns",
+        label: t("Reset all columns"),
         onSelect: () => {
           setColumns(side, { ...DEFAULT_COLUMNS })
           setColumnLayout(side, {
@@ -626,7 +631,9 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
               return (
                 <Tooltip
                   key={id}
-                  content="Right-click for column options and order. Drag the edge to resize; double-click to fit visible cells."
+                  content={t(
+                    "Right-click for column options and order. Drag the edge to resize; double-click to fit visible cells.",
+                  )}
                 >
                   <div
                     role="columnheader"
@@ -643,7 +650,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
                       onClick={() => toggleSort(side, COLUMN_SORT[id])}
                       className={`flex h-full w-full items-center gap-1 px-1.5 hover:text-text ${RIGHT.has(id) ? "justify-end" : ""} ${sorted ? "text-text" : ""}`}
                     >
-                      {String(header?.column.columnDef.header ?? COLUMN_LABEL[id])}
+                      {t(COLUMN_LABEL[id])}
                       {sorted && <span aria-hidden="true">{sorted === "asc" ? "↑" : "↓"}</span>}
                     </button>
                     <div
@@ -710,7 +717,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
       </div>
       {columnMenu && (
         <PopupMenu
-          label={`${COLUMN_LABEL[columnMenu.id]} column options`}
+          label={t("{column} column options", { column: t(COLUMN_LABEL[columnMenu.id]) })}
           testId={`column-menu-${side}`}
           entries={menuEntries}
           onReorder={reorderColumns}

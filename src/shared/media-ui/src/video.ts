@@ -1,5 +1,6 @@
 import type { ErrorCode } from "@panelyth/contracts"
 import { create } from "zustand"
+import { t } from "@panelyth/i18n"
 
 /** "1:05", "12:00", "1:02:03" — hours only when needed. NaN/∞ shows "0:00". */
 export function formatTime(seconds: number): string {
@@ -67,9 +68,15 @@ export function problemFromMediaError(code: number | undefined): VideoProblem {
 
 /** The detail line for an unsupported video, naming the codec when known. */
 export function unsupportedDetail(videoCodec: string, audioCodec: string): string {
-  if (videoCodec) return `${codecName(videoCodec)} video isn't supported by the built-in player.`
-  if (audioCodec) return `${codecName(audioCodec)} audio isn't supported by the built-in player.`
-  return "This format isn't supported by the built-in player."
+  if (videoCodec)
+    return t("{codec} video isn't supported by the built-in player.", {
+      codec: codecName(videoCodec),
+    })
+  if (audioCodec)
+    return t("{codec} audio isn't supported by the built-in player.", {
+      codec: codecName(audioCodec),
+    })
+  return t("This format isn't supported by the built-in player.")
 }
 
 /**

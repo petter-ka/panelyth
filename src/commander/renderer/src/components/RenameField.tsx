@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { cancelRename, commitRename, useFilesStore } from "../features/files"
 import type { Side } from "../features/panels"
+import { t } from "@panelyth/i18n"
 
 /** Is this view row being renamed? (Rows subscribe to this boolean only.) */
 export const useRenaming = (side: Side, row: number): boolean =>
@@ -31,7 +32,7 @@ export function RenameField({ onDone }: { onDone(): void }) {
     <span className="relative flex min-w-0 flex-1 items-center">
       <input
         ref={input}
-        aria-label="New name"
+        aria-label={t("New name")}
         aria-invalid={r.error !== null}
         value={value}
         spellCheck={false}

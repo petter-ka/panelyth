@@ -14,6 +14,7 @@ import { createPageStore, type PageStore } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError, isBridgeAvailable } from "../bridge"
 import { usePanelsStore, type Side } from "./panels"
+import { t } from "@panelyth/i18n"
 
 // Panel listings (Stage C01, ADR-0028): one query session per panel in the
 // all-entries scope (ADR-0026), its pages in a page store outside React
@@ -252,13 +253,16 @@ export function toPanelError(error: unknown): PanelError {
   const reason = (error.details as { reason?: unknown } | undefined)?.reason
   switch (true) {
     case error.code === "NOT_FOUND":
-      return { kind: "notFound", message: "This folder doesn't exist anymore." }
+      return { kind: "notFound", message: t("This folder doesn't exist anymore.") }
     case error.code === "PERMISSION_DENIED":
-      return { kind: "denied", message: "You don't have permission to open this folder." }
+      return { kind: "denied", message: t("You don't have permission to open this folder.") }
     case reason === "notReady":
-      return { kind: "notReady", message: "The drive is not ready. Insert a disk or reconnect it." }
+      return {
+        kind: "notReady",
+        message: t("The drive is not ready. Insert a disk or reconnect it."),
+      }
     case reason === "network":
-      return { kind: "network", message: "The network location can't be reached." }
+      return { kind: "network", message: t("The network location can't be reached.") }
     default:
       return { kind: "other", message: error.message }
   }

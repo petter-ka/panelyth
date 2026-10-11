@@ -1,4 +1,5 @@
 import type { ByteSource } from "./bytes"
+import { msg } from "@panelyth/i18n"
 
 // Text in byte windows (Stage C05): encoding detection on the first window,
 // lines found inside a loaded window, and search over the whole file in
@@ -18,11 +19,11 @@ export const ENCODINGS: readonly { value: Encoding; label: string }[] = [
   { value: "utf-8", label: "UTF-8" },
   { value: "utf-16le", label: "UTF-16 LE" },
   { value: "utf-16be", label: "UTF-16 BE" },
-  { value: "windows-1252", label: "Western (Windows-1252, Latin-1)" },
-  { value: "windows-1250", label: "Central European (Windows-1250)" },
-  { value: "iso-8859-2", label: "Central European (ISO-8859-2)" },
-  { value: "windows-1251", label: "Cyrillic (Windows-1251)" },
-  { value: "koi8-r", label: "Cyrillic (KOI8-R)" },
+  { value: "windows-1252", label: msg("Western (Windows-1252, Latin-1)") },
+  { value: "windows-1250", label: msg("Central European (Windows-1250)") },
+  { value: "iso-8859-2", label: msg("Central European (ISO-8859-2)") },
+  { value: "windows-1251", label: msg("Cyrillic (Windows-1251)") },
+  { value: "koi8-r", label: msg("Cyrillic (KOI8-R)") },
 ]
 
 /** The window detection and the quick view read first. */

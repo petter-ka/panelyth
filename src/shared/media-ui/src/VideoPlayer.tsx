@@ -31,6 +31,7 @@ import {
 } from "./icons"
 import { mediaPort } from "./port"
 import { flushResume, readResume, recordResume, usablePoint, type ResumePoint } from "./resume"
+import { t } from "@panelyth/i18n"
 
 /** While playing, the position is saved about this often. */
 const RESUME_SAVE_EVERY_MS = 15_000
@@ -268,7 +269,7 @@ export function VideoPlayer({
       ref={rootRef}
       tabIndex={0}
       onKeyDown={onKeyDown}
-      aria-label={`Video player: ${name}`}
+      aria-label={t("Video player: {name}", { name })}
       data-testid="video-player"
       data-state={state}
       data-problem={problem ?? undefined}
@@ -372,12 +373,12 @@ export function VideoPlayer({
       </div>
       <div
         role="toolbar"
-        aria-label="Playback controls"
+        aria-label={t("Playback controls")}
         className="flex h-10 shrink-0 items-center gap-1 border-t border-border bg-chrome px-1.5"
       >
         <span
           className={unavailable ? "inline-flex" : "contents"}
-          data-tooltip-content={playing ? "Pause (Space)" : "Play (Space)"}
+          data-tooltip-content={playing ? t("Pause (Space)") : t("Play (Space)")}
         >
           <button
             type="button"
@@ -385,7 +386,7 @@ export function VideoPlayer({
             onClick={toggle}
             disabled={unavailable}
             style={unavailable ? { pointerEvents: "none" } : undefined}
-            aria-label={playing ? "Pause" : "Play"}
+            aria-label={playing ? t("Pause") : t("Play")}
           >
             {playing ? <PauseIcon /> : <PlayIcon />}
           </button>
@@ -397,13 +398,16 @@ export function VideoPlayer({
           {formatTime(current)} / {formatTime(total)}
         </span>
         <Slider
-          label="Seek"
+          label={t("Seek")}
           value={current}
           max={total}
           step={0.1}
           disabled={!url || !!problem || total <= 0}
           onChange={seek}
-          valueText={`${formatTime(current)} of ${formatTime(total)}`}
+          valueText={t("{current} of {total}", {
+            current: formatTime(current),
+            total: formatTime(total),
+          })}
           className="min-w-12 flex-1"
           testId="video-seek"
         />
@@ -411,14 +415,14 @@ export function VideoPlayer({
           type="button"
           className={control}
           onClick={() => setMuted(!muted)}
-          aria-label={muted ? "Unmute" : "Mute"}
+          aria-label={muted ? t("Unmute") : t("Mute")}
           aria-pressed={muted}
-          data-tooltip-content={muted ? "Unmute (M)" : "Mute (M)"}
+          data-tooltip-content={muted ? t("Unmute (M)") : t("Mute (M)")}
         >
           {muted ? <MuteIcon /> : <VolumeIcon />}
         </button>
         <Slider
-          label="Volume"
+          label={t("Volume")}
           value={muted ? 0 : volume}
           max={1}
           step={0.05}
@@ -430,7 +434,7 @@ export function VideoPlayer({
         <span
           className={unavailable ? "inline-flex" : "contents"}
           data-tooltip-content={
-            fullscreen || appFullscreen ? "Exit full screen (F)" : "Full screen (F)"
+            fullscreen || appFullscreen ? t("Exit full screen (F)") : t("Full screen (F)")
           }
         >
           <button
@@ -439,7 +443,7 @@ export function VideoPlayer({
             onClick={toggleFullscreen}
             disabled={unavailable}
             style={unavailable ? { pointerEvents: "none" } : undefined}
-            aria-label={fullscreen || appFullscreen ? "Exit full screen" : "Full screen"}
+            aria-label={fullscreen || appFullscreen ? t("Exit full screen") : t("Full screen")}
           >
             {fullscreen || appFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
           </button>
@@ -503,19 +507,19 @@ function ProblemView({
 }) {
   const content: Record<VideoProblem, { title: string; text: string; action: ReactNode }> = {
     unsupported: {
-      title: "This video can't be played here",
+      title: t("This video can't be played here"),
       text: detail,
-      action: <ActionButton onClick={onOpen}>Open with default app</ActionButton>,
+      action: <ActionButton onClick={onOpen}>{t("Open with default app")}</ActionButton>,
     },
     missing: {
-      title: "This video can't be opened",
-      text: "The file was moved, deleted or can't be read.",
-      action: <ActionButton onClick={onRetry}>Try again</ActionButton>,
+      title: t("This video can't be opened"),
+      text: t("The file was moved, deleted or can't be read."),
+      action: <ActionButton onClick={onRetry}>{t("Try again")}</ActionButton>,
     },
     damaged: {
-      title: "This video is damaged",
-      text: "The file can't be read as a video.",
-      action: <ActionButton onClick={onOpen}>Open with default app</ActionButton>,
+      title: t("This video is damaged"),
+      text: t("The file can't be read as a video."),
+      action: <ActionButton onClick={onOpen}>{t("Open with default app")}</ActionButton>,
     },
   }
   const c = content[problem]

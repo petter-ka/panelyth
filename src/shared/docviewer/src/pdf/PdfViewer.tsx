@@ -5,6 +5,7 @@ import { PdfPage } from "./PdfPage"
 import { PdfThumbs } from "./PdfThumbs"
 import { PDFJS_DATA, pdfjs, type PDFDocumentProxy } from "./pdfjs"
 import { locateMatch, usePdfSearch } from "./search"
+import { t } from "@panelyth/i18n"
 
 type Zoom = "width" | "page" | number
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4] as const
@@ -46,10 +47,10 @@ function useLoadPdf(src: string): Load {
             status: "error",
             message:
               error instanceof Error && error.name === "InvalidPDFException"
-                ? "This is not a valid PDF file."
+                ? t("This is not a valid PDF file.")
                 : error instanceof Error
                   ? error.message
-                  : "The PDF could not be opened.",
+                  : t("The PDF could not be opened."),
           })
       },
     )
@@ -66,7 +67,8 @@ export default function PdfViewer({ params }: { params: DocumentParams }) {
   if (load.status === "loading") {
     return (
       <p className="p-6 text-sm text-muted">
-        Opening…{load.percent !== null ? ` ${Math.round(load.percent)}%` : ""}
+        {t("Opening…")}
+        {load.percent !== null ? ` ${Math.round(load.percent)}%` : ""}
       </p>
     )
   }
@@ -101,7 +103,7 @@ function PasswordForm({
     >
       <p className="truncate font-medium">{name}</p>
       <label className="flex flex-col gap-1 text-xs text-muted">
-        {wrong ? "Wrong password. Try again." : "This PDF is protected. Enter its password."}
+        {wrong ? t("Wrong password. Try again.") : t("This PDF is protected. Enter its password.")}
         <input
           type="password"
           autoFocus
@@ -111,7 +113,7 @@ function PasswordForm({
         />
       </label>
       <button type="submit" className="h-8 rounded bg-accent text-accent-foreground">
-        Open
+        {t("Open")}
       </button>
     </form>
   )
@@ -269,7 +271,7 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
   return (
     <div className="flex h-full flex-col bg-canvas text-text" onKeyDown={onKeyDown}>
       <header className="flex h-11 shrink-0 items-center gap-1 border-b border-border bg-chrome px-2 text-xs">
-        <Button label="Pages" pressed={sidebar} onClick={() => setSidebar((v) => !v)}>
+        <Button label={t("Pages")} pressed={sidebar} onClick={() => setSidebar((v) => !v)}>
           ☰
         </Button>
         <h1
@@ -279,11 +281,15 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
           {params.name}
         </h1>
         <div className="flex-1" />
-        <Button label="Previous page" onClick={() => goTo(current - 1)} disabled={current <= 1}>
+        <Button
+          label={t("Previous page")}
+          onClick={() => goTo(current - 1)}
+          disabled={current <= 1}
+        >
           ↑
         </Button>
         <input
-          aria-label="Page number"
+          aria-label={t("Page number")}
           value={pageInput}
           inputMode="numeric"
           onChange={(e) => setPageInput(e.target.value.replace(/\D/g, ""))}
@@ -296,18 +302,18 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
         />
         <span className="text-muted tabular-nums">/ {doc.numPages}</span>
         <Button
-          label="Next page"
+          label={t("Next page")}
           onClick={() => goTo(current + 1)}
           disabled={current >= doc.numPages}
         >
           ↓
         </Button>
         <div className="mx-2 h-5 w-px bg-border" />
-        <Button label="Zoom out (Ctrl+-)" onClick={() => zoomBy(-1)}>
+        <Button label={t("Zoom out (Ctrl+-)")} onClick={() => zoomBy(-1)}>
           −
         </Button>
         <select
-          aria-label="Zoom"
+          aria-label={t("Zoom")}
           value={zoomValue}
           onChange={(e) => {
             const v = e.target.value
@@ -315,8 +321,8 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
           }}
           className="h-7 rounded border border-border bg-canvas px-1 text-text outline-none"
         >
-          <option value="width">Fit width ({percent}%)</option>
-          <option value="page">Fit page</option>
+          <option value="width">{t("Fit width ({percent}%)", { percent })}</option>
+          <option value="page">{t("Fit page")}</option>
           {ZOOM_STEPS.map((z) => (
             <option key={z} value={z}>
               {Math.round(z * 100)}%
@@ -326,22 +332,22 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
             <option value={zoom}>{percent}%</option>
           )}
         </select>
-        <Button label="Zoom in (Ctrl++)" onClick={() => zoomBy(1)}>
+        <Button label={t("Zoom in (Ctrl++)")} onClick={() => zoomBy(1)}>
           +
         </Button>
         <div className="mx-2 h-5 w-px bg-border" />
-        <Button label="Rotate" onClick={() => setRotation((r) => (r + 90) % 360)}>
+        <Button label={t("Rotate")} onClick={() => setRotation((r) => (r + 90) % 360)}>
           ⟳
         </Button>
         <Button
-          label="Night mode (invert pages)"
+          label={t("Night mode (invert pages)")}
           pressed={night}
           onClick={() => setNight((v) => !v)}
         >
           ☾
         </Button>
-        <Button label="Find (Ctrl+F)" pressed={findOpen} onClick={openFind}>
-          Find
+        <Button label={t("Find (Ctrl+F)")} pressed={findOpen} onClick={openFind}>
+          {t("Find")}
         </Button>
       </header>
 
@@ -352,9 +358,9 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
         >
           <input
             ref={findInput}
-            aria-label="Find in document"
+            aria-label={t("Find in document")}
             value={query}
-            placeholder="Find"
+            placeholder={t("Find")}
             spellCheck={false}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -374,19 +380,25 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
               ? ""
               : search.total === 0
                 ? search.done
-                  ? "No matches"
-                  : `Searching… ${search.scanned}/${doc.numPages}`
-                : `${Math.min(matchIndex, search.total - 1) + 1} of ${search.total}${search.done ? "" : "+"}`}
+                  ? t("No matches")
+                  : t("Searching… {scanned}/{pages}", {
+                      scanned: search.scanned,
+                      pages: doc.numPages,
+                    })
+                : t("{current} of {total}", {
+                    current: Math.min(matchIndex, search.total - 1) + 1,
+                    total: `${search.total}${search.done ? "" : "+"}`,
+                  })}
           </span>
           <Button
-            label="Previous match (Shift+Enter)"
+            label={t("Previous match (Shift+Enter)")}
             onClick={() => stepMatch(-1)}
             disabled={search.total === 0}
           >
             ↑
           </Button>
           <Button
-            label="Next match (Enter)"
+            label={t("Next match (Enter)")}
             onClick={() => stepMatch(1)}
             disabled={search.total === 0}
           >

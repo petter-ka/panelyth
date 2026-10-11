@@ -1,19 +1,20 @@
 import { COLOR_LABELS, type ColorLabel } from "@panelyth/contracts"
+import { msg, t } from "@panelyth/i18n"
 
 // Color labels (Stage 08, ADR-0022): stored as 1..7, 0 = none. Colors come
 // from the --label-* tokens, so both themes keep them distinguishable.
 
 const NAMES: Record<ColorLabel, string> = {
-  red: "Red",
-  orange: "Orange",
-  yellow: "Yellow",
-  green: "Green",
-  blue: "Blue",
-  purple: "Purple",
-  gray: "Gray",
+  red: msg("Red"),
+  orange: msg("Orange"),
+  yellow: msg("Yellow"),
+  green: msg("Green"),
+  blue: msg("Blue"),
+  purple: msg("Purple"),
+  gray: msg("Gray"),
 }
 
-/** Labels in menu order with their stored values. */
+/** Labels in menu order with their stored values; `name` is the English source (translate with t()). */
 export const LABELS = COLOR_LABELS.map((key, i) => ({ value: i + 1, key, name: NAMES[key] }))
 
 export function labelKey(value: number): ColorLabel | null {
@@ -22,7 +23,7 @@ export function labelKey(value: number): ColorLabel | null {
 
 export function labelName(value: number): string {
   const key = labelKey(value)
-  return key ? NAMES[key] : "None"
+  return key ? t(NAMES[key]) : t("None")
 }
 
 /** CSS color for a label (a token reference), or null for none. */

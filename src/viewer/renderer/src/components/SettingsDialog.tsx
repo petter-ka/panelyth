@@ -8,6 +8,7 @@ import {
   type WheelMode,
 } from "../features/settings/settingsStore"
 import { Button } from "./ui/button"
+import { t } from "@panelyth/i18n"
 
 function ViewerSettings() {
   const preferences = useSettingsStore((s) => s.preferences)
@@ -28,69 +29,73 @@ function ViewerSettings() {
           role="status"
           className="rounded-md border border-border bg-canvas px-3 py-2 text-[0.6875rem] text-muted"
         >
-          Settings will be available when the library is ready.
+          {t("Settings will be available when the library is ready.")}
         </p>
       )}
       <section aria-labelledby="startup-folder-label" className="space-y-2">
         <div id="startup-folder-label" className="text-xs font-medium">
-          Startup folder
+          {t("Startup folder")}
         </div>
         <ChoiceGroup<StartupFolderMode>
-          label="Startup folder"
+          label={t("Startup folder")}
           value={preferences.startupFolder}
           disabled={!libraryLoaded}
           options={[
-            { value: "lastUsed", label: "Last used" },
-            { value: "specified", label: "Specified" },
-            { value: "systemDefault", label: "System default" },
+            { value: "lastUsed", label: t("Last used") },
+            { value: "specified", label: t("Specified") },
+            { value: "systemDefault", label: t("System default") },
           ]}
           onChange={(value) => setPreference("startupFolder", value)}
         />
         {preferences.startupFolder === "systemDefault" && (
-          <p className="text-[0.6875rem] text-muted">System default opens the Home folder.</p>
+          <p className="text-[0.6875rem] text-muted">
+            {t("System default opens the Home folder.")}
+          </p>
         )}
         {preferences.startupFolder === "specified" && (
           <div className="flex min-w-0 items-center gap-2 pl-1">
             <Tooltip content={preferences.specifiedFolder ?? undefined}>
               <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-muted">
-                {preferences.specifiedFolder ?? "Choose a folder to use at startup"}
+                {preferences.specifiedFolder ?? t("Choose a folder to use at startup")}
               </span>
             </Tooltip>
             <Button size="sm" disabled={!libraryLoaded} onClick={() => void chooseFolder()}>
-              Choose folder
+              {t("Choose folder")}
             </Button>
           </div>
         )}
       </section>
 
-      <section aria-label="Confirmation and reminders" className="border-t border-border">
+      <section aria-label={t("Confirmation and reminders")} className="border-t border-border">
         <SwitchRow
-          label="Confirm on Escape exit"
-          description="Ask before closing Panelyth when no image or video is fullscreen."
+          label={t("Confirm on Escape exit")}
+          description={t("Ask before closing Panelyth when no image or video is fullscreen.")}
           checked={preferences.confirmOnEscapeExit}
           disabled={!libraryLoaded}
           onChange={(value) => setPreference("confirmOnEscapeExit", value)}
         />
         <SwitchRow
-          label="Confirm before overwriting files"
-          description="Ask before Paste and overwrite replaces existing items."
+          label={t("Confirm before overwriting files")}
+          description={t("Ask before Paste and overwrite replaces existing items.")}
           checked={preferences.confirmOverwrite}
           disabled={!libraryLoaded}
           onChange={(value) => setPreference("confirmOverwrite", value)}
         />
         <SwitchRow
-          label="Remind me to save changes"
-          description="Warn before leaving with unsaved image edits when editing is available."
+          label={t("Remind me to save changes")}
+          description={t("Warn before leaving with unsaved image edits when editing is available.")}
           checked={preferences.remindSaveChanges}
           disabled={!libraryLoaded}
           onChange={(value) => setPreference("remindSaveChanges", value)}
         />
       </section>
 
-      <section aria-label="Tiles" className="border-t border-border">
+      <section aria-label={t("Tiles")} className="border-t border-border">
         <SwitchRow
-          label="Show file names under tiles"
-          description="Folders always show their name. A hidden name still appears when you point at the tile."
+          label={t("Show file names under tiles")}
+          description={t(
+            "Folders always show their name. A hidden name still appears when you point at the tile.",
+          )}
           checked={preferences.showFileNames}
           disabled={!libraryLoaded}
           onChange={(value) => setPreference("showFileNames", value)}
@@ -102,20 +107,20 @@ function ViewerSettings() {
         className="space-y-2 border-t border-border pt-3"
       >
         <div id="wheel-behavior-label" className="text-xs font-medium">
-          Mouse wheel
+          {t("Mouse wheel")}
         </div>
         <ChoiceGroup<WheelMode>
-          label="Mouse wheel behavior"
+          label={t("Mouse wheel behavior")}
           value={preferences.wheelMode}
           disabled={!libraryLoaded}
           options={[
-            { value: "zoom", label: "Zoom in / out" },
-            { value: "previousNext", label: "Previous / next" },
+            { value: "zoom", label: t("Zoom in / out") },
+            { value: "previousNext", label: t("Previous / next") },
           ]}
           onChange={(value) => setPreference("wheelMode", value)}
         />
         {preferences.wheelMode === "previousNext" && (
-          <p className="text-[0.6875rem] text-muted">Ctrl + mouse wheel zooms in or out.</p>
+          <p className="text-[0.6875rem] text-muted">{t("Ctrl + mouse wheel zooms in or out.")}</p>
         )}
       </section>
     </div>

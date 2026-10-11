@@ -1,4 +1,5 @@
 import { initInterfaceSize, initTheme, startSharedAppearanceSync } from "@panelyth/ui"
+import { initLocale, LocaleBoundary } from "@panelyth/i18n"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { bridge, isBridgeAvailable } from "./bridge"
@@ -21,6 +22,8 @@ import { startFind } from "./features/find"
 import { startArchives } from "./features/archives"
 import "./styles.css"
 
+// The stored language loads before the first paint (ADR-0034).
+await initLocale()
 initTheme()
 initInterfaceSize()
 startSidecarMonitoring()
@@ -64,6 +67,8 @@ const root = document.getElementById("root")
 if (!root) throw new Error("#root missing")
 createRoot(root).render(
   <StrictMode>
-    <AppShell />
+    <LocaleBoundary>
+      <AppShell />
+    </LocaleBoundary>
   </StrictMode>,
 )

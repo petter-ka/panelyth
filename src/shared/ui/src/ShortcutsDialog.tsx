@@ -3,6 +3,7 @@ import { useState, type KeyboardEvent } from "react"
 import { Button, Kbd } from "./button"
 import { DialogWindow } from "./dialog"
 import { Tooltip } from "./Tooltip"
+import { t } from "@panelyth/i18n"
 
 export interface ShortcutsDialogProps {
   open: boolean
@@ -52,7 +53,7 @@ export function ShortcutsDialog({
         setRecording(null)
         onOpenChange(o)
       }}
-      title="Keyboard shortcuts"
+      title={t("Keyboard shortcuts")}
       onEscapeKeyDown={(e) => {
         if (!recording) return
         e.preventDefault() // Esc cancels the recording, not the dialog
@@ -61,8 +62,8 @@ export function ShortcutsDialog({
     >
       <div className="-mx-4 -mt-4 max-h-[60vh] overflow-y-auto px-4 pt-2" data-testid="shortcuts">
         {[...new Set(actions.map((a) => a.group))].map((group) => (
-          <section key={group} aria-label={group} className="pt-2">
-            <h3 className="pb-1 text-[0.6875rem] font-medium text-muted">{group}</h3>
+          <section key={group} aria-label={t(group)} className="pt-2">
+            <h3 className="pb-1 text-[0.6875rem] font-medium text-muted">{t(group)}</h3>
             <ul>
               {actions
                 .filter((a) => a.group === group)
@@ -76,9 +77,11 @@ export function ShortcutsDialog({
                       data-action={a.id}
                     >
                       <span className="min-w-0 flex-1 truncate">
-                        {a.label}
+                        {t(a.label)}
                         {custom && (
-                          <span className="pl-1.5 text-[0.6875rem] text-muted">(custom)</span>
+                          <span className="pl-1.5 text-[0.6875rem] text-muted">
+                            {t("(custom)")}
+                          </span>
                         )}
                       </span>
                       {recording === a.id ? (
@@ -89,40 +92,41 @@ export function ShortcutsDialog({
                           onBlur={() => setRecording(null)}
                           className="h-6 rounded border border-accent px-2 text-[0.6875rem] text-accent"
                         >
-                          Press keys… (Esc cancels)
+                          {t("Press keys… (Esc cancels)")}
                         </button>
                       ) : (
                         <span className="flex gap-1">
                           {own.length > 0 ? (
                             own.map((c) => <Kbd key={c}>{formatChord(c)}</Kbd>)
                           ) : (
-                            <span className="text-[0.6875rem] text-muted">Not set</span>
+                            <span className="text-[0.6875rem] text-muted">{t("Not set")}</span>
                           )}
                         </span>
                       )}
                       <Button
                         size="sm"
                         className="h-6 px-2"
-                        aria-label={`Change shortcut for ${a.label}`}
+                        aria-label={t("Change shortcut for {action}", { action: t(a.label) })}
                         onClick={() => setRecording(a.id)}
                       >
-                        Change
+                        {t("Change")}
                       </Button>
                       <Tooltip
-                        content={`Default: ${
-                          defaultChords(a)
-                            .map((c) => formatChord(c))
-                            .join(", ") || "none"
-                        }`}
+                        content={t("Default: {chords}", {
+                          chords:
+                            defaultChords(a)
+                              .map((c) => formatChord(c))
+                              .join(", ") || t("none"),
+                        })}
                       >
                         <Button
                           size="sm"
                           className="h-6 px-2"
                           disabled={!custom}
-                          aria-label={`Reset shortcut for ${a.label}`}
+                          aria-label={t("Reset shortcut for {action}", { action: t(a.label) })}
                           onClick={() => onReset(a.id)}
                         >
-                          Reset
+                          {t("Reset")}
                         </Button>
                       </Tooltip>
                     </li>
@@ -134,7 +138,7 @@ export function ShortcutsDialog({
       </div>
       <div className="flex justify-end border-t border-border pt-3">
         <Button disabled={customized.size === 0} onClick={onResetAll}>
-          Reset all
+          {t("Reset all")}
         </Button>
       </div>
     </DialogWindow>

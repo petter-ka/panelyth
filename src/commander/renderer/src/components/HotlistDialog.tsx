@@ -11,6 +11,7 @@ import {
   useHotlistStore,
 } from "../features/hotlist"
 import { usePanelsStore } from "../features/panels"
+import { t } from "@panelyth/i18n"
 
 const field =
   "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
@@ -30,15 +31,15 @@ export function HotlistDialog() {
     <DialogWindow
       open={open}
       onOpenChange={setHotlistEditing}
-      title="Directory hotlist"
-      description="Shared with the viewer's bookmarks. Groups show in the commander only."
+      title={t("Directory hotlist")}
+      description={t("Shared with the viewer's bookmarks. Groups show in the commander only.")}
       contentClassName="w-[min(40rem,calc(100vw-2rem))]"
     >
       <div className="flex gap-3">
         <div className="flex w-56 shrink-0 flex-col gap-2">
           <ul
             role="listbox"
-            aria-label="Hotlist folders"
+            aria-label={t("Hotlist folders")}
             className="h-64 overflow-y-auto rounded-md border border-border bg-canvas py-1 text-xs"
           >
             {bookmarks.map((b) => (
@@ -53,7 +54,9 @@ export function HotlistDialog() {
                 {b.group && <span className="truncate text-[0.6875rem] text-muted">{b.group}</span>}
               </li>
             ))}
-            {bookmarks.length === 0 && <li className="px-2 py-1 text-muted">No folders yet</li>}
+            {bookmarks.length === 0 && (
+              <li className="px-2 py-1 text-muted">{t("No folders yet")}</li>
+            )}
           </ul>
           <div className="flex gap-1.5">
             <Button
@@ -66,11 +69,11 @@ export function HotlistDialog() {
                   .catch(() => undefined)
               }}
             >
-              Add current
+              {t("Add current")}
             </Button>
             <Button
               size="sm"
-              aria-label="Move up"
+              aria-label={t("Move up")}
               disabled={!selected || bookmarks[0]?.id === selected.id}
               onClick={() => selected && void moveBookmark(selected.id, -1).catch(() => undefined)}
             >
@@ -78,7 +81,7 @@ export function HotlistDialog() {
             </Button>
             <Button
               size="sm"
-              aria-label="Move down"
+              aria-label={t("Move down")}
               disabled={!selected || bookmarks.at(-1)?.id === selected.id}
               onClick={() => selected && void moveBookmark(selected.id, 1).catch(() => undefined)}
             >
@@ -89,7 +92,7 @@ export function HotlistDialog() {
         {selected ? (
           <BookmarkForm key={selected.id} bookmark={selected} groups={groups} />
         ) : (
-          <p className="text-xs text-muted">Add the current folder with Ctrl+D.</p>
+          <p className="text-xs text-muted">{t("Add the current folder with Ctrl+D.")}</p>
         )}
       </div>
     </DialogWindow>
@@ -116,10 +119,10 @@ function BookmarkForm({ bookmark, groups }: { bookmark: Bookmark; groups: string
         (e instanceof PanelythError && (e.details as { reason?: string })?.reason) || ""
       setError(
         reason === "duplicate"
-          ? "Another hotlist entry has this folder."
+          ? t("Another hotlist entry has this folder.")
           : e instanceof PanelythError && e.code === "INVALID_PATH"
-            ? "Enter a full folder path."
-            : "The entry could not be saved.",
+            ? t("Enter a full folder path.")
+            : t("The entry could not be saved."),
       )
     }
   }
@@ -132,11 +135,11 @@ function BookmarkForm({ bookmark, groups }: { bookmark: Bookmark; groups: string
       }}
     >
       <label className="flex flex-col gap-1">
-        <span className="text-muted">Name</span>
+        <span className="text-muted">{t("Name")}</span>
         <input className={field} value={label} onChange={(e) => setLabel(e.target.value)} />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-muted">Folder</span>
+        <span className="text-muted">{t("Folder")}</span>
         <input
           className={field}
           value={path}
@@ -146,12 +149,12 @@ function BookmarkForm({ bookmark, groups }: { bookmark: Bookmark; groups: string
         />
       </label>
       <label className="flex flex-col gap-1">
-        <span className="text-muted">Group</span>
+        <span className="text-muted">{t("Group")}</span>
         <input
           className={field}
           value={group}
           list="hotlist-groups"
-          placeholder="No group"
+          placeholder={t("No group")}
           onChange={(e) => setGroup(e.target.value)}
         />
         <datalist id="hotlist-groups">
@@ -170,10 +173,10 @@ function BookmarkForm({ bookmark, groups }: { bookmark: Bookmark; groups: string
           variant="danger"
           onClick={() => void removeBookmark(bookmark.id).catch(() => undefined)}
         >
-          Remove
+          {t("Remove")}
         </Button>
         <Button type="submit" variant="primary" disabled={!dirty || path.trim() === ""}>
-          Save
+          {t("Save")}
         </Button>
       </div>
     </form>

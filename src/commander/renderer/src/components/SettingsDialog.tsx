@@ -9,6 +9,7 @@ import {
   type PanelSettings,
 } from "../features/settings"
 import { useSidecarStore } from "../features/sidecar"
+import { t } from "@panelyth/i18n"
 
 interface Choice<K extends keyof PanelSettings> {
   setting: K
@@ -50,21 +51,23 @@ function EditorField() {
   }
   return (
     <label className="flex flex-col gap-1">
-      <span className="text-muted">Editor (F4)</span>
+      <span className="text-muted">{t("Editor (F4)")}</span>
       <input
-        aria-label="Editor program"
+        aria-label={t("Editor program")}
         className="h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
         value={value}
         maxLength={MAX_EDITOR_CHARS}
         spellCheck={false}
-        placeholder="The system's text editor"
+        placeholder={t("The system's text editor")}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => {
           if (e.key === "Enter") save()
         }}
       />
-      <span className="text-[0.6875rem] text-muted">The full path of a program, or empty.</span>
+      <span className="text-[0.6875rem] text-muted">
+        {t("The full path of a program, or empty.")}
+      </span>
     </label>
   )
 }
@@ -75,18 +78,18 @@ function CommanderSettings() {
     <Section>
       <Radios
         setting="sizeFormat"
-        label="Sizes"
+        label={t("Sizes")}
         options={[
-          { value: "units", label: "Units (1.5 KB)" },
-          { value: "bytes", label: "Bytes (1,234,567)" },
+          { value: "units", label: t("Units (1.5 KB)") },
+          { value: "bytes", label: t("Bytes (1,234,567)") },
         ]}
       />
       <Radios
         setting="dateFormat"
-        label="Dates"
+        label={t("Dates")}
         options={[
-          { value: "locale", label: "As the system shows them" },
-          { value: "iso", label: "ISO (2026-10-06 14:05)" },
+          { value: "locale", label: t("As the system shows them") },
+          { value: "iso", label: t("ISO (2026-10-06 14:05)") },
         ]}
       />
       <label className="flex items-center gap-2">
@@ -95,50 +98,50 @@ function CommanderSettings() {
           checked={showHidden}
           onChange={(e) => updateSettings({ showHidden: e.target.checked })}
         />
-        Show hidden and system files in new panels
+        {t("Show hidden and system files in new panels")}
       </label>
       <Radios
         setting="letters"
-        label="Typed letters"
+        label={t("Typed letters")}
         options={[
-          { value: "quickSearch", label: "Start quick search" },
+          { value: "quickSearch", label: t("Start quick search") },
           {
             value: "altLetters",
-            label: "Start quick search with Alt (letters go to the command line)",
+            label: t("Start quick search with Alt (letters go to the command line)"),
           },
         ]}
       />
       <Radios
         setting="rightButton"
-        label="Right mouse button"
+        label={t("Right mouse button")}
         options={[
-          { value: "mark", label: "Marks entries (hold for the menu)" },
-          { value: "menu", label: "Opens the menu" },
+          { value: "mark", label: t("Marks entries (hold for the menu)") },
+          { value: "menu", label: t("Opens the menu") },
         ]}
       />
       <Radios
         setting="mediaOpen"
-        label="Open images and videos with"
+        label={t("Open images and videos with")}
         options={[
           { value: "viewer", label: "Panelyth Viewer" },
-          { value: "system", label: "System default app" },
+          { value: "system", label: t("System default app") },
         ]}
       />
       <Radios
         setting="documentOpen"
-        label="Open PDFs and text files with"
+        label={t("Open PDFs and text files with")}
         options={[
-          { value: "window", label: "Panelyth document window" },
-          { value: "system", label: "System default app" },
+          { value: "window", label: t("Panelyth document window") },
+          { value: "system", label: t("System default app") },
         ]}
       />
       <Radios
         setting="runPrograms"
-        label="Run programs with Enter"
+        label={t("Run programs with Enter")}
         options={[
-          { value: "ask", label: "Ask first" },
-          { value: "always", label: "Always" },
-          { value: "never", label: "Never" },
+          { value: "ask", label: t("Ask first") },
+          { value: "always", label: t("Always") },
+          { value: "never", label: t("Never") },
         ]}
       />
       <EditorField />

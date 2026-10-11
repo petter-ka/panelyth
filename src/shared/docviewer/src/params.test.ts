@@ -8,7 +8,7 @@ describe("parseParams", () => {
   it("accepts what main sends", () => {
     expect(
       parseParams(hash({ kind: "pdf", name: "a.pdf", size: "10", src: token, theme: "beige" })),
-    ).toEqual({ kind: "pdf", name: "a.pdf", sizeBytes: 10, src: token, theme: "beige" })
+    ).toEqual({ kind: "pdf", name: "a.pdf", sizeBytes: 10, src: token, theme: "beige", lang: null })
     expect(parseParams(hash({ kind: "text", name: "a.md", size: "x", src: token }))).toMatchObject({
       kind: "text",
       sizeBytes: 0,

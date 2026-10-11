@@ -18,6 +18,7 @@ import {
   splitLines,
 } from "./decode"
 import { useDocumentBytes } from "./useDocumentBytes"
+import { t } from "@panelyth/i18n"
 
 const FONT_SIZES = [11, 12, 13, 14, 16, 18, 20, 24] as const
 const DEFAULT_FONT = 2
@@ -48,7 +49,10 @@ const Line = memo(function Line({ text, starts, length, current }: LineProps) {
       <>
         {shown}
         {cut && (
-          <span className="text-muted"> … ({text.length - shown.length} more characters)</span>
+          <span className="text-muted">
+            {" "}
+            {t("… ({count} more characters)", { count: text.length - shown.length })}
+          </span>
         )}
       </>
     )
@@ -165,7 +169,7 @@ export function TextViewer({ params }: { params: DocumentParams }) {
   }
 
   if (bytes.status === "loading") {
-    return <p className="p-6 text-sm text-muted">Loading…</p>
+    return <p className="p-6 text-sm text-muted">{t("Loading…")}</p>
   }
   if (bytes.status === "error") {
     return (
@@ -181,21 +185,25 @@ export function TextViewer({ params }: { params: DocumentParams }) {
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium" title={params.name}>
           {params.name}
         </h1>
-        <ToolbarButton label="Find (Ctrl+F)" onClick={openFind} pressed={findOpen}>
-          Find
-        </ToolbarButton>
-        <ToolbarButton label="Wrap long lines" onClick={() => setWrap((w) => !w)} pressed={wrap}>
-          Wrap
+        <ToolbarButton label={t("Find (Ctrl+F)")} onClick={openFind} pressed={findOpen}>
+          {t("Find")}
         </ToolbarButton>
         <ToolbarButton
-          label="Smaller text (Ctrl+-)"
+          label={t("Wrap long lines")}
+          onClick={() => setWrap((w) => !w)}
+          pressed={wrap}
+        >
+          {t("Wrap")}
+        </ToolbarButton>
+        <ToolbarButton
+          label={t("Smaller text (Ctrl+-)")}
           onClick={() => setFont((f) => Math.max(0, f - 1))}
           disabled={font === 0}
         >
           A−
         </ToolbarButton>
         <ToolbarButton
-          label="Larger text (Ctrl++)"
+          label={t("Larger text (Ctrl++)")}
           onClick={() => setFont((f) => Math.min(FONT_SIZES.length - 1, f + 1))}
           disabled={font === FONT_SIZES.length - 1}
         >
@@ -210,9 +218,9 @@ export function TextViewer({ params }: { params: DocumentParams }) {
         >
           <input
             ref={findInput}
-            aria-label="Find in text"
+            aria-label={t("Find in text")}
             value={query}
-            placeholder="Find"
+            placeholder={t("Find")}
             spellCheck={false}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
@@ -227,25 +235,28 @@ export function TextViewer({ params }: { params: DocumentParams }) {
             {query === ""
               ? ""
               : matches.length === 0
-                ? "No matches"
-                : `${Math.min(matchIndex, matches.length - 1) + 1} of ${matches.length}${matches.length >= 50_000 ? "+" : ""}`}
+                ? t("No matches")
+                : t("{current} of {total}", {
+                    current: Math.min(matchIndex, matches.length - 1) + 1,
+                    total: `${matches.length}${matches.length >= 50_000 ? "+" : ""}`,
+                  })}
           </span>
           <ToolbarButton
-            label="Previous match (Shift+Enter)"
+            label={t("Previous match (Shift+Enter)")}
             onClick={() => step(-1)}
             disabled={matches.length === 0}
           >
             ↑
           </ToolbarButton>
           <ToolbarButton
-            label="Next match (Enter)"
+            label={t("Next match (Enter)")}
             onClick={() => step(1)}
             disabled={matches.length === 0}
           >
             ↓
           </ToolbarButton>
           <ToolbarButton
-            label="Close find (Esc)"
+            label={t("Close find (Esc)")}
             onClick={() => {
               setFindOpen(false)
               box.current?.focus()
@@ -314,12 +325,14 @@ export function TextViewer({ params }: { params: DocumentParams }) {
 
       {bytes.truncated && (
         <p className="shrink-0 border-t border-border bg-raised px-3 py-1.5 text-xs text-warning">
-          Showing the first {formatBytes(MAX_TEXT_BYTES)} of {formatBytes(params.sizeBytes)}. Use
-          the commander&apos;s lister (F3 hex view) or an editor (F4) for the rest.
+          {t(
+            "Showing the first {shown} of {total}. Use the commander's lister (F3 hex view) or an editor (F4) for the rest.",
+            { shown: formatBytes(MAX_TEXT_BYTES), total: formatBytes(params.sizeBytes) },
+          )}
         </p>
       )}
       <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
-        <span>{lines.length.toLocaleString()} lines</span>
+        <span>{t("{count, plural, one {# line} other {# lines}}", { count: lines.length })}</span>
         <span>{formatBytes(params.sizeBytes)}</span>
         <span>{decoded?.encoding}</span>
         <span>{ending}</span>

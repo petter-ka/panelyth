@@ -8,10 +8,17 @@ import {
   usePropertiesStore,
   type PropertiesTarget,
 } from "../features/properties/propertiesStore"
-import { formatBytes, formatCount, formatDate, plural } from "../lib/format"
+import { formatBytes, formatCount, formatDate } from "../lib/format"
 import { DialogWindow } from "./ui/dialog"
+import { msg, t } from "@panelyth/i18n"
 
-const KIND = { dir: "Folder", image: "Image", video: "Video", file: "File", link: "Link" } as const
+const KIND = {
+  dir: msg("Folder"),
+  image: msg("Image"),
+  video: msg("Video"),
+  file: msg("File"),
+  link: msg("Link"),
+} as const
 
 type Loaded =
   | { kind: "entry"; props: Properties }
@@ -36,43 +43,49 @@ function Row({
 }
 
 function EntryRows({ p }: { p: Properties }) {
-  const date = (ms: number | null) => (ms === null ? "Not available" : formatDate(ms))
+  const date = (ms: number | null) => (ms === null ? t("Not available") : formatDate(ms))
   return (
     <>
-      <Row label="Type">
+      <Row label={t("Type")}>
         {p.kind === "dir" ? (
-          "Folder"
+          t("Folder")
         ) : (
           <>
-            {KIND[p.kind]} (<span className="font-mono">{p.ext.toUpperCase()}</span>)
+            {t(KIND[p.kind])} (<span className="font-mono">{p.ext.toUpperCase()}</span>)
           </>
         )}
       </Row>
-      <Row label="Location" mono>
+      <Row label={t("Location")} mono>
         <span data-testid="props-path">{p.path}</span>
       </Row>
       {p.kind !== "dir" && (
-        <Row label="Size" mono>
-          {formatBytes(p.sizeBytes)} ({formatCount(p.sizeBytes)} bytes)
+        <Row label={t("Size")} mono>
+          {t("{size} ({bytes} bytes)", {
+            size: formatBytes(p.sizeBytes),
+            bytes: formatCount(p.sizeBytes),
+          })}
         </Row>
       )}
       {p.width !== null && p.height !== null && (
-        <Row label="Dimensions" mono>
+        <Row label={t("Dimensions")} mono>
           {formatCount(p.width)} × {formatCount(p.height)}
         </Row>
       )}
       {p.kind === "dir" && (
-        <Row label="Contains" mono>
+        <Row label={t("Contains")} mono>
           {p.childFolders === null || p.childMedia === null
-            ? "Not listed yet"
-            : `${plural(p.childFolders, "folder", "folders")}, ${plural(p.childMedia, "image or video", "images and videos")}`}
+            ? t("Not listed yet")
+            : t(
+                "{folders, plural, one {# folder} other {# folders}}, {media, plural, one {# image or video} other {# images and videos}}",
+                { folders: p.childFolders, media: p.childMedia },
+              )}
         </Row>
       )}
       {p.kind !== "dir" && (
         <>
-          <Row label="Favorite">{p.favorite ? "Yes" : "No"}</Row>
-          <Row label="Rating">{p.rating > 0 ? "★".repeat(p.rating) : "Not rated"}</Row>
-          <Row label="Label">
+          <Row label={t("Favorite")}>{p.favorite ? t("Yes") : t("No")}</Row>
+          <Row label={t("Rating")}>{p.rating > 0 ? "★".repeat(p.rating) : t("Not rated")}</Row>
+          <Row label={t("Label")}>
             {p.label > 0 ? (
               <span className="inline-flex items-center gap-1.5">
                 <span
@@ -83,41 +96,47 @@ function EntryRows({ p }: { p: Properties }) {
                 {labelName(p.label)}
               </span>
             ) : (
-              "None"
+              t("None")
             )}
           </Row>
-          <Row label="Tags">{p.tags.length > 0 ? p.tags.join(", ") : "None"}</Row>
+          <Row label={t("Tags")}>{p.tags.length > 0 ? p.tags.join(", ") : t("None")}</Row>
         </>
       )}
-      <Row label="Created" mono>
+      <Row label={t("Created")} mono>
         {date(p.createdMs)}
       </Row>
-      <Row label="Modified" mono>
+      <Row label={t("Modified")} mono>
         {formatDate(p.modifiedMs)}
       </Row>
-      <Row label="Accessed" mono>
+      <Row label={t("Accessed")} mono>
         {date(p.accessedMs)}
       </Row>
-      {!p.exists && <Row label="Status">The file was moved or deleted since it was indexed.</Row>}
+      {!p.exists && (
+        <Row label={t("Status")}>{t("The file was moved or deleted since it was indexed.")}</Row>
+      )}
     </>
   )
 }
 
 function SelectionRows({ info }: { info: SelectionInfo }) {
   const parts = [
-    info.folders > 0 && plural(info.folders, "folder", "folders"),
-    info.images > 0 && plural(info.images, "image", "images"),
-    info.videos > 0 && plural(info.videos, "video", "videos"),
+    info.folders > 0 &&
+      t("{count, plural, one {# folder} other {# folders}}", { count: info.folders }),
+    info.images > 0 && t("{count, plural, one {# image} other {# images}}", { count: info.images }),
+    info.videos > 0 && t("{count, plural, one {# video} other {# videos}}", { count: info.videos }),
   ].filter(Boolean)
   return (
     <>
-      <Row label="Selected" mono>
-        {parts.join(", ") || "Nothing"}
+      <Row label={t("Selected")} mono>
+        {parts.join(", ") || t("Nothing")}
       </Row>
-      <Row label="Total size" mono>
-        {formatBytes(info.bytes)} ({formatCount(info.bytes)} bytes)
+      <Row label={t("Total size")} mono>
+        {t("{size} ({bytes} bytes)", {
+          size: formatBytes(info.bytes),
+          bytes: formatCount(info.bytes),
+        })}
       </Row>
-      {info.folders > 0 && <Row label="Note">Folder sizes are not included.</Row>}
+      {info.folders > 0 && <Row label={t("Note")}>{t("Folder sizes are not included.")}</Row>}
     </>
   )
 }
@@ -145,9 +164,10 @@ export function PropertiesDialog() {
   }, [target])
 
   const value = loaded && loaded.for === target ? loaded.value : null
-  let title = "Properties"
+  let title = t("Properties")
   if (value?.kind === "entry") title = value.props.name
-  else if (target?.kind === "selection") title = `${plural(target.count, "item", "items")} selected`
+  else if (target?.kind === "selection")
+    title = t("{count, plural, one {# item} other {# items}} selected", { count: target.count })
 
   return (
     <DialogWindow
@@ -160,10 +180,10 @@ export function PropertiesDialog() {
         data-testid="properties"
         aria-busy={value === null}
       >
-        {value === null && <Row label="">Loading…</Row>}
+        {value === null && <Row label="">{t("Loading…")}</Row>}
         {value?.kind === "entry" && <EntryRows p={value.props} />}
         {value?.kind === "selection" && <SelectionRows info={value.info} />}
-        {value?.kind === "error" && <Row label="Error">{value.message}</Row>}
+        {value?.kind === "error" && <Row label={t("Error")}>{value.message}</Row>}
       </dl>
     </DialogWindow>
   )

@@ -415,7 +415,7 @@ describe("open and edit", () => {
     await cursorTo(ROW.notes)
     await panelKey({ key: "Enter" })
     await waitFor(() => expect(fake.api.document.open).toHaveBeenCalledTimes(1))
-    expect(fake.api.document.open).toHaveBeenLastCalledWith(ID.notes, expect.any(String))
+    expect(fake.api.document.open).toHaveBeenLastCalledWith(ID.notes, expect.any(String), "en")
     expect(fake.shell).toEqual([{ action: "document", entryId: ID.notes }])
     expect(fake.api.shell.open).not.toHaveBeenCalled()
 

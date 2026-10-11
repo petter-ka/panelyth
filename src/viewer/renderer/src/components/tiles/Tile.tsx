@@ -29,18 +29,19 @@ import { useSettingsStore } from "../../features/settings/settingsStore"
 import { HeartIcon, PlayIcon } from "../ui/icons"
 import { formatBytes, formatDate } from "../../lib/format"
 import { FolderGlyph, UnavailableGlyph, VideoGlyph } from "./glyphs"
+import { msg, t } from "@panelyth/i18n"
 
 const KIND_LABEL = {
-  dir: "Folder",
-  image: "Image",
-  video: "Video",
-  file: "File",
-  link: "Link",
+  dir: msg("Folder"),
+  image: msg("Image"),
+  video: msg("Video"),
+  file: msg("File"),
+  link: msg("Link"),
 } as const
 
 function tooltip(item: ContentItem): string {
-  if (item.kind === "dir") return `${item.name}\nFolder`
-  return `${item.name}\n${KIND_LABEL[item.kind]} (${item.ext}), ${formatBytes(item.sizeBytes)}\nModified ${formatDate(item.modifiedMs)}`
+  if (item.kind === "dir") return `${item.name}\n${t("Folder")}`
+  return `${item.name}\n${t(KIND_LABEL[item.kind])} (${item.ext}), ${formatBytes(item.sizeBytes)}\n${t("Modified {date}", { date: formatDate(item.modifiedMs) })}`
 }
 
 /** Visual state shared by each fixed tile slot and its fitted preview frame. */
@@ -248,9 +249,9 @@ function UserBadge({ item }: { item: ContentItem }) {
   if (!item.favorite && item.rating === 0 && item.label === 0) return null
   const color = labelColor(item.label)
   const label = [
-    color && `${labelName(item.label)} label`,
-    item.favorite && "Favorite",
-    item.rating > 0 && `${item.rating} stars`,
+    color && t("{label} label", { label: labelName(item.label) }),
+    item.favorite && t("Favorite"),
+    item.rating > 0 && t("{count, plural, one {# star} other {# stars}}", { count: item.rating }),
   ]
     .filter(Boolean)
     .join(", ")

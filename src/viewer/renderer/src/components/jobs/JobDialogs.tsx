@@ -14,9 +14,10 @@ import {
   type Sample,
 } from "../../features/jobs/jobsStore"
 import { applyPattern, parsePattern, splitExt } from "../../features/jobs/pattern"
-import { formatCount, plural } from "../../lib/format"
+import { formatCount } from "../../lib/format"
 import { buttonClass } from "../ui/button"
 import { DialogWindow } from "../ui/dialog"
+import { msg, t } from "@panelyth/i18n"
 
 const input =
   "h-8 w-full rounded-md border border-border bg-raised px-2 text-xs focus:border-accent focus:outline-none"
@@ -31,7 +32,7 @@ function Buttons({ children }: { children: ReactNode }) {
 function Cancel() {
   return (
     <button type="button" className={secondary} onClick={closeJobDialog}>
-      Cancel
+      {t("Cancel")}
     </button>
   )
 }
@@ -63,7 +64,7 @@ function RenameDialog({ id, name, isDir }: { id: number; name: string; isDir: bo
   return (
     <form onSubmit={(e) => void submit(e)}>
       <label className="flex flex-col gap-1 text-xs">
-        <span className="text-muted">New name</span>
+        <span className="text-muted">{t("New name")}</span>
         <input
           ref={ref}
           className={input}
@@ -84,7 +85,7 @@ function RenameDialog({ id, name, isDir }: { id: number; name: string; isDir: bo
       <Buttons>
         <Cancel />
         <button type="submit" className={primary} disabled={busy}>
-          Rename
+          {t("Rename")}
         </button>
       </Buttons>
     </form>
@@ -111,7 +112,7 @@ function BatchRenameDialog(props: {
     >
       <div className="grid grid-cols-[minmax(0,1fr)_5rem] gap-2 text-xs">
         <label className="flex flex-col gap-1">
-          <span className="text-muted">Pattern</span>
+          <span className="text-muted">{t("Pattern")}</span>
           <input
             autoFocus
             className={input}
@@ -122,7 +123,7 @@ function BatchRenameDialog(props: {
           />
         </label>
         <label className="flex flex-col gap-1">
-          <span className="text-muted">Start at</span>
+          <span className="text-muted">{t("Start at")}</span>
           <input
             type="number"
             min={0}
@@ -133,10 +134,14 @@ function BatchRenameDialog(props: {
         </label>
       </div>
       <p className="mt-2 text-[0.6875rem] text-muted">
-        {"{name}"} is the current name, {"{n}"} a number, {"{n:000}"} a number with three digits.
-        Extensions stay the same.
+        {t("{name} is the current name, {n} a number, {n:000} a number with three digits.", {
+          name: "{name}",
+          n: "{n}",
+          "n:000": "{n:000}",
+        })}{" "}
+        {t("Extensions stay the same.")}
       </p>
-      <ol className="mt-3 space-y-1 text-xs" aria-label="Preview" data-testid="rename-preview">
+      <ol className="mt-3 space-y-1 text-xs" aria-label={t("Preview")} data-testid="rename-preview">
         {props.samples.map((s, i) => (
           <li key={i} className="flex min-w-0 gap-2">
             <span className="min-w-0 flex-1 truncate text-muted">{s.name}</span>
@@ -147,7 +152,9 @@ function BatchRenameDialog(props: {
           </li>
         ))}
         {props.count > props.samples.length && (
-          <li className="text-muted">and {formatCount(props.count - props.samples.length)} more</li>
+          <li className="text-muted">
+            {t("and {count} more", { count: formatCount(props.count - props.samples.length) })}
+          </li>
         )}
       </ol>
       {!parts && (
@@ -158,7 +165,7 @@ function BatchRenameDialog(props: {
       <Buttons>
         <Cancel />
         <button type="submit" className={primary} disabled={!valid}>
-          Rename {formatCount(props.count)}
+          {t("Rename {count}", { count: formatCount(props.count) })}
         </button>
       </Buttons>
     </form>
@@ -169,8 +176,10 @@ function DeleteDialog({ selection, count }: { selection: SelectionDescriptor; co
   return (
     <div className="text-xs">
       <p>
-        {plural(count, "item", "items")} will be deleted permanently. This can't be undone, and
-        folders are deleted with everything in them.
+        {t(
+          "{count, plural, one {# item} other {# items}} will be deleted permanently. This can't be undone, and folders are deleted with everything in them.",
+          { count },
+        )}
       </p>
       <Buttons>
         <Cancel />
@@ -181,7 +190,7 @@ function DeleteDialog({ selection, count }: { selection: SelectionDescriptor; co
           onClick={() => void deletePermanently(selection, count)}
           data-testid="confirm-delete"
         >
-          Delete permanently
+          {t("Delete permanently")}
         </button>
       </Buttons>
     </div>
@@ -197,10 +206,15 @@ function ReplacePasteDialog(props: {
   return (
     <div className="text-xs">
       <p>
-        {plural(props.count, "item", "items")}{" "}
-        {props.mode === "cut" ? "will be moved" : "will be copied"} to{" "}
-        <span className="font-medium"> {props.folderName}</span>. Items with matching names at the
-        destination may be replaced.
+        {props.mode === "cut"
+          ? t(
+              "{count, plural, one {# item} other {# items}} will be moved to “{folder}”. Items with matching names at the destination may be replaced.",
+              { count: props.count, folder: props.folderName },
+            )
+          : t(
+              "{count, plural, one {# item} other {# items}} will be copied to “{folder}”. Items with matching names at the destination may be replaced.",
+              { count: props.count, folder: props.folderName },
+            )}
       </p>
       <Buttons>
         <Cancel />
@@ -213,7 +227,7 @@ function ReplacePasteDialog(props: {
           }
           data-testid="confirm-overwrite"
         >
-          Replace existing items
+          {t("Replace existing items")}
         </button>
       </Buttons>
     </div>
@@ -229,8 +243,10 @@ function DropTransferDialog(props: {
   return (
     <div className="text-xs">
       <p>
-        Copy or cut and paste {plural(props.count, "item", "items")} into{" "}
-        <span className="font-medium"> {props.folderName}</span>?
+        {t("Copy or cut and paste {count, plural, one {# item} other {# items}} into “{folder}”?", {
+          count: props.count,
+          folder: props.folderName,
+        })}
       </p>
       <Buttons>
         <Cancel />
@@ -248,7 +264,7 @@ function DropTransferDialog(props: {
             )
           }
         >
-          Copy
+          {t("Copy")}
         </button>
         <button
           type="button"
@@ -263,7 +279,7 @@ function DropTransferDialog(props: {
             )
           }
         >
-          Cut and paste
+          {t("Cut and paste")}
         </button>
       </Buttons>
     </div>
@@ -300,31 +316,31 @@ function TagDialog({ selection, count }: { selection: SelectionDescriptor; count
     >
       <label className="flex flex-col gap-1 text-xs">
         <span className="text-muted">
-          Tag {plural(count, "file", "files")} (folders are skipped)
+          {t("Tag {count, plural, one {# file} other {# files}} (folders are skipped)", { count })}
         </span>
         <input
           autoFocus
           className={input}
           value={name}
           maxLength={MAX_TAG_CHARS}
-          placeholder="New or existing tag"
+          placeholder={t("New or existing tag")}
           onChange={(e) => setName(e.target.value)}
           data-testid="tag-input"
         />
       </label>
       {matches.length > 0 && (
-        <ul className="mt-3 space-y-1 text-xs" aria-label="Existing tags">
-          {matches.map((t) => (
-            <li key={t.id} className="flex items-center gap-2">
-              <span className="min-w-0 flex-1 truncate">{t.name}</span>
+        <ul className="mt-3 space-y-1 text-xs" aria-label={t("Existing tags")}>
+          {matches.map((tag) => (
+            <li key={tag.id} className="flex items-center gap-2">
+              <span className="min-w-0 flex-1 truncate">{tag.name}</span>
               <span className="text-[0.6875rem] text-muted tabular-nums">
-                {formatCount(t.count)}
+                {formatCount(tag.count)}
               </span>
-              <button type="button" className={secondary} onClick={() => apply(t.name, true)}>
-                Add
+              <button type="button" className={secondary} onClick={() => apply(tag.name, true)}>
+                {t("Add")}
               </button>
-              <button type="button" className={secondary} onClick={() => apply(t.name, false)}>
-                Remove
+              <button type="button" className={secondary} onClick={() => apply(tag.name, false)}>
+                {t("Remove")}
               </button>
             </li>
           ))}
@@ -333,7 +349,7 @@ function TagDialog({ selection, count }: { selection: SelectionDescriptor; count
       <Buttons>
         <Cancel />
         <button type="submit" className={primary} disabled={!trimmed}>
-          Add tag
+          {t("Add tag")}
         </button>
       </Buttons>
     </form>
@@ -358,14 +374,14 @@ function ErrorsDialog({ jobId }: { jobId: number }) {
   return (
     <div className="text-xs">
       {errors === null ? (
-        <p className="text-muted">Loading…</p>
+        <p className="text-muted">{t("Loading…")}</p>
       ) : errors.list.length === 0 ? (
-        <p className="text-muted">The details are no longer available.</p>
+        <p className="text-muted">{t("The details are no longer available.")}</p>
       ) : (
         <ul className="max-h-72 space-y-2 overflow-y-auto" data-testid="job-errors">
           {errors.list.map((e, i) => (
             <li key={i}>
-              <div className="truncate font-medium">{e.name || "Unknown item"}</div>
+              <div className="truncate font-medium">{e.name || t("Unknown item")}</div>
               <div className="text-muted">{e.message}</div>
             </li>
           ))}
@@ -373,12 +389,15 @@ function ErrorsDialog({ jobId }: { jobId: number }) {
       )}
       {errors && errors.total > errors.list.length && (
         <p className="mt-2 text-muted">
-          Showing the first {formatCount(errors.list.length)} of {formatCount(errors.total)}.
+          {t("Showing the first {shown} of {total}.", {
+            shown: formatCount(errors.list.length),
+            total: formatCount(errors.total),
+          })}
         </p>
       )}
       <Buttons>
         <button type="button" className={secondary} onClick={closeJobDialog}>
-          Close
+          {t("Close")}
         </button>
       </Buttons>
     </div>
@@ -386,13 +405,13 @@ function ErrorsDialog({ jobId }: { jobId: number }) {
 }
 
 const TITLE = {
-  rename: "Rename",
-  batchRename: "Rename items",
-  replacePaste: "Overwrite existing items?",
-  dropTransfer: "Copy or move items?",
-  delete: "Delete permanently?",
-  tag: "Tags",
-  errors: "Items that failed",
+  rename: msg("Rename"),
+  batchRename: msg("Rename items"),
+  replacePaste: msg("Overwrite existing items?"),
+  dropTransfer: msg("Copy or move items?"),
+  delete: msg("Delete permanently?"),
+  tag: msg("Tags"),
+  errors: msg("Items that failed"),
 } as const
 
 export function JobDialogs() {
@@ -401,7 +420,7 @@ export function JobDialogs() {
     <DialogWindow
       open={dialog !== null}
       onOpenChange={(open) => !open && closeJobDialog()}
-      title={dialog ? TITLE[dialog.kind] : ""}
+      title={dialog ? t(TITLE[dialog.kind]) : ""}
     >
       {dialog?.kind === "rename" && <RenameDialog {...dialog} />}
       {dialog?.kind === "batchRename" && <BatchRenameDialog {...dialog} />}

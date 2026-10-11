@@ -285,7 +285,7 @@ async function boot(): Promise<void> {
     "file.open": async (_event, { entryId }) =>
       toFileOpenResult(await sc.call("file.resolve", { entryId }), mediaTokens, commanderOrigin()),
     // Commander only: a PDF or text file in a document window (ADR-0033).
-    "document.open": async (_event, { entryId, theme }) => {
+    "document.open": async (_event, { entryId, theme, lang }) => {
       const r = await sc.call("file.resolve", { entryId })
       // Main decides from the resolved path; no token is minted for anything else.
       if (!documentKindOf(r.path)) throw new Error("this file is not a document")
@@ -295,6 +295,7 @@ async function boot(): Promise<void> {
         path: r.path,
         sizeBytes: r.sizeBytes,
         ...(theme && { theme }),
+        ...(lang && { lang }),
       })
       return { ok: true }
     },

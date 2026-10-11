@@ -32,7 +32,7 @@ import {
 import { openViewerAt } from "../../features/viewer/viewerStore"
 import { copyImage, copyName, copySelectionToClipboard } from "../../features/clipboard/clipboard"
 import { playInPane } from "../../features/preview/previewStore"
-import { formatCount, plural } from "../../lib/format"
+import { formatCount } from "../../lib/format"
 import { SortMenuItems } from "../FolderToolbar"
 import {
   ContextMenuContent,
@@ -43,10 +43,15 @@ import {
   ContextMenuSeparator,
   ContextMenuSub,
 } from "../ui/menu"
+import { msg, t } from "@panelyth/i18n"
 
 export type MenuTarget = "selection" | "background"
 
-const SIZE_LABEL: Record<TileSize, string> = { small: "Small", medium: "Medium", large: "Large" }
+const SIZE_LABEL: Record<TileSize, string> = {
+  small: msg("Small"),
+  medium: msg("Medium"),
+  large: msg("Large"),
+}
 
 // Actions report failures in the status line rather than throwing into React.
 const quietly = (p: Promise<unknown>): void => void p.catch(() => undefined)
@@ -78,37 +83,41 @@ function SelectionItems() {
         <>
           {item?.kind === "dir" && (
             <ContextMenuItem shortcut="Enter" onSelect={() => void openFolderEntry(single)}>
-              Open
+              {t("Open")}
             </ContextMenuItem>
           )}
           {item?.kind === "image" && (
             <ContextMenuItem shortcut="Enter" onSelect={() => openViewerAt(focusIndex)}>
-              Open
+              {t("Open")}
             </ContextMenuItem>
           )}
           {item?.kind === "video" && (
             <>
               <ContextMenuItem shortcut="Enter" onSelect={() => playInPane(focusIndex)}>
-                Play
+                {t("Play")}
               </ContextMenuItem>
               <ContextMenuItem
-                shortcut="Double-click"
+                shortcut={t("Double-click")}
                 onSelect={() => playInPane(focusIndex, { fullscreen: true })}
               >
-                Play full screen
+                {t("Play full screen")}
               </ContextMenuItem>
             </>
           )}
           <ContextMenuItem onSelect={() => quietly(bridge.openWithSystem(single))}>
-            Open with default app
+            {t("Open with default app")}
           </ContextMenuItem>
           <ContextMenuItem onSelect={() => quietly(bridge.reveal(single))}>
-            Show in file manager
+            {t("Show in file manager")}
           </ContextMenuItem>
           <ContextMenuSeparator />
         </>
       )}
-      {count > 1 && <ContextMenuLabel>{formatCount(count)} items selected</ContextMenuLabel>}
+      {count > 1 && (
+        <ContextMenuLabel>
+          {t("{count} items selected", { count: formatCount(count) })}
+        </ContextMenuLabel>
+      )}
       <FileItems
         pictureId={item?.kind === "image" ? item.id : undefined}
         favorite={item?.kind === "dir" ? undefined : item?.favorite}
@@ -117,17 +126,19 @@ function SelectionItems() {
       />
       <ContextMenuSeparator />
       <ContextMenuItem onSelect={copySelectionPaths}>
-        {count > 1 ? "Copy paths" : "Copy path"}
+        {count > 1 ? t("Copy paths") : t("Copy path")}
       </ContextMenuItem>
       {item && (
-        <ContextMenuItem onSelect={() => void copyName(item.name)}>Copy name</ContextMenuItem>
+        <ContextMenuItem onSelect={() => void copyName(item.name)}>
+          {t("Copy name")}
+        </ContextMenuItem>
       )}
       <ContextMenuItem shortcut="Ctrl+A" onSelect={() => selectAll(total)}>
-        Select all
+        {t("Select all")}
       </ContextMenuItem>
       <ContextMenuSeparator />
       <ContextMenuItem action="item.properties" onSelect={openProperties}>
-        Properties
+        {t("Properties")}
       </ContextMenuItem>
     </>
   )
@@ -150,62 +161,70 @@ function FileItems({
   return (
     <>
       <ContextMenuItem action="edit.cut" onSelect={() => void copySelection("cut")}>
-        Cut
+        {t("Cut")}
       </ContextMenuItem>
       <ContextMenuItem action="edit.copy" onSelect={() => void copySelectionToClipboard()}>
-        Copy
+        {t("Copy")}
       </ContextMenuItem>
       {pictureId !== undefined && (
-        <ContextMenuItem onSelect={() => void copyImage(pictureId)}>Copy picture</ContextMenuItem>
+        <ContextMenuItem onSelect={() => void copyImage(pictureId)}>
+          {t("Copy picture")}
+        </ContextMenuItem>
       )}
       {clip.mode !== "" && (
         <>
           <ContextMenuItem action="edit.paste" onSelect={() => void paste()}>
-            Paste {plural(clip.count, "item", "items")}
+            {t("Paste {count, plural, one {# item} other {# items}}", { count: clip.count })}
           </ContextMenuItem>
           <ContextMenuItem onSelect={pasteReplacing}>
-            Paste and overwrite conflicts...
+            {t("Paste and overwrite conflicts...")}
           </ContextMenuItem>
         </>
       )}
-      <ContextMenuItem onSelect={() => void transferSelection("copy")}>Copy to…</ContextMenuItem>
-      <ContextMenuItem onSelect={() => void transferSelection("move")}>Move to…</ContextMenuItem>
+      <ContextMenuItem onSelect={() => void transferSelection("copy")}>
+        {t("Copy to…")}
+      </ContextMenuItem>
+      <ContextMenuItem onSelect={() => void transferSelection("move")}>
+        {t("Move to…")}
+      </ContextMenuItem>
       <ContextMenuItem action="item.rename" onSelect={renameSelection}>
-        Rename…
+        {t("Rename…")}
       </ContextMenuItem>
       <ContextMenuItem action="item.trash" onSelect={() => void trashSelection()}>
-        Move to trash
+        {t("Move to trash")}
       </ContextMenuItem>
       <ContextMenuItem action="item.delete" onSelect={askDeletePermanently}>
-        Delete permanently…
+        {t("Delete permanently…")}
       </ContextMenuItem>
       <ContextMenuSeparator />
       {favorite !== true && (
-        <ContextMenuItem onSelect={() => void setFavorite(true)}>Add to favorites</ContextMenuItem>
+        <ContextMenuItem onSelect={() => void setFavorite(true)}>
+          {t("Add to favorites")}
+        </ContextMenuItem>
       )}
       {favorite !== false && (
         <ContextMenuItem onSelect={() => void setFavorite(false)}>
-          Remove from favorites
+          {t("Remove from favorites")}
         </ContextMenuItem>
       )}
-      <ContextMenuSub label="Rating">
+      <ContextMenuSub label={t("Rating")}>
         <ContextMenuRadioGroup
           value={rating === undefined ? "" : String(rating)}
           onValueChange={(v) => void setRating(Number(v))}
         >
           {[5, 4, 3, 2, 1, 0].map((r) => (
             <ContextMenuRadioItem key={r} value={String(r)}>
-              {r === 0 ? "No rating" : "★".repeat(r)}
+              {r === 0 ? t("No rating") : "★".repeat(r)}
             </ContextMenuRadioItem>
           ))}
         </ContextMenuRadioGroup>
       </ContextMenuSub>
-      <ContextMenuSub label="Label">
+      <ContextMenuSub label={t("Label")}>
         <ContextMenuRadioGroup
           value={label === undefined ? "" : String(label)}
           onValueChange={(v) => void setLabel(Number(v))}
         >
-          {[...LABELS, { value: 0, name: "No label" }].map((l) => (
+          {[...LABELS, { value: 0, name: msg("No label") }].map((l) => (
             <ContextMenuRadioItem key={l.value} value={String(l.value)}>
               <span className="flex items-center gap-2">
                 <span
@@ -213,13 +232,13 @@ function FileItems({
                   className="size-2.5 rounded-full border border-border"
                   style={{ background: labelColor(l.value) ?? "transparent" }}
                 />
-                {l.name}
+                {t(l.name)}
               </span>
             </ContextMenuRadioItem>
           ))}
         </ContextMenuRadioGroup>
       </ContextMenuSub>
-      <ContextMenuItem onSelect={askTags}>Tags…</ContextMenuItem>
+      <ContextMenuItem onSelect={askTags}>{t("Tags…")}</ContextMenuItem>
     </>
   )
 }
@@ -233,7 +252,7 @@ function BackgroundItems() {
   const setSize = useLayoutStore((s) => s.setTileSize)
   return (
     <>
-      <ContextMenuSub label="Sort by">
+      <ContextMenuSub label={t("Sort by")}>
         <SortMenuItems
           Group={ContextMenuRadioGroup}
           Item={ContextMenuRadioItem}
@@ -241,37 +260,37 @@ function BackgroundItems() {
           Separator={ContextMenuSeparator}
         />
       </ContextMenuSub>
-      <ContextMenuSub label="Tile size">
+      <ContextMenuSub label={t("Tile size")}>
         <ContextMenuRadioGroup value={size} onValueChange={(v) => setSize(v as TileSize)}>
           {TILE_SIZE_ORDER.map((s) => (
             <ContextMenuRadioItem key={s} value={s}>
-              {SIZE_LABEL[s]}
+              {t(SIZE_LABEL[s])}
             </ContextMenuRadioItem>
           ))}
         </ContextMenuRadioGroup>
       </ContextMenuSub>
       <ContextMenuItem action="view.refresh" onSelect={() => void refresh()}>
-        Refresh
+        {t("Refresh")}
       </ContextMenuItem>
       {clip.mode !== "" && dirId !== null && (
         <>
           <ContextMenuItem action="edit.paste" onSelect={() => void paste()}>
-            Paste {plural(clip.count, "item", "items")}
+            {t("Paste {count, plural, one {# item} other {# items}}", { count: clip.count })}
           </ContextMenuItem>
           <ContextMenuItem onSelect={pasteReplacing}>
-            Paste and overwrite conflicts...
+            {t("Paste and overwrite conflicts...")}
           </ContextMenuItem>
         </>
       )}
       <ContextMenuSeparator />
       <ContextMenuItem shortcut="Ctrl+A" disabled={total === 0} onSelect={() => selectAll(total)}>
-        Select all
+        {t("Select all")}
       </ContextMenuItem>
       {dirId !== null && (
         <>
           <ContextMenuSeparator />
           <ContextMenuItem onSelect={() => openEntryProperties(dirId)}>
-            Folder properties
+            {t("Folder properties")}
           </ContextMenuItem>
         </>
       )}

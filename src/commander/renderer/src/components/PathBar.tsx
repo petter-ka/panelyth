@@ -10,6 +10,7 @@ import {
   useListingStore,
 } from "../features/listing"
 import type { Side } from "../features/panels"
+import { t } from "@panelyth/i18n"
 
 export interface PathBarHandle {
   edit(): void
@@ -96,7 +97,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
       {editing ? (
         <input
           ref={input}
-          aria-label="Path"
+          aria-label={t("Path")}
           aria-invalid={error !== null}
           aria-describedby={error ? `${side}-path-error` : undefined}
           value={value}
@@ -118,7 +119,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
       ) : (
         <>
           {(branch || find) && (
-            <Tooltip content="Back to the folder (Backspace)">
+            <Tooltip content={t("Back to the folder (Backspace)")}>
               <button
                 type="button"
                 tabIndex={-1}
@@ -126,11 +127,11 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
                 data-testid={`location-${side}`}
                 className="mr-1 h-6 max-w-[50%] shrink-0 truncate rounded bg-accent/15 px-1.5 text-accent hover:bg-accent/25"
               >
-                {find ? `Search results: ${find.label}` : "Branch view"}
+                {find ? t("Search results: {label}", { label: find.label }) : t("Branch view")}
               </button>
             </Tooltip>
           )}
-          <Tooltip content="Edit the path (Alt+D)">
+          <Tooltip content={t("Edit the path (Alt+D)")}>
             <button
               type="button"
               tabIndex={-1}
@@ -139,12 +140,12 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               aria-busy={loading}
               className={`h-6 min-w-0 flex-1 truncate rounded px-1.5 text-left font-mono font-normal hover:bg-raised ${active ? "text-text" : "text-muted"}`}
             >
-              {archive ? archivePath(path, archive) : path || "No folder open"}
+              {archive ? archivePath(path, archive) : path || t("No folder open")}
             </button>
           </Tooltip>
           {filtering ? (
             <input
-              aria-label="Quick filter"
+              aria-label={t("Quick filter")}
               placeholder="*.jpg;*.png|*_small.*"
               autoFocus
               onFocus={(e) => e.target.select()}
@@ -169,7 +170,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
             />
           ) : (
             filter !== "" && (
-              <Tooltip content="Quick filter (Ctrl+S); click to clear">
+              <Tooltip content={t("Quick filter (Ctrl+S); click to clear")}>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -182,24 +183,24 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               </Tooltip>
             )
           )}
-          <Tooltip content="Parent folder">
+          <Tooltip content={t("Parent folder")}>
             <button
               type="button"
               tabIndex={-1}
               onClick={() => void goUp(side)}
-              aria-label="Parent folder"
+              aria-label={t("Parent folder")}
               data-testid={`up-${side}`}
               className="ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
             >
               ..
             </button>
           </Tooltip>
-          <Tooltip content="Root (Ctrl+\)">
+          <Tooltip content={t("Root (Ctrl+\\)")}>
             <button
               type="button"
               tabIndex={-1}
               onClick={() => void goRoot(side)}
-              aria-label="Root (Ctrl+\)"
+              aria-label={t("Root (Ctrl+\\)")}
               data-testid={`root-${side}`}
               className="ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
             >

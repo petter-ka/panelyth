@@ -8,6 +8,7 @@ const params = {
   sizeBytes: 40,
   src: `panelyth-media://m/${"b".repeat(32)}`,
   theme: null,
+  lang: null,
 }
 
 beforeEach(() => {

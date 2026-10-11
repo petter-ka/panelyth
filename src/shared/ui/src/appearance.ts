@@ -1,3 +1,4 @@
+import { applyLocale, currentLocale, isLocale, msg, type Locale } from "@panelyth/i18n"
 import { create } from "zustand"
 
 /**
@@ -13,13 +14,13 @@ export type ThemePreference =
   "system" | "light" | "dark" | "dark-purple" | "dark-brown" | "beige" | "light-brown"
 
 export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[] = [
-  { value: "system", label: "System" },
-  { value: "light", label: "Light" },
-  { value: "dark", label: "Dark" },
-  { value: "dark-purple", label: "Dark purple" },
-  { value: "dark-brown", label: "Dark brown" },
-  { value: "beige", label: "Beige" },
-  { value: "light-brown", label: "Light brown" },
+  { value: "system", label: msg("System") },
+  { value: "light", label: msg("Light") },
+  { value: "dark", label: msg("Dark") },
+  { value: "dark-purple", label: msg("Dark purple") },
+  { value: "dark-brown", label: msg("Dark brown") },
+  { value: "beige", label: msg("Beige") },
+  { value: "light-brown", label: msg("Light brown") },
 ]
 
 /** Dark is the designed default: media reads best on a dark neutral surround. */
@@ -42,6 +43,8 @@ export const SHARED_APPEARANCE_KEY = "shared.appearance"
 export interface SharedAppearance {
   theme: ThemePreference
   interfaceSize: InterfaceSize
+  /** The interface language (ADR-0034); English until chosen. */
+  language: Locale
 }
 
 const THEME_KEY = "panelyth.theme"
@@ -94,7 +97,14 @@ function current(): SharedAppearance {
   return {
     theme: useThemeStore.getState().preference,
     interfaceSize: useInterfaceSizeStore.getState().size,
+    language: currentLocale(),
   }
+}
+
+/** The Settings → Appearance language picker: applies the language, then shares it. */
+export async function setLanguage(language: Locale): Promise<void> {
+  await applyLocale(language)
+  save?.(current())
 }
 
 interface ThemeState {
@@ -163,7 +173,9 @@ export function connectSharedAppearance(persist: ((value: SharedAppearance) => v
  */
 export function applySharedAppearance(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false
-  const { theme, interfaceSize } = value as Partial<Record<keyof SharedAppearance, unknown>>
+  const { theme, interfaceSize, language } = value as Partial<
+    Record<keyof SharedAppearance, unknown>
+  >
   let applied = false
   if (isTheme(theme)) {
     writeLocal(THEME_KEY, theme)
@@ -175,6 +187,10 @@ export function applySharedAppearance(value: unknown): boolean {
     writeLocal(SIZE_KEY, interfaceSize)
     applyInterfaceSize(interfaceSize)
     useInterfaceSizeStore.setState({ size: interfaceSize })
+    applied = true
+  }
+  if (isLocale(language)) {
+    if (language !== currentLocale()) void applyLocale(language)
     applied = true
   }
   return applied

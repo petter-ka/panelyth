@@ -19,6 +19,7 @@ import { PathBar, type PathBarHandle } from "./PathBar"
 import { RowMenu } from "./RowMenu"
 import { StatusLine } from "./StatusLine"
 import { TabBar } from "./TabBar"
+import { msg, t } from "@panelyth/i18n"
 
 /** The quick-search box at the bottom of the panel (focus stays in the list). */
 function QuickSearchBox({ side }: { side: Side }) {
@@ -29,16 +30,16 @@ function QuickSearchBox({ side }: { side: Side }) {
   return (
     <div
       role="search"
-      aria-label="Quick search"
+      aria-label={t("Quick search")}
       data-testid={`quicksearch-${side}`}
       data-missed={missed}
       className="absolute bottom-2 left-2 z-10 flex items-center gap-2 rounded border border-accent bg-raised px-2 py-1 text-xs shadow-lg"
     >
-      <span className="text-muted">Search:</span>
+      <span className="text-muted">{t("Search:")}</span>
       <span className={missed ? "text-danger" : "text-text"} aria-live="polite">
         {text}
       </span>
-      <span className="text-[0.6875rem] text-muted">↑↓ next · Esc</span>
+      <span className="text-[0.6875rem] text-muted">{t("↑↓ next · Esc")}</span>
     </div>
   )
 }
@@ -54,11 +55,11 @@ interface PanelProps {
 }
 
 const TITLES: Record<PanelErrorKind, string> = {
-  notFound: "Folder not found",
-  denied: "Permission denied",
-  notReady: "Drive not ready",
-  network: "Network location unavailable",
-  other: "This folder can't be opened",
+  notFound: msg("Folder not found"),
+  denied: msg("Permission denied"),
+  notReady: msg("Drive not ready"),
+  network: msg("Network location unavailable"),
+  other: msg("This folder can't be opened"),
 }
 
 /**
@@ -70,7 +71,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   { side, active, onActivate },
   ref,
 ) {
-  const label = side === "left" ? "Left panel" : "Right panel"
+  const label = side === "left" ? t("Left panel") : t("Right panel")
   const list = useRef<FullViewHandle>(null)
   const pathBar = useRef<PathBarHandle>(null)
   useImperativeHandle(ref, () => ({ focus: () => list.current?.focus() }), [])
@@ -117,10 +118,10 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   }
 
   let message: { title: string; detail?: string } | null = null
-  if (dirId === null && !error) message = { title: loading ? "Opening…" : "No folder open" }
+  if (dirId === null && !error) message = { title: loading ? t("Opening…") : t("No folder open") }
   else if (dirId !== null && total === 0 && !error && !loading) {
     message = listing
-      ? { title: "Listing…" }
+      ? { title: t("Listing…") }
       : { title: emptyTitle(find !== null, branch, filter !== "") }
   }
 
@@ -138,9 +139,19 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
       <PathBar ref={pathBar} side={side} active={active} onDone={() => list.current?.focus()} />
       <div data-menu-area className="relative flex min-h-0 flex-1 flex-col">
         {view === "brief" ? (
-          <BriefView ref={list} side={side} active={active} label={`${label} contents`} />
+          <BriefView
+            ref={list}
+            side={side}
+            active={active}
+            label={t("{panel} contents", { panel: label })}
+          />
         ) : (
-          <FullView ref={list} side={side} active={active} label={`${label} contents`} />
+          <FullView
+            ref={list}
+            side={side}
+            active={active}
+            label={t("{panel} contents", { panel: label })}
+          />
         )}
         <QuickSearchBox side={side} />
         <DriveMenu side={side} />
@@ -161,7 +172,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
             className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-canvas px-6 text-center"
           >
             <div>
-              <p className="text-sm text-text">{TITLES[error.kind]}</p>
+              <p className="text-sm text-text">{t(TITLES[error.kind])}</p>
               <p className="mt-1 text-xs text-muted">{error.message}</p>
             </div>
             <div className="flex gap-2 text-xs">
@@ -170,7 +181,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
                 onClick={() => void retry(side)}
                 className="rounded border border-border px-2.5 py-1 text-text hover:bg-raised"
               >
-                Retry
+                {t("Retry")}
               </button>
               {dirId !== null && (
                 <Tooltip content="Esc">
@@ -179,7 +190,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
                     onClick={() => dismissError(side)}
                     className="rounded border border-border px-2.5 py-1 text-text hover:bg-raised"
                   >
-                    Back
+                    {t("Back")}
                   </button>
                 </Tooltip>
               )}
@@ -188,7 +199,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
                 onClick={() => void openHome(side)}
                 className="rounded border border-border px-2.5 py-1 text-text hover:bg-raised"
               >
-                Home folder
+                {t("Home folder")}
               </button>
             </div>
           </div>
@@ -200,7 +211,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
 })
 
 function emptyTitle(find: boolean, branch: boolean, filtered: boolean): string {
-  if (filtered) return "No files match the quick filter"
-  if (find) return "No files found"
-  return branch ? "No files below this folder" : "This folder is empty"
+  if (filtered) return t("No files match the quick filter")
+  if (find) return t("No files found")
+  return branch ? t("No files below this folder") : t("This folder is empty")
 }

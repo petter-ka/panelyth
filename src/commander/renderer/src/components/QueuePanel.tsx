@@ -20,26 +20,46 @@ import {
   useQueueStore,
   visibleJobs,
 } from "../features/queue"
+import { msg, t } from "@panelyth/i18n"
 
 const VERBS: Partial<Record<JobSnapshot["kind"], [string, string]>> = {
-  copy: ["Copying", "Copied"],
-  move: ["Moving", "Moved"],
-  trash: ["Moving to the trash", "Moved to the trash"],
-  delete: ["Deleting", "Deleted"],
-  rename: ["Renaming", "Renamed"],
+  copy: [
+    msg("Copying {count, plural, one {# item} other {# items}}"),
+    msg("Copied {count, plural, one {# item} other {# items}}"),
+  ],
+  move: [
+    msg("Moving {count, plural, one {# item} other {# items}}"),
+    msg("Moved {count, plural, one {# item} other {# items}}"),
+  ],
+  trash: [
+    msg("Moving {count, plural, one {# item} other {# items}} to the trash"),
+    msg("Moved {count, plural, one {# item} other {# items}} to the trash"),
+  ],
+  delete: [
+    msg("Deleting {count, plural, one {# item} other {# items}}"),
+    msg("Deleted {count, plural, one {# item} other {# items}}"),
+  ],
+  rename: [
+    msg("Renaming {count, plural, one {# item} other {# items}}"),
+    msg("Renamed {count, plural, one {# item} other {# items}}"),
+  ],
 }
 
 /** "Copying 1,204 items to Backup" / "Copied 1,204 items to Backup". */
 export function describeJob(j: JobSnapshot): string {
-  const [doing, done] = VERBS[j.kind] ?? ["Working on", "Worked on"]
-  const items = `${formatCount(j.total)} ${j.total === 1 ? "item" : "items"}`
-  const to = j.destination ? ` to ${j.destination}` : ""
-  return `${isActiveJob(j) ? doing : done} ${items}${to}`
+  const [doing, done] = VERBS[j.kind] ?? [
+    msg("Working on {count, plural, one {# item} other {# items}}"),
+    msg("Worked on {count, plural, one {# item} other {# items}}"),
+  ]
+  const action = t(isActiveJob(j) ? doing : done, { count: j.total })
+  return j.destination
+    ? t("{action} to {destination}", { action, destination: j.destination })
+    : action
 }
 
 function duration(ms: number): string {
   const s = Math.ceil(ms / 1000)
-  if (s < 60) return `${s} s`
+  if (s < 60) return t("{seconds} s", { seconds: s })
   const m = Math.floor(s / 60)
   if (m < 60) return `${m}:${String(s % 60).padStart(2, "0")}`
   return `${Math.floor(m / 60)}:${String(m % 60).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`
@@ -54,33 +74,44 @@ function percent(j: JobSnapshot): number {
 /** "2.1 of 6.3 GB · 412 MB/s · 0:12 left", or the state. */
 function progressText(j: JobSnapshot): string {
   const parts: string[] = []
-  if (j.bytesTotal > 0) parts.push(`${formatBytes(j.bytesDone)} of ${formatBytes(j.bytesTotal)}`)
-  else parts.push(`${formatCount(j.done)} of ${formatCount(j.total)}`)
+  if (j.bytesTotal > 0) {
+    parts.push(
+      t("{current} of {total}", {
+        current: formatBytes(j.bytesDone),
+        total: formatBytes(j.bytesTotal),
+      }),
+    )
+  } else {
+    parts.push(
+      t("{current} of {total}", { current: formatCount(j.done), total: formatCount(j.total) }),
+    )
+  }
   switch (j.state) {
     case "queued":
-      parts.push("waiting")
+      parts.push(t("waiting"))
       break
     case "paused":
-      parts.push("paused")
+      parts.push(t("paused"))
       break
     case "asking":
-      parts.push("needs your decision")
+      parts.push(t("needs your decision"))
       break
     case "running":
       if (j.bytesPerSec > 0) parts.push(`${formatBytes(j.bytesPerSec)}/s`)
-      if (j.etaMs > 0) parts.push(`${duration(j.etaMs)} left`)
+      if (j.etaMs > 0) parts.push(t("{time} left", { time: duration(j.etaMs) }))
       break
     case "completed":
-      parts.push(j.failed > 0 ? `${formatCount(j.failed)} failed` : "done")
+      parts.push(j.failed > 0 ? t("{count} failed", { count: formatCount(j.failed) }) : t("done"))
       break
     case "cancelled":
-      parts.push("cancelled")
+      parts.push(t("cancelled"))
       break
     case "failed":
-      parts.push(j.error || "failed")
+      parts.push(j.error || t("failed"))
       break
   }
-  if (j.skipped > 0 && !isActiveJob(j)) parts.push(`${formatCount(j.skipped)} skipped`)
+  if (j.skipped > 0 && !isActiveJob(j))
+    parts.push(t("{count} skipped", { count: formatCount(j.skipped) }))
   return parts.join(" · ")
 }
 
@@ -112,36 +143,36 @@ function JobRow({ j }: { j: JobSnapshot }) {
       <div className="flex shrink-0 items-center gap-1">
         {j.state === "asking" && (
           <Button size="sm" variant="primary" onClick={() => openQuestion(j.jobId)}>
-            Needs your decision
+            {t("Needs your decision")}
           </Button>
         )}
         {j.state === "queued" && (
           <Button size="sm" onClick={() => void startNow(j.jobId)}>
-            Start now
+            {t("Start now")}
           </Button>
         )}
         {(j.state === "running" || j.state === "queued") && (
           <Button size="sm" onClick={() => void pause(j.jobId)}>
-            Pause
+            {t("Pause")}
           </Button>
         )}
         {j.state === "paused" && (
           <Button size="sm" onClick={() => void resume(j.jobId)}>
-            Resume
+            {t("Resume")}
           </Button>
         )}
         {active && (
           <Button size="sm" onClick={() => void cancel(j.jobId)}>
-            Cancel
+            {t("Cancel")}
           </Button>
         )}
         {!active && j.failed > 0 && (
           <Button size="sm" onClick={() => void showDetails(j.jobId)}>
-            Details
+            {t("Details")}
           </Button>
         )}
         {!active && (
-          <Button size="sm" aria-label="Close" onClick={() => dismissJob(j.jobId)}>
+          <Button size="sm" aria-label={t("Close")} onClick={() => dismissJob(j.jobId)}>
             ×
           </Button>
         )}
@@ -169,7 +200,7 @@ export function QueuePanel() {
     list.at(-1)!
   return (
     <section
-      aria-label="Operation queue"
+      aria-label={t("Operation queue")}
       data-testid="queue"
       data-expanded={expanded}
       className="shrink-0 border-t border-border bg-chrome text-xs"
@@ -178,14 +209,16 @@ export function QueuePanel() {
         <div className="flex max-h-56 flex-col">
           <div className="flex h-7 items-center gap-2 border-b border-border px-3 text-muted">
             <span className="flex-1">
-              {formatCount(active.length)} running or waiting ·{" "}
-              {formatCount(list.length - active.length)} finished
+              {t("{running} running or waiting · {finished} finished", {
+                running: formatCount(active.length),
+                finished: formatCount(list.length - active.length),
+              })}
             </span>
             <Button size="sm" onClick={dismissFinished}>
-              Clear finished
+              {t("Clear finished")}
             </Button>
             <Button size="sm" onClick={() => setQueueExpanded(false)} title="Ctrl+J">
-              Collapse
+              {t("Collapse")}
             </Button>
           </div>
           <ul className="min-h-0 overflow-y-auto" aria-live="off">
@@ -202,7 +235,7 @@ export function QueuePanel() {
             </ul>
           </div>
           {list.length > 1 && (
-            <Tooltip content="Show all operations (Ctrl+J)">
+            <Tooltip content={t("Show all operations (Ctrl+J)")}>
               <button
                 type="button"
                 tabIndex={-1}
@@ -239,11 +272,13 @@ function Side({
         <span className="truncate text-text">{name}</span>
       </Tooltip>
       <span className="text-muted tabular-nums">
-        {side.isDir ? "Folder" : formatBytes(side.size)}
+        {side.isDir ? t("Folder") : formatBytes(side.size)}
       </span>
       <span className="text-muted tabular-nums">
         {formatDate(side.modifiedMs)}
-        {newer && <span className="ml-1.5 rounded bg-accent/20 px-1 text-accent">newer</span>}
+        {newer && (
+          <span className="ml-1.5 rounded bg-accent/20 px-1 text-accent">{t("newer")}</span>
+        )}
       </span>
     </div>
   )
@@ -272,34 +307,34 @@ export function ConflictDialog() {
       onOpenChange={(open) => {
         if (!open) deferQuestion()
       }}
-      title={`“${c.name}” already exists`}
+      title={t("“{name}” already exists", { name: c.name })}
       description={describeJob(job)}
       contentClassName="w-[min(36rem,calc(100vw-2rem))]"
     >
       <div className="flex flex-col gap-3 text-xs" data-testid="conflict-dialog">
         <div className="flex gap-3">
-          <Side title="New" side={c.source} newer={srcNewer} name={c.name} />
-          <Side title="Existing" side={c.target} newer={dstNewer} name={c.name} />
+          <Side title={t("New")} side={c.source} newer={srcNewer} name={c.name} />
+          <Side title={t("Existing")} side={c.target} newer={dstNewer} name={c.name} />
         </div>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={all} onChange={(e) => setAll(e.target.checked)} />
-          Apply to all conflicts in this job
+          {t("Apply to all conflicts in this job")}
         </label>
         <div className="flex flex-wrap justify-end gap-2">
           <Button variant="primary" onClick={() => decide("replace")} autoFocus>
-            Overwrite
+            {t("Overwrite")}
           </Button>
           <Button
             onClick={() => decide("replaceOlder", true)}
-            title="This and every later conflict of this job"
+            title={t("This and every later conflict of this job")}
           >
-            Overwrite all older
+            {t("Overwrite all older")}
           </Button>
-          <Button onClick={() => decide("skip")}>Skip</Button>
-          <Button onClick={() => decide("renameNew")}>Rename</Button>
-          <Button onClick={() => decide("renameExisting")}>Rename existing</Button>
+          <Button onClick={() => decide("skip")}>{t("Skip")}</Button>
+          <Button onClick={() => decide("renameNew")}>{t("Rename")}</Button>
+          <Button onClick={() => decide("renameExisting")}>{t("Rename existing")}</Button>
           <Button variant="danger" onClick={() => decide("cancel")}>
-            Cancel job
+            {t("Cancel job")}
           </Button>
         </div>
       </div>
@@ -317,7 +352,7 @@ export function JobDetailsDialog() {
       onOpenChange={(open) => {
         if (!open) closeDetails()
       }}
-      title={`${formatCount(d.total)} ${d.total === 1 ? "item" : "items"} failed`}
+      title={t("{count, plural, one {# item} other {# items}} failed", { count: d.total })}
       contentClassName="w-[min(40rem,calc(100vw-2rem))]"
     >
       <ul className="max-h-80 overflow-y-auto text-xs" data-testid="job-details">
@@ -332,7 +367,7 @@ export function JobDetailsDialog() {
       </ul>
       {d.total > d.errors.length && (
         <p className="mt-2 text-xs text-muted">
-          The first {formatCount(d.errors.length)} are shown.
+          {t("The first {count} are shown.", { count: formatCount(d.errors.length) })}
         </p>
       )}
     </DialogWindow>

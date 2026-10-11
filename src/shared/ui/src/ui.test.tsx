@@ -1,3 +1,4 @@
+import { resetLocale, useLocaleStore } from "@panelyth/i18n"
 import { fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
@@ -8,6 +9,7 @@ import {
   startSharedAppearanceSync,
   initInterfaceSize,
   initTheme,
+  setLanguage,
   useInterfaceSizeStore,
   useThemeStore,
 } from "./index"
@@ -27,6 +29,7 @@ describe("AppSwitchButton", () => {
 describe("shared appearance", () => {
   beforeEach(() => {
     localStorage.clear()
+    resetLocale()
     connectSharedAppearance(null)
     initTheme()
     initInterfaceSize()
@@ -36,9 +39,17 @@ describe("shared appearance", () => {
     const save = vi.fn()
     connectSharedAppearance(save)
     useThemeStore.getState().setPreference("light")
-    expect(save).toHaveBeenLastCalledWith({ theme: "light", interfaceSize: "medium" })
+    expect(save).toHaveBeenLastCalledWith({
+      theme: "light",
+      interfaceSize: "medium",
+      language: "en",
+    })
     useInterfaceSizeStore.getState().setSize("large")
-    expect(save).toHaveBeenLastCalledWith({ theme: "light", interfaceSize: "large" })
+    expect(save).toHaveBeenLastCalledWith({
+      theme: "light",
+      interfaceSize: "large",
+      language: "en",
+    })
   })
 
   it("applies a value from the other app without saving it again", () => {
@@ -62,6 +73,7 @@ describe("shared appearance", () => {
 describe("startSharedAppearanceSync", () => {
   beforeEach(() => {
     localStorage.clear()
+    resetLocale()
     initTheme()
     initInterfaceSize()
   })
@@ -92,6 +104,21 @@ describe("startSharedAppearanceSync", () => {
     stop()
   })
 
+  it("shares the language and applies the other app's", async () => {
+    const p = port({})
+    const stop = startSharedAppearanceSync(p)
+    await setLanguage("de")
+    expect(p.saveSetting).toHaveBeenLastCalledWith(
+      "shared.appearance",
+      expect.objectContaining({ language: "de" }),
+    )
+    p.emit("shared.appearance", { theme: "dark", interfaceSize: "medium", language: "fr" })
+    await vi.waitFor(() => expect(useLocaleStore.getState().locale).toBe("fr"))
+    p.emit("shared.appearance", { theme: "dark", interfaceSize: "medium", language: "klingon" })
+    expect(useLocaleStore.getState().locale).toBe("fr")
+    stop()
+  })
+
   it("migrates this app's local values the first time", async () => {
     localStorage.setItem("panelyth.theme", "beige")
     initTheme()
@@ -101,12 +128,14 @@ describe("startSharedAppearanceSync", () => {
       expect(p.saveSetting).toHaveBeenCalledWith("shared.appearance", {
         theme: "beige",
         interfaceSize: "medium",
+        language: "en",
       }),
     )
     useThemeStore.getState().setPreference("light")
     expect(p.saveSetting).toHaveBeenLastCalledWith("shared.appearance", {
       theme: "light",
       interfaceSize: "medium",
+      language: "en",
     })
     stop()
   })

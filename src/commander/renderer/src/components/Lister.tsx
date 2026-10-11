@@ -17,12 +17,13 @@ import {
 import { HexView, TextView, type ByteMatch, type ByteViewHandle } from "./ByteViews"
 import { useImageRequests } from "./QuickView"
 import { useByteFile, type ByteFile } from "./useByteFile"
+import { msg, t } from "@panelyth/i18n"
 
 const MODES: readonly { mode: ListerMode; label: string; key: string }[] = [
-  { mode: "text", label: "Text", key: "1" },
-  { mode: "hex", label: "Hex", key: "2" },
-  { mode: "image", label: "Image", key: "3" },
-  { mode: "video", label: "Video", key: "4" },
+  { mode: "text", label: msg("Text"), key: "1" },
+  { mode: "hex", label: msg("Hex"), key: "2" },
+  { mode: "image", label: msg("Image"), key: "3" },
+  { mode: "video", label: msg("Video"), key: "4" },
 ]
 
 const MODE_ACTIONS: Partial<Record<ActionId, ListerMode>> = {
@@ -200,7 +201,7 @@ function ListerWindow({ l }: { l: ListerState }) {
       ref={root}
       role="dialog"
       aria-modal="true"
-      aria-label={`Lister: ${item.name}`}
+      aria-label={t("Lister: {name}", { name: item.name })}
       tabIndex={-1}
       data-testid="lister"
       data-entry={item.id}
@@ -215,9 +216,9 @@ function ListerWindow({ l }: { l: ListerState }) {
             <span className="ml-2 text-muted">{formatBytes(item.sizeBytes)}</span>
           </span>
         </Tooltip>
-        <div role="group" aria-label="View as" className="flex gap-1">
+        <div role="group" aria-label={t("View as")} className="flex gap-1">
           {MODES.map((m) => (
-            <Tooltip key={m.mode} content={`${m.label} (${m.key})`}>
+            <Tooltip key={m.mode} content={`${t(m.label)} (${m.key})`}>
               <button
                 type="button"
                 className={chip}
@@ -225,7 +226,7 @@ function ListerWindow({ l }: { l: ListerState }) {
                 disabled={!available(m.mode)}
                 onClick={() => setListerMode(m.mode)}
               >
-                {m.label}
+                {t(m.label)}
               </button>
             </Tooltip>
           ))}
@@ -233,7 +234,7 @@ function ListerWindow({ l }: { l: ListerState }) {
         {mode === "text" && (
           <>
             <select
-              aria-label="Encoding"
+              aria-label={t("Encoding")}
               className={field}
               value={textEncoding}
               onChange={(e) => {
@@ -243,39 +244,39 @@ function ListerWindow({ l }: { l: ListerState }) {
             >
               {ENCODINGS.map((enc) => (
                 <option key={enc.value} value={enc.value}>
-                  {enc.label}
+                  {t(enc.label)}
                 </option>
               ))}
             </select>
-            <Tooltip content="Wrap lines (W)">
+            <Tooltip content={t("Wrap lines (W)")}>
               <button
                 type="button"
                 className={chip}
                 aria-pressed={wrap}
                 onClick={() => setWrap((w) => (lastWrap = !w))}
               >
-                Wrap
+                {t("Wrap")}
               </button>
             </Tooltip>
           </>
         )}
         {(mode === "text" || mode === "hex") && (
-          <Tooltip content="Find (Ctrl+F)">
+          <Tooltip content={t("Find (Ctrl+F)")}>
             <button type="button" className={chip} onClick={() => run("lister.find")}>
-              Find
+              {t("Find")}
             </button>
           </Tooltip>
         )}
-        <Tooltip content="Close (Esc)">
+        <Tooltip content={t("Close (Esc)")}>
           <button type="button" className={chip} onClick={closeLister}>
-            Close
+            {t("Close")}
           </button>
         </Tooltip>
       </div>
       {findOpen && (
         <form
           role="search"
-          aria-label="Find in file"
+          aria-label={t("Find in file")}
           className="flex h-9 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2 text-xs"
           onSubmit={(e) => {
             e.preventDefault()
@@ -285,7 +286,7 @@ function ListerWindow({ l }: { l: ListerState }) {
         >
           <input
             ref={findInput}
-            aria-label="Find"
+            aria-label={t("Find")}
             className={`${field} w-64`}
             value={query}
             spellCheck={false}
@@ -301,15 +302,15 @@ function ListerWindow({ l }: { l: ListerState }) {
               checked={caseSensitive}
               onChange={(e) => setCaseSensitive(e.target.checked)}
             />
-            Match case
+            {t("Match case")}
           </label>
           <span role="status" aria-live="polite" className="text-muted" data-testid="find-status">
             {status.kind === "searching"
-              ? `Searching… ${Math.round(status.progress * 100)}%`
+              ? t("Searching… {percent}%", { percent: Math.round(status.progress * 100) })
               : status.kind === "notFound"
-                ? "Not found"
+                ? t("Not found")
                 : status.kind === "unencodable"
-                  ? "The text can't be written in this encoding"
+                  ? t("The text can't be written in this encoding")
                   : ""}
           </span>
         </form>
@@ -332,10 +333,10 @@ function ListerWindow({ l }: { l: ListerState }) {
           {mode === "text" || mode === "hex" ? `${Math.round(position * 100)}%` : ""}
         </span>
         {mode === "text" && (
-          <span>{ENCODINGS.find((e) => e.value === textEncoding)?.label ?? textEncoding}</span>
+          <span>{t(ENCODINGS.find((e) => e.value === textEncoding)?.label ?? textEncoding)}</span>
         )}
         <span className="flex-1" />
-        <span>N / P next and previous file · 1–4 view · Esc close</span>
+        <span>{t("N / P next and previous file · 1–4 view · Esc close")}</span>
       </div>
     </div>
   )
@@ -368,7 +369,7 @@ function ListerBody({
   if (mode === "image") return <ListerImage id={item.id} />
   if (mode === "video") return <ListerVideo id={item.id} name={item.name} />
   if (file.status === "loading" || mode === null)
-    return <p className="p-4 text-center text-xs text-muted">Reading…</p>
+    return <p className="p-4 text-center text-xs text-muted">{t("Reading…")}</p>
   if (file.status === "failed")
     return (
       <p role="alert" className="p-4 text-center text-xs text-danger">
@@ -382,7 +383,7 @@ function ListerBody({
         key={file.source.url}
         source={file.source}
         match={match}
-        label={`Hex of ${item.name}`}
+        label={t("Hex of {name}", { name: item.name })}
         onPosition={onPosition}
       />
     )
@@ -395,7 +396,7 @@ function ListerBody({
       floor={floor}
       wrap={wrap}
       match={match}
-      label={`Text of ${item.name}`}
+      label={t("Text of {name}", { name: item.name })}
       onPosition={onPosition}
     />
   )

@@ -1,6 +1,7 @@
 import type { SidecarStatus, SystemInfo } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../../bridge"
+import { t } from "@panelyth/i18n"
 
 interface SidecarState {
   status: SidecarStatus | null
@@ -51,7 +52,7 @@ function applyStatus(status: SidecarStatus): void {
  */
 export function startSidecarMonitoring(): () => void {
   if (!isBridgeAvailable()) {
-    useSidecarStore.setState({ error: "Panelyth bridge is not available" })
+    useSidecarStore.setState({ error: t("Panelyth bridge is not available") })
     return () => {}
   }
   const unsubscribe = bridge.on("sidecar.status", applyStatus)

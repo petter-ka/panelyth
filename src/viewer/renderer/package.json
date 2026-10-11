@@ -10,6 +10,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@panelyth/i18n": "workspace:*",
     "@panelyth/media-ui": "workspace:*",
     "@panelyth/renderer-core": "workspace:*",
     "@panelyth/ui": "workspace:*",
