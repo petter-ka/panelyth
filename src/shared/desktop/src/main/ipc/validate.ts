@@ -1,6 +1,7 @@
 import { isAbsolute } from "node:path"
 import {
   CONFLICT_DECISIONS,
+  isContentItem,
   CONFLICT_POLICIES,
   MAX_MKDIR_PATH_CHARS,
   ENTRY_KINDS,
@@ -526,7 +527,24 @@ export const validators: Record<RendererMethod, Validator> = {
   "shell.edit": entryParams,
   "file.open": entryParams,
   "document.open": windowParams,
-  "media.openWindow": windowParams,
+  "media.openWindow": (p) =>
+    shapeWithOptional(p, ["entryId", "key"], ["theme", "lang"]) &&
+    isId(p.entryId) &&
+    isId(p.key) &&
+    (p.theme === undefined || (typeof p.theme === "string" && /^[a-z-]{1,32}$/.test(p.theme))) &&
+    (p.lang === undefined || (typeof p.lang === "string" && /^[a-z]{2,3}$/.test(p.lang)))
+      ? null
+      : "expected { entryId, key, theme?, lang? }",
+  "media.windowStep": (p) =>
+    shape(p, ["direction"]) && (p.direction === -1 || p.direction === 0 || p.direction === 1)
+      ? null
+      : "expected { direction: -1 | 0 | 1 }",
+  "media.windowAnswer": (p) =>
+    shape(p, ["requestId", "item"]) &&
+    Number.isSafeInteger(p.requestId) &&
+    (p.item === null || isContentItem(p.item))
+      ? null
+      : "expected { requestId, item }",
   "shell.reveal": entryParams,
   "shell.revealPath": (p) => (shape(p, ["path"]) ? pathProblem(p.path) : "expected { path }"),
   "clipboard.copyPaths": (p) => {

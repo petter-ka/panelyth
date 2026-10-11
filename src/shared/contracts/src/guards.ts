@@ -537,4 +537,9 @@ export const eventGuards: EventGuards = {
     v.bookmarks.length <= 500 &&
     v.bookmarks.every(isBookmark),
   "find.progress": isFindProgress,
+  "mediaWindow.step": (v): v is EventMap["mediaWindow.step"] =>
+    isRec(v) &&
+    isInt(v.requestId) &&
+    isInt(v.key) &&
+    (v.direction === -1 || v.direction === 0 || v.direction === 1),
 }

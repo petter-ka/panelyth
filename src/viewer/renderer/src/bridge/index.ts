@@ -4,6 +4,7 @@ import type {
   ClipMode,
   ClipState,
   ConflictPolicy,
+  ContentItem,
   JobErrorsResult,
   JobSnapshot,
   JobStartParams,
@@ -110,8 +111,12 @@ export const bridge = {
     unwrap(() => api().query.page(params)),
   openMedia: (entryId: number): Promise<MediaOpenResult> => unwrap(() => api().media.open(entryId)),
   /** An image or video in a frameless full-screen window of its own (ADR-0033). */
-  openMediaWindow: async (entryId: number, lang?: string): Promise<void> => {
-    await unwrap(() => api().media.openWindow(entryId, undefined, lang))
+  openMediaWindow: async (entryId: number, key: number, lang?: string): Promise<void> => {
+    await unwrap(() => api().media.openWindow(entryId, key, undefined, lang))
+  },
+  /** The opener's reply to a mediaWindow.step event. */
+  mediaWindowAnswer: async (requestId: number, item: ContentItem | null): Promise<void> => {
+    await unwrap(() => api().media.windowAnswer(requestId, item))
   },
   ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
     unwrap(() => api().preview.ensure(params)),

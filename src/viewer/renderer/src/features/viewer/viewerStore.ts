@@ -59,19 +59,72 @@ export function openViewerAt(index: number): boolean {
   return true
 }
 
+// The media window (ADR-0033 amended) shows the file in a window of its own;
+// this window keeps the listing, so the media window asks it for neighbours.
+
+interface HostedWindow {
+  index: number
+  item: ContentItem
+}
+
+/** Windows opened from here, by the key they were opened with (the newest few). */
+const hosted = new Map<number, HostedWindow>()
+const MAX_HOSTED = 32
+let nextKey = 1
+
+const isMedia = (item: ContentItem | undefined): item is ContentItem =>
+  item?.kind === "image" || item?.kind === "video"
+
 /**
  * Double-click / Enter on an image or video tile: the file fills the screen in
- * a frameless window of its own (ADR-0033). When that window can't open (an
- * image the browser can't show directly, say) the in-app surface is used.
+ * a frameless window of its own, with zoom, fit, the Panelyth player and
+ * previous / next. When that window can't open, the in-app surface is used.
  */
 export function openFullscreenAt(index: number): boolean {
   const item = getItem(index)
-  if (item?.kind !== "image" && item?.kind !== "video") return false
-  void bridge.openMediaWindow(item.id, currentLocale()).catch(() => {
+  if (!isMedia(item)) return false
+  const key = nextKey++
+  hosted.set(key, { index, item })
+  if (hosted.size > MAX_HOSTED) hosted.delete(hosted.keys().next().value!)
+  void bridge.openMediaWindow(item.id, key, currentLocale()).catch(() => {
+    hosted.delete(key)
     if (item.kind === "image") openViewerAt(index)
     else playInPane(index, { fullscreen: true })
   })
   return true
+}
+
+async function answerStep(key: number, direction: -1 | 0 | 1): Promise<ContentItem | null> {
+  const window = hosted.get(key)
+  if (!window) return null
+  if (direction === 0) return window.item
+  const found = await findMedia(window.index + direction, direction)
+  if (!found) return null
+  window.index = found.index
+  window.item = found.item
+  return found.item
+}
+
+async function findMedia(
+  from: number,
+  direction: 1 | -1,
+): Promise<{ index: number; item: ContentItem } | null> {
+  const total = getTotal()
+  for (let i = from, n = 0; i >= 0 && i < total && n < MAX_SCAN; i += direction, n++) {
+    const item = getItem(i) ?? (await ensureIndex(i))
+    if (isMedia(item)) return { index: i, item }
+  }
+  return null
+}
+
+/** Answers the media windows' questions; returns the stop function. */
+export function startMediaWindowHost(): () => void {
+  return bridge.on("mediaWindow.step", ({ requestId, key, direction }) => {
+    void answerStep(key, direction)
+      .catch(() => null)
+      .then((item) => bridge.mediaWindowAnswer(requestId, item))
+      .catch(() => undefined)
+  })
 }
 
 async function findViewable(

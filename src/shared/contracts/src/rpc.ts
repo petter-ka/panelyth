@@ -552,10 +552,31 @@ export interface DocumentOpenParams {
 /**
  * media.openWindow (both apps, ADR-0033 amended): shows an image or a video
  * in a frameless full-screen window of its own, a child of the shell window.
- * Main resolves the entry and gives the window a read-only token; the window
- * has no preload and no IPC. `theme` and `lang` are as for document.open.
+ * The window is the shared media overlay on the commander's narrow profile.
+ * The opener keeps the folder listing: `key` names this window in the
+ * opener's own bookkeeping, and the window asks the opener for neighbours
+ * through main (media.windowStep, the mediaWindow.step event, media.windowAnswer).
+ * `theme` and `lang` are as for document.open.
  */
-export type MediaWindowOpenParams = DocumentOpenParams
+export interface MediaWindowOpenParams extends DocumentOpenParams {
+  key: number
+}
+
+/** media.windowStep (the media window): 0 = the first item, -1 / 1 = previous / next. */
+export interface MediaWindowStepParams {
+  direction: -1 | 0 | 1
+}
+
+/** The item the opener found, or null at either end. */
+export interface MediaWindowStepResult {
+  item: ContentItem | null
+}
+
+/** media.windowAnswer (the opener): the reply to one mediaWindow.step event. */
+export interface MediaWindowAnswerParams {
+  requestId: number
+  item: ContentItem | null
+}
 
 export interface Properties {
   id: number
@@ -1435,6 +1456,10 @@ export interface MainMethodMap {
   "media.open": { params: MediaOpenParams; result: MediaOpenResult }
   /** Both apps (ADR-0033): an image or video in a frameless full-screen window. */
   "media.openWindow": { params: MediaWindowOpenParams; result: OkResult }
+  /** The media window (commander profile): the next, previous or first item, asked of the opener. */
+  "media.windowStep": { params: MediaWindowStepParams; result: MediaWindowStepResult }
+  /** The opener's answer to a mediaWindow.step event (both apps). */
+  "media.windowAnswer": { params: MediaWindowAnswerParams; result: OkResult }
   /** Home, Desktop, Documents, Downloads, Pictures, Videos (those that exist). */
   "places.list": { params: EmptyParams; result: PlacesResult }
   /** Opens a file or folder with the system default application (kinds per app profile). */
@@ -1485,6 +1510,7 @@ export const VIEWER_METHODS = [
   "folder.covers",
   "media.open",
   "media.openWindow",
+  "media.windowAnswer",
   "query.facets",
   "selection.info",
   "selection.rebase",
@@ -1526,6 +1552,7 @@ export const VIEWER_METHODS = [
 export const COMMANDER_ONLY_METHODS = [
   "file.open",
   "document.open",
+  "media.windowStep",
   "shell.edit",
   "fs.mkfile",
   "find.start",
@@ -1602,6 +1629,8 @@ export const COMMANDER_METHODS = [
   // bytes through tokens), open with the default app, the editor, new files.
   "media.open",
   "media.openWindow",
+  "media.windowStep",
+  "media.windowAnswer",
   "preview.ensure",
   "props.get",
   "file.open",
@@ -1633,6 +1662,8 @@ export const MAIN_METHODS = [
   "dialog.openFolder",
   "media.open",
   "media.openWindow",
+  "media.windowStep",
+  "media.windowAnswer",
   "file.open",
   "document.open",
   "places.list",

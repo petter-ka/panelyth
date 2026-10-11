@@ -768,6 +768,7 @@ const messages: Messages = {
   "This drive has no trash. The items can only be deleted permanently.":
     "На этом диске нет корзины. Элементы можно удалить только навсегда.",
   "This file can't be read: {reason}": "Не удаётся прочитать этот файл: {reason}",
+  "This file can't be shown in a window.": "Этот файл нельзя показать в окне.",
   "This folder can't be opened": "Эту папку нельзя открыть",
   "This folder doesn't exist anymore.": "Эта папка больше не существует.",
   "This folder doesn't exist. Check the destination.":
@@ -947,7 +948,6 @@ const messages: Messages = {
   "{name} can't be edited: {reason}": "Не удалось изменить «{name}»: {reason}",
   "{name} can't be opened in a window: {reason}": "Не удалось открыть «{name}» в окне: {reason}",
   "{name} can't be opened: {reason}": "Не удалось открыть «{name}»: {reason}",
-  "{name} can't be shown.": "Не удалось показать {name}.",
   "{name} can't be started: {reason}": "Не удалось запустить «{name}»: {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "«{name}» — это программа. Запускайте её, только если доверяете источнику.",

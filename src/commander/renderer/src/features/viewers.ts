@@ -107,20 +107,76 @@ export function toggleQuickView(side: Side): void {
 
 export const closeQuickView = (): void => set({ quick: null, quickItem: null })
 
+// The media window (ADR-0033 amended) shows the file in a window of its own;
+// the panel keeps the listing, so the window asks it for neighbours.
+
+interface HostedWindow {
+  side: Side
+  index: number
+  item: ContentItem
+}
+
+/** Windows opened from here, by the key they were opened with (the newest few). */
+const hosted = new Map<number, HostedWindow>()
+const MAX_HOSTED = 32
+let nextKey = 1
+
+const isMedia = (item: ContentItem | undefined): item is ContentItem =>
+  item?.kind === "image" || item?.kind === "video"
+
 /**
- * An image or video fills the screen in a frameless window of its own
- * (ADR-0033). When that window can't open (an image the browser can't show
- * directly, say) the in-app surface above the panels is used instead.
+ * An image or video fills the screen in a frameless window of its own, with
+ * zoom, fit, the Panelyth player and previous / next. When that window can't
+ * open the in-app surface above the panels is used instead.
  */
 export function openMediaViewer(
   item: ContentItem,
   side = usePanelsStore.getState().active,
 ): boolean {
-  if (item.kind !== "image" && item.kind !== "video") return false
+  if (!isMedia(item)) return false
+  const panel = useListingStore.getState()[side]
+  const key = nextKey++
+  hosted.set(key, { side, index: panel.cursor - parentRows(panel), item })
+  if (hosted.size > MAX_HOSTED) hosted.delete(hosted.keys().next().value!)
   void bridge
-    .openMediaWindow(item.id, currentAppearance().theme, currentLocale())
-    .catch(() => openMediaOverlay(item, side))
+    .openMediaWindow(item.id, key, currentAppearance().theme, currentLocale())
+    .catch(() => {
+      hosted.delete(key)
+      openMediaOverlay(item, side)
+    })
   return true
+}
+
+/** The media window asked for its first, previous or next item. */
+async function answerStep(key: number, direction: -1 | 0 | 1): Promise<ContentItem | null> {
+  const window = hosted.get(key)
+  if (!window) return null
+  if (direction === 0) return window.item
+  const store = pageStoreOf(window.side)
+  const total = store.getTotal()
+  for (
+    let index = window.index + direction, scanned = 0;
+    index >= 0 && index < total && scanned < MAX_STEP_SCAN;
+    index += direction, scanned++
+  ) {
+    const item = await store.ensureIndex(index)
+    if (isMedia(item)) {
+      window.index = index
+      window.item = item
+      return item
+    }
+  }
+  return null
+}
+
+/** Answers the media windows' questions; returns the stop function. */
+export function startMediaWindowHost(): () => void {
+  return bridge.on("mediaWindow.step", ({ requestId, key, direction }) => {
+    void answerStep(key, direction)
+      .catch(() => null)
+      .then((item) => bridge.mediaWindowAnswer(requestId, item))
+      .catch(() => undefined)
+  })
 }
 
 /** Opens a shared full-window media surface above Commander. */

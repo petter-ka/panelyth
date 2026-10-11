@@ -769,6 +769,7 @@ const messages: Messages = {
   "This drive has no trash. The items can only be deleted permanently.":
     "Ezen a meghajtón nincs kuka. Az elemek csak véglegesen törölhetők.",
   "This file can't be read: {reason}": "A fájl nem olvasható: {reason}",
+  "This file can't be shown in a window.": "Ez a fájl nem jeleníthető meg ablakban.",
   "This folder can't be opened": "Ez a mappa nem nyitható meg",
   "This folder doesn't exist anymore.": "Ez a mappa már nem létezik.",
   "This folder doesn't exist. Check the destination.":
@@ -945,7 +946,6 @@ const messages: Messages = {
   "{name} can't be edited: {reason}": "A(z) {name} nem szerkeszthető: {reason}",
   "{name} can't be opened in a window: {reason}": "A(z) {name} nem nyitható meg ablakban: {reason}",
   "{name} can't be opened: {reason}": "A(z) {name} nem nyitható meg: {reason}",
-  "{name} can't be shown.": "A(z) {name} nem jeleníthető meg.",
   "{name} can't be started: {reason}": "A(z) {name} nem indítható el: {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "A(z) {name} egy program. Csak akkor futtassa, ha megbízik a forrásában.",

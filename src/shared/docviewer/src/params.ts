@@ -1,11 +1,8 @@
 import { documentKindOf, type DocumentKind } from "@panelyth/contracts"
 
-/** The frameless full-screen media window shows these (mediaWindow.ts). */
-export type MediaKind = "image" | "video"
-
 /** What main puts in the window's URL fragment (documentWindow.ts); the page has nothing else. */
 export interface DocumentParams {
-  kind: DocumentKind | MediaKind
+  kind: DocumentKind
   name: string
   sizeBytes: number
   /** The read-only panelyth-media token URL. */
@@ -23,9 +20,9 @@ export function parseParams(hash: string): DocumentParams | null {
   const name = p.get("name") ?? ""
   const kind = p.get("kind")
   if (!TOKEN_URL.test(src) || name === "") return null
-  if (kind !== "pdf" && kind !== "text" && kind !== "image" && kind !== "video") return null
-  // The kind must agree with the name main resolved (media: main checked the entry itself).
-  if ((kind === "pdf" || kind === "text") && documentKindOf(name) !== kind) return null
+  if (kind !== "pdf" && kind !== "text") return null
+  // The kind must agree with the name main resolved.
+  if (documentKindOf(name) !== kind) return null
   const size = Number(p.get("size"))
   return {
     kind,

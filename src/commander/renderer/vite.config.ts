@@ -12,6 +12,13 @@ export default defineConfig({
     emptyOutDir: true,
     target: "chrome130",
     sourcemap: true,
+    // media.html is the full-screen media window's page (ADR-0033 amended).
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        media: "media.html",
+      },
+    },
   },
   server: {
     port: 5174,

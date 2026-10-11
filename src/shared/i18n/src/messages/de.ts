@@ -773,6 +773,8 @@ const messages: Messages = {
   "This drive has no trash. The items can only be deleted permanently.":
     "Dieses Laufwerk hat keinen Papierkorb. Die Elemente können nur endgültig gelöscht werden.",
   "This file can't be read: {reason}": "Diese Datei kann nicht gelesen werden: {reason}",
+  "This file can't be shown in a window.":
+    "Diese Datei kann nicht in einem Fenster angezeigt werden.",
   "This folder can't be opened": "Dieser Ordner kann nicht geöffnet werden",
   "This folder doesn't exist anymore.": "Dieser Ordner existiert nicht mehr.",
   "This folder doesn't exist. Check the destination.":
@@ -954,7 +956,6 @@ const messages: Messages = {
   "{name} can't be opened in a window: {reason}":
     "{name} kann nicht in einem Fenster geöffnet werden: {reason}",
   "{name} can't be opened: {reason}": "{name} kann nicht geöffnet werden: {reason}",
-  "{name} can't be shown.": "{name} kann nicht angezeigt werden.",
   "{name} can't be started: {reason}": "{name} kann nicht gestartet werden: {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "{name} ist ein Programm. Führen Sie es nur aus, wenn Sie seiner Herkunft vertrauen.",

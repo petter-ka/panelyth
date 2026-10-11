@@ -78,6 +78,8 @@ export interface EventMap {
   "bookmarks.changed": { bookmarks: Bookmark[] }
   /** A search's progress (Stage C06, commander); results arrive through query.invalidated. */
   "find.progress": FindProgress
+  /** From main, to the window that opened a media window: find that window's next item (media.windowAnswer replies). */
+  "mediaWindow.step": { requestId: number; key: number; direction: -1 | 0 | 1 }
 }
 
 export type EventChannel = keyof EventMap
@@ -95,6 +97,7 @@ export const EVENT_CHANNELS = [
   "volumes.changed",
   "bookmarks.changed",
   "find.progress",
+  "mediaWindow.step",
 ] as const satisfies readonly EventChannel[]
 
 /** Channels produced by the Go sidecar and forwarded by main unchanged. */

@@ -42,6 +42,8 @@ const mainHandlers = (): MainHandlers => ({
   "shell.edit": vi.fn(async () => ({ ok: true })),
   "document.open": vi.fn(async () => ({ ok: true })),
   "media.openWindow": vi.fn(async () => ({ ok: true })),
+  "media.windowStep": vi.fn(async () => ({ item: null })),
+  "media.windowAnswer": vi.fn(async () => ({ ok: true })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
     url: `panelyth-media://m/${String(p.entryId).padStart(32, "0")}`,
     kind: "image" as const,
@@ -119,7 +121,9 @@ describe("invoke router", () => {
       ["document.open", { entryId: 3 }],
       ["document.open", { entryId: 3, theme: "light" }],
       ["media.open", { entryId: 3 }],
-      ["media.openWindow", { entryId: 3, theme: "dark", lang: "de" }],
+      ["media.openWindow", { entryId: 3, key: 1, theme: "dark", lang: "de" }],
+      ["media.windowStep", { direction: -1 }],
+      ["media.windowStep", { direction: 0 }],
     ] as const) {
       await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
       expect(main[m]).toHaveBeenLastCalledWith(commander, p, "commander")
@@ -149,6 +153,12 @@ describe("invoke router", () => {
       const res = await handler(ok, m, { entryId: 3 })
       expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     }
+    // The viewer can answer a media window's question but not ask one.
+    const asked = await handler(ok, "media.windowStep", { direction: 1 })
+    expect(asked).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    await expect(
+      handler(ok, "media.windowAnswer", { requestId: 1, item: null }),
+    ).resolves.toMatchObject({ ok: true })
     // The viewer's shell.open still goes to main, which applies its profile.
     await handler(ok, "shell.open", { entryId: 3 })
     expect(main["shell.open"]).toHaveBeenLastCalledWith(ok, { entryId: 3 }, "viewer")
@@ -162,8 +172,11 @@ describe("invoke router", () => {
       ["document.open", { entryId: 3, theme: "Pink Panther!" }],
       ["document.open", { entryId: 3, path: "/etc/passwd" }],
       ["document.open", { entryId: 0 }],
-      ["media.openWindow", { entryId: 3, path: "/etc/passwd" }],
-      ["media.openWindow", { entryId: 0 }],
+      ["media.openWindow", { entryId: 3, key: 1, path: "/etc/passwd" }],
+      ["media.openWindow", { entryId: 3 }],
+      ["media.openWindow", { entryId: 0, key: 1 }],
+      ["media.windowStep", { direction: 2 }],
+      ["media.windowAnswer", { requestId: 1, item: { id: 1 } }],
       ["fs.mkfile", { parentDirId: 2, name: "" }],
       ["fs.mkfile", { parentDirId: 2, name: "a\u0000b" }],
       ["fs.mkfile", { parentDirId: 2 }],
