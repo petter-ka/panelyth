@@ -130,30 +130,6 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               </button>
             </Tooltip>
           )}
-          <Tooltip content="Parent folder">
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => void goUp(side)}
-              aria-label="Parent folder"
-              data-testid={`up-${side}`}
-              className="mr-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
-            >
-              ..
-            </button>
-          </Tooltip>
-          <Tooltip content="Root (Ctrl+\)">
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => void goRoot(side)}
-              aria-label="Root (Ctrl+\)"
-              data-testid={`root-${side}`}
-              className="mr-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
-            >
-              /
-            </button>
-          </Tooltip>
           <Tooltip content="Edit the path (Alt+D)">
             <button
               type="button"
@@ -206,6 +182,30 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               </Tooltip>
             )
           )}
+          <Tooltip content="Parent folder">
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => void goUp(side)}
+              aria-label="Parent folder"
+              data-testid={`up-${side}`}
+              className="ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
+            >
+              ..
+            </button>
+          </Tooltip>
+          <Tooltip content="Root (Ctrl+\)">
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => void goRoot(side)}
+              aria-label="Root (Ctrl+\)"
+              data-testid={`root-${side}`}
+              className="ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
+            >
+              /
+            </button>
+          </Tooltip>
         </>
       )}
       {editing && error && (
