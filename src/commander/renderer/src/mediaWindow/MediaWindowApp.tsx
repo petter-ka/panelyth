@@ -17,6 +17,7 @@ const closeWindow = (): void => window.close()
 export function MediaWindowApp() {
   const [item, setItem] = useState<ContentItem | null>(null)
   const [failed, setFailed] = useState(false)
+  const [wheelMode, setWheelMode] = useState<"zoom" | "previousNext">("zoom")
   const busy = useRef(false)
 
   const step = useCallback(async (direction: -1 | 0 | 1): Promise<void> => {
@@ -43,6 +44,14 @@ export function MediaWindowApp() {
         else setFailed(true)
       })
       .catch(() => live && setFailed(true))
+    // Settings → Mouse wheel (the viewer's setting, shared through library.db).
+    bridge
+      .libraryNow()
+      .then((library) => {
+        const viewer = library.settings["viewer"] as { wheelMode?: unknown } | undefined
+        if (live && viewer?.wheelMode === "previousNext") setWheelMode("previousNext")
+      })
+      .catch(() => undefined)
     return () => {
       live = false
     }
@@ -68,6 +77,8 @@ export function MediaWindowApp() {
       key={item.id}
       item={item}
       lane={MEDIA_WINDOW_LANE}
+      wheelMode={wheelMode}
+      closeOnDoubleClick
       onClose={closeWindow}
       onStep={(direction) => void step(direction)}
     />

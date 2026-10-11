@@ -12,6 +12,10 @@ export interface MediaViewerOverlayProps {
   playToken?: number
   placeholder?: Thumb | null
   lane?: string
+  /** "previousNext": the wheel steps through the files (Ctrl + wheel zooms); default zooms. */
+  wheelMode?: "zoom" | "previousNext"
+  /** Double-click on the picture or video closes the surface (the media window). */
+  closeOnDoubleClick?: boolean
 }
 
 const zoomButton =
@@ -28,6 +32,8 @@ export function MediaViewerOverlay({
   playToken = 1,
   placeholder = null,
   lane = "media-overlay",
+  wheelMode = "zoom",
+  closeOnDoubleClick = false,
 }: MediaViewerOverlayProps) {
   const root = useRef<HTMLDivElement>(null)
   const imageController = useRef<ImageViewerController>(null)
@@ -161,6 +167,9 @@ export function MediaViewerOverlay({
             controllerRef={imageController}
             onZoomChange={onZoomChange}
             lane={lane}
+            wheelMode={wheelMode}
+            {...(onStep && { onWheelNavigate: onStep })}
+            {...(closeOnDoubleClick && { onDoubleClick: onClose })}
           />
         ) : item.kind === "video" ? (
           <VideoPlayer
@@ -173,6 +182,7 @@ export function MediaViewerOverlay({
             appFullscreen
             onExitFullscreen={onClose}
             lane={lane}
+            {...(closeOnDoubleClick && { onDoubleClick: onClose })}
           />
         ) : null}
       </main>
