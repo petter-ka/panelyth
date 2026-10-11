@@ -290,6 +290,15 @@ const selectionParams: Validator = (p) =>
 const entryParams: Validator = (p) =>
   shape(p, ["entryId"]) && isId(p.entryId) ? null : "expected { entryId }"
 
+/** document.open and media.openWindow: an entry, the theme name and the language. */
+const windowParams: Validator = (p) =>
+  shapeWithOptional(p, ["entryId"], ["theme", "lang"]) &&
+  isId(p.entryId) &&
+  (p.theme === undefined || (typeof p.theme === "string" && /^[a-z-]{1,32}$/.test(p.theme))) &&
+  (p.lang === undefined || (typeof p.lang === "string" && /^[a-z]{2,3}$/.test(p.lang)))
+    ? null
+    : "expected { entryId, theme?, lang? }"
+
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
   "app.switch": (p) =>
@@ -516,13 +525,8 @@ export const validators: Record<RendererMethod, Validator> = {
       : "expected { entryId, allowProgram? }",
   "shell.edit": entryParams,
   "file.open": entryParams,
-  "document.open": (p) =>
-    shapeWithOptional(p, ["entryId"], ["theme", "lang"]) &&
-    isId(p.entryId) &&
-    (p.theme === undefined || (typeof p.theme === "string" && /^[a-z-]{1,32}$/.test(p.theme))) &&
-    (p.lang === undefined || (typeof p.lang === "string" && /^[a-z]{2,3}$/.test(p.lang)))
-      ? null
-      : "expected { entryId, theme?, lang? }",
+  "document.open": windowParams,
+  "media.openWindow": windowParams,
   "shell.reveal": entryParams,
   "shell.revealPath": (p) => (shape(p, ["path"]) ? pathProblem(p.path) : "expected { path }"),
   "clipboard.copyPaths": (p) => {

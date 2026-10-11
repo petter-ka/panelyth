@@ -945,6 +945,7 @@ const messages: Messages = {
   "{name} can't be edited: {reason}": "A(z) {name} nem szerkeszthető: {reason}",
   "{name} can't be opened in a window: {reason}": "A(z) {name} nem nyitható meg ablakban: {reason}",
   "{name} can't be opened: {reason}": "A(z) {name} nem nyitható meg: {reason}",
+  "{name} can't be shown.": "A(z) {name} nem jeleníthető meg.",
   "{name} can't be started: {reason}": "A(z) {name} nem indítható el: {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "A(z) {name} egy program. Csak akkor futtassa, ha megbízik a forrásában.",

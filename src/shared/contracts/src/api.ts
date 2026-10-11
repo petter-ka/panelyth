@@ -105,6 +105,8 @@ export interface PanelythApi {
   media: {
     /** Opens an image/video for viewing: a panelyth-media URL and display size. */
     open(entryId: number): Promise<RpcEnvelope<MediaOpenResult>>
+    /** An image or video in a frameless full-screen window of its own (ADR-0033). */
+    openWindow(entryId: number, theme?: string, lang?: string): Promise<RpcEnvelope<OkResult>>
   }
   preview: {
     ensure(params: PreviewEnsureParams): Promise<RpcEnvelope<PreviewEnsureResult>>
@@ -277,6 +279,8 @@ export interface CommanderApi {
   /** Stage C05: quick view and lister (shared media components, ADR-0025). */
   media: {
     open(entryId: number): Promise<RpcEnvelope<MediaOpenResult>>
+    /** An image or video in a frameless full-screen window of its own (ADR-0033). */
+    openWindow(entryId: number, theme?: string, lang?: string): Promise<RpcEnvelope<OkResult>>
   }
   preview: {
     ensure(params: CommanderPreviewParams): Promise<RpcEnvelope<PreviewEnsureResult>>

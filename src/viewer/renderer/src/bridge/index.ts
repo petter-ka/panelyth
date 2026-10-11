@@ -109,6 +109,10 @@ export const bridge = {
   queryPage: (params: QueryPageParams): Promise<QueryPageResult> =>
     unwrap(() => api().query.page(params)),
   openMedia: (entryId: number): Promise<MediaOpenResult> => unwrap(() => api().media.open(entryId)),
+  /** An image or video in a frameless full-screen window of its own (ADR-0033). */
+  openMediaWindow: async (entryId: number, lang?: string): Promise<void> => {
+    await unwrap(() => api().media.openWindow(entryId, undefined, lang))
+  },
   ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
     unwrap(() => api().preview.ensure(params)),
   folderCovers: (params: FolderCoversParams): Promise<FolderCoversResult> =>

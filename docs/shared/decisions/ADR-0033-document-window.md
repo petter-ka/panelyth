@@ -50,6 +50,17 @@ ADR-0032 (a third renderer in the package).
   is cut when drawn. Whole large files stay with the lister (F3 hex view) and the editor (F4).
 - **No editing, no printing, no save.** The window cannot write anything.
 
+## Amendment: the media window
+
+Double-click, Enter and "Open" on an image or a video, in both apps, open the file in a **media window** instead of an
+in-app overlay: a frameless, full-screen child of the shell window with no header, built on this window's page and
+origin (`kind=image|video`). The viewer's profile gains one method for it, `media.openWindow { entryId, theme?, lang? }`
+(also in the commander's); main resolves the entry and mints a token without `fetchOrigin`, so the page can only use it
+as an `<img>` or `<video>` source. Esc (handled in main, so it works while a video has focus) closes the window; the
+video keeps its native controls. The documents CSP gains `panelyth-media:` for `img-src` and `media-src` only. The
+in-app overlay (the viewer's image viewer, the commander's `MediaViewerOverlay`) stays as the fallback when the window
+cannot open, e.g. for an image the browser can't show directly. Left/Right stepping and zoom are not in the window.
+
 ## Consequences
 
 - One more renderer to build and ship (`documents/` in the package, `pnpm build`, the dev server on port 5175).

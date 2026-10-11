@@ -953,6 +953,7 @@ const messages: Messages = {
   "{name} can't be opened in a window: {reason}":
     "Impossibile aprire {name} in una finestra: {reason}",
   "{name} can't be opened: {reason}": "Impossibile aprire {name}: {reason}",
+  "{name} can't be shown.": "Impossibile mostrare {name}.",
   "{name} can't be started: {reason}": "Impossibile avviare {name}: {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "{name} è un programma. Eseguilo solo se ti fidi della sua provenienza.",

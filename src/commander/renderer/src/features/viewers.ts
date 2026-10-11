@@ -1,5 +1,8 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
+import { currentAppearance } from "@panelyth/ui"
+import { currentLocale } from "@panelyth/i18n"
+import { bridge } from "../bridge"
 import { opensInDocumentWindow, openDocumentWindow } from "./documents"
 import { onSessionChanged, pageStoreOf, parentRows, useListingStore } from "./listing"
 import { otherSide, usePanelsStore, type Side } from "./panels"
@@ -104,8 +107,24 @@ export function toggleQuickView(side: Side): void {
 
 export const closeQuickView = (): void => set({ quick: null, quickItem: null })
 
-/** Opens a shared full-window media surface above Commander. */
+/**
+ * An image or video fills the screen in a frameless window of its own
+ * (ADR-0033). When that window can't open (an image the browser can't show
+ * directly, say) the in-app surface above the panels is used instead.
+ */
 export function openMediaViewer(
+  item: ContentItem,
+  side = usePanelsStore.getState().active,
+): boolean {
+  if (item.kind !== "image" && item.kind !== "video") return false
+  void bridge
+    .openMediaWindow(item.id, currentAppearance().theme, currentLocale())
+    .catch(() => openMediaOverlay(item, side))
+  return true
+}
+
+/** Opens a shared full-window media surface above Commander. */
+export function openMediaOverlay(
   item: ContentItem,
   side = usePanelsStore.getState().active,
 ): boolean {

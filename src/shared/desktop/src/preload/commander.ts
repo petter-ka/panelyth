@@ -199,6 +199,8 @@ const api: CommanderApi = {
   },
   media: {
     open: (entryId) => invoke("media.open", { entryId }),
+    openWindow: (entryId, theme, lang) =>
+      invoke("media.openWindow", { entryId, ...(theme && { theme }), ...(lang && { lang }) }),
   },
   preview: {
     ensure: ({ lane, epoch, profile, items, force }) =>

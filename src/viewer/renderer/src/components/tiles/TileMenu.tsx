@@ -29,7 +29,7 @@ import {
   toDescriptor,
   useSelectionStore,
 } from "../../features/tiles/selectionStore"
-import { openViewerAt } from "../../features/viewer/viewerStore"
+import { openFullscreenAt } from "../../features/viewer/viewerStore"
 import { copyImage, copyName, copySelectionToClipboard } from "../../features/clipboard/clipboard"
 import { playInPane } from "../../features/preview/previewStore"
 import { formatCount } from "../../lib/format"
@@ -87,7 +87,7 @@ function SelectionItems() {
             </ContextMenuItem>
           )}
           {item?.kind === "image" && (
-            <ContextMenuItem shortcut="Enter" onSelect={() => openViewerAt(focusIndex)}>
+            <ContextMenuItem shortcut="Enter" onSelect={() => openFullscreenAt(focusIndex)}>
               {t("Open")}
             </ContextMenuItem>
           )}

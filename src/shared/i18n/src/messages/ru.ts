@@ -947,6 +947,7 @@ const messages: Messages = {
   "{name} can't be edited: {reason}": "Не удалось изменить «{name}»: {reason}",
   "{name} can't be opened in a window: {reason}": "Не удалось открыть «{name}» в окне: {reason}",
   "{name} can't be opened: {reason}": "Не удалось открыть «{name}»: {reason}",
+  "{name} can't be shown.": "Не удалось показать {name}.",
   "{name} can't be started: {reason}": "Не удалось запустить «{name}»: {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "«{name}» — это программа. Запускайте её, только если доверяете источнику.",

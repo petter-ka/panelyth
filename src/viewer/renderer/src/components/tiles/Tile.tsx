@@ -23,8 +23,7 @@ import {
   useSelectionStore,
   type SelectionState,
 } from "../../features/tiles/selectionStore"
-import { openViewerAt } from "../../features/viewer/viewerStore"
-import { playInPane } from "../../features/preview/previewStore"
+import { openFullscreenAt } from "../../features/viewer/viewerStore"
 import { useSettingsStore } from "../../features/settings/settingsStore"
 import { HeartIcon, PlayIcon } from "../ui/icons"
 import { formatBytes, formatDate } from "../../lib/format"
@@ -376,8 +375,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
       }}
       onDoubleClick={() => {
         if (item?.kind === "dir") void openFolderEntry(item.id)
-        else if (item?.kind === "image") openViewerAt(index)
-        else if (item?.kind === "video") playInPane(index, { fullscreen: true })
+        else openFullscreenAt(index)
       }}
     >
       <div

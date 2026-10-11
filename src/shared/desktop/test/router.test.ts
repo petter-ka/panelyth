@@ -41,6 +41,7 @@ const mainHandlers = (): MainHandlers => ({
   })),
   "shell.edit": vi.fn(async () => ({ ok: true })),
   "document.open": vi.fn(async () => ({ ok: true })),
+  "media.openWindow": vi.fn(async () => ({ ok: true })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
     url: `panelyth-media://m/${String(p.entryId).padStart(32, "0")}`,
     kind: "image" as const,
@@ -118,6 +119,7 @@ describe("invoke router", () => {
       ["document.open", { entryId: 3 }],
       ["document.open", { entryId: 3, theme: "light" }],
       ["media.open", { entryId: 3 }],
+      ["media.openWindow", { entryId: 3, theme: "dark", lang: "de" }],
     ] as const) {
       await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
       expect(main[m]).toHaveBeenLastCalledWith(commander, p, "commander")
@@ -160,6 +162,8 @@ describe("invoke router", () => {
       ["document.open", { entryId: 3, theme: "Pink Panther!" }],
       ["document.open", { entryId: 3, path: "/etc/passwd" }],
       ["document.open", { entryId: 0 }],
+      ["media.openWindow", { entryId: 3, path: "/etc/passwd" }],
+      ["media.openWindow", { entryId: 0 }],
       ["fs.mkfile", { parentDirId: 2, name: "" }],
       ["fs.mkfile", { parentDirId: 2, name: "a\u0000b" }],
       ["fs.mkfile", { parentDirId: 2 }],

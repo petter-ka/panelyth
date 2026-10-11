@@ -217,6 +217,10 @@ export const bridge = {
   },
   // Stage C05: quick view, lister, open and edit.
   openMedia: (entryId: number): Promise<MediaOpenResult> => unwrap(() => api().media.open(entryId)),
+  /** An image or video in a frameless full-screen window of its own (ADR-0033). */
+  openMediaWindow: async (entryId: number, theme?: string, lang?: string): Promise<void> => {
+    await unwrap(() => api().media.openWindow(entryId, theme, lang))
+  },
   ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
     unwrap(() => api().preview.ensure(params)),
   properties: (entryId: number): Promise<Properties> => unwrap(() => api().props.get(entryId)),
