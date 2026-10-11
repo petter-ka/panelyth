@@ -72,6 +72,7 @@ import { panelDnd } from "./panelDnd"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
 import { RenameField, useRenaming } from "./RenameField"
 import { useRightButton } from "./useRightButton"
+import { useScrollMemory } from "./useScrollMemory"
 
 /** Fixed row height per interface size, so no row is ever measured (ADR-0028). */
 export const ROW_HEIGHT: Record<InterfaceSize, number> = { small: 20, medium: 22, large: 26 }
@@ -198,6 +199,12 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   const parent = parentRows(panel)
   const count = rowCount(panel)
   const store = pageStoreOf(side)
+  useScrollMemory(
+    body,
+    side,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    "top",
+  )
 
   const measureViewport = useCallback((): void => {
     const node = body.current

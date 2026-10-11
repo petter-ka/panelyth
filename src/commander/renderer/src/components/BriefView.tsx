@@ -21,6 +21,7 @@ import { clickRow, focusGrid, ROW_HEIGHT, type FullViewHandle } from "./FullView
 import { panelDnd } from "./panelDnd"
 import { RenameField, useRenaming } from "./RenameField"
 import { useRightButton } from "./useRightButton"
+import { useScrollMemory } from "./useScrollMemory"
 
 /** Fixed column width per interface size; nothing is measured per name (ADR-0028). */
 export const BRIEF_COLUMN: Record<InterfaceSize, number> = { small: 180, medium: 200, large: 240 }
@@ -54,6 +55,12 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
   const parent = parentRows(panel)
   const count = rowCount(panel)
   const store = pageStoreOf(side)
+  useScrollMemory(
+    box,
+    side,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    "left",
+  )
 
   // The rows per column follow the panel's height (measured on resize only).
   const [viewport, setViewport] = useState({ width: 0, height: 0 })
