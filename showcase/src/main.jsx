@@ -1,761 +1,212 @@
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { createRoot } from "react-dom/client"
 import "./styles.css"
 
 const Arrow = ({ diagonal = false }) => (
-  <svg
-    aria-hidden="true"
-    viewBox="0 0 20 20"
-    className={diagonal ? "arrow arrow-diagonal" : "arrow"}
-  >
-    <path d="M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5" />
+  <svg aria-hidden="true" viewBox="0 0 20 20" className={diagonal ? "arrow arrow-diagonal" : "arrow"}>
+    <path d={diagonal ? "M5 15 15 5M6 5h9v9" : "M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5"} />
   </svg>
 )
 
-const BrandMark = () => (
-  <span className="brand-mark" aria-hidden="true">
-    <span />
-    <span />
-    <span />
-    <span />
-  </span>
-)
+function BrandMark() {
+  return (
+    <svg className="brand-mark" viewBox="0 0 192 128" aria-hidden="true">
+      <path d="M10 33h42l8 4-8 4H10a4 4 0 0 1 0-8Z" fill="#c9e878" fillOpacity=".68" />
+      <path d="M4 60h48l8 4-8 4H4a4 4 0 0 1 0-8Z" fill="#c9e878" />
+      <path d="M16 84h36l8 4-8 4H16a4 4 0 0 1 0-8Z" fill="#c9e878" fillOpacity=".8" />
+      <rect x="60" y="10" width="122" height="108" rx="15" fill="#eff1e5" />
+      <rect x="67" y="17" width="33" height="94" rx="10" fill="#c9e878" />
+      <rect x="76" y="28" width="15" height="15" rx="4" fill="#43523b" />
+      <rect x="75" y="52" width="18" height="4" rx="2" fill="#738358" />
+      <rect x="75" y="63" width="18" height="4" rx="2" fill="#738358" />
+      <rect x="75" y="74" width="14" height="4" rx="2" fill="#738358" />
+      <rect x="109" y="24" width="61" height="7" rx="3.5" fill="#687263" />
+      <rect x="109" y="39" width="61" height="36" rx="5" fill="#35483c" />
+      <circle cx="158" cy="49" r="4" fill="#e8c98d" />
+      <path d="m113 69 16-19 12 14 9-8 17 15v1h-54Z" fill="#b9cf91" />
+      <rect x="109" y="84" width="39" height="5" rx="2.5" fill="#8c9680" />
+      <rect x="109" y="96" width="57" height="4" rx="2" fill="#c0c4b7" />
+    </svg>
+  )
+}
 
-const rowsLeft = [
-  { icon: "folder", name: "Alpine trip", ext: "DIR", size: "—", active: true },
-  { icon: "image", name: "IMG_2048", ext: "JPG", size: "4.8 MB" },
-  { icon: "image", name: "IMG_2049", ext: "JPG", size: "5.1 MB" },
-  { icon: "video", name: "summit-cut", ext: "MP4", size: "1.2 GB" },
-  { icon: "text", name: "field-notes", ext: "MD", size: "18 KB" },
+const highlights = [
+  {
+    title: "A library that stays local",
+    copy: "Browse folders on your computer. Your photos and videos stay on your device.",
+  },
+  {
+    title: "Built for big folders",
+    copy: "Move through large collections with a responsive grid and previews ready when you are.",
+  },
+  {
+    title: "Photos and video together",
+    copy: "Scan stills, play clips, and keep the whole shoot in one familiar place.",
+  },
+  {
+    title: "A closer look, quickly",
+    copy: "Open a focused preview, check file details, and move to the next item without losing your place.",
+  },
+  {
+    title: "Folders and archives",
+    copy: "Navigate everyday folders and browse supported ZIP and TAR archives in the same workspace.",
+  },
+  {
+    title: "Work that keeps moving",
+    copy: "Search, copy, rename, and queue file tasks with progress you can follow.",
+  },
 ]
 
-const rowsRight = [
-  { icon: "folder", name: "Alpine trip", ext: "DIR", size: "—", active: true },
-  { icon: "image", name: "IMG_2048", ext: "JPG", size: "4.8 MB", match: true },
-  { icon: "image", name: "IMG_2049", ext: "JPG", size: "4.9 MB", changed: true },
-  { icon: "folder", name: "selects", ext: "DIR", size: "—" },
-  { icon: "text", name: "field-notes", ext: "MD", size: "18 KB", match: true },
+const media = [
+  { name: "Tre Cime", kind: "alpine", selected: true },
+  { name: "Morning light", kind: "lake" },
+  { name: "Ridge trail", kind: "ridge" },
+  { name: "Pine forest", kind: "forest" },
+  { name: "Last light", kind: "sunset" },
 ]
 
-function FileRow({ file }) {
+function ProductWindow() {
   return (
-    <div
-      className={`file-row${file.active ? " is-active" : ""}${file.match ? " is-match" : ""}${file.changed ? " is-changed" : ""}`}
-    >
-      <span className={`file-icon file-icon-${file.icon}`} aria-hidden="true">
-        {file.icon === "folder"
-          ? "▰"
-          : file.icon === "image"
-            ? "◩"
-            : file.icon === "video"
-              ? "▶"
-              : "≡"}
-      </span>
-      <span className="file-name">{file.name}</span>
-      <span className="file-ext">{file.ext}</span>
-      <span className="file-size">{file.size}</span>
-      <span className="file-state" aria-hidden="true">
-        {file.match ? "●" : file.changed ? "↗" : ""}
-      </span>
-    </div>
-  )
-}
-
-function CommanderWindow() {
-  return (
-    <div
-      className="hero-window"
-      role="img"
-      aria-label="Illustrated preview of planned Panelyth Commander, showing two file panels and a copy job"
-    >
-      <div className="window-topbar">
-        <div className="window-brand">
-          <BrandMark />
-          <span>
-            panelyth <b>commander</b>
-          </span>
-        </div>
-        <div className="window-session">
-          <span className="live-dot" /> APP VIEW <span className="session-separator">/</span> PANELS
-          READY
-        </div>
-        <div className="window-controls" aria-hidden="true">
-          <i />
-          <i />
-          <i />
-        </div>
+    <div className="product-window" role="img" aria-label="Illustration of Panelyth browsing a photo folder">
+      <div className="window-chrome">
+        <div className="chrome-controls" aria-hidden="true"><i /><i /><i /></div>
+        <div className="chrome-brand"><BrandMark /><span>panelyth</span></div>
+        <div className="chrome-location"><span>Pictures</span><b>/</b><strong>Dolomites</strong></div>
+        <span className="chrome-status"><i /> LOCAL LIBRARY</span>
       </div>
-      <div className="window-toolbar">
-        <div className="toolbar-actions">
-          <span>↶</span>
-          <span>↷</span>
-          <span className="toolbar-divider" />
-          <span>＋</span>
-          <span>⌕</span>
-        </div>
-        <div className="toolbar-label">
-          COMMANDER <span>·</span> LOCAL FILESYSTEM
-        </div>
-        <div className="toolbar-kbd">
-          <kbd>CTRL</kbd>
-          <kbd>SHIFT</kbd>
-          <kbd>M</kbd>
-        </div>
-      </div>
-      <div className="commander-panels">
-        <div className="commander-panel">
-          <div className="panel-drive-row">
-            <span className="drive-pill">C:</span>
-            <span className="drive-name">WORKSTATION</span>
-            <span className="drive-free">412 GB FREE</span>
+      <div className="window-body">
+        <aside className="app-sidebar" aria-hidden="true">
+          <div className="sidebar-label">LIBRARY</div>
+          <div className="sidebar-item is-active"><span>▦</span> All media <small>248</small></div>
+          <div className="sidebar-item"><span>▧</span> Photos <small>212</small></div>
+          <div className="sidebar-item"><span>▷</span> Video <small>36</small></div>
+          <div className="sidebar-label sidebar-label-spaced">PLACES</div>
+          <div className="sidebar-place"><i /> Pictures</div>
+          <div className="sidebar-place is-nested"><i /> Dolomites</div>
+          <div className="sidebar-place"><i /> Recent folders</div>
+          <div className="sidebar-bottom"><span className="drive-icon">C:</span><span>Local disk<small>412 GB free</small></span></div>
+        </aside>
+        <div className="app-main">
+          <div className="app-toolbar">
+            <div><strong>Dolomites</strong><span>248 items</span></div>
+            <div className="toolbar-tools"><span>⌕</span><span>⇅</span><span className="view-toggle">▦ &nbsp; ▤</span></div>
           </div>
-          <div className="panel-tabs">
-            <span className="panel-tab is-current">Alpine trip</span>
-            <span className="panel-tab">Photos</span>
-            <span className="panel-tab-add">+</span>
-          </div>
-          <div className="panel-path">
-            <span>⌂</span>
-            <span>Pictures</span>
-            <b>/</b>
-            <strong>Alpine trip</strong>
-          </div>
-          <div className="file-list-heading">
-            <span>
-              NAME <b>↓</b>
-            </span>
-            <span>EXT</span>
-            <span>SIZE</span>
-            <span />
-          </div>
-          <div className="file-list">
-            {rowsLeft.map((file) => (
-              <FileRow key={file.name} file={file} />
+          <div className="media-grid">
+            {media.map((item, index) => (
+              <div key={item.name} className={`media-tile${index === 0 ? " media-tile-large" : ""}${item.selected ? " is-selected" : ""}`}>
+                <div className={`landscape landscape-${item.kind}`} aria-hidden="true"><i /><b /><span /></div>
+                <span className="tile-title">{item.name}</span>
+                <span className="tile-meta">{index === 0 ? "JPG · 8.4 MB" : index === 2 ? "MP4 · 00:18" : "JPG · 5.1 MB"}</span>
+                {item.kind === "ridge" && <span className="video-mark" aria-hidden="true">▶</span>}
+              </div>
             ))}
           </div>
-          <div className="panel-status">
-            <span>5 ITEMS</span>
-            <span>1 MARKED · 1.2 GB</span>
-          </div>
+          <div className="app-status"><span>248 ITEMS</span><span>1 SELECTED</span><span>100%</span></div>
         </div>
-        <div className="panel-split" aria-hidden="true">
-          <span>⇄</span>
-        </div>
-        <div className="commander-panel">
-          <div className="panel-drive-row">
-            <span className="drive-pill drive-pill-muted">D:</span>
-            <span className="drive-name">FIELD ARCHIVE</span>
-            <span className="drive-free">1.2 TB FREE</span>
-          </div>
-          <div className="panel-tabs">
-            <span className="panel-tab is-current">Alpine trip</span>
-            <span className="panel-tab">Backup</span>
-            <span className="panel-tab-add">+</span>
-          </div>
-          <div className="panel-path">
-            <span>⌂</span>
-            <span>Archive</span>
-            <b>/</b>
-            <strong>Alpine trip</strong>
-          </div>
-          <div className="file-list-heading">
-            <span>
-              NAME <b>↓</b>
-            </span>
-            <span>EXT</span>
-            <span>SIZE</span>
-            <span />
-          </div>
-          <div className="file-list">
-            {rowsRight.map((file) => (
-              <FileRow key={file.name} file={file} />
-            ))}
-          </div>
-          <div className="panel-status">
-            <span>5 ITEMS</span>
-            <span>
-              <i className="sync-indicator" /> COMPARE READY
-            </span>
-          </div>
-        </div>
+        <aside className="app-inspector" aria-hidden="true">
+          <div className="inspector-title">INFORMATION <span>···</span></div>
+          <div className="inspector-preview"><div className="landscape landscape-alpine"><i /><b /><span /></div></div>
+          <strong>Tre Cime</strong>
+          <small>IMG_1842.JPG</small>
+          <div className="inspector-rule" />
+          <div className="inspector-row"><span>Dimensions</span><b>4032 × 3024</b></div>
+          <div className="inspector-row"><span>File size</span><b>8.4 MB</b></div>
+          <div className="inspector-row"><span>Created</span><b>18 Jun 2025</b></div>
+          <div className="inspector-tag"><i /> ON THIS DEVICE</div>
+        </aside>
       </div>
-      <div className="window-functionbar">
-        <div>
-          <kbd>F3</kbd>
-          <span>View</span>
-        </div>
-        <div>
-          <kbd>F4</kbd>
-          <span>Edit</span>
-        </div>
-        <div className="function-primary">
-          <kbd>F5</kbd>
-          <span>Copy</span>
-        </div>
-        <div>
-          <kbd>F6</kbd>
-          <span>Move</span>
-        </div>
-        <div>
-          <kbd>F7</kbd>
-          <span>New folder</span>
-        </div>
-        <div>
-          <kbd>F8</kbd>
-          <span>Delete</span>
-        </div>
-        <div className="function-queue">
-          <span className="queue-pulse" /> <span>Copying 124 files</span>
-          <span className="queue-progress">
-            <i />
-          </span>
-          <b>62%</b>
-        </div>
-      </div>
-      <div className="window-bottomline">
-        <span>
-          F5 COPY <span className="muted-dot">·</span> F6 MOVE <span className="muted-dot">·</span>{" "}
-          TAB SWITCH PANEL
-        </span>
-        <span>
-          BUILT FOR FLOW <span className="bottom-star">✳</span>
-        </span>
-      </div>
+      <div className="window-foot"><span><kbd>←</kbd><kbd>→</kbd> Navigate</span><span><kbd>SPACE</kbd> Preview</span><span>PICTURES / DOLOMITES</span></div>
     </div>
   )
 }
 
-function ImagePlaceholder({ variant, label }) {
+function MiniWindow({ variant }) {
   return (
-    <div
-      className={`image-placeholder image-placeholder-${variant}`}
-      role="img"
-      aria-label={`${label} image placeholder`}
-    >
-      <div className="placeholder-grid" />
-      {variant === "viewer" && (
-        <div className="placeholder-viewer">
-          <span className="media-tile media-tile-wide" />
-          <span className="media-tile media-tile-tall" />
-          <span className="media-tile" />
-          <span className="media-tile" />
-          <span className="media-tile media-tile-wide" />
-        </div>
-      )}
-      {variant === "panels" && (
-        <div className="placeholder-panels">
-          <span>
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-          <b>⇄</b>
-          <span>
-            <i />
-            <i />
-            <i />
-            <i />
-          </span>
-        </div>
-      )}
-      {variant === "sync" && (
-        <div className="placeholder-sync">
-          <span className="sync-disc sync-disc-a" />
-          <span className="sync-disc sync-disc-b" />
-          <i>≠</i>
-        </div>
-      )}
-      {variant === "rename" && (
-        <div className="placeholder-rename">
-          <div>
-            <b>IMG_2048.jpg</b>
-            <span>→</span>
-            <strong>alpine_001.jpg</strong>
-          </div>
-          <div>
-            <b>IMG_2049.jpg</b>
-            <span>→</span>
-            <strong>alpine_002.jpg</strong>
-          </div>
-          <div>
-            <b>IMG_2050.jpg</b>
-            <span>→</span>
-            <strong>alpine_003.jpg</strong>
-          </div>
-        </div>
-      )}
-      <div className="placeholder-caption">
-        <span>VISUAL PLACEHOLDER</span>
-        <span>{label}</span>
+    <div className={`mini-window mini-window-${variant}`} aria-hidden="true">
+      <div className="mini-top"><span /><span /><span /><b>panelyth</b><i>···</i></div>
+      <div className="mini-content">
+        <div className="mini-rail"><i /><i /><i /><i /></div>
+        {variant === "grid" && <div className="mini-grid">{["alpine", "lake", "ridge", "forest", "sunset", "lake"].map((kind, i) => <i key={i} className={`landscape landscape-${kind}`} />)}</div>}
+        {variant === "preview" && <div className="mini-preview"><i className="landscape landscape-alpine" /><div><b>Tre Cime</b><span>4032 × 3024 · JPG</span><span>8.4 MB</span></div></div>}
+        {variant === "jobs" && <div className="mini-jobs"><b>Background jobs</b><div><i /><span>Copy selected files<small>68 of 124 files</small></span><em>54%</em></div><div><i /><span>Build previews<small>Preparing thumbnails</small></span><em>RUNNING</em></div><div><i /><span>Archive folder<small>Waiting in queue</small></span><em>QUEUED</em></div></div>}
       </div>
-      <span className="placeholder-corner" aria-hidden="true">
-        ↗
-      </span>
     </div>
-  )
-}
-
-function FeatureCard({ index, category, title, description, shortcut, visual }) {
-  return (
-    <article className={`feature-card feature-card-${visual} reveal`}>
-      <ImagePlaceholder variant={visual} label={`0${index} / ${category.toUpperCase()}`} />
-      <div className="feature-card-copy">
-        <div className="feature-kicker">
-          <span>0{index}</span>
-          <span>{category}</span>
-        </div>
-        <h3>{title}</h3>
-        <p>{description}</p>
-        <div className="feature-foot">
-          <span>{shortcut}</span>
-          <a href="#details" aria-label={`Explore ${category}`}>
-            <Arrow diagonal />
-          </a>
-        </div>
-      </div>
-    </article>
   )
 }
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
-
-  useEffect(() => {
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    const revealElements = document.querySelectorAll(".reveal")
-
-    if ("IntersectionObserver" in window && !reduceMotion) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("is-visible")
-              observer.unobserve(entry.target)
-            }
-          })
-        },
-        { threshold: 0.14 },
-      )
-      revealElements.forEach((element) => observer.observe(element))
-      return () => observer.disconnect()
-    }
-
-    revealElements.forEach((element) => element.classList.add("is-visible"))
-    return undefined
-  }, [])
-
-  useEffect(() => {
-    const hero = document.querySelector(".hero")
-    const preview = document.querySelector(".hero-window")
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    if (!hero || !preview || reduceMotion || window.innerWidth < 760) return undefined
-
-    let frame = 0
-    const onPointerMove = (event) => {
-      cancelAnimationFrame(frame)
-      frame = requestAnimationFrame(() => {
-        const bounds = hero.getBoundingClientRect()
-        const x = (event.clientX - bounds.left) / bounds.width - 0.5
-        const y = (event.clientY - bounds.top) / bounds.height - 0.5
-        preview.style.setProperty("--tilt-y", `${x * 1.2}deg`)
-        preview.style.setProperty("--tilt-x", `${-y * 1.2}deg`)
-      })
-    }
-    const onPointerLeave = () => {
-      preview.style.setProperty("--tilt-y", "0deg")
-      preview.style.setProperty("--tilt-x", "0deg")
-    }
-    hero.addEventListener("pointermove", onPointerMove, { passive: true })
-    hero.addEventListener("pointerleave", onPointerLeave, { passive: true })
-    return () => {
-      cancelAnimationFrame(frame)
-      hero.removeEventListener("pointermove", onPointerMove)
-      hero.removeEventListener("pointerleave", onPointerLeave)
-    }
-  }, [])
-
   const closeMenu = () => setMenuOpen(false)
 
   return (
     <div className="site-shell">
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Panelyth home" onClick={closeMenu}>
-          <BrandMark />
-          <span>panelyth</span>
-        </a>
-        <button
-          className="menu-toggle"
-          type="button"
-          aria-expanded={menuOpen}
-          aria-controls="site-nav"
-          onClick={() => setMenuOpen(!menuOpen)}
-        >
-          <span>{menuOpen ? "Close" : "Menu"}</span>
-          <i className={menuOpen ? "menu-icon is-open" : "menu-icon"}>
-            <b />
-            <b />
-          </i>
+        <a className="brand" href="#top" aria-label="Panelyth home" onClick={closeMenu}><BrandMark /><span>panelyth</span></a>
+        <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-nav" onClick={() => setMenuOpen(!menuOpen)}>
+          <span>{menuOpen ? "Close" : "Menu"}</span><i className={menuOpen ? "menu-icon is-open" : "menu-icon"}><b /><b /></i>
         </button>
-        <nav
-          className={menuOpen ? "site-nav is-open" : "site-nav"}
-          id="site-nav"
-          aria-label="Main navigation"
-        >
-          <a href="#features" onClick={closeMenu}>
-            Features
-          </a>
-          <a href="#workflow" onClick={closeMenu}>
-            Product family
-          </a>
-          <a href="#details" onClick={closeMenu}>
-            Architecture
-          </a>
+        <nav className={menuOpen ? "site-nav is-open" : "site-nav"} id="site-nav" aria-label="Main navigation">
+          <a href="#highlights" onClick={closeMenu}>Highlights</a>
+          <a href="#screenshots" onClick={closeMenu}>Screenshots</a>
+          <a href="#about" onClick={closeMenu}>About Panelyth</a>
         </nav>
-        <a className="header-cta" href="#project">
-          Project details <Arrow diagonal />
-        </a>
+        <a className="header-cta" href="#highlights" onClick={closeMenu}>Explore Panelyth <Arrow diagonal /></a>
       </header>
 
       <main>
         <section className="hero" id="top">
-          <div className="hero-grain" aria-hidden="true" />
-          <div className="hero-copy">
-            <div className="eyebrow">
-              <span className="eyebrow-dot" /> PANELYTH / LOCAL DESKTOP TOOLS{" "}
-              <span className="eyebrow-rule" />
+          <div className="hero-heading">
+            <div className="section-label"><span>01</span><i /> PANELYTH</div>
+            <h1>Your media,<br /><em>in clear view.</em></h1>
+            <div className="hero-intro">
+              <p>A thoughtful desktop browser for photo and video libraries. Fast to navigate, easy to focus, and always on your device.</p>
+              <a className="hero-link" href="#highlights">Explore the highlights <span><Arrow /></span></a>
             </div>
-            <h1>
-              Two tools.
-              <br />
-              <em>One workspace.</em>
-            </h1>
-            <div className="hero-support">
-              <p>
-                Browse large photo libraries and local video in Panelyth. A planned Commander view
-                adds keyboard-first file work in the same workspace.
-              </p>
-              <a className="round-link" href="#features" aria-label="Scroll to features">
-                <Arrow />
-              </a>
-            </div>
-            <div className="hero-index">
-              <span>PANELYTH PRODUCT FAMILY</span>
-              <span>
-                WINDOWS <b>·</b> macOS <b>·</b> LINUX
-              </span>
-            </div>
+            <div className="platform-line"><span>WINDOWS</span><i /> <span>macOS</span><i /> <span>LINUX</span><b>LOCAL FIRST · DESKTOP APP</b></div>
           </div>
-          <div className="hero-art">
-            <div className="hero-art-note">
-              <span>APP / 02 · PLANNED</span>
-              <b>DUAL PANEL VIEW</b>
-              <span className="art-note-line" />
-            </div>
-            <span className="orbit orbit-one" aria-hidden="true" />
-            <span className="orbit orbit-two" aria-hidden="true" />
-            <CommanderWindow />
-            <div className="floating-chip chip-sync">
-              <span className="chip-glyph">⇄</span>
-              <span>
-                <b>Compare & sync</b>
-                <small>Side by side. Always.</small>
-              </span>
-              <i />
-            </div>
-            <div className="floating-chip chip-shortcut">
-              <span className="shortcut-key">TAB</span>
-              <span>
-                <b>Switch panels</b>
-                <small>Keep your hands moving.</small>
-              </span>
-            </div>
-          </div>
-          <div className="hero-scroll">
-            <span className="scroll-line" /> SCROLL TO EXPLORE
+          <div className="hero-visual">
+            <ProductWindow />
+            <div className="visual-caption"><span>Panelyth · Media browser</span><span>Illustrative interface</span></div>
           </div>
         </section>
 
-        <section className="intro-band" id="workflow">
-          <div className="section-meta">
-            <span>01 / PRODUCT FAMILY</span>
-            <span>
-              ONE WINDOW · SHARED CONTEXT <i>✳</i>
-            </span>
-          </div>
-          <div className="intro-content reveal">
-            <h2>
-              Made for your
-              <br />
-              <em>whole library.</em>
-            </h2>
-            <div className="intro-aside">
-              <p>
-                One app window, two purpose-built tools. Your folder, current file and selection
-                follow when you switch between them.
-              </p>
-              <span className="intro-aside-index">
-                01<span>/</span>02
-              </span>
-            </div>
-          </div>
-          <div className="workflow-strip" aria-label="Panelyth viewer and Commander share context">
-            <div>
-              <span>APP / 01</span>
-              <b>Panelyth</b>
-              <small>Photos · Video</small>
-            </div>
-            <i>⇄</i>
-            <div>
-              <span>SHARED CONTEXT</span>
-              <b>Folder · File · Selection</b>
-              <small>Bookmarks · Recents · Clipboard</small>
-            </div>
-            <i>⇄</i>
-            <div>
-              <span>APP / 02 · PLANNED</span>
-              <b>Commander</b>
-              <small>Dual-panel file manager</small>
-            </div>
+        <section className="highlights-section" id="highlights">
+          <div className="section-topline"><span>02 / HIGHLIGHTS</span><span>MADE FOR YOUR FILES <i>✳</i></span></div>
+          <div className="highlights-heading"><h2>What's<br />inside.</h2><p>Everything you need to move through a media folder, without getting between you and the work.</p></div>
+          <div className="highlight-grid">
+            {highlights.map((item, index) => (
+              <article className="highlight" key={item.title}>
+                <div className="highlight-number">0{index + 1}<span> / 06</span></div>
+                <h3>{item.title}</h3>
+                <p>{item.copy}</p>
+              </article>
+            ))}
           </div>
         </section>
 
-        <section className="features-section" id="features">
-          <div className="section-meta">
-            <span>02 / CORE CAPABILITIES</span>
-            <span>
-              KEYBOARD FIRST <i>✳</i>
-            </span>
-          </div>
-          <div className="features-heading reveal">
-            <div>
-              <span className="eyebrow eyebrow-dark">
-                <span className="eyebrow-dot" /> TWO APP EXPERIENCES
-              </span>
-              <h2>
-                Fluid browsing.
-                <br />
-                Direct <em>control.</em>
-              </h2>
-            </div>
-            <p>
-              Move from a fast visual library to precise file operations, with shared context and a
-              purpose-built interface for each job.
-            </p>
-          </div>
-          <div className="feature-grid">
-            <FeatureCard
-              index={1}
-              category="Panelyth viewer"
-              title="A fluid media library."
-              description="Browse huge photo folders, keep previews ready in a persistent cache, and play video locally."
-              shortcut="TILES · PREVIEW · VIDEO"
-              visual="viewer"
-            />
-            <FeatureCard
-              index={2}
-              category="Commander · planned"
-              title="Two panels. One glance."
-              description="Work between locations with tabs, marks and a keyboard-first layout. Keep both sides visible."
-              shortcut="TAB · F5 COPY"
-              visual="panels"
-            />
-            <FeatureCard
-              index={3}
-              category="Compare & sync"
-              title="See what changed."
-              description="Compare folders and files, then choose which way each difference should move."
-              shortcut="SHIFT + F2 · SYNC"
-              visual="sync"
-            />
-            <FeatureCard
-              index={4}
-              category="Batch operations"
-              title="Handle the whole set."
-              description="Find, archive, queue and rename files with previews, progress and clear conflict choices."
-              shortcut="FIND · ARCHIVE · RENAME"
-              visual="rename"
-            />
+        <section className="screenshots-section" id="screenshots">
+          <div className="section-topline"><span>03 / IN THE APP</span><span>ONE PLACE FOR THE WHOLE FOLDER <i>✳</i></span></div>
+          <div className="screenshots-heading"><h2>Made to keep<br /><em>you moving.</em></h2><p>From the first scan to the last file in the queue, the details stay close at hand.</p></div>
+          <div className="shot-grid">
+            <figure className="shot-card shot-card-wide"><MiniWindow variant="grid" /><figcaption><span>01 / MEDIA GRID</span><b>See the folder at a glance.</b></figcaption></figure>
+            <figure className="shot-card"><MiniWindow variant="preview" /><figcaption><span>02 / QUICK PREVIEW</span><b>Stay with the moment.</b></figcaption></figure>
+            <figure className="shot-card"><MiniWindow variant="jobs" /><figcaption><span>03 / BACKGROUND WORK</span><b>Know what's happening.</b></figcaption></figure>
           </div>
         </section>
 
-        <section className="detail-section" id="details">
-          <div
-            className="detail-art reveal"
-            role="img"
-            aria-label="System architecture diagram: React interface, Electron desktop shell, and Go sidecar"
-          >
-            <div className="detail-placeholder-label">
-              <span>PANELYTH / SYSTEM MAP</span>
-              <span>LOCAL DESKTOP APP</span>
-            </div>
-            <div className="architecture-flow">
-              <div className="architecture-node node-renderer">
-                <span>01 / INTERFACE</span>
-                <b>React</b>
-                <small>Panels · Search · Queue</small>
-              </div>
-              <div className="architecture-link">
-                <span>APP VIEW</span>
-                <i />
-              </div>
-              <div className="architecture-node node-shell">
-                <span>02 / DESKTOP</span>
-                <b>Electron</b>
-                <small>Window · Native access</small>
-              </div>
-              <div className="architecture-link">
-                <span>FRAMED RPC</span>
-                <i />
-              </div>
-              <div className="architecture-node node-core">
-                <span>03 / FILE SERVICES</span>
-                <b>Go sidecar</b>
-                <small>Index · Preview · Jobs</small>
-              </div>
-            </div>
-            <div className="detail-art-caption">
-              <span>ONE SHARED PLATFORM</span>
-              <span>RENDERER → SHELL → CORE</span>
-            </div>
-          </div>
-          <div className="detail-copy reveal">
-            <div className="section-meta">
-              <span>03 / PROJECT ARCHITECTURE</span>
-            </div>
-            <span className="eyebrow eyebrow-dark">
-              <span className="eyebrow-dot" /> CLEAR RESPONSIBILITIES
-            </span>
-            <h2>
-              Small UI.
-              <br />
-              Serious
-              <br />
-              <em>engine.</em>
-            </h2>
-            <p>
-              React owns the interface. Electron provides the desktop shell. A Go sidecar handles
-              indexing, previews and background file jobs.
-            </p>
-            <ul className="detail-list">
-              <li>
-                <span>01</span> Browse ZIP and TAR archives <i>↗</i>
-              </li>
-              <li>
-                <span>02</span> Find files across folders <i>↗</i>
-              </li>
-              <li>
-                <span>03</span> Queue work and come back later <i>↗</i>
-              </li>
-            </ul>
-            <a className="text-link" href="#project">
-              Project structure <Arrow />
-            </a>
-          </div>
-        </section>
-
-        <section className="project-section" id="project">
-          <div className="section-meta">
-            <span>04 / PROJECT NOTES</span>
-            <span>
-              PANELYTH <i>✳</i>
-            </span>
-          </div>
-          <div className="project-heading reveal">
-            <div>
-              <span className="eyebrow eyebrow-dark">
-                <span className="eyebrow-dot" /> THE STACK
-              </span>
-              <h2>
-                Designed in layers.
-                <br />
-                <em>Documented in code.</em>
-              </h2>
-            </div>
-            <p>
-              Local-first apps for Windows, macOS and Linux, built on a shared desktop platform.
-            </p>
-          </div>
-          <div className="project-grid reveal">
-            <article className="project-module">
-              <div className="module-top">
-                <span>UI / 01</span>
-                <span className="module-state">
-                  <i /> INTERFACE
-                </span>
-              </div>
-              <b>React renderer</b>
-              <p>Panels, keyboard flow, dialogs and live job feedback.</p>
-              <span className="module-tag">TYPESCRIPT · REACT</span>
-            </article>
-            <article className="project-module">
-              <div className="module-top">
-                <span>SHELL / 02</span>
-                <span className="module-state">
-                  <i /> DESKTOP
-                </span>
-              </div>
-              <b>Electron</b>
-              <p>App lifecycle, native integration and a restricted bridge.</p>
-              <span className="module-tag">MAIN · PRELOAD</span>
-            </article>
-            <article className="project-module">
-              <div className="module-top">
-                <span>SERVICES / 03</span>
-                <span className="module-state">
-                  <i /> FILE CORE
-                </span>
-              </div>
-              <b>Go</b>
-              <p>Indexing, previews, file operations and cancellable jobs.</p>
-              <span className="module-tag">INDEX · JOBS · MEDIA</span>
-            </article>
-          </div>
-          <div className="project-footer">
-            <span>
-              <i /> SOURCE TREE / VIEWER · COMMANDER · SHARED · DOCS
-            </span>
-            <span>UI ↔ SHELL ↔ FILE SERVICES</span>
-            <a href="#top">BACK TO TOP ↑</a>
-          </div>
-        </section>
-
-        <section className="closing-section">
-          <div className="closing-orbit" aria-hidden="true" />
-          <div className="closing-meta">
-            <span>05 / PANELYTH</span>
-            <span>
-              LOCAL-FIRST DESKTOP APPS <i>✳</i>
-            </span>
-          </div>
-          <h2>
-            Your library.
-            <br />
-            <em>In good hands.</em>
-          </h2>
-          <a href="#features" className="closing-link">
-            Explore the apps{" "}
-            <span>
-              <Arrow diagonal />
-            </span>
-          </a>
-          <div className="closing-bottom">
-            <span>ONE WINDOW · TWO APP EXPERIENCES</span>
-            <span>BUILT FOR LARGE LIBRARIES.</span>
+        <section className="about-section" id="about">
+          <div className="section-topline"><span>04 / ABOUT PANELYTH</span><span>LOCAL FILES · CLEAR WORKFLOW</span></div>
+          <div className="about-content">
+            <div className="about-copy"><h2>Your library.<br /><em>Your machine.</em></h2><p>Panelyth is a local-first desktop app for browsing photo and video folders. It is built around a simple idea: your files should stay yours, and finding the right one should feel effortless.</p><a href="#top" className="about-link">Back to the top <Arrow /></a></div>
+            <div className="stack-card"><div className="stack-card-head"><span>PROJECT / STACK</span><span>01 — 03</span></div><div className="stack-row"><span>01</span><b>React</b><small>Interface</small></div><div className="stack-row"><span>02</span><b>Electron</b><small>Desktop app</small></div><div className="stack-row"><span>03</span><b>Go</b><small>File services</small></div><div className="stack-card-foot"><i /> LOCAL FIRST EXPERIENCE <span>BUILT FOR DESKTOP</span></div></div>
           </div>
         </section>
       </main>
 
       <footer className="site-footer">
-        <a className="brand footer-brand" href="#top">
-          <BrandMark />
-          <span>panelyth</span>
-        </a>
-        <span className="footer-note">REACT · ELECTRON · GO</span>
-        <div className="footer-links">
-          <a href="#features">Features</a>
-          <a href="#top">Back to top ↑</a>
-        </div>
+        <a className="brand footer-brand" href="#top"><BrandMark /><span>panelyth</span></a>
+        <span className="footer-note">A CLEARER WAY THROUGH YOUR MEDIA.</span>
+        <a className="footer-top" href="#top">BACK TO TOP <span>↑</span></a>
         <span className="footer-copy">© 2026 PANELYTH</span>
       </footer>
     </div>
