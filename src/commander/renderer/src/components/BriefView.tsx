@@ -1,5 +1,5 @@
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
-import { TypeGlyph, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
+import { Spinner, TypeGlyph, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   forwardRef,
@@ -201,6 +201,10 @@ const BriefItem = memo(function BriefItem({
   const marked = useMarksStore((s) => entry >= 0 && isMarked(s[side], entry, shown?.id))
   const renaming = useRenaming(side, index)
   const panelPath = useListingStore((s) => s[side].path)
+  // Enter on this folder or archive is still being answered (a slow drive).
+  const opening = useListingStore(
+    (s) => s[side].loading && shown !== undefined && s[side].loadingTarget === shown.id,
+  )
   const prefix = shown ? folderPrefix(shown.dirPath, panelPath) : ""
   return (
     <div
@@ -230,7 +234,11 @@ const BriefItem = memo(function BriefItem({
         </>
       ) : shown ? (
         <>
-          <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} />
+          {opening ? (
+            <Spinner size={16} />
+          ) : (
+            <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} />
+          )}
           <span className="truncate">
             {prefix && <span className="text-muted">{prefix}</span>}
             {shown.kind === "dir" ? `[${shown.name}]` : shown.name}

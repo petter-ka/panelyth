@@ -1,6 +1,12 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
-import { Tooltip, TypeGlyph, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
+import {
+  Spinner,
+  Tooltip,
+  TypeGlyph,
+  useInterfaceSizeStore,
+  type InterfaceSize,
+} from "@panelyth/ui"
 import {
   columnOrderingFeature,
   columnPinningFeature,
@@ -884,6 +890,8 @@ function Cells({
 }) {
   const { sizeFormat, dateFormat } = useSettingsStore((s) => s.settings)
   const panelPath = useListingStore((s) => s[side].path)
+  // Enter on this folder or archive is still being answered (a slow drive).
+  const opening = useListingStore((s) => s[side].loading && s[side].loadingTarget === item.id)
   const prefix = folderPrefix(item.dirPath, panelPath)
   return (
     <>
@@ -901,7 +909,11 @@ function Cells({
         >
           {column.id === "name" ? (
             <>
-              <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} />
+              {opening ? (
+                <Spinner size={16} />
+              ) : (
+                <TypeGlyph glyph={glyphOf(item)} muted={isMuted(item)} />
+              )}
               {renaming ? (
                 <RenameField onDone={() => focusGrid(side)} />
               ) : (

@@ -1,6 +1,6 @@
 import type { Crumb, PlaceId } from "@panelyth/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Tooltip, TypeGlyph } from "@panelyth/ui"
+import { Spinner, Tooltip, TypeGlyph } from "@panelyth/ui"
 import {
   memo,
   useEffect,
@@ -262,6 +262,9 @@ const RowView = memo(function RowView({
   onFocusRow,
 }: RowViewProps) {
   const [dragOver, setDragOver] = useState(false)
+  const path = rowPath(row)
+  // The folder is being opened from this row (a drive that is slow to answer).
+  const opening = useFolderStore((s) => s.opening && path !== null && s.openingTarget === path)
   if (row.type === "header") {
     return (
       <div className="flex h-full items-end px-3 pb-1 text-[0.6875rem] font-medium text-muted">
@@ -281,7 +284,6 @@ const RowView = memo(function RowView({
   }
   const node = row.type === "tree" ? getNode(row.key) : undefined
   const label = row.type === "tree" ? (node?.name ?? "") : row.label
-  const path = rowPath(row)
   const depth = row.type === "tree" ? row.depth : 0
   return (
     <div
@@ -291,6 +293,7 @@ const RowView = memo(function RowView({
       aria-selected={active}
       aria-expanded={row.type === "tree" && node?.hasChildren ? row.expanded : undefined}
       aria-label={label}
+      aria-busy={opening || undefined}
       data-tooltip-content={path ?? undefined}
       data-tooltip-side="right"
       data-testid={row.type === "tree" ? "tree-node" : "sidebar-link"}
@@ -349,7 +352,9 @@ const RowView = memo(function RowView({
         </button>
       ) : null}
       <span className={`shrink-0 ${active ? "text-accent" : "text-muted"}`}>
-        {row.type === "tree" ? (
+        {opening ? (
+          <Spinner size={14} />
+        ) : row.type === "tree" ? (
           depth === 0 ? (
             <TypeGlyph glyph="drive" size={14} />
           ) : (

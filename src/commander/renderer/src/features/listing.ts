@@ -99,6 +99,8 @@ export interface PanelState {
   progress: IndexProgress | null
   /** A navigation is in flight; the previous rows stay until the new ones arrive. */
   loading: boolean
+  /** What `loading` is opening: a path (a drive, a place) or a folder's entry id; else null. */
+  loadingTarget: string | number | null
   /** The last navigation failed; the previous listing (if any) is kept behind it. */
   error: PanelError | null
   query: QuerySnapshot | null
@@ -139,6 +141,7 @@ const emptyPanel = (): PanelState => ({
   scanId: 0,
   progress: null,
   loading: false,
+  loadingTarget: null,
   error: null,
   query: null,
   sort: DEFAULT_SORT,
@@ -286,9 +289,10 @@ async function navigate(
   side: Side,
   open: () => Promise<DirOpenResult>,
   options: NavigateOptions = {},
+  target: string | number | null = null,
 ): Promise<void> {
   const seq = ++seqs[side]
-  patch(side, { loading: true })
+  patch(side, { loading: true, loadingTarget: target })
   try {
     const dir = await open()
     if (seq !== seqs[side]) return
@@ -354,7 +358,7 @@ async function navigate(
     if (seq !== seqs[side]) return
     patch(side, { loading: false })
     if (options.inline) throw error
-    failed[side] = () => navigate(side, open, options)
+    failed[side] = () => navigate(side, open, options, target)
     patch(side, { error: toPanelError(error) })
   }
 }
@@ -376,13 +380,13 @@ export async function openHome(side: Side): Promise<void> {
 // Each panel's scans run in its own lane, so one panel never stops the
 // other's listing or branch view (Stage C06).
 export const openPath = (side: Side, path: string, options?: NavigateOptions): Promise<void> =>
-  navigate(side, () => bridge.openDir(path, side, options?.branch === true), options)
+  navigate(side, () => bridge.openDir(path, side, options?.branch === true), options, path)
 
 export const openFolderEntry = (
   side: Side,
   entryId: number,
   options?: NavigateOptions,
-): Promise<void> => navigate(side, () => bridge.openDirEntry(entryId, side), options)
+): Promise<void> => navigate(side, () => bridge.openDirEntry(entryId, side), options, entryId)
 
 /** "Go to file" (Stage C06): the entry's folder, with the cursor on the entry. */
 export const goToEntry = (side: Side, entryId: number): Promise<void> =>
@@ -498,7 +502,7 @@ export async function enterArchive(side: Side, item: ContentItem): Promise<void>
   const p = getPanel(side)
   if (p.dirId === null) return
   const seq = ++seqs[side]
-  patch(side, { loading: true })
+  patch(side, { loading: true, loadingTarget: item.id })
   try {
     const opened = await bridge.openArchive(item.id)
     if (seq !== seqs[side]) {

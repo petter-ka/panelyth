@@ -74,6 +74,31 @@ describe("sidebar", () => {
     expect(sidebar().getByRole("treeitem", { name: "/" })).toBeInTheDocument()
   })
 
+  it("shows a loader on the clicked place while its folder is slow to open", async () => {
+    const bridge = await setup()
+    // A drive that has to wake up: dir.open answers late.
+    const open = bridge.api.dir.open.getMockImplementation()!
+    let answer: () => void = () => undefined
+    bridge.api.dir.open.mockImplementationOnce(
+      (params: { path: string; recursive: boolean }) =>
+        new Promise((resolve) => {
+          answer = () => resolve(open(params))
+        }),
+    )
+    const place = () => sidebar().getByRole("treeitem", { name: "Pictures" })
+    await sidebar().findByRole("treeitem", { name: "Pictures" })
+    expect(place().querySelector("[data-glyph=folder]")).not.toBeNull()
+    await userEvent.click(place())
+    expect(place()).toHaveAttribute("aria-busy", "true")
+    expect(place().querySelector("[data-spinner]")).not.toBeNull()
+    expect(place().querySelector("[data-glyph=folder]")).toBeNull()
+    // Only the clicked row shows it.
+    expect(screen.getByTestId("sidebar-list").querySelectorAll("[data-spinner]")).toHaveLength(1)
+    await act(async () => answer())
+    await waitFor(() => expect(place().querySelector("[data-spinner]")).toBeNull())
+    expect(place().querySelector("[data-glyph=folder]")).not.toBeNull()
+  })
+
   it("lists tree children lazily, one level per expand", async () => {
     const bridge = await setup()
     const root = await sidebar().findByRole("treeitem", { name: "/" })

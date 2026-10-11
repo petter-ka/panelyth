@@ -437,6 +437,50 @@ describe("drives", () => {
     await waitFor(() => expect(screen.getByTestId("drive-menu-left")).toHaveTextContent("STICK"))
   })
 
+  it("shows a loader on a drive, or on a folder, while it is slow to open", async () => {
+    const fake = await start()
+    await waitFor(() => expect(screen.getByTestId("drives-left")).toHaveTextContent("D"))
+    const drive = () => within(screen.getByTestId("drives-left")).getByRole("button", { name: "D" })
+    // The drive has to wake up: dir.open answers late.
+    const open = fake.api.dir.open.getMockImplementation()!
+    let answer: () => void = () => undefined
+    fake.api.dir.open.mockImplementationOnce(
+      (params: { path: string }) =>
+        new Promise((resolve) => {
+          answer = () => resolve(open(params))
+        }),
+    )
+    await act(async () => fireEvent.click(drive()))
+    expect(drive()).toHaveAttribute("aria-busy", "true")
+    expect(drive().querySelector("[data-spinner]")).not.toBeNull()
+    expect(path("left")).toHaveTextContent(HOME.path) // the old listing stays meanwhile
+    await act(async () => answer())
+    await waitFor(() => expect(path("left")).toHaveTextContent(DROOT.path))
+    expect(drive().querySelector("[data-spinner]")).toBeNull()
+    expect(drive()).not.toHaveAttribute("aria-busy")
+
+    // Enter on a folder that answers late: the loader replaces its icon.
+    await act(async () =>
+      fireEvent.click(within(screen.getByTestId("drives-left")).getByRole("button", { name: "C" })),
+    )
+    await waitFor(() => expect(path("left")).toHaveTextContent(ROOT.path))
+    const openEntry = fake.api.dir.openEntry.getMockImplementation()!
+    fake.api.dir.openEntry.mockImplementationOnce(
+      (params: { entryId: number }) =>
+        new Promise((resolve) => {
+          answer = () => resolve(openEntry(params))
+        }),
+    )
+    await key("left", { key: "ArrowDown" })
+    const folderRow = cursorRow("left")!
+    expect(folderRow.querySelector("[data-glyph=folder]")).not.toBeNull()
+    await key("left", { key: "Enter" })
+    expect(cursorRow("left")!.querySelector("[data-spinner]")).not.toBeNull()
+    expect(cursorRow("left")!.querySelector("[data-glyph=folder]")).toBeNull()
+    await act(async () => answer())
+    await waitFor(() => expect(grid("left").querySelector("[data-spinner]")).toBeNull())
+  })
+
   it("follows volumes.changed", async () => {
     const fake = await start()
     await waitFor(() => expect(screen.getByTestId("drives-left")).toHaveTextContent("D"))

@@ -281,6 +281,24 @@
     }
   }
 
+  /* Spinner.tsx: shown only once an open has taken a moment. */
+  .pending-spinner {
+    animation: fv-fade 120ms linear 180ms both;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .pending-spinner circle:last-child {
+      transform-origin: center;
+      animation: fv-spin 700ms linear infinite;
+    }
+  }
+
+  @keyframes fv-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
   ::selection {
     background: var(--accent);
     color: var(--accent-foreground);
