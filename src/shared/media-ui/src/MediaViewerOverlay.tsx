@@ -18,6 +18,9 @@ export interface MediaViewerOverlayProps {
   closeOnDoubleClick?: boolean
 }
 
+/** Wheel steps closer together than this count as one (as in the image viewer). */
+const WHEEL_STEP_INTERVAL_MS = 140
+
 const zoomButton =
   "h-7 rounded-md border border-border bg-raised px-2 text-xs enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
 
@@ -40,6 +43,32 @@ export function MediaViewerOverlay({
   const [zoom, setZoom] = useState({ value: 1, fit: true })
   const onZoomChange = useCallback((value: number, fit: boolean) => setZoom({ value, fit }), [])
   const isImage = item.kind === "image"
+  const main = useRef<HTMLElement>(null)
+  const lastWheelStep = useRef(0)
+  const wheelRef = useRef({ wheelMode, onStep })
+  useEffect(() => {
+    wheelRef.current = { wheelMode, onStep }
+  }, [wheelMode, onStep])
+
+  // The image viewer handles its own wheel (zoom or step, by the setting). A
+  // video has nothing to zoom, so with "previous / next" the wheel steps
+  // through the files over it too (Ctrl + wheel is left alone).
+  useEffect(() => {
+    const el = main.current
+    if (!el || isImage) return
+    const onWheel = (e: WheelEvent): void => {
+      const { wheelMode: mode, onStep: step } = wheelRef.current
+      if (mode !== "previousNext" || !step || e.ctrlKey || e.metaKey || e.deltaY === 0) return
+      if (e.target instanceof Element && e.target.closest("input, [role=slider]")) return
+      e.preventDefault()
+      const now = performance.now()
+      if (lastWheelStep.current > 0 && now - lastWheelStep.current < WHEEL_STEP_INTERVAL_MS) return
+      lastWheelStep.current = now
+      step(e.deltaY > 0 ? 1 : -1)
+    }
+    el.addEventListener("wheel", onWheel, { passive: false })
+    return () => el.removeEventListener("wheel", onWheel)
+  }, [isImage])
 
   useEffect(() => {
     root.current?.focus()
@@ -158,7 +187,7 @@ export function MediaViewerOverlay({
           Close
         </button>
       </header>
-      <main className="min-h-0 flex-1 bg-canvas">
+      <main ref={main} className="min-h-0 flex-1 bg-canvas">
         {isImage ? (
           <ImageViewer
             key={item.id}
