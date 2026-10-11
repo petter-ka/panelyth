@@ -49,6 +49,8 @@ interface VideoPlayerProps {
   appFullscreen?: boolean
   /** Leaves the app-level fullscreen surface. */
   onExitFullscreen?: () => void
+  /** Replaces the double-click fullscreen toggle (the media window closes instead). */
+  onDoubleClick?: () => void
   /** Preview lane for Try again (the viewer's preview pane by default). */
   lane?: FitLane
 }
@@ -73,6 +75,7 @@ export function VideoPlayer({
   playFullscreen = false,
   appFullscreen = false,
   onExitFullscreen,
+  onDoubleClick,
   lane = "pane",
 }: VideoPlayerProps) {
   const { fit, media } = useViewerImage(entryId)
@@ -281,7 +284,8 @@ export function VideoPlayer({
           if (!url || problem) return
           if (e.target instanceof Element && e.target.closest("button, input, [role=slider]"))
             return
-          toggleFullscreen()
+          if (onDoubleClick) onDoubleClick()
+          else toggleFullscreen()
         }}
       >
         {url && !problem && (

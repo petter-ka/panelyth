@@ -3,11 +3,27 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const step = vi.fn()
-vi.mock("../bridge", () => ({ bridge: { mediaWindowStep: (d: number) => step(d) } }))
+const settings: Record<string, unknown> = {}
+vi.mock("../bridge", () => ({
+  bridge: {
+    mediaWindowStep: (d: number) => step(d),
+    libraryNow: async () => ({ settings }),
+  },
+}))
 // The overlay itself is tested in media-ui; here only what the window gives it.
 vi.mock("@panelyth/media-ui", () => ({
-  MediaViewerOverlay: (props: { item: ContentItem; onStep: (d: -1 | 1) => void }) => (
-    <div role="dialog" aria-label={props.item.name}>
+  MediaViewerOverlay: (props: {
+    item: ContentItem
+    onStep: (d: -1 | 1) => void
+    wheelMode: string
+    closeOnDoubleClick: boolean
+  }) => (
+    <div
+      role="dialog"
+      aria-label={props.item.name}
+      data-wheel={props.wheelMode}
+      data-close={props.closeOnDoubleClick}
+    >
       <button onClick={() => props.onStep(1)}>next</button>
     </div>
   ),
@@ -28,6 +44,16 @@ describe("MediaWindowApp", () => {
     fireEvent.click(screen.getByText("next"))
     expect(await screen.findByRole("dialog", { name: "b.mp4" })).toBeInTheDocument()
     expect(step).toHaveBeenNthCalledWith(2, 1)
+  })
+
+  it("closes on double-click and follows the viewer's mouse wheel setting", async () => {
+    settings["viewer"] = { wheelMode: "previousNext" }
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    render(<MediaWindowApp />)
+    const dialog = await screen.findByRole("dialog", { name: "a.jpg" })
+    expect(dialog).toHaveAttribute("data-close", "true")
+    await waitFor(() => expect(dialog).toHaveAttribute("data-wheel", "previousNext"))
+    delete settings["viewer"]
   })
 
   it("keeps the current item at the end of the list", async () => {

@@ -81,6 +81,8 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "find.progress",
   // Stage C05: quick view and lister images.
   "preview.ready",
+  // ADR-0033: a full-screen media window asks this panel for its next item.
+  "mediaWindow.step",
 ])
 const subscribers = new Map<EventChannel, Set<(payload: never) => void>>()
 
