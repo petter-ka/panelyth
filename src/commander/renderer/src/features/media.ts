@@ -20,6 +20,10 @@ export function configureCommanderMedia(): void {
     ensurePreviews: (params) => bridge.ensurePreviews(params),
     openWithSystem: (entryId) => bridge.shellOpen(entryId),
     onPreviewReady: (listener) => bridge.on("preview.ready", listener),
+    settings: {
+      read: async (key) => (await bridge.libraryNow()).settings[key],
+      write: (key, value) => bridge.setSetting(key, value),
+    },
   })
 }
 

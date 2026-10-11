@@ -30,6 +30,10 @@ import {
   VolumeIcon,
 } from "./icons"
 import { mediaPort } from "./port"
+import { flushResume, readResume, recordResume, usablePoint, type ResumePoint } from "./resume"
+
+/** While playing, the position is saved about this often. */
+const RESUME_SAVE_EVERY_MS = 15_000
 
 interface VideoPlayerProps {
   entryId: number
@@ -96,6 +100,60 @@ export function VideoPlayer({
     v.volume = volume
     v.muted = muted
   }, [volume, muted, url])
+
+  // Long videos continue where they stopped (resume.ts): the saved position
+  // is read once, and applied when both it and the video's metadata are in.
+  const resumePoint = useRef<ResumePoint | undefined>(undefined)
+  const resumeRead = useRef(false)
+  const resumeApplied = useRef(false)
+  const lastSaved = useRef(0)
+  const startedRef = useRef(false)
+  startedRef.current = started
+  const applyResume = (): void => {
+    const v = videoRef.current
+    if (!v || resumeApplied.current || !resumeRead.current || !Number.isFinite(v.duration)) return
+    if (v.readyState < 1) return // no metadata yet
+    resumeApplied.current = true
+    const at = usablePoint(resumePoint.current, v.duration)
+    if (at === null) return
+    v.currentTime = at
+    setCurrent(at)
+  }
+  useEffect(() => {
+    let live = true
+    void readResume(entryId).then((point) => {
+      if (!live) return
+      resumePoint.current = point
+      resumeRead.current = true
+      applyResume()
+    })
+    return () => {
+      live = false
+    }
+    // applyResume only reads refs; it runs again from the metadata event.
+  }, [entryId])
+  // Saves where the video is: on pause and end, every few seconds while it
+  // plays, and when it goes away. Only a video that was started is saved.
+  const saveResume = (v: HTMLVideoElement): void => {
+    // Not before the saved position was applied: a start from 0:00 must not erase it.
+    if (!startedRef.current || !resumeApplied.current) return
+    lastSaved.current = Date.now()
+    recordResume(entryId, v.ended ? v.duration : v.currentTime, v.duration)
+  }
+  useEffect(() => {
+    const v = videoRef.current
+    if (!v || !url) return
+    const onHide = (): void => {
+      saveResume(v)
+      void flushResume()
+    }
+    window.addEventListener("pagehide", onHide)
+    return () => {
+      window.removeEventListener("pagehide", onHide)
+      onHide()
+    }
+    // saveResume reads refs and the entry id, which is fixed per player (key={entryId}).
+  }, [url])
 
   // Release the decoder and the file stream when this video goes away.
   useEffect(() => {
@@ -236,17 +294,30 @@ export function VideoPlayer({
             data-testid="video-element"
             onClick={toggle}
             onPlay={() => {
+              if (lastSaved.current === 0) lastSaved.current = Date.now()
               setPlaying(true)
               setStarted(true)
             }}
-            onPause={() => setPlaying(false)}
-            onEnded={() => setPlaying(false)}
-            onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
+            onPause={(e) => {
+              setPlaying(false)
+              saveResume(e.currentTarget)
+              void flushResume()
+            }}
+            onEnded={(e) => {
+              setPlaying(false)
+              saveResume(e.currentTarget)
+              void flushResume()
+            }}
+            onTimeUpdate={(e) => {
+              setCurrent(e.currentTarget.currentTime)
+              if (Date.now() - lastSaved.current > RESUME_SAVE_EVERY_MS) saveResume(e.currentTarget)
+            }}
             onDurationChange={(e) => {
               const d = e.currentTarget.duration
               if (Number.isFinite(d)) setDuration(d)
             }}
             onLoadedMetadata={(e) => {
+              applyResume()
               // Chromium plays the audio of a file whose video codec it can't
               // decode: the element reports no picture although ffprobe saw one.
               if (e.currentTarget.videoWidth === 0 && info && info.width > 0) {

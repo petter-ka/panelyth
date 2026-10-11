@@ -366,6 +366,48 @@ describe("video player", () => {
     }
   })
 
+  it("a video over ten minutes continues where it stopped, and saves where it stops", async () => {
+    const bridge = await setup()
+    bridge.backend.settings["player.resume"] = { "5": { t: 1800, d: 3600, at: 1 } }
+    bridge.api.media.open.mockResolvedValueOnce(videoInfo(5, { durationMs: 3_600_000 }) as never)
+    await select(4)
+    await waitFor(() => expect(player()).toHaveAttribute("data-state", "ready"))
+    const el = videoEl()
+    let time = 0
+    Object.defineProperty(el, "currentTime", {
+      configurable: true,
+      get: () => time,
+      set: (v: number) => (time = v),
+    })
+    Object.defineProperty(el, "duration", { configurable: true, value: 3600 })
+    Object.defineProperty(el, "readyState", { configurable: true, value: 1 })
+    Object.defineProperty(el, "videoWidth", { configurable: true, value: 1920 })
+    fireEvent.loadedMetadata(el)
+    await waitFor(() => expect(time).toBe(1800))
+    expect(within(player()).getByTestId("video-time")).toHaveTextContent("30:00 / 1:00:00")
+
+    fireEvent.click(within(player()).getByRole("button", { name: "Play" }))
+    time = 2400
+    fireEvent.pause(el)
+    await waitFor(() =>
+      expect(bridge.backend.settings["player.resume"]).toEqual({
+        "5": { t: 2400, d: 3600, at: expect.any(Number) },
+      }),
+    )
+  })
+
+  it("a short video is not remembered", async () => {
+    const bridge = await setup()
+    await select(4) // 42 s
+    await waitFor(() => expect(player()).toHaveAttribute("data-state", "ready"))
+    const el = videoEl()
+    Object.defineProperty(el, "duration", { configurable: true, value: 42 })
+    fireEvent.click(within(player()).getByRole("button", { name: "Play" }))
+    fireEvent.pause(el)
+    await act(async () => void (await new Promise((r) => setTimeout(r, 1200))))
+    expect(bridge.backend.settings["player.resume"]).toBeUndefined()
+  })
+
   it("an unsupported codec shows why, with Open with default app", async () => {
     const bridge = await setup()
     bridge.api.media.open.mockResolvedValueOnce(videoInfo(5, { videoCodec: "hevc" }) as never)
