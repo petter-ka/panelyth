@@ -16,15 +16,6 @@ describe("parseParams", () => {
     })
   })
 
-  it("accepts the media window's kinds without a document extension", () => {
-    for (const kind of ["image", "video"]) {
-      expect(parseParams(hash({ kind, name: "holiday.jpg", src: token }))).toMatchObject({ kind })
-    }
-    expect(
-      parseParams(hash({ kind: "image", name: "a.jpg", src: "file:///etc/passwd" })),
-    ).toBeNull()
-  })
-
   it("refuses anything but a media token, and a kind that does not match the name", () => {
     for (const src of [
       "https://example.com/a.pdf",

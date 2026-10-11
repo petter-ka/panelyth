@@ -17,7 +17,7 @@ import { loadLayout } from "./features/panels"
 import { startSidecarMonitoring } from "./features/sidecar"
 import { startMedia } from "./features/media"
 import { startOpen } from "./features/open"
-import { startQuickView } from "./features/viewers"
+import { startMediaWindowHost, startQuickView } from "./features/viewers"
 import { startFind } from "./features/find"
 import { startArchives } from "./features/archives"
 import "./styles.css"
@@ -57,6 +57,8 @@ if (isBridgeAvailable()) {
   void startPanels().catch(() => undefined)
   // Quick view and the lister: the shared media components on this bridge (C05).
   startMedia()
+  // Full-screen media windows ask this panel for the next and previous image (ADR-0033).
+  startMediaWindowHost()
   // Find files: results and progress of the dialog's search (C06).
   startFind()
   // Archives: the results of archive tests are announced (C07).

@@ -11,6 +11,7 @@ import { startShortcutPersistence } from "./features/shortcuts/shortcutStore"
 import { startThumbMonitoring } from "./features/previews/thumbStore"
 import { startCoverMonitoring } from "./features/previews/coverStore"
 import { startViewerImageMonitoring } from "./features/viewer/viewerImages"
+import { startMediaWindowHost } from "./features/viewer/viewerStore"
 import { startSidecarMonitoring } from "./features/system/sidecarStore"
 import { startStartupFolder } from "./features/settings/startupFolder"
 import { startViewerSettingsPersistence } from "./features/settings/settingsStore"
@@ -41,6 +42,7 @@ startViewerSettingsPersistence()
 startStartupFolder()
 startAppearanceSync()
 startContextSync()
+startMediaWindowHost()
 
 const root = document.getElementById("root")
 if (!root) throw new Error("#root missing")

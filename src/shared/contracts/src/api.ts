@@ -8,6 +8,7 @@ import type {
   ClipMode,
   ClipState,
   ConflictDecision,
+  ContentItem,
   FsCanTrashResult,
   FsMkdirResult,
   FsMkfileResult,
@@ -44,6 +45,7 @@ import type {
   DirOpenResult,
   EchoResult,
   MediaOpenResult,
+  MediaWindowStepResult,
   OpenFolderDialogResult,
   PreviewEnsureParams,
   FolderCoversParams,
@@ -106,7 +108,14 @@ export interface PanelythApi {
     /** Opens an image/video for viewing: a panelyth-media URL and display size. */
     open(entryId: number): Promise<RpcEnvelope<MediaOpenResult>>
     /** An image or video in a frameless full-screen window of its own (ADR-0033). */
-    openWindow(entryId: number, theme?: string, lang?: string): Promise<RpcEnvelope<OkResult>>
+    openWindow(
+      entryId: number,
+      key: number,
+      theme?: string,
+      lang?: string,
+    ): Promise<RpcEnvelope<OkResult>>
+    /** The opener's reply to a mediaWindow.step event. */
+    windowAnswer(requestId: number, item: ContentItem | null): Promise<RpcEnvelope<OkResult>>
   }
   preview: {
     ensure(params: PreviewEnsureParams): Promise<RpcEnvelope<PreviewEnsureResult>>
@@ -280,7 +289,20 @@ export interface CommanderApi {
   media: {
     open(entryId: number): Promise<RpcEnvelope<MediaOpenResult>>
     /** An image or video in a frameless full-screen window of its own (ADR-0033). */
-    openWindow(entryId: number, theme?: string, lang?: string): Promise<RpcEnvelope<OkResult>>
+    openWindow(
+      entryId: number,
+      key: number,
+      theme?: string,
+      lang?: string,
+    ): Promise<RpcEnvelope<OkResult>>
+    /** The opener's reply to a mediaWindow.step event. */
+    windowAnswer(
+      requestId: number,
+      item: ContentItem | null,
+    ): Promise<
+      RpcEnvelope<OkResult>
+    > /** The media window: the first, previous or next item, asked of the opener. */
+    windowStep(direction: -1 | 0 | 1): Promise<RpcEnvelope<MediaWindowStepResult>>
   }
   preview: {
     ensure(params: CommanderPreviewParams): Promise<RpcEnvelope<PreviewEnsureResult>>

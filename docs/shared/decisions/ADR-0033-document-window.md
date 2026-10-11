@@ -53,13 +53,21 @@ ADR-0032 (a third renderer in the package).
 ## Amendment: the media window
 
 Double-click, Enter and "Open" on an image or a video, in both apps, open the file in a **media window** instead of an
-in-app overlay: a frameless, full-screen child of the shell window with no header, built on this window's page and
-origin (`kind=image|video`). The viewer's profile gains one method for it, `media.openWindow { entryId, theme?, lang? }`
-(also in the commander's); main resolves the entry and mints a token without `fetchOrigin`, so the page can only use it
-as an `<img>` or `<video>` source. Esc (handled in main, so it works while a video has focus) closes the window; the
-video keeps its native controls. The documents CSP gains `panelyth-media:` for `img-src` and `media-src` only. The
-in-app overlay (the viewer's image viewer, the commander's `MediaViewerOverlay`) stays as the fallback when the window
-cannot open, e.g. for an image the browser can't show directly. Left/Right stepping and zoom are not in the window.
+in-app overlay: a frameless, full-screen child of the shell window with no title bar or app chrome. Its page is the
+shared media overlay (`MediaViewerOverlay`: zoom and fit, the Panelyth video player, previous / next, Esc to close),
+served as `media.html` from the commander's origin, so it runs on the commander's profile (ADR-0027) like quick view and
+needs no profile of its own. It is not the document window's page: that one has no bridge and could not host the
+player.
+
+- **Methods.** `media.openWindow { entryId, key, theme?, lang? }` (both profiles) opens it; main resolves the entry and
+  refuses anything but an image or video. The listing stays with the window that opened it, which keeps `key` → index
+  state: the media window calls `media.windowStep { direction }` (commander profile), main relays a `mediaWindow.step`
+  event to the opener only, and the opener answers with `media.windowAnswer { requestId, item }` (both profiles; main
+  accepts the answer only from the window the question went to, and gives up after 5 s). No folder list and no path
+  crosses IPC, only one `ContentItem` per step.
+- **Fallback.** The in-app overlay (the commander's `MediaViewerOverlay`, the viewer's image viewer and in-pane
+  fullscreen player) stays for when the window cannot open.
+- **Not in the window.** Selection and cursor do not follow the stepping back into the opener.
 
 ## Consequences
 

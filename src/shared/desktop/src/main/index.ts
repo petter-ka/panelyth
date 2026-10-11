@@ -203,8 +203,9 @@ async function boot(): Promise<void> {
   )
   mediaWindows = new MediaWindows(
     {
-      url: documentsDevUrl() ?? `${DOCUMENTS_ORIGIN}/index.html`,
-      origin: documentsOrigin(),
+      url: new URL("media.html", `${commanderDevUrl() ?? COMMANDER_ORIGIN}/`).toString(),
+      origin: commanderOrigin(),
+      preload: commanderPreloadPath(),
       devTools: !app.isPackaged,
     },
     () => mainWindow,
@@ -292,21 +293,26 @@ async function boot(): Promise<void> {
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),
     // Both apps: an image or video in a frameless full-screen window (ADR-0033).
-    "media.openWindow": async (_event, { entryId, theme, lang }) => {
+    "media.openWindow": async (event, { entryId, key, theme, lang }) => {
       const r = await sc.call("media.resolve", { entryId })
-      // Main decides from the resolved entry; only displayable media gets a token.
-      if ((r.kind !== "image" && r.kind !== "video") || !r.original)
+      // Main decides from the resolved entry; the window is for media only.
+      if (r.kind !== "image" && r.kind !== "video")
         throw new Error("this file cannot be shown in a media window")
-      const { url } = toMediaOpenResult(r, mediaTokens)
-      if (!url) throw new Error("this file cannot be shown in a media window")
       mediaWindows?.open({
-        kind: r.kind,
-        tokenUrl: url,
-        path: r.path,
-        mime: r.mime,
+        opener: event.sender,
+        key,
+        entryId,
         ...(theme && { theme }),
         ...(lang && { lang }),
       })
+      return { ok: true }
+    },
+    // The media window asks its opener for a neighbour; the opener answers.
+    "media.windowStep": async (event, { direction }) => ({
+      item: (await mediaWindows?.step(event.sender, direction)) ?? null,
+    }),
+    "media.windowAnswer": (event, { requestId, item }) => {
+      mediaWindows?.answer(event.sender, requestId, item)
       return { ok: true }
     },
     // Commander only (the allowlist); the token may be fetch()ed by its origin alone.

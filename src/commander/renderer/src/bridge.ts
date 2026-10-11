@@ -1,4 +1,5 @@
 import type {
+  ContentItem,
   AppId,
   ArchiveCheckResult,
   ArchiveOpenResult,
@@ -218,8 +219,20 @@ export const bridge = {
   // Stage C05: quick view, lister, open and edit.
   openMedia: (entryId: number): Promise<MediaOpenResult> => unwrap(() => api().media.open(entryId)),
   /** An image or video in a frameless full-screen window of its own (ADR-0033). */
-  openMediaWindow: async (entryId: number, theme?: string, lang?: string): Promise<void> => {
-    await unwrap(() => api().media.openWindow(entryId, theme, lang))
+  openMediaWindow: async (
+    entryId: number,
+    key: number,
+    theme?: string,
+    lang?: string,
+  ): Promise<void> => {
+    await unwrap(() => api().media.openWindow(entryId, key, theme, lang))
+  },
+  /** The media window: the first (0), previous (-1) or next (1) item, asked of the opener. */
+  mediaWindowStep: async (direction: -1 | 0 | 1): Promise<ContentItem | null> =>
+    (await unwrap(() => api().media.windowStep(direction))).item,
+  /** The opener's reply to a mediaWindow.step event. */
+  mediaWindowAnswer: async (requestId: number, item: ContentItem | null): Promise<void> => {
+    await unwrap(() => api().media.windowAnswer(requestId, item))
   },
   ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
     unwrap(() => api().preview.ensure(params)),

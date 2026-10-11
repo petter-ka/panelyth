@@ -772,6 +772,7 @@ const messages: Messages = {
   "This drive has no trash. The items can only be deleted permanently.":
     "Ce lecteur n'a pas de corbeille. Les éléments ne peuvent être supprimés que définitivement.",
   "This file can't be read: {reason}": "Ce fichier ne peut pas être lu : {reason}",
+  "This file can't be shown in a window.": "Ce fichier ne peut pas être affiché dans une fenêtre.",
   "This folder can't be opened": "Ce dossier ne peut pas être ouvert",
   "This folder doesn't exist anymore.": "Ce dossier n'existe plus.",
   "This folder doesn't exist. Check the destination.":
@@ -954,7 +955,6 @@ const messages: Messages = {
   "{name} can't be opened in a window: {reason}":
     "{name} ne peut pas être ouvert dans une fenêtre : {reason}",
   "{name} can't be opened: {reason}": "{name} ne peut pas être ouvert : {reason}",
-  "{name} can't be shown.": "Impossible d’afficher {name}.",
   "{name} can't be started: {reason}": "{name} ne peut pas être démarré : {reason}",
   "{name} is a program. Run it only if you trust where it came from.":
     "{name} est un programme. Ne l'exécutez que si vous faites confiance à sa provenance.",
