@@ -36,6 +36,7 @@ Only one stage is active at a time. Default order:
 | 17 | P05 — Performance hardening | platform | both apps |
 | 18 | P06 — Release engineering | platform | packages both app views with the commander enabled |
 | 19 | C11 — Commander release | commander | completes the commander-specific release checks and acceptance |
+| — | 12–16 — Image editor | viewer | planned, not scheduled (owner request 2026-10-11); proposed slot: after P04, before P05, so P05 profiles the editor too |
 
 Packaged builds include the commander. Development can still run the viewer alone by leaving
 `PANELYTH_COMMANDER` unset; C11 completes the commander-specific release checks after C08–C10.
@@ -90,10 +91,22 @@ Tabbed settings, persisted startup/viewer preferences, Escape exit behavior and 
 Richer browsing without scroll cost. Folder tiles show up to four pictures or video posters from inside the folder
 (ADR-0024); video double-click plays full screen; pictures copy to the OS clipboard; additive Shift selection.
 
+### Phases 12–16 — Image editor (planned, 2026-10-11)
+
+An **Edit** button on pictures opens a non-destructive editor (`docs/viewer/IMAGE-EDITOR.md`, ADR-0035, ADR-0036):
+
+- **12** foundation: edit session and render pipeline, rotate / resize / canvas / DPI / crop, histogram, EXIF and file
+  panels, undo/redo, safe save (copy, as, replace through trash)
+- **13** color: lighting, colors, levels, curves, sharpen/blur, noise, swap color, reduce and count colors,
+  grayscale, sepia, negative
+- **14** effects: border, frame mask, watermark, bump map, sketch, oil painting, lens, obscure
+- **15** draw and retouch: draw, clone and heal, red-eye
+- **16** batch: recipes, the `edit` job, output rules, reports, undo
+
 ### Phases 9–11 — moved
 
 Cross-platform hardening, performance hardening and release apply to both apps, so they became platform stages
-P04–P06 (2026-10-05). Viewer numbers 09–11 are retired; the next viewer stage is 12.
+P04–P06 (2026-10-05). Viewer numbers 09–11 are retired; the first new viewer stage is 12 (the image editor, above).
 
 ## Platform track
 

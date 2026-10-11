@@ -6,13 +6,16 @@ Only one stage is active at a time, across all tracks. The order across tracks i
 
 | Track | Stage IDs | Stage documents | Bench result IDs |
 |---|---|---|---|
-| Viewer | `00`…`08.6` (history and active); next new stage `12` | `docs/viewer/stages/` | `stage-03-…`, `stage-08.6-…` |
+| Viewer | `00`…`08.6` (history), `12`…`16` (image editor, planned); next new stage `17` | `docs/viewer/stages/` | `stage-03-…`, `stage-08.6-…` |
 | Platform | `P01`…`P06` | `docs/shared/stages/` | `stage-P01-…` |
 | Commander | `C00`…`C11` | `docs/commander/stages/` | `stage-C00-…` |
 
 - The viewer stages 00–08.6 also built most of the shared platform; their records stay in the viewer track.
 - The viewer's planned Stages 09, 10 and 11 became P04, P05 and P06 (2026-10-05, ADR-0025). Viewer numbers 09–11 are
   retired.
+- Viewer Stages 12–16 (2026-10-11, owner request) are the image editor (`docs/viewer/IMAGE-EDITOR.md`; ADR-0035 and
+  ADR-0036, both proposed and decided in Stages 12 and 16). They are planned and not scheduled: the active stage stays
+  P04 until the owner picks one.
 - New stage documents start from `docs/STAGE-TEMPLATE.md`.
 
 ## Stage gates
@@ -43,6 +46,11 @@ A stage is complete only when:
 | 08 | Product polish + extensibility foundations | 07 | implementation done; tests pending |
 | 08.5 | Viewer settings + interaction polish | 08 | implementation done; tests pending |
 | 08.6 | UI polish v2 (folder covers, …) | 08.5 | done (2026-10-05) |
+| 12 | Image editor foundation: Edit button, session, geometry, save, info panels | 08.6, P03 | planned (not scheduled) |
+| 13 | Image editor: color tools | 12 | planned |
+| 14 | Image editor: effects | 13 | planned |
+| 15 | Image editor: draw and retouch | 12 | planned |
+| 16 | Image editor: batch mode | 12, 13, 14 (15 for auto red-eye) | planned |
 
 ### Platform
 

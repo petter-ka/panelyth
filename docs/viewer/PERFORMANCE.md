@@ -3,6 +3,8 @@
 Viewer-specific budgets, rendering strategy and recorded results. Platform strategy and budgets (startup, idle memory,
 IPC, paging, long tasks) are in `docs/shared/PERFORMANCE.md` and apply here too.
 
+> The image editor (Stages 12–16) has its own proposed budgets in each stage document, fixed by the Stage 12 baseline.
+
 ## Viewer budgets
 
 | Metric | Budget |

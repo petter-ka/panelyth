@@ -70,14 +70,15 @@ docs/
     decisions/                 shared ADRs
     stages/                    platform stages P01…P06
   viewer/                      Panelyth (photo and video viewer)
-    BRS.md                     viewer requirements (FR-01…FR-19)
+    BRS.md                     viewer requirements (FR-01…FR-19, FR-23)
     FEATURE-MATRIX.md
     ARCHITECTURE.md            workspace, tile view, preview pane, focused viewer
     UX-DESIGN.md
     PERFORMANCE.md             viewer budgets and recorded baselines
     TESTING.md                 viewer e2e scenarios and fixtures
     decisions/                 viewer ADRs
-    stages/                    viewer stages 00…08.6
+    IMAGE-EDITOR.md            image editor spec: features, UX, batch, stages 12–16 (planned)
+    stages/                    viewer stages 00…08.6 and 12…16
   commander/                   Panelyth Commander (dual-panel file manager)
     BRS.md                     commander requirements (CFR-01…, CNFR-01…)
     FEATURE-MATRIX.md          Total Commander features → stages
@@ -148,6 +149,8 @@ Claude Code should read these files in this order:
 | 0032 | Packaging and release builds (electron-builder) | shared | Accepted (Stage P04) |
 | 0033 | Document window: PDFs and text in a window of their own | shared | Accepted (owner request) |
 | 0034 | Localization: eight languages, English text as the key | shared | Accepted (owner request) |
+| 0035 | Image editor engine: sessions, proxy rendering, save semantics | viewer | Proposed (decided in Stage 12) |
+| 0036 | Batch image editing: recipes, edit jobs, output rules | viewer | Proposed (decided in Stage 16) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 
