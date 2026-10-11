@@ -139,6 +139,16 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   Settings → "Open images and videos with" can use
   the system default app instead. Shift+F4 asks for a name (`new.txt`, the name selected without its extension).
 
+### Document window (ADR-0033)
+
+- **PDFs and text files** (by extension or conventional name) open in a window of their own, a child of the shell
+  window, on Enter, double-click and F3. Settings → Panels → "Open PDFs and text files with" can keep the system
+  default app instead (then F3 shows the lister again). Other files are unchanged.
+- **PDF:** a page strip (thumbnails), page jump, fit width / fit page / zoom, rotate, find with marks on the matches,
+  night mode, password prompt. **Text:** line numbers, find, wrap, text size, encoding and line ending shown; the first
+  16 MiB of a larger file, with a note. Ctrl+F finds, Enter / Shift+Enter or F3 step, Ctrl+± zoom, Esc closes find.
+- The window is read-only and has no connection to the app: it can only read the one file it was opened for.
+
 ## Default keyboard map
 
 Total Commander-compatible defaults in the shared keymap (ADR-0022, scopes `panels`, `lister`, `dialogs`). Every

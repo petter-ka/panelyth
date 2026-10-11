@@ -40,6 +40,7 @@ const mainHandlers = (): MainHandlers => ({
     sizeBytes: 10,
   })),
   "shell.edit": vi.fn(async () => ({ ok: true })),
+  "document.open": vi.fn(async () => ({ ok: true })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
     url: `panelyth-media://m/${String(p.entryId).padStart(32, "0")}`,
     kind: "image" as const,
@@ -114,6 +115,8 @@ describe("invoke router", () => {
       ["shell.open", { entryId: 3 }],
       ["shell.open", { entryId: 3, allowProgram: true }],
       ["shell.edit", { entryId: 3 }],
+      ["document.open", { entryId: 3 }],
+      ["document.open", { entryId: 3, theme: "light" }],
       ["media.open", { entryId: 3 }],
     ] as const) {
       await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
@@ -140,7 +143,7 @@ describe("invoke router", () => {
       }),
     ).resolves.toMatchObject({ ok: true })
     // The viewer's profile has none of the commander-only methods.
-    for (const m of ["file.open", "shell.edit", "fs.mkfile"]) {
+    for (const m of ["file.open", "document.open", "shell.edit", "fs.mkfile"]) {
       const res = await handler(ok, m, { entryId: 3 })
       expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     }
@@ -154,6 +157,9 @@ describe("invoke router", () => {
       ["shell.edit", { entryId: 0 }],
       ["shell.edit", { entryId: 3, editor: "/bin/sh" }],
       ["file.open", { entryId: -1 }],
+      ["document.open", { entryId: 3, theme: "Pink Panther!" }],
+      ["document.open", { entryId: 3, path: "/etc/passwd" }],
+      ["document.open", { entryId: 0 }],
       ["fs.mkfile", { parentDirId: 2, name: "" }],
       ["fs.mkfile", { parentDirId: 2, name: "a\u0000b" }],
       ["fs.mkfile", { parentDirId: 2 }],

@@ -1,5 +1,6 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
+import { opensInDocumentWindow, openDocumentWindow } from "./documents"
 import { onSessionChanged, pageStoreOf, parentRows, useListingStore } from "./listing"
 import { otherSide, usePanelsStore, type Side } from "./panels"
 
@@ -207,6 +208,13 @@ export function openLister(side: Side): void {
   const index = p.cursor - parentRows(p)
   const item = index >= 0 ? pageStoreOf(side).getItem(index) : undefined
   if (!item || item.kind === "dir") return
+  // PDFs and text files go to the document window unless Settings says otherwise (ADR-0033).
+  if (opensInDocumentWindow(item)) {
+    void openDocumentWindow(item).then((opened) => {
+      if (!opened) set({ lister: { side, index, item, mode: null } })
+    })
+    return
+  }
   set({ lister: { side, index, item, mode: null } })
 }
 

@@ -18,6 +18,7 @@ import {
   toMediaOpenResult,
 } from "./mediaProtocol"
 import { handleThumbProtocol } from "./thumbProtocol"
+import { DocumentWindows } from "./documentWindow"
 import {
   broadcast,
   forwardableEvent,
@@ -30,6 +31,8 @@ import {
   commanderDevUrl,
   commanderDistPath,
   commanderPreloadPath,
+  documentsDevUrl,
+  documentsDistPath,
   preloadPath,
   rendererDevUrl,
   rendererDistPath,
@@ -40,12 +43,14 @@ import {
   APP_ORIGIN,
   COMMANDER_HOST,
   COMMANDER_ORIGIN,
+  DOCUMENTS_HOST,
+  DOCUMENTS_ORIGIN,
   hardenSession,
   originOf,
   trustedOrigin,
 } from "./security"
 import { AppShell, startAppFrom } from "./shell"
-import { COMMANDER_ENABLED_ARG, type AppId } from "@panelyth/contracts"
+import { COMMANDER_ENABLED_ARG, documentKindOf, type AppId } from "@panelyth/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
@@ -90,8 +95,15 @@ const shellLog: { action: string; value: string }[] = []
 
 let sidecar: SidecarProcess | null = null
 let appShell: AppShell | null = null
+let mainWindow: BrowserWindow | null = null
+let documentWindows: DocumentWindows | null = null
 let logger: Logger = consoleLogger
 let shutdownState: "running" | "stopping" | "done" = "running"
+
+const documentsOrigin = (): string => {
+  const devUrl = documentsDevUrl()
+  return (devUrl && originOf(devUrl)) || DOCUMENTS_ORIGIN
+}
 
 const commanderOrigin = (): string => {
   const devUrl = commanderDevUrl()
@@ -107,6 +119,10 @@ function openWindow(): BrowserWindow {
     devMethods,
     devTools: !app.isPackaged,
     extraArgs: commanderEnabled ? [COMMANDER_ENABLED_ARG] : [],
+  })
+  mainWindow = win
+  win.on("closed", () => {
+    if (mainWindow === win) mainWindow = null
   })
   const commanderUrl = commanderDevUrl() ?? `${COMMANDER_ORIGIN}/index.html`
   appShell = new AppShell(
@@ -160,11 +176,29 @@ async function boot(): Promise<void> {
   logger.info("app starting", { version: app.getVersion(), packaged: app.isPackaged, devMethods })
 
   const devUrl = rendererDevUrl()
-  const devUrls = [devUrl, commanderDevUrl()].filter((u): u is string => u !== null)
-  hardenSession(session.defaultSession, [trustedOrigin(devUrl), commanderOrigin()], devUrls, [
-    commanderOrigin(),
-  ])
-  handleAppProtocol({ [APP_HOST]: rendererDistPath(), [COMMANDER_HOST]: commanderDistPath() })
+  const devUrls = [devUrl, commanderDevUrl(), documentsDevUrl()].filter(
+    (u): u is string => u !== null,
+  )
+  hardenSession(
+    session.defaultSession,
+    [trustedOrigin(devUrl), commanderOrigin()],
+    devUrls,
+    [commanderOrigin(), documentsOrigin()],
+    documentsOrigin(),
+  )
+  handleAppProtocol({
+    [APP_HOST]: rendererDistPath(),
+    [COMMANDER_HOST]: commanderDistPath(),
+    [DOCUMENTS_HOST]: documentsDistPath(),
+  })
+  documentWindows = new DocumentWindows(
+    {
+      url: documentsDevUrl() ?? `${DOCUMENTS_ORIGIN}/index.html`,
+      origin: documentsOrigin(),
+      devTools: !app.isPackaged,
+    },
+    () => mainWindow,
+  )
 
   const sc = new SidecarProcess({
     binaryPath: sidecarBinaryPath(),
@@ -250,6 +284,20 @@ async function boot(): Promise<void> {
     // Commander only (the allowlist); the token may be fetch()ed by its origin alone.
     "file.open": async (_event, { entryId }) =>
       toFileOpenResult(await sc.call("file.resolve", { entryId }), mediaTokens, commanderOrigin()),
+    // Commander only: a PDF or text file in a document window (ADR-0033).
+    "document.open": async (_event, { entryId, theme }) => {
+      const r = await sc.call("file.resolve", { entryId })
+      // Main decides from the resolved path; no token is minted for anything else.
+      if (!documentKindOf(r.path)) throw new Error("this file is not a document")
+      const { url } = toFileOpenResult(r, mediaTokens, documentsOrigin())
+      documentWindows?.open({
+        tokenUrl: url,
+        path: r.path,
+        sizeBytes: r.sizeBytes,
+        ...(theme && { theme }),
+      })
+      return { ok: true }
+    },
     "sidecar.getStatus": () => sc.getStatus(),
     "dialog.openFolder": async (event) => {
       // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.

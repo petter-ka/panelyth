@@ -283,6 +283,9 @@ describe("quick view (Ctrl+Q)", () => {
 })
 
 describe("lister (F3)", () => {
+  // The lister is what F3 shows when PDFs and text go to the system app (ADR-0033).
+  beforeEach(() => updateSettings({ documentOpen: "system" }))
+
   it("opens text with the detected encoding; 1–4 switch modes; Esc keeps the cursor", async () => {
     await start()
     await cursorTo(ROW.wide)
@@ -407,8 +410,52 @@ describe("lister (F3)", () => {
 })
 
 describe("open and edit", () => {
+  it("Enter and F3 open PDFs and text files in a document window, not the system app or the lister", async () => {
+    const fake = await start()
+    await cursorTo(ROW.notes)
+    await panelKey({ key: "Enter" })
+    await waitFor(() => expect(fake.api.document.open).toHaveBeenCalledTimes(1))
+    expect(fake.api.document.open).toHaveBeenLastCalledWith(ID.notes, expect.any(String))
+    expect(fake.shell).toEqual([{ action: "document", entryId: ID.notes }])
+    expect(fake.api.shell.open).not.toHaveBeenCalled()
+
+    await panelKey({ key: "F3" })
+    await waitFor(() => expect(fake.api.document.open).toHaveBeenCalledTimes(2))
+    expect(screen.queryByTestId("lister")).toBeNull()
+
+    // Other files are unchanged: setup.exe asks, a binary file still gets the lister.
+    await cursorTo(ROW.data)
+    await panelKey({ key: "F3" })
+    expect(lister()).toHaveAttribute("data-entry", String(ID.data))
+    expect(fake.api.document.open).toHaveBeenCalledTimes(2)
+  })
+
+  it("the setting sends PDFs and text files to the system app and F3 to the lister", async () => {
+    const fake = await start()
+    act(() => updateSettings({ documentOpen: "system" }))
+    await cursorTo(ROW.notes)
+    await panelKey({ key: "Enter" })
+    expect(fake.shell).toEqual([{ action: "open", entryId: ID.notes }])
+    await panelKey({ key: "F3" })
+    expect(lister()).toHaveAttribute("data-entry", String(ID.notes))
+    expect(fake.api.document.open).not.toHaveBeenCalled()
+  })
+
+  it("falls back to the system app when the window cannot open", async () => {
+    const fake = await start()
+    fake.api.document.open.mockResolvedValueOnce({
+      ok: false,
+      e: { code: "INTERNAL", message: "no window", retryable: false },
+    } as never)
+    await cursorTo(ROW.notes)
+    await panelKey({ key: "Enter" })
+    await waitFor(() => expect(fake.api.shell.open).toHaveBeenCalledWith(ID.notes, undefined))
+    expect(useFilesStore.getState().notice).toMatch(/can't be opened in a window/)
+  })
+
   it("Enter opens a file with its default app; folders still open in the panel", async () => {
     const fake = await start()
+    act(() => updateSettings({ documentOpen: "system" }))
     await cursorTo(ROW.notes)
     await panelKey({ key: "Enter" })
     expect(fake.shell).toEqual([{ action: "open", entryId: ID.notes }])

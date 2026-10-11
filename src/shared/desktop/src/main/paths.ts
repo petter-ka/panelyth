@@ -53,3 +53,15 @@ export function preloadPath(): string {
 export function commanderPreloadPath(): string {
   return join(__dirname, "..", "preload", "commander.cjs")
 }
+
+/** The document window's built renderer, served through app://documents/ (ADR-0033). */
+export function documentsDistPath(): string {
+  if (app.isPackaged) return join(process.resourcesPath, "documents")
+  return resolve(app.getAppPath(), "..", "docviewer", "dist")
+}
+
+/** The document window's dev server URL; set by scripts/dev.mjs. */
+export function documentsDevUrl(): string | null {
+  if (app.isPackaged) return null
+  return process.env.PANELYTH_DOCUMENTS_URL || null
+}

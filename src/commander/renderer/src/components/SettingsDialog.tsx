@@ -125,6 +125,14 @@ function CommanderSettings() {
         ]}
       />
       <Radios
+        setting="documentOpen"
+        label="Open PDFs and text files with"
+        options={[
+          { value: "window", label: "Panelyth document window" },
+          { value: "system", label: "System default app" },
+        ]}
+      />
+      <Radios
         setting="runPrograms"
         label="Run programs with Enter"
         options={[
