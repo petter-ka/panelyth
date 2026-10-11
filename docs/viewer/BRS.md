@@ -290,6 +290,23 @@ Provide useful states for:
 Design system (FR-20) and cross-platform packaging (FR-21) apply to every app and live in
 `docs/shared/REQUIREMENTS.md`.
 
+### FR-23 — Image editing (Stages 12–16, planned)
+
+Pictures have an **Edit** button. The editor (`docs/viewer/IMAGE-EDITOR.md`) provides:
+
+- color changing: lighting, colors, levels, curves, sharpen/blur, noise reduction, swap color, reduce colors, count
+  colors, grayscale, sepia, negative
+- effects: border effects, frame mask, watermark, bump map, sketch, oil painting, lens, obscure (blur)
+- geometry and retouching: rotate, resize, canvas size, set DPI, crop, draw, clone and heal, red-eye remover
+- views: EXIF, histogram, file properties
+- batch mode for every feature that can work without pointing at pixels (recipes over a multi-selection)
+
+Requirements: the original is never lost (save as copy by default; replace goes through the trash); editing is
+non-destructive until saved, with undo/redo; sliders answer while dragged and the editor never blocks the UI or the tile
+view; pixel work is in Go and no image data crosses regular IPC; every tool is keyboard-operable, localized
+(ADR-0034) and accessible; the commander gains no editing capability (ADR-0027). Batch runs are bounded, cancellable
+and undoable. Out of scope: RAW/HEIC/AVIF, animation, layers, AI features, 16-bit editing, lossless JPEG transforms.
+
 ## 4. Non-functional requirements
 
 NFR-01–NFR-14 (responsiveness, large folders, memory, IPC, reliability, privacy, security, accessibility,
@@ -402,9 +419,7 @@ Architecture should allow:
 - tags
 - collections/albums
 - color labels
-- rotate/flip
-- crop/resize
-- image effects/adjustments
+- rotate/flip, crop/resize, image effects/adjustments (planned as FR-23, Stages 12–16)
 - duplicate detection
 - perceptual search
 - richer video information

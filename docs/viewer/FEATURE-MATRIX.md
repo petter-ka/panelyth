@@ -21,4 +21,8 @@
 | Tags | foundation | ✓ |
 | Color labels | foundation | filter/sort |
 | Collections | model-ready | ✓ |
-| Image effects/resize/crop | architecture-ready | ✓ |
+| Image editor: Edit button, geometry, EXIF/histogram, safe save | planned (Stage 12) | ✓ |
+| Image editor: color tools | planned (Stage 13) | ✓ |
+| Image editor: effects (border, frame, watermark, bump, sketch, oil, lens, obscure) | planned (Stage 14) | ✓ |
+| Image editor: draw, clone/heal, red-eye | planned (Stage 15) | ✓ |
+| Image editor: batch mode with recipes | planned (Stage 16) | ✓ |

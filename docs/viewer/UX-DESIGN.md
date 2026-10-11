@@ -297,7 +297,7 @@ Prepare for:
 - color labels
 - collections
 - effects
-- crop/resize/rotate
+- crop/resize/rotate (the editor: `docs/viewer/IMAGE-EDITOR.md` §5, Stages 12–16)
 - duplicate detection
 - compare/slideshow
 - custom shortcuts
