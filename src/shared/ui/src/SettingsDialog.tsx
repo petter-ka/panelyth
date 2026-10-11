@@ -1,7 +1,14 @@
 import { setSwitchSettings, useSwitchSettings } from "@panelyth/renderer-core"
 import { useId, useState, type KeyboardEvent, type ReactNode } from "react"
 import { LOCALES, LOCALE_NAMES, t, type Locale, useLocaleStore } from "@panelyth/i18n"
-import { setLanguage, THEME_OPTIONS, useInterfaceSizeStore, useThemeStore } from "./appearance"
+import {
+  ICON_SET_OPTIONS,
+  setLanguage,
+  THEME_OPTIONS,
+  useIconSetStore,
+  useInterfaceSizeStore,
+  useThemeStore,
+} from "./appearance"
 import { Button } from "./button"
 import { DialogWindow } from "./dialog"
 import { Tooltip } from "./Tooltip"
@@ -151,6 +158,8 @@ function AppearanceSettings() {
   const setPreference = useThemeStore((s) => s.setPreference)
   const interfaceSize = useInterfaceSizeStore((s) => s.size)
   const setInterfaceSize = useInterfaceSizeStore((s) => s.setSize)
+  const iconSet = useIconSetStore((s) => s.iconSet)
+  const setIconSet = useIconSetStore((s) => s.setIconSet)
   const language = useLocaleStore((s) => s.locale)
   return (
     <div className="space-y-4" aria-label={t("Appearance")}>
@@ -183,6 +192,19 @@ function AppearanceSettings() {
         />
         <p className="text-[0.6875rem] text-muted">
           {t("Adjusts interface text, padding, and spacing.")}
+        </p>
+      </section>
+      <section className="space-y-2 border-t border-border pt-3">
+        <h3 className="text-xs font-medium">{t("Icon library")}</h3>
+        <ChoiceGroup
+          label={t("Icon library")}
+          value={iconSet}
+          disabled={false}
+          options={ICON_SET_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
+          onChange={setIconSet}
+        />
+        <p className="text-[0.6875rem] text-muted">
+          {t("Applies to the toolbar and menu icons in the viewer and the commander.")}
         </p>
       </section>
       <section className="space-y-2 border-t border-border pt-3">

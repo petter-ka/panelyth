@@ -85,7 +85,7 @@ your appearance settings.
 | Focused entry (the selected tile, the commander's cursor) | carried over on switch | `shared.context` | C01 |
 | Selection (the commander's marks) | carried over on switch, up to 10,000 entries, resolved in Go | memory only | C02 |
 | Last used app | the next start opens it | `shared.context` | C01 |
-| Theme, interface size | live: a change in one app applies to the other at once | `shared.appearance` | C00 |
+| Theme, interface size, language, icon library | live: a change in one app applies to the other at once | `shared.appearance` | C00 |
 | Carry-over options, start-with | live | `shared.switch` | C02 |
 | Bookmarks (viewer) = hotlist (commander) | one list, live: Go sends `bookmarks.changed` after every edit; the commander adds groups, the viewer shows a flat list | `library.db` `bookmarks` (`group_name`, migration 4) | C03 |
 | Recent locations | one list fed by every folder either app opens (`dir.open`); the viewer re-reads it when shown, the commander when its history menu opens; the commander's per-tab history stays its own | `library.db` `recent` | C03 |
@@ -162,7 +162,7 @@ Everything shared lives in the existing `library.db` (`<UserConfigDir>/Panelyth/
 - `shared.switch` (`{ v: 1, carry: { folder, focus, selection }, startWith: "last" | "viewer" | "commander" }`,
   Settings → General, Stage C02). At start, main reads it with `shared.context` (waiting at most 400 ms) and shows the
   commander first when "Start with" says so, or when it was the last used app;
-- `shared.appearance` (theme, interface size). The switch key is remapped per app, in each app's own shortcut setting
+- `shared.appearance` (theme, interface size, language, icon library). The switch key is remapped per app, in each app's own shortcut setting
   (`shortcuts`, `commander.shortcuts`), not in a shared one (Stage C02);
 - the `bookmarks` and `recent` tables, used by both apps (Stage C03 added bookmark groups for the hotlist:
   `group_name`, library.db migration 4);

@@ -1,57 +1,36 @@
 // Player icons (moved from the viewer, Stage C05): 16px grid, currentColor,
 // 1.5 stroke, like the viewer's chrome icons.
-import type { SVGProps } from "react"
-
-type IconProps = SVGProps<SVGSVGElement> & { size?: number }
-
-function Icon({ size = 16, children, ...rest }: IconProps) {
-  return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 16 16"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-      {...rest}
-    >
-      {children}
-    </svg>
-  )
-}
+import { Icon, type IconProps } from "@panelyth/ui"
 
 export const PlayIcon = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon name="play" {...p}>
     <path d="M5 3.25v9.5L12.5 8 5 3.25Z" fill="currentColor" />
   </Icon>
 )
 export const PauseIcon = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon name="pause" {...p}>
     <path d="M4.75 3.5h2v9h-2zM9.25 3.5h2v9h-2z" fill="currentColor" strokeWidth="0" />
   </Icon>
 )
 export const VolumeIcon = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon name="volume" {...p}>
     <path d="M2.5 6.25h2.25L8 3.5v9L4.75 9.75H2.5v-3.5Z" />
     <path d="M10.5 6a3 3 0 0 1 0 4M12.25 4.25a5.5 5.5 0 0 1 0 7.5" />
   </Icon>
 )
 export const MuteIcon = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon name="mute" {...p}>
     <path d="M2.5 6.25h2.25L8 3.5v9L4.75 9.75H2.5v-3.5Z" />
     <path d="m10.5 6 3 4M13.5 6l-3 4" />
   </Icon>
 )
 export const FullscreenIcon = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon name="fullscreen" {...p}>
     <path d="M2.75 6V2.75H6M10 2.75h3.25V6M13.25 10v3.25H10M6 13.25H2.75V10" />
   </Icon>
 )
 export const ExitFullscreenIcon = (p: IconProps) => (
-  <Icon {...p}>
+  <Icon name="exit-fullscreen" {...p}>
     <path d="M6 2.75V6H2.75M13.25 6H10V2.75M10 13.25V10h3.25M2.75 10H6v3.25" />
   </Icon>
 )
