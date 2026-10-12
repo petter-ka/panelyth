@@ -1156,6 +1156,7 @@ const messages: Messages = {
     "Öffnen Sie einen Ordner, um Bilder und Videos zu durchsuchen.",
   "Open folder…": "Ordner öffnen…",
   "Open images and videos with": "Bilder und Videos öffnen mit",
+  "Open in Panelyth": "In Panelyth öffnen",
   "Open in a new tab": "In neuem Tab öffnen",
   "Open in the editor": "Im Editor öffnen",
   "Open in the left panel": "Im linken Bereich öffnen",
@@ -1165,6 +1166,8 @@ const messages: Messages = {
   "Open with default app": "Mit Standard-App öffnen",
   "Opening the picture…": "Bild wird geöffnet…",
   "Opening…": "Wird geöffnet…",
+  "Opens the folder with this file selected (double-click)":
+    "Öffnet den Ordner mit dieser Datei ausgewählt (Doppelklick)",
   "Opens the menu": "Öffnet das Menü",
   "Operation queue": "Vorgangswarteschlange",
   Operations: "Vorgänge",

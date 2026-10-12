@@ -86,6 +86,7 @@ ipcRenderer.on(IPC_EVENT, (_event, message: EventMessage) => {
 const api: PanelythApi = {
   app: {
     exit: () => invoke("app.exit", {}),
+    openRequest: () => invoke("app.openRequest", {}),
   },
   system: {
     ping: () => invoke("system.ping", {}),

@@ -10,6 +10,7 @@ import type {
   SavedConnection,
   SidecarStatus,
   Volume,
+  OpenRequest,
 } from "./rpc"
 
 export type ScanState = "running" | "completed" | "cancelled" | "failed"
@@ -110,6 +111,8 @@ export interface EventMap {
   "mediaWindow.step": { requestId: number; key: number; direction: -1 | 0 | 1 }
   /** From main, to the viewer: open the editor on this picture (the commander's Edit button; Stage 12). */
   "edit.request": EditRequestEvent
+  /** From main, to the viewer: open this folder and select this entry (a file opened from the OS). */
+  "open.request": OpenRequest
 }
 
 export type EventChannel = keyof EventMap
@@ -131,6 +134,7 @@ export const EVENT_CHANNELS = [
   "compare.progress",
   "mediaWindow.step",
   "edit.request",
+  "open.request",
 ] as const satisfies readonly EventChannel[]
 
 /** Channels produced by the Go sidecar and forwarded by main unchanged. */

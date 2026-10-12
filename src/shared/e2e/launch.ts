@@ -8,7 +8,7 @@ import { _electron, expect, type ElectronApplication, type Page } from "@playwri
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 export const desktopDir = join(repoRoot, "src", "shared", "desktop")
-const electronPath = createRequire(import.meta.url)("electron") as unknown as string
+export const electronPath = createRequire(import.meta.url)("electron") as unknown as string
 
 export interface Launched {
   app: ElectronApplication
@@ -16,28 +16,42 @@ export interface Launched {
 }
 
 /**
- * Launches the production build with isolated cache, config and Electron
- * profile directories. Pass PANELYTH_USER_DATA_DIR in `env` to reuse a
- * profile across launches.
+ * The environment of a launch: isolated cache, config and Electron profile
+ * directories unless `env` names them. A second process started with the
+ * same environment is a second launch of the same app (the OS opening a file
+ * while it runs).
  */
-export async function launchApp(env: Record<string, string> = {}): Promise<Launched> {
+export function launchEnv(env: Record<string, string> = {}): Record<string, string> {
   const scratch = mkdtempSync(join(tmpdir(), "panelyth-e2e-"))
   // A VS Code extension host sets ELECTRON_RUN_AS_NODE for its children; with
   // it Electron runs as plain Node and the app never starts.
   const { ELECTRON_RUN_AS_NODE: _runAsNode, ...inherited } = process.env as Record<string, string>
+  return {
+    ...inherited,
+    PANELYTH_CACHE_DIR: join(scratch, "cache"),
+    PANELYTH_CONFIG_DIR: join(scratch, "config"),
+    PANELYTH_USER_DATA_DIR: join(scratch, "user-data"),
+    PANELYTH_RENDERER_URL: "",
+    // Record shell/clipboard calls instead of opening apps (main exposes __panelythShellLog).
+    PANELYTH_TEST_SHELL: "record",
+    ...env,
+  }
+}
+
+/**
+ * Launches the production build with isolated cache, config and Electron
+ * profile directories. Pass PANELYTH_USER_DATA_DIR in `env` to reuse a
+ * profile across launches. `args` follow the app's folder on the command
+ * line, as a file does when the OS opens it with the app.
+ */
+export async function launchApp(
+  env: Record<string, string> = {},
+  args: readonly string[] = [],
+): Promise<Launched> {
   const app = await _electron.launch({
     executablePath: electronPath,
-    args: [desktopDir],
-    env: {
-      ...inherited,
-      PANELYTH_CACHE_DIR: join(scratch, "cache"),
-      PANELYTH_CONFIG_DIR: join(scratch, "config"),
-      PANELYTH_USER_DATA_DIR: join(scratch, "user-data"),
-      PANELYTH_RENDERER_URL: "",
-      // Record shell/clipboard calls instead of opening apps (main exposes __panelythShellLog).
-      PANELYTH_TEST_SHELL: "record",
-      ...env,
-    },
+    args: [desktopDir, ...args],
+    env: launchEnv(env),
   })
   const page = await app.firstWindow()
   return { app, page }

@@ -1147,6 +1147,7 @@ const messages: Messages = {
     "Откройте папку, чтобы просматривать изображения и видео.",
   "Open folder…": "Открыть папку…",
   "Open images and videos with": "Открывать изображения и видео в",
+  "Open in Panelyth": "Открыть в Panelyth",
   "Open in a new tab": "Открыть в новой вкладке",
   "Open in the editor": "Открыть в редакторе",
   "Open in the left panel": "Открыть в левой панели",
@@ -1156,6 +1157,8 @@ const messages: Messages = {
   "Open with default app": "Открыть в приложении по умолчанию",
   "Opening the picture…": "Открытие изображения…",
   "Opening…": "Открытие…",
+  "Opens the folder with this file selected (double-click)":
+    "Открывает папку с этим файлом выделенным (двойной щелчок)",
   "Opens the menu": "Открывает меню",
   "Operation queue": "Очередь операций",
   Operations: "Операции",

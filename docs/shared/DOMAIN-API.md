@@ -123,6 +123,21 @@ fs.mkfile({ parentDirId, name })   // commander, Shift+F4 → { entryId, created
 > only from the commander's own view while it is shown. Refusals carry `details.reason`: `hidden`, `folder`, `unc`,
 > `noEntry`, `noOther`, `tooMany`, `tooLong`, `dir`, `shadowed`, `name`.
 
+## Files opened from the OS ("Open with", ADR-0033 amended)
+
+```ts
+entry.fromPath({ path })     // main -> sidecar only: { dirId, entryId, kind, listed }; images and videos only
+media.windowReveal()         // the media window of such a file (commander profile): show it in the viewer; no parameters
+app.openRequest()            // viewer, once at start: { request: { dirId, entryId } | null }
+// event, main -> viewer:    open.request { dirId, entryId }
+```
+
+> A picture or video the OS hands to the app opens in a media window with no app window behind it. The path is
+> read by main from the launch's arguments and given to the sidecar; no renderer method takes one. The window's
+> items come through the existing `media.windowStep`, answered by main from a session over the file's folder.
+> `media.windowReveal` is accepted only from a window main opened for a file, and takes the viewer to the folder
+> and entry main already knows; `app.openRequest` hands that pair to a viewer started for it.
+
 ## Connections (Stage C10.5, commander only, ADR-0037)
 
 ```ts

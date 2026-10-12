@@ -31,6 +31,7 @@ import type {
   DirOpenParams,
   DirOpenResult,
   MediaOpenResult,
+  OpenRequest,
   PreviewEnsureParams,
   PreviewEnsureResult,
   FolderCoversParams,
@@ -167,6 +168,11 @@ export const bridge = {
   ): Promise<SelectionDescriptor | null> => {
     const context = api().context
     return context ? unwrap(() => context.selection(version, queryId)) : null
+  },
+  /** Once at start: the folder and entry the app was started to show (a file opened from the OS). */
+  takeOpenRequest: async (): Promise<OpenRequest | null> => {
+    const ask = api().app.openRequest
+    return ask ? (await unwrap(() => ask())).request : null
   },
   getContext: async (): Promise<SharedContext | null> => {
     const context = api().context

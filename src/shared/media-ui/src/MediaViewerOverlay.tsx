@@ -18,6 +18,11 @@ export interface MediaViewerOverlayProps {
   closeOnDoubleClick?: boolean
   /** Shows an Edit button for pictures (the commander hands the picture to the viewer's editor; Stage 12). */
   onEdit?: () => void
+  /**
+   * The surface stands alone (a file opened from the OS): a button, and a
+   * double-click on the picture or video, take it into the app at its folder.
+   */
+  onShowInApp?: () => void
 }
 
 /** Wheel steps closer together than this count as one (as in the image viewer). */
@@ -40,7 +45,9 @@ export function MediaViewerOverlay({
   wheelMode = "zoom",
   closeOnDoubleClick = false,
   onEdit,
+  onShowInApp,
 }: MediaViewerOverlayProps) {
+  const onDoubleClick = onShowInApp ?? (closeOnDoubleClick ? onClose : undefined)
   const root = useRef<HTMLDivElement>(null)
   const imageController = useRef<ImageViewerController>(null)
   const [zoom, setZoom] = useState({ value: 1, fit: true })
@@ -186,6 +193,17 @@ export function MediaViewerOverlay({
             {t("Edit")}
           </button>
         )}
+        {onShowInApp && (
+          <button
+            type="button"
+            className={zoomButton}
+            onClick={onShowInApp}
+            title={t("Opens the folder with this file selected (double-click)")}
+            data-testid="media-show-in-app"
+          >
+            {t("Open in Panelyth")}
+          </button>
+        )}
         <button
           type="button"
           className="h-7 rounded-md border border-border bg-raised px-2.5 text-xs hover:border-muted"
@@ -206,7 +224,7 @@ export function MediaViewerOverlay({
             lane={lane}
             wheelMode={wheelMode}
             {...(onStep && { onWheelNavigate: onStep })}
-            {...(closeOnDoubleClick && { onDoubleClick: onClose })}
+            {...(onDoubleClick && { onDoubleClick })}
           />
         ) : item.kind === "video" ? (
           <VideoPlayer
@@ -219,7 +237,7 @@ export function MediaViewerOverlay({
             appFullscreen
             onExitFullscreen={onClose}
             lane={lane}
-            {...(closeOnDoubleClick && { onDoubleClick: onClose })}
+            {...(onDoubleClick && { onDoubleClick })}
           />
         ) : null}
       </main>

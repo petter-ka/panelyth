@@ -23,6 +23,7 @@ import {
 import { handleThumbProtocol } from "./thumbProtocol"
 import { DocumentWindows } from "./documentWindow"
 import { MediaWindows } from "./mediaWindow"
+import { fileArgument, OpenWithSession } from "./openWith"
 import {
   broadcast,
   forwardableEvent,
@@ -54,11 +55,17 @@ import {
   trustedOrigin,
 } from "./security"
 import { AppShell, startAppFrom } from "./shell"
-import { COMMANDER_ENABLED_ARG, documentKindOf, type AppId } from "@panelyth/contracts"
+import {
+  COMMANDER_ENABLED_ARG,
+  documentKindOf,
+  type AppId,
+  type OpenRequest,
+} from "@panelyth/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
 import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
+import { statSync } from "node:fs"
 import { stat } from "node:fs/promises"
 import { join } from "node:path"
 import { perfMark } from "./perf"
@@ -109,6 +116,25 @@ let mediaWindows: MediaWindows | null = null
 let logger: Logger = consoleLogger
 let shutdownState: "running" | "stopping" | "done" = "running"
 
+// "Open with" (ADR-0033 amended): a picture or video the OS handed over opens
+// in a media window of its own, and the main window is not created for it.
+const isFile = (path: string): boolean => {
+  try {
+    return statSync(path).isFile()
+  } catch {
+    return false
+  }
+}
+/** The file an argument list names; the app's own entry script is none. */
+const fileFrom = (argv: readonly string[], cwd: string): string | null =>
+  fileArgument(argv, cwd, isFile, [app.getAppPath()])
+/** The file this run was started for; macOS names it with open-file, also before the app is ready. */
+let startFile: string | null = fileFrom(process.argv, process.cwd())
+/** Main's handlers are registered: files can open. */
+let booted = false
+/** A file's folder and entry waiting for the viewer to start (app.openRequest takes it). */
+let pendingOpen: OpenRequest | null = null
+
 const documentsOrigin = (): string => {
   const devUrl = documentsDevUrl()
   return (devUrl && originOf(devUrl)) || DOCUMENTS_ORIGIN
@@ -117,6 +143,52 @@ const documentsOrigin = (): string => {
 const commanderOrigin = (): string => {
   const devUrl = commanderDevUrl()
   return (devUrl && originOf(devUrl)) || COMMANDER_ORIGIN
+}
+
+/**
+ * A file from the OS in a full-screen media window of its own. A file that
+ * turns out to be no picture or video opens the app as usual instead.
+ */
+function openFile(path: string): void {
+  const sc = sidecar
+  const windows = mediaWindows
+  if (!sc || !windows) return
+  perfMark("open-with")
+  const session = new OpenWithSession((method, params) => sc.call(method, params), path)
+  let win: BrowserWindow | null = null
+  const unavailable = (reason: unknown): void => {
+    logger.warn("a file from the OS could not be shown", { reason: String(reason) })
+    if (!mainWindow && shutdownState === "running") openWindow()
+    if (win && !win.isDestroyed()) win.close()
+  }
+  win = windows.open({
+    source: {
+      step: async (direction) => {
+        try {
+          const item = await session.step(direction)
+          if (!item && direction === 0) unavailable("not in its folder")
+          return item
+        } catch (error) {
+          if (direction === 0) unavailable(error)
+          throw error
+        }
+      },
+      current: () => session.current(),
+      close: () => session.close(),
+    },
+  })
+}
+
+/** The viewer shows a folder with an entry selected: in the window that is there, or in a new one. */
+function revealInViewer(request: OpenRequest): void {
+  const viewer = mainWindow && !mainWindow.isDestroyed() ? appShell?.showViewer() : null
+  if (viewer && !viewer.isLoading()) {
+    broadcast([viewer], "open.request", request)
+    return
+  }
+  // The viewer asks for it when it starts (app.openRequest).
+  pendingOpen = request
+  if (!viewer) openWindow()
 }
 
 function openWindow(): BrowserWindow {
@@ -146,6 +218,8 @@ function openWindow(): BrowserWindow {
       : null,
   )
   const shell = appShell
+  // Opened to show a file's folder: the viewer, whichever app was used last.
+  if (pendingOpen) return win
   if (forcedStartApp === "commander") shell.switchTo("commander")
   else if (forcedStartApp === null)
     void lastUsedApp().then((last) => {
@@ -295,6 +369,12 @@ async function boot(): Promise<void> {
       app.quit()
       return { ok: true }
     },
+    // Viewer, once at start: what a file opened from the OS asked it to show.
+    "app.openRequest": () => {
+      const request = pendingOpen
+      pendingOpen = null
+      return { request }
+    },
     "app.switch": (_event, { to, edit }) => {
       // Edit in the media overlay or the media window (Stage 12): the viewer
       // comes to the front and opens its editor on the picture. The viewer is
@@ -418,6 +498,19 @@ async function boot(): Promise<void> {
       mediaWindows?.answer(event.sender, requestId, item)
       return { ok: true }
     },
+    // The media window of a file opened from the OS: its picture in the viewer, at its
+    // folder. Only such a window may ask; what is shown is what main gave it.
+    "media.windowReveal": (event) => {
+      const request = mediaWindows?.sourceOf(event.sender)?.current()
+      if (!request) throw new Error("this window was not opened for a file")
+      revealInViewer(request)
+      // After the main window exists, so the app never has no window in between.
+      const win = BrowserWindow.fromWebContents(event.sender)
+      setImmediate(() => {
+        if (win && !win.isDestroyed()) win.close()
+      })
+      return { ok: true }
+    },
     // Commander only (the allowlist); the token may be fetch()ed by its origin alone.
     "file.open": async (_event, { entryId }) =>
       toFileOpenResult(await sc.call("file.resolve", { entryId }), mediaTokens, commanderOrigin()),
@@ -471,18 +564,37 @@ async function boot(): Promise<void> {
   // Sidecar and window start in parallel; calls wait for the handshake.
   sc.start()
   perfMark("sidecar-spawned")
-  openWindow()
+  booted = true
+  // A file from the OS: its media window alone. The app's window is made when it is asked for.
+  if (startFile) openFile(startFile)
+  else openWindow()
+  startFile = null
 }
 
 if (!app.requestSingleInstanceLock()) {
   app.quit()
 } else {
-  app.on("second-instance", () => {
-    const [win] = BrowserWindow.getAllWindows()
-    if (win) {
-      if (win.isMinimized()) win.restore()
-      win.focus()
+  app.on("second-instance", (_event, argv, cwd) => {
+    // Another file opened from the OS while the app runs: one more media window.
+    const file = fileFrom(argv, cwd)
+    if (file && booted) {
+      openFile(file)
+      return
     }
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      if (mainWindow.isMinimized()) mainWindow.restore()
+      mainWindow.focus()
+    } else if (booted && shutdownState === "running") {
+      // Only media windows so far: the app itself was asked for now.
+      openWindow()
+    }
+  })
+
+  // macOS hands files over with an event, possibly before the app is ready.
+  app.on("open-file", (event, path) => {
+    event.preventDefault()
+    if (booted) openFile(path)
+    else startFile = path
   })
 
   app.whenReady().then(boot, (error: unknown) => {

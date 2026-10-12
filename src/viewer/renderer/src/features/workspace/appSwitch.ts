@@ -122,7 +122,8 @@ async function applySelection(ctx: SharedContext): Promise<void> {
   })
 }
 
-async function selectEntry(entryId: number): Promise<void> {
+/** Selects an entry of the open folder and scrolls to it, if the folder's session has it. */
+export async function selectEntry(entryId: number): Promise<void> {
   const query = useFolderStore.getState().query
   if (!query) return
   const at = await bridge.indexOf(query.queryId, entryId).catch(() => null)

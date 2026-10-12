@@ -8,6 +8,8 @@ export type PerfMarkName =
   | "window-created"
   | "ready-to-show"
   | "commander-view-created"
+  // A file from the OS: its media window was asked for (no main window behind it).
+  | "open-with"
 
 // Milliseconds since main-process start (performance.timeOrigin). Read by the
 // startup benchmark through Playwright's electronApp.evaluate.

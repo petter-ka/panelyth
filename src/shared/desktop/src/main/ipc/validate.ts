@@ -696,6 +696,8 @@ function batchProblem(p: unknown): string | null {
 
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
+  "app.openRequest": empty,
+  "media.windowReveal": empty,
   "app.switch": (p) =>
     shapeWithOptional(p, ["to"], ["edit"]) &&
     (p.to === "viewer" || p.to === "commander") &&

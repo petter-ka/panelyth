@@ -96,6 +96,7 @@ import type {
   EchoResult,
   MediaOpenResult,
   MediaWindowStepResult,
+  OpenRequestResult,
   OpenFolderDialogResult,
   PreviewEnsureParams,
   FolderCoversParams,
@@ -139,6 +140,8 @@ export interface PanelythApi {
     exit(): Promise<RpcEnvelope<OkResult>>
     /** Show the other app (present only while the commander is enabled; ADR-0031). */
     switch?(to: AppId): Promise<RpcEnvelope<OkResult>>
+    /** Once at start: the folder and entry the app was started to show (a file opened from the OS). */
+    openRequest(): Promise<RpcEnvelope<OpenRequestResult>>
   }
   system: {
     ping(): Promise<RpcEnvelope<PingResult>>
@@ -479,6 +482,8 @@ export interface CommanderApi {
       RpcEnvelope<OkResult>
     > /** The media window: the first, previous or next item, asked of the opener. */
     windowStep(direction: -1 | 0 | 1): Promise<RpcEnvelope<MediaWindowStepResult>>
+    /** The media window of a file opened from the OS: show its picture in the viewer, at its folder. */
+    windowReveal(): Promise<RpcEnvelope<OkResult>>
   }
   preview: {
     ensure(params: CommanderPreviewParams): Promise<RpcEnvelope<PreviewEnsureResult>>

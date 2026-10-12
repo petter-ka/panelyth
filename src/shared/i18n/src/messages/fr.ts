@@ -1153,6 +1153,7 @@ const messages: Messages = {
     "Ouvrez un dossier pour parcourir les images et les vidéos.",
   "Open folder…": "Ouvrir un dossier…",
   "Open images and videos with": "Ouvrir les images et vidéos avec",
+  "Open in Panelyth": "Ouvrir dans Panelyth",
   "Open in a new tab": "Ouvrir dans un nouvel onglet",
   "Open in the editor": "Ouvrir dans l'éditeur",
   "Open in the left panel": "Ouvrir dans le panneau de gauche",
@@ -1162,6 +1163,8 @@ const messages: Messages = {
   "Open with default app": "Ouvrir avec l'application par défaut",
   "Opening the picture…": "Ouverture de l'image…",
   "Opening…": "Ouverture…",
+  "Opens the folder with this file selected (double-click)":
+    "Ouvre le dossier avec ce fichier sélectionné (double-clic)",
   "Opens the menu": "Ouvre le menu",
   "Operation queue": "File d'attente des opérations",
   Operations: "Opérations",

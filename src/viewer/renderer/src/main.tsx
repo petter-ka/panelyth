@@ -20,6 +20,7 @@ import { initInterfaceSize } from "./features/theme/interfaceSizeStore"
 import { startTreeMonitoring } from "./features/tree/treeStore"
 import { startWorkspacePersistence } from "./features/workspace/workspace"
 import { startAppearanceSync, startContextSync } from "./features/workspace/appSwitch"
+import { startOpenRequests } from "./features/workspace/openRequest"
 import { startEditor } from "./features/editor/editorStore"
 import { startEditorSettingsPersistence } from "./features/editor/editorSettings"
 import "./styles/index.css"
@@ -41,6 +42,8 @@ startWorkspacePersistence()
 startShortcutPersistence()
 startVideoPrefsPersistence()
 startViewerSettingsPersistence()
+// Before the startup folder: a file opened from the OS decides the first folder.
+startOpenRequests()
 startStartupFolder()
 startAppearanceSync()
 startContextSync()

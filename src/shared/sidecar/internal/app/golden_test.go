@@ -755,6 +755,13 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-remote.removeConnection.json"] = call(230, byID(230, "remote.removeConnection", map[string]any{"connectionId": 1}))
 	saved.ID, saved.HasPassword, saved.Fingerprint = 1, true, strings.Repeat("ab", 32)
 	golden["evt-connections.changed.json"] = eventFrame(t, evConnectionsChanged, connectionsEvent{Connections: []library.Connection{saved}})
+	// "Open with" (main only): a picture the OS handed over, by its path. The
+	// folder was listed above, so the entry is the one the listing made.
+	batchPics, _ := filepath.Glob(filepath.Join(batchDir, "*.jpg"))
+	if len(batchPics) == 0 {
+		t.Fatal("no picture to open by path")
+	}
+	golden["res-entry.fromPath.json"] = call(231, byID(231, "entry.fromPath", map[string]any{"path": batchPics[0]}))
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)

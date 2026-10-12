@@ -3,10 +3,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const step = vi.fn()
+const reveal = vi.fn(async () => undefined)
 const settings: Record<string, unknown> = {}
 vi.mock("../bridge", () => ({
   bridge: {
     mediaWindowStep: (d: number) => step(d),
+    mediaWindowReveal: () => reveal(),
     libraryNow: async () => ({ settings }),
   },
 }))
@@ -16,25 +18,55 @@ vi.mock("@panelyth/media-ui", () => ({
     item: ContentItem
     onStep: (d: -1 | 1) => void
     wheelMode: string
-    closeOnDoubleClick: boolean
+    closeOnDoubleClick?: boolean
+    onEdit?: () => void
+    onShowInApp?: () => void
   }) => (
     <div
       role="dialog"
       aria-label={props.item.name}
       data-wheel={props.wheelMode}
-      data-close={props.closeOnDoubleClick}
+      data-close={props.closeOnDoubleClick === true}
+      data-edit={props.onEdit !== undefined}
     >
       <button onClick={() => props.onStep(1)}>next</button>
+      {props.onShowInApp && <button onClick={props.onShowInApp}>show in app</button>}
     </div>
   ),
 }))
 
-const { MediaWindowApp } = await import("./MediaWindowApp")
+const { MediaWindowApp, standsAlone } = await import("./MediaWindowApp")
 
 const item = (id: number, name: string) => ({ id, kind: "image", name }) as ContentItem
 
 describe("MediaWindowApp", () => {
-  beforeEach(() => step.mockReset())
+  beforeEach(() => {
+    step.mockReset()
+    reveal.mockClear()
+    window.location.hash = ""
+  })
+
+  it("opened for a file from the OS, it takes the picture into the viewer instead of closing", async () => {
+    expect(standsAlone("#entry=3&theme=dark")).toBe(false)
+    expect(standsAlone("#alone=1&lang=de")).toBe(true)
+    window.location.hash = "#alone=1"
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    render(<MediaWindowApp />)
+    const dialog = await screen.findByRole("dialog", { name: "a.jpg" })
+    // No app window behind it: a double-click does not close, and Edit has no editor to go to.
+    expect(dialog).toHaveAttribute("data-close", "false")
+    expect(dialog).toHaveAttribute("data-edit", "false")
+    fireEvent.click(screen.getByText("show in app"))
+    expect(reveal).toHaveBeenCalledTimes(1)
+  })
+
+  it("opened from an app, it offers no way into the app (it is in front of it)", async () => {
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    render(<MediaWindowApp />)
+    const dialog = await screen.findByRole("dialog", { name: "a.jpg" })
+    expect(dialog).toHaveAttribute("data-edit", "true")
+    expect(screen.queryByText("show in app")).toBeNull()
+  })
 
   it("shows the first item the opener gives and steps through the opener", async () => {
     step.mockResolvedValueOnce(item(1, "a.jpg")).mockResolvedValueOnce(item(2, "b.mp4"))

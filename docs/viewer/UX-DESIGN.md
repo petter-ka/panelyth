@@ -156,6 +156,14 @@ Opened with Enter or double-click on an image tile; a full-window overlay on the
 - Errors say what happened ("The file was moved or deleted", "damaged or in a format Panelyth can't read") and offer
   **Try again**; navigation keeps working.
 
+## A picture or video opened from the OS (ADR-0033 amended)
+
+Opening a picture or a video with Panelyth from the file manager shows it full screen at once, in the media window:
+zoom and fit, the player, previous and next through the folder's pictures and videos by name, Esc to close. The
+app's own window is not opened behind it. **A double-click** on the picture or video, or **Open in Panelyth** in the
+bar, opens the viewer on that folder with the file selected and closes the full-screen window. (In a media window
+opened from inside the app, a double-click closes it, as before.)
+
 ## Settings (Stage 08.5)
 
 The status bar opens a tabbed settings dialog with Viewer, Appearance and Shortcuts sections. Viewer preferences use

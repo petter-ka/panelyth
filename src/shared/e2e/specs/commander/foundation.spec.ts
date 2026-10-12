@@ -115,7 +115,8 @@ test.describe("commander foundation (Stage C00)", () => {
         fs: ["canTrash", "listDirs", "mkdir", "mkfile", "volumes"],
         clip: ["get", "paste", "set"],
         clipboard: ["copyPaths", "copyText"],
-        media: ["open", "openWindow", "windowAnswer", "windowStep"],
+        // windowReveal: the media window of a file opened from the OS asks for the viewer.
+        media: ["open", "openWindow", "windowAnswer", "windowReveal", "windowStep"],
         preview: ["ensure"],
         props: ["get"],
         file: ["open"],

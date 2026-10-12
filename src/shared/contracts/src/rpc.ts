@@ -598,6 +598,38 @@ export interface EntryPathResult {
   program: boolean
 }
 
+/**
+ * Main -> sidecar only ("Open with"): a picture or video the OS handed to the
+ * app, by its path. No renderer names a path.
+ */
+export interface EntryFromPathParams {
+  path: string
+}
+
+/** The file's folder (opened, listed in the background) and the file's entry, indexed at once. */
+export interface EntryFromPathResult {
+  dirId: number
+  entryId: number
+  kind: EntryKind
+  /** The folder's listing is complete; false while a large folder is still being listed. */
+  listed: boolean
+}
+
+/**
+ * "Show this in the viewer": a folder to open and the entry to select there.
+ * Main hands it to the viewer when a file opened from the OS is taken into the
+ * app (the `open.request` event, or app.openRequest at start).
+ */
+export interface OpenRequest {
+  dirId: number
+  entryId: number
+}
+
+/** app.openRequest (viewer, once at start): what the app was started for, or null. */
+export interface OpenRequestResult {
+  request: OpenRequest | null
+}
+
 /** Sidecar -> main only (Stage C05): any indexed file, for the commander's lister and quick view. */
 export interface FileResolveResult {
   path: string
@@ -2214,6 +2246,8 @@ export interface SidecarMethodMap {
   "selection.paths": { params: SelectionPathsParams; result: SelectionPathsResult }
   /** Electron main only. */
   "entry.path": { params: EntryParams; result: EntryPathResult }
+  /** Electron main only ("Open with"): a file the OS handed over, by its path. */
+  "entry.fromPath": { params: EntryFromPathParams; result: EntryFromPathResult }
   /** Electron main only: decodes an image to a temp PNG for the OS clipboard. */
   "clipboard.image": { params: EntryParams; result: ClipboardImageResult }
   "props.get": { params: EntryParams; result: Properties }
@@ -2339,6 +2373,13 @@ export interface MainMethodMap {
   "media.windowStep": { params: MediaWindowStepParams; result: MediaWindowStepResult }
   /** The opener's answer to a mediaWindow.step event (both apps). */
   "media.windowAnswer": { params: MediaWindowAnswerParams; result: OkResult }
+  /**
+   * The media window of a file opened from the OS (commander profile): show
+   * its picture in the viewer, at its folder. The window closes.
+   */
+  "media.windowReveal": { params: EmptyParams; result: OkResult }
+  /** Viewer, once at start: the folder and entry the app was started to show, if any. */
+  "app.openRequest": { params: EmptyParams; result: OpenRequestResult }
   /** Home, Desktop, Documents, Downloads, Pictures, Videos (those that exist). */
   "places.list": { params: EmptyParams; result: PlacesResult }
   /** Opens a file or folder with the system default application (kinds per app profile). */
@@ -2405,6 +2446,7 @@ export type Result<M extends Method> = MethodMap[M]["result"]
 export const VIEWER_METHODS = [
   "app.exit",
   "app.switch",
+  "app.openRequest",
   "system.ping",
   "system.info",
   "sidecar.getStatus",
@@ -2495,6 +2537,7 @@ export const COMMANDER_ONLY_METHODS = [
   "file.open",
   "document.open",
   "media.windowStep",
+  "media.windowReveal",
   "shell.edit",
   "fs.mkfile",
   "find.start",
@@ -2602,6 +2645,7 @@ export const COMMANDER_METHODS = [
   "media.openWindow",
   "media.windowStep",
   "media.windowAnswer",
+  "media.windowReveal",
   "preview.ensure",
   "props.get",
   "file.open",
@@ -2661,12 +2705,14 @@ export const APP_METHODS: Record<AppId, readonly RendererMethod[]> = {
 export const MAIN_METHODS = [
   "app.exit",
   "app.switch",
+  "app.openRequest",
   "sidecar.getStatus",
   "dialog.openFolder",
   "media.open",
   "media.openWindow",
   "media.windowStep",
   "media.windowAnswer",
+  "media.windowReveal",
   "file.open",
   "document.open",
   "places.list",

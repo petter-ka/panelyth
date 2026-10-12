@@ -50,6 +50,8 @@ const mainHandlers = (): MainHandlers => ({
   "media.openWindow": vi.fn(async () => ({ ok: true })),
   "media.windowStep": vi.fn(async () => ({ item: null })),
   "media.windowAnswer": vi.fn(async () => ({ ok: true })),
+  "media.windowReveal": vi.fn(async () => ({ ok: true })),
+  "app.openRequest": vi.fn(() => ({ request: null })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
     url: `panelyth-media://m/${String(p.entryId).padStart(32, "0")}`,
     kind: "image" as const,
@@ -190,6 +192,33 @@ describe("invoke router", () => {
     await expect(
       handler(ok, "media.windowAnswer", { requestId: 1, item: null }),
     ).resolves.toMatchObject({ ok: true })
+    // A file opened from the OS ("Open with"): its media window (the commander's profile)
+    // may ask for the viewer; the viewer asks once what it was started for. Neither takes
+    // a parameter, so neither can name a path, a folder or an entry.
+    await expect(handler(commander, "media.windowReveal", {})).resolves.toMatchObject({ ok: true })
+    await expect(handler(ok, "app.openRequest", {})).resolves.toEqual({
+      ok: true,
+      r: { request: null },
+    })
+    for (const [from, m, p] of [
+      [ok, "media.windowReveal", {}],
+      [commander, "app.openRequest", {}],
+    ] as const) {
+      expect(await handler(from, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    for (const [from, m, p] of [
+      [commander, "media.windowReveal", { entryId: 3 }],
+      [commander, "media.windowReveal", { path: "C:\\x.jpg" }],
+      [ok, "app.openRequest", { dirId: 1 }],
+    ] as const) {
+      expect(await handler(from, m, p), m).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
     // The viewer's shell.open still goes to main, which applies its profile.
     await handler(ok, "shell.open", { entryId: 3 })
     expect(main["shell.open"]).toHaveBeenLastCalledWith(ok, { entryId: 3 }, "viewer")
@@ -1365,6 +1394,8 @@ describe("invoke router", () => {
     "system.shutdown",
     "media.resolve",
     "entry.path",
+    // A path from the OS goes from main to the sidecar; no renderer may name one.
+    "entry.fromPath",
     "selection.paths",
     "nope",
     42,

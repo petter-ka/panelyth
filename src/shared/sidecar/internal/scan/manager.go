@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"sync"
+	"time"
 
 	"panelyth/sidecar/internal/index"
 )
@@ -107,6 +108,27 @@ func (m *Manager) Wait(scanID int64) {
 	m.mu.Unlock()
 	if r != nil {
 		<-r.done
+	}
+}
+
+// WaitFor blocks until scanID has finished, the time is up or ctx ends, and
+// reports whether it finished.
+func (m *Manager) WaitFor(ctx context.Context, scanID int64, d time.Duration) bool {
+	m.mu.Lock()
+	r := m.running[scanID]
+	m.mu.Unlock()
+	if r == nil {
+		return true
+	}
+	t := time.NewTimer(d)
+	defer t.Stop()
+	select {
+	case <-r.done:
+		return true
+	case <-t.C:
+		return false
+	case <-ctx.Done():
+		return false
 	}
 }
 

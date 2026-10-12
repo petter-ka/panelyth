@@ -69,6 +69,7 @@ import {
   type Bookmark,
   type Crumb,
   type DirChild,
+  type EntryFromPathResult,
   type EntryPathResult,
   type ClipboardImageResult,
   type LibraryState,
@@ -780,6 +781,15 @@ export const sidecarResultGuards: ResultGuards = {
     isRec(v) && arrayOf(v.paths, isStr) && isBool(v.truncated),
   "entry.path": (v): v is EntryPathResult =>
     isRec(v) && isStr(v.path) && isStr(v.kind) && entryKinds.has(v.kind) && isBool(v.program),
+  "entry.fromPath": (v): v is EntryFromPathResult =>
+    isRec(v) &&
+    isInt(v.dirId) &&
+    v.dirId > 0 &&
+    isInt(v.entryId) &&
+    v.entryId > 0 &&
+    isStr(v.kind) &&
+    entryKinds.has(v.kind) &&
+    isBool(v.listed),
   "file.resolve": (v): v is FileResolveResult =>
     isRec(v) &&
     isStr(v.path) &&
@@ -1002,4 +1012,6 @@ export const eventGuards: EventGuards = {
     (v.direction === -1 || v.direction === 0 || v.direction === 1),
   "edit.request": (v): v is EventMap["edit.request"] =>
     isRec(v) && isInt(v.entryId) && v.entryId > 0,
+  "open.request": (v): v is EventMap["open.request"] =>
+    isRec(v) && isInt(v.dirId) && v.dirId > 0 && isInt(v.entryId) && v.entryId > 0,
 }

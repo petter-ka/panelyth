@@ -44,6 +44,58 @@ describe("mediaWindowUrl", () => {
   })
 })
 
+const OPTIONS = {
+  url: "app://commander/media.html",
+  origin: "app://commander",
+  preload: "p.cjs",
+  devTools: false,
+}
+
+describe("a window for a file from the OS", () => {
+  beforeEach(() => {
+    created.length = 0
+  })
+
+  it("stands alone: it asks its source, not an opener, and the source goes with the window", async () => {
+    const source = {
+      step: vi.fn(async (direction: number) => (direction === 0 ? item : null)),
+      current: vi.fn(() => ({ dirId: 3, entryId: 7 })),
+      close: vi.fn(),
+    }
+    const parent = vi.fn(() => null)
+    const windows = new MediaWindows(OPTIONS, parent)
+    windows.open({ source })
+    // No shell window is asked for: there may be none.
+    expect(parent).not.toHaveBeenCalled()
+    const win = created[0]! as unknown as {
+      webContents: { id: number }
+      loadURL: { mock: { calls: [string][] } }
+      on: { mock: { calls: [string, () => void][] } }
+    }
+    const params = new URLSearchParams(win.loadURL.mock.calls[0]![0].split("#")[1])
+    expect(params.get("alone")).toBe("1")
+    expect(params.get("entry")).toBeNull()
+
+    const sender = { id: win.webContents.id } as never
+    expect(await windows.step(sender, 0)).toEqual(item)
+    expect(await windows.step(sender, 1)).toBeNull()
+    expect(source.step.mock.calls.map((c) => c[0])).toEqual([0, 1])
+    expect(windows.sourceOf(sender)).toBe(source)
+    // Any other sender has no source (the reveal is refused for it).
+    expect(windows.sourceOf({ id: 999 } as never)).toBeNull()
+
+    win.on.mock.calls.find(([name]) => name === "closed")![1]()
+    expect(source.close).toHaveBeenCalledTimes(1)
+    expect(windows.sourceOf(sender)).toBeNull()
+  })
+
+  it("a window opened from an app has no source", () => {
+    const windows = new MediaWindows(OPTIONS, () => null)
+    windows.open({ opener: opener() as never, key: 1, entryId: 7 })
+    expect(windows.sourceOf({ id: created[0]!.webContents.id } as never)).toBeNull()
+  })
+})
+
 describe("MediaWindows relay", () => {
   beforeEach(() => {
     created.length = 0

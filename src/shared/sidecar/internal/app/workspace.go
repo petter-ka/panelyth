@@ -166,6 +166,7 @@ func (s *indexService) registerWorkspace(srv *rpc.Server) {
 	})
 	rpc.Register(srv, "props.get", s.propsGet)
 	rpc.Register(srv, "entry.path", s.entryPath)
+	rpc.Register(srv, "entry.fromPath", s.entryFromPath)
 	rpc.Register(srv, "clipboard.image", s.clipboardImage)
 	rpc.Register(srv, "selection.info", func(ctx context.Context, p selectionParams) (index.Summary, error) {
 		ids, err := s.resolveSelection(p.Selection)

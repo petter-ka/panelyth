@@ -414,6 +414,7 @@ const api: CommanderApi = {
       }),
     windowAnswer: (requestId, item) => invoke("media.windowAnswer", { requestId, item }),
     windowStep: (direction) => invoke("media.windowStep", { direction }),
+    windowReveal: () => invoke("media.windowReveal", {}),
   },
   preview: {
     ensure: ({ lane, epoch, profile, items, force }) =>

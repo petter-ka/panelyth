@@ -69,6 +69,49 @@ player.
   fullscreen player) stays for when the window cannot open.
 - **Not in the window.** Selection and cursor do not follow the stepping back into the opener.
 
+## Amendment: a file opened from the OS ("Open with", 2026-10-12, owner request)
+
+When Panelyth is the app the OS opens a picture or a video with (chosen as the default app, "Open with", a file
+dropped on the program, a file named on the command line), the file opens in a **media window of its own**, full
+screen, and the app's main window is **not created**: no viewer, no commander, no folder restore. That is what
+makes it fast: the picture is decoded and on screen about 0.3 s after the launch, some 20 to 40 ms after the point
+where an ordinary start merely has its empty window ready (Windows, `adr-0033-…-e2e-openwith.jsonl`).
+
+- **The path comes from the OS, and only main reads it.** Main takes the first argument that is an existing file
+  (`fileArgument`; switches, the app's own script and names that are not there are skipped), also from a second
+  launch while the app runs (`second-instance`) and from macOS's `open-file` event. It goes to the sidecar in one
+  main-only method, `entry.fromPath { path }` → `{ dirId, entryId, kind, listed }`. No renderer method takes a path,
+  and the window's URL carries none.
+- **The sidecar** refuses anything but an image or a video, opens the file's folder as `dir.open` does (listed in
+  the background in a scan lane of its own, watched) and puts the file itself in the index at once, so the picture
+  never waits for a folder of 100,000 files. It waits at most 150 ms for the listing, which is enough for a folder
+  of a few thousand files; `listed` says whether the listing was complete.
+- **A window without an opener.** Such a media window has no parent (the shell may not exist, or be minimized) and
+  its fragment says `alone=1`. Its page asks for items exactly as before (`media.windowStep`); main answers from a
+  session it holds for that window (`OpenWithSession`): the folder's pictures and videos by name, as the viewer
+  lists them by default, following the listing as it arrives. While a large folder is still being listed, a step
+  that finds no neighbour asks once more after 0.3 s. The session closes with the window.
+- **Into the app.** In such a window a double-click on the picture or video, or the button "Open in Panelyth", does
+  not close it: `media.windowReveal {}` (commander profile, no parameters; main accepts it only from a window it
+  opened for a file) shows the **viewer** on the file's folder with the file selected, then closes the media window.
+  When no main window exists, main creates it showing the viewer, whichever app was used last, and the viewer asks
+  once at start what it was started for (`app.openRequest {}` → `{ request: { dirId, entryId } | null }`, viewer
+  profile); the configured startup folder is not opened then. When the viewer runs already, main sends it the
+  `open.request { dirId, entryId }` event. Esc and Close end the window; when it was the only one, the app ends.
+- **Not a picture or a video:** the app starts as usual. A second launch without a file brings the main window to
+  the front, or opens it when only media windows exist.
+- **Not in such a window:** Edit (there is no editor behind it; take the picture into the viewer first).
+- **Not decided here: file associations in the packages.** The feature works when the user picks the program
+  ("Open with → choose an app", a command line). Declaring the picture and video types in the installers (NSIS,
+  the macOS bundle's document types, the Linux desktop entry's MIME types), so the app is offered by the OS, changes
+  what an installation does to the user's system and is the owner's call (Stage P06).
+
+Verified: unit tests for the argument, the session (the file first, neighbours, a hidden file, a listing under
+way, close), the standalone window, the per-app allowlist and validation, the page and the overlay, the viewer's
+start and the event; a Go test for `entry.fromPath`; E2E `openwith.spec.ts` (a cold start with a file: one window,
+no main window, next and previous, double-click into the viewer with the file selected; the app already running;
+a file that is no picture). Not run: the packaged app, macOS (`open-file`) and Linux.
+
 ## Consequences
 
 - One more renderer to build and ship (`documents/` in the package, `pnpm build`, the dev server on port 5175).

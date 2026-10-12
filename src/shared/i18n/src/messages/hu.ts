@@ -1148,6 +1148,7 @@ const messages: Messages = {
     "Nyisson meg egy mappát a képek és videók böngészéséhez.",
   "Open folder…": "Mappa megnyitása…",
   "Open images and videos with": "Képek és videók megnyitása",
+  "Open in Panelyth": "Megnyitás a Panelythben",
   "Open in a new tab": "Megnyitás új lapon",
   "Open in the editor": "Megnyitás a szerkesztőben",
   "Open in the left panel": "Megnyitás a bal panelen",
@@ -1157,6 +1158,8 @@ const messages: Messages = {
   "Open with default app": "Megnyitás az alapértelmezett alkalmazással",
   "Opening the picture…": "Kép megnyitása…",
   "Opening…": "Megnyitás…",
+  "Opens the folder with this file selected (double-click)":
+    "Megnyitja a mappát, ezzel a fájllal kijelölve (dupla kattintás)",
   "Opens the menu": "Megnyitja a menüt",
   "Operation queue": "Műveleti sor",
   Operations: "Műveletek",

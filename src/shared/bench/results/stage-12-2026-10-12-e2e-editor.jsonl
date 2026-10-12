@@ -9,3 +9,5 @@
 {"at":"2026-10-12T02:18:31.254Z","test":"editor-24mp","firstFrameMs":19,"readyMs":504,"dragPaints":62,"dragPaintGapP95Ms":39,"dragSettleMs":39,"finalFrame":"1630x642","longTasksOver50":0,"maxLongTaskMs":0}
 {"at":"2026-10-12T08:31:46.166Z","test":"editor","firstFrameMs":20,"readyMs":266,"quarterTurnMs":21,"dragMs":1237,"dragPaints":43,"dragPaintGapP95Ms":36,"dragSettleMs":17,"longTasksOver50":0,"maxLongTaskMs":0,"saveMs":123}
 {"at":"2026-10-12T08:31:48.893Z","test":"editor-24mp","firstFrameMs":19,"readyMs":456,"dragPaints":62,"dragPaintGapP95Ms":33,"dragSettleMs":38,"finalFrame":"1630x642","longTasksOver50":0,"maxLongTaskMs":0}
+{"at":"2026-10-12T09:33:29.661Z","test":"editor","firstFrameMs":19,"readyMs":277,"quarterTurnMs":27,"dragMs":1244,"dragPaints":43,"dragPaintGapP95Ms":39,"dragSettleMs":17,"longTasksOver50":0,"maxLongTaskMs":0,"saveMs":70}
+{"at":"2026-10-12T09:33:32.451Z","test":"editor-24mp","firstFrameMs":20,"readyMs":447,"dragPaints":62,"dragPaintGapP95Ms":32,"dragSettleMs":35,"finalFrame":"1630x642","longTasksOver50":0,"maxLongTaskMs":0}

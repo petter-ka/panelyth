@@ -10,11 +10,22 @@ export const MEDIA_WINDOW_LANE = "cmd-media-window"
 const closeWindow = (): void => window.close()
 
 /**
+ * Opened for a file from the OS ("Open with"): there is no app window behind
+ * this one. Main says so in the URL fragment.
+ */
+export const standsAlone = (hash = window.location.hash): boolean =>
+  new URLSearchParams(hash.replace(/^#/, "")).get("alone") === "1"
+
+/**
  * The full-screen media window (ADR-0033 amended): the shared media overlay
  * (zoom, fit, the Panelyth player, previous / next) over a black window. The
  * window that opened it owns the listing, so every step is a question to it.
+ * A window opened for a file from the OS asks main the same way; there a
+ * double-click does not close it but takes the picture into the viewer, at
+ * its folder.
  */
 export function MediaWindowApp() {
+  const [alone] = useState(standsAlone)
   const [item, setItem] = useState<ContentItem | null>(null)
   const [failed, setFailed] = useState(false)
   const [wheelMode, setWheelMode] = useState<"zoom" | "previousNext">("zoom")
@@ -78,16 +89,22 @@ export function MediaWindowApp() {
       item={item}
       lane={MEDIA_WINDOW_LANE}
       wheelMode={wheelMode}
-      closeOnDoubleClick
       onClose={closeWindow}
       onStep={(direction) => void step(direction)}
-      // The main window's viewer opens its editor on the picture; this window is done.
-      onEdit={() =>
-        void bridge
-          .editInViewer(item.id)
-          .then(closeWindow)
-          .catch(() => undefined)
-      }
+      {...(alone
+        ? {
+            // Main opens the viewer on this file's folder and closes this window.
+            onShowInApp: () => void bridge.mediaWindowReveal().catch(() => undefined),
+          }
+        : {
+            closeOnDoubleClick: true,
+            // The main window's viewer opens its editor on the picture; this window is done.
+            onEdit: () =>
+              void bridge
+                .editInViewer(item.id)
+                .then(closeWindow)
+                .catch(() => undefined),
+          })}
     />
   )
 }

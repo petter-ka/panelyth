@@ -147,7 +147,7 @@ Claude Code should read these files in this order:
 | 0030 | Archives as folders | commander | Accepted (Stage C07) |
 | 0031 | One shell for both apps: app switching and shared state | shared | Accepted |
 | 0032 | Packaging and release builds (electron-builder) | shared | Accepted (Stage P04) |
-| 0033 | Document window: PDFs and text in a window of their own | shared | Accepted (owner request) |
+| 0033 | Document window: PDFs and text in a window of their own; the media window; files opened from the OS | shared | Accepted (owner request; amended 2026-10-12) |
 | 0034 | Localization: eight languages, English text as the key | shared | Accepted (owner request) |
 | 0035 | Image editor engine: sessions, proxy rendering, save semantics | viewer | Accepted with amendments (Stage 12, 2026-10-12; notes from Stages 13 to 15) |
 | 0036 | Batch image editing: recipes, edit jobs, output rules | viewer | Accepted with amendments (Stage 16) |
