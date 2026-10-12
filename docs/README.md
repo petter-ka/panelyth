@@ -3,7 +3,7 @@
 **A keyboard-first, two-panel file manager with a photo and video viewer beside it, in one desktop app for Windows,
 macOS and Linux.** It is built for very large folders, runs entirely on your own computer, and needs no account.
 
-![Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar](../showcase/src/media/commander-panels.webp)
+![Panelyth Commander with two folders of files in the Full view, five files marked in the left panel](../showcase/src/media/commander-files.webp)
 
 ![The Panelyth viewer showing a folder of photographs as tiles, with the folder tree and a preview on the left](../showcase/src/media/viewer-tiles.webp)
 
@@ -36,7 +36,7 @@ you selected comes with you. Bookmarks, recent folders and appearance are shared
 - **And the rest of the toolbox:** a multi-rename tool with undo, a quick view of the file under the cursor, a lister
   for text, hex, pictures and video, and a command line.
 
-![Panelyth Commander with two folders of files in the Full view, five files marked in the left panel](../showcase/src/media/commander-files.webp)
+![Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar](../showcase/src/media/commander-panels.webp)
 
 <p>
   <img src="../showcase/src/media/commander-find.webp" width="32%" alt="The Find files dialog on its Advanced tab, with a minimum size and a date range filled in" />
