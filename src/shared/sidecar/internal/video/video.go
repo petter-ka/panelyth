@@ -14,14 +14,14 @@ import (
 	"image"
 	"image/png"
 	"io"
-	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"panelyth/sidecar/internal/platform"
 )
 
 var (
@@ -85,37 +85,25 @@ func New(ffmpeg, ffprobe string) *Tools {
 
 // Locate finds the tools: PANELYTH_FFMPEG (path to ffmpeg, ffprobe is its
 // sibling; "off" disables video tools), then next to the sidecar executable
-// (packaged builds), then PATH.
+// (packaged builds), then PATH and the folders package managers install to
+// (platform.ToolFinder).
 func Locate(getenv func(string) string) *Tools {
-	exe := func(name string) string {
-		if runtime.GOOS == "windows" {
-			return name + ".exe"
-		}
-		return name
-	}
-	if v := getenv("PANELYTH_FFMPEG"); v != "" {
+	return locate(platform.HostTools(getenv))
+}
+
+func locate(f platform.ToolFinder) *Tools {
+	if v := f.Getenv("PANELYTH_FFMPEG"); v != "" {
 		if v == "off" {
 			return New("", "")
 		}
-		return New(existing(v), existing(filepath.Join(filepath.Dir(v), exe("ffprobe"))))
+		return New(f.File(v), f.File(filepath.Join(filepath.Dir(v), f.Exe("ffprobe"))))
 	}
-	if self, err := os.Executable(); err == nil {
-		dir := filepath.Dir(self)
-		ff, fp := existing(filepath.Join(dir, exe("ffmpeg"))), existing(filepath.Join(dir, exe("ffprobe")))
-		if ff != "" && fp != "" {
-			return New(ff, fp)
-		}
+	// A packaged pair is used only when it is complete: ffmpeg from the
+	// package beside an ffprobe of another version reads files differently.
+	if ff, fp := f.Beside("ffmpeg"), f.Beside("ffprobe"); ff != "" && fp != "" {
+		return New(ff, fp)
 	}
-	ff, _ := exec.LookPath("ffmpeg")
-	fp, _ := exec.LookPath("ffprobe")
-	return New(ff, fp)
-}
-
-func existing(p string) string {
-	if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
-		return p
-	}
-	return ""
+	return New(f.Installed([]string{"ffmpeg"}), f.Installed([]string{"ffprobe"}))
 }
 
 // Available reports whether posters and probing work.

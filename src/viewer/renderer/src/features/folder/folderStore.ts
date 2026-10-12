@@ -464,23 +464,42 @@ async function rebaseSelection(previous: QuerySnapshot): Promise<void> {
   }
 }
 
+/** The open folder's session moved on: new pages, the selection mapped over, new facets. */
+function applyInvalidation(snapshot: QuerySnapshot): void {
+  const query = get().query
+  if (!query || snapshot.queryId !== query.queryId || snapshot.version <= query.version) return
+  set({ query: snapshot })
+  invalidatePages(snapshot)
+  void rebaseSelection(query)
+  scheduleFacets(snapshot.queryId)
+}
+
 /** Subscribes to index events; returns an unsubscribe function. */
 export function startFolderMonitoring(): () => void {
   if (!isBridgeAvailable()) return () => {}
+  // While the commander is shown the viewer makes no page or thumbnail
+  // requests (docs/shared/APP-SWITCHING.md, "Hidden app rules"): the newest
+  // version of its folder waits here until the viewer is shown again.
+  let visible = true
+  let waiting: QuerySnapshot | null = null
   const offProgress = bridge.on("index.progress", (p) => {
     rememberProgress(p)
     if (p.scanId === get().folder?.scanId) set({ progress: p })
   })
   const offInvalidated = bridge.on("query.invalidated", (snapshot) => {
-    const query = get().query
-    if (!query || snapshot.queryId !== query.queryId || snapshot.version <= query.version) return
-    set({ query: snapshot })
-    invalidatePages(snapshot)
-    void rebaseSelection(query)
-    scheduleFacets(snapshot.queryId)
+    if (visible) applyInvalidation(snapshot)
+    else if (snapshot.queryId === get().query?.queryId) waiting = snapshot
+  })
+  const offVisibility = bridge.on("app.visibility", ({ app, visible: shown }) => {
+    if (app !== "viewer") return
+    visible = shown
+    const snapshot = waiting
+    waiting = null
+    if (shown && snapshot) applyInvalidation(snapshot)
   })
   return () => {
     offProgress()
     offInvalidated()
+    offVisibility()
   }
 }

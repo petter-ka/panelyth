@@ -37,6 +37,14 @@ type (
 		// clears it.
 		Selection json.RawMessage `json:"selection"`
 	}
+	// appSetVisibleParams names the app on screen (Stage P02, ADR-0026).
+	// Electron main sends it at start and on every switch; no renderer can.
+	appSetVisibleParams struct {
+		App string `json:"app"`
+		// Seq orders main's calls: requests are handled concurrently, and
+		// after a quick switch there and back the later one must win.
+		Seq int64 `json:"seq"`
+	}
 	contextGetResult struct {
 		// Version counts publishes in this run; 0 = nothing published yet
 		// (App and Path then come from the previous run, DirID is 0).
@@ -109,6 +117,23 @@ type sharedContext struct {
 }
 
 func validApp(app string) bool { return app == "viewer" || app == "commander" }
+
+// appSetVisible moves the watches to the folders of the app on screen; the
+// folders it shows are re-listed if they were not watched while it was
+// hidden (ADR-0020, ADR-0026).
+func (s *indexService) appSetVisible(_ context.Context, p appSetVisibleParams) (okResult, error) {
+	if !validApp(p.App) {
+		return okResult{}, rpc.NewError(rpc.CodeInvalidArgument, "app must be viewer or commander")
+	}
+	s.visibleMu.Lock()
+	defer s.visibleMu.Unlock()
+	if p.Seq <= s.visibleSeq {
+		return okResult{OK: false}, nil // overtaken by a later switch
+	}
+	s.visibleSeq = p.Seq
+	s.watcher.Show(p.App)
+	return okResult{OK: true}, nil
+}
 
 func (c *sharedContext) publish(ctx context.Context, p contextPublishParams) (okResult, error) {
 	if !validApp(p.App) {
@@ -258,6 +283,7 @@ func toRanges(sorted []int) [][2]int {
 
 func (s *indexService) registerContext(srv *rpc.Server) {
 	rpc.Register(srv, "context.publish", s.context.publish)
+	rpc.Register(srv, "app.setVisible", s.appSetVisible)
 	rpc.Register(srv, "context.get", func(ctx context.Context, _ emptyParams) (contextGetResult, error) {
 		return s.context.get(ctx)
 	})

@@ -65,7 +65,7 @@ export function ViewerOverlay() {
   const index = useViewerStore((s) => s.index)
   const item = useViewerStore((s) => s.item)
   const total = useFolderStore((s) => s.query?.total ?? 0)
-  const wheelMode = useSettingsStore((s) => s.preferences.wheelMode)
+  const wheelMode = useSettingsStore((s) => s.settings.wheelMode)
   const thumb = useThumb(item?.id ?? -1)
   const controller = useRef<ImageViewerController>(null)
   const rootRef = useRef<HTMLDivElement>(null)

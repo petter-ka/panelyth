@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -278,7 +277,7 @@ func findCoverSources(ctx context.Context, dir, dirKey string, videos bool) ([]i
 			}
 			out = append(out, index.Source{Kind: kind, Ext: ext, Size: info.Size(),
 				MtimeNs: info.ModTime().UnixNano(), PathKey: pathkey.ChildKey(dirKey, e.Name(), false),
-				Path: filepath.Join(dir, e.Name())})
+				Path: fsx.JoinName(dir, e.Name())})
 			if len(out) == MaxCovers {
 				break
 			}

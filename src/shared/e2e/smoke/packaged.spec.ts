@@ -35,11 +35,14 @@ test("packaged: open, preview, switch, list, copy, quit", async () => {
   })
   const scratch = mkdtempSync(join(tmpdir(), "panelyth-smoke-"))
   const dst = mkdtempSync(join(tmpdir(), "panelyth-smoke-dst-"))
+  // A VS Code extension host sets ELECTRON_RUN_AS_NODE for its children; with
+  // it Electron runs as plain Node and the app never starts (as in launchEnv).
+  const { ELECTRON_RUN_AS_NODE: _runAsNode, ...inherited } = process.env as Record<string, string>
   const app = await _electron.launch({
     executablePath: packagedApp(),
     args: [`--user-data-dir=${join(scratch, "user-data")}`],
     env: {
-      ...(process.env as Record<string, string>),
+      ...inherited,
       PANELYTH_CACHE_DIR: join(scratch, "cache"),
       PANELYTH_CONFIG_DIR: join(scratch, "config"),
       PANELYTH_COMMANDER: "1",
@@ -82,7 +85,12 @@ test("packaged: open, preview, switch, list, copy, quit", async () => {
     const tile = page.locator('[data-testid="tile"][data-kind="image"]').first()
     await expect(tile).toBeVisible({ timeout: 30_000 })
     await tile.dblclick()
-    await expect(page.getByTestId("viewer").getByTestId("image-viewer")).toHaveAttribute(
+    // The picture opens in the media window (ADR-0033), a window of its own.
+    await expect
+      .poll(() => app.windows().some((w) => w.url().includes("media.html")), { timeout: 15_000 })
+      .toBe(true)
+    const media = app.windows().find((w) => w.url().includes("media.html"))!
+    await expect(media.getByTestId("media-viewer").getByTestId("image-viewer")).toHaveAttribute(
       "data-layer",
       "fit",
       { timeout: 30_000 },

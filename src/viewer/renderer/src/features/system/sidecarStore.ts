@@ -1,22 +1,17 @@
-import type { SidecarStatus, SystemInfo } from "@panelyth/contracts"
-import { create } from "zustand"
-import { bridge, isBridgeAvailable } from "../../bridge"
+import type { SystemInfo } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
+import { createSidecarStore, followSidecar } from "@panelyth/renderer-core"
+import { bridge, isBridgeAvailable } from "../../bridge"
 
-interface SidecarState {
-  status: SidecarStatus | null
+interface ViewerSidecarState {
   info: SystemInfo | null
   /** Round trip renderer → main → Go → renderer of the last ping. */
   pingMs: number | null
-  error: string | null
 }
 
-export const useSidecarStore = create<SidecarState>(() => ({
-  status: null,
-  info: null,
-  pingMs: null,
-  error: null,
-}))
+// The status and its monitoring are shared with the commander
+// (src/shared/renderer-core); the ping and the build info are the viewer's.
+export const useSidecarStore = createSidecarStore<ViewerSidecarState>({ info: null, pingMs: null })
 
 export async function measurePing(): Promise<void> {
   try {
@@ -36,33 +31,21 @@ async function refreshInfo(): Promise<void> {
   }
 }
 
-function applyStatus(status: SidecarStatus): void {
-  const previous = useSidecarStore.getState().status
-  useSidecarStore.setState({ status })
-  // Only on transitions into ready: no polling while idle.
-  if (status.state === "ready" && (previous?.state !== "ready" || previous.pid !== status.pid)) {
-    void measurePing()
-    void refreshInfo()
-  }
-}
-
-/**
- * Subscribes to sidecar status pushes and fetches the current status once,
- * in case the renderer loaded after the sidecar became ready.
- */
+/** Follows the sidecar; measures the ping and reads the build info each time it becomes ready. */
 export function startSidecarMonitoring(): () => void {
   if (!isBridgeAvailable()) {
     useSidecarStore.setState({ error: t("Panelyth bridge is not available") })
     return () => {}
   }
-  const unsubscribe = bridge.on("sidecar.status", applyStatus)
-  bridge.sidecarStatus().then(
-    (status) => {
-      // A push may already have delivered a newer status.
-      const current = useSidecarStore.getState().status
-      if (!current || current.since <= status.since) applyStatus(status)
+  return followSidecar(
+    useSidecarStore,
+    {
+      getStatus: bridge.sidecarStatus,
+      onStatus: (listener) => bridge.on("sidecar.status", listener),
     },
-    (error: unknown) => useSidecarStore.setState({ error: String(error) }),
+    () => {
+      void measurePing()
+      void refreshInfo()
+    },
   )
-  return unsubscribe
 }

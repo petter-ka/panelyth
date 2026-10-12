@@ -49,6 +49,7 @@ type (
 	dirOpenContainingParams struct {
 		EntryID int64  `json:"entryId"`
 		Lane    string `json:"lane"`
+		App     string `json:"app"`
 	}
 )
 
@@ -91,7 +92,7 @@ func (s *indexService) findStart(ctx context.Context, p findStartParams) (findSt
 	var snap query.Snapshot
 	findID, _, err := s.finds.Start(c, func(src *find.Source) (int64, error) {
 		var err error
-		snap, err = s.queries.OpenSource(ctx, index.Descriptor{Scope: index.ScopeAll, ShowHidden: true}, src)
+		snap, err = s.queries.OpenSource(ctx, query.OwnerCommander, index.Descriptor{Scope: index.ScopeAll, ShowHidden: true}, src)
 		return snap.QueryID, err
 	})
 	if err != nil {
@@ -106,7 +107,7 @@ func (s *indexService) openFindQuery(ctx context.Context, findID int64, d index.
 	if errors.Is(err, find.ErrUnknown) {
 		return query.Snapshot{}, rpc.NewError(rpc.CodeNotFound, "the search results are no longer available")
 	}
-	snap, err := s.queries.OpenSource(ctx, d, src)
+	snap, err := s.queries.OpenSource(ctx, query.OwnerCommander, d, src)
 	if err != nil {
 		return snap, dbError(err)
 	}
@@ -123,7 +124,7 @@ func (s *indexService) dirOpenContaining(ctx context.Context, p dirOpenContainin
 	if len(paths) == 0 {
 		return dirOpenResult{}, rpc.NewError(rpc.CodeNotFound, "not in the index")
 	}
-	return s.dirOpen(ctx, dirOpenParams{Path: filepath.Dir(paths[0].Path), Lane: p.Lane})
+	return s.dirOpen(ctx, dirOpenParams{Path: filepath.Dir(paths[0].Path), Lane: p.Lane, App: p.App})
 }
 
 // changed routes index changes to query sessions and to search results.

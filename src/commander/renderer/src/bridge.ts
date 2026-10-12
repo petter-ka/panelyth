@@ -34,9 +34,6 @@ import type {
   JobErrorsResult,
   CommanderApi,
   DirOpenResult,
-  ErrorCode,
-  EventChannel,
-  EventMap,
   LibraryState,
   ListDirsResult,
   Place,
@@ -52,7 +49,6 @@ import type {
   RemoteConnectParams,
   RemoteConnectResult,
   RemoteOpenResult,
-  RpcEnvelope,
   SavedConnection,
   SharedContext,
   ShellRunToolParams,
@@ -62,33 +58,16 @@ import type {
   Volume,
 } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
+import { createBridgeCore, PanelythError, unwrap } from "@panelyth/renderer-core"
 
-/** A failed call, with the sidecar's error code and details (e.g. `{ reason: "notReady" }`). */
-export class PanelythError extends Error {
-  override name = "PanelythError"
-  constructor(
-    readonly code: ErrorCode,
-    message: string,
-    readonly details?: unknown,
-  ) {
-    super(message)
-  }
-}
+// The envelope handling is shared with the viewer (src/shared/renderer-core).
+export { PanelythError }
 
 /** The commander's narrow API (ADR-0027); everything goes through here. */
-function api(): CommanderApi {
-  const value = window.panelyth
-  if (!value) throw new Error(t("Panelyth bridge unavailable"))
-  return value
-}
+const core = createBridgeCore<CommanderApi>(() => t("Panelyth bridge unavailable"))
+const api = core.api
 
-async function unwrap<T>(call: () => Promise<RpcEnvelope<T>>): Promise<T> {
-  const res = await call()
-  if (!res.ok) throw new PanelythError(res.e.code, res.e.message, res.e.details)
-  return res.r
-}
-
-export const isBridgeAvailable = (): boolean => window.panelyth !== undefined
+export const isBridgeAvailable = core.isAvailable
 
 let library: Promise<LibraryState> | null = null
 
@@ -371,8 +350,5 @@ export const bridge = {
   },
   mkfile: (parentDirId: number, name: string): Promise<FsMkfileResult> =>
     unwrap(() => api().fs.mkfile(parentDirId, name)),
-  on: <C extends EventChannel>(
-    channel: C,
-    listener: (payload: EventMap[C]) => void,
-  ): (() => void) => api().onEvent(channel, listener),
+  on: core.on,
 }

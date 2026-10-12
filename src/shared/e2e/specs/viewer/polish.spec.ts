@@ -3,14 +3,11 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { launchApp, repoRoot, showDialogFolder, waitForReady } from "../../launch"
 
 // Stage 08.6: copying pictures to the OS clipboard and additive selection.
 // Main records clipboard writes instead of touching the user's clipboard
 // (PANELYTH_TEST_SHELL=record): a picture is logged as "WxH" from its PNG.
-
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
 
 const tile = (page: Page, name: string) =>
   page.locator(`[data-testid="tile"][aria-label="${name}"]`)
@@ -51,13 +48,13 @@ function imagesCopy(): string {
 async function open() {
   const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: imagesCopy() })
   await waitForReady(launched.page)
-  await toolbarOpen(launched.page).click()
+  await showDialogFolder(launched.page)
   await expect(tile(launched.page, "photo_0000.jpg")).toBeVisible({ timeout: 30_000 })
   return launched
 }
 
 test.describe("UI polish v2 (Stage 08.6)", () => {
-  test("Ctrl+C copies the picture (oriented) from the tiles, the menu and the viewer", async () => {
+  test("Ctrl+C copies the picture (oriented) from the tiles and the menu", async () => {
     const { app, page } = await open()
     try {
       await page.evaluate(() => {
@@ -88,17 +85,9 @@ test.describe("UI polish v2 (Stage 08.6)", () => {
       await expect(page.getByTestId("notice")).toContainText("2 items copied")
       expect(await pictures(app)).toHaveLength(2)
 
-      // The viewer: Ctrl+C and the right-click menu.
-      await tile(page, "photo_0003.jpg").dblclick()
-      await expect(page.getByTestId("viewer")).toBeVisible()
-      await page.keyboard.press("Control+c")
-      await expect.poll(() => pictures(app)).toHaveLength(3)
-      await page.getByTestId("viewer-canvas").click({ button: "right" })
-      await page.getByTestId("viewer-menu").getByRole("menuitem", { name: "Copy picture" }).click()
-      await expect.poll(() => pictures(app)).toHaveLength(4)
-      await expect(page.getByTestId("viewer")).toBeVisible() // still open, keys still work
-      await page.keyboard.press("Escape")
-      await expect(page.getByTestId("viewer")).toHaveCount(0)
+      // The full-screen viewer had Ctrl+C and "Copy picture" in its menu too.
+      // A double-click now opens the media window (ADR-0033), which has
+      // neither; see "Open" in docs/shared/stages/P04-cross-platform.md.
 
       const longTasks = await page.evaluate(
         () => (window as unknown as { __long: number[] }).__long,

@@ -12,6 +12,9 @@ Amended 2026-10-05 (ADR-0031): the code moved into `shared/` (`desktop`, `contra
 Amended 2026-10-10: `shared/`, `viewer/` and `commander/` moved under `src/`; `scripts/` stays in the repository root.
 Paths below use the new layout.
 
+Amended 2026-10-12 (Stage P01): the workspace as built, and the package boundaries as lint rules (see "Workspace
+packages and their boundaries" below).
+
 ## Decision
 
 - **pnpm workspace** with packages `src/shared/desktop`, `src/viewer/renderer`, `src/shared/contracts`, `src/shared/e2e`
@@ -34,6 +37,30 @@ Paths below use the new layout.
   gofmt and go vet run through `node scripts/go.mjs`.
 - **Tests**: Vitest (contracts, desktop with a real-binary sidecar integration test, renderer with jsdom and RTL),
   `go test` (including a subprocess test of the real entrypoint), and Playwright `_electron` for e2e.
+
+## Workspace packages and their boundaries (Stage P01)
+
+The workspace has eleven packages: the shell (`src/shared/desktop`), the two apps (`src/viewer/renderer`,
+`src/commander/renderer`), the document window (`src/shared/docviewer`, ADR-0033), the shared renderer packages
+(`src/shared/contracts`, `i18n`, `renderer-core`, `ui`, `media-ui`), and the tooling (`src/shared/e2e`,
+`src/shared/bench`).
+
+- **The shared renderer packages ship TypeScript source** and are bundled by each app's Vite build, like
+  `src/shared/contracts`. They have no build step. Stage P01 measured no reason to prebuild them: an app's bundle
+  holds only what it imports (the commander's has no Radix menu code, though `src/shared/ui` exports the menus).
+- **Boundaries are lint rules** (`no-restricted-imports` in `eslint.config.js`):
+  - an app never imports the other app, by package name or by path;
+  - a shared package never imports an app, the document window or the shell;
+  - a shared package imports only the packages below it: `contracts`, `i18n` < `renderer-core` < `ui` <
+    `media-ui`;
+  - renderer code (the apps, the document window, the shared renderer packages) never imports `electron` or
+    `node:*`; the message catalog's tooling in `src/shared/i18n` is the exception, it runs in Node.
+- `src/shared/desktop/test/boundaries.test.ts` lints one import per rule and fails when a rule stops firing; it also
+  checks the same layering in the packages' `package.json` files.
+- **Bundle sizes are recorded** by `pnpm bench:bundle` (`scripts/bundle-size.mjs`, after `pnpm build`): JS and CSS
+  per renderer, raw and gzipped, with the locale chunks counted apart.
+- Tailwind scans `src/shared/ui` from each app, so a class used only by a shared component an app does not render
+  still reaches that app's CSS (534 bytes in the commander for the menus and the notice).
 
 ## Consequences
 

@@ -1,0 +1,696 @@
+{
+  "stage": "01",
+  "benchmark": "index",
+  "date": "2026-10-12T13:57:22+02:00",
+  "env": {
+    "arch": "amd64",
+    "cpus": 32,
+    "go": "go1.27.0",
+    "os": "windows"
+  },
+  "fixtures": {
+    "flat-100k": {
+      "expected": {
+        "Dirs": 0,
+        "Media": 90000,
+        "NonMedia": 10000,
+        "Hidden": 0,
+        "Exec": 0,
+        "Links": 0
+      },
+      "spec": {
+        "Files": 100000,
+        "Depth": 0,
+        "Fanout": 0,
+        "NonMediaEvery": 10,
+        "HiddenEvery": 0,
+        "ExecEvery": 0,
+        "LinkEvery": 0
+      }
+    },
+    "media-100k": {
+      "expected": {
+        "Dirs": 0,
+        "Media": 100000,
+        "NonMedia": 0,
+        "Hidden": 0,
+        "Exec": 0,
+        "Links": 0
+      },
+      "spec": {
+        "Files": 100000,
+        "Depth": 0,
+        "Fanout": 0,
+        "NonMediaEvery": 0,
+        "HiddenEvery": 0,
+        "ExecEvery": 0,
+        "LinkEvery": 0
+      }
+    },
+    "mixed-100k": {
+      "expected": {
+        "Dirs": 0,
+        "Media": 40000,
+        "NonMedia": 42000,
+        "Hidden": 14000,
+        "Exec": 4000,
+        "Links": 0
+      },
+      "spec": {
+        "Files": 100000,
+        "Depth": 0,
+        "Fanout": 0,
+        "NonMediaEvery": 2,
+        "HiddenEvery": 5,
+        "ExecEvery": 20,
+        "LinkEvery": 50
+      }
+    },
+    "tree-50k": {
+      "expected": {
+        "Dirs": 258,
+        "Media": 46620,
+        "NonMedia": 5180,
+        "Hidden": 0,
+        "Exec": 0,
+        "Links": 0
+      },
+      "spec": {
+        "Files": 200,
+        "Depth": 3,
+        "Fanout": 6,
+        "NonMediaEvery": 10,
+        "HiddenEvery": 0,
+        "ExecEvery": 0,
+        "LinkEvery": 0
+      }
+    }
+  },
+  "scans": [
+    {
+      "name": "flat-100k",
+      "recursive": false,
+      "indexState": "cold",
+      "entries": 100001,
+      "dirs": 1,
+      "elapsedMs": 1480.228,
+      "entriesPerSec": 67557.83568477289,
+      "firstCommitMs": 30.19,
+      "batches": 56,
+      "batchMsMax": 79.765,
+      "batchMsAvg": 26.070696428571445,
+      "writeShareOfElapsed": 0.9863068392166618
+    },
+    {
+      "name": "flat-100k",
+      "recursive": false,
+      "indexState": "warm",
+      "entries": 100001,
+      "dirs": 1,
+      "elapsedMs": 2523.173,
+      "entriesPerSec": 39633.03348601147,
+      "firstCommitMs": 51.78,
+      "batches": 64,
+      "batchMsMax": 85.966,
+      "batchMsAvg": 38.660296875,
+      "writeShareOfElapsed": 0.9806140918597338
+    },
+    {
+      "name": "tree-50k",
+      "recursive": true,
+      "indexState": "cold",
+      "entries": 52059,
+      "dirs": 259,
+      "elapsedMs": 843.446,
+      "entriesPerSec": 61721.79368922255,
+      "firstCommitMs": 43.078,
+      "batches": 34,
+      "batchMsMax": 40.015,
+      "batchMsAvg": 19.963117647058823,
+      "writeShareOfElapsed": 0.80472964481425
+    },
+    {
+      "name": "tree-50k",
+      "recursive": true,
+      "indexState": "warm",
+      "entries": 52059,
+      "dirs": 259,
+      "elapsedMs": 1008.663,
+      "entriesPerSec": 51611.88622959303,
+      "firstCommitMs": 45.236,
+      "batches": 37,
+      "batchMsMax": 55.889,
+      "batchMsAvg": 24.128324324324325,
+      "writeShareOfElapsed": 0.8850805472194381
+    },
+    {
+      "name": "mixed-100k",
+      "recursive": false,
+      "indexState": "cold",
+      "entries": 100001,
+      "dirs": 1,
+      "elapsedMs": 1773.094,
+      "entriesPerSec": 56399.15311878558,
+      "firstCommitMs": 22.491,
+      "batches": 60,
+      "batchMsMax": 92.663,
+      "batchMsAvg": 29.011250000000004,
+      "writeShareOfElapsed": 0.9817161413890071
+    },
+    {
+      "name": "mixed-100k",
+      "recursive": false,
+      "indexState": "warm",
+      "entries": 100001,
+      "dirs": 1,
+      "elapsedMs": 2576.564,
+      "entriesPerSec": 38811.76636792255,
+      "firstCommitMs": 39.036,
+      "batches": 65,
+      "batchMsMax": 64.411,
+      "batchMsAvg": 39.24129230769231,
+      "writeShareOfElapsed": 0.9899556153078287
+    },
+    {
+      "name": "media-100k",
+      "recursive": false,
+      "indexState": "cold",
+      "entries": 100001,
+      "dirs": 1,
+      "elapsedMs": 1697.85,
+      "entriesPerSec": 58898.607061872375,
+      "firstCommitMs": 36.615,
+      "batches": 58,
+      "batchMsMax": 56.7,
+      "batchMsAvg": 28.218827586206906,
+      "writeShareOfElapsed": 0.9639791501015994
+    },
+    {
+      "name": "media-100k",
+      "recursive": false,
+      "indexState": "warm",
+      "entries": 100001,
+      "dirs": 1,
+      "elapsedMs": 2714.882,
+      "entriesPerSec": 36834.38175213508,
+      "firstCommitMs": 70.561,
+      "batches": 65,
+      "batchMsMax": 74.707,
+      "batchMsAvg": 41.062538461538466,
+      "writeShareOfElapsed": 0.9831237600750237
+    }
+  ],
+  "queries": [
+    {
+      "name": "flat-100k name asc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 71.98,
+        "p95": 93.76,
+        "max": 93.76
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1.02,
+          "max": 1.06
+        },
+        "last": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 0.77,
+          "max": 1.02
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1,
+          "max": 1.11
+        }
+      }
+    },
+    {
+      "name": "flat-100k modified desc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 72.67,
+        "p95": 83.03,
+        "max": 83.03
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.53,
+          "max": 1.91
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "flat-100k type asc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 80.05,
+        "p95": 91.37,
+        "max": 91.37
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.7
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        }
+      }
+    },
+    {
+      "name": "flat-100k created desc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 63.48,
+        "p95": 66.23,
+        "max": 66.23
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.51
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "flat-100k dimensions desc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 73.41,
+        "p95": 79.97,
+        "max": 79.97
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.54
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.01
+        }
+      }
+    },
+    {
+      "name": "flat-100k search \"img_4\"",
+      "total": 10000,
+      "openMs": {
+        "n": 7,
+        "p50": 40.41,
+        "p95": 42.34,
+        "max": 42.34
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1.5,
+          "max": 1.77
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.69
+        }
+      }
+    },
+    {
+      "name": "tree-50k recursive name asc",
+      "total": 46620,
+      "openMs": {
+        "n": 7,
+        "p50": 50.18,
+        "p95": 68.55,
+        "max": 68.55
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 2
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.2,
+          "max": 1.52
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "mixed-100k media name asc",
+      "total": 40000,
+      "openMs": {
+        "n": 7,
+        "p50": 49.42,
+        "p95": 52.98,
+        "max": 52.98
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.51,
+          "max": 1.73
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "mixed-100k all name asc",
+      "total": 86000,
+      "openMs": {
+        "n": 7,
+        "p50": 69.76,
+        "p95": 86.26,
+        "max": 86.26
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 0.55,
+          "max": 0.6
+        },
+        "last": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1.01,
+          "max": 1.51
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "mixed-100k all+hidden name asc",
+      "total": 100001,
+      "openMs": {
+        "n": 7,
+        "p50": 71.33,
+        "p95": 99.02,
+        "max": 99.02
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.51
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.89
+        }
+      }
+    },
+    {
+      "name": "mixed-100k all ext asc",
+      "total": 86000,
+      "openMs": {
+        "n": 7,
+        "p50": 87.02,
+        "p95": 93.32,
+        "max": 93.32
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1.51,
+          "max": 1.88
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.02,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "mixed-100k all attrs desc",
+      "total": 100001,
+      "openMs": {
+        "n": 7,
+        "p50": 95.22,
+        "p95": 100.56,
+        "max": 100.56
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.08,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.51
+        }
+      }
+    },
+    {
+      "name": "mixed-100k all mask *.txt",
+      "total": 42000,
+      "openMs": {
+        "n": 7,
+        "p50": 54.16,
+        "p95": 56.46,
+        "max": 56.46
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1,
+          "max": 1.64
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.76
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "mixed-100k all mask *|*.txt;*.jpg",
+      "total": 24000,
+      "openMs": {
+        "n": 7,
+        "p50": 49.25,
+        "p95": 50.8,
+        "max": 50.8
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.68
+        }
+      }
+    },
+    {
+      "name": "flat-100k all name asc",
+      "total": 100000,
+      "openMs": {
+        "n": 7,
+        "p50": 72.92,
+        "p95": 79.24,
+        "max": 79.24
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.21,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.68
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "media-100k media name asc",
+      "total": 100000,
+      "openMs": {
+        "n": 7,
+        "p50": 80.4,
+        "p95": 95.16,
+        "max": 95.16
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.75
+        },
+        "last": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.04
+        }
+      }
+    }
+  ],
+  "memory": {
+    "growthAfterGCBytes": 40239104,
+    "note": "Go runtime memory (/memory/classes/total:bytes) of this process; excludes SQLite page cache outside the Go heap only if allocated natively (modernc allocates in Go)",
+    "runtimeBytesAfterGC": 52645888,
+    "runtimeBytesBefore": 12406784,
+    "runtimeBytesPeak": 52645888
+  },
+  "indexDb": {
+    "bytes": 132071424,
+    "entries": 352058
+  }
+}

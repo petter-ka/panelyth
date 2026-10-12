@@ -163,6 +163,26 @@ export interface DirOpenParams {
   lane?: string
 }
 
+/**
+ * The calling app, added to a call by Electron main (Stage P02, ADR-0026):
+ * a folder is watched while the app that opened it is on screen, and a
+ * session counts against that app's budget. A renderer's own value is
+ * replaced; main's own calls carry none.
+ */
+export interface CallerApp {
+  app?: AppId
+}
+
+/** Electron main only (Stage P02): the app on screen; the watches follow it. */
+export interface AppSetVisibleParams {
+  app: AppId
+  /**
+   * Counts main's calls from 1. The sidecar handles requests concurrently and
+   * drops a call overtaken by a later one (`ok: false`).
+   */
+  seq: number
+}
+
 /** Opens a folder tile by its index id (no path building in the renderer). */
 export interface DirOpenEntryParams {
   entryId: number
@@ -2180,11 +2200,11 @@ export interface SidecarMethodMap {
   "system.shutdown": { params: EmptyParams; result: ShutdownResult }
   /** Development/benchmark only; registered when PANELYTH_DEV_METHODS=1. */
   "system.echo": { params: EchoParams; result: EchoResult }
-  "dir.open": { params: DirOpenParams; result: DirOpenResult }
-  "dir.openEntry": { params: DirOpenEntryParams; result: DirOpenResult }
+  "dir.open": { params: DirOpenParams & CallerApp; result: DirOpenResult }
+  "dir.openEntry": { params: DirOpenEntryParams & CallerApp; result: DirOpenResult }
   "dir.cancelScan": { params: CancelScanParams; result: CancelScanResult }
   /** The folder holding an entry, opened like dir.open ("Go to file", Stage C06). */
-  "dir.openContaining": { params: DirOpenContainingParams; result: DirOpenResult }
+  "dir.openContaining": { params: DirOpenContainingParams & CallerApp; result: DirOpenResult }
   "find.start": { params: FindStartParams; result: FindStartResult }
   "find.cancel": { params: FindIdParams; result: FindCancelResult }
   "archive.open": { params: EntryParams; result: ArchiveOpenResult }
@@ -2223,7 +2243,7 @@ export interface SidecarMethodMap {
   "remote.open": { params: RemoteOpenParams; result: RemoteOpenResult }
   "remote.mkdir": { params: RemoteMkdirParams; result: OkResult }
   "remote.rename": { params: RemoteRenameParams; result: OkResult }
-  "query.open": { params: QueryDescriptor; result: QuerySnapshot }
+  "query.open": { params: QueryDescriptor & CallerApp; result: QuerySnapshot }
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
   "query.indexOf": { params: QueryIndexOfParams; result: QueryIndexOfResult }
@@ -2232,6 +2252,8 @@ export interface SidecarMethodMap {
   "selection.fromContext": { params: SelectionFromContextParams; result: SelectionDescriptor }
   /** The app being left: its folder and focused entry (only from the visible app). */
   "context.publish": { params: ContextPublishParams; result: OkResult }
+  /** Electron main only: the app on screen, at start and on every switch (Stage P02). */
+  "app.setVisible": { params: AppSetVisibleParams; result: OkResult }
   /** The app being shown (and main at startup): the latest context. */
   "context.get": { params: EmptyParams; result: SharedContext }
   "preview.ensure": { params: PreviewEnsureParams; result: PreviewEnsureResult }

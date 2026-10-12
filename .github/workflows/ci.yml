@@ -81,17 +81,17 @@ jobs:
         id: build
         run: pnpm build
       # Disabled: the e2e suites use too many runner minutes. Uncomment to restore.
-      # # The viewer's specs still click the "Open folder…" button that the
-      # # startup folder (Stage 08.5) and C06 removed from the first screen; they
-      # # join this step once repaired (open item, docs/shared/stages/P04).
-      # - name: E2E (commander and app switch)
+      # # The viewer's specs were repaired on 2026-10-12 (Stage P04) and run here
+      # # too. Four commander tests that predate the document window (ADR-0033)
+      # # still fail; see "Open" in docs/shared/stages/P04-cross-platform.md.
+      # - name: E2E (viewer, commander and app switch)
       #   # Windows: reported, not blocking, until its timing races are fixed
       #   # (open item in docs/shared/stages/P04-cross-platform.md). Linux and
       #   # macOS block.
       #   continue-on-error: ${{ runner.os == 'Windows' }}
       #   shell: bash
       #   run: |
-      #     specs="specs/commander specs/switch.spec.ts"
+      #     specs="specs"
       #     if [ "$RUNNER_OS" = "Linux" ]; then
       #       xvfb-run -a -s "-screen 0 1920x1080x24" pnpm --filter @panelyth/e2e exec playwright test $specs
       #     else

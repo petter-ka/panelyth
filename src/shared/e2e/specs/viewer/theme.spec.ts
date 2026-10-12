@@ -2,42 +2,66 @@ import { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
-import { launchApp, waitForReady } from "../../launch"
+import { commanderEnv, launchApp, waitForReady } from "../../launch"
 
-const canvasColor = (page: Page): Promise<string> =>
-  page.evaluate(() => {
-    const main = document.querySelector('main[aria-label="Content"] > div:last-child')
-    return main ? getComputedStyle(main).backgroundColor : "missing"
-  })
+// The theme is chosen in Settings → Appearance (shared by both apps since
+// Stage C00). A fresh profile is dark; "System" follows the system's setting.
+// Settings open from the app rail, which the product always shows (packaged
+// builds have both apps), so the specs launch with the commander enabled.
 
-test("a fresh profile opens in the dark theme on the neutral canvas", async () => {
-  const { app, page } = await launchApp()
+const theme = (page: Page): Promise<string | undefined> =>
+  page.evaluate(() => document.documentElement.dataset.theme)
+
+const isDark = (page: Page): Promise<boolean> =>
+  page.evaluate(() => document.documentElement.classList.contains("dark"))
+
+async function chooseTheme(page: Page, name: string): Promise<void> {
+  const step = { timeout: 5_000 }
+  await page.getByTestId("app-settings").click(step)
+  await page.getByRole("tab", { name: "Appearance" }).click(step)
+  await page
+    .getByRole("group", { name: "Color theme" })
+    .getByRole("button", { name, exact: true })
+    .click(step)
+}
+
+test("a fresh profile opens in the dark theme; System follows the system's setting", async () => {
+  const { app, page } = await launchApp(commanderEnv("viewer"))
   try {
     await waitForReady(page)
-    await expect(page.locator("html")).toHaveClass(/\bdark\b/)
-    await expect(page.getByTestId("theme-toggle")).toHaveText("Theme: dark")
-    expect(await canvasColor(page)).toBe("rgb(27, 27, 27)")
+    await page.emulateMedia({ colorScheme: "light" })
+    await expect.poll(() => theme(page)).toBe("dark")
+    expect(await isDark(page)).toBe(true)
+    await chooseTheme(page, "System")
+    await expect.poll(() => theme(page)).toBe("light")
+    expect(await isDark(page)).toBe(false)
+    await page.emulateMedia({ colorScheme: "dark" })
+    await expect.poll(() => theme(page)).toBe("dark")
+    expect(await isDark(page)).toBe(true)
   } finally {
     await app.close()
   }
 })
 
-test("the chosen theme persists across restarts", async () => {
+test("the chosen theme persists across restarts, whatever the system says", async () => {
   const profile = mkdtempSync(join(tmpdir(), "panelyth-profile-"))
-  const first = await launchApp({ PANELYTH_USER_DATA_DIR: profile })
+  const env = { ...commanderEnv("viewer"), PANELYTH_USER_DATA_DIR: profile }
+  const first = await launchApp(env)
   try {
     await waitForReady(first.page)
-    await first.page.getByTestId("theme-toggle").click()
-    await expect(first.page.getByTestId("theme-toggle")).toHaveText("Theme: light")
+    await first.page.emulateMedia({ colorScheme: "dark" })
+    await chooseTheme(first.page, "Light")
+    await expect.poll(() => theme(first.page)).toBe("light")
+    expect(await isDark(first.page)).toBe(false)
   } finally {
     await first.app.close()
   }
-  const second = await launchApp({ PANELYTH_USER_DATA_DIR: profile })
+  const second = await launchApp(env)
   try {
     await waitForReady(second.page)
-    await expect(second.page.getByTestId("theme-toggle")).toHaveText("Theme: light")
-    await expect(second.page.locator("html")).not.toHaveClass(/\bdark\b/)
-    expect(await canvasColor(second.page)).toBe("rgb(232, 232, 232)")
+    await second.page.emulateMedia({ colorScheme: "dark" })
+    await expect.poll(() => theme(second.page)).toBe("light")
+    expect(await isDark(second.page)).toBe(false)
   } finally {
     await second.app.close()
   }

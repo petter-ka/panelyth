@@ -1,12 +1,13 @@
 import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { basename, dirname, join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { launchApp, repoRoot, showViewerFolder, waitForReady } from "../../launch"
 
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
+/** The tile of a subfolder of the folder shown; double-clicking it opens the folder. */
+const folderTile = (page: Page, dir: string) =>
+  page.locator(`[data-testid="tile"][data-kind="dir"][aria-label="${basename(dir)}"]`)
 
 /** Starts recording long tasks, rAF frame gaps and event counts in the renderer. */
 async function instrument(page: Page): Promise<void> {
@@ -21,7 +22,9 @@ async function instrument(page: Page): Promise<void> {
     w.__fv = { longTasks, events, frames, timing }
     document.addEventListener("click", () => (timing.clickAt ||= performance.now()), true)
     new MutationObserver((_, observer) => {
-      if (document.querySelector('[data-testid="tile"][data-kind]:not([data-kind="loading"])')) {
+      if (
+        document.querySelector('[data-testid="tile"]:is([data-kind="image"], [data-kind="video"])')
+      ) {
         timing.firstRowsAt = performance.now()
         observer.disconnect()
       }
@@ -58,11 +61,16 @@ test.describe("file index (Stage 01)", () => {
     const fx = ensureFixture("flat-100k", { files: 100_000, nonMediaEvery: 10 })
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: fx.root })
     try {
-      await waitForReady(page)
+      // The folder is opened from its tile in the folder above it, timed in
+      // the page from the click.
+      await showViewerFolder(page, dirname(fx.root))
+      await expect(folderTile(page, fx.root)).toBeVisible({ timeout: 15_000 })
       await instrument(page)
       const started = Date.now()
-      await toolbarOpen(page).click()
-      await expect(page.getByTestId("tile-view")).toBeVisible({ timeout: 15_000 })
+      await folderTile(page, fx.root).dblclick()
+      await expect(page.getByTestId("folder-name")).toHaveText(basename(fx.root), {
+        timeout: 15_000,
+      })
       await expect(page.getByTestId("folder-summary")).toHaveText(
         /^90,000 items\. 10,000 other files not shown$/,
         { timeout: 120_000 },
@@ -102,9 +110,9 @@ test.describe("file index (Stage 01)", () => {
     const fx = ensureFixture("tree-50k", { files: 200, depth: 3, fanout: 6, nonMediaEvery: 10 })
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: fx.root })
     try {
-      await waitForReady(page)
+      await showViewerFolder(page, fx.root)
+      await expect(page.getByTestId("tile").first()).toBeVisible({ timeout: 15_000 })
       await page.getByLabel("Include subfolders").check()
-      await toolbarOpen(page).click()
       await page.getByRole("button", { name: "Stop" }).click()
       await expect(page.getByTestId("folder-summary")).toContainText("Indexing stopped", {
         timeout: 10_000,
@@ -123,8 +131,7 @@ test.describe("file index (Stage 01)", () => {
 
     const first = await launchApp(env)
     try {
-      await waitForReady(first.page)
-      await toolbarOpen(first.page).click()
+      await showViewerFolder(first.page, fx.root)
       await expect(first.page.getByTestId("folder-summary")).toHaveText(/^4,500 items/, {
         timeout: 60_000,
       })
@@ -163,8 +170,7 @@ test.describe("file index (Stage 01)", () => {
     for (const n of ["a.jpg", "b.png"]) writeFileSync(join(dir, n), "x")
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
     try {
-      await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showViewerFolder(page, dir)
       await expect(page.getByTestId("folder-summary")).toHaveText("2 items")
       writeFileSync(join(dir, "c.webp"), "x")
       mkdirSync(join(dir, "new folder"))
@@ -179,8 +185,7 @@ test.describe("file index (Stage 01)", () => {
     const missing = join(tmpdir(), "panelyth-does-not-exist-" + Date.now())
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: missing })
     try {
-      await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showViewerFolder(page, missing)
       await expect(page.getByText("This folder no longer exists.")).toBeVisible()
     } finally {
       await app.close()
@@ -188,7 +193,8 @@ test.describe("file index (Stage 01)", () => {
   })
 })
 
-function writeResult(result: object): void {
+/** Filed under BENCH_STAGE when a stage re-measures the index (P02, P05). */
+function writeResult(result: object, stage = process.env.BENCH_STAGE ?? "03"): void {
   const date = new Date().toISOString().slice(0, 10)
   const file = join(
     repoRoot,
@@ -196,7 +202,7 @@ function writeResult(result: object): void {
     "shared",
     "bench",
     "results",
-    `stage-03-${date}-e2e-index.jsonl`,
+    `stage-${stage}-${date}-e2e-index.jsonl`,
   )
   appendFileSync(file, JSON.stringify({ at: new Date().toISOString(), ...result }) + "\n")
 }

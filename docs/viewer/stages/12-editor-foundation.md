@@ -216,8 +216,9 @@ Before and after of the two optimizations made in this stage (invariant 10): ope
   buttons, not by dragging.
 - **E2E not covered:** cancelling a running save, 200 % interface size, a real Replace (an e2e run leaves the
   recycle bin alone; the Go tests cover the path with an injected trash).
-- **Tile-view scroll with an idle session** was not measured: the viewer's tile e2e suite cannot open a folder since
-  C06. An idle session runs no code and holds 72 MB.
+- **Tile-view scroll with an idle session** was not measured: the viewer's tile e2e suite could not open a folder
+  since C06 (it can again since Stage P01, 2026-10-12; the check itself is still to be written). An idle session runs
+  no code and holds 72 MB.
 - **A corpus of camera files** for the metadata tests: the fixtures are built in the tests.
 - The full frame for a 4K canvas (125–131 ms) and a 100 MP save's 789 MB peak, for Stage P05.
 

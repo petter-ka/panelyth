@@ -10,7 +10,11 @@ import { resetThumbs, startThumbMonitoring } from "../../features/previews/thumb
 import { profileFor, rowHeight, tilesPerRow, type TileSize } from "../../features/tiles/layout"
 import { resetLayoutStore, useLayoutStore } from "../../features/tiles/layoutStore"
 import { useSelectionStore } from "../../features/tiles/selectionStore"
-import { DEFAULT_VIEWER_PREFERENCES, useSettingsStore } from "../../features/settings/settingsStore"
+import {
+  DEFAULT_VIEWER_PREFERENCES,
+  setPreference,
+  useSettingsStore,
+} from "../../features/settings/settingsStore"
 import { startSidecarMonitoring, useSidecarStore } from "../../features/system/sidecarStore"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
@@ -75,7 +79,7 @@ beforeEach(() => {
   resetLayoutStore()
   resetFolderStore()
   resetThumbs()
-  useSettingsStore.setState({ preferences: DEFAULT_VIEWER_PREFERENCES })
+  useSettingsStore.setState({ settings: DEFAULT_VIEWER_PREFERENCES })
   useSidecarStore.setState({ status: null, info: null, pingMs: null, error: null })
 })
 afterEach(() => {
@@ -152,7 +156,7 @@ describe("TileView", () => {
     await userEvent.click(file)
     expect(file.lastElementChild).toHaveClass("bg-raised")
 
-    act(() => useSettingsStore.getState().setPreference("showFileNames", false))
+    act(() => setPreference("showFileNames", false))
     expect(name(file)).toBe("")
     expect(file).toHaveAttribute("aria-selected", "true")
     expect(file.lastElementChild).not.toHaveClass("bg-raised")
@@ -164,7 +168,7 @@ describe("TileView", () => {
     expect(file.getAttribute("data-tooltip-content")).toContain(fileName)
     expect(view().firstElementChild!.getAttribute("style")).toBe(height)
 
-    act(() => useSettingsStore.getState().setPreference("showFileNames", true))
+    act(() => setPreference("showFileNames", true))
     expect(name(file)).toBe(fileName)
   })
 

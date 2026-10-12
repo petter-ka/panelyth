@@ -708,14 +708,14 @@ describe("closing with unsaved changes", () => {
   })
 
   it("does not ask when the reminder is switched off", async () => {
-    const { useSettingsStore } = await import("../../features/settings/settingsStore")
+    const { setPreference } = await import("../../features/settings/settingsStore")
     await setup()
-    act(() => useSettingsStore.getState().setPreference("remindSaveChanges", false))
+    act(() => setPreference("remindSaveChanges", false))
     await pick("flip")
     await click(screen.getByRole("button", { name: "Horizontal" }))
     await key(editor(), "Escape")
     expect(screen.queryByTestId("editor")).toBeNull()
-    act(() => useSettingsStore.getState().setPreference("remindSaveChanges", true))
+    act(() => setPreference("remindSaveChanges", true))
   })
 })
 

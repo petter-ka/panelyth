@@ -1,4 +1,4 @@
-import { create } from "zustand"
+import { createSettingsStore } from "@panelyth/renderer-core"
 import { bridge } from "../../bridge"
 import { useLibraryStore } from "../library/libraryStore"
 
@@ -62,36 +62,32 @@ export function parseViewerPreferences(value: unknown): ViewerPreferences {
   }
 }
 
-interface SettingsState {
-  open: boolean
-  preferences: ViewerPreferences
-  openSettings(): void
-  closeSettings(): void
-  setPreference<K extends keyof Omit<ViewerPreferences, "v">>(
-    key: K,
-    value: ViewerPreferences[K],
-  ): void
-}
-
-export const useSettingsStore = create<SettingsState>((set, get) => ({
-  open: false,
-  preferences: DEFAULT_VIEWER_PREFERENCES,
-  openSettings: () => set({ open: true }),
-  closeSettings: () => set({ open: false }),
-  setPreference(key, value) {
-    const preferences = { ...get().preferences, [key]: value, v: 1 } as ViewerPreferences
-    set({ preferences })
+// Built by the factory both apps use (src/shared/renderer-core).
+const store = createSettingsStore<ViewerPreferences>({
+  defaults: DEFAULT_VIEWER_PREFERENCES,
+  read: parseViewerPreferences,
+  // Never before the library loaded: the defaults would replace what is stored.
+  save(preferences) {
     if (useLibraryStore.getState().loaded)
       void bridge.setSetting(VIEWER_SETTINGS_KEY, preferences).catch(() => undefined)
   },
-}))
+})
+
+export const useSettingsStore = store.useStore
+export const openSettings = (): void => store.setOpen(true)
+export const closeSettings = (): void => store.setOpen(false)
+
+export function setPreference<K extends keyof Omit<ViewerPreferences, "v">>(
+  key: K,
+  value: ViewerPreferences[K],
+): void {
+  store.update({ [key]: value } as Partial<ViewerPreferences>)
+}
 
 /** Applies saved settings after each successful library load (including restarts). */
 export function startViewerSettingsPersistence(): () => void {
   const load = (settings: Record<string, unknown>): void =>
-    useSettingsStore.setState({
-      preferences: parseViewerPreferences(settings[VIEWER_SETTINGS_KEY]),
-    })
+    store.load(settings[VIEWER_SETTINGS_KEY])
   if (useLibraryStore.getState().loaded) load(useLibraryStore.getState().settings)
   return useLibraryStore.subscribe((s, prev) => {
     if (s.loaded && (!prev.loaded || s.settings !== prev.settings)) load(s.settings)

@@ -11,13 +11,13 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/platform"
 )
 
 // Tool runs an external 7-Zip (ADR-0030, like ffmpeg in ADR-0018): 7z, rar
@@ -28,49 +28,26 @@ type Tool struct {
 }
 
 // LocateTool finds 7-Zip: PANELYTH_7Z (a path; "off" disables it), then
-// next to the sidecar executable, then PATH (7z, 7zz, 7za).
+// next to the sidecar executable, then PATH and the folders it installs to
+// (7z, 7zz, 7za; platform.ToolFinder).
 func LocateTool(getenv func(string) string) *Tool {
+	return locateTool(platform.HostTools(getenv))
+}
+
+func locateTool(f platform.ToolFinder) *Tool {
 	names := []string{"7z", "7zz", "7za"}
-	exe := func(n string) string {
-		if runtime.GOOS == "windows" {
-			return n + ".exe"
-		}
-		return n
-	}
-	if v := getenv("PANELYTH_7Z"); v != "" {
+	if v := f.Getenv("PANELYTH_7Z"); v != "" {
 		if v == "off" {
 			return &Tool{}
 		}
-		if fi, err := os.Stat(v); err == nil && !fi.IsDir() {
-			return &Tool{Path: v}
-		}
-		return &Tool{}
-	}
-	if self, err := os.Executable(); err == nil {
-		for _, n := range names {
-			p := filepath.Join(filepath.Dir(self), exe(n))
-			if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
-				return &Tool{Path: p}
-			}
-		}
+		return &Tool{Path: f.File(v)}
 	}
 	for _, n := range names {
-		if p, err := exec.LookPath(n); err == nil {
+		if p := f.Beside(n); p != "" {
 			return &Tool{Path: p}
 		}
 	}
-	if runtime.GOOS == "windows" {
-		for _, dir := range []string{os.Getenv("ProgramFiles"), os.Getenv("ProgramFiles(x86)")} {
-			if dir == "" {
-				continue
-			}
-			p := filepath.Join(dir, "7-Zip", "7z.exe")
-			if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
-				return &Tool{Path: p}
-			}
-		}
-	}
-	return &Tool{}
+	return &Tool{Path: f.Installed(names, "7-Zip")}
 }
 
 // Available reports whether 7-Zip was found.

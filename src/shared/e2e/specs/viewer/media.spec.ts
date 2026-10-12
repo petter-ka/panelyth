@@ -2,13 +2,10 @@ import { execFileSync } from "node:child_process"
 import { appendFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
+import { atEveryLoad, launchApp, repoRoot, showDialogFolder, waitForReady } from "../../launch"
 
 // Stage 06: video posters (ADR-0018), pane playback and media states.
-
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
 
 function writeResult(result: object): void {
   const date = new Date().toISOString().slice(0, 10)
@@ -121,13 +118,19 @@ const posterCounts = (page: Page) =>
     return { videos: tiles.length, posters: loaded.length }
   })
 
+/** From the start of every load: showing a folder reloads the page. */
 async function instrument(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  await atEveryLoad(page, () => {
     const w = window as unknown as { __m: { readyItems: number; longTasks: number[] } }
     w.__m = { readyItems: 0, longTasks: [] }
-    window.panelyth!.onEvent("preview.ready", (p) => {
-      w.__m.readyItems += p.items.length
-    })
+    // The preload's API appears a moment after the document starts.
+    const listen = (): void => {
+      if (!window.panelyth) return void setTimeout(listen, 0)
+      window.panelyth.onEvent("preview.ready", (p) => {
+        w.__m.readyItems += p.items.length
+      })
+    }
+    listen()
     new PerformanceObserver((l) =>
       l.getEntries().forEach((e) => w.__m.longTasks.push(e.duration)),
     ).observe({
@@ -139,6 +142,17 @@ const metrics = (page: Page) =>
   page.evaluate(
     () => (window as unknown as { __m: { readyItems: number; longTasks: number[] } }).__m,
   )
+
+/** The frameless media window (ADR-0033). */
+async function mediaPage(app: ElectronApplication): Promise<Page> {
+  const deadline = Date.now() + 15_000
+  for (;;) {
+    const page = app.windows().find((p) => p.url().includes("media.html"))
+    if (page) return page
+    if (Date.now() > deadline) throw new Error("media window not found")
+    await new Promise((r) => setTimeout(r, 25))
+  }
+}
 
 test.describe("video playback + media preview (Stage 06)", () => {
   test.skip(!hasFfmpeg(), "ffmpeg/ffprobe not installed")
@@ -156,7 +170,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
       await waitForReady(first.page)
       await instrument(first.page)
       const t0 = Date.now()
-      await toolbarOpen(first.page).click()
+      await showDialogFolder(first.page)
       await expect
         .poll(
           async () => {
@@ -179,7 +193,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
       await waitForReady(second.page)
       await instrument(second.page)
       const t0 = Date.now()
-      await toolbarOpen(second.page).click()
+      await showDialogFolder(second.page)
       await expect
         .poll(async () => (await posterCounts(second.page)).posters, {
           timeout: 30_000,
@@ -208,7 +222,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       const tile = tileByName(page, "clip_03.mp4")
       await expect(tile).toBeVisible({ timeout: 60_000 })
       await instrument(page)
@@ -282,7 +296,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       const tile = await findTile(page, "web.webm")
       await tile.click()
       await page.getByTestId("tile-view").press("Enter")
@@ -293,6 +307,9 @@ test.describe("video playback + media preview (Stage 06)", () => {
       await expect
         .poll(() => page.evaluate(() => document.fullscreenElement?.getAttribute("data-testid")))
         .toBe("video-player")
+      // The player binds Esc once it has seen the change itself (its button
+      // says so); a key sent in the frame before that is nobody's.
+      await expect(page.getByRole("button", { name: "Exit full screen" })).toBeVisible()
       await page.keyboard.press("Escape")
       await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull()
     } finally {
@@ -300,26 +317,33 @@ test.describe("video playback + media preview (Stage 06)", () => {
     }
   })
 
-  test("double-clicking a video tile plays it full screen; Esc returns to the pane, still playing", async () => {
+  test("double-clicking a video tile plays it in the media window; Esc closes it", async () => {
     test.setTimeout(120_000)
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       const tile = await findTile(page, "web.webm")
       const t0 = Date.now()
       await tile.dblclick()
-      const player = page.getByTestId("video-player")
-      await expect
-        .poll(() => page.evaluate(() => document.fullscreenElement?.getAttribute("data-testid")))
-        .toBe("video-player")
+      // The frameless media window (ADR-0033) took over from the in-page
+      // full screen: the file fills a window of its own.
+      const media = await mediaPage(app)
+      const viewer = media.getByTestId("media-viewer")
+      await expect(viewer).toHaveAttribute("aria-label", "Media viewer: web.webm", {
+        timeout: 15_000,
+      })
+      const player = media.getByTestId("video-player")
       await expect(player).toHaveAttribute("data-state", "playing", { timeout: 10_000 })
       const dblclickToPlayingMs = Date.now() - t0
       await expect(page.getByTestId("viewer")).toHaveCount(0)
-      await page.keyboard.press("Escape")
-      await expect.poll(() => page.evaluate(() => document.fullscreenElement)).toBeNull()
-      await expect(player).toHaveAttribute("data-state", "playing")
-      writeResult({ test: "dblclick-fullscreen", dblclickToPlayingMs })
+      // The window closes under the key press, which then has no page to return to.
+      await viewer.press("Escape").catch(() => undefined)
+      await expect
+        .poll(() => app.windows().filter((p) => p.url().includes("media.html")).length)
+        .toBe(0)
+      await expect(tile).toHaveAttribute("aria-selected", "true")
+      writeResult({ test: "dblclick-media-window", dblclickToPlayingMs })
     } finally {
       await app.close()
     }
@@ -330,7 +354,7 @@ test.describe("video playback + media preview (Stage 06)", () => {
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       const legacy = await findTile(page, "legacy.mkv")
       await legacy.click()
       const player = page.getByTestId("video-player")

@@ -234,12 +234,26 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
   return null
 }
 
+/** Folder and query opens name the calling app to the sidecar (Stage P02, ADR-0026). */
+const CALLER_APP_METHODS: ReadonlySet<string> = new Set([
+  "dir.open",
+  "dir.openEntry",
+  "dir.openContaining",
+  "query.open",
+])
+
 /**
- * Per-app job options added by main, never by a renderer (ADR-0027,
- * ADR-0029): the commander copies links as links; the viewer skips them.
+ * What main adds to a call, never a renderer (ADR-0027):
+ * - the calling app on folder and query opens (ADR-0026): the sidecar
+ *   watches a folder while its app is on screen and budgets sessions per app;
+ * - per-app job options (ADR-0029): the commander copies links as links; the
+ *   viewer skips them.
  */
 export function profileParams(app: AppId, method: string, params: unknown): unknown {
-  if (app !== "commander" || !params || typeof params !== "object") return params ?? {}
+  if (!params || typeof params !== "object") return params ?? {}
+  // Last, so a renderer cannot name another app.
+  if (CALLER_APP_METHODS.has(method)) return { ...params, app }
+  if (app !== "commander") return params
   const p = params as Record<string, unknown>
   if (
     method === "clip.paste" ||

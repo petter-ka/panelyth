@@ -1,6 +1,8 @@
-import { appendFileSync } from "node:fs"
+import { appendFileSync, mkdtempSync, writeFileSync } from "node:fs"
+import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type ElectronApplication } from "@playwright/test"
+import { commanderOf, goTo, launch, mixedFolder } from "./commander/helpers"
 import {
   commanderEnv,
   commanderPage,
@@ -15,7 +17,7 @@ import {
 // docs/shared/APP-SWITCHING.md), Stage C00 part: the switch itself and shared
 // appearance. Folder and selection carry-over arrive in Stages C01 and C02.
 
-function writeResult(result: object): void {
+function writeResult(result: object, stage = "C00"): void {
   const date = new Date().toISOString().slice(0, 10)
   const file = join(
     repoRoot,
@@ -23,7 +25,7 @@ function writeResult(result: object): void {
     "shared",
     "bench",
     "results",
-    `stage-C00-${date}-e2e-switch.jsonl`,
+    `stage-${stage}-${date}-e2e-switch.jsonl`,
   )
   appendFileSync(file, JSON.stringify({ at: new Date().toISOString(), ...result }) + "\n")
 }
@@ -116,6 +118,47 @@ test.describe("app switch (ADR-0031)", () => {
       writeResult(result)
       test.info().annotations.push({ type: "metrics", description: JSON.stringify(result) })
       expectWithinBudget(firstSwitchMs, 800, "C00 first switch (ms)")
+    } finally {
+      await app.close()
+    }
+  })
+
+  // Stage P02 (ADR-0026): the sidecar watches the folders of the app on
+  // screen only, and lists a hidden app's folders again when it is shown.
+  test("a folder that changed while its app was hidden is current when the app is shown", async () => {
+    test.setTimeout(60_000)
+    const left = mixedFolder()
+    const right = mkdtempSync(join(tmpdir(), "panelyth-p02-"))
+    writeFileSync(join(right, "was-here.txt"), "x")
+    const { app, page } = await launch("commander")
+    try {
+      const c = await commanderOf(app)
+      await goTo(c, "right", right)
+      await goTo(c, "left", left)
+      const rightRows = c.getByTestId("grid-right").locator("[data-id]")
+      await expect(rightRows.filter({ hasText: "was-here" })).toBeVisible()
+
+      // The viewer is shown: it follows the active panel's folder, and the
+      // other panel's folder is no longer watched.
+      await c.getByTestId("grid-left").focus()
+      await c.keyboard.press("Control+Shift+M")
+      await expect.poll(() => shellState(app)).toMatchObject({ active: "viewer" })
+      await expect(page.getByTestId("tile").first()).toBeVisible()
+      writeFileSync(join(right, "arrived-while-hidden.txt"), "x")
+      // Longer than the watcher's forced re-listing: nobody is told by the OS.
+      await page.waitForTimeout(2500)
+
+      const t0 = Date.now()
+      await page.keyboard.press("Control+Shift+M")
+      await expect.poll(() => shellState(app)).toMatchObject({ active: "commander" })
+      await expect(rightRows.filter({ hasText: "arrived-while-hidden" })).toBeVisible()
+      const shownMs = Date.now() - t0
+      await expect(rightRows.filter({ hasText: "was-here" })).toBeVisible()
+
+      // On screen again, the panel follows changes as before.
+      writeFileSync(join(right, "arrived-while-shown.txt"), "x")
+      await expect(rightRows.filter({ hasText: "arrived-while-shown" })).toBeVisible()
+      writeResult({ test: "relist-on-show", shownMs }, "P02")
     } finally {
       await app.close()
     }

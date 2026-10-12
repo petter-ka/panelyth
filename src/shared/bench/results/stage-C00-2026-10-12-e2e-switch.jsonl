@@ -4,3 +4,8 @@
 {"at":"2026-10-12T09:29:43.457Z","test":"switch","firstSwitchMs":193,"laterSwitchMs":[6,6,5,6],"viewerOnlyMb":383,"bothViewsMb":521,"commanderViewMb":138}
 {"at":"2026-10-12T09:30:14.553Z","test":"switch","firstSwitchMs":178,"laterSwitchMs":[6,5,5,7],"viewerOnlyMb":382,"bothViewsMb":521,"commanderViewMb":139}
 {"at":"2026-10-12T09:33:18.484Z","test":"switch","firstSwitchMs":187,"laterSwitchMs":[6,4,5,5],"viewerOnlyMb":383,"bothViewsMb":523,"commanderViewMb":140}
+{"at":"2026-10-12T10:40:42.840Z","test":"switch","firstSwitchMs":191,"laterSwitchMs":[5,5,5,4],"viewerOnlyMb":379,"bothViewsMb":521,"commanderViewMb":142}
+{"at":"2026-10-12T10:46:15.814Z","test":"switch","firstSwitchMs":177,"laterSwitchMs":[5,5,4,4],"viewerOnlyMb":377,"bothViewsMb":514,"commanderViewMb":137}
+{"at":"2026-10-12T12:04:23.003Z","test":"switch","firstSwitchMs":186,"laterSwitchMs":[5,4,4,5],"viewerOnlyMb":376,"bothViewsMb":514,"commanderViewMb":138}
+{"at":"2026-10-12T13:35:21.335Z","test":"switch","firstSwitchMs":188,"laterSwitchMs":[4,6,5,5],"viewerOnlyMb":382,"bothViewsMb":521,"commanderViewMb":139}
+{"at":"2026-10-12T13:56:54.570Z","test":"switch","firstSwitchMs":188,"laterSwitchMs":[6,5,5,6],"viewerOnlyMb":378,"bothViewsMb":517,"commanderViewMb":139}

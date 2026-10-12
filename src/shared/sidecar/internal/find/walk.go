@@ -5,7 +5,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"path/filepath"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -240,7 +239,7 @@ func listDir(ctx context.Context, c *Compiled, j dirJob, chunk int, cnt *counter
 				continue
 			}
 			if isDir && enter {
-				subs = append(subs, dirJob{path: filepath.Join(j.path, name), depth: j.depth + 1})
+				subs = append(subs, dirJob{path: fsx.JoinName(j.path, name), depth: j.depth + 1})
 			}
 			if isDir && !c.folders {
 				continue
@@ -307,7 +306,7 @@ func readContent(ctx context.Context, c *Compiled, cands <-chan index.Found, hit
 			continue // drain
 		}
 		var read int64
-		ok, err := c.content.searchFile(ctx, filepath.Join(h.Dir, h.Name), buf, c.SkipBinary, &read)
+		ok, err := c.content.searchFile(ctx, fsx.JoinName(h.Dir, h.Name), buf, c.SkipBinary, &read)
 		cnt.bytes.Add(read)
 		cnt.searched.Add(1)
 		if err != nil && !errors.Is(err, errBinary) && ctx.Err() == nil {

@@ -1,0 +1,376 @@
+{
+  "stage": "01",
+  "benchmark": "index",
+  "date": "2026-10-12T13:56:17+02:00",
+  "env": {
+    "arch": "amd64",
+    "cpus": 32,
+    "go": "go1.27.0",
+    "os": "windows"
+  },
+  "fixtures": {
+    "flat-100k": {
+      "expected": {
+        "Dirs": 0,
+        "Media": 90000,
+        "NonMedia": 10000,
+        "Hidden": 0
+      },
+      "spec": {
+        "Files": 100000,
+        "Depth": 0,
+        "Fanout": 0,
+        "NonMediaEvery": 10,
+        "HiddenEvery": 0
+      }
+    },
+    "tree-50k": {
+      "expected": {
+        "Dirs": 258,
+        "Media": 46620,
+        "NonMedia": 5180,
+        "Hidden": 0
+      },
+      "spec": {
+        "Files": 200,
+        "Depth": 3,
+        "Fanout": 6,
+        "NonMediaEvery": 10,
+        "HiddenEvery": 0
+      }
+    }
+  },
+  "scans": [
+    {
+      "name": "flat-100k",
+      "recursive": false,
+      "indexState": "cold",
+      "entries": 90000,
+      "dirs": 1,
+      "elapsedMs": 1286.533,
+      "entriesPerSec": 69955.45392150844,
+      "firstCommitMs": 28.711,
+      "batches": 52,
+      "batchMsMax": 46.396,
+      "batchMsAvg": 24.222288461538458,
+      "writeShareOfElapsed": 0.9790335731769024
+    },
+    {
+      "name": "flat-100k",
+      "recursive": false,
+      "indexState": "warm",
+      "entries": 90000,
+      "dirs": 1,
+      "elapsedMs": 2044.98,
+      "entriesPerSec": 44010.210368805565,
+      "firstCommitMs": 62.792,
+      "batches": 54,
+      "batchMsMax": 53.771,
+      "batchMsAvg": 37.46544444444444,
+      "writeShareOfElapsed": 0.9893172549364784
+    },
+    {
+      "name": "tree-50k",
+      "recursive": true,
+      "indexState": "cold",
+      "entries": 46878,
+      "dirs": 259,
+      "elapsedMs": 683.851,
+      "entriesPerSec": 68550.02039918052,
+      "firstCommitMs": 41.954,
+      "batches": 33,
+      "batchMsMax": 40.208,
+      "batchMsAvg": 16.977212121212126,
+      "writeShareOfElapsed": 0.8192544867229852
+    },
+    {
+      "name": "tree-50k",
+      "recursive": true,
+      "indexState": "warm",
+      "entries": 46878,
+      "dirs": 259,
+      "elapsedMs": 933.174,
+      "entriesPerSec": 50235.004404323314,
+      "firstCommitMs": 45.394,
+      "batches": 29,
+      "batchMsMax": 48.055,
+      "batchMsAvg": 28.176482758620683,
+      "writeShareOfElapsed": 0.875633054500018
+    },
+    {
+      "name": "mixed-100k",
+      "recursive": false,
+      "indexState": "cold",
+      "entries": 40000,
+      "dirs": 1,
+      "elapsedMs": 617.63,
+      "entriesPerSec": 64763.69347343879,
+      "firstCommitMs": 57.097,
+      "batches": 24,
+      "batchMsMax": 35.356,
+      "batchMsAvg": 22.807875,
+      "writeShareOfElapsed": 0.8862733351683046
+    },
+    {
+      "name": "mixed-100k",
+      "recursive": false,
+      "indexState": "warm",
+      "entries": 40000,
+      "dirs": 1,
+      "elapsedMs": 860.748,
+      "entriesPerSec": 46471.20876261112,
+      "firstCommitMs": 64.045,
+      "batches": 27,
+      "batchMsMax": 64.874,
+      "batchMsAvg": 30.573925925925924,
+      "writeShareOfElapsed": 0.9590449237175107
+    },
+    {
+      "name": "media-100k",
+      "recursive": false,
+      "indexState": "cold",
+      "entries": 100000,
+      "dirs": 1,
+      "elapsedMs": 1655.772,
+      "entriesPerSec": 60394.78865447658,
+      "firstCommitMs": 34.329,
+      "batches": 60,
+      "batchMsMax": 95.445,
+      "batchMsAvg": 26.940516666666667,
+      "writeShareOfElapsed": 0.9762400861954424
+    },
+    {
+      "name": "media-100k",
+      "recursive": false,
+      "indexState": "warm",
+      "entries": 100000,
+      "dirs": 1,
+      "elapsedMs": 2569.511,
+      "entriesPerSec": 38917.910839844626,
+      "firstCommitMs": 53.564,
+      "batches": 64,
+      "batchMsMax": 77.892,
+      "batchMsAvg": 39.799406250000004,
+      "writeShareOfElapsed": 0.9913022361064032
+    }
+  ],
+  "queries": [
+    {
+      "name": "flat-100k name asc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 59.45,
+        "p95": 114.16,
+        "max": 114.16
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.76
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.63
+        }
+      }
+    },
+    {
+      "name": "flat-100k modified desc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 72.35,
+        "p95": 92.19,
+        "max": 92.19
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 1.04,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "flat-100k type asc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 61.08,
+        "p95": 63.19,
+        "max": 63.19
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.04,
+          "max": 1.52
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "flat-100k created desc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 49.9,
+        "p95": 54.11,
+        "max": 54.11
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.83
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1.5
+        }
+      }
+    },
+    {
+      "name": "flat-100k dimensions desc",
+      "total": 90000,
+      "openMs": {
+        "n": 7,
+        "p50": 60,
+        "p95": 62.7,
+        "max": 62.7
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.5
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.5
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 2
+        }
+      }
+    },
+    {
+      "name": "flat-100k search \"img_4\"",
+      "total": 10000,
+      "openMs": {
+        "n": 7,
+        "p50": 27.26,
+        "p95": 33.45,
+        "max": 33.45
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0.51,
+          "p95": 0.56,
+          "max": 0.66
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.76
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1,
+          "max": 1
+        }
+      }
+    },
+    {
+      "name": "tree-50k recursive name asc",
+      "total": 46620,
+      "openMs": {
+        "n": 7,
+        "p50": 37.53,
+        "p95": 45.24,
+        "max": 45.24
+      },
+      "pageMsByOffset": {
+        "0": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.05,
+          "max": 1.55
+        },
+        "last": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.75
+        },
+        "middle": {
+          "n": 50,
+          "p50": 0,
+          "p95": 1.5,
+          "max": 1.51
+        }
+      }
+    }
+  ],
+  "memory": {
+    "growthAfterGCBytes": 41033728,
+    "note": "Go runtime memory (/memory/classes/total:bytes) of this process; excludes SQLite page cache outside the Go heap only if allocated natively (modernc allocates in Go)",
+    "runtimeBytesAfterGC": 52916224,
+    "runtimeBytesBefore": 11882496,
+    "runtimeBytesPeak": 52916224
+  }
+}

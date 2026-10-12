@@ -19,7 +19,7 @@ import { useGlobalShortcuts } from "./shortcuts"
 import { DialogWindow } from "../components/ui/dialog"
 import { Button } from "../components/ui/button"
 import { ChevronDownIcon } from "../components/ui/icons"
-import { useSettingsStore } from "../features/settings/settingsStore"
+import { openSettings, useSettingsStore } from "../features/settings/settingsStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { useShortcutHint } from "../features/shortcuts/shortcutStore"
 import { switchToCommander } from "../features/workspace/appSwitch"
@@ -73,11 +73,10 @@ export function AppShell() {
   const outerPrefix = previewRight ? RIGHT : ""
   const commanderEnabled = canSwitchApps()
   const appSwitchShortcut = useShortcutHint("app.switch")
-  const openSettings = useSettingsStore((s) => s.openSettings)
   useGlobalShortcuts()
 
   const requestExit = useCallback(() => {
-    if (useSettingsStore.getState().preferences.confirmOnEscapeExit) setConfirmExit(true)
+    if (useSettingsStore.getState().settings.confirmOnEscapeExit) setConfirmExit(true)
     else void bridge.quit().catch(() => undefined)
   }, [])
 

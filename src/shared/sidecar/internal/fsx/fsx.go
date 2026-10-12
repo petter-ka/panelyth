@@ -27,13 +27,15 @@ type Crumb struct {
 // renderer never parses OS paths; it gets these.
 func Crumbs(clean string) []Crumb {
 	var out []Crumb
-	for p := clean; ; {
+	// Each ancestor is spelled for itself: only a path Windows would
+	// rewrite keeps the \\?\ prefix (joinname.go).
+	for p := PlainPath(clean); ; {
 		parent := filepath.Dir(p)
 		if parent == p {
 			out = append(out, Crumb{Name: rootName(p), Path: p})
 			break
 		}
-		out = append(out, Crumb{Name: filepath.Base(p), Path: p})
+		out = append(out, Crumb{Name: filepath.Base(p), Path: SafePath(p)})
 		p = parent
 	}
 	slices.Reverse(out)
@@ -114,7 +116,7 @@ func ListDirs(ctx context.Context, dir string, opts ListOptions) (children []Dir
 				truncated = true
 				break
 			}
-			children = append(children, DirChild{Name: e.Name(), Path: filepath.Join(dir, e.Name()), HasChildren: true})
+			children = append(children, DirChild{Name: e.Name(), Path: JoinName(dir, e.Name()), HasChildren: true})
 		}
 		if truncated || errors.Is(rerr, io.EOF) || (rerr == nil && len(ents) == 0) {
 			break

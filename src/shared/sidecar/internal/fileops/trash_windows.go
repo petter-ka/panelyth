@@ -8,6 +8,8 @@ import (
 	"unsafe"
 
 	"golang.org/x/sys/windows"
+
+	"panelyth/sidecar/internal/fsx"
 )
 
 var procSHFileOperationW = windows.NewLazySystemDLL("shell32.dll").NewProc("SHFileOperationW")
@@ -47,6 +49,15 @@ func canTrash(path string) bool {
 	return windows.GetDriveType(root) == windows.DRIVE_FIXED
 }
 
+// noTrash says why path cannot go to the Recycle Bin. The shell cannot
+// address a name Win32 rewrites (fsx.JoinName), on any drive.
+func noTrash(path string) error {
+	if fsx.IsVerbatim(path) {
+		return Errorf(CodeTrashUnavailable, "Windows can't move an item with this name to the Recycle Bin")
+	}
+	return Errorf(CodeTrashUnavailable, "this drive has no Recycle Bin")
+}
+
 // CanTrash reports whether items in dir can go to the Recycle Bin (fixed
 // drives only, ADR-0021).
 func CanTrash(dir string) bool { return canTrash(dir) }
@@ -57,7 +68,7 @@ func Trash(path string) error {
 		return err
 	}
 	if !canTrash(path) {
-		return Errorf(CodeTrashUnavailable, "this drive has no Recycle Bin")
+		return noTrash(path)
 	}
 	// pFrom is a list of NUL-terminated paths ending with an extra NUL.
 	from, err := windows.UTF16FromString(path)
@@ -105,7 +116,7 @@ func TrashMany(paths []string) []error {
 			continue
 		}
 		if !canTrash(p) {
-			errs[i] = Errorf(CodeTrashUnavailable, "this drive has no Recycle Bin")
+			errs[i] = noTrash(p)
 			continue
 		}
 		u, err := windows.UTF16FromString(p)

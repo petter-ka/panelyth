@@ -1,5 +1,5 @@
-// The only module that touches window.panelyth. Feature code imports from
-// here and receives plain results or PanelythError, never envelopes.
+// The viewer's only way to window.panelyth. Feature code imports from here
+// and receives plain results or PanelythError, never envelopes.
 import type {
   BatchFolder,
   BatchParams,
@@ -60,16 +60,13 @@ import type {
   EditSaveParams,
   EditSaveResult,
   EditSavedResult,
-  ErrorCode,
-  EventChannel,
-  EventMap,
   PanelythApi,
   PingResult,
-  RpcEnvelope,
   SidecarStatus,
   SystemInfo,
 } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
+import { createBridgeCore, PanelythError, unwrap } from "@panelyth/renderer-core"
 
 declare global {
   interface Window {
@@ -77,32 +74,13 @@ declare global {
   }
 }
 
-export class PanelythError extends Error {
-  override name = "PanelythError"
-  constructor(
-    readonly code: ErrorCode,
-    message: string,
-    readonly retryable = false,
-  ) {
-    super(message)
-  }
-}
+// The envelope handling is shared with the commander (src/shared/renderer-core).
+export { PanelythError }
 
-function api(): PanelythApi {
-  const bridge = window.panelyth
-  if (!bridge) throw new PanelythError("SIDECAR_UNAVAILABLE", t("Panelyth bridge is not available"))
-  return bridge
-}
+const core = createBridgeCore<PanelythApi>(() => t("Panelyth bridge is not available"))
+const api = core.api
 
-async function unwrap<R>(call: () => Promise<RpcEnvelope<R>>): Promise<R> {
-  const envelope = await call()
-  if (envelope.ok) return envelope.r
-  throw new PanelythError(envelope.e.code, envelope.e.message, envelope.e.retryable)
-}
-
-export function isBridgeAvailable(): boolean {
-  return window.panelyth !== undefined
-}
+export const isBridgeAvailable = core.isAvailable
 
 /** True while the commander is enabled: preload then exposes app.switch (ADR-0031). */
 export function canSwitchApps(): boolean {
@@ -277,7 +255,5 @@ export const bridge = {
   recipeDelete: async (id: number): Promise<void> => {
     await unwrap(() => api().recipes.remove(id))
   },
-  on<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void {
-    return api().onEvent(channel, listener)
-  },
+  on: core.on,
 }

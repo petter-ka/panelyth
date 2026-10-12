@@ -235,7 +235,8 @@ Decisions recorded with the review (not findings):
 ## Exit checklist
 
 - [x] implementation complete
-- [ ] tests complete (the NVDA pass, with C02's to C09's; Linux and macOS through CI; the viewer's e2e tile suite)
+- [ ] tests complete (the NVDA pass, with C02's to C09's; Linux and macOS through CI; the viewer's e2e tile suite
+      ran green on 2026-10-12, Stage P01)
 - [x] benchmark complete
 - [x] performance regression reviewed (commander: the Full and Brief views are unchanged, a page asks for thumbnails
   only in the Thumbnails view; viewer: its tile view runs on the moved parts within its budgets, bundle +352 bytes)

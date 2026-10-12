@@ -39,8 +39,11 @@ func ParseMountInfo(text string) []Volume {
 		}
 		seen[mp] = true
 		kind := "removable"
-		if networkFS[pf[0]] {
+		switch {
+		case networkFS[pf[0]]:
 			kind = "network"
+		case opticalFS[pf[0]]:
+			kind = "optical"
 		}
 		out = append(out, Volume{Path: mp, Label: filepath.Base(mp), Kind: kind})
 	}

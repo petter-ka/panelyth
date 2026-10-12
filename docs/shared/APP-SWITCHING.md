@@ -147,9 +147,19 @@ A hidden app keeps its state and sessions but does no work:
 - when shown again, it re-lists its visible folders (served from the index first, ADR-0015), applies the carried-over
   context, and carries on.
 
-Where this stands (Stage C01): the hidden commander keeps `query.invalidated` aside and refetches pages only when
-shown; it does not re-list on show, because the sidecar still watches every opened folder (bounded, ADR-0020). The
-viewer does not pause yet. Watching only the visible app's folders is part of Stage P02.
+Where this stands (Stages C01, P01 and P02):
+
+- A hidden app keeps `query.invalidated` aside and refetches pages only when shown, the commander per panel since
+  C01 and the viewer for its folder since P01; the newest version is applied, the ones in between are skipped.
+- The sidecar watches only the folders of the app on screen (Stage P02, ADR-0020): main names it with
+  `app.setVisible` at start and on every switch. When an app is shown, its folders that were not watched meanwhile
+  are listed again, 300 ms after the switch; a folder both apps show was watched all along and is not. Measured: a
+  file that arrived in a hidden commander panel's folder is on screen 0.87 s after the switch back.
+- A change made by a job (a copy into the folder the hidden app shows) still reaches that app's sessions in Go at
+  once; its renderer holds it back until it is shown.
+- Not covered yet: the viewer is the window's own web contents and is laid out under the commander's view, so
+  resizing the window while the commander is shown still makes it request the pages and thumbnails of its new
+  range.
 
 ## Persistence: the shared storage
 

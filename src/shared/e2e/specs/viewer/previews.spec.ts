@@ -3,14 +3,11 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { atEveryLoad, launchApp, repoRoot, showDialogFolder, waitForReady } from "../../launch"
 
 const IMAGES = { count: 150, width: 1600, height: 1200, pngAlphaEvery: 10, rotatedEvery: 7 }
 /** Minimum image tiles in view at the default window size (1440×900, medium tiles). */
 const MIN_VISIBLE = 8
-
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
 
 /** Mounted image tiles, and how many of them show a decoded panelyth-thumb: image. */
 const thumbCounts = (page: Page): Promise<{ images: number; loaded: number }> =>
@@ -45,15 +42,23 @@ async function waitForAllThumbs(page: Page, timeout = 60_000): Promise<number> {
   return (await thumbCounts(page)).images
 }
 
-/** Counts preview.ready events and long tasks in the renderer. */
+/**
+ * Counts preview.ready events and long tasks in the renderer, from the
+ * start of every load: showing a folder reloads the page (showDialogFolder).
+ */
 async function instrument(page: Page): Promise<void> {
-  await page.evaluate(() => {
+  await atEveryLoad(page, () => {
     const w = window as unknown as { __pv: { events: number; items: number; longTasks: number[] } }
     w.__pv = { events: 0, items: 0, longTasks: [] }
-    window.panelyth!.onEvent("preview.ready", (p) => {
-      w.__pv.events++
-      w.__pv.items += p.items.length
-    })
+    // The preload's API appears a moment after the document starts.
+    const listen = (): void => {
+      if (!window.panelyth) return void setTimeout(listen, 0)
+      window.panelyth.onEvent("preview.ready", (p) => {
+        w.__pv.events++
+        w.__pv.items += p.items.length
+      })
+    }
+    listen()
     new PerformanceObserver((l) =>
       l.getEntries().forEach((e) => w.__pv.longTasks.push(e.duration)),
     ).observe({ type: "longtask" })
@@ -87,7 +92,7 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
       await waitForReady(first.page)
       await instrument(first.page)
       const t0 = Date.now()
-      await toolbarOpen(first.page).click()
+      await showDialogFolder(first.page)
       await waitForThumbs(first.page, 1)
       const firstThumbMs = Date.now() - t0
       const visible = await waitForAllThumbs(first.page)
@@ -115,7 +120,7 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
       await waitForReady(second.page)
       await instrument(second.page)
       const t0 = Date.now()
-      await toolbarOpen(second.page).click()
+      await showDialogFolder(second.page)
       await waitForAllThumbs(second.page, 15_000)
       const warmMs = Date.now() - t0
       const m = await pv(second.page)
@@ -133,7 +138,7 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: photos })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       await waitForAllThumbs(page)
       // Replace a visible JPEG in place with the bytes of another JPEG: same
       // name, same id, new size/mtime. The watcher re-lists, the page
@@ -167,7 +172,7 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
     let src: string
     try {
       await waitForReady(first.page)
-      await toolbarOpen(first.page).click()
+      await showDialogFolder(first.page)
       await waitForAllThumbs(first.page)
       src = (await first.page.locator('[data-testid="tile"] img').first().getAttribute("src"))!
     } finally {
@@ -189,7 +194,7 @@ test.describe("thumbnail pipeline (Stage 02, on the Stage 03 tile view)", () => 
     const second = await launchApp(env)
     try {
       await waitForReady(second.page)
-      await toolbarOpen(second.page).click()
+      await showDialogFolder(second.page)
       // The broken <img> reports back, the sidecar regenerates, all tiles load.
       await waitForAllThumbs(second.page, 30_000)
     } finally {

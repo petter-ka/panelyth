@@ -1,6 +1,6 @@
 import { CONFLICT_POLICIES, type ConflictPolicy } from "@panelyth/contracts"
 import { TILE_SIZE_ORDER, type TileSize } from "@panelyth/media-ui"
-import { create } from "zustand"
+import { createSettingsStore } from "@panelyth/renderer-core"
 import { bridge, isBridgeAvailable } from "../bridge"
 
 // The commander's own settings (Stage C03, Settings → Panels), under
@@ -98,16 +98,6 @@ export const DEFAULT_SETTINGS: PanelSettings = {
 const policies: ReadonlySet<unknown> = new Set(CONFLICT_POLICIES)
 const tileSizes: ReadonlySet<unknown> = new Set(TILE_SIZE_ORDER)
 
-interface SettingsState {
-  settings: PanelSettings
-  open: boolean
-}
-
-export const useSettingsStore = create<SettingsState>(() => ({
-  settings: DEFAULT_SETTINGS,
-  open: false,
-}))
-
 /** Validated; unknown values fall back to the defaults. */
 export function readSettings(value: unknown): PanelSettings {
   const v = (value ?? {}) as Partial<Record<keyof PanelSettings, unknown>> & { v?: unknown }
@@ -138,22 +128,24 @@ export function readSettings(value: unknown): PanelSettings {
   }
 }
 
-export function updateSettings(change: Partial<PanelSettings>): void {
-  const settings = { ...useSettingsStore.getState().settings, ...change }
-  useSettingsStore.setState({ settings })
-  if (isBridgeAvailable())
-    void bridge.setSetting(SETTINGS_KEY, { v: 2, ...settings }).catch(() => undefined)
-}
+// Built by the factory both apps use (src/shared/renderer-core).
+const store = createSettingsStore<PanelSettings>({
+  defaults: DEFAULT_SETTINGS,
+  read: readSettings,
+  save(settings) {
+    if (isBridgeAvailable())
+      void bridge.setSetting(SETTINGS_KEY, { v: 2, ...settings }).catch(() => undefined)
+  },
+})
 
-export const setSettingsOpen = (open: boolean): void => useSettingsStore.setState({ open })
+export const useSettingsStore = store.useStore
+export const updateSettings = store.update
+export const setSettingsOpen = store.setOpen
+/** Tests. */
+export const resetSettings = store.reset
 
 export async function loadSettings(): Promise<void> {
   if (!isBridgeAvailable()) return
   const { settings } = await bridge.library()
-  useSettingsStore.setState({ settings: readSettings(settings[SETTINGS_KEY]) })
-}
-
-/** Tests. */
-export function resetSettings(): void {
-  useSettingsStore.setState({ settings: DEFAULT_SETTINGS, open: false })
+  store.load(settings[SETTINGS_KEY])
 }

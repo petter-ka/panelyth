@@ -99,7 +99,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
   const focused = useSelectionStore((s) => s.focusIndex === index)
   const selected = useSelectionStore((s) => item !== undefined && isSelected(s, index, item.id))
   // Settings can hide file names; the line stays, so the grid's geometry never changes.
-  const showFileNames = useSettingsStore((s) => s.preferences.showFileNames)
+  const showFileNames = useSettingsStore((s) => s.settings.showFileNames)
   // This folder tile is being opened (a slow drive or network folder).
   const opening = useFolderStore(
     (s) => s.opening && item?.kind === "dir" && s.openingTarget === item.id,

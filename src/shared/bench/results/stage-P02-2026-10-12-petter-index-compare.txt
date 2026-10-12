@@ -1,0 +1,60 @@
+Stage P02, 2026-10-12, petter (i9-13900K, Windows 11): cmd/indexbench, 12 alternating runs each.
+before = the scanner of commit 2341f43 (media and folders only), built from native/fastview-go and run on the
+fixtures of today (flat-100k, tree-50k, mixed-100k, media-100k); after = this stage's code. Times in ms.
+C: was 99 % full: single scans stall to 3-12 s in both builds, so compare the minimum and the best half.
+3 of the 12 runs of the new build ended in an access violation inside modernc.org/sqlite (runs 1, 4, 12);
+none of the old build's did.
+
+== before: 12 of 12 runs completed
+flat-100k cold     min 1287  median 1336  best-half 1287 1291 1308 1326 1336 1336
+flat-100k warm     min 2045  median 2196  best-half 2045 2062 2066 2088 2101 2196
+tree-50k cold      min 684  median 727  best-half 684 689 691 693 709 727
+tree-50k warm      min 851  median 905  best-half 851 856 867 880 895 905
+mixed-100k cold    min 582  median 591  best-half 582 584 585 585 589 591
+mixed-100k warm    min 781  median 828  best-half 781 785 789 811 818 828
+media-100k cold    min 1585  median 1656  best-half 1585 1587 1613 1637 1642 1656
+media-100k warm    min 2437  median 2558  best-half 2437 2470 2471 2483 2486 2558
+flat-100k name asc                 total  90000  open p50 median 55.7 ms  worst page(256) p95 1.51 ms
+flat-100k modified desc            total  90000  open p50 median 61.3 ms  worst page(256) p95 1.51 ms
+flat-100k type asc                 total  90000  open p50 median 61.5 ms  worst page(256) p95 1.50 ms
+flat-100k created desc             total  90000  open p50 median 49.3 ms  worst page(256) p95 1.50 ms
+flat-100k dimensions desc          total  90000  open p50 median 59.8 ms  worst page(256) p95 1.50 ms
+flat-100k search "img_4"           total  10000  open p50 median 26.5 ms  worst page(256) p95 1.50 ms
+tree-50k recursive name asc        total  46620  open p50 median 37.4 ms  worst page(256) p95 1.51 ms
+
+== after: 9 of 12 runs completed
+flat-100k cold     min 1443  median 1566  best-half 1443 1480 1516 1523 1566
+flat-100k warm     min 2364  median 2454  best-half 2364 2390 2406 2452 2454
+tree-50k cold      min 738  median 807  best-half 738 767 788 793 807
+tree-50k warm      min 984  median 1009  best-half 984 984 1000 1009 1009
+mixed-100k cold    min 1676  median 1773  best-half 1676 1698 1754 1755 1773
+mixed-100k warm    min 2554  median 4057  best-half 2554 2577 2719 2736 4057
+media-100k cold    min 1611  median 1698  best-half 1611 1639 1655 1678 1698
+media-100k warm    min 2442  median 4895  best-half 2442 2663 2715 4079 4895
+flat-100k name asc                 total  90000  open p50 median 72.0 ms  worst page(256) p95 1.50 ms
+flat-100k modified desc            total  90000  open p50 median 73.4 ms  worst page(256) p95 1.55 ms
+flat-100k type asc                 total  90000  open p50 median 75.4 ms  worst page(256) p95 1.53 ms
+flat-100k created desc             total  90000  open p50 median 63.3 ms  worst page(256) p95 1.50 ms
+flat-100k dimensions desc          total  90000  open p50 median 73.0 ms  worst page(256) p95 1.50 ms
+flat-100k search "img_4"           total  10000  open p50 median 40.3 ms  worst page(256) p95 1.50 ms
+tree-50k recursive name asc        total  46620  open p50 median 50.7 ms  worst page(256) p95 1.51 ms
+mixed-100k media name asc          total  40000  open p50 median 49.4 ms  worst page(256) p95 1.51 ms
+mixed-100k all name asc            total  86000  open p50 median 68.4 ms  worst page(256) p95 1.51 ms
+mixed-100k all+hidden name asc     total 100001  open p50 median 70.8 ms  worst page(256) p95 1.50 ms
+mixed-100k all ext asc             total  86000  open p50 median 88.0 ms  worst page(256) p95 1.51 ms
+mixed-100k all attrs desc          total 100001  open p50 median 94.7 ms  worst page(256) p95 1.51 ms
+mixed-100k all mask *.txt          total  42000  open p50 median 53.5 ms  worst page(256) p95 1.51 ms
+mixed-100k all mask *|*.txt;*.jpg  total  24000  open p50 median 48.8 ms  worst page(256) p95 1.50 ms
+flat-100k all name asc             total 100000  open p50 median 71.3 ms  worst page(256) p95 1.50 ms
+media-100k media name asc          total 100000  open p50 median 78.6 ms  worst page(256) p95 1.52 ms
+index.db 127.2 MB
+
+== cold scans, median after / median before
+flat-100k cold     median 1336 -> 1566 (17 %)   min 1287 -> 1443 (12 %)
+flat-100k warm     median 2196 -> 2454 (12 %)   min 2045 -> 2364 (16 %)
+tree-50k cold      median 727 -> 807 (11 %)   min 684 -> 738 (8 %)
+tree-50k warm      median 905 -> 1009 (11 %)   min 851 -> 984 (16 %)
+mixed-100k cold    median 591 -> 1773 (200 %)   min 582 -> 1676 (188 %)
+mixed-100k warm    median 828 -> 4057 (390 %)   min 781 -> 2554 (227 %)
+media-100k cold    median 1656 -> 1698 (3 %)   min 1585 -> 1611 (2 %)
+media-100k warm    median 2558 -> 4895 (91 %)   min 2437 -> 2442 (0 %)

@@ -127,7 +127,7 @@ func (m *Manager) attrsBelow(j *job, dir string, c fileops.AttrChange, w *attrWa
 		if isLink(e.Type()) {
 			continue
 		}
-		path := filepath.Join(dir, e.Name())
+		path := fsx.JoinName(dir, e.Name())
 		if e.IsDir() {
 			if err := m.attrsBelow(j, path, c, w); err != nil {
 				return err

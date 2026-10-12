@@ -12,7 +12,7 @@ import (
 
 // VolumeID is the path's volume: "c:" or "\server\share", lower-cased.
 func VolumeID(path string) string {
-	return strings.ToLower(filepath.VolumeName(path))
+	return strings.ToLower(filepath.VolumeName(PlainPath(path)))
 }
 
 // WindowsNames: every Windows volume uses Windows naming rules.

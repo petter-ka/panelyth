@@ -3,6 +3,8 @@ import { bridge, canSwitchApps } from "../bridge"
 import { useLibraryStore } from "../features/library/libraryStore"
 import { openShortcutHelp } from "../features/shortcuts/shortcutStore"
 import {
+  closeSettings,
+  setPreference,
   useSettingsStore,
   type StartupFolderMode,
   type WheelMode,
@@ -100,8 +102,7 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
 }
 
 function ViewerSettings() {
-  const preferences = useSettingsStore((s) => s.preferences)
-  const setPreference = useSettingsStore((s) => s.setPreference)
+  const preferences = useSettingsStore((s) => s.settings)
   const libraryLoaded = useLibraryStore((s) => s.loaded)
 
   const chooseFolder = async (): Promise<void> => {
@@ -219,7 +220,6 @@ function ViewerSettings() {
 
 export function SettingsDialog() {
   const open = useSettingsStore((s) => s.open)
-  const closeSettings = useSettingsStore((s) => s.closeSettings)
   const settingsReady = useLibraryStore((s) => s.loaded)
 
   return (

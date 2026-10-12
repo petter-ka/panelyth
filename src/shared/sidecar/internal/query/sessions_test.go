@@ -39,7 +39,7 @@ func setup(t *testing.T, files int) *env {
 	}
 	root, _ := s.EnsureDir(context.Background(), dir)
 	e := &env{store: s, root: root}
-	e.mgr = NewManager(s, quiet, Options{MinRefreshDelay: 20 * time.Millisecond, MaxSessions: 3}, func(snap Snapshot) {
+	e.mgr = NewManager(s, quiet, Options{MinRefreshDelay: 20 * time.Millisecond, Budgets: map[Owner]int{OwnerMain: 3}}, func(snap Snapshot) {
 		e.mu.Lock()
 		e.inv = append(e.inv, snap)
 		e.mu.Unlock()
@@ -78,7 +78,7 @@ func (e *env) waitInvalidation(t *testing.T, total int) Snapshot {
 func TestSessionFollowsScan(t *testing.T) {
 	e := setup(t, 300)
 	ctx := context.Background()
-	snap, err := e.mgr.Open(ctx, index.Descriptor{DirID: e.root.ID, Sort: []index.SortKey{{Field: index.SortName}}})
+	snap, err := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Sort: []index.SortKey{{Field: index.SortName}}})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -117,7 +117,7 @@ func TestSessionFollowsScan(t *testing.T) {
 func TestPageSizeCap(t *testing.T) {
 	e := setup(t, 1200)
 	e.scan(t, false)
-	snap, _ := e.mgr.Open(context.Background(), index.Descriptor{DirID: e.root.ID})
+	snap, _ := e.mgr.Open(context.Background(), OwnerMain, index.Descriptor{DirID: e.root.ID})
 	p, _ := e.mgr.Page(context.Background(), snap.QueryID, 0, 1_000_000)
 	if len(p.Items) != MaxPageSize {
 		t.Fatalf("page size %d, want cap %d", len(p.Items), MaxPageSize)
@@ -126,7 +126,7 @@ func TestPageSizeCap(t *testing.T) {
 
 func TestRecursiveSessionSeesSubfolderChanges(t *testing.T) {
 	e := setup(t, 20)
-	snap, _ := e.mgr.Open(context.Background(), index.Descriptor{DirID: e.root.ID, Recursive: true})
+	snap, _ := e.mgr.Open(context.Background(), OwnerMain, index.Descriptor{DirID: e.root.ID, Recursive: true})
 	e.scan(t, true)
 	got := e.waitInvalidation(t, 3*20)
 	if got.QueryID != snap.QueryID {
@@ -139,7 +139,7 @@ func TestEvictionAndClose(t *testing.T) {
 	ctx := context.Background()
 	var ids []int64
 	for range 4 {
-		s, _ := e.mgr.Open(ctx, index.Descriptor{DirID: e.root.ID})
+		s, _ := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID})
 		ids = append(ids, s.QueryID)
 		time.Sleep(time.Millisecond)
 	}
@@ -149,7 +149,7 @@ func TestEvictionAndClose(t *testing.T) {
 	if !e.mgr.Close(ids[3]) || e.mgr.Close(ids[3]) {
 		t.Fatal("close semantics")
 	}
-	if _, err := e.mgr.Open(ctx, index.Descriptor{DirID: 999999}); !errors.Is(err, index.ErrNotFound) {
+	if _, err := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: 999999}); !errors.Is(err, index.ErrNotFound) {
 		t.Fatalf("unknown dir: %v", err)
 	}
 }
@@ -157,7 +157,7 @@ func TestEvictionAndClose(t *testing.T) {
 func TestIDsKeepPreviousVersion(t *testing.T) {
 	e := setup(t, 10)
 	ctx := context.Background()
-	snap, _ := e.mgr.Open(ctx, index.Descriptor{DirID: e.root.ID})
+	snap, _ := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID})
 	v1, cur, err := e.mgr.IDs(snap.QueryID, 1)
 	if err != nil || cur != 1 || len(v1) != 0 {
 		t.Fatalf("v1: %v %d %v", v1, cur, err)
@@ -205,11 +205,11 @@ func TestUserDataAndMaterializedHooks(t *testing.T) {
 	e.mgr.opts.Materialized = func(int64, index.Descriptor, []int64) { mu.Lock(); materialized++; mu.Unlock() }
 	e.mgr.opts.Dropped = func(int64) { mu.Lock(); dropped++; mu.Unlock() }
 
-	plain, err := e.mgr.Open(context.Background(), index.Descriptor{DirID: e.root.ID})
+	plain, err := e.mgr.Open(context.Background(), OwnerMain, index.Descriptor{DirID: e.root.ID})
 	if err != nil {
 		t.Fatal(err)
 	}
-	fav, err := e.mgr.Open(context.Background(), index.Descriptor{DirID: e.root.ID, FavoriteOnly: true})
+	fav, err := e.mgr.Open(context.Background(), OwnerMain, index.Descriptor{DirID: e.root.ID, FavoriteOnly: true})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -232,9 +232,9 @@ func TestUserDataAndMaterializedHooks(t *testing.T) {
 	mu.Unlock()
 
 	e.mgr.Close(fav.QueryID)
-	// MaxSessions is 3: two more opens evict the oldest.
+	// The budget is 3: two more opens evict the oldest.
 	for range 3 {
-		if _, err := e.mgr.Open(context.Background(), index.Descriptor{DirID: e.root.ID}); err != nil {
+		if _, err := e.mgr.Open(context.Background(), OwnerMain, index.Descriptor{DirID: e.root.ID}); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -249,7 +249,7 @@ func TestIndexOf(t *testing.T) {
 	e := setup(t, 300)
 	e.scan(t, false)
 	ctx := context.Background()
-	snap, _ := e.mgr.Open(ctx, index.Descriptor{DirID: e.root.ID})
+	snap, _ := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID})
 	p, _ := e.mgr.Page(ctx, snap.QueryID, 250, 1)
 	at, version, err := e.mgr.IndexOf(snap.QueryID, p.Items[0].ID)
 	if err != nil || at != 250 || version != snap.Version {
@@ -282,7 +282,7 @@ func TestLocateMatchPositions(t *testing.T) {
 	e := setup(t, 300)
 	e.scan(t, false)
 	ctx := context.Background()
-	snap, _ := e.mgr.Open(ctx, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll})
+	snap, _ := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll})
 	p, _ := e.mgr.Page(ctx, snap.QueryID, 0, MaxPageSize)
 	name := index.FoldName(p.Items[250].Name)
 
@@ -378,6 +378,101 @@ func BenchmarkPositions100k(b *testing.B) {
 		m := &Manager{sessions: map[int64]*session{1: {id: 1, ids: ids, version: 1}}}
 		if pos, _, _ := m.Positions(context.Background(), 1, carried); len(pos) != 10_000 {
 			b.Fatal(len(pos))
+		}
+	}
+}
+
+// Stage P02 (ADR-0026): one sidecar serves both apps, and each has its own
+// session budget.
+func TestEachOwnerEvictsOnlyItsOwnSessions(t *testing.T) {
+	e := setup(t, 20)
+	e.scan(t, false)
+	ctx := context.Background()
+	open := func(owner Owner) int64 {
+		t.Helper()
+		snap, err := e.mgr.Open(ctx, owner, index.Descriptor{DirID: e.root.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return snap.QueryID
+	}
+	alive := func(id int64) bool {
+		_, err := e.mgr.Page(ctx, id, 0, 1)
+		return err == nil
+	}
+
+	viewerFolder := open(OwnerViewer)
+	mainSession := open(OwnerMain) // the test budget for main is 3
+
+	// A commander with more tabs than its budget loses its own oldest tab,
+	// never the viewer's folder or main's session.
+	var tabs []int64
+	for range Budgets[OwnerCommander] + 3 {
+		tabs = append(tabs, open(OwnerCommander))
+	}
+	if n := e.mgr.Count(OwnerCommander); n != Budgets[OwnerCommander] {
+		t.Fatalf("commander holds %d sessions, want its budget of %d", n, Budgets[OwnerCommander])
+	}
+	for i, id := range tabs {
+		if want := i >= 3; alive(id) != want {
+			t.Errorf("commander session %d alive = %v, want %v (the 3 oldest are evicted)", i, !want, want)
+		}
+	}
+	if !alive(viewerFolder) || !alive(mainSession) {
+		t.Fatal("another owner's session was evicted by the commander")
+	}
+
+	// And the other way round: the viewer's 9th session drops its own oldest.
+	var queries []int64
+	for range Budgets[OwnerViewer] {
+		queries = append(queries, open(OwnerViewer))
+	}
+	if alive(viewerFolder) {
+		t.Error("the viewer's oldest session should be the one evicted")
+	}
+	if !alive(queries[0]) || e.mgr.Count(OwnerViewer) != Budgets[OwnerViewer] {
+		t.Errorf("viewer holds %d sessions", e.mgr.Count(OwnerViewer))
+	}
+	if n := e.mgr.Count(OwnerCommander); n != Budgets[OwnerCommander] {
+		t.Errorf("the viewer evicted commander sessions: %d left", n)
+	}
+	if !alive(mainSession) {
+		t.Error("main's session was evicted by the viewer")
+	}
+}
+
+func TestLeastRecentlyUsedOfAnOwnerGoesFirst(t *testing.T) {
+	e := setup(t, 20)
+	e.scan(t, false)
+	ctx := context.Background()
+	var ids []int64
+	for range 3 { // main's test budget
+		snap, err := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, snap.QueryID)
+		time.Sleep(2 * time.Millisecond)
+	}
+	// Paging the oldest makes it the most recently used.
+	if _, err := e.mgr.Page(ctx, ids[0], 0, 1); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.mgr.Page(ctx, ids[0], 0, 1); err != nil {
+		t.Error("the session used last was evicted")
+	}
+	if _, err := e.mgr.Page(ctx, ids[1], 0, 1); !errors.Is(err, ErrUnknownSession) {
+		t.Errorf("the least recently used session should be gone: %v", err)
+	}
+}
+
+func TestParseOwner(t *testing.T) {
+	for app, want := range map[string]Owner{"viewer": OwnerViewer, "commander": OwnerCommander, "": OwnerMain, "shell": OwnerMain} {
+		if got := ParseOwner(app); got != want {
+			t.Errorf("ParseOwner(%q) = %q, want %q", app, got, want)
 		}
 	}
 }

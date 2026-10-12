@@ -9,9 +9,15 @@ the previous version's id list, so a descriptor made just before a refresh still
 version. Older versions are rejected (INVALID_ARGUMENT), never misapplied. `selection.info` (count, size) and
 `selection.paths` (main only; ≤ 10,000, for the clipboard) resolve descriptors in Go.
 
-Amended 2026-10-05: sessions have a budget per app inside the one sidecar (ADR-0026, proposed); a selection can be
+Amended 2026-10-05: sessions have a budget per app inside the one sidecar (ADR-0026); a selection can be
 carried to the other app with `selection.fromContext` (ADR-0031); and find results, archives and directory compares
 add session sources (commander Stages C06–C08, ADR-0030).
+
+Amended 2026-10-12 (Stage P02): **the budgets are built.** A session has an owner, named by Electron main on
+`query.open`: the viewer (8 sessions), the commander (24) or main itself (8). Sessions over a source (find
+results, archives, remote folders, compares) are the commander's. An owner over its budget loses its own least
+recently used session; another owner's sessions are never evicted. The order is a use counter, not the clock. The
+cap of "8 per sidecar" below is replaced by these.
 
 Amended 2026-10-07 (Stage C06): the **session-source interface** is in place. A session is materialized either from
 the index (the default) or from a `query.Source`, which returns the ordered ids for a descriptor (sorting and
@@ -72,7 +78,8 @@ Ctrl+A.
 - When the index changes under a session (scan batches, watcher reconciles), Go re-materializes it on a
   debounce (about 250 ms) and emits `query.invalidated { queryId, version, total }`. The renderer refetches only
   the pages it holds, and ids keep selection stable.
-- Sessions are capped (8 per sidecar, least-recently-used eviction) and closed explicitly with `query.close`.
+- Sessions are capped (8 per sidecar at first; per owner since Stage P02: the viewer 8, the commander 24, main 8;
+  least-recently-used eviction within an owner) and closed explicitly with `query.close`.
   Per-window ownership comes with multi-window support.
 - Descriptor fields in Stage 01: `dirId`, `recursive`, `sort: [{ field: name | modified | size | type,
   direction }]` and `kinds`. Search and more sort fields arrive in Stage 05.

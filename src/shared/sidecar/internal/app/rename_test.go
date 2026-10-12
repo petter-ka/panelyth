@@ -212,6 +212,9 @@ func TestSetAttributesJobAndProperties(t *testing.T) {
 	sel := selectionWire{QueryID: queryID, Version: version, Ranges: [][2]int{{0, 2}}, Include: []int64{}, Exclude: []int64{}}
 	t.Cleanup(func() {
 		_ = fileops.ApplyAttrs(filepath.Join(dir, "doc.txt"), fileops.AttrChange{Clear: fileops.SettableAttrs, ModeSet: 0o600})
+		// The job takes the write permission from "sub" too; without it an
+		// ordinary user cannot remove what is inside (Stage P04).
+		_ = os.Chmod(filepath.Join(dir, "sub"), 0o755)
 	})
 
 	when := time.Date(2021, 4, 5, 6, 7, 8, 0, time.UTC).UnixMilli()

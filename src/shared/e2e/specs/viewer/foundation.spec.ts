@@ -16,7 +16,9 @@ test("app starts, renders the shell and the renderer can ping Go", async () => {
     await expect(page).toHaveTitle("Panelyth")
     expect(page.url()).toBe("app://panelyth/index.html")
     await waitForReady(page)
-    await expect(page.getByText("No folder open")).toBeVisible()
+    // The empty state lasts a few tens of ms: the startup folder opens at once.
+    await expect(page.getByRole("toolbar", { name: "Navigation" })).toBeVisible()
+    await expect(page.getByTestId("folder-name")).toBeVisible()
     await expect(page.getByTestId("sidecar-status")).toContainText("Backend ready")
     await expect(page.getByTestId("ping")).toHaveText(/ping \d+\.\d ms/)
 
@@ -48,12 +50,15 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
       process: "undefined",
       ipcRenderer: "undefined",
       electron: "undefined",
+      // The viewer's profile (ADR-0027); edit, batch and recipes are the image editor's (Stages 12 and 16).
       apiKeys: [
         "app",
+        "batch",
         "clip",
         "clipboard",
         "dialog",
         "dir",
+        "edit",
         "entry",
         "folder",
         "fs",
@@ -65,6 +70,7 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         "preview",
         "props",
         "query",
+        "recipes",
         "selection",
         "shell",
         "sidecar",

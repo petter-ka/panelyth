@@ -216,6 +216,7 @@ function openWindow(): BrowserWindow {
           devTools: !app.isPackaged,
         }
       : null,
+    announceVisibleApp,
   )
   const shell = appShell
   // Opened to show a file's folder: the viewer, whichever app was used last.
@@ -229,6 +230,19 @@ function openWindow(): BrowserWindow {
       }
     })
   return win
+}
+
+/**
+ * Tells the sidecar which app is on screen (Stage P02, ADR-0026): it watches
+ * that app's folders only and re-lists them when the app is shown again.
+ * Never awaited: a switch does not wait for the sidecar.
+ */
+let visibleSeq = 0
+
+function announceVisibleApp(visible: AppId): void {
+  sidecar?.call("app.setVisible", { app: visible, seq: ++visibleSeq }).catch((error: unknown) => {
+    logger.warn("app.setVisible failed", { error: String(error) })
+  })
 }
 
 /** Settings → General "Start with", else the app the previous run ended in. */
@@ -308,7 +322,11 @@ async function boot(): Promise<void> {
   const thumbTokens = new MediaTokens(48)
   handleMediaProtocol(mediaTokens, frameTokens, thumbTokens)
   sc.onStatus((status) => {
-    if (status.state === "ready") perfMark("sidecar-ready")
+    if (status.state === "ready") {
+      perfMark("sidecar-ready")
+      // A new sidecar process knows nothing: at start and after a restart.
+      announceVisibleApp(appShell?.activeApp ?? "viewer")
+    }
     logger.info("sidecar status", { ...status })
     broadcast(webContents.getAllWebContents(), "sidecar.status", status)
   })

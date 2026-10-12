@@ -1,0 +1,6 @@
+{"at":"2026-10-12T13:26:46.229Z","test":"step-latency-media-window","source":"12 MP JPEG","stepP50Ms":636,"stepMaxMs":702}
+{"at":"2026-10-12T13:26:50.731Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1560,"oneToOneToOriginalMs":91,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-12T13:38:44.156Z","test":"step-latency-media-window","source":"12 MP JPEG","stepP50Ms":615,"stepMaxMs":633}
+{"at":"2026-10-12T13:38:48.994Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1532,"oneToOneToOriginalMs":102,"longTasks":0,"longTaskMaxMs":0}
+{"at":"2026-10-12T14:00:10.241Z","test":"step-latency-media-window","source":"12 MP JPEG","stepP50Ms":621,"stepMaxMs":624}
+{"at":"2026-10-12T14:00:16.255Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1517,"oneToOneToOriginalMs":102,"longTasks":0,"longTaskMaxMs":0}

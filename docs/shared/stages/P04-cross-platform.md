@@ -1,8 +1,10 @@
 # Stage P04 — Cross-Platform Hardening
 
-Status: **In progress** (started 2026-10-08; packaging, CI and the Linux pass done). Track: platform (formerly viewer Stage 09). Depends on: P03 and the app stages in scope (see
-`docs/ROADMAP.md`). Applies to both apps; when the viewer ships first, it runs with the viewer in scope and C11
-repeats the commander parts.
+Status: **In progress** (started 2026-10-08; packaging, CI and the Linux pass done; taken up again 2026-10-12: paths,
+volumes, media tools, wheel input and the viewer's e2e specs done on Windows and Linux; the macOS items remain).
+Track: platform (formerly viewer Stage 09). Depends on: P03 and the app stages in scope (see `docs/ROADMAP.md`).
+Applies to both apps; when the viewer ships first, it runs with the viewer in scope and C11 repeats the commander
+parts.
 
 ## Objective
 
@@ -150,29 +152,169 @@ not run by hand here.
   budgets only while another suite loaded the same 4 vCPUs; idle they pass.
 - The packaged smoke test passes.
 
+## Progress (2026-10-12)
+
+Second slice, on the reference machine (Windows 11, i9-13900K) with the Go suite also run on Linux in a container
+(Docker Desktop, WSL2 kernel, Go 1.27; as root and as an ordinary user). The "not started" items of the first slice,
+the viewer's stale e2e specs, and what those runs found. macOS was not run: its parts are built for it and vetted
+(`GOOS=darwin go vet`), and are named under "Open".
+
+### Media tools per OS (ADR-0018, ADR-0030, amended)
+
+- ffmpeg, ffprobe and 7-Zip are found by one finder (`internal/platform`, `ToolFinder`): the environment variable,
+  next to the sidecar, `PATH`, then the folders package managers install to. **macOS: an app started from the Finder
+  or the Dock gets a `PATH` without Homebrew and MacPorts**, so `PATH` alone found nothing there; `/opt/homebrew/bin`,
+  `/usr/local/bin` and `/opt/local/bin` are searched. Linux adds `/usr/local/bin` and `/snap/bin`; Windows keeps
+  `Program Files\7-Zip`.
+- Only a complete packaged pair is used (ffmpeg beside the sidecar with the system's ffprobe is not mixed), and a
+  wrong path in the variable does not fall back.
+- The rules of each OS are tested on any host through an injected finder (`platform/tools_test.go`,
+  `video/locate_test.go`, `archive/locate_test.go`); on this machine the sidecar finds the winget ffmpeg a shell finds.
+
+### Paths and names (ADR-0015, amended)
+
+- **Unicode normalization** (carried over): the key was NFC on every OS. That is right on macOS, where the composed
+  and the decomposed form of a name are one file, and wrong on Windows and Linux, where they are two: a folder
+  holding both showed one. The key is NFC on macOS only. Comparing two folders still pairs the two forms on every OS
+  (`pathkey.NameKey`), since the sides may be volumes of different systems.
+- **Case sensitivity per volume** (carried over): decided, not built. The key folds case by the platform's default
+  (Windows and macOS fold, Linux does not). The cost is tested and recorded in ADR-0015: in a folder marked
+  case-sensitive on Windows (`fsutil`, tested here) or on a case-sensitive APFS volume, two names that differ only in
+  case share one row; on a case-insensitive volume under Linux, a folder reached by a path typed in another case gets
+  a second key.
+- **Names Windows rewrites** (found): a name ending in a dot or a space, or a device name such as `NUL`, was listed
+  and then opened under the path Win32 makes of it. `photo.jpg.` opened `photo.jpg` (deleting the stray file would
+  have deleted its neighbour) and `NUL` opened the null device (it read as an empty file). The index and the
+  folder tree now join a listed name with `fsx.JoinName`, which gives the path the `\\?\` prefix where Windows itself
+  says it would open something else; keys, volume ids and breadcrumbs ignore the prefix. The Recycle Bin refuses
+  such an item with a reason; reading, deleting, folder sizes and folders with such names inside are tested
+  (`scan/names_test.go`). Cost: 129–142 ns per join against 117–123 ns for `filepath.Join`, one allocation each
+  (`BenchmarkJoinName`).
+- **Long paths and UNC**: a folder 600 characters deep lists and opens; a folder on a share (the loopback admin
+  share) lists by its UNC path, is a folder of its own to the index, and its root is the breadcrumb's root.
+
+### Volumes
+
+- **macOS**: the list came from reading `/Volumes` and resolving every entry, which can wait on a share that
+  stopped answering, and every volume but the boot volume was "removable". It now comes from the mount table without
+  waiting for any filesystem (`getfsstat`, `MNT_NOWAIT`): network filesystems are `network`, discs `optical`, mounts
+  the Finder hides are left out. The selection is a pure function tested on every OS (`fsx.DarwinVolumes`); the
+  system call around it has not run on a Mac yet.
+- **Linux**: discs (`iso9660`, `udf`) are `optical`.
+- **Windows**, on real drives: a substituted drive appears in the list and in the monitor's signature and
+  disappears again, with the label and space of the disk behind it; a mapped share is `network`, has space and no
+  label (a share's label is not read, by design).
+- **Linux trash** (carried over from ADR-0021): verified on a second volume as an ordinary user. Where the volume's
+  top folder is writable the item goes to `.Trash-$uid` there with a relative path; where it is not, the item stays
+  and the error is `TRASH_UNAVAILABLE`. **Found: a fresh account had no trash at all.** `~/.local/share` does not
+  exist until something creates it, the home trash was then skipped, and the fallback at the top of the home volume
+  cannot be created by an ordinary user. The home trash is now made when it is first needed.
+
+### Trackpad and wheel (carried over from viewer Stage 03)
+
+- The lists scroll natively, so inertia is the browser's. Where the wheel **steps** instead (next file, tile size,
+  rows of the lister's byte views), every event stepped once: a trackpad sends dozens per swipe. Steps now follow
+  the distance travelled (`createWheelStepper` in `src/shared/ui`): the first event of a gesture steps, so one notch
+  of any mouse is one step whatever the system reports for it (Chromium on Windows reports 100 px, macOS far less
+  for a slow notch), and within a gesture a step takes a notch of travel.
+- **Found: wheel navigation stepped once per event for every device.** The picture, with its wheel handler and the
+  time of the last step, is replaced at every step, so the 140 ms limit never applied to the next event: eight
+  events were eight pictures. The stepper now belongs to the window. (`viewer.test.tsx`, with the real image
+  viewer.)
+- Tested with modelled streams (notches, a spun wheel, a slow drag, a swipe with decaying inertia, a pinch); not yet
+  felt on a real trackpad.
+
+### E2E
+
+- **The viewer's stale specs are repaired** (open since C06): `jobs`, `media`, `polish`, `previews`, `viewer`,
+  `workspace` and `theme`, 34 tests. They show their folder through `showDialogFolder` (`src/shared/e2e/launch.ts`);
+  measurements that must not miss the first events are installed at every load (`atEveryLoad`). `viewer.spec.ts`
+  follows the picture into the media window, where a double-click opens it since ADR-0033; `theme.spec.ts` chooses
+  the theme in Settings → Appearance.
+- **Fixtures emptied by a temp cleaner** (the reference machine: Storage Sense, with the disk 99 % full) left their
+  markers, and specs then tested what was left: the tiles spec saw 400 of 2,000 folders, the rename benchmark no
+  files. A fixture's marker now carries the count of its root's entries and a tree with fewer is generated again
+  (`internal/fixture`); the two spec-local fixtures check their content.
+- Found by the Linux run: an FTP download test expected a name with a backslash to be refused everywhere (it is an
+  ordinary character outside Windows); an attributes test left a folder an ordinary user cannot empty.
+
+### Results
+
+- Go, Windows: all packages pass. Go, Linux: all 31 packages pass as root and as an ordinary user (with the real
+  trash), and the race detector passes over the eight packages changed here.
+- Unit: contracts 202, i18n 26, renderer-core 39, desktop 272, ui 88, docviewer 15, media-ui 23, viewer 321,
+  commander 288.
+- E2E, Windows, every spec of both apps (121 tests, 11.6 min): 116 pass. Four are the commander tests that predate
+  the document window (see Open). The fifth, `editor.spec.ts` "the commander's Edit lands in the viewer's editor",
+  got no rows for its fresh folder once in two full runs and passes 5 of 5 alone.
+- The packaged smoke test passes on Windows (1.4 s). Its last step waited for the in-page viewer and now follows
+  the picture into the media window; it also drops `ELECTRON_RUN_AS_NODE`, which an editor's terminal sets and with
+  which the packaged app never starts.
+- Bundles against P01's last build: viewer JS +499 bytes (0.06 %), commander +339 bytes (0.04 %), the wheel stepper
+  (`stage-P04-2026-10-12-petter-bundle.json`).
+- Startup (`stage-P04-2026-10-12-petter-startup.json`): ready-to-show p50 262 ms, sidecar ready 162 ms, ping p95
+  0.2 ms, sidecar exit 21 ms. Idle memory 446.8 MB, 153.3 MB over an empty Electron: as in Stage P01 (448.4 MB)
+  and since C00, because a fresh profile opens Home at start and the sidecar decodes its covers (C00's record; the
+  benchmark is to start without a folder again in P05).
+- Media window: a step to the next 12 MP picture takes 636 ms at p50 and 702 ms at most; a 48 MP original shows
+  91 ms after 1:1 with no long task (`stage-04-2026-10-12-e2e-viewer.jsonl`).
+
 ## Open
 
-- **The viewer's e2e specs** still click "Open folder…", which the first screen no longer shows (the startup folder
-  opens home; open since C06, see the C07 record). They need a way to open a folder from the UI (a product decision:
-  for example an Open folder shortcut) or a test path; until then CI runs the commander and app-switch specs only.
-- **Windows e2e does not block CI** (owner's decision, 2026-10-08): it runs and reports, but its step continues on
-  error. Over four Windows runs 11 different commander specs failed, almost all on timing, and each passed in another
-  run. Still open: a restart opens the viewer instead of the last used commander when the start takes longer than the
-  400 ms wait for the shared context; the C02 carry-over spec (viewer selection back to marks) failed twice; further
-  timing races. Unit, Go, packaging and the packaged smoke test stay blocking on Windows.
-- Windows and macOS: the first CI run is the first run of the packaging and smoke test there, and of the e2e suites on
-  macOS. The macOS `clonefile` path, "Put Back", FSEvents vs kqueue, and NFC/NFD names are verified in that run or by
-  hand on a Mac.
-- macOS: "Put Back", NFC/NFD names and the e2e run after the watcher change are still to be confirmed.
-- Not started: volume tests (removable, network, labels), Unicode normalization and per-volume case sensitivity for
-  `path_key`, Windows UNC and reserved names, ffmpeg/ffprobe and 7-Zip discovery per OS, trackpad and wheel inertia,
-  startup and idle-memory budgets per OS (`BENCH_STAGE=P04`).
+For the owner:
+
+- **Case-sensitive folders and volumes** (ADR-0015, decided in this stage): the key folds case by platform, not by
+  volume. Two names that differ only in case share one row in a case-sensitive folder on Windows or on a
+  case-sensitive APFS volume. Say so if per-volume detection should be built before the release after all.
+- **The media window has less than the full-screen viewer it replaced** (ADR-0033): no Ctrl+C or "Copy picture", no
+  context menu, no rotate or flip, no Home and End, and no prefetch of the neighbours, so a step to the next 12 MP
+  picture takes 636 ms at p50 where the in-page viewer took 1 ms for a prefetched one (Stage 04). The in-page
+  viewer still exists and opens only when the media window cannot. `polish.spec.ts` no longer checks the copy
+  inside the viewer.
+- **Whether Enter on a `.cmd` should ask to run it or show it** (see the stale commander tests below).
+- `pnpm lint` fails on formatting in `showcase/src/main.jsx` and `showcase/src/styles.css` (committed in
+  `bc06a82`), which fails the CI lint job; `prettier --write` on the two files fixes it.
+- `pnpm package` could not replace `src/shared/desktop/release/win-unpacked` on the reference machine (EBUSY: some
+  program holds the folder; no Panelyth process was running). The package was built into another folder and passed
+  the smoke test from there.
+
+Not run on a Mac (built and vetted for it, tested through pure functions where possible):
+
+- the volume list from the mount table (`getfsstat`), the Homebrew and MacPorts folders, NFC keys with composed and
+  decomposed names on APFS (`TestComposedAndDecomposedNames` runs there in CI), the `clonefile` path, the e2e run
+  after the watcher change;
+- "Put Back" for items sent to the trash (ADR-0021): the trash is a rename into `.Trash`, which the Finder does not
+  offer to put back. It needs Finder scripting, cgo or Electron's `shell.trashItem` from main; undecided;
+- the wheel stepper on a real trackpad (macOS and a Windows precision touchpad).
+
+Still open from the first slice:
+
+- **Four commander e2e tests are stale since ADR-0033** (they fail at `bc06a82`): `archives.spec.ts` scenario 13
+  and `viewers.spec.ts` scenario 11, "safety" and "bench" press F3 or Enter on a text file and wait for the in-app
+  lister or the program dialog, but such a file now opens in a document window (`commander.settings`
+  `documentOpen` is "window" or "system"; there is no in-app choice). They need the document window's page.
+  "safety" presses Enter on `tool.cmd`: `cmd` is a text extension (`src/shared/contracts/src/documents.ts`), so the
+  file opens as text and the "run this program?" dialog never shows.
+- **E2E in CI**: the suites are switched off in `ci.yml` (runner minutes). With the viewer's specs repaired, the
+  step can name `specs` as a whole when it is switched on again. Windows e2e was not blocking (owner's decision,
+  2026-10-08); its open races: a restart opens the viewer instead of the last used commander when the start takes
+  longer than the 400 ms wait for the shared context; the C02 carry-over spec failed twice on the runner.
+- Startup and idle-memory budgets on Linux and macOS (`BENCH_STAGE=P04` was run on Windows only).
+- Windows on a real removable drive and a real network server: the kinds and timeouts are tested with a
+  substituted drive, the loopback share and stubbed space reads.
+- Packing, checksum files and FTP uploads of a folder that holds a name Windows rewrites still walk it with plain
+  joins: a name with a trailing dot or space inside fails there as not found. A file named `NUL` inside may be
+  read as empty (not tested).
+- Linux: shares mounted by the desktop (`gvfs`, under `/run/user`) are not in the drive list; they open by path.
 - Link copies with the privilege (Windows) remain a manual check.
+- On the reference machine one commander unit test failed once in eight runs of the suite and was not caught again
+  (the machine's intermittent faults, see `docs/DEVELOPMENT-STAGES.md`).
 
 ## Exit checklist
 
-- [ ] implementation complete (packaging, CI and Linux done; see Open)
-- [ ] tests complete
-- [ ] benchmark complete (scanner ordering and statx measured; startup and memory per OS open)
-- [x] performance regression reviewed (scanner listing: statx faster than lstat, chunk ordering ≈ 0.1 µs per entry)
-- [ ] docs/ADR updated (ADR-0032 accepted; this record continues)
+- [ ] implementation complete (the macOS items and the commander's four stale e2e tests remain; see Open)
+- [ ] tests complete (not run on a Mac; no real trackpad)
+- [ ] benchmark complete (startup and memory measured on Windows; Linux and macOS open)
+- [x] performance regression reviewed (statx faster than lstat, chunk ordering ≈ 0.1 µs per entry, the name join
+  ≈ 10 ns per entry; startup as in P01)
+- [ ] docs/ADR updated (ADR-0032 accepted; ADR-0015, 0018, 0021 and 0030 amended; this record continues)

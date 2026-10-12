@@ -135,6 +135,7 @@ function Breadcrumb({ crumbs }: { crumbs: Crumb[] }) {
       aria-label={t("Folder path")}
       className="flex min-w-0 flex-1 items-center"
       data-testid="breadcrumb"
+      data-path={crumbs[crumbs.length - 1]?.path}
     >
       <ol className="flex min-w-0 items-center">
         {hidden.length > 0 && (

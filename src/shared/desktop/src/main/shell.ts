@@ -42,6 +42,8 @@ export class AppShell {
   constructor(
     private readonly window: BrowserWindow,
     private readonly commanderView: CommanderView | null,
+    /** Called when another app is shown (the sidecar's watches follow it, ADR-0026). */
+    private readonly onShown: (app: AppId) => void = () => undefined,
   ) {
     window.setTitle(APP_TITLES.viewer)
     // The shell owns the title: it names the visible app.
@@ -105,6 +107,7 @@ export class AppShell {
     }
     if (to === this.active) return
     this.active = to
+    this.onShown(to)
     this.window.setTitle(APP_TITLES[to])
     for (const app of ["viewer", "commander"] as const) {
       const wc = this.webContentsOf(app)

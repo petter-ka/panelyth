@@ -62,11 +62,24 @@ func TestKeys(t *testing.T) {
 	}
 }
 
+// Stage P04: the composed and the decomposed form of a name are one file
+// on macOS and two files on Windows and Linux; the key follows.
 func TestUnicodeNormalization(t *testing.T) {
-	composed := ChildKey("/x/", "caf\u00e9.jpg", false)
-	decomposed := ChildKey("/x/", "cafe\u0301.jpg", false)
-	if composed != decomposed {
-		t.Fatalf("NFC mismatch: %q vs %q", composed, decomposed)
+	composed := ChildKey("/x/", "café.jpg", false)
+	decomposed := ChildKey("/x/", "café.jpg", false)
+	if (composed == decomposed) != (runtime.GOOS == "darwin") {
+		t.Fatalf("on %s: %q vs %q", runtime.GOOS, composed, decomposed)
+	}
+	dirA, dirB := DirKey(abs(t, "café")), DirKey(abs(t, "café"))
+	if (dirA == dirB) != (runtime.GOOS == "darwin") {
+		t.Fatalf("on %s: %q vs %q", runtime.GOOS, dirA, dirB)
+	}
+	// Compare pairs the two forms on every platform.
+	if NameKey("café.jpg") != NameKey("café.jpg") {
+		t.Fatal("NameKey keeps the two forms apart")
+	}
+	if (NameKey("A.JPG") == NameKey("a.jpg")) != caseInsensitive {
+		t.Fatalf("NameKey case on %s", runtime.GOOS)
 	}
 }
 

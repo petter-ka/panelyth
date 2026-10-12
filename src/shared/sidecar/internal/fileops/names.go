@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"strings"
 	"unicode/utf8"
+
+	"panelyth/sidecar/internal/fsx"
 )
 
 // MaxNameBytes is the common filename limit (NTFS, APFS, ext4).
@@ -113,6 +115,7 @@ func UniqueName(name string, isDir bool, exists func(string) bool) (string, bool
 // IsWithin reports whether path equals root or lies inside it. Both must be
 // clean absolute paths; comparison follows the platform's case rule.
 func IsWithin(path, root string) bool {
+	path, root = fsx.PlainPath(path), fsx.PlainPath(root)
 	if caseInsensitive {
 		path, root = strings.ToLower(path), strings.ToLower(root)
 	}

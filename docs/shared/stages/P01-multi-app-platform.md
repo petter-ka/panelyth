@@ -1,7 +1,8 @@
 # Stage P01 — Multi-App Platform: One Shell, App Views, Shared Packages
 
-Status: **In progress** (started 2026-10-05). Track: platform. Depends on: viewer Stage 08.6 closed. Unblocks: P02,
-C00.
+Status: **Implementation done** (started 2026-10-05; the rest of scope 2 and the hidden-viewer rule on 2026-10-12).
+Open: the owner's word on a bundle that grew by under 0.1 %, the viewer's work on a window resize while it is hidden,
+and the Linux and macOS runs (CI). Track: platform. Depends on: viewer Stage 08.6 closed. Unblocks: P02, C00.
 
 ## Progress (2026-10-05, "minimal P01" agreed with the owner)
 
@@ -25,8 +26,108 @@ Moved since, by the commander stages that needed them (2026-10-05): the page sto
 keymap engine and the switch-settings store (`src/shared/renderer-core`, C02), and `Button`, `Kbd`, `DialogWindow` and the
 shortcuts dialog (`src/shared/ui`, C02); the viewer re-exports or wraps them, so its imports and behavior did not change.
 
-Still open: the rest of scope 2 (`src/shared/renderer-core`: bridge core, settings and sidecar stores; the remaining UI
-primitives: menus, icons) and its bundle-size check.
+## Progress (2026-10-12, the rest of the stage)
+
+- **Bridge core** (`src/shared/renderer-core/src/bridge.ts`): one `PanelythError` (code, message, `retryable`,
+  `details`), `unwrap` (envelope → result or error) and `createBridgeCore<Api>()`, which reaches the preload API in
+  one place. Each app keeps its own method list, typed by its own preload, so an app can still name only the methods
+  of its profile. Before, each app had its own error class: the viewer's dropped `details`, the commander's dropped
+  `retryable`, and the commander threw a plain `Error` without a preload.
+- **Sidecar store** (`sidecarStore.ts`): `createSidecarStore(extra)` and `followSidecar(store, port, onReady)`. The
+  viewer adds its ping and build info; the commander uses it as it is. This fixed a defect in the commander: its
+  first `sidecar.getStatus` answer could replace a newer pushed status (the viewer already compared `since`).
+- **Settings store** (`settingsStore.ts`): `createSettingsStore({ defaults, read, save })` builds the viewer's
+  `viewer` and the commander's `commander.settings` stores (state `{ settings, open }`, `update`, `load`, `setOpen`,
+  `reset`). The viewer's store was renamed to this shape (`preferences` → `settings`; `openSettings`,
+  `closeSettings` and `setPreference` are functions of the module); what is stored did not change.
+- **UI primitives** (`src/shared/ui`): the context and dropdown menus (`menu.tsx`; the Radix menu packages are now
+  this package's dependencies), the 25 chrome icons (`icons.tsx`) and the `Notice` view. The viewer re-exports them;
+  its `ContextMenuItem` only adds the hint from its keymap, and its `Notice` only reads its store. The commander's
+  `PopupMenu` and action icons stay in the commander: nothing else uses them.
+- **Package boundaries** (scope 2, "Dependency rules"): `eslint.config.js` forbids an app importing the other app,
+  a shared package importing an app, the shell or a package above it (`contracts`, `i18n` < `renderer-core` < `ui` <
+  `media-ui`), and renderer code importing `electron` or `node:*`. `src/shared/desktop/test/boundaries.test.ts`
+  proves the rules fire (32 imports, by name and by path) and checks the same layering in the `package.json` files.
+- **Hidden-app rule for the viewer** (scope 3): while the commander is shown, a `query.invalidated` for the viewer's
+  folder waits; the newest one is applied when the viewer is shown (`startFolderMonitoring`), as the commander has
+  done since C01. A copy of 10,000 files into the folder the hidden viewer shows no longer makes it fetch pages and
+  thumbnails after every batch. Consequence: after more than one change while hidden, the selection is cleared
+  rather than mapped over (Go maps across one version, ADR-0017); with carry-over on, the commander's marks replace
+  it anyway.
+- **Tooling** (scope 5): `pnpm bench:bundle` (`scripts/bundle-size.mjs`) records each renderer's JS and CSS, raw
+  and gzipped; `src/shared/bench/scripts/startup.ts` now starts from a VS Code terminal (it removes
+  `ELECTRON_RUN_AS_NODE`, with which Electron runs as plain Node); the viewer's tile spec files its results under
+  `BENCH_STAGE`.
+- **The viewer's tile e2e spec** opens folders again (it clicked a toolbar button gone since C06): it sets the
+  startup folder and reloads, as the editor specs do. Its resize test waits for the page to have the new width, and
+  the first-thumbnail test opens the folder by its tile. The preload-surface test lists `edit`, `batch` and
+  `recipes` (Stages 12 and 16).
+
+Not moved, and why: the theme and interface-size stores live in `src/shared/ui` (`appearance.ts`) beside the tokens
+they switch, not in `renderer-core` as the table below planned; `ui` already depends on `renderer-core`, so nothing
+is duplicated.
+
+## Results (2026-10-12)
+
+Reference machine (i9-13900K, Windows 11), `BENCH_STAGE=P01`; before = commit `bc06a82`, after = this stage's build.
+Files: `src/shared/bench/results/stage-P01-2026-10-12-*`.
+
+| Measure | Before | After |
+|---|---|---|
+| Viewer ready-to-show, p50 | 266 ms | 256–259 ms (4 runs) |
+| Sidecar ready, p50 | 161 ms | 149–158 ms |
+| Idle memory, all processes | 448.4 MB | 446.4–447.6 MB |
+| `system.ping` p95 | 0.2 ms | 0.2 ms (one of four runs read 0.5 ms) |
+| 100k tile scroll, medium tiles at 1920 px | p95 frame 7 ms, 0 long tasks, 80 tiles mounted (2026-10-06) | the same |
+| 100k tile scroll, small tiles at 2560 px | p95 frame 7 ms, 0 long tasks, 204 tiles mounted (2026-10-06) | the same |
+| First switch to the commander | 178–200 ms (6 runs) | 177–191 ms |
+| Later switches | 4–8 ms | 4–5 ms |
+| Viewer JS | 786,221 B (gzip 242,088) | 786,892 B (gzip 242,256): +671 B, +0.09 % |
+| Viewer CSS | 41,808 B | 41,808 B |
+| Commander JS | 897,784 B (gzip 266,707) | 898,414 B (gzip 267,028): +630 B, +0.07 % |
+| Commander CSS | 40,856 B | 41,390 B: +534 B, the menus' and the notice's classes |
+| Document window JS | 764,592 B | 764,592 B |
+
+- The tile-scroll "before" is the record of 2026-10-06 (`stage-03-2026-10-06-e2e-tiles.jsonl`): at `bc06a82` the
+  spec could not open a folder.
+- **The bundle grew**, by 671 bytes in the viewer and 630 in the commander. The stage says it must not grow. The
+  bytes are the factories and two thin wrappers; no dependency is bundled twice, the Radix menus are not in the
+  commander's bundle (it does not use them) and neither are the icons it does not draw. Accepting this is the
+  owner's call.
+- The idle-memory budget (60 MB over the Electron floor) fails before and after (152–155 MB over); it has failed
+  since C00 and is a Stage P05 item.
+- Packages still ship TypeScript source bundled by each app: nothing measured gives a reason to prebuild them.
+
+Tests: contracts 201, desktop 267 (39 new: boundaries), renderer-core 39 (20 new), ui 72 (35 new), media-ui 23,
+i18n 26, docviewer 15, viewer 320 (3 new), commander 288 (6 new). E2E on the final build: the app switch (3), both
+foundation specs (8), the viewer's tile spec (9). Go was not touched and its tests were not run.
+
+The commander's e2e suite (54 tests) ran twice on the final build: 47 and 48 passed.
+
+- Four tests fail in both runs and at `bc06a82` as well: `archives.spec.ts` scenario 13 and `viewers.spec.ts`
+  scenario 11, "safety" and "bench". They press F3 or Enter on a text file and wait for the in-app lister or the
+  program dialog; since ADR-0033 such a file opens in a document window (`tool.cmd` of "safety" too: `cmd` is in
+  the text extensions of `src/shared/contracts/src/documents.ts`). The specs were not updated (a Stage P04 item,
+  recorded there).
+- Five others failed in one run each and never in both: `navigation.spec.ts` "switch: bookmarks…", `tabstree.spec.ts`
+  scenario 19 and its tree benchmark (69.6 ms against 50), `tools.spec.ts` scenario 17 and `ftp.spec.ts` "a server
+  that stops answering". Each passes alone on the final build (2 or 3 runs of each), and the three of the first run
+  pass at `bc06a82` alone too. The first run shared the machine with other work of this stage. The suite was not
+  run whole at `bc06a82`, so "no more often than before" is not shown; Stage P04 records the same pattern on
+  Windows CI.
+
+The viewer's `editor.test.tsx` "asks before replacing the original…" fails some runs on a focus assertion; it did so
+at `bc06a82` too (2 of 5 runs).
+
+Still open:
+
+- the owner's word on the bundle growth above;
+- the hidden viewer still lays its tiles out again when the window is resized while the commander is shown, which
+  costs a page and a thumbnail request for the new range; a pause in the page store is the fix (not part of
+  Stage P02, which built the sidecar's side: session budgets and watching per app);
+- the viewer's other e2e specs (`index`, `jobs`, `media`, `polish`, `previews`) still click the removed "Open
+  folder…" button (a Stage P04 item); the tile spec shows the replacement;
+- the Linux and macOS runs (CI).
 
 ## Objective
 
@@ -136,8 +237,10 @@ No regression beyond run-to-run noise (about ±5 %). The bundle must not grow.
 
 ## Exit checklist
 
-- [ ] implementation complete
-- [ ] tests complete
-- [ ] benchmark complete
-- [ ] performance regression reviewed
-- [ ] docs/ADR updated
+- [x] implementation complete (the resize of a hidden viewer is open, see "Still open")
+- [x] tests complete (the viewer's other e2e specs are a Stage P04 item; Linux and macOS runs in CI)
+- [x] benchmark complete (`stage-P01-2026-10-12-*`)
+- [ ] performance regression reviewed: no timing regression in either app; the bundles grew by 671 B (viewer) and
+      630 B (commander) against "must not grow", which waits for the owner
+- [x] docs/ADR updated (ADR-0013 amended; ADR-0031's open points and ADR-0027's per-view part were closed on
+      2026-10-05)

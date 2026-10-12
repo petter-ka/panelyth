@@ -360,7 +360,7 @@ export function EditorOverlay() {
   const compare = useEditorStore((s) => s.compare)
   const panelOpen = useEditorSettings((s) => s.settings.panel)
   const setSetting = useEditorSettings((s) => s.set)
-  const remind = useSettingsStore((s) => s.preferences.remindSaveChanges)
+  const remind = useSettingsStore((s) => s.settings.remindSaveChanges)
   const controller = useRef<CanvasController>(null)
   const rootRef = useRef<HTMLDivElement>(null)
   const activeGroup = useRef<HTMLButtonElement | null>(null)

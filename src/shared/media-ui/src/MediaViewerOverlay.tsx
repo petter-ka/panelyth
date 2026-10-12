@@ -4,6 +4,7 @@ import { ImageViewer, type ImageViewerController } from "./ImageViewer"
 import { VideoPlayer } from "./VideoPlayer"
 import { requestFit, requestMedia } from "./viewerImages"
 import { t } from "@panelyth/i18n"
+import { wheelNavigationStep } from "./wheelNavigation"
 
 export interface MediaViewerOverlayProps {
   item: ContentItem
@@ -24,9 +25,6 @@ export interface MediaViewerOverlayProps {
    */
   onShowInApp?: () => void
 }
-
-/** Wheel steps closer together than this count as one (as in the image viewer). */
-const WHEEL_STEP_INTERVAL_MS = 140
 
 const zoomButton =
   "h-7 rounded-md border border-border bg-raised px-2 text-xs enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
@@ -54,7 +52,6 @@ export function MediaViewerOverlay({
   const onZoomChange = useCallback((value: number, fit: boolean) => setZoom({ value, fit }), [])
   const isImage = item.kind === "image"
   const main = useRef<HTMLElement>(null)
-  const lastWheelStep = useRef(0)
   const wheelRef = useRef({ wheelMode, onStep })
   useEffect(() => {
     wheelRef.current = { wheelMode, onStep }
@@ -71,10 +68,8 @@ export function MediaViewerOverlay({
       if (mode !== "previousNext" || !step || e.ctrlKey || e.metaKey || e.deltaY === 0) return
       if (e.target instanceof Element && e.target.closest("input, [role=slider]")) return
       e.preventDefault()
-      const now = performance.now()
-      if (lastWheelStep.current > 0 && now - lastWheelStep.current < WHEEL_STEP_INTERVAL_MS) return
-      lastWheelStep.current = now
-      step(e.deltaY > 0 ? 1 : -1)
+      const direction = wheelNavigationStep(e)
+      if (direction !== 0) step(direction > 0 ? 1 : -1)
     }
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)

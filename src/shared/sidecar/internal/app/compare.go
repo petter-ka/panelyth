@@ -219,7 +219,7 @@ func (s *indexService) compareDirs(ctx context.Context, p compareDirsParams) (co
 	var snap query.Snapshot
 	res, err := s.compares.Start(spec, func(r *compare.Result) (int64, error) {
 		var err error
-		snap, err = s.queries.OpenSource(ctx, index.Descriptor{Scope: index.ScopeAll, ShowHidden: true}, r)
+		snap, err = s.queries.OpenSource(ctx, query.OwnerCommander, index.Descriptor{Scope: index.ScopeAll, ShowHidden: true}, r)
 		return snap.QueryID, err
 	})
 	if err != nil {
@@ -381,7 +381,7 @@ func (s *indexService) compareMarks(ctx context.Context, p compareMarksParams) (
 		}
 		entries := make([]compare.Entry, len(items))
 		for i, it := range items {
-			entries[i] = compare.Entry{Key: pathkey.ChildKey("", it.Name, false), IsDir: it.Kind == media.KindDir,
+			entries[i] = compare.Entry{Key: pathkey.NameKey(it.Name), IsDir: it.Kind == media.KindDir,
 				Size: it.Size, MtimeNs: it.MtimeNs}
 		}
 		return side{entries: entries, positions: positions, version: version}, nil

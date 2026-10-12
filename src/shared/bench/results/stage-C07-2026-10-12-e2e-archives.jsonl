@@ -1,3 +1,8 @@
 {"at":"2026-10-12T06:47:39.013Z","metric":"open 100k-entry zip, Enter → first rows","ms":73,"budgetMs":1000}
 {"at":"2026-10-12T08:23:56.407Z","metric":"open 100k-entry zip, Enter → first rows","ms":60,"budgetMs":1000}
 {"at":"2026-10-12T08:38:44.224Z","metric":"open 100k-entry zip, Enter → first rows","ms":65,"budgetMs":1000}
+{"at":"2026-10-12T10:48:19.805Z","metric":"open 100k-entry zip, Enter → first rows","ms":75,"budgetMs":1000}
+{"at":"2026-10-12T10:57:24.398Z","metric":"open 100k-entry zip, Enter → first rows","ms":66,"budgetMs":1000}
+{"at":"2026-10-12T12:07:15.535Z","metric":"open 100k-entry zip, Enter → first rows","ms":62,"budgetMs":1000}
+{"at":"2026-10-12T13:28:12.701Z","metric":"open 100k-entry zip, Enter → first rows","ms":65,"budgetMs":1000}
+{"at":"2026-10-12T13:49:02.078Z","metric":"open 100k-entry zip, Enter → first rows","ms":65,"budgetMs":1000}

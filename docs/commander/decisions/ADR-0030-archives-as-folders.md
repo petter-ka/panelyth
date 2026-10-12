@@ -80,8 +80,10 @@ implemented and where it was refined.
   option off they are skipped. Before an extraction the dialog shows `archive.check`'s warnings: "space" (more than
   the free space) and "ratio" (more than 100 times the compressed size and at least 1 GiB). Item codes
   `UNSAFE_PATH`, `CORRUPT`, `ENCRYPTED`, `TOO_LARGE`.
-- **7-Zip:** found through `PANELYTH_7Z` (`off` disables it), next to the sidecar, `PATH` (`7z`, `7zz`, `7za`) and,
-  on Windows, `Program Files\7-Zip`. Without it those formats open with their default app and the commander says
+- **7-Zip:** found through `PANELYTH_7Z` (`off` disables it), next to the sidecar, `PATH` (`7z`, `7zz`, `7za`) and
+  the folders it is installed to: `Program Files\7-Zip` on Windows, Homebrew's and MacPorts' folders on macOS (an
+  app started from the Finder has neither on `PATH`), `/usr/local/bin` and `/snap/bin` on Linux (Stage P04; the
+  finder is ffmpeg's, ADR-0018). Without it those formats open with their default app and the commander says
   why. With it, extraction runs into a hidden staging folder inside the target (a partial name, so a crash leaves
   nothing behind) and the staged entries are moved in through the same checks and conflict handling as the built-in
   formats. 7-Zip runs without a console window and without stdin, so a password prompt fails instead of hanging.

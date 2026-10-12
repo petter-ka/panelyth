@@ -10,7 +10,6 @@ import (
 	"io/fs"
 	"log/slog"
 	"os"
-	"path/filepath"
 	"slices"
 	"strings"
 	"sync"
@@ -287,7 +286,7 @@ func listDir(ctx context.Context, j job, chunk int, out chan<- msg, skipped, err
 				MtimeNs: info.ModTime().UnixNano(), BtimeNs: fsx.FileTimes(info).BirthNs, PathKey: pathkey.ChildKey(j.key, name, isDir),
 			}
 			if isDir {
-				row.Path = filepath.Join(j.path, name)
+				row.Path = fsx.JoinName(j.path, name)
 			} else {
 				row.Size = info.Size()
 			}

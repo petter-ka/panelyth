@@ -1,9 +1,9 @@
-import { appendFileSync, existsSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
+import { appendFileSync, existsSync, mkdirSync, mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, dirname, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { launchApp, repoRoot, showDialogFolder, waitForReady } from "../../launch"
 
 // Stage 05: navigation, lazy tree, index-backed search, pane resize,
 // workspace persistence, multi-selection (docs/viewer/stages/05-filesystem-ux.md).
@@ -21,17 +21,14 @@ function writeResult(result: object): void {
   appendFileSync(file, JSON.stringify({ at: new Date().toISOString(), ...result }) + "\n")
 }
 
-const nav = (page: Page) => page.getByRole("toolbar", { name: "Navigation" })
-
 async function openVia(dialogPath: string, env: Record<string, string> = {}) {
   const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dialogPath, ...env })
   await waitForReady(launched.page)
-  await nav(launched.page).getByRole("button", { name: "Open folder…" }).click()
+  await showDialogFolder(launched.page)
   return launched
 }
 
-const folderPath = (page: Page) =>
-  page.getByTestId("breadcrumb").locator('[aria-current="page"]').getAttribute("title")
+const folderPath = (page: Page) => page.getByTestId("breadcrumb").getAttribute("data-path")
 
 const shellLog = (app: ElectronApplication) =>
   app.evaluate(
@@ -92,10 +89,11 @@ test.describe("sidebar tree", () => {
     test.setTimeout(180_000)
     const base = join(tmpdir(), "panelyth-fixtures", "subdirs-10k")
     const many = join(base, "many")
-    if (!existsSync(join(base, ".done"))) {
+    // The last folder, not a marker: a temp cleaner can empty the tree and
+    // leave a marker file behind (Stage P04).
+    if (!existsSync(join(many, "dir 9999"))) {
       for (let i = 0; i < 10_000; i++)
         mkdirSync(join(many, `dir ${i}`, i % 10 === 0 ? "child" : ""), { recursive: true })
-      writeFileSync(join(base, ".done"), "")
     }
     const { app, page } = await openVia(base)
     try {

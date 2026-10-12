@@ -316,7 +316,7 @@ export function pasteReplacing(): void {
   const folder = useFolderStore.getState().folder
   const clip = get().clip
   if (!folder || clip.mode === "") return
-  if (useSettingsStore.getState().preferences.confirmOverwrite) {
+  if (useSettingsStore.getState().settings.confirmOverwrite) {
     set({
       dialog: {
         kind: "replacePaste",

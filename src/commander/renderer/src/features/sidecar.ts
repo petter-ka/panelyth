@@ -1,16 +1,13 @@
-import type { SidecarStatus } from "@panelyth/contracts"
-import { create } from "zustand"
+import { createSidecarStore, followSidecar } from "@panelyth/renderer-core"
 import { bridge, isBridgeAvailable } from "../bridge"
 
-export const useSidecarStore = create<{ status: SidecarStatus | null }>(() => ({ status: null }))
+export const useSidecarStore = createSidecarStore()
 
 /** Follows the shared sidecar's state (one sidecar serves both apps, ADR-0031). */
 export function startSidecarMonitoring(): () => void {
   if (!isBridgeAvailable()) return () => undefined
-  const off = bridge.on("sidecar.status", (status) => useSidecarStore.setState({ status }))
-  void bridge
-    .sidecarStatus()
-    .then((status) => useSidecarStore.setState({ status }))
-    .catch(() => undefined)
-  return off
+  return followSidecar(useSidecarStore, {
+    getStatus: bridge.sidecarStatus,
+    onStatus: (listener) => bridge.on("sidecar.status", listener),
+  })
 }

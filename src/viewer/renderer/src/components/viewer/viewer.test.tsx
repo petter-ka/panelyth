@@ -13,6 +13,7 @@ import { useSelectionStore } from "../../features/tiles/selectionStore"
 import { startSidecarMonitoring, useSidecarStore } from "../../features/system/sidecarStore"
 import { resetViewerImages, startViewerImageMonitoring } from "../../features/viewer/viewerImages"
 import { resetViewer, useViewerStore } from "../../features/viewer/viewerStore"
+import { setPreference } from "../../features/settings/settingsStore"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
 
@@ -230,5 +231,29 @@ describe("image viewer", () => {
     })
     expect(imageViewer()).toHaveAttribute("data-mode", "free")
     expect(Number(imageViewer().dataset.zoom)).toBeGreaterThan(0.25)
+  })
+
+  // Stage P04: a trackpad sends a stream of wheel events, and the picture
+  // (with its wheel handler) is replaced at every step.
+  it("a stream of wheel events steps through pictures by distance, not per event", async () => {
+    setPreference("wheelMode", "previousNext")
+    await setup()
+    await openOn(5)
+    expect(viewer()).toHaveAttribute("data-entry-id", "6")
+    const now = vi.spyOn(performance, "now")
+    const wheel = async (at: number, deltaY: number): Promise<void> => {
+      now.mockReturnValue(at)
+      await act(async () => {
+        imageViewer().dispatchEvent(new WheelEvent("wheel", { deltaY, cancelable: true }))
+      })
+    }
+    // 8 events in 112 ms, 240 px: one step now, the next when 140 ms passed.
+    for (let i = 0; i < 8; i++) await wheel(10_000 + i * 16, 30)
+    expect(viewer()).toHaveAttribute("data-entry-id", "7")
+    await wheel(10_144, 30)
+    expect(viewer()).toHaveAttribute("data-entry-id", "8")
+    // A slow drag back: 40 events of 2 px (80 px) are one step, not five.
+    for (let i = 0; i < 40; i++) await wheel(20_000 + i * 16, -2)
+    expect(viewer()).toHaveAttribute("data-entry-id", "7")
   })
 })

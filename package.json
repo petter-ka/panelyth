@@ -21,6 +21,7 @@
     "test:e2e": "pnpm build && pnpm --filter @panelyth/e2e test",
     "bench:go": "node scripts/go.mjs bench",
     "bench:startup": "pnpm build && pnpm --filter @panelyth/bench startup",
+    "bench:bundle": "node scripts/bundle-size.mjs",
     "bench:index": "node scripts/go.mjs indexbench",
     "bench:previews": "node scripts/go.mjs thumbbench",
     "bench:find": "node scripts/go.mjs findbench",

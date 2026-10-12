@@ -3,12 +3,9 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { launchApp, repoRoot, showDialogFolder, waitForReady } from "../../launch"
 
 // Stage 07: batch jobs, coalesced progress, user metadata (ADR-0021).
-
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
 
 const tileByName = (page: Page, name: string) =>
   page.locator(`[data-testid="tile"][aria-label="${name}"]`)
@@ -60,7 +57,7 @@ test.describe("batch operations (Stage 07)", () => {
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: fx.root })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       await expect(page.getByTestId("folder-summary")).toHaveText(/^90,000 items/, {
         timeout: 120_000,
       })
@@ -124,7 +121,7 @@ test.describe("batch operations (Stage 07)", () => {
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
     try {
       await waitForReady(page)
-      await toolbarOpen(page).click()
+      await showDialogFolder(page)
       await expect(page.getByTestId("folder-summary")).toHaveText(/^13 items/, { timeout: 30_000 })
 
       // Copy everything and paste into the same folder: duplicates keep both.

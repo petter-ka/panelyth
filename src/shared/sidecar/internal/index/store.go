@@ -15,6 +15,7 @@ import (
 	"sync"
 	"time"
 
+	"panelyth/sidecar/internal/fsx"
 	"panelyth/sidecar/internal/media"
 	"panelyth/sidecar/internal/natsort"
 	"panelyth/sidecar/internal/pathkey"
@@ -370,7 +371,8 @@ func (s *Store) ScanEnded(ctx context.Context, scanID int64, state int, dirs, en
 	return err
 }
 
-// joinPath joins a stored directory path and an entry name.
+// joinPath joins a stored directory path and an entry name the way the
+// folder holds it (fsx.JoinName: Windows rewrites some names).
 func joinPath(dir, name string) string {
-	return filepath.Join(dir, name)
+	return fsx.JoinName(dir, name)
 }

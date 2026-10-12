@@ -33,7 +33,7 @@ const SyncPairDay = 48 * time.Hour
 func GenerateSync(root string, spec SyncSpec) error {
 	marker := filepath.Join(root, ".panelyth-fixture")
 	want := fmt.Sprintf("sync %+v", spec)
-	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
+	if cached(root, marker, want) {
 		return nil
 	}
 	if err := os.RemoveAll(root); err != nil {
@@ -62,7 +62,7 @@ func GenerateSync(root string, spec SyncSpec) error {
 			return err
 		}
 	}
-	return os.WriteFile(marker, []byte(want), 0o644)
+	return seal(root, marker, want)
 }
 
 // put writes a file dated baseTime plus age.

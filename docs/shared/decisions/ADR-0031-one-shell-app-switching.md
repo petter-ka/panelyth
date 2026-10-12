@@ -74,7 +74,7 @@ src/
     e2e/                  Playwright harness; specs/viewer/, later specs/commander/ (@panelyth/e2e)
     bench/                startup benchmark, empty-Electron baseline, results/ (@panelyth/bench)
     ui/                   (Stage P01) tokens, Tailwind theme, primitives, icons, dialogs, menus, Notice, app switcher rail
-    renderer-core/        (Stage P01) bridge, page store, selection algebra, keymap, theme, settings, sidecar store
+    renderer-core/        (Stage P01) bridge core, page store, selection algebra, keymap, settings and sidecar store factories
     media-ui/             (Stage C05) image viewer, video player; tile components (Stage C10)
   viewer/
     renderer/             the viewer's React app (@panelyth/renderer)

@@ -79,6 +79,50 @@ export async function waitForReady(
   }
 }
 
+/**
+ * Shows a folder in the viewer: the viewer opens the folder named in its
+ * settings at start, so the folder is set there and the page reloaded. (The
+ * toolbar has had no "Open folder…" button since the sidebar took over
+ * navigation; a test that needs the open itself opens a folder tile.)
+ */
+export async function showViewerFolder(page: Page, dir: string): Promise<void> {
+  await waitForReady(page)
+  await page.evaluate(async (folder) => {
+    await window.panelyth!.library.setSetting("viewer", {
+      v: 1,
+      startupFolder: "specified",
+      specifiedFolder: folder,
+    })
+  }, dir)
+  await page.reload()
+  await waitForReady(page)
+}
+
+/**
+ * Shows the folder the launch named in PANELYTH_TEST_DIALOG_PATH, for the
+ * specs written when the toolbar had an "Open folder…" button over the
+ * folder dialog: the dialog's canned answer is still what names the folder.
+ */
+export async function showDialogFolder(page: Page): Promise<void> {
+  await waitForReady(page)
+  const dir = await page.evaluate(async () => {
+    const res = await window.panelyth!.dialog.openFolder()
+    if (!res.ok) throw new Error(res.e.message)
+    return res.r.path
+  })
+  if (!dir) throw new Error("the launch named no folder (PANELYTH_TEST_DIALOG_PATH)")
+  await showViewerFolder(page, dir)
+}
+
+/**
+ * Runs `install` in the page now and at the start of every later load, for
+ * measurements that must not miss the first events after a reload.
+ */
+export async function atEveryLoad(page: Page, install: () => void): Promise<void> {
+  await page.addInitScript(install)
+  await page.evaluate(install)
+}
+
 export function isAlive(pid: number): boolean {
   try {
     process.kill(pid, 0)

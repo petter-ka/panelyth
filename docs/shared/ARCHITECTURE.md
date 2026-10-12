@@ -56,10 +56,10 @@ Shared code:
 
 - `src/shared/desktop`: the shell (main process and one preload per app);
 - `src/shared/contracts`: wire types, guards, golden fixtures (ADR-0012);
-- `src/shared/ui` (Stage P01): design tokens, Tailwind theme, primitives (menus, dialogs, buttons, icons), notices, the
-  app switcher rail;
-- `src/shared/renderer-core` (Stage P01): bridge, page store, selection algebra, keymap, theme, settings and sidecar
-  stores;
+- `src/shared/ui` (Stage P01): design tokens, Tailwind theme, the theme and interface-size stores, primitives (menus,
+  dialogs, buttons, icons), notices, the app switcher rail;
+- `src/shared/renderer-core` (Stage P01): the bridge core (envelope → `PanelythError`), page store, selection
+  algebra, keymap, and the factories of the settings and sidecar stores; each app keeps its own bridge method list;
 - `src/shared/media-ui` (Stage C05; the tile parts since Stage C10: geometry, thumbnail and cover stores, the
   preview frame `TileThumb`): `ImageViewer`, `VideoPlayer`, their request logic (viewer-fit previews, original
   URLs, video preferences) and zoom/transform math, behind a small port (`configureMedia`) that each app sets up with

@@ -56,3 +56,17 @@ export {
   type TreeStore,
   type TreeStoreOptions,
 } from "./treeStore"
+export { createBridgeCore, PanelythError, unwrap, type BridgeCore } from "./bridge"
+export {
+  createSidecarStore,
+  followSidecar,
+  type SidecarPort,
+  type SidecarState,
+  type SidecarStore,
+} from "./sidecarStore"
+export {
+  createSettingsStore,
+  type SettingsState,
+  type SettingsStore,
+  type SettingsStoreOptions,
+} from "./settingsStore"

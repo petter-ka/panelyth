@@ -10,6 +10,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"panelyth/sidecar/internal/fsx"
 )
 
 // PartialSuffix marks unfinished copies. The leading dot keeps them out of
@@ -79,7 +81,7 @@ func PartialName(dir, name string) string {
 // TreeSize sums the regular files under dir (symlinks are not followed).
 func TreeSize(ctx context.Context, dir string) (int64, error) {
 	var total int64
-	err := filepath.WalkDir(dir, func(_ string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(fsx.Verbatim(dir), func(_ string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

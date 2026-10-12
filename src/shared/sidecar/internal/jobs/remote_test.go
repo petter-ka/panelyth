@@ -248,11 +248,12 @@ func TestDownloadNeverWritesOutsideItsFolder(t *testing.T) {
 	// What a broken or hostile listing could hand a job. The connection's own
 	// listing never has such names; the job does not rely on that.
 	crafted := []remote.Info{}
-	for _, name := range []string{"../evil.txt", `..\evil.txt`, "sub/evil.txt", ".."} {
+	for _, name := range []string{"../evil.txt", "sub/evil.txt", ".."} {
 		crafted = append(crafted, remote.Info{Path: "/readme.txt", Entry: remote.Entry{Name: name, Size: 5}})
 	}
 	if runtime.GOOS == "windows" {
-		for _, name := range []string{"con", "a:b.txt", "trailing."} {
+		// A backslash separates folders on Windows only (see below).
+		for _, name := range []string{`..\evil.txt`, "con", "a:b.txt", "trailing."} {
 			crafted = append(crafted, remote.Info{Path: "/readme.txt", Entry: remote.Entry{Name: name, Size: 5}})
 		}
 	}
@@ -282,6 +283,23 @@ func TestDownloadNeverWritesOutsideItsFolder(t *testing.T) {
 	sp.Destination = filepath.Join(re.root, "gone")
 	if s := re.run(sp); s.State != StateFailed || s.Error == "" {
 		t.Errorf("a missing destination: %+v", s)
+	}
+	if runtime.GOOS != "windows" {
+		// Outside Windows a backslash is a character of a name like any
+		// other: the file is written under that name, inside the folder
+		// (Stage P04; the Linux run found the test expecting a refusal).
+		name := `..\evil.txt`
+		sp = re.spec(KindDownload, RemoteSpec{Items: []remote.Info{{Path: "/readme.txt", Entry: remote.Entry{Name: name, Size: 5}}}})
+		sp.Destination, sp.Conflict = re.root, ConflictReplace
+		if s := re.run(sp); s.Done != 1 || s.Failed != 0 {
+			t.Fatalf("a name with a backslash: %+v", s)
+		}
+		if data, err := os.ReadFile(filepath.Join(re.root, name)); err != nil || string(data) != "hello" {
+			t.Fatalf("%q in the destination: %q, %v", name, data, err)
+		}
+		if _, err := os.Stat(filepath.Join(filepath.Dir(re.root), "evil.txt")); err == nil {
+			t.Fatal("a file was written outside the destination")
+		}
 	}
 }
 

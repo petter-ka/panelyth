@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"sync"
 	"time"
 
 	"panelyth/sidecar/internal/archive"
@@ -51,7 +52,10 @@ type indexService struct {
 	store   *index.Store
 	scans   *scan.Manager
 	queries *query.Manager
-	finds   *find.Manager
+	// visibleSeq is the newest app.setVisible applied (Stage P02).
+	visibleMu  sync.Mutex
+	visibleSeq int64
+	finds      *find.Manager
 	// archives are the open archives (Stage C07, ADR-0030).
 	archives *archive.Manager
 	// remotes are the connections to FTP servers, connecting the connects
@@ -185,6 +189,10 @@ type (
 		// Lane names the caller's foreground scan slot (a commander panel);
 		// a new scan cancels only the previous one in its lane.
 		Lane string `json:"lane"`
+		// App is the calling app, added by Electron main and never by a
+		// renderer (Stage P02, ADR-0026): the folder is watched while that
+		// app is on screen. Empty for main's own calls.
+		App string `json:"app"`
 	}
 	dirOpenResult struct {
 		DirID        int64  `json:"dirId"`
@@ -201,6 +209,7 @@ type (
 		EntryID   int64  `json:"entryId"`
 		Recursive bool   `json:"recursive"`
 		Lane      string `json:"lane"`
+		App       string `json:"app"`
 	}
 	cancelScanParams struct {
 		ScanID int64 `json:"scanId"`
@@ -238,6 +247,9 @@ type (
 		// RemoteDirID is the folder's id from remote.open.
 		RemoteID    int64 `json:"remoteId"`
 		RemoteDirID int64 `json:"remoteDirId"`
+		// App is the calling app, added by Electron main (Stage P02): the
+		// session counts against that app's budget.
+		App string `json:"app"`
 	}
 	queryPageParams struct {
 		QueryID int64 `json:"queryId"`
@@ -362,11 +374,21 @@ func (s *indexService) dirOpen(ctx context.Context, p dirOpenParams) (dirOpenRes
 	if len(p.Lane) > 16 {
 		return dirOpenResult{}, rpc.NewError(rpc.CodeInvalidArgument, "lane must be at most 16 characters")
 	}
-	scanID, err := s.scans.Open(info, p.Recursive, p.Lane)
+	if p.App != "" && !validApp(p.App) {
+		return dirOpenResult{}, rpc.NewError(rpc.CodeInvalidArgument, "app must be viewer or commander")
+	}
+	// Lanes are per app: a folder the commander opens never stops the
+	// viewer's listing.
+	scanID, err := s.scans.Open(info, p.Recursive, p.App+"/"+p.Lane)
 	if err != nil {
 		return dirOpenResult{}, dbError(err)
 	}
-	s.watcher.Watch(info.ID, clean)
+	// Watched for the app that shows it: the viewer's folder, or a commander
+	// panel's. A folder the commander opens outside a panel (a destination,
+	// a compare root) is not on screen and is not watched.
+	if p.App != string(query.OwnerCommander) || p.Lane != "" {
+		s.watcher.Watch(watch.Slot{App: p.App, Lane: p.Lane}, info.ID, clean)
+	}
 	if lib, lerr := s.library(ctx); lerr == nil {
 		if err := lib.TouchRecent(ctx, info.Key, info.Path); err != nil {
 			s.log.Warn("record recent folder", "err", err)
@@ -387,6 +409,9 @@ func (s *indexService) dirOpen(ctx context.Context, p dirOpenParams) (dirOpenRes
 
 func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.Snapshot, error) {
 	d := index.Descriptor{DirID: p.DirID, Recursive: p.Recursive, Scope: index.Scope(p.Scope), ShowHidden: p.ShowHidden}
+	if p.App != "" && !validApp(p.App) {
+		return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "app must be viewer or commander")
+	}
 	if !index.ValidScope(d.Scope) {
 		return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "scope must be media or all")
 	}
@@ -459,7 +484,7 @@ func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.
 		}
 		return s.openFindQuery(ctx, p.FindID, d)
 	}
-	snap, err := s.queries.Open(ctx, d)
+	snap, err := s.queries.Open(ctx, query.ParseOwner(p.App), d)
 	if errors.Is(err, index.ErrNotFound) {
 		return snap, rpc.NewError(rpc.CodeNotFound, "folder is not indexed")
 	}
@@ -632,5 +657,5 @@ func (s *indexService) dirOpenEntry(ctx context.Context, p dirOpenEntryParams) (
 	if err != nil {
 		return dirOpenResult{}, dbError(err)
 	}
-	return s.dirOpen(ctx, dirOpenParams{Path: info.Path, Recursive: p.Recursive, Lane: p.Lane})
+	return s.dirOpen(ctx, dirOpenParams{Path: info.Path, Recursive: p.Recursive, Lane: p.Lane, App: p.App})
 }

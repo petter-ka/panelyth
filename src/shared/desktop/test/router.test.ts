@@ -364,7 +364,8 @@ describe("invoke router", () => {
     ] as const) {
       const res = await handler(commander, m, p)
       expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
-      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+      // Folder and query opens also name the calling app (Stage P02).
+      expect(sidecar.call).toHaveBeenLastCalledWith(m, profileParams("commander", m, p))
     }
     for (const [m, p] of [
       ["find.start", { ...spec, roots: [] }],
@@ -446,7 +447,8 @@ describe("invoke router", () => {
     ] as const) {
       const res = await handler(commander, m, p)
       expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
-      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+      // Folder and query opens also name the calling app (Stage P02).
+      expect(sidecar.call).toHaveBeenLastCalledWith(m, profileParams("commander", m, p))
     }
     const pack = {
       kind: "pack",
@@ -777,7 +779,76 @@ describe("invoke router", () => {
       handler(commander, "query.indexOf", { queryId: 1, entryId: 7 }),
     ).resolves.toMatchObject({ ok: true })
     await expect(handler(commander, "fs.volumes", {})).resolves.toMatchObject({ ok: true })
-    expect(sidecar.call).toHaveBeenCalledWith("query.open", descriptor)
+    expect(sidecar.call).toHaveBeenCalledWith("query.open", { ...descriptor, app: "commander" })
+  })
+
+  it("names the calling app on folder and query opens, whatever the renderer sent (Stage P02)", async () => {
+    const { handler, sidecar, ok, commander } = setup()
+    const abs = process.platform === "win32" ? "C:\\Photos" : "/photos"
+    const descriptor = {
+      dirId: 1,
+      recursive: false,
+      sort: [],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+    }
+    const sent = (method: string): unknown =>
+      vi.mocked(sidecar.call).mock.calls.findLast(([m]) => m === method)?.[1]
+
+    // The viewer: its one folder and its sessions.
+    await handler(ok, "dir.open", { path: abs, recursive: false })
+    expect(sent("dir.open")).toEqual({ path: abs, recursive: false, app: "viewer" })
+    await handler(ok, "dir.openEntry", { entryId: 2, recursive: false })
+    expect(sent("dir.openEntry")).toEqual({ entryId: 2, recursive: false, app: "viewer" })
+    await handler(ok, "query.open", descriptor)
+    expect(sent("query.open")).toEqual({ ...descriptor, app: "viewer" })
+
+    // The commander: a panel's folder by its lane, and its sessions.
+    await handler(commander, "dir.open", { path: abs, recursive: false, lane: "left" })
+    expect(sent("dir.open")).toEqual({
+      path: abs,
+      recursive: false,
+      lane: "left",
+      app: "commander",
+    })
+    await handler(commander, "dir.openContaining", { entryId: 9, lane: "right" })
+    expect(sent("dir.openContaining")).toEqual({ entryId: 9, lane: "right", app: "commander" })
+    await handler(commander, "query.open", { ...descriptor, scope: "all" })
+    expect(sent("query.open")).toEqual({ ...descriptor, scope: "all", app: "commander" })
+
+    // A renderer cannot pass for the other app: the field is not part of its
+    // call, and main's value would replace it anyway.
+    await expect(
+      handler(ok, "dir.open", { path: abs, recursive: false, app: "commander" }),
+    ).resolves.toMatchObject({ ok: false, e: { code: "INVALID_ARGUMENT" } })
+    await expect(
+      handler(ok, "query.open", { ...descriptor, app: "commander" }),
+    ).resolves.toMatchObject({ ok: false, e: { code: "INVALID_ARGUMENT" } })
+    expect(profileParams("viewer", "query.open", { ...descriptor, app: "commander" })).toEqual({
+      ...descriptor,
+      app: "viewer",
+    })
+
+    // Nothing is added to other calls.
+    const page = { queryId: 1, offset: 0, limit: 256, thumbProfile: null }
+    await handler(ok, "query.page", page)
+    expect(sent("query.page")).toEqual(page)
+    await handler(commander, "query.close", { queryId: 1 })
+    expect(sent("query.close")).toEqual({ queryId: 1 })
+  })
+
+  it("lets no renderer say which app is on screen (Stage P02)", async () => {
+    const { handler, sidecar, ok, commander } = setup(true)
+    for (const event of [ok, commander]) {
+      await expect(
+        handler(event, "app.setVisible", { app: "commander", seq: 99 }),
+      ).resolves.toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
   })
 
   it("lets the commander's tree list a folder's subfolders, hidden ones too; the viewer's never", async () => {

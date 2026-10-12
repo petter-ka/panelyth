@@ -1,12 +1,15 @@
 import { appendFileSync, cpSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type ElectronApplication, type Locator, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
-
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
+import {
+  expectWithinBudget,
+  launchApp,
+  repoRoot,
+  showDialogFolder,
+  waitForReady,
+} from "../../launch"
 
 function writeResult(result: object): void {
   const date = new Date().toISOString().slice(0, 10)
@@ -32,7 +35,7 @@ function copyOf(name: string, images: { count: number; width: number; height: nu
 async function openFolderAt(dir: string) {
   const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
   await waitForReady(launched.page)
-  await toolbarOpen(launched.page).click()
+  await showDialogFolder(launched.page)
   await expect(
     launched.page.locator('[data-testid="tile"][data-kind="image"]').first(),
   ).toBeVisible({
@@ -53,35 +56,62 @@ const watchLongTasks = (page: Page) =>
 const longTasks = (page: Page) =>
   page.evaluate(() => (window as unknown as { __lt: number[] }).__lt)
 
-/** ms from pressing `key` until the viewer shows a decoded layer of a new entry. */
-async function timedStep(page: Page, key: string): Promise<{ ms: number; entry: string }> {
-  return page.evaluate(
+/** The frameless media window (ADR-0033): a double-click on a tile opens the file there. */
+async function mediaPage(app: ElectronApplication): Promise<Page> {
+  const deadline = Date.now() + 15_000
+  for (;;) {
+    const page = app.windows().find((p) => p.url().includes("media.html"))
+    if (page) return page
+    if (Date.now() > deadline) throw new Error("media window not found")
+    await new Promise((r) => setTimeout(r, 25))
+  }
+}
+
+const mediaWindows = (app: ElectronApplication): number =>
+  app.windows().filter((p) => p.url().includes("media.html")).length
+
+interface Opened {
+  media: Page
+  viewer: Locator
+  image: Locator
+}
+
+async function openInMediaWindow(app: ElectronApplication, tile: Locator): Promise<Opened> {
+  await tile.dblclick()
+  const media = await mediaPage(app)
+  const viewer = media.getByTestId("media-viewer")
+  await expect(viewer).toBeVisible({ timeout: 15_000 })
+  return { media, viewer, image: viewer.getByTestId("image-viewer") }
+}
+
+/** ms from pressing `key` until the media window shows a decoded layer of a new entry. */
+async function timedStep(media: Page, key: string): Promise<{ ms: number; entry: string }> {
+  return media.evaluate(
     (k) =>
       new Promise<{ ms: number; entry: string }>((resolve) => {
-        const viewer = document.querySelector<HTMLElement>('[data-testid="viewer"]')!
-        const before = viewer.dataset.entryId
+        const root = (): HTMLElement =>
+          document.querySelector<HTMLElement>('[data-testid="media-viewer"]')!
+        const before = root().dataset.entryId
         const t0 = performance.now()
         const check = (): boolean => {
-          const v = document.querySelector<HTMLElement>('[data-testid="viewer"]')!
-          const layer = document.querySelector<HTMLElement>(
-            '[data-testid="viewer"] [data-testid="image-viewer"]',
-          )?.dataset.layer
-          if (v.dataset.entryId !== before && (layer === "fit" || layer === "original")) {
-            resolve({ ms: performance.now() - t0, entry: v.dataset.entryId! })
+          const layer = root().querySelector<HTMLElement>('[data-testid="image-viewer"]')?.dataset
+            .layer
+          if (root().dataset.entryId !== before && (layer === "fit" || layer === "original")) {
+            resolve({ ms: performance.now() - t0, entry: root().dataset.entryId! })
             return true
           }
           return false
         }
         const mo = new MutationObserver(() => check() && mo.disconnect())
         mo.observe(document.body, { subtree: true, attributes: true, childList: true })
-        viewer.dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }))
+        root().dispatchEvent(new KeyboardEvent("keydown", { key: k, bubbles: true }))
       }),
     key,
   )
 }
 
-test.describe("image viewer (Stage 04)", () => {
-  test("opens from a tile, steps through images and returns to the selected tile", async () => {
+test.describe("image viewer (Stage 04; in the media window since ADR-0033)", () => {
+  test("opens from a tile, steps through images and closes with Esc", async () => {
     test.setTimeout(180_000)
     const { app, page } = await openFolderAt(
       copyOf("images-150", { count: 150, width: 1600, height: 1200 }),
@@ -89,63 +119,59 @@ test.describe("image viewer (Stage 04)", () => {
     try {
       const tile = page.locator('[data-testid="tile"][data-kind="image"]').nth(3)
       const name = await tile.getAttribute("aria-label")
-      await tile.dblclick()
-      const viewer = page.getByTestId("viewer")
-      await expect(viewer).toBeVisible()
-      await expect(page.getByTestId("viewer-name")).toHaveText(name!)
-      await expect(page.getByTestId("viewer").getByTestId("image-viewer")).toHaveAttribute(
-        "data-layer",
-        "fit",
-        {
-          timeout: 20_000,
-        },
-      )
+      const { viewer, image } = await openInMediaWindow(app, tile)
+      await expect(viewer).toHaveAttribute("aria-label", `Media viewer: ${name}`)
+      await expect(image).toHaveAttribute("data-layer", "fit", { timeout: 20_000 })
 
+      const first = await viewer.getAttribute("data-entry-id")
       await viewer.press("ArrowRight")
+      await expect(viewer).not.toHaveAttribute("data-entry-id", first!)
+      const second = await viewer.getAttribute("data-entry-id")
       await viewer.press("ArrowRight")
-      const shown = await viewer.getAttribute("data-index")
-      await viewer.press("Escape")
-      await expect(viewer).toHaveCount(0)
-      const selected = page.locator(`#tile-${shown}`)
-      await expect(selected).toBeVisible()
-      await expect(selected).toHaveAttribute("aria-selected", "true")
-      await expect(page.getByTestId("tile-view")).toBeFocused()
+      await expect(viewer).not.toHaveAttribute("data-entry-id", second!)
+      await expect(viewer).not.toHaveAttribute("aria-label", `Media viewer: ${name}`)
+      await viewer.press("ArrowLeft")
+      await expect(viewer).toHaveAttribute("data-entry-id", second!)
+
+      // The window closes under the key press, which then has no page to return to.
+      await viewer.press("Escape").catch(() => undefined)
+      await expect.poll(() => mediaWindows(app)).toBe(0)
+      // The folder is as it was left: the tile that was opened is selected.
+      await expect(tile).toHaveAttribute("aria-selected", "true")
     } finally {
       await app.close()
     }
   })
 
-  test("changing to a prefetched image is immediate", async () => {
+  test("changing to the next image", async () => {
     test.setTimeout(240_000)
     const { app, page } = await openFolderAt(
       copyOf("images-12mp-120", { count: 120, width: 4000, height: 3000 }),
     )
     try {
-      await page.locator('[data-testid="tile"][data-kind="image"]').first().dblclick()
-      await expect(page.getByTestId("viewer").getByTestId("image-viewer")).toHaveAttribute(
-        "data-layer",
-        "fit",
-        {
-          timeout: 30_000,
-        },
+      const { media, image } = await openInMediaWindow(
+        app,
+        page.locator('[data-testid="tile"][data-kind="image"]').first(),
       )
-      const warm: number[] = []
+      await expect(image).toHaveAttribute("data-layer", "fit", { timeout: 30_000 })
+      const steps: number[] = []
       for (let i = 0; i < 6; i++) {
-        await page.waitForTimeout(700) // give the neighbour prefetch time, like a person looking
-        warm.push((await timedStep(page, "ArrowRight")).ms)
+        await media.waitForTimeout(700) // like a person looking
+        steps.push((await timedStep(media, "ArrowRight")).ms)
       }
-      const cold = (await timedStep(page, "End")).ms // not prefetched: generated on demand
-      const sorted = [...warm].sort((a, b) => a - b)
+      const sorted = [...steps].sort((a, b) => a - b)
       const result = {
-        test: "step-latency",
+        test: "step-latency-media-window",
         source: "12 MP JPEG",
-        prefetchedP50Ms: Math.round(sorted[Math.floor(sorted.length / 2)]!),
-        prefetchedMaxMs: Math.round(sorted.at(-1)!),
-        coldJumpMs: Math.round(cold),
+        stepP50Ms: Math.round(sorted[Math.floor(sorted.length / 2)]!),
+        stepMaxMs: Math.round(sorted.at(-1)!),
       }
       writeResult(result)
       test.info().annotations.push({ type: "metrics", description: JSON.stringify(result) })
-      expect(result.prefetchedMaxMs).toBeLessThan(100)
+      // The media window asks for the picture it shows and nothing ahead of
+      // it, so a step waits for one fit preview (docs/shared/stages/P04,
+      // "Open": the 100 ms of a prefetched step is not met there).
+      expectWithinBudget(result.stepMaxMs, 1_000, "media window: step to the next 12 MP image")
     } finally {
       await app.close()
     }
@@ -157,18 +183,20 @@ test.describe("image viewer (Stage 04)", () => {
       copyOf("images-12mp-120", { count: 120, width: 4000, height: 3000 }),
     )
     try {
-      await page.locator('[data-testid="tile"][data-kind="image"]').first().dblclick()
-      const iv = page.getByTestId("viewer").getByTestId("image-viewer")
-      await expect(iv).toHaveAttribute("data-layer", "fit", { timeout: 30_000 })
-      await expect(page.getByTestId("viewer").getByTestId("viewer-original-layer")).toHaveCount(0) // fit needs no original
-      await page.getByTestId("viewer").press("1")
-      await expect(iv).toHaveAttribute("data-layer", "original", { timeout: 20_000 })
-      const natural = await page
+      const { media, viewer, image } = await openInMediaWindow(
+        app,
+        page.locator('[data-testid="tile"][data-kind="image"]').first(),
+      )
+      await expect(image).toHaveAttribute("data-layer", "fit", { timeout: 30_000 })
+      await expect(media.getByTestId("viewer-original-layer")).toHaveCount(0) // fit needs no original
+      await viewer.press("1")
+      await expect(image).toHaveAttribute("data-layer", "original", { timeout: 20_000 })
+      const natural = await media
         .getByTestId("viewer-original-layer")
         .evaluate((img: HTMLImageElement) => ({ w: img.naturalWidth, src: img.src }))
       expect(natural.w).toBe(4000)
       expect(natural.src).toMatch(/^panelyth-media:\/\/m\/[0-9a-f]{32}$/)
-      await expect(page.getByTestId("viewer-zoom")).toHaveText(/^100%$|^\d+%$/)
+      await expect(image).toHaveAttribute("data-zoom", "1.0000")
     } finally {
       await app.close()
     }
@@ -180,23 +208,25 @@ test.describe("image viewer (Stage 04)", () => {
       copyOf("images-48mp-3", { count: 3, width: 8000, height: 6000 }),
     )
     try {
-      await watchLongTasks(page)
       const t0 = Date.now()
-      await page.locator('[data-testid="tile"][data-kind="image"]').first().dblclick()
-      const iv = page.getByTestId("viewer").getByTestId("image-viewer")
-      await expect(iv).toHaveAttribute("data-layer", "fit", { timeout: 60_000 })
+      const { media, viewer, image } = await openInMediaWindow(
+        app,
+        page.locator('[data-testid="tile"][data-kind="image"]').first(),
+      )
+      await expect(image).toHaveAttribute("data-layer", "fit", { timeout: 60_000 })
       const fitMs = Date.now() - t0
+      await watchLongTasks(media)
       const t1 = Date.now()
-      await page.getByTestId("viewer").press("1")
-      await expect(iv).toHaveAttribute("data-layer", "original", { timeout: 60_000 })
+      await viewer.press("1")
+      await expect(image).toHaveAttribute("data-layer", "original", { timeout: 60_000 })
       const originalMs = Date.now() - t1
       // Pan around the 100 % image while it is displayed.
-      const box = (await iv.boundingBox())!
-      await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-      await page.mouse.down()
-      await page.mouse.move(box.x + 100, box.y + 100, { steps: 20 })
-      await page.mouse.up()
-      const lt = await longTasks(page)
+      const box = (await image.boundingBox())!
+      await media.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await media.mouse.down()
+      await media.mouse.move(box.x + 100, box.y + 100, { steps: 20 })
+      await media.mouse.up()
+      const lt = await longTasks(media)
       const result = {
         test: "large-decode",
         source: "48 MP JPEG",

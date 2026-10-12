@@ -31,7 +31,7 @@ const EncodingSample = "Grüße aus Köln — naïve café\r\nzweite Zeile\r\nth
 func GenerateText(root string, spec TextSpec) error {
 	marker := filepath.Join(root, ".panelyth-fixture")
 	want := fmt.Sprintf("text %+v", spec)
-	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
+	if cached(root, marker, want) {
 		return nil
 	}
 	if err := os.RemoveAll(root); err != nil {
@@ -50,7 +50,7 @@ func GenerateText(root string, spec TextSpec) error {
 			return err
 		}
 	}
-	return os.WriteFile(marker, []byte(want), 0o644)
+	return seal(root, marker, want)
 }
 
 func writeLog(path string, size int64) error {

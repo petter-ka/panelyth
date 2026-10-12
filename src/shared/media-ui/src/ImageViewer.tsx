@@ -14,6 +14,7 @@ import {
 } from "./zoom"
 import { cssTransform, IDENTITY, isIdentity, orientedSize, type ViewTransform } from "./transform"
 import { t } from "@panelyth/i18n"
+import { wheelNavigationStep } from "./wheelNavigation"
 
 export interface ImageViewerController {
   fit(): void
@@ -159,7 +160,6 @@ export function ImageViewer({
   const zoomRef = useRef(state.zoom)
   const wheelNavigateRef = useRef(onWheelNavigate)
   const wheelModeRef = useRef(wheelMode)
-  const lastWheelNavigation = useRef(0)
   useEffect(() => {
     setZoomRef.current = setZoom
     zoomRef.current = state.zoom
@@ -172,11 +172,8 @@ export function ImageViewer({
     const onWheel = (e: WheelEvent): void => {
       if (wheelModeRef.current === "previousNext" && !(e.ctrlKey || e.metaKey)) {
         e.preventDefault()
-        if (e.deltaY === 0) return
-        const now = performance.now()
-        if (lastWheelNavigation.current > 0 && now - lastWheelNavigation.current < 140) return
-        lastWheelNavigation.current = now
-        wheelNavigateRef.current?.(e.deltaY > 0 ? 1 : -1)
+        const direction = wheelNavigationStep(e)
+        if (direction !== 0) wheelNavigateRef.current?.(direction > 0 ? 1 : -1)
         return
       }
       e.preventDefault()

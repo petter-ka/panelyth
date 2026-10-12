@@ -11,10 +11,10 @@ import {
   writeFileSync,
 } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, waitForReady } from "../../launch"
+import { launchApp, repoRoot, showViewerFolder } from "../../launch"
 
 // Mirrors src/viewer/renderer/src/features/tiles/layout.ts (docs/viewer/stages/03-tile-view.md).
 const METRICS = {
@@ -27,18 +27,24 @@ const perRowFor = (width: number, size: keyof typeof METRICS): number => {
   return Math.max(1, Math.floor((width - 32 + gap) / (tile + gap)))
 }
 
-const toolbarOpen = (page: Page) =>
-  page.getByRole("toolbar", { name: "Navigation" }).getByRole("button", { name: "Open folder…" })
-
-async function setWindow(app: ElectronApplication, width: number, height: number): Promise<void> {
-  await app.evaluate(
+/** Resizes the window; with `page`, returns once the page has the new width. */
+async function setWindow(
+  app: ElectronApplication,
+  width: number,
+  height: number,
+  page?: Page,
+): Promise<void> {
+  // The OS may clamp the window to the screen: wait for the size it got.
+  const actual = await app.evaluate(
     ({ BrowserWindow }, [w, h]) => {
       const win = BrowserWindow.getAllWindows()[0]!
       win.unmaximize()
       win.setContentSize(w, h)
+      return win.getContentSize()[0]!
     },
     [width, height] as const,
   )
+  await page?.waitForFunction((w) => window.innerWidth === w, actual)
 }
 
 const viewState = (page: Page) =>
@@ -61,15 +67,19 @@ const ipcCounts = (app: ElectronApplication): Promise<Record<string, number>> =>
       ).__panelythIpcCounts?.() ?? {},
   )
 
+/**
+ * The viewer opens the folder named in its settings at start (the toolbar has
+ * had no "Open folder…" button since the sidebar took over navigation).
+ */
 async function openFolderAt(dir: string, size?: "small" | "medium" | "large") {
   const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: dir })
-  await waitForReady(launched.page)
+  const { page } = launched
+  await showViewerFolder(page, dir)
   if (size)
-    await launched.page
+    await page
       .getByRole("button", { name: `${size[0]!.toUpperCase()}${size.slice(1)} tiles` })
       .click()
-  await toolbarOpen(launched.page).click()
-  await expect(launched.page.getByTestId("tile").first()).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByTestId("tile").first()).toBeVisible({ timeout: 30_000 })
   return launched
 }
 
@@ -134,7 +144,8 @@ async function scrollStress(
   )
 }
 
-function writeResult(result: object, stage = "03"): void {
+/** Filed under BENCH_STAGE when a stage re-measures the tile view (P01, P05). */
+function writeResult(result: object, stage = process.env.BENCH_STAGE ?? "03"): void {
   const date = new Date().toISOString().slice(0, 10)
   const file = join(
     repoRoot,
@@ -173,10 +184,22 @@ function ensureFolderFixture(): string {
     images: { count: 6, width: 1600, height: 1200 },
   })
   const root = join(tmpdir(), "panelyth-fixtures", `folders-${COVER_FOLDERS}`)
-  const marker = join(root, ".fixture-done")
-  if (existsSync(marker)) return root
-  rmSync(root, { recursive: true, force: true })
   const images = readdirSync(src.root).filter((f) => !f.startsWith("."))
+  // The tree is checked, not a marker: a cleaner of temporary files removed
+  // the folders with pictures and left the marker and the rest (Stage P04).
+  const withMedia = Array.from({ length: COVER_FOLDERS }, (_, i) => i).filter(
+    (i) => !coverFolderEmpty(i),
+  )
+  const whole = (i: number): boolean =>
+    images.every((f) => existsSync(join(root, coverFolderName(i), f)))
+  if (
+    existsSync(root) &&
+    readdirSync(root).filter((f) => !f.startsWith(".")).length === COVER_FOLDERS &&
+    whole(withMedia[0]!) &&
+    whole(withMedia[withMedia.length - 1]!)
+  )
+    return root
+  rmSync(root, { recursive: true, force: true })
   for (let i = 0; i < COVER_FOLDERS; i++) {
     const dir = join(root, coverFolderName(i))
     mkdirSync(dir, { recursive: true })
@@ -192,7 +215,6 @@ function ensureFolderFixture(): string {
       }
     }
   }
-  writeFileSync(marker, "")
   return root
 }
 
@@ -202,7 +224,7 @@ test.describe("tile view (Stage 03)", () => {
     try {
       const seen: { window: number; width: number; perRow: number }[] = []
       for (const w of [1280, 1920, 2560]) {
-        await setWindow(app, w, 1000)
+        await setWindow(app, w, 1000, page)
         await expect
           .poll(async () => {
             const s = await viewState(page)
@@ -290,10 +312,10 @@ test.describe("tile view (Stage 03)", () => {
   test("first thumbnails are requested right away, not after a scroll-settle delay", async () => {
     // Regression guard: a no-op programmatic scroll on mount (scroll reset,
     // scroll anchoring) used to flag isScrolling and hold the first request
-    // for ~230 ms. Timed inside the page from the click.
-    const launched = await launchApp({ PANELYTH_TEST_DIALOG_PATH: imagesCopy() })
+    // for ~230 ms. Timed inside the page from the click that opens the folder
+    // (its tile in the parent folder).
+    const launched = await openFolderAt(dirname(imagesCopy()))
     try {
-      await waitForReady(launched.page)
       await launched.page.evaluate(() => {
         const t = { click: 0, mounted: 0, ready: 0 }
         ;(window as unknown as { __t: typeof t }).__t = t
@@ -304,7 +326,7 @@ test.describe("tile view (Stage 03)", () => {
             t.mounted = performance.now()
         }).observe(document.body, { childList: true, subtree: true, attributes: true })
       })
-      await toolbarOpen(launched.page).click()
+      await launched.page.locator('[data-testid="tile"][data-kind="dir"]').dblclick()
       await launched.page.waitForFunction(
         () => (window as unknown as { __t: { ready: number } }).__t.ready > 0,
         null,
@@ -426,8 +448,7 @@ test.describe("tile view (Stage 03)", () => {
       PANELYTH_USER_DATA_DIR: profile,
     })
     try {
-      await waitForReady(first.page)
-      await toolbarOpen(first.page).click()
+      await showViewerFolder(first.page, dir)
       await first.page.getByRole("button", { name: "Large tiles" }).click()
       await expect(first.page.getByTestId("tile-view")).toHaveAttribute("data-tile-size", "large")
       expect((await viewState(first.page)).boxWidth).toBe("260px")
@@ -439,8 +460,7 @@ test.describe("tile view (Stage 03)", () => {
       PANELYTH_USER_DATA_DIR: profile,
     })
     try {
-      await waitForReady(second.page)
-      await toolbarOpen(second.page).click()
+      await showViewerFolder(second.page, dir)
       await expect(second.page.getByTestId("tile-view")).toHaveAttribute("data-tile-size", "large")
     } finally {
       await second.app.close()

@@ -13,7 +13,14 @@ import {
   type TileSize,
 } from "@panelyth/media-ui"
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
-import { INTERFACE_SIZE_SCALE, Spinner, TypeGlyph, useInterfaceSizeStore } from "@panelyth/ui"
+import {
+  createWheelStepper,
+  INTERFACE_SIZE_SCALE,
+  Spinner,
+  TypeGlyph,
+  useInterfaceSizeStore,
+  WHEEL_NOTCH_PX,
+} from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import {
   forwardRef,
@@ -209,15 +216,19 @@ export const ThumbsView = forwardRef<FullViewHandle, ThumbsViewProps>(function T
   useEffect(() => {
     const el = box.current
     if (!el) return
+    // As in the viewer's tile view: a pinch changes the size by its distance.
+    const sizeStep = createWheelStepper({ stepPx: WHEEL_NOTCH_PX / 2 })
     const onWheel = (e: WheelEvent): void => {
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
+      const direction = sizeStep(e)
+      if (direction === 0) return
       const now = useSettingsStore.getState().settings.thumbSize
       const next =
         TILE_SIZE_ORDER[
           Math.min(
             TILE_SIZE_ORDER.length - 1,
-            Math.max(0, TILE_SIZE_ORDER.indexOf(now) + (e.deltaY < 0 ? 1 : -1)),
+            Math.max(0, TILE_SIZE_ORDER.indexOf(now) + (direction < 0 ? 1 : -1)),
           )
         ]!
       if (next !== now) updateSettings({ thumbSize: next })

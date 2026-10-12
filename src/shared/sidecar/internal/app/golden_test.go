@@ -492,6 +492,8 @@ func TestGoldenFrames(t *testing.T) {
 	imgSel := map[string]any{"queryId": qid, "version": 1, "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
 	golden["res-context.publish.json"] = call(61, byID(61, "context.publish", map[string]any{"app": "viewer", "dirId": imgDir["dirId"], "focusId": firstImage, "selection": imgSel}))
 	golden["res-context.get.json"] = call(62, `{"t":"req","id":62,"m":"context.get","p":{}}`)
+	// Stage P02: main names the app on screen (the watches follow it).
+	golden["res-app.setVisible.json"] = call(67, `{"t":"req","id":67,"m":"app.setVisible","p":{"app":"viewer","seq":1}}`)
 	golden["res-query.indexOf.json"] = call(63, byID(63, "query.indexOf", map[string]any{"queryId": qid, "entryId": firstImage}))
 	// Stage C02: the carried selection, quick search and marking by mask.
 	ctxVersion := golden["res-context.get.json"].(map[string]any)["r"].(map[string]any)["version"]

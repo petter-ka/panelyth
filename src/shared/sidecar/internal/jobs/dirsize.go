@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"panelyth/sidecar/internal/fileops"
+	"panelyth/sidecar/internal/fsx"
 	"panelyth/sidecar/internal/index"
 	"panelyth/sidecar/internal/media"
 	"panelyth/sidecar/internal/pathkey"
@@ -44,7 +45,7 @@ func (m *Manager) dirSizes(j *job, a *applier) error {
 
 // walkSize sums file sizes below root; the job's context cancels it.
 func walkSize(j *job, root string) (bytes int64, unreadable int, err error) {
-	err = filepath.WalkDir(root, func(_ string, d fs.DirEntry, werr error) error {
+	err = filepath.WalkDir(fsx.Verbatim(root), func(_ string, d fs.DirEntry, werr error) error {
 		if cerr := j.ctx.Err(); cerr != nil {
 			return cerr
 		}

@@ -76,7 +76,7 @@ func readDir(ctx context.Context, dir string, cnt *counters) ([]ent, error) {
 			if strings.HasPrefix(name, ".") && strings.HasSuffix(name, fileops.PartialSuffix) {
 				continue
 			}
-			it := ent{name: name, key: pathkey.ChildKey("", name, false), dir: e.IsDir()}
+			it := ent{name: name, key: pathkey.NameKey(name), dir: e.IsDir()}
 			info, err := fsx.EntryInfo(f, e)
 			switch {
 			case err != nil:

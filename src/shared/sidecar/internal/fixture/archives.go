@@ -45,13 +45,13 @@ func GenerateArchives(root string, spec ArchiveSpec) error {
 	// A marker makes repeated calls with the same spec cheap (big.tar.gz).
 	marker := filepath.Join(root, ".panelyth-archives")
 	want := fmt.Sprintf("%+v", spec)
-	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
+	if cached(root, marker, want) {
 		return nil
 	}
 	if err := generateArchives(root, spec); err != nil {
 		return err
 	}
-	return os.WriteFile(marker, []byte(want), 0o644)
+	return seal(root, marker, want)
 }
 
 func generateArchives(root string, spec ArchiveSpec) error {

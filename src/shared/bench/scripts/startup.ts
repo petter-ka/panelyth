@@ -28,6 +28,10 @@ const electronPath = createRequire(import.meta.url)("electron") as unknown as st
 const RUNS = Number(process.env.RUNS ?? 10)
 const IDLE_MS = Number(process.env.IDLE_MS ?? 10_000)
 const STAGE = process.env.BENCH_STAGE ?? ""
+// A VS Code extension host sets ELECTRON_RUN_AS_NODE for its children; with
+// it Electron runs as plain Node and neither the app nor the empty Electron
+// starts.
+delete process.env.ELECTRON_RUN_AS_NODE
 // Resolved up front so a missing BENCH_STAGE fails before minutes of runs;
 // never overwrites an earlier result.
 const outFile = resultPath("startup")

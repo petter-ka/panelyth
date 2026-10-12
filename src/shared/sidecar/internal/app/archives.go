@@ -125,7 +125,7 @@ func (s *indexService) openArchiveQuery(ctx context.Context, archiveID, dirID in
 	if err != nil {
 		return query.Snapshot{}, archiveError(err)
 	}
-	snap, err := s.queries.OpenSource(ctx, d, src)
+	snap, err := s.queries.OpenSource(ctx, query.OwnerCommander, d, src)
 	if err != nil {
 		return snap, dbError(err)
 	}

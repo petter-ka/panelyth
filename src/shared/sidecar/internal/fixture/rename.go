@@ -30,7 +30,7 @@ var RenameScenarioNames = []string{"Album", "IMG_0001.JPG", "IMG_0002.JPG", "IMG
 func GenerateRename(root string, spec RenameSpec) error {
 	marker := RenameMarker(root)
 	want := fmt.Sprintf("rename %+v", spec)
-	if b, err := os.ReadFile(marker); err == nil && string(b) == want {
+	if cached(root, marker, want) {
 		return nil
 	}
 	if err := os.RemoveAll(root); err != nil {
@@ -81,7 +81,7 @@ func GenerateRename(root string, spec RenameSpec) error {
 			}
 		}
 	}
-	return os.WriteFile(marker, []byte(want), 0o644)
+	return seal(root, marker, want)
 }
 
 // RenameMarker is the marker file of a rename fixture.

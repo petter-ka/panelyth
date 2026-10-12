@@ -7,3 +7,7 @@
 {"at":"2026-10-12T02:25:55.411Z","test":"batch-cancel","cancelMs":127,"finishedBeforeCancel":16}
 {"at":"2026-10-12T08:31:06.009Z","test":"batch-200","pictures":200,"jobMs":834,"picturesPerSec":239.8,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":7}
 {"at":"2026-10-12T08:31:07.564Z","test":"batch-cancel","cancelMs":111,"finishedBeforeCancel":16}
+{"at":"2026-10-12T13:35:32.202Z","test":"batch-200","pictures":200,"jobMs":878,"picturesPerSec":227.8,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":7}
+{"at":"2026-10-12T13:35:33.764Z","test":"batch-cancel","cancelMs":112,"finishedBeforeCancel":15}
+{"at":"2026-10-12T13:57:04.629Z","test":"batch-200","pictures":200,"jobMs":860,"picturesPerSec":232.6,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":7}
+{"at":"2026-10-12T13:57:06.144Z","test":"batch-cancel","cancelMs":108,"finishedBeforeCancel":12}

@@ -42,9 +42,38 @@ type Page struct {
 	Items  []index.Item
 }
 
+// Owner is the app a session belongs to. Each app has its own budget inside
+// the one sidecar and evicts only its own least recently used sessions
+// (ADR-0026): a commander with many tabs never closes the viewer's folder.
+type Owner string
+
+const (
+	OwnerViewer    Owner = "viewer"
+	OwnerCommander Owner = "commander"
+	// OwnerMain is every other caller: Electron main's own sessions (the
+	// neighbours of a file opened from the OS) and callers that name no app.
+	OwnerMain Owner = ""
+)
+
+// Budgets are the sessions each owner may hold (ADR-0026): the viewer's
+// folder and its recent queries; the commander's 2 panels × visible tabs,
+// find results, branch views and compares.
+var Budgets = map[Owner]int{OwnerViewer: 8, OwnerCommander: 24, OwnerMain: 8}
+
+// ParseOwner maps the app named by main to an owner; anything else is
+// OwnerMain.
+func ParseOwner(app string) Owner {
+	switch o := Owner(app); o {
+	case OwnerViewer, OwnerCommander:
+		return o
+	}
+	return OwnerMain
+}
+
 // Options tunes session behaviour; zero values get defaults.
 type Options struct {
-	MaxSessions int
+	// Budgets overrides the sessions an owner may hold (tests).
+	Budgets map[Owner]int
 	// MinRefreshDelay is the throttle between re-materializations; the
 	// effective delay grows to 3x the last refresh cost for huge sessions.
 	MinRefreshDelay time.Duration
@@ -86,6 +115,7 @@ type singleFolder interface{ SingleFolder() bool }
 
 type session struct {
 	id      int64
+	owner   Owner
 	desc    index.Descriptor
 	src     Source
 	dirKey  string
@@ -93,8 +123,10 @@ type session struct {
 	version int64
 	// prevIDs is the previous version's list, kept so selection descriptors
 	// made just before a refresh still resolve exactly (ADR-0017).
-	prevIDs  []int64
-	lastUsed time.Time
+	prevIDs []int64
+	// lastUsed is the manager's use counter at the last use: two sessions
+	// used within one clock tick still have an order.
+	lastUsed uint64
 	// pending is true while a refresh is scheduled or running; dirtyAgain
 	// records changes that arrived during a running refresh.
 	pending, running, dirtyAgain bool
@@ -112,6 +144,7 @@ type Manager struct {
 	mu       sync.Mutex
 	sessions map[int64]*session
 	nextID   int64
+	uses     uint64
 	closed   bool
 
 	// lk holds the name lookups of sessions used for search and marking.
@@ -121,30 +154,60 @@ type Manager struct {
 // NewManager creates a manager; invalidated is called (from a timer
 // goroutine) after a session was re-materialized.
 func NewManager(store *index.Store, log *slog.Logger, opts Options, invalidated func(Snapshot)) *Manager {
-	if opts.MaxSessions <= 0 {
-		opts.MaxSessions = 8
-	}
 	if opts.MinRefreshDelay <= 0 {
 		opts.MinRefreshDelay = 250 * time.Millisecond
 	}
 	return &Manager{store: store, log: log, opts: opts, invalidated: invalidated, sessions: map[int64]*session{}}
 }
 
-// Open materializes a new session.
-func (m *Manager) Open(ctx context.Context, d index.Descriptor) (Snapshot, error) {
+// Open materializes a new session for owner.
+func (m *Manager) Open(ctx context.Context, owner Owner, d index.Descriptor) (Snapshot, error) {
 	dir, err := m.store.Dir(ctx, d.DirID)
 	if err != nil {
 		return Snapshot{}, err
 	}
-	return m.open(ctx, d, nil, dir.Key)
+	return m.open(ctx, owner, d, nil, dir.Key)
 }
 
 // OpenSource materializes a new session over src instead of the index.
-func (m *Manager) OpenSource(ctx context.Context, d index.Descriptor, src Source) (Snapshot, error) {
-	return m.open(ctx, d, src, "")
+func (m *Manager) OpenSource(ctx context.Context, owner Owner, d index.Descriptor, src Source) (Snapshot, error) {
+	return m.open(ctx, owner, d, src, "")
 }
 
-func (m *Manager) open(ctx context.Context, d index.Descriptor, src Source, dirKey string) (Snapshot, error) {
+// useLocked stamps a use of a session.
+func (m *Manager) useLocked() uint64 {
+	m.uses++
+	return m.uses
+}
+
+// budget is the number of sessions owner may hold.
+func (m *Manager) budget(owner Owner) int {
+	if n := m.opts.Budgets[owner]; n > 0 {
+		return n
+	}
+	if n := Budgets[owner]; n > 0 {
+		return n
+	}
+	return Budgets[OwnerMain]
+}
+
+// Count is the number of sessions owner holds.
+func (m *Manager) Count(owner Owner) int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.countLocked(owner)
+}
+
+func (m *Manager) countLocked(owner Owner) (n int) {
+	for _, s := range m.sessions {
+		if s.owner == owner {
+			n++
+		}
+	}
+	return n
+}
+
+func (m *Manager) open(ctx context.Context, owner Owner, d index.Descriptor, src Source, dirKey string) (Snapshot, error) {
 	ids, err := m.materialize(ctx, d, src, dirKey)
 	if err != nil {
 		return Snapshot{}, err
@@ -155,9 +218,9 @@ func (m *Manager) open(ctx context.Context, d index.Descriptor, src Source, dirK
 		return Snapshot{}, ErrUnknownSession
 	}
 	m.nextID++
-	s := &session{id: m.nextID, desc: d, src: src, dirKey: dirKey, ids: ids, version: 1, lastUsed: time.Now()}
+	s := &session{id: m.nextID, owner: owner, desc: d, src: src, dirKey: dirKey, ids: ids, version: 1, lastUsed: m.useLocked()}
 	m.sessions[s.id] = s
-	dropped := m.evictLocked()
+	dropped := m.evictLocked(owner)
 	m.mu.Unlock()
 	m.notifyDropped(dropped)
 	if m.opts.Materialized != nil {
@@ -193,11 +256,13 @@ func (m *Manager) notifyDropped(ids []int64) {
 	}
 }
 
-func (m *Manager) evictLocked() (dropped []int64) {
-	for len(m.sessions) > m.opts.MaxSessions {
+// evictLocked drops owner's least recently used sessions over its budget;
+// another owner's sessions are never touched.
+func (m *Manager) evictLocked(owner Owner) (dropped []int64) {
+	for over := m.countLocked(owner) - m.budget(owner); over > 0; over-- {
 		var oldest *session
 		for _, s := range m.sessions {
-			if oldest == nil || s.lastUsed.Before(oldest.lastUsed) {
+			if s.owner == owner && (oldest == nil || s.lastUsed < oldest.lastUsed) {
 				oldest = s
 			}
 		}
@@ -238,7 +303,7 @@ func (m *Manager) Page(ctx context.Context, id int64, offset, limit int) (Page, 
 		m.mu.Unlock()
 		return Page{}, ErrUnknownSession
 	}
-	s.lastUsed = time.Now()
+	s.lastUsed = m.useLocked()
 	snap := Snapshot{QueryID: s.id, Version: s.version, Total: len(s.ids)}
 	lo := min(max(offset, 0), len(s.ids))
 	hi := min(lo+min(max(limit, 0), MaxPageSize), len(s.ids))
@@ -276,7 +341,7 @@ func (m *Manager) IDs(id, version int64) (ids []int64, current int64, err error)
 	if s == nil {
 		return nil, 0, ErrUnknownSession
 	}
-	s.lastUsed = time.Now()
+	s.lastUsed = m.useLocked()
 	switch version {
 	case s.version:
 		return s.ids, s.version, nil
@@ -297,7 +362,7 @@ func (m *Manager) Current(id int64) ([]int64, int64, error) {
 	if s == nil {
 		return nil, 0, ErrUnknownSession
 	}
-	s.lastUsed = time.Now()
+	s.lastUsed = m.useLocked()
 	return s.ids, s.version, nil
 }
 
@@ -320,7 +385,7 @@ func (m *Manager) Facets(ctx context.Context, id int64) (index.Facets, error) {
 		m.mu.Unlock()
 		return index.Facets{}, ErrUnknownSession
 	}
-	s.lastUsed = time.Now()
+	s.lastUsed = m.useLocked()
 	desc, key, src := s.desc, s.dirKey, s.src
 	m.mu.Unlock()
 	if src != nil {
@@ -396,7 +461,7 @@ func (m *Manager) Rows(ctx context.Context, id int64) (items []index.Item, posit
 		m.mu.Unlock()
 		return nil, nil, 0, ErrUnknownSession
 	}
-	s.lastUsed = time.Now()
+	s.lastUsed = m.useLocked()
 	ids, version, src := s.ids, s.version, s.src
 	m.mu.Unlock()
 	if is, ok := src.(ItemSource); ok {

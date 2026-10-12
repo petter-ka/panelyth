@@ -1,0 +1,10 @@
+{"at":"2026-10-12T10:39:40.770Z","test":"responsive","seen":[{"window":1280,"width":1048,"perRow":5},{"window":1920,"width":1664,"perRow":8},{"window":2560,"width":2304,"perRow":11}]}
+{"at":"2026-10-12T10:39:49.366Z","test":"scroll-100k","size":"medium","windowWidth":1920,"contentWidth":1664,"perRow":8,"frames":722,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":177068,"ensureCalls":1,"pageCalls":25}
+{"at":"2026-10-12T10:39:57.848Z","test":"scroll-100k","size":"small","windowWidth":2560,"contentWidth":2304,"perRow":17,"frames":722,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":204,"scrolledPx":177068,"ensureCalls":1,"pageCalls":78}
+{"at":"2026-10-12T10:40:02.204Z","test":"scroll-10k","frames":434,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":88740}
+{"at":"2026-10-12T10:40:03.215Z","test":"first-thumb","tilesMountedMs":103,"firstReadyMs":181,"mountToReadyMs":78}
+{"at":"2026-10-12T10:46:20.233Z","test":"responsive","seen":[{"window":1280,"width":1024,"perRow":5},{"window":1920,"width":1664,"perRow":8},{"window":2560,"width":2304,"perRow":11}]}
+{"at":"2026-10-12T10:46:28.651Z","test":"scroll-100k","size":"medium","windowWidth":1920,"contentWidth":1664,"perRow":8,"frames":721,"maxFrameGapMs":8,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":176668,"ensureCalls":1,"pageCalls":25}
+{"at":"2026-10-12T10:46:37.083Z","test":"scroll-100k","size":"small","windowWidth":2560,"contentWidth":2304,"perRow":17,"frames":722,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":204,"scrolledPx":177068,"ensureCalls":1,"pageCalls":78}
+{"at":"2026-10-12T10:46:41.424Z","test":"scroll-10k","frames":433,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":88440}
+{"at":"2026-10-12T10:46:42.392Z","test":"first-thumb","tilesMountedMs":102,"firstReadyMs":181,"mountToReadyMs":79}

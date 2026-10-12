@@ -462,7 +462,7 @@ func (s *indexService) openRemoteQuery(ctx context.Context, remoteID, dirID int6
 	if err != nil {
 		return query.Snapshot{}, remoteError(err)
 	}
-	snap, err := s.queries.OpenSource(ctx, d, src)
+	snap, err := s.queries.OpenSource(ctx, query.OwnerCommander, d, src)
 	if err != nil {
 		return snap, dbError(err)
 	}

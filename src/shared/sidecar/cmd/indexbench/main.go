@@ -83,10 +83,14 @@ func main() {
 	treeSpec := fixture.Spec{Files: 200, Depth: 3, Fanout: 6, NonMediaEvery: 10}
 	flatExp := must(fixture.Generate(flat, flatSpec))
 	treeExp := must(fixture.Generate(tree, treeSpec))
-	// Stage P02: half media, half documents, every 5th file hidden.
+	// Stage P02: media, documents, hidden files, programs and links (where
+	// the OS lets a user create links), and a folder of media only.
 	mixed := filepath.Join(*fixtures, "mixed-100k")
-	mixedSpec := fixture.Spec{Files: 100_000, NonMediaEvery: 2, HiddenEvery: 5}
+	mixedSpec := fixture.Spec{Files: 100_000, NonMediaEvery: 2, HiddenEvery: 5, ExecEvery: 20, LinkEvery: 50}
 	mixedExp := must(fixture.Generate(mixed, mixedSpec))
+	mediaOnly := filepath.Join(*fixtures, "media-100k")
+	mediaSpec := fixture.Spec{Files: 100_000}
+	mediaExp := must(fixture.Generate(mediaOnly, mediaSpec))
 
 	dbDir := must(os.MkdirTemp("", "panelyth-indexbench-"))
 	defer os.RemoveAll(dbDir)
@@ -105,12 +109,14 @@ func main() {
 			"flat-100k":  map[string]any{"spec": flatSpec, "expected": flatExp},
 			"tree-50k":   map[string]any{"spec": treeSpec, "expected": treeExp},
 			"mixed-100k": map[string]any{"spec": mixedSpec, "expected": mixedExp},
+			"media-100k": map[string]any{"spec": mediaSpec, "expected": mediaExp},
 		},
 	}
 
 	flatInfo := must(store.EnsureDir(ctx, flat))
 	treeInfo := must(store.EnsureDir(ctx, tree))
 	mixedInfo := must(store.EnsureDir(ctx, mixed))
+	mediaInfo := must(store.EnsureDir(ctx, mediaOnly))
 	res.Scans = append(res.Scans,
 		runScan(ctx, store, log, "flat-100k", flatInfo, false, "cold"),
 		runScan(ctx, store, log, "flat-100k", flatInfo, false, "warm"),
@@ -118,10 +124,13 @@ func main() {
 		runScan(ctx, store, log, "tree-50k", treeInfo, true, "warm"),
 		runScan(ctx, store, log, "mixed-100k", mixedInfo, false, "cold"),
 		runScan(ctx, store, log, "mixed-100k", mixedInfo, false, "warm"),
+		runScan(ctx, store, log, "media-100k", mediaInfo, false, "cold"),
+		runScan(ctx, store, log, "media-100k", mediaInfo, false, "warm"),
 	)
 	checkTotal(ctx, store, flatInfo, false, flatExp.Media)
 	checkTotal(ctx, store, treeInfo, true, treeExp.Media)
 	checkTotal(ctx, store, mixedInfo, false, mixedExp.Media)
+	checkTotal(ctx, store, mediaInfo, false, mediaExp.Media)
 
 	qm := query.NewManager(store, log, query.Options{}, nil)
 	res.Queries = append(res.Queries,
@@ -142,6 +151,7 @@ func main() {
 		runQuery(ctx, qm, "mixed-100k all mask *.txt", index.Descriptor{DirID: mixedInfo.ID, Scope: index.ScopeAll, NameMask: "*.txt", Sort: []index.SortKey{{Field: index.SortName}}}),
 		runQuery(ctx, qm, "mixed-100k all mask *|*.txt;*.jpg", index.Descriptor{DirID: mixedInfo.ID, Scope: index.ScopeAll, NameMask: "*|*.txt;*.jpg", Sort: []index.SortKey{{Field: index.SortName}}}),
 		runQuery(ctx, qm, "flat-100k all name asc", index.Descriptor{DirID: flatInfo.ID, Scope: index.ScopeAll, Sort: []index.SortKey{{Field: index.SortName}}}),
+		runQuery(ctx, qm, "media-100k media name asc", index.Descriptor{DirID: mediaInfo.ID, Sort: []index.SortKey{{Field: index.SortName}}}),
 	)
 	qm.Shutdown()
 
@@ -162,7 +172,8 @@ func main() {
 		}
 	}
 	res.IndexDB = map[string]any{"bytes": dbBytes, "entries": flatExp.Media + flatExp.NonMedia + flatExp.Hidden +
-		treeExp.Media + treeExp.NonMedia + treeExp.Dirs + mixedExp.Media + mixedExp.NonMedia + mixedExp.Hidden}
+		treeExp.Media + treeExp.NonMedia + treeExp.Dirs + mixedExp.Media + mixedExp.NonMedia + mixedExp.Hidden +
+		mixedExp.Exec + mixedExp.Links + mediaExp.Media}
 
 	b, _ := json.MarshalIndent(res, "", "  ")
 	if *out == "" {
@@ -209,11 +220,11 @@ func runQuery(ctx context.Context, qm *query.Manager, name string, d index.Descr
 	var snap query.Snapshot
 	for range 7 {
 		t := time.Now()
-		snap = must(qm.Open(ctx, d))
+		snap = must(qm.Open(ctx, query.OwnerMain, d))
 		opens = append(opens, ms(time.Since(t)))
 		qm.Close(snap.QueryID)
 	}
-	snap = must(qm.Open(ctx, d))
+	snap = must(qm.Open(ctx, query.OwnerMain, d))
 	offsets := map[string]int{"0": 0, "middle": snap.Total / 2, "last": max(snap.Total-256, 0)}
 	pages := map[string]latency{}
 	for label, off := range offsets {

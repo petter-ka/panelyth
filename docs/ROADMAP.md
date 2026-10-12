@@ -19,7 +19,7 @@ Only one stage is active at a time. Default order:
 |---|---|---|---|
 | 1 | 08.6 — UI polish v2 | viewer | done 2026-10-05 |
 | 2 | P01 — Multi-app platform: one shell, app views | platform | everything after it builds on app views and shared packages |
-| 3 | P02 — Index scope: all entries, filtered per query | platform | the commander lists every file (query core done; the rest open) |
+| 3 | P02 — Index scope: all entries, filtered per query | platform | the commander lists every file (implementation done 2026-10-12) |
 | 4 | C00 — Commander foundation and the app switch | commander | done 2026-10-05 (with the minimal part of P01) |
 | 5 | C01 — Panels and listing | commander | implemented: first useful version; folder and focus carried over on switch |
 | 6 | C02 — Keyboard, marks and quick search | commander | implementation done: the Total Commander interaction model; selection carried over |
@@ -32,8 +32,8 @@ Only one stage is active at a time. Default order:
 | 13 | C08 — Compare, synchronize, checksums | commander | implementation done (2026-10-11): compares as session sources; sync and checksum jobs |
 | 14 | C09 — Multi-rename, attributes, properties | commander | implementation done (2026-10-11): one rename engine, a previewed multi-rename with an undo, attribute jobs |
 | 15 | C10 — Command line, tools, customization | commander | implementation done (2026-10-11): ADR-0027 accepted in full; the command line, user commands, toolbar, Thumbnails view, settings |
-| 15a | C10.5 — Tab sets, folder tree, FTP connections, compare selected files | commander | active (implementation done 2026-10-12, owner request): ADR-0037 accepted with amendments; tab sets, the folder tree on shared code, FTP and FTPS as a session source with saved connections, compare for several files. P04 covers FTP and the tree on all three OSes |
-| 16 | P04 — Cross-platform hardening | platform | both apps |
+| 15a | C10.5 — Tab sets, folder tree, FTP connections, compare selected files | commander | implementation done (2026-10-12, owner request): ADR-0037 accepted with amendments; tab sets, the folder tree on shared code, FTP and FTPS as a session source with saved connections, compare for several files. P04 covers FTP and the tree on all three OSes |
+| 16 | P04 — Cross-platform hardening | platform | active (in progress since 2026-10-08, taken up again 2026-10-12): packaging, CI, the Linux pass, paths, volumes, media tools, wheel input and the viewer's e2e specs done; the macOS items remain |
 | 17 | P05 — Performance hardening | platform | both apps |
 | 18 | P06 — Release engineering | platform | packages both app views with the commander enabled |
 | 19 | C11 — Commander release | commander | completes the commander-specific release checks and acceptance |
@@ -115,16 +115,21 @@ P04–P06 (2026-10-05). Viewer numbers 09–11 are retired; the first new viewer
 
 ## Platform track
 
-### P01 — Multi-app platform: one shell, app views, shared packages
+### P01 — Multi-app platform: one shell, app views, shared packages (implementation done 2026-10-12)
 
 The window hosts one app view per app with its own capability profile; `src/shared/ui` and
-`src/shared/renderer-core` are extracted. The folder layout (`src/shared/`, `src/viewer/`, `src/commander/`) is already
-done. The viewer is unchanged.
+`src/shared/renderer-core` are extracted (the bridge core, the settings and sidecar store factories, menus, icons and
+the notice on 2026-10-12), with the package boundaries as lint rules. A hidden viewer no longer refetches its folder.
+The folder layout (`src/shared/`, `src/viewer/`, `src/commander/`) was done first. The viewer is unchanged. Open: the
+owner's word on bundles that grew by under 0.1 %, and the hidden viewer's work on a window resize.
 
-### P02 — Index scope: all entries, filtered per query
+### P02 — Index scope: all entries, filtered per query (implementation done 2026-10-12)
 
 The shared index stores every entry with attributes; the viewer queries the `media` scope and sees what it sees today,
-the commander queries `all` (ADR-0026).
+the commander queries `all` (ADR-0026, accepted with amendments). Sessions are budgeted per app (viewer 8, commander
+24) and the sidecar watches the folders of the app on screen only; a hidden app's folders are listed again when it
+is shown. Open: the owner's word on a cold scan of a 90 %-media folder that is 12–17 % slower (10 % allowed), and
+the intermittent SQLite driver fault, which ended 3 of 12 runs of the index benchmark.
 
 ### P03 — File-operation engine v2 (implementation done 2026-10-06)
 
@@ -133,6 +138,10 @@ Queue lanes, per-item conflict questions, pause and resume, speed and ETA, OS fa
 ### P04 — Cross-platform hardening (formerly Phase 9; in progress since 2026-10-08)
 
 Packaged builds of both apps on Windows, macOS and Linux; path, volume, trash, watching and media capability tests.
+Done by 2026-10-12 on Windows and Linux: packaging and CI (ADR-0032), path keys by platform and names Windows
+rewrites (ADR-0015, amended), volumes, ffmpeg and 7-Zip discovery per OS, wheel input that steps by distance, the
+Linux trash, and the viewer's e2e specs. Open: everything that needs a Mac ("Put Back", the volume list, a real
+trackpad), budgets on Linux and macOS, and the commander's four e2e tests that predate the document window.
 
 ### P05 — Performance hardening (formerly Phase 10)
 
@@ -201,7 +210,7 @@ history and `cd`; user commands with placeholders, quoted by main and started fr
 the menu of files; a Thumbnails view on the tile parts shared with the viewer; settings in five sections. The
 security review of `shell.run` and user commands is recorded with no open findings (ADR-0027 accepted in full).
 
-### C10.5 — Tab sets, folder tree, FTP connections, compare selected files (active; implementation done 2026-10-12)
+### C10.5 — Tab sets, folder tree, FTP connections, compare selected files (implementation done 2026-10-12)
 
 The tab bar always shown with a "+" button, rename, duplicate and reopen, and named tab sets that can be saved and
 opened again; a folder tree beside the panels (one that follows the active panel, or one per panel) on the viewer's

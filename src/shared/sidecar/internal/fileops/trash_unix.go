@@ -25,6 +25,18 @@ func devOf(path string) (uint64, bool) {
 	return uint64(st.Dev), true //nolint:unconvert // Dev is int32 on darwin
 }
 
+// devOfNearest is the device of path, or of its nearest existing ancestor.
+func devOfNearest(path string) (uint64, bool) {
+	for p := filepath.Clean(path); ; p = filepath.Dir(p) {
+		if d, ok := devOf(p); ok {
+			return d, true
+		}
+		if filepath.Dir(p) == p {
+			return 0, false
+		}
+	}
+}
+
 // mountTop walks up from path to the topmost directory on the same device.
 func mountTop(path string, dev uint64) string {
 	top := filepath.Dir(path)
@@ -61,7 +73,10 @@ func Trash(path string) error {
 		dataHome = filepath.Join(home, ".local", "share")
 	}
 	if dataHome != "" {
-		if d, ok := devOf(dataHome); ok && d == dev {
+		// The home trash is made when it is first needed: on a fresh
+		// account not even its parent folder exists (Stage P04; such an
+		// account had no trash at all).
+		if d, ok := devOfNearest(dataHome); ok && d == dev && os.MkdirAll(dataHome, 0o700) == nil {
 			return trashInto(filepath.Join(dataHome, "Trash"), path, path, time.Now())
 		}
 	}

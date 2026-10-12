@@ -180,6 +180,77 @@ describe("live indexing", () => {
   })
 })
 
+describe("while the commander is shown (hidden app rules, Stage P01)", () => {
+  const hide = (bridge: ReturnType<typeof setup>, visible = false) =>
+    act(() => bridge.push("app.visibility", { app: "viewer", visible }))
+
+  it("makes no page request for a changed folder until the viewer is shown, then one catch-up", async () => {
+    const bridge = setup()
+    bridge.backend.items = makeItems(3)
+    await act(() => openFolder("/photos"))
+    await screen.findByText("IMG_0.jpg")
+    const pagesBefore = bridge.api.query.page.mock.calls.length
+    const facetsBefore = bridge.api.query.facets.mock.calls.length
+
+    const versions: number[] = []
+    const off = useFolderStore.subscribe((state, prev) => {
+      if (state.query && state.query.version !== prev.query?.version)
+        versions.push(state.query.version)
+    })
+    stop.push(off)
+
+    hide(bridge)
+    bridge.backend.items = makeItems(250)
+    bridge.backend.version = 3
+    act(() => bridge.push("query.invalidated", { queryId: 1, version: 2, total: 120 }))
+    act(() => bridge.push("query.invalidated", { queryId: 1, version: 3, total: 250 }))
+    await new Promise((resolve) => setTimeout(resolve, 50))
+    expect(bridge.api.query.page).toHaveBeenCalledTimes(pagesBefore)
+    expect(bridge.api.query.facets).toHaveBeenCalledTimes(facetsBefore)
+    expect(useFolderStore.getState().query).toMatchObject({ version: 1, total: 3 })
+
+    // Shown again: the newest version only, never the one in between.
+    hide(bridge, true)
+    expect(useFolderStore.getState().query).toMatchObject({ version: 3, total: 250 })
+    await waitFor(() => expect(screen.getByTestId("folder-summary")).toHaveTextContent("250 items"))
+    expect(bridge.api.query.page.mock.calls.length).toBeGreaterThan(pagesBefore)
+    expect(versions).toEqual([3])
+  })
+
+  it("ignores the other app's visibility and a change of a folder it no longer shows", async () => {
+    const bridge = setup()
+    bridge.backend.items = makeItems(3)
+    await act(() => openFolder("/photos"))
+    await screen.findByText("IMG_0.jpg")
+    const pagesBefore = bridge.api.query.page.mock.calls.length
+
+    // The commander's own visibility says nothing about the viewer.
+    act(() => bridge.push("app.visibility", { app: "commander", visible: false }))
+    bridge.backend.version = 2
+    act(() => bridge.push("query.invalidated", { queryId: 1, version: 2, total: 3 }))
+    await waitFor(() => expect(useFolderStore.getState().query?.version).toBe(2))
+    const pagesShown = bridge.api.query.page.mock.calls.length
+    expect(pagesShown).toBeGreaterThan(pagesBefore)
+
+    hide(bridge)
+    act(() => bridge.push("query.invalidated", { queryId: 99, version: 9, total: 1 }))
+    hide(bridge, true)
+    expect(useFolderStore.getState().query).toMatchObject({ queryId: 1, version: 2 })
+    expect(bridge.api.query.page).toHaveBeenCalledTimes(pagesShown)
+  })
+
+  it("shown again with nothing changed asks for nothing", async () => {
+    const bridge = setup()
+    bridge.backend.items = makeItems(3)
+    await act(() => openFolder("/photos"))
+    await screen.findByText("IMG_0.jpg")
+    const pagesBefore = bridge.api.query.page.mock.calls.length
+    hide(bridge)
+    hide(bridge, true)
+    expect(bridge.api.query.page).toHaveBeenCalledTimes(pagesBefore)
+  })
+})
+
 describe("sorting and subfolders", () => {
   it("reopens the query with the new sort and closes the old session", async () => {
     const bridge = setup()

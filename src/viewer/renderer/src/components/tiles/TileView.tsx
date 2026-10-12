@@ -50,6 +50,7 @@ import { ContextMenuRoot, ContextMenuTrigger } from "../ui/menu"
 import { Tile } from "./Tile"
 import { TileMenu, type MenuTarget } from "./TileMenu"
 import { t } from "@panelyth/i18n"
+import { createWheelStepper, WHEEL_NOTCH_PX } from "@panelyth/ui"
 
 /** Pause after scrolling before thumbnails are requested (fast scrolls request nothing). */
 const SETTLE_MS = 80
@@ -295,10 +296,14 @@ export function TileView() {
   useEffect(() => {
     const el = scrollRef.current
     if (!el) return
+    // A pinch arrives as a stream of small Ctrl + wheel events: the size
+    // follows its distance, not the number of events (Stage P04).
+    const sizeStep = createWheelStepper({ stepPx: WHEEL_NOTCH_PX / 2 })
     const onWheel = (e: WheelEvent): void => {
       if (!e.ctrlKey && !e.metaKey) return
       e.preventDefault()
-      stepTileSize(e.deltaY < 0 ? 1 : -1)
+      const direction = sizeStep(e)
+      if (direction !== 0) stepTileSize(direction < 0 ? 1 : -1)
     }
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)

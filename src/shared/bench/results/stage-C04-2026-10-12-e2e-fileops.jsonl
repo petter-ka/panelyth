@@ -4,3 +4,13 @@
 {"at":"2026-10-12T08:25:17.748Z","test":"copy-from-ui","small10k":{"copyMs":2048,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":633,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":112}
 {"at":"2026-10-12T08:38:55.506Z","test":"pause-latency","pauseMs":105,"finalState":"paused"}
 {"at":"2026-10-12T08:40:32.770Z","test":"copy-from-ui","small10k":{"copyMs":4178,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":623,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"enter1kWhileCopyingMs":131}
+{"at":"2026-10-12T10:48:30.307Z","test":"pause-latency","pauseMs":120,"finalState":"paused"}
+{"at":"2026-10-12T10:49:43.290Z","test":"copy-from-ui","small10k":{"copyMs":8226,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":625,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":113}
+{"at":"2026-10-12T10:57:35.445Z","test":"pause-latency","pauseMs":106,"finalState":"paused"}
+{"at":"2026-10-12T10:58:40.866Z","test":"copy-from-ui","small10k":{"copyMs":2171,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":626,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":112}
+{"at":"2026-10-12T12:07:26.922Z","test":"pause-latency","pauseMs":118,"finalState":"paused"}
+{"at":"2026-10-12T12:08:33.678Z","test":"copy-from-ui","small10k":{"copyMs":2158,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":636,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":123}
+{"at":"2026-10-12T13:29:19.551Z","test":"pause-latency","pauseMs":116,"finalState":"paused"}
+{"at":"2026-10-12T13:30:25.932Z","test":"copy-from-ui","small10k":{"copyMs":2171,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":621,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":114}
+{"at":"2026-10-12T13:50:01.526Z","test":"pause-latency","pauseMs":115,"finalState":"paused"}
+{"at":"2026-10-12T13:51:07.798Z","test":"copy-from-ui","small10k":{"copyMs":2155,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":620,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":113}

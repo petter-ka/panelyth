@@ -2,9 +2,10 @@
 
 ## Status
 
-Proposed (2026-10-05). Decided in Stage P02. It refines ADR-0015 for the commander. Revised the same day by ADR-0031:
-one sidecar serves both apps, so the scope is chosen per query instead of per process. The viewer sees exactly what
-it sees today.
+**Accepted with amendments (Stage P02, 2026-10-12).** Proposed 2026-10-05. It refines ADR-0015 for the commander.
+Revised the same day by ADR-0031: one sidecar serves both apps, so the scope is chosen per query instead of per
+process. The viewer sees exactly what it sees today. The amendments are in "As built" below; the measured cost is
+in "Consequences".
 
 ## Context
 
@@ -55,6 +56,22 @@ it sees today.
   each visible commander panel. A hidden app's folders are re-listed when it is shown again (ADR-0031).
 - Recursive listings (branch view, find by name) reuse ADR-0015's bounded, cancellable recursive indexing.
 
+### As built (Stage P02)
+
+- **The sidecar learns the caller from main.** Electron main adds `app` to `dir.open`, `dir.openEntry`,
+  `dir.openContaining` and `query.open`; a renderer cannot send it. Main tells the sidecar which app is on screen
+  with `app.setVisible { app, seq }` at start, after a sidecar restart and on every switch; `seq` orders the
+  calls, which the sidecar handles concurrently.
+- **Three session owners, not two:** the viewer (8), the commander (24) and Electron main (8), which opens
+  sessions of its own for a file opened from the OS. Eviction is per owner, by a use counter.
+- **Watches are slots:** the viewer's one folder and each commander panel (its lane), at most four per app.
+  Main's own folders are always watched. Until main names the visible app, every app's are.
+- **Re-listing on show** covers only the folders that were not watched while the app was hidden (a folder both
+  apps show stays watched), and waits for the watcher's quiet period, so a folder the app leaves at once is not
+  listed for nothing.
+- **A folder the commander opens outside a panel** (a typed destination, a compare root) is not watched.
+- **Scan lanes are per app,** so an open by one app never cancels the other app's listing.
+
 ## Why
 
 - Sessions, selection descriptors, jobs, invalidation, watching and previews already work on index ids. One index for
@@ -69,6 +86,12 @@ it sees today.
   viewer inside its budgets.
 - Scan throughput is re-measured with all entries, including `Lstat` for links and attribute reads. On Windows the
   directory read already returns attributes.
+- **Measured in Stage P02** (Windows, 100,000 entries, against the scanner that stored media only): a folder of
+  media only scans as before (+2–3 %); a folder with 10 % other files 12–17 % slower, which is its 11 % more rows
+  (the stage allowed 10 %; per row the scanner is as fast); a folder with 40 % media takes 2.9 times as long
+  (0.59 → 1.7 s), still in batches and stoppable. `query.page(256)` stays at 1.5 ms p95 at any offset in either
+  scope; the viewer's `query.open` on a 100k folder went from 56 to 72 ms. `index.db` grows with the rows, about
+  380 bytes each. Links were not in the benchmark: the reference machine's account cannot create them.
 - Kind checks move to main: `shell.open` and the media token protocol check the entry kind against the calling app
   view's profile (ADR-0027).
 - Code that assumed kinds ⊆ {dir, image, video} must handle `file` and `link` safely, even in the viewer, which never

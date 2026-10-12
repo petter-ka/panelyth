@@ -32,7 +32,7 @@ func BenchmarkOpenAndPage10k(b *testing.B) {
 	defer m.Shutdown()
 	d := index.Descriptor{DirID: root.ID, Sort: []index.SortKey{{Field: index.SortName}}}
 	for b.Loop() {
-		snap, err := m.Open(ctx, d)
+		snap, err := m.Open(ctx, OwnerMain, d)
 		if err != nil {
 			b.Fatal(err)
 		}

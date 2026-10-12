@@ -59,10 +59,10 @@ A stage is complete only when:
 
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
-| P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | in progress (minimal part done) |
-| P02 | Index scope: all entries, filtered per query | P01 | partly done (query core in code; session budgets and visible-app watching open) |
+| P01 | Multi-app platform: one shell, app views, shared packages | 08.6 | implementation done (2026-10-12); the owner's word on bundles that grew by under 0.1 %, the hidden viewer on a window resize and the Linux and macOS runs remain |
+| P02 | Index scope: all entries, filtered per query | P01 | implementation done (2026-10-12); ADR-0026 accepted with amendments; the owner's word on a 12–17 % slower cold scan of `flat-100k`, a benchmark run with links and the Linux and macOS runs remain |
 | P03 | File-operation engine v2 | P02 | implementation done (2026-10-06); Linux/macOS paths in P04 |
-| P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | in progress: packaging, CI, release builds and the Linux pass done (2026-10-08) |
+| P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | in progress: packaging, CI, release builds and the Linux pass done (2026-10-08); paths, volumes, media tools, wheel input and the viewer's e2e specs done on Windows and Linux (2026-10-12); the macOS items, budgets on Linux and macOS and four stale commander e2e tests remain |
 | P05 | Performance hardening (formerly 10) | P04 | planned |
 | P06 | Release engineering (formerly 11) | P05 | planned |
 
@@ -71,7 +71,7 @@ A stage is complete only when:
 | Stage | Name | Depends on | Status |
 |---|---|---|---|
 | C00 | Foundation and the app switch | P01 | done (2026-10-05) |
-| C01 | Panels and listing | C00, P02 | implementation done; cold-cache 100k timings and the rest of P02 open |
+| C01 | Panels and listing | C00, P02 | implementation done; cold-cache 100k timings open (P02 was completed on 2026-10-12) |
 | C02 | Keyboard, marks and quick search | C01 | implementation done; the NVDA pass and the C01 open items remain |
 | C03 | Drives, tabs, hotlist, history and session | C02 | implementation done (2026-10-06); the NVDA pass remains |
 | C04 | File operations | C03, P03 | implementation done (2026-10-06); the NVDA pass remains |
@@ -80,7 +80,7 @@ A stage is complete only when:
 | C07 | Archives | C06 | implementation done (2026-10-07); the NVDA pass and a run with a real 7-Zip remain |
 | C08 | Compare, synchronize and checksums | C07 | implementation done (2026-10-11); the NVDA pass and a FAT/network run of a sync remain |
 | C09 | Multi-rename, attributes and properties | C08 | implementation done (2026-10-11); the NVDA pass and the Linux and macOS runs remain |
-| C10 | Command line, tools and customization | C09 | implementation done (2026-10-11); the NVDA pass, the Linux and macOS runs and the viewer's e2e tile suite remain |
+| C10 | Command line, tools and customization | C09 | implementation done (2026-10-11); the NVDA pass and the Linux and macOS runs remain (the viewer's e2e tile suite ran green on 2026-10-12, Stage P01) |
 | C10.5 | Tab sets, folder tree, FTP connections, compare selected files | C10 | implementation done (2026-10-12); ADR-0037 accepted with amendments; the owner's confirmation of FTP in the first release, the Linux and macOS runs and the NVDA pass remain |
 | C11 | Commander release | C10, C10.5, P04, P05, P06 | planned |
 
@@ -101,6 +101,66 @@ A stage is complete only when:
 
 ## Active stage
 
+`P04 — Cross-platform hardening` (`docs/shared/stages/P04-cross-platform.md`), started 2026-10-08 and taken up
+again on 2026-10-12 at the owner's request, after P02; still in progress. This slice did the items that were not
+started, on the reference machine and (the Go suite) on Linux as root and as an ordinary user. **Paths:** a
+`path_key` folds what the platform's filesystems fold (ADR-0015, amended): NFC on macOS only, since Windows and
+Linux keep a composed and a decomposed name as two files and the key showed one; case by platform, with per-volume
+detection decided against and its cost tested. Names Windows rewrites (a trailing dot or space, `NUL`) were opened
+under another path, so an action on `photo.jpg.` would have hit `photo.jpg`; the index now hands out the exact path.
+**Volumes:** the macOS list comes from the mount table without waiting on any share; Windows is tested on a
+substituted drive and a mapped share; a fresh Linux account had no trash, now made on first use. **Media tools:**
+ffmpeg, ffprobe and 7-Zip are found on macOS when the app starts from the Finder (Homebrew is not on that `PATH`).
+**Wheel:** stepping (next file, tile size, lister rows) follows the distance travelled; wheel navigation had stepped
+once per event because the picture took the throttle's state with it at every step. **E2E:** the viewer's seven
+stale specs are repaired (34 tests), fixtures notice when a temp cleaner removed part of them, and the packaged
+smoke test follows the picture into the media window. Measured: the name join costs about 10 ns per entry; startup
+262 ms to ready-to-show; idle memory as in P01 (the benchmark opens Home, C00's record).
+
+Open from P04: everything that needs a Mac (the volume list and tool folders there, "Put Back", a real trackpad, the
+e2e run); startup and memory budgets on Linux and macOS; the commander's four e2e tests that predate the document
+window (ADR-0033), one with a product question (Enter on a `.cmd`); the owner's word on case-sensitive folders and on
+what the media window lacks against the full-screen viewer it replaced (copy, menu, rotate, prefetch: a step to the
+next 12 MP picture takes 636 ms); `pnpm lint` fails on two files of `showcase/`.
+
+Before that:
+`P02 — Index scope: all entries, filtered per query` (`docs/shared/stages/P02-index-scope-profiles.md`), whose
+query core was built on 2026-10-05 with C01 and which was taken up again on 2026-10-12 at the owner's request, right
+after P01; implementation done the same day. ADR-0026 is accepted with amendments. Electron main names the calling
+app on folder and query opens and the app on screen (`app.setVisible`); no renderer can. **Sessions** have an owner
+and a budget each (viewer 8, commander 24, main 8): an app evicts only its own, where one budget of 8 let a
+commander with tabs close the viewer's folder. **Watching** is by slot (the viewer's folder, a commander panel)
+and only for the app on screen; a hidden app's folders are listed again 300 ms after it is shown, unless the other
+app showed them too. A folder the commander opens outside a panel is no longer watched, and its open no longer
+cancels the viewer's listing. Measured against the scanner that stored media only, on the same day: a media-only
+100k folder scans as before, `flat-100k` (10 % other files) 12–17 % slower, a folder with 40 % media 2.9 times
+as long; `query.page(256)` 1.5 ms at any offset in either scope; the viewer's first rows of a 100k folder
+112–158 ms; the switch 4–5 ms. The viewer's index e2e spec runs again (5 of 5).
+
+Open from P02: the owner's word on the `flat-100k` scan (the stage allows 10 %; the time is the 11 % more rows);
+**the intermittent fault in the SQLite driver ended 3 of 12 runs of the index benchmark** (Stage 07's carried
+item; it needs its driver or hardware decision); the benchmark had no links (the account cannot create them); the
+Linux and macOS runs (CI). The viewer's stale e2e specs were repaired in Stage P04 (2026-10-12). The next stage is
+the owner's choice (`docs/ROADMAP.md`).
+
+Before that:
+`P01 — Multi-app platform: one shell, app views, shared packages`
+(`docs/shared/stages/P01-multi-app-platform.md`), started 2026-10-05 with the part Stage C00 needed and taken up
+again on 2026-10-12 at the owner's request, after C10.5; implementation done the same day. The rest of the shared
+renderer packages is extracted: `src/shared/renderer-core` has the bridge core (one `PanelythError` with the retry
+hint and the details, the envelope handling, the way to the preload API) and the factories of the settings and
+sidecar stores, and both apps are built on them; `src/shared/ui` has the menus, the chrome icons and the notice.
+The commander's first sidecar status can no longer replace a newer one. The package boundaries are lint rules with
+a test that proves they fire (ADR-0013, amended). A hidden viewer keeps a change of its folder aside until it is
+shown, as the commander does. `pnpm bench:bundle` records bundle sizes. The viewer's tile e2e spec opens folders
+again (9 of 9 green). Measured before and after: ready-to-show 266 → 256–259 ms, `system.ping` p95 0.2 ms, the 100k
+tile scroll at 7 ms a frame with no long task and 80 or 204 tiles mounted, the first switch 177–191 ms and later
+ones 4–5 ms; the viewer's JS grew by 671 bytes (0.09 %) and the commander's by 630 (0.07 %).
+
+Open from P01: the owner's word on that growth (the stage says the bundle must not grow); the hidden viewer still
+requests pages and thumbnails when the window is resized under the commander; the Linux and macOS runs (CI). The viewer's other e2e specs were repaired in Stage P04 (2026-10-12).
+
+Before that:
 `C10.5 — Tab sets, folder tree, FTP connections and compare selected files`
 (`docs/commander/stages/C10.5-tabs-tree-ftp-compare.md`), started 2026-10-12 at the owner's request right after 16;
 implementation done the same day. ADR-0037 is accepted with amendments. The tab bar is always there with a "+"
@@ -201,7 +261,8 @@ slider paints a frame every 37–40 ms at p95; saving 24 MP: 0.88 s; a session h
 
 Open from 12: the NVDA pass over the editor; the Linux and macOS runs and the race detector (CI); a full-resolution
 view of a region (zoom beyond the proxy shows the proxy's pixels); the before/after split handle and the zebra
-overlay; the tile-scroll check with an idle session (the viewer's tile e2e suite, open since C06).
+overlay; the tile-scroll check with an idle session (the viewer's tile e2e suite opens folders again since P01;
+the check is still to be written).
 
 Before that:
 `C10 — Command line, tools and customization` (`docs/commander/stages/C10-command-line-and-customization.md`),
@@ -215,8 +276,9 @@ in the stage document with no open findings. Thumbnails view on 100,000 entries:
 task; Enter to the command handed over: 0.5 ms.
 
 Open from C10: the NVDA pass over the command line, the Thumbnails view and the settings; the Linux and macOS runs
-(the `sh` quoting and the console window; CI); the viewer's e2e tile suite, which cannot open a folder since C06;
-console programs started with Enter are not seen (Shift+Enter opens a console).
+(the `sh` quoting and the console window; CI); console programs started with Enter are not seen (Shift+Enter opens
+a console). The viewer's e2e tile suite, which could not open a folder since C06, was repaired and ran green in
+Stage P01 (2026-10-12).
 
 Before that:
 `C09 — Multi-rename, attributes and properties` (`docs/commander/stages/C09-multi-rename-and-attributes.md`), started
@@ -243,14 +305,13 @@ ms (budget 3 s).
 Open from C08: the NVDA pass over its three dialogs, and a sync on FAT/exFAT and on a network share (dates are checked
 exactly as the compare read them; a P04 volume item).
 
-Earlier:
+Earlier (the first slice of the active stage):
 `P04 — Cross-platform hardening` (`docs/shared/stages/P04-cross-platform.md`), started 2026-10-08 at the owner's
 request while C07's manual items stay open. ADR-0032 is accepted: electron-builder packages the product (Windows NSIS,
 macOS DMG and zip, Linux AppImage and tar.gz), `release.yml` builds Windows and macOS for every published GitHub
 release, and `ci.yml` runs the suites and a packaged smoke test on all three OSes. The Linux pass fixed read-only
-copies on Unix, filesystem-dependent entry ids, created times on Linux (`statx`), duplicate quick-access places, and (in the commander)
-a dropped mark-by-mask and undone cursor keys during folder refreshes. Open: the viewer's e2e specs (since C06), the first Windows and macOS CI run,
-and the volume, Unicode, media-tool and budget items of the stage.
+copies on Unix, filesystem-dependent entry ids, created times on Linux (`statx`), duplicate quick-access places, and
+(in the commander) a dropped mark-by-mask and undone cursor keys during folder refreshes.
 
 Before that:
 `C07 — Archives` (`docs/commander/stages/C07-archives.md`), started 2026-10-07 right after C06 (find files, branch
@@ -267,9 +328,9 @@ pack and unpack dialogs, the synchronize, text diff and checksum dialogs, the mu
 dialogs, the command line, the Thumbnails view and the settings sections). Open from P03:
 the Linux and macOS fast paths (P04).
 
-Open from C01: the cold-cache 100k timings (470 / 366 ms on the first run after a build) and the rest of P02
-(per-app session budgets, visible-app watching). Open from C02: the manual NVDA pass. P01's shared-package
-extraction moved on with C02 (selection algebra, keymap engine, dialogs) but is not complete.
+Open from C01: the cold-cache 100k timings (470 / 366 ms on the first run after a build); the rest of P02
+(per-app session budgets, visible-app watching) was built on 2026-10-12. Open from C02: the manual NVDA pass. P01's shared-package
+extraction moved on with C02 (selection algebra, keymap engine, dialogs) and was completed on 2026-10-12.
 
 Test runs on the reference machine hit intermittent native crashes of Node and Electron processes (access violations
 in vitest workers, Playwright and pnpm itself) at random points since 2026-10-05; reruns pass. Together with the Stage
@@ -279,7 +340,8 @@ The Stage 08 and 08.5 gates are still open: their implementation is done (2026-1
 was never added (`docs/viewer/stages/08-product-polish.md`, `docs/viewer/stages/08.5-viewer-settings.md`).
 
 Carried over from Stage 07: the intermittent modernc SQLite heap fault, which reproduces outside Panelyth and needs a
-driver/hardware decision (`docs/viewer/stages/07-batch-and-metadata.md`).
+driver/hardware decision (`docs/viewer/stages/07-batch-and-metadata.md`). Seen again on 2026-10-12 (Stage P02): 3 of
+12 runs of `cmd/indexbench` ended in an access violation inside the driver while a query was stepping.
 
 Carried over: idle memory is still near the budget edge (Stage 08: 52.9 MB over the Electron floor, budget 60). Cold
 scans are 12–15 % slower since Stage 05. Both are to be re-measured in Stage P05. Shipping an LGPL ffmpeg/ffprobe build

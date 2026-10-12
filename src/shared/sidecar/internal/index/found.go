@@ -107,7 +107,7 @@ func (s *Store) PutFound(ctx context.Context, gen int64, items []Found, dirs Fou
 			return nil, fmt.Errorf("add %q: %w", f.Name, err)
 		}
 		if isDir {
-			path := filepath.Join(f.Dir, f.Name)
+			path := joinPath(f.Dir, f.Name)
 			if _, err := dirState.ExecContext(ctx, ids[i], path); err != nil {
 				return nil, err
 			}

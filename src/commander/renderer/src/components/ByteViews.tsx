@@ -19,6 +19,7 @@ import {
   type Encoding,
 } from "../features/text"
 import { t } from "@panelyth/i18n"
+import { createWheelStepper } from "@panelyth/ui"
 
 // Text and hex views over byte windows (Stage C05): only the visible rows
 // are read and rendered. The scroll position is a byte offset (text) or a
@@ -62,12 +63,14 @@ function useWheelRows(ref: RefObject<HTMLElement | null>, onRows: (rows: number)
   useEffect(() => {
     const el = ref.current
     if (!el) return
+    // Rows follow the distance the wheel travelled: a trackpad's stream of
+    // small events moves a row per row height, not a row per event.
+    const rowStep = createWheelStepper({ stepPx: LINE_PX, maxSteps: 20, linePx: LINE_PX })
     const onWheel = (e: WheelEvent): void => {
       if (e.deltaY === 0) return
       e.preventDefault()
-      const px = e.deltaMode === 1 ? e.deltaY * LINE_PX : e.deltaY
-      const rows = Math.sign(px) * Math.min(20, Math.max(1, Math.round(Math.abs(px) / LINE_PX)))
-      handler.current(rows)
+      const rows = rowStep(e)
+      if (rows !== 0) handler.current(rows)
     }
     el.addEventListener("wheel", onWheel, { passive: false })
     return () => el.removeEventListener("wheel", onWheel)

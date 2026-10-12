@@ -714,6 +714,7 @@ export const sidecarResultGuards: ResultGuards = {
   "query.indexOf": (v): v is QueryIndexOfResult =>
     isRec(v) && isInt(v.index) && v.index >= -1 && isInt(v.version),
   "context.publish": isOk,
+  "app.setVisible": isOk,
   "context.get": (v): v is SharedContext =>
     isRec(v) &&
     isCount(v.version) &&

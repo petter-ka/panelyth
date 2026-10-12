@@ -208,13 +208,18 @@ func TestParseMountInfo(t *testing.T) {
 41 22 0:50 / /mnt/nas rw - nfs4 nas:/photos rw
 42 22 0:51 / /run/media/p/CARD rw - vfat /dev/sdc1 rw
 43 22 0:52 / /snap/core/1 ro - squashfs /dev/loop0 ro
-44 22 8:17 / /media/petter/My\040Disk rw - exfat /dev/sdb1 rw`
+44 22 8:17 / /media/petter/My\040Disk rw - exfat /dev/sdb1 rw
+45 22 11:0 / /media/petter/HOLIDAY\0402019 ro - iso9660 /dev/sr0 ro
+46 22 0:53 / /mnt/share rw - cifs //nas/share rw
+47 22 0:54 / /home/petter/mnt rw - ext4 /dev/sdd1 rw`
 	got := ParseMountInfo(text)
 	want := []Volume{
 		{Path: "/", Label: "/", Kind: "fixed"},
 		{Path: "/media/petter/My Disk", Label: "My Disk", Kind: "removable"},
 		{Path: "/mnt/nas", Label: "nas", Kind: "network"},
 		{Path: "/run/media/p/CARD", Label: "CARD", Kind: "removable"},
+		{Path: "/media/petter/HOLIDAY 2019", Label: "HOLIDAY 2019", Kind: "optical"},
+		{Path: "/mnt/share", Label: "share", Kind: "network"},
 	}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("got %v\nwant %v", got, want)
