@@ -106,13 +106,21 @@ func boxRGBA(src *image.RGBA, w, h int) *image.RGBA {
 // boxYCbCr averages luma and chroma on their own planes, then converts each
 // output pixel once.
 func boxYCbCr(src *image.YCbCr, w, h int) *image.RGBA {
+	dst := image.NewRGBA(image.Rect(0, 0, w, h))
+	boxYCbCrRows(src, dst, 0, h)
+	return dst
+}
+
+// boxYCbCrRows fills the rows [ya, yb) of dst; rows are independent, so the
+// editor's proxy runs them in parallel bands.
+func boxYCbCrRows(src *image.YCbCr, dst *image.RGBA, ya, yb int) {
+	w, h := dst.Rect.Dx(), dst.Rect.Dy()
 	sb := src.Rect
 	sw, sh := sb.Dx(), sb.Dy()
 	cxShift, cyShift := chromaShift(src.SubsampleRatio)
 	cw := (sb.Max.X+(1<<cxShift)-1)>>cxShift - sb.Min.X>>cxShift
 	ch := (sb.Max.Y+(1<<cyShift)-1)>>cyShift - sb.Min.Y>>cyShift
-	dst := image.NewRGBA(image.Rect(0, 0, w, h))
-	for y := range h {
+	for y := ya; y < yb; y++ {
 		y0, y1 := span(y, sh, h)
 		cy0, cy1 := span(y, ch, h)
 		for x := range w {
@@ -142,7 +150,6 @@ func boxYCbCr(src *image.YCbCr, w, h int) *image.RGBA {
 			dst.Pix[o], dst.Pix[o+1], dst.Pix[o+2], dst.Pix[o+3] = r, g, b, 0xFF
 		}
 	}
-	return dst
 }
 
 func chromaShift(r image.YCbCrSubsampleRatio) (int, int) {

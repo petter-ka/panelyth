@@ -1,0 +1,3 @@
+{"at":"2026-10-12T01:09:41.286Z","test":"editor-draw-24mp","pointerMoves":80,"inkSeen":80,"inkMaxMs":26.2,"framePaints":82,"frameGapP95Ms":51,"settleMs":31,"longTasksOver50":0,"maxLongTaskMs":0}
+{"at":"2026-10-12T01:12:22.075Z","test":"editor-draw-24mp","pointerMoves":80,"inkSeen":80,"inkMaxMs":25.1,"framePaints":82,"frameGapP95Ms":46,"settleMs":30,"longTasksOver50":0,"maxLongTaskMs":0}
+{"at":"2026-10-12T02:18:23.182Z","test":"editor-draw-24mp","pointerMoves":80,"inkSeen":80,"inkMaxMs":24.7,"framePaints":82,"frameGapP95Ms":42,"settleMs":26,"longTasksOver50":0,"maxLongTaskMs":0}

@@ -2,7 +2,8 @@ import { formatChord, hasMarks } from "@panelyth/renderer-core"
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import { runPanelAction, useUiStore } from "../features/commands"
-import { useKeymapStore, type ActionId } from "../features/keymap"
+import { toolAction, useKeymapStore, type ActionId } from "../features/keymap"
+import { useToolsStore } from "../features/tools"
 import { enter, pageStoreOf, parentRows, useListingStore } from "../features/listing"
 import { countOf, marksOf } from "../features/marks"
 import type { Side } from "../features/panels"
@@ -19,6 +20,7 @@ const ENTRY_ITEMS: readonly Item[] = [
   { action: "files.copy", label: msg("Copy to the other panel…") },
   { action: "files.move", label: msg("Move to the other panel…") },
   { action: "files.rename", label: msg("Rename") },
+  { action: "files.multiRename", label: msg("Multi-rename…") },
   { action: "files.trash", label: msg("Delete") },
   "separator",
   { action: "clip.cut", label: msg("Cut") },
@@ -31,8 +33,15 @@ const ENTRY_ITEMS: readonly Item[] = [
   { action: "archive.pack", label: msg("Pack…") },
   { action: "archive.unpack", label: msg("Unpack…") },
   "separator",
+  { action: "compare.content", label: msg("Compare by content") },
+  { action: "hash.create", label: msg("Create checksums") },
+  { action: "hash.verify", label: msg("Verify checksums") },
+  "separator",
   { action: "files.mkdir", label: msg("New folder") },
   { action: "view.refresh", label: msg("Refresh") },
+  "separator",
+  { action: "files.attributes", label: msg("Change attributes…") },
+  { action: "files.properties", label: msg("Properties") },
 ]
 
 // Commands for the folder itself: "..", or the empty area below the entries.
@@ -45,6 +54,9 @@ const FOLDER_ITEMS: readonly Item[] = [
   "separator",
   { action: "mark.all", label: msg("Mark all") },
   { action: "mark.invert", label: msg("Invert marks") },
+  "separator",
+  { action: "compare.dirs", label: msg("Compare directories") },
+  { action: "compare.sync", label: msg("Synchronize directories") },
 ]
 
 const MENU_WIDTH = 256
@@ -69,6 +81,8 @@ function operandLabel(side: Side): string {
 export function RowMenu({ side }: { side: Side }) {
   const menu = useUiStore((s) => (s.rowMenu?.side === side ? s.rowMenu : null))
   const chords = useKeymapStore((s) => s.keymap.chords)
+  // The user's commands that ask for a place in the entry menu (Stage C10).
+  const tools = useToolsStore((s) => s.commands)
   const open = menu !== null
   // The backdrop paints nothing, so Chromium would still scroll the list
   // behind it; a cancelling (non-passive) wheel listener stops that. The menu
@@ -102,6 +116,21 @@ export function RowMenu({ side }: { side: Side }) {
       detail: chord ? formatChord(chord) : undefined,
       onSelect: () => runPanelAction(side, item.action),
     })
+  }
+
+  const listed = menu.entry ? tools.filter((tool) => tool.menu) : []
+  if (listed.length > 0) {
+    entries.push({ id: `separator-${separators++}`, label: "", separator: true })
+    for (const tool of listed) {
+      const action = toolAction(tool.id)
+      const chord = chords[action]?.[0]
+      entries.push({
+        id: action,
+        label: tool.title,
+        detail: chord ? formatChord(chord) : undefined,
+        onSelect: () => runPanelAction(side, action),
+      })
+    }
   }
 
   const height =

@@ -1,0 +1,37 @@
+{
+  "id": 172,
+  "ok": true,
+  "r": {
+    "conflicts": 2,
+    "firstProblem": 0,
+    "invalid": 1,
+    "offset": 0,
+    "renamed": 0,
+    "rows": [
+      {
+        "id": 36,
+        "name": "IMG_1.jpg",
+        "newName": "img.jpg",
+        "reason": "duplicate",
+        "status": "conflict"
+      },
+      {
+        "id": 37,
+        "name": "IMG_2.jpg",
+        "newName": "img.jpg",
+        "reason": "duplicate",
+        "status": "conflict"
+      },
+      {
+        "id": 38,
+        "name": "notes.txt",
+        "newName": "taken/.txt",
+        "reason": "The name can't contain / or \\.",
+        "status": "invalid"
+      }
+    ],
+    "total": 3,
+    "unchanged": 0
+  },
+  "t": "res"
+}

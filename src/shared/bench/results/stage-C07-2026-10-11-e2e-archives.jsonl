@@ -1,0 +1,4 @@
+{"at":"2026-10-11T15:11:52.262Z","metric":"open 100k-entry zip, Enter → first rows","ms":68,"budgetMs":1000}
+{"at":"2026-10-11T16:20:15.922Z","metric":"open 100k-entry zip, Enter → first rows","ms":91,"budgetMs":1000}
+{"at":"2026-10-11T17:24:01.956Z","metric":"open 100k-entry zip, Enter → first rows","ms":85,"budgetMs":1000}
+{"at":"2026-10-11T23:39:26.656Z","metric":"open 100k-entry zip, Enter → first rows","ms":95,"budgetMs":1000}

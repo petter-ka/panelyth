@@ -6,6 +6,7 @@ import (
 	"errors"
 	"io/fs"
 	"os"
+	"runtime"
 	"time"
 
 	"panelyth/sidecar/internal/archive"
@@ -120,6 +121,13 @@ type (
 		AccessedMs *int64 `json:"accessedMs"`
 		Width      *int   `json:"width"`
 		Height     *int   `json:"height"`
+		// Attrs are the fsx.Attr* bits as they are now (omitted when none is
+		// set, as on page rows); Permissions the permission bits (null on
+		// Windows, which has none); LinkTarget where a link points, as it is
+		// stored (Stage C09).
+		Attrs       int     `json:"attrs,omitempty"`
+		Permissions *int    `json:"permissions"`
+		LinkTarget  *string `json:"linkTarget"`
 		// Folders: counts from the last complete listing, null before it.
 		ChildFolders *int `json:"childFolders"`
 		ChildMedia   *int `json:"childMedia"`
@@ -390,6 +398,20 @@ func (s *indexService) propsGet(ctx context.Context, p entryParams) (propsResult
 		res.CreatedMs, res.AccessedMs = msPtr(t.BirthNs), msPtr(t.AccessNs)
 		if !fi.IsDir() {
 			res.SizeBytes = fi.Size()
+		}
+	}
+	// The entry itself, not what a link points to.
+	if li, err := os.Lstat(d.Path); err == nil {
+		res.Exists = true
+		res.Attrs = fsx.AttrsOf(d.Name, li)
+		if runtime.GOOS != "windows" {
+			mode := int(li.Mode().Perm())
+			res.Permissions = &mode
+		}
+		if res.Attrs&fsx.AttrLink != 0 {
+			if target, err := os.Readlink(d.Path); err == nil {
+				res.LinkTarget = &target
+			}
 		}
 	}
 	if d.Width > 0 && d.Height > 0 {

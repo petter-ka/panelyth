@@ -1,5 +1,7 @@
 import type {
   EventMap,
+  FolderCoversParams,
+  FolderCoversResult,
   MediaOpenResult,
   PreviewEnsureParams,
   PreviewEnsureResult,
@@ -17,6 +19,12 @@ export interface MediaPort {
   /** "Open with default app" on a video the built-in player can't play. */
   openWithSystem(entryId: number): Promise<void>
   onPreviewReady(listener: (payload: EventMap["preview.ready"]) => void): () => void
+  /**
+   * Folder covers for tiles (Stage C10: the tile parts moved here). Absent in
+   * an app whose profile has no folder.covers: folders show their symbol.
+   */
+  folderCovers?(params: FolderCoversParams): Promise<FolderCoversResult>
+  onFolderCovers?(listener: (payload: EventMap["folder.covers"]) => void): () => void
   /**
    * library.db settings, read fresh and written whole: where a long video
    * stopped (resume.ts). Absent: positions are not remembered.

@@ -80,6 +80,11 @@ Names only, in fixed-width columns that flow top to bottom and then into the nex
 
 The viewer's tile components on the shared preview cache, inside the panel, with the same cursor and marks.
 
+As built: Ctrl+Shift+F1. Fixed-size tiles flow left to right, as many a row as the panel is wide. The cursor is an
+outline around the tile (accent in the active panel); a marked tile has the accent frame and its name in the accent
+color with "•". ←/→ move a tile, ↑/↓ a row. Pictures and videos show their thumbnail, other files their type icon,
+folders the folder symbol. Tile size S, M or L in Settings → Panels, or Ctrl+wheel.
+
 ## Function-key bar
 
 F3 View · F4 Edit · F5 Copy · F6 Move · F7 New folder · F8 Delete. Every label is a button, paired
@@ -87,14 +92,35 @@ with a compact action icon and a keycap so the bar is easy to scan while still t
 is held, the labels change to those variants (Shift+F5 Copy here, Shift+F6 Rename, Shift+F8 Delete permanently,
 Alt+F5 Pack, Alt+F7 Find, …).
 
-Above it, a compact quick-action toolbar provides icon buttons for Find files, quick filter, branch view, quick view,
-refresh, the directory hotlist and rename. Tooltips show each action's current shortcut; quick view, branch view and
-quick filter expose their active state.
+Above the panels, a toolbar of icon buttons: by default Find files, quick filter, branch view, compare and
+synchronize directories, quick view, refresh, the directory hotlist and rename. Tooltips show each action's current
+shortcut; quick view, branch view, quick filter and the Thumbnails view expose their active state.
+
+As built (Stage C10): the buttons are the user's (Settings → Toolbar): any action of the panels or the shell, any of
+their own commands, and dividers, in their order; Reset brings the default back. The toolbar, the command line and the
+function-key bar can each be hidden (Settings → Panels).
+
+### User commands (Stage C10)
+
+Settings → Editor and tools → "Add a command…": a name, the command as it would be typed, its parameters, a working
+folder (empty: the panel's folder), an icon, and whether it shows on the toolbar, in the menu of files, and runs in a
+console window that stays open. In the parameters `%P` is this panel's folder, `%T` the other panel's, `%N` the name
+under the cursor, `%S` the marked names and `%L` a file listing the marked paths; `%P%N` is the full path under the
+cursor. Names are quoted for the user. A command can take a key in Keyboard shortcuts → Tools. When a command needs
+a file and there is none, the status bar says so.
 
 ## Command line (Stage C10)
 
 The prompt shows the active panel's path. Enter runs the command there; Alt+F8 opens its history; Ctrl+Enter inserts
 the cursor name and Ctrl+Shift+Enter the full path; Esc clears. `cd <path>` changes the active panel's folder.
+
+As built: Enter runs the line without a console window (a program with a window shows it); Shift+Enter runs it in a
+console window that stays open, and on an empty line opens that console in the panel's folder. The field says so
+while it is empty. Ctrl+K puts the keys into the line (and shows it
+when it is hidden); Tab, ↑, ↓ or a second Esc return them to the files. The history (Alt+F8 or the ▾ button) lists the
+last 50 lines, newest first; a picked line waits for Enter. `cd` also takes `..`, `\`, `~`, `/d` and, on Windows, a
+drive alone (`d:`). When a command cannot run (a network folder on Windows, a folder that is gone), the reason shows
+above the line and the line stays.
 
 ## Queue panel (Stage C04)
 
@@ -120,8 +146,47 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   Advanced (size, date, attributes), Results (streaming list; Feed to panel, Go to file, Stop).
 - **Multi-rename (Ctrl+M, Stage C09):** mask fields with placeholder buttons, search and replace, case, counter; a
   live preview table (old name → new name), conflicts highlighted; Start and Undo last.
+  As built: for the marks, or the cursor entry. A name mask and an extension mask (`[N]` and `[E]` to begin with);
+  placeholder buttons (`[N]`, `[N1-5]`, `[E]`, `[C]`, `[Y]-[M]-[D]`, `[h][m][s]`) write into the mask used last, at the
+  caret; Search for / Replace with, with Regular expression and Match case; Case (unchanged, all lowercase, ALL
+  UPPERCASE, first letter, first letter of each word); the counter's start, step and digits. The preview lists every
+  entry as old name → new name and says in words why one is not renamed: Unchanged (muted), Same name twice, Name is
+  taken, Names are exchanged (warning color), Invalid name (danger color, the reason as a tooltip). A line below sums
+  up ("3 of 12 names will change · 1 name is not free") and "Show the first one" scrolls to the first problem. A mask
+  or an expression that cannot be used says why under its field; the rows stay as they were. Start is available when
+  at least one name changes: what is not free is left out and listed when the job ends. The job runs in the queue and
+  the result is announced ("Renamed 12 items."). Undo last appears when there is a multi-rename to take back (its
+  tooltip says how many names, in which folder); it is also a command of its own without a default key.
+- **Change attributes (Stage C09):** from the entry menu (no default key; it can be bound), for the marks or the cursor
+  entry. On Windows four boxes (Read-only, Hidden, System, Archive); elsewhere a grid of Owner, Group and Others by
+  Read, Write and Execute. Every box has three states: ✓ sets, empty clears, – leaves it as it is (the start). For
+  one entry a line says what it has now. Modified and Accessed take a date and time, with Now; an empty date stays as
+  it is. "Also everything inside the folders" applies the change below them. Change starts the job.
+- **Properties (Alt+Enter, Stage C09):** the rows the viewer's properties show (type, location, size, dimensions,
+  content of a folder, dates), with the attributes or permissions and, for a link, where it points; for marks, what
+  they are and their total size. Buttons: Change attributes…, Checksums… (the Create checksums dialog for the same
+  entries) and Done.
 - **Synchronize directories (Stage C08):** left and right roots, compare options, a result table with a direction
   arrow per row (→, ←, =, ≠, ×), filters, and Synchronize.
+  As built: opened from the quick action bar or the folder menu (no default key; it can be bound). Options: left to
+  right only, compare contents, dates within 2 seconds or exact, ignore a one-hour difference, ignore dates.
+  Compare, Stop and Compare again show progress in a status line. Five filter buttons carry the symbol and its count;
+  the equal rows are hidden at first. Rows show the name with its folder below the roots, then size and date of each
+  side around the symbol; a copy that replaces a newer file is in the warning color, the side a delete removes is
+  struck through in the danger color. Arrow keys move, Shift extends, Ctrl+A selects all; → and ← set the direction,
+  = leaves a row alone, Delete deletes a one-sided entry, Backspace restores the default (five buttons do the same).
+  Synchronize… replaces the table with a confirmation: what is copied each way with sizes, folders created, entries
+  deleted per side, newer files replaced, and "Delete permanently instead of moving to the trash". The job then runs
+  in the queue and the dialog closes.
+- **Compare by content (Stage C08):** from the entry menu. Two marked files, or the cursor file against the file of
+  the same name in the other panel (else that panel's cursor file). Text files: two columns with line numbers,
+  changed lines in the warning tint, lines on one side only in the danger and success tints, a summary ("3
+  differences", "identical", "differ only in line ends or encoding"), Previous / Next difference (P / N). Other
+  files: "identical" or "different" with progress while they are read.
+- **Create checksums (Stage C08):** from the entry menu, for the marks or the cursor entry: the algorithm (SHA-256,
+  SHA-1, MD5, CRC32 as .sfv), one checksum file beside each file or one named list in the panel's folder. **Verify
+  checksums** starts at once on the marked checksum files or the one under the cursor; the result is announced, and
+  files that did not verify open as a list.
 
 ## Quick view and lister (Stage C05)
 
@@ -162,7 +227,7 @@ entry is remappable.
 | Backspace, Ctrl+PgUp | Parent folder | C01 |
 | Ctrl+\ | Root of the drive | C02 |
 | Ctrl+F3 / F4 / F5 / F6 | Sort by name / extension / date / size | C01 |
-| Ctrl+F1 / Ctrl+F2 | Brief / Full view | C03 / C01 |
+| Ctrl+F1 / Ctrl+F2 / Ctrl+Shift+F1 | Brief / Full / Thumbnails view | C03 / C01 / C10 |
 | Ctrl+H | Show hidden and system files | C01 |
 | Ctrl+R | Refresh | C01 |
 | Alt+D | Edit the path | C01 |
@@ -191,16 +256,18 @@ entry is remappable.
 | Alt+F5 / Alt+F9 / Alt+Shift+F9 | Pack / unpack / test archives | C07 |
 | Ctrl+PgDn | Open the archive under the cursor (Enter does too; Backspace at its root leaves it) | C07 |
 | Shift+F2 | Compare directories | C08 |
-| Ctrl+M | Multi-rename | C09 |
+| Ctrl+M | Multi-rename (Undo the last multi-rename and Change attributes have no default key) | C09 |
 | Alt+Shift+Enter / Alt+Enter | Size of all folders / properties | C09 |
-| Ctrl+K, Alt+F8, Ctrl+Enter | Focus the command line, command history, insert cursor name | C10 |
+| Ctrl+K, Alt+F8 | Focus the command line, command history | C10 |
+| Ctrl+Enter / Ctrl+Shift+Enter | Add the cursor entry's name / full path to the command line | C10 |
+| Enter / Shift+Enter (in the command line) | Run the line / run it in a console window (fixed keys) | C10 |
 | F1, Ctrl+/ | Keyboard shortcuts (shared dialog) | C02 |
 | Ctrl+Shift+M | Switch to the viewer (shared `shell` scope) | C00 |
 | Alt+F4 | Exit | C00 |
 
 Quick search uses plain letters, so letter keys never trigger other commands in a panel. Total Commander's
 Ctrl+Alt+letters works as an alias, and a setting sends letters to the command line instead (classic Total
-Commander).
+Commander): Settings → Panels → Typed letters → "Go to the command line"; quick search then starts with Alt.
 
 ## Mouse
 
@@ -210,8 +277,9 @@ Commander).
   unmarks them, when the first row was marked). Holding the right button still for half a second opens the context
   menu instead, and leaves the marks alone; a small ring beside the pointer fills while the button is held. Settings → "Right mouse button" switches to "Opens the menu" (a
   right-click opens it at once).
-- The context menu lists the panel's commands with their shortcuts (open, view, edit, copy, move, rename, delete, the
-  clipboard, copy paths and names, pack, unpack, new folder, refresh). Like the keys, it acts on the marked entries,
+- The context menu lists the panel's commands with their shortcuts (open, view, edit, copy, move, rename,
+  multi-rename, delete, the clipboard, copy paths and names, pack, unpack, compare and checksums, new folder, refresh,
+  change attributes, properties). Like the keys, it acts on the marked entries,
   or on the cursor entry when nothing is marked; its heading says which. On ".." and the empty area it lists the
   folder's commands (paste, new folder, new text file, refresh, mark all, invert). The Menu key and Shift+F10 open it
   for the cursor entry.

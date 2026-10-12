@@ -5,6 +5,7 @@ import { bridge, PanelythError } from "../bridge"
 import { focusEntry, pageStoreOf, parentRows, useListingStore } from "./listing"
 import { cursorDescriptor, marksDescriptor, marksOf, markNone } from "./marks"
 import { otherSide, setActivePanel, usePanelsStore, type Side } from "./panels"
+import { useSettingsStore } from "./settings"
 import { useTabsStore } from "./tabs"
 import { msg, t } from "@panelyth/i18n"
 
@@ -162,6 +163,8 @@ export interface CopyTarget {
   dirId: number | null
 }
 
+const defaults = () => useSettingsStore.getState().settings
+
 /** The other panel's folder: F5 / F6's default destination. */
 export function otherPanelTarget(side: Side): CopyTarget | null {
   const p = panel(otherSide(side))
@@ -201,8 +204,9 @@ export async function openCopy(
       destinationDirId: dest.dirId,
       name: null,
       mask: "*.*",
-      conflict: "ask",
-      verify: false,
+      // Settings → Operations: what the dialog starts with.
+      conflict: defaults().copyConflict,
+      verify: defaults().copyVerify,
       links: true,
       warnings: [],
       error: null,
@@ -242,8 +246,8 @@ export function openCopyHere(side: Side): void {
       destinationDirId: p.dirId,
       name: item.name,
       mask: "*.*",
-      conflict: "ask",
-      verify: false,
+      conflict: defaults().copyConflict,
+      verify: defaults().copyVerify,
       links: true,
       warnings: [],
       error: null,
@@ -348,18 +352,22 @@ export async function openDelete(side: Side, permanent: boolean): Promise<void> 
     return
   }
   const count = source.ranges.reduce((n, [a, b]) => n + b - a, 0) + source.include.length
-  set({
-    remove: {
-      side,
-      source,
-      what: describe(side, count),
-      count,
-      bytes: null,
-      permanent,
-      trash: permanent ? true : null,
-      next: nextSurvivor(side),
-    },
-  })
+  const request: DeleteDialogState = {
+    side,
+    source,
+    what: describe(side, count),
+    count,
+    bytes: null,
+    permanent,
+    trash: permanent ? true : null,
+    next: nextSurvivor(side),
+  }
+  // Settings → Confirmations: the trash needs no question (the items can be
+  // taken back). Without a trash the dialog still asks, as a permanent delete does.
+  if (!permanent && !defaults().confirmTrash) {
+    if (await bridge.canTrash(p.dirId).catch(() => false)) return startDelete(request)
+  }
+  set({ remove: request })
   const [info, trash] = await Promise.all([
     sizeOf(source),
     permanent ? Promise.resolve(true) : bridge.canTrash(p.dirId).catch(() => true),
@@ -381,6 +389,10 @@ export async function confirmDelete(): Promise<void> {
   const r = get().remove
   if (!r) return
   set({ remove: null })
+  await startDelete(r)
+}
+
+async function startDelete(r: DeleteDialogState): Promise<void> {
   try {
     await bridge.startJob({
       kind: r.permanent ? "delete" : "trash",
@@ -536,6 +548,24 @@ export function dragSource(e: DragEvent): Side | null {
 /** A drop on a panel, a tab or a drive: the copy dialog (Shift: move). */
 export function dropOn(from: Side, target: CopyTarget, shift: boolean): void {
   setActivePanel(from)
+  const source = operand(from)
+  // Settings → Confirmations: a drop starts at once, with the default policy.
+  // Out of an archive, or onto a folder not open yet, the dialog still shows.
+  if (!defaults().confirmDrop && source && target.dirId !== null && !inArchive(from)) {
+    void bridge
+      .startJob({
+        kind: shift ? "move" : "copy",
+        source: { selection: source },
+        destinationDirId: target.dirId,
+        conflict: defaults().copyConflict,
+        ...(defaults().copyVerify && { verify: true }),
+      })
+      .then(() => {
+        if (marksDescriptor(from)) markNone(from)
+      })
+      .catch((error: unknown) => notice(errorText(error)))
+    return
+  }
   void openCopy(from, shift ? "move" : "copy", target)
 }
 

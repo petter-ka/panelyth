@@ -77,7 +77,7 @@ docs/
     PERFORMANCE.md             viewer budgets and recorded baselines
     TESTING.md                 viewer e2e scenarios and fixtures
     decisions/                 viewer ADRs
-    IMAGE-EDITOR.md            image editor spec: features, UX, batch, stages 12–16 (planned)
+    IMAGE-EDITOR.md            image editor spec: features, UX, batch, stages 12–16
     stages/                    viewer stages 00…08.6 and 12…16
   commander/                   Panelyth Commander (dual-panel file manager)
     BRS.md                     commander requirements (CFR-01…, CNFR-01…)
@@ -141,7 +141,7 @@ Claude Code should read these files in this order:
 | 0024 | Folder covers | viewer | Accepted |
 | 0025 | Product family: two apps on one platform | shared | Accepted; process model and data superseded by 0031 |
 | 0026 | Index scope: all entries stored, filtered per query | shared | Proposed (Stage P02) |
-| 0027 | App capability profiles: allowlists, shell actions, launching | shared | Allowlists accepted (P01), launching accepted (C05, 2026-10-06); the command line is decided in C10 |
+| 0027 | App capability profiles: allowlists, shell actions, launching | shared | Accepted in full (C10, 2026-10-11): allowlists (P01), launching (C05), the command line and user commands (C10) |
 | 0028 | Commander panels: dual-panel layout, TanStack Table (table view) and virtualized lists | commander | Accepted (Stage C01) |
 | 0029 | File-operation engine v2 | shared | Accepted (Stage P03, 2026-10-06) |
 | 0030 | Archives as folders | commander | Accepted (Stage C07) |
@@ -149,8 +149,8 @@ Claude Code should read these files in this order:
 | 0032 | Packaging and release builds (electron-builder) | shared | Accepted (Stage P04) |
 | 0033 | Document window: PDFs and text in a window of their own | shared | Accepted (owner request) |
 | 0034 | Localization: eight languages, English text as the key | shared | Accepted (owner request) |
-| 0035 | Image editor engine: sessions, proxy rendering, save semantics | viewer | Proposed (decided in Stage 12) |
-| 0036 | Batch image editing: recipes, edit jobs, output rules | viewer | Proposed (decided in Stage 16) |
+| 0035 | Image editor engine: sessions, proxy rendering, save semantics | viewer | Accepted with amendments (Stage 12, 2026-10-12; notes from Stages 13 to 15) |
+| 0036 | Batch image editing: recipes, edit jobs, output rules | viewer | Accepted with amendments (Stage 16) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

@@ -20,6 +20,8 @@ import { initInterfaceSize } from "./features/theme/interfaceSizeStore"
 import { startTreeMonitoring } from "./features/tree/treeStore"
 import { startWorkspacePersistence } from "./features/workspace/workspace"
 import { startAppearanceSync, startContextSync } from "./features/workspace/appSwitch"
+import { startEditor } from "./features/editor/editorStore"
+import { startEditorSettingsPersistence } from "./features/editor/editorSettings"
 import "./styles/index.css"
 
 // The stored language loads before the first paint (ADR-0034).
@@ -43,6 +45,8 @@ startStartupFolder()
 startAppearanceSync()
 startContextSync()
 startMediaWindowHost()
+startEditorSettingsPersistence()
+startEditor()
 
 const root = document.getElementById("root")
 if (!root) throw new Error("#root missing")

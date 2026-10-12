@@ -1,8 +1,9 @@
 # Image Editor — Product Spec, Feature Catalogue and UX
 
-Status: **Planned** (2026-10-11), at the owner's request. Stages 12–16 deliver it. It moves "image effects/adjustments",
-"crop/resize" and "rotate/flip" out of BRS §9 (future) into FR-23. Architecture: ADR-0035 (editor engine) and ADR-0036
-(batch editing), both **proposed** and decided in the stages that name them. Until then nothing here is built on.
+Status: **In delivery** (planned 2026-10-11 at the owner's request; Stages 12 to 15 built 2026-10-12). Stages 12–16
+deliver it. It moves "image effects/adjustments", "crop/resize" and "rotate/flip" out of BRS §9 (future) into FR-23.
+Architecture: ADR-0035 (editor engine, **accepted** in Stage 12 with amendments) and ADR-0036 (batch editing,
+accepted with amendments in Stage 16). Where this spec and a stage record differ, the stage record says what was built.
 
 This file is the single catalogue of what the editor does, what each tool is called, which stage delivers it and
 whether it works in batch. The stage documents (`docs/viewer/stages/12-…` to `16-…`) hold the work breakdown.
@@ -133,7 +134,12 @@ keyboard route, every change is reversible, and nothing blocks the picture while
 ```
 
 - **Tool rail** (left): Adjust, Color, Effects, Geometry, Retouch, Draw. Each opens its tools in the right panel. `/`
-  or `Ctrl/Cmd+K` opens a **tool search** ("curv" → Curves) and is the fast path for keyboard users.
+  or `Ctrl/Cmd+K` opens a **tool search** ("curv" → Curves) and is the fast path for keyboard users. As built
+  (Stage 13): the groups are Adjust (Lighting, Colors, Levels, Curves), Color (Grayscale, Sepia, Negative, Replace
+  color, Swap channels, Reduce colors), Detail (Sharpen, Blur, Reduce noise), Geometry and Looks, with the keys A, C,
+  D, G and L; the panel lists the group's tools as headers and one tool is open at a time. Effects (Stage 14, key
+  E): Border, Frame mask, Watermark, Obscure, Lens, Bump map, Sketch, Oil painting. Draw and retouch (Stage 15,
+  key R): Draw, Clone, Heal, Red-eye, whose pointer works on the picture itself.
 - **Canvas:** reuses the viewer's layered zoom and pan (fit, 1:1, wheel, drag). **Before/after:** hold `\` to peek the
   original, or drag a split handle. Crop, obscure, clone and red-eye draw their overlays on the canvas.
 - **Right panel** (resizable, collapsible, state remembered): the histogram is always on top; below it the active
@@ -171,6 +177,12 @@ keyboard route, every change is reversible, and nothing blocks the picture while
   with values spoken in units, the canvas has a text alternative, and everything works at 200 % interface size.
 
 ### 5.4 Batch editor (Stage 16)
+
+> As built (2026-10-12, `docs/viewer/stages/16-editor-batch.md`): the filmstrip sits under the canvas and its
+> samples are chosen by Go (pinning is not built); the output is a dialog opened from the top bar, not a part of the
+> right panel; the suffix is a name template (`{name}-edited` by default); the conflict policies are keep both, skip
+> and replace-through-the-trash; the finished job offers Show in folder and Undo this batch; recipes are saved and
+> six are built in, but export, import and the recipe list in the single editor are not built.
 
 Opens from a multi-selection. Same shell, different center: a **filmstrip of up to 12 sample pictures** from the
 selection (first, last and spread between, the user can pin others) shows the live result of the recipe, so the user
@@ -217,9 +229,12 @@ the stage documents (proposed budgets, fixed by the Stage 12 baseline and then a
 
 | Question | Decided in |
 |---|---|
-| How frames travel from Go to the canvas (encoded file + token vs raw buffer): measured | 12 |
-| EXIF reader/writer: extend `internal/meta` or add a small pure-Go library | 12 |
-| Editing size cap (proposed 100 MP) and memory budget per session | 12 |
-| Spot-heal algorithm (patch-based vs gradient-domain) | 15 |
-| Whether auto red-eye ships in batch | 15, 16 |
-| Text shaping for watermarks in complex scripts (pure-Go limits) | 14 |
+| How frames travel from Go to the canvas: **a JPEG file behind a token** (measured; ADR-0035) | 12, answered |
+| EXIF reader/writer: **the in-house bounded reader, extended**; no library | 12, answered |
+| Editing size cap and memory per session: **100 MP; 72 MB per session** (it keeps the proxy, not the source) | 12, answered |
+| How an eyedropper reads a color without pixels in the renderer: **Go answers `edit.probe`** | 13, answered |
+| A full-resolution view of a region (to judge sharpening on a large picture) | open; with P05 |
+| Spot-heal algorithm: **a copy corrected to the tone around the stroke, the source chosen among 48 nearby offsets**; neither a solver nor patch search was needed for the fixture bound | 15, answered |
+| Whether auto red-eye ships in batch: **no**; its test set is synthetic, so Auto is interactive-only | 15, answered |
+| Text shaping for watermarks in complex scripts: **not shaped** (left to right with kerning; Latin, Greek and Cyrillic built in, other scripts through a system font) | 14, answered |
+| How a logo or a texture reaches Go without a renderer path: **main's dialog registers it; the list holds a content-hash id** | 14, answered |

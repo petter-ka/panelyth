@@ -1,10 +1,10 @@
 // View transforms for the image viewer (Stage 08, ADR-0022). Display only:
 // the file is never changed. Rotation and flip are in screen space ("rotate
 // right" always turns clockwise on screen, "flip" always mirrors left-right),
-// and map one-to-one onto the Go edit list (internal/imaging/transform.go)
-// for a future export or edited preview. Crop is modelled here so a crop
-// overlay can plug in without changing the viewer's geometry contract.
+// and map one-to-one onto the Go edit list (internal/imaging/ops.go): the
+// image editor starts from what the viewer showed (Stage 12).
 
+import type { EditList } from "@panelyth/contracts"
 import type { Size } from "./zoom"
 
 export type Rotation = 0 | 90 | 180 | 270
@@ -52,14 +52,11 @@ export function cssTransform(t: ViewTransform): string {
   return `${t.flipH ? "scaleX(-1) " : ""}rotate(${t.rotate}deg)`
 }
 
-/** The equivalent Go edit list (imaging.EditList JSON). */
-export function toEditList(
-  t: ViewTransform,
-  crop?: CropRect,
-): { op: string; deg?: number; axis?: string; rect?: CropRect }[] {
-  const ops: { op: string; deg?: number; axis?: string; rect?: CropRect }[] = []
-  if (t.rotate !== 0) ops.push({ op: "rotate", deg: t.rotate })
-  if (t.flipH) ops.push({ op: "flip", axis: "h" })
-  if (crop) ops.push({ op: "crop", rect: crop })
+/** The equivalent edit list (the editor's operations, ADR-0035). */
+export function toEditList(t: ViewTransform, crop?: CropRect): EditList {
+  const ops: EditList = []
+  if (t.rotate !== 0) ops.push({ op: "rotate", p: { angle: t.rotate } })
+  if (t.flipH) ops.push({ op: "flip", p: { axis: "h" } })
+  if (crop) ops.push({ op: "crop", p: { rect: crop } })
   return ops
 }

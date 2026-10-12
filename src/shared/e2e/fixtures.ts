@@ -22,6 +22,10 @@ export interface FixtureSpec {
   text?: { logBytes: number; encodings: boolean }
   /** Archive fixtures (Stage C07): samples (set.zip, set.tar.gz, slip.zip), many.zip, big.tar.gz, pack/. */
   archives?: { samples?: boolean; zipEntries?: number; tgzBytes?: number; packFiles?: number }
+  /** Compare fixtures (Stage C08): left/ and right/ with known differences; tree-a/ and tree-b/ of many files. */
+  sync?: { pair?: boolean; entries?: number }
+  /** Multi-rename fixtures (Stage C09): scenario/ with a few named files; files/ of many pictures; folders/ of many folders. */
+  rename?: { scenario?: boolean; files?: number; folders?: number }
   files: number
   depth?: number
   fanout?: number
@@ -69,6 +73,22 @@ export function ensureFixture(
             String(spec.archives.tgzBytes ?? 0),
             "-archive-pack-files",
             String(spec.archives.packFiles ?? 0),
+          ]
+        : []),
+      ...(spec.sync
+        ? [
+            ...(spec.sync.pair ? ["-sync-pair"] : []),
+            "-sync-entries",
+            String(spec.sync.entries ?? 0),
+          ]
+        : []),
+      ...(spec.rename
+        ? [
+            ...(spec.rename.scenario ? ["-rename-scenario"] : []),
+            "-rename-files",
+            String(spec.rename.files ?? 0),
+            "-rename-folders",
+            String(spec.rename.folders ?? 0),
           ]
         : []),
       ...(spec.images

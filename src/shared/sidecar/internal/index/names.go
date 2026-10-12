@@ -91,8 +91,64 @@ func MatchMask(m Mask, name string) bool {
 	return true
 }
 
-// SetDirSize stores a folder's calculated size (bytes of every file below it).
-func (s *Store) SetDirSize(ctx context.Context, id, bytes int64) error {
-	_, err := s.w.ExecContext(ctx, `UPDATE entries SET dir_size_bytes = ? WHERE id = ? AND kind = 0`, bytes, id)
-	return err
+// DirSize is a folder's calculated size (bytes of every file below it).
+type DirSize struct {
+	ID    int64
+	Bytes int64
+}
+
+// SetDirSizes stores calculated folder sizes in one transaction (a batch of
+// a folder-size job, Stage C09).
+func (s *Store) SetDirSizes(ctx context.Context, sizes []DirSize) error {
+	if len(sizes) == 0 {
+		return nil
+	}
+	tx, err := s.w.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	stmt, err := tx.PrepareContext(ctx, `UPDATE entries SET dir_size_bytes = ? WHERE id = ? AND kind = 0`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, d := range sizes {
+		if _, err := stmt.ExecContext(ctx, d.Bytes, d.ID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// Stat is what an attribute or timestamp change left on an entry.
+type Stat struct {
+	ID      int64
+	MtimeNs int64
+	Attrs   int // fsx.Attr* bits
+}
+
+// SetStats stores the dates and attributes of changed entries in one
+// transaction (Stage C09). Everything else about a row stays: the content
+// did not change, so its metadata is still right.
+func (s *Store) SetStats(ctx context.Context, stats []Stat) error {
+	if len(stats) == 0 {
+		return nil
+	}
+	tx, err := s.w.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+	stmt, err := tx.PrepareContext(ctx, `UPDATE entries SET mtime_ns = ?, attrs = ? WHERE id = ?`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for _, st := range stats {
+		if _, err := stmt.ExecContext(ctx, st.MtimeNs, st.Attrs, st.ID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }

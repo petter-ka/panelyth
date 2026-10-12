@@ -206,3 +206,26 @@ func BenchmarkFavorite100k(b *testing.B) {
 		}
 	}
 }
+
+// A batch of renames is applied in its order, in one transaction: a chain
+// (b → c, then a → b) keeps each file's metadata with the file.
+func TestRekeyMany(t *testing.T) {
+	l, _ := open(t)
+	if err := l.SetRating(ctx, []string{"/d/a.jpg"}, 1, nil); err != nil {
+		t.Fatal(err)
+	}
+	if err := l.SetRating(ctx, []string{"/d/b.jpg"}, 2, nil); err != nil {
+		t.Fatal(err)
+	}
+	pairs := [][2]string{{"/d/b.jpg", "/d/c.jpg"}, {"/d/a.jpg", "/d/b.jpg"}, {"/d/same.jpg", "/d/same.jpg"}, {"/d/none.jpg", "/d/other.jpg"}}
+	if err := l.RekeyMany(ctx, pairs); err != nil {
+		t.Fatal(err)
+	}
+	ann, _ := l.Annotations(ctx, []string{"/d/a.jpg", "/d/b.jpg", "/d/c.jpg"}, false)
+	if len(ann) != 2 || ann["/d/b.jpg"].Rating != 1 || ann["/d/c.jpg"].Rating != 2 {
+		t.Fatalf("after the batch: %+v", ann)
+	}
+	if err := l.RekeyMany(ctx, nil); err != nil {
+		t.Fatal(err)
+	}
+}

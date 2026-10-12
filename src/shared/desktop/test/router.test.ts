@@ -25,7 +25,11 @@ const status: SidecarStatus = {
 }
 
 function eventFrom(url: string, parent: object | null = null): IpcMainInvokeEvent {
-  return { senderFrame: { url, parent } } as unknown as IpcMainInvokeEvent
+  // sender.id is the window an edit session belongs to (Stage 12).
+  return {
+    senderFrame: { url, parent },
+    sender: { id: url.startsWith(COMMANDER) ? 2 : 1 },
+  } as unknown as IpcMainInvokeEvent
 }
 
 const mainHandlers = (): MainHandlers => ({
@@ -40,6 +44,8 @@ const mainHandlers = (): MainHandlers => ({
     sizeBytes: 10,
   })),
   "shell.edit": vi.fn(async () => ({ ok: true })),
+  "shell.run": vi.fn(async () => ({ ok: true })),
+  "shell.runTool": vi.fn(async () => ({ ok: true })),
   "document.open": vi.fn(async () => ({ ok: true })),
   "media.openWindow": vi.fn(async () => ({ ok: true })),
   "media.windowStep": vi.fn(async () => ({ item: null })),
@@ -61,6 +67,28 @@ const mainHandlers = (): MainHandlers => ({
   "clipboard.copyPaths": vi.fn(async () => ({ count: 1, truncated: false })),
   "clipboard.copyText": vi.fn(async () => ({ ok: true })),
   "clipboard.copyImage": vi.fn(async () => ({ width: 1, height: 1 })),
+  "edit.render": vi.fn(async (_e, p: { rev: number }) => ({
+    rev: p.rev,
+    frame: { url: `panelyth-media://m/${"e".repeat(32)}`, width: 4, height: 3 },
+    output: { width: 40, height: 30, dpi: { x: 0, y: 0 } },
+  })),
+  "edit.save": vi.fn(async () => ({ jobId: 5, name: "a (edited).jpg" })),
+  "edit.reveal": vi.fn(async () => ({ ok: true })),
+  "edit.thumbs": vi.fn(async () => ({ thumbs: [] })),
+  "asset.pick": vi.fn(async () => ({ asset: null })),
+  "asset.release": vi.fn(async () => ({ ok: true })),
+  "batch.pickFolder": vi.fn(async () => ({ folder: null })),
+  "batch.plan": vi.fn(async () => ({
+    count: 2,
+    skipped: [],
+    names: ["a-edited.jpg"],
+    bytes: 10,
+    estimateBytes: 5,
+    warnings: [],
+    problems: [],
+    samples: [{ id: 3, name: "a.jpg" }],
+  })),
+  "batch.start": vi.fn(async () => ({ jobId: 9 }) as never),
 })
 
 function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
@@ -187,6 +215,76 @@ describe("invoke router", () => {
         e: { code: "INVALID_ARGUMENT" },
       })
     }
+  })
+
+  it("gives the commander the command line and user commands; the viewer neither (Stage C10)", async () => {
+    const { handler, main, sidecar, commander, ok } = setup()
+    const sel = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    for (const [m, p] of [
+      ["shell.run", { command: "git status", dirId: 7 }],
+      // An empty line with the console flag: a console in the folder.
+      ["shell.run", { command: "", dirId: 7, console: true }],
+      ["shell.run", { command: 'echo "a & b" > %TEMP%\\x', dirId: 7, console: true }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7 }],
+      [
+        "shell.runTool",
+        { toolId: "ab12cd34", dirId: 7, otherDirId: 8, cursorId: 9, selection: sel },
+      ],
+    ] as const) {
+      await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
+      expect(main[m]).toHaveBeenLastCalledWith(commander, p, "commander")
+    }
+    // Main runs them itself: nothing is forwarded to the sidecar by the router.
+    expect(sidecar.call).not.toHaveBeenCalled()
+    // The viewer's profile has neither.
+    for (const [m, p] of [
+      ["shell.run", { command: "calc", dirId: 7 }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7 }],
+    ] as const) {
+      await expect(handler(ok, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    // The viewer cannot plant a user command for the commander to run.
+    await expect(
+      handler(ok, "library.setSetting", {
+        key: "commander.tools",
+        value: { v: 1, commands: [{ id: "x", title: "x", command: "calc" }] },
+      }),
+    ).resolves.toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    expect(main["shell.run"]).toHaveBeenCalledTimes(3)
+    // Validation: one line of text, folder and entry ids, a tool id; never a path or a program.
+    for (const [m, p] of [
+      ["shell.run", { command: "", dirId: 7 }],
+      ["shell.run", { command: "   ", dirId: 7 }],
+      ["shell.run", { command: "", dirId: 7, console: false }],
+      ["shell.run", { command: "a\nb", dirId: 7 }],
+      ["shell.run", { command: "a\u0000b", dirId: 7 }],
+      ["shell.run", { command: "x".repeat(2049), dirId: 7 }],
+      ["shell.run", { command: 5, dirId: 7 }],
+      ["shell.run", { command: "dir", dirId: 0 }],
+      ["shell.run", { command: "dir" }],
+      ["shell.run", { command: "dir", dirId: 7, cwd: "C:\\Windows" }],
+      ["shell.run", { command: "dir", dirId: 7, console: "yes" }],
+      ["shell.run", { command: "dir", dirId: 7, env: { PATH: "x" } }],
+      ["shell.runTool", { toolId: "../x", dirId: 7 }],
+      ["shell.runTool", { toolId: "", dirId: 7 }],
+      ["shell.runTool", { toolId: "ab12cd34" }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7, command: "calc" }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7, params: "%P" }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7, cursorId: -1 }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7, otherDirId: "C:\\" }],
+      ["shell.runTool", { toolId: "ab12cd34", dirId: 7, selection: { paths: ["C:\\x"] } }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    expect(main["shell.run"]).toHaveBeenCalledTimes(3)
+    expect(main["shell.runTool"]).toHaveBeenCalledTimes(2)
   })
 
   it("gives the commander find files, branch scans and Go to file; the viewer none of them (Stage C06)", async () => {
@@ -370,6 +468,255 @@ describe("invoke router", () => {
     expect(
       await handler(ok, "query.open", { ...descriptor, scope: undefined, archiveDirId: undefined }),
     ).toMatchObject({ ok: false })
+  })
+
+  it("checks compare methods and jobs (Stage C08)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const sel = { queryId: 2, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    const options = { toleranceMs: 2000, dst: false, ignoreDates: false }
+    const dirs = { leftDirId: 3, rightDirId: 4, ...options, content: false, asymmetric: true }
+    const marks = { leftQueryId: 5, rightQueryId: 6, ...options }
+    const list = {
+      kind: "hashCreate",
+      source: { selection: sel },
+      algorithm: "sha256",
+      perFile: false,
+      destinationDirId: 4,
+      name: "sums.sha256",
+    }
+    for (const [m, p] of [
+      ["compare.dirs", dirs],
+      ["compare.cancel", { compareId: 1 }],
+      ["compare.close", { compareId: 1 }],
+      ["compare.plan", { compareId: 1 }],
+      ["compare.show", { compareId: 1, show: ["copyRight", "delete"] }],
+      ["compare.show", { compareId: 1, show: [] }],
+      ["compare.setAction", { compareId: 1, selection: sel, action: "copyLeft" }],
+      ["compare.setAction", { compareId: 1, selection: sel, action: "default" }],
+      ["compare.marks", marks],
+      ["diff.open", { leftId: 7, rightId: 8 }],
+      ["diff.page", { diffId: 1, offset: 0, limit: 500 }],
+      ["diff.close", { diffId: 1 }],
+      ["jobs.start", { kind: "sync", compareId: 1, planVersion: 3 }],
+      ["jobs.start", { kind: "sync", compareId: 1, planVersion: 3, deletePermanently: true }],
+      ["jobs.start", list],
+      [
+        "jobs.start",
+        { kind: "hashCreate", source: { selection: sel }, algorithm: "crc32", perFile: true },
+      ],
+      ["jobs.start", { kind: "hashVerify", source: { selection: sel } }],
+      ["jobs.start", { kind: "compareFiles", leftId: 7, rightId: 8 }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
+      // Nothing is added for these: no copyLinks, no paths.
+      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+    }
+    for (const [m, p] of [
+      ["compare.dirs", { ...dirs, leftDirId: 0 }],
+      // The roots are folder ids, never paths: a sync writes to them.
+      ["compare.dirs", { ...dirs, leftDirId: "/home/me", left: "/home/me" }],
+      ["compare.dirs", { ...dirs, toleranceMs: 60_001 }],
+      ["compare.dirs", { ...dirs, toleranceMs: -1 }],
+      ["compare.dirs", { ...dirs, asymmetric: "yes" }],
+      ["compare.dirs", { ...dirs, mask: "*.txt" }],
+      ["compare.cancel", {}],
+      ["compare.show", { compareId: 1, show: ["everything"] }],
+      ["compare.show", { compareId: 1, show: "equal" }],
+      ["compare.setAction", { compareId: 1, selection: sel, action: "shred" }],
+      [
+        "compare.setAction",
+        { compareId: 1, selection: { ...sel, ranges: [[3, 1]] }, action: "none" },
+      ],
+      ["compare.marks", { ...marks, rightQueryId: 5 }],
+      ["compare.marks", { ...marks, dst: 1 }],
+      ["diff.open", { leftId: 7 }],
+      ["diff.open", { leftId: 7, rightId: 8, path: "/etc/passwd" }],
+      ["diff.page", { diffId: 1, offset: 0, limit: 501 }],
+      ["diff.page", { diffId: 1, offset: -1, limit: 10 }],
+      ["jobs.start", { kind: "sync", compareId: 1 }],
+      ["jobs.start", { kind: "sync", compareId: 1, planVersion: 0 }],
+      // A sync takes no selection and no paths: only the confirmed plan.
+      ["jobs.start", { kind: "sync", compareId: 1, planVersion: 3, source: { selection: sel } }],
+      ["jobs.start", { kind: "sync", compareId: 1, planVersion: 3, right: "/tmp" }],
+      ["jobs.start", { ...list, algorithm: "sha512" }],
+      ["jobs.start", { ...list, name: "" }],
+      ["jobs.start", { ...list, destinationDirId: undefined }],
+      ["jobs.start", { ...list, perFile: true }],
+      ["jobs.start", { ...list, destination: "/tmp" }],
+      ["jobs.start", { kind: "hashVerify" }],
+      ["jobs.start", { kind: "compareFiles", leftId: 7 }],
+      ["jobs.start", { kind: "compareFiles", leftId: 7, rightId: 8, source: { selection: sel } }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer compares nothing.
+    for (const m of [
+      "compare.dirs",
+      "compare.cancel",
+      "compare.close",
+      "compare.show",
+      "compare.setAction",
+      "compare.plan",
+      "compare.marks",
+      "diff.open",
+      "diff.page",
+      "diff.close",
+    ]) {
+      const res = await handler(ok, m, { compareId: 1 })
+      expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    }
+    for (const p of [
+      { kind: "sync", compareId: 1, planVersion: 3 },
+      { kind: "hashVerify", source: { selection: sel } },
+      { kind: "compareFiles", leftId: 7, rightId: 8 },
+      { kind: "hashCreate", source: { selection: sel }, algorithm: "md5", perFile: true },
+    ]) {
+      expect(await handler(ok, "jobs.start", p), p.kind).toMatchObject({
+        ok: false,
+        e: { code: "PERMISSION_DENIED" },
+      })
+    }
+    // The compare's progress is forwarded like the other sidecar events.
+    const progress = {
+      compareId: 1,
+      state: "running",
+      phase: "listing",
+      dirs: 2,
+      entries: 10,
+      compared: 0,
+      bytes: 0,
+      errors: 0,
+      links: 0,
+      rows: 4,
+      truncated: false,
+      elapsedMs: 12,
+    }
+    expect(
+      forwardableEvent({ t: "evt", ch: "compare.progress", seq: 1, p: progress }),
+    ).toMatchObject({ ch: "compare.progress" })
+    expect(
+      forwardableEvent({
+        t: "evt",
+        ch: "compare.progress",
+        seq: 2,
+        p: { ...progress, phase: "?" },
+      }),
+    ).toBeNull()
+  })
+
+  it("checks the multi-rename preview and the rename and attribute jobs (Stage C09)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const sel = { queryId: 2, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+    const plan = {
+      nameMask: "[N]-[C]",
+      extMask: "[E]",
+      search: "",
+      replace: "",
+      regex: false,
+      matchCase: false,
+      case: "",
+      start: 1,
+      step: 1,
+      digits: 2,
+    }
+    const preview = { selection: sel, plan, offset: 0, limit: 200 }
+    const attrs = { kind: "setAttributes", source: { selection: sel } }
+    for (const [m, p] of [
+      ["rename.preview", preview],
+      ["rename.preview", { ...preview, plan: { ...plan, case: "words", start: -5, step: -1 } }],
+      ["rename.undoInfo", {}],
+      ["jobs.start", { kind: "multiRename", source: { selection: sel }, plan }],
+      ["jobs.start", { kind: "undoRename" }],
+      ["jobs.start", { ...attrs, setAttrs: 4, clearAttrs: 1 | 8 }],
+      ["jobs.start", { ...attrs, setMode: 0o400, clearMode: 0o022, recursive: true }],
+      [
+        "jobs.start",
+        { ...attrs, modifiedMs: Date.UTC(2024, 0, 2), accessedMs: Date.UTC(2024, 0, 3) },
+      ],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
+      // Nothing is added for these: no copyLinks, no paths.
+      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+    }
+    for (const [m, p] of [
+      ["rename.preview", { ...preview, limit: 0 }],
+      ["rename.preview", { ...preview, limit: 501 }],
+      ["rename.preview", { ...preview, offset: -1 }],
+      ["rename.preview", { ...preview, plan: { ...plan, case: "title" } }],
+      ["rename.preview", { ...preview, plan: { ...plan, digits: 0 } }],
+      ["rename.preview", { ...preview, plan: { ...plan, digits: 11 } }],
+      ["rename.preview", { ...preview, plan: { ...plan, step: 1_000_001 } }],
+      ["rename.preview", { ...preview, plan: { ...plan, nameMask: "x".repeat(256) } }],
+      ["rename.preview", { ...preview, plan: { ...plan, search: "a\0b" } }],
+      ["rename.preview", { ...preview, plan: { ...plan, regex: "yes" } }],
+      // A plan is exactly its fields: no folder, no list of names.
+      ["rename.preview", { ...preview, plan: { ...plan, folder: "/tmp" } }],
+      ["rename.preview", { ...preview, names: ["a", "b"] }],
+      ["rename.preview", { ...preview, selection: { ...sel, ranges: [[3, 1]] } }],
+      ["rename.undoInfo", { jobId: 1 }],
+      ["jobs.start", { kind: "multiRename", source: { selection: sel } }],
+      ["jobs.start", { kind: "multiRename", plan }],
+      [
+        "jobs.start",
+        { kind: "multiRename", source: { selection: sel }, plan, destination: "/tmp" },
+      ],
+      [
+        "jobs.start",
+        { kind: "multiRename", source: { selection: sel }, plan: { ...plan, start: 1.5 } },
+      ],
+      // An undo takes nothing: it undoes what Go recorded, not what a renderer says.
+      ["jobs.start", { kind: "undoRename", source: { selection: sel } }],
+      ["jobs.start", { kind: "undoRename", names: [["b", "a"]] }],
+      ["jobs.start", attrs],
+      ["jobs.start", { ...attrs, recursive: true }],
+      ["jobs.start", { ...attrs, setAttrs: 4, clearAttrs: 4 }],
+      ["jobs.start", { ...attrs, setAttrs: 16 }],
+      ["jobs.start", { ...attrs, clearAttrs: 32 }],
+      ["jobs.start", { ...attrs, setMode: 0o1000 }],
+      ["jobs.start", { ...attrs, setMode: 0o600, clearMode: 0o200 }],
+      ["jobs.start", { ...attrs, modifiedMs: Date.UTC(1979, 11, 31) }],
+      ["jobs.start", { ...attrs, accessedMs: Date.UTC(10_000, 0, 1) }],
+      ["jobs.start", { ...attrs, modifiedMs: "now" }],
+      ["jobs.start", { ...attrs, setAttrs: 1, recursive: 1 }],
+      ["jobs.start", { ...attrs, setAttrs: 1, path: "C:\\Windows" }],
+      ["jobs.start", { kind: "setAttributes", setAttrs: 1 }],
+    ] as const) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer keeps its own batch rename and has none of this.
+    for (const m of ["rename.preview", "rename.undoInfo"]) {
+      const res = await handler(ok, m, {})
+      expect(res, m).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    }
+    for (const p of [
+      { kind: "multiRename", source: { selection: sel }, plan },
+      { kind: "undoRename" },
+      { ...attrs, setAttrs: 1 },
+    ]) {
+      expect(await handler(ok, "jobs.start", p), p.kind).toMatchObject({
+        ok: false,
+        e: { code: "PERMISSION_DENIED" },
+      })
+    }
+    // The viewer's pattern rename is not the commander's.
+    expect(
+      await handler(commander, "jobs.start", {
+        kind: "rename",
+        source: { selection: sel },
+        pattern: "{name} {n}",
+        start: 1,
+      }),
+    ).toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
   })
 
   it("lets the commander list folders in the all scope (Stage C01)", async () => {
@@ -1098,5 +1445,552 @@ describe("sidecar event forwarding", () => {
     expect(
       forwardableEvent({ t: "evt", ch: "index.progress", seq: 1, p: { ...progress, state: "?" } }),
     ).toBeNull()
+  })
+})
+
+describe("the image editor's methods (Stage 12, ADR-0035)", () => {
+  const SESSION = "0123456789abcdef01234567"
+  const list = [{ op: "rotate", p: { angle: 90 } }]
+  const render = {
+    sessionId: SESSION,
+    rev: 1,
+    editList: list,
+    view: { maxEdge: 1200 },
+    quality: "draft",
+    histogram: true,
+  }
+  const save = {
+    sessionId: SESSION,
+    editList: list,
+    target: "copy",
+    format: "jpeg",
+    quality: 92,
+    metadata: "keep",
+    dpi: 0,
+  }
+  const estimate = {
+    sessionId: SESSION,
+    editList: list,
+    format: "png",
+    quality: 0,
+    metadata: "strip",
+  }
+
+  it("serves the viewer and adds the calling window to edit.open", async () => {
+    const { handler, sidecar, main, ok } = setup()
+    await expect(handler(ok, "edit.open", { entryId: 9 })).resolves.toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenLastCalledWith("edit.open", { entryId: 9, owner: 1 })
+    await expect(handler(ok, "edit.render", render)).resolves.toMatchObject({
+      ok: true,
+      r: { rev: 1, frame: { width: 4 } },
+    })
+    expect(main["edit.render"]).toHaveBeenCalledWith(ok, render, "viewer")
+    await expect(handler(ok, "edit.save", save)).resolves.toEqual({
+      ok: true,
+      r: { jobId: 5, name: "a (edited).jpg" },
+    })
+    for (const [m, p] of [
+      ["edit.info", { sessionId: SESSION }],
+      ["edit.close", { sessionId: SESSION }],
+      ["edit.estimate", estimate],
+      ["edit.saved", { jobId: 5 }],
+      ["edit.reveal", { jobId: 5 }],
+    ] as const) {
+      await expect(handler(ok, m, p), m).resolves.toMatchObject({ ok: true })
+    }
+  })
+
+  it("refuses every edit method from the commander's view, and the sidecar-side ones from anyone", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    for (const [m, p] of [
+      ["edit.open", { entryId: 9 }],
+      ["edit.render", render],
+      ["edit.info", { sessionId: SESSION }],
+      ["edit.estimate", estimate],
+      ["edit.save", save],
+      ["edit.close", { sessionId: SESSION }],
+      ["edit.saved", { jobId: 5 }],
+      ["edit.reveal", { jobId: 5 }],
+    ] as const) {
+      await expect(handler(commander, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    // What main calls in the sidecar (a frame file, a save path) is not a renderer method.
+    for (const m of ["edit.frame", "edit.write", "edit.source", "edit.savedPath"]) {
+      for (const from of [ok, commander]) {
+        await expect(handler(from, m, {}), m).resolves.toMatchObject({
+          ok: false,
+          e: { code: "METHOD_NOT_FOUND" },
+        })
+      }
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+    expect(main["edit.render"]).not.toHaveBeenCalled()
+    expect(main["edit.save"]).not.toHaveBeenCalled()
+  })
+
+  it("lets a renderer name neither the owner nor a path", async () => {
+    const { handler, sidecar, ok } = setup()
+    for (const p of [
+      { entryId: 9, owner: 77 },
+      { entryId: 0 },
+      { entryId: "9" },
+      { path: "C:\\x.jpg" },
+      {},
+    ]) {
+      await expect(handler(ok, "edit.open", p)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    for (const extra of [{ path: "C:\\out.jpg" }, { destination: "/tmp/x.jpg" }, { owner: 1 }]) {
+      await expect(handler(ok, "edit.save", { ...save, ...extra })).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["a session id that is not one", { ...render, sessionId: "../../etc" }],
+    ["a session id of the wrong length", { ...render, sessionId: "abc" }],
+    ["revision zero", { ...render, rev: 0 }],
+    ["a fractional revision", { ...render, rev: 1.5 }],
+    ["no view", { ...render, view: {} }],
+    ["a huge view", { ...render, view: { maxEdge: 1e9 } }],
+    ["a view with extras", { ...render, view: { maxEdge: 100, rect: [0, 0, 1, 1] } }],
+    ["an unknown quality", { ...render, quality: "best" }],
+    ["a histogram flag that is not a boolean", { ...render, histogram: "yes" }],
+    ["an edit list that is not a list", { ...render, editList: "[]" }],
+    ["an unknown operation", { ...render, editList: [{ op: "shell", p: { cmd: "calc" } }] }],
+    ["NaN in an operation", { ...render, editList: [{ op: "rotate", p: { angle: Number.NaN } }] }],
+    ["extra keys on an operation", { ...render, editList: [{ op: "flip", p: {}, run: 1 }] }],
+    ["too many operations", { ...render, editList: Array.from({ length: 513 }, () => list[0]) }],
+    ["an extra parameter", { ...render, file: "x" }],
+  ])("refuses a render with %s", async (_name, params) => {
+    const { handler, main, ok } = setup()
+    await expect(handler(ok, "edit.render", params)).resolves.toMatchObject({
+      ok: false,
+      e: { code: "INVALID_ARGUMENT" },
+    })
+    expect(main["edit.render"]).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    ["an unknown target", { ...save, target: "overwrite" }],
+    ["an unknown format", { ...save, format: "webp" }],
+    ["a quality out of range", { ...save, quality: 101 }],
+    ["a fractional quality", { ...save, quality: 80.5 }],
+    ["an unknown metadata policy", { ...save, metadata: "all" }],
+    ["a negative resolution", { ...save, dpi: -1 }],
+    ["a huge resolution", { ...save, dpi: 1e6 }],
+    ["a resolution that is not a number", { ...save, dpi: "300" }],
+    ["a hostile edit list", { ...save, editList: [{ op: "crop", p: { rect: null } }] }],
+  ])("refuses a save with %s", async (_name, params) => {
+    const { handler, main, ok } = setup()
+    await expect(handler(ok, "edit.save", params)).resolves.toMatchObject({
+      ok: false,
+      e: { code: "INVALID_ARGUMENT" },
+    })
+    expect(main["edit.save"]).not.toHaveBeenCalled()
+  })
+
+  it("lets only the commander hand a picture to the viewer's editor", async () => {
+    const { handler, main, commander, ok } = setup()
+    await expect(handler(commander, "app.switch", { to: "viewer", edit: 12 })).resolves.toEqual({
+      ok: true,
+      r: { ok: true },
+    })
+    expect(main["app.switch"]).toHaveBeenLastCalledWith(
+      commander,
+      { to: "viewer", edit: 12 },
+      "commander",
+    )
+    for (const [from, p] of [
+      [ok, { to: "commander", edit: 12 }],
+      [ok, { to: "viewer", edit: 12 }],
+      [commander, { to: "commander", edit: 12 }],
+    ] as const) {
+      await expect(handler(from, "app.switch", p)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "PERMISSION_DENIED" },
+      })
+    }
+    for (const edit of [0, -1, 1.5, "12", null]) {
+      await expect(handler(commander, "app.switch", { to: "viewer", edit })).resolves.toMatchObject(
+        {
+          ok: false,
+          e: { code: "INVALID_ARGUMENT" },
+        },
+      )
+    }
+    expect(main["app.switch"]).toHaveBeenCalledTimes(1)
+  })
+
+  it("serves the Stage 13 methods to the viewer only, with every parameter checked", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    const tone = [
+      {
+        op: "levels",
+        p: { l: { inBlack: 10, inWhite: 240, gamma: 1.1, outBlack: 0, outWhite: 255 } },
+      },
+      {
+        op: "curves",
+        p: {
+          l: [
+            [0, 0],
+            [128, 140],
+            [255, 255],
+          ],
+        },
+      },
+    ]
+    const probe = {
+      sessionId: SESSION,
+      editList: tone,
+      view: { maxEdge: 900 },
+      x: 0.5,
+      y: 0.25,
+      radius: 2,
+    }
+    const thumbs = { sessionId: SESSION, editLists: [[], tone], edge: 120 }
+    const colors = { sessionId: SESSION, editList: tone, scope: "edited", maxColors: 16 }
+    await expect(handler(ok, "edit.probe", probe)).resolves.toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenLastCalledWith("edit.probe", probe)
+    await expect(handler(ok, "edit.colors", colors)).resolves.toMatchObject({ ok: true })
+    await expect(handler(ok, "edit.thumbs", thumbs)).resolves.toEqual({
+      ok: true,
+      r: { thumbs: [] },
+    })
+    expect(main["edit.thumbs"]).toHaveBeenCalledWith(ok, thumbs, "viewer")
+    await expect(
+      handler(ok, "edit.render", { ...render, editList: tone, histogramAt: 1 }),
+    ).resolves.toMatchObject({ ok: true })
+    for (const [m, p] of [
+      ["edit.probe", probe],
+      ["edit.thumbs", thumbs],
+      ["edit.colors", colors],
+      ["edit.thumbFrames", thumbs],
+    ] as const) {
+      await expect(handler(commander, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    await expect(handler(ok, "edit.thumbFrames", thumbs)).resolves.toMatchObject({
+      ok: false,
+      e: { code: "METHOD_NOT_FOUND" },
+    })
+    for (const [m, p] of [
+      ["edit.probe", { ...probe, x: 1.5 }],
+      ["edit.probe", { ...probe, y: Number.NaN }],
+      ["edit.probe", { ...probe, radius: 99 }],
+      ["edit.probe", { ...probe, view: { maxEdge: 0 } }],
+      ["edit.probe", { ...probe, editList: [{ op: "exec", p: {} }] }],
+      ["edit.thumbs", { ...thumbs, edge: 4000 }],
+      ["edit.thumbs", { ...thumbs, editLists: Array.from({ length: 17 }, () => []) }],
+      ["edit.thumbs", { ...thumbs, editLists: [[{ op: "flip", p: { axis: null } }]] }],
+      ["edit.thumbs", { ...thumbs, editLists: "all" }],
+      ["edit.colors", { ...colors, scope: "everything" }],
+      ["edit.colors", { ...colors, maxColors: 0 }],
+      ["edit.colors", { ...colors, maxColors: 1000 }],
+      ["edit.colors", { ...colors, path: "C:\\x" }],
+      ["edit.render", { ...render, histogramAt: -1 }],
+      ["edit.render", { ...render, histogramAt: 1.5 }],
+      ["edit.render", { ...render, histogramAt: 100000 }],
+    ] as const) {
+      await expect(handler(ok, m, p), JSON.stringify(p).slice(0, 80)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+  })
+
+  it("gives the viewer effects, fonts and picked assets; the commander none of them (Stage 14)", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    const ASSET = "0123456789abcdef0123456789abcdef"
+    const effects = [
+      { op: "border", p: { style: "polaroid", width: 5, color: "#ffffff" } },
+      { op: "frameMask", p: { shape: "custom", assetId: ASSET, feather: 2 } },
+      { op: "watermark", p: { text: "© {year} {name}", size: 6, font: "Go", anchor: "se" } },
+      { op: "bump", p: { height: 40, source: "texture", assetId: ASSET, tile: true } },
+      { op: "sketch", p: { style: "pencil", detail: 60 } },
+      { op: "oil", p: { radius: 4 } },
+      { op: "lens", p: { mode: "bulge", amount: 50, cx: 0.4, cy: 0.6 } },
+      {
+        op: "obscure",
+        p: {
+          method: "mosaic",
+          strength: 60,
+          shape: "polygon",
+          points: [
+            [0.1, 0.1],
+            [0.5, 0.2],
+            [0.3, 0.7],
+          ],
+        },
+      },
+    ]
+    // The operations are known to the structural check; Go checks what they mean.
+    await expect(
+      handler(ok, "edit.render", { ...render, editList: effects }),
+    ).resolves.toMatchObject({
+      ok: true,
+    })
+    await expect(handler(ok, "edit.fonts", { sessionId: SESSION })).resolves.toMatchObject({
+      ok: true,
+    })
+    expect(sidecar.call).toHaveBeenLastCalledWith("edit.fonts", { sessionId: SESSION })
+    // The dialog and the path are main's: the renderer sends a session id and nothing else.
+    await expect(handler(ok, "asset.pick", { sessionId: SESSION })).resolves.toEqual({
+      ok: true,
+      r: { asset: null },
+    })
+    expect(main["asset.pick"]).toHaveBeenCalledWith(ok, { sessionId: SESSION }, "viewer")
+    await expect(
+      handler(ok, "asset.release", { sessionId: SESSION, assetId: ASSET }),
+    ).resolves.toMatchObject({ ok: true })
+    for (const [m, p] of [
+      ["asset.pick", { sessionId: SESSION, path: "C:\\logo.png" }],
+      ["asset.pick", { sessionId: "nope" }],
+      ["asset.pick", {}],
+      ["asset.release", { sessionId: SESSION, assetId: "../../etc/passwd" }],
+      ["asset.release", { sessionId: SESSION, assetId: ASSET.toUpperCase() }],
+      ["asset.release", { sessionId: SESSION }],
+      ["edit.fonts", { sessionId: SESSION, family: "Arial" }],
+      ["edit.render", { ...render, editList: [{ op: "border", p: { width: Number.NaN } }] }],
+      [
+        "edit.render",
+        { ...render, editList: [{ op: "watermark", p: { text: "x".repeat(5000) } }] },
+      ],
+    ] as const) {
+      await expect(handler(ok, m, p), JSON.stringify(p).slice(0, 80)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // No renderer names a file for an asset: the sidecar methods that take a path are main's.
+    for (const view of [ok, commander]) {
+      for (const [m, p] of [
+        ["edit.assetAdd", { sessionId: SESSION, path: "C:\\logo.png" }],
+        ["edit.assetDrop", { sessionId: SESSION, assetId: ASSET }],
+      ] as const) {
+        await expect(handler(view, m, p), m).resolves.toMatchObject({
+          ok: false,
+          e: { code: "METHOD_NOT_FOUND" },
+        })
+      }
+    }
+    for (const [m, p] of [
+      ["asset.pick", { sessionId: SESSION }],
+      ["asset.release", { sessionId: SESSION, assetId: ASSET }],
+      ["edit.fonts", { sessionId: SESSION }],
+    ] as const) {
+      await expect(handler(commander, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    expect(main["asset.pick"]).toHaveBeenCalledTimes(1)
+  })
+
+  it("lets the viewer draw and retouch and find red eyes; the commander not (Stage 15)", async () => {
+    const { handler, sidecar, commander, ok } = setup()
+    const strokes = [
+      {
+        op: "draw",
+        p: {
+          strokes: [
+            {
+              tool: "brush",
+              color: "#ff0000",
+              size: 4,
+              points: [
+                [0.1, 0.1],
+                [0.5, 0.5, 0.8],
+              ],
+            },
+            { tool: "text", size: 6, text: "{name}", points: [[0.2, 0.2]] },
+          ],
+        },
+      },
+      { op: "clone", p: { size: 5, source: [0.2, 0.2], points: [[0.6, 0.6]] } },
+      { op: "heal", p: { size: 4, points: [[0.5, 0.5]] } },
+      { op: "redeye", p: { rect: { x: 0.4, y: 0.4, w: 0.05, h: 0.05 } } },
+    ]
+    await expect(
+      handler(ok, "edit.render", { ...render, editList: strokes }),
+    ).resolves.toMatchObject({
+      ok: true,
+    })
+    const eyes = { sessionId: SESSION, editList: strokes }
+    await expect(handler(ok, "edit.eyes", eyes)).resolves.toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenLastCalledWith("edit.eyes", eyes)
+    await expect(handler(commander, "edit.eyes", eyes)).resolves.toMatchObject({
+      ok: false,
+      e: { code: "METHOD_NOT_FOUND" },
+    })
+    for (const p of [
+      { sessionId: SESSION },
+      { sessionId: "nope", editList: [] },
+      { sessionId: SESSION, editList: [{ op: "spray", p: {} }] },
+      { sessionId: SESSION, editList: [], rect: { x: 0, y: 0, w: 1, h: 1 } },
+      {
+        sessionId: SESSION,
+        editList: [
+          { op: "draw", p: { strokes: [{ tool: "brush", size: 1, points: [[0.5, Number.NaN]] }] } },
+        ],
+      },
+    ]) {
+      await expect(
+        handler(ok, "edit.eyes", p),
+        JSON.stringify(p).slice(0, 80),
+      ).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+  })
+
+  it("runs a batch for the viewer only, with the recipe checked and no path from a renderer (Stage 16)", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    const source = {
+      selection: { queryId: 1, version: 1, ranges: [[0, 200]], include: [], exclude: [] },
+    }
+    const output = {
+      format: "jpeg",
+      quality: 85,
+      metadata: "keep",
+      destination: "folder",
+      template: "{n:3}-{name}",
+      conflict: "keepBoth",
+    }
+    const recipe = {
+      version: 1,
+      ops: [
+        { op: "resize", p: { mode: "fit", w: 1600, h: 1600, noEnlarge: true } },
+        { op: "watermark", p: { text: "© {year}", size: 4, anchor: "se" } },
+      ],
+      output,
+    }
+    const FOLDER = "0123456789abcdef"
+    const batch = { source, recipe, folderId: FOLDER }
+    await expect(handler(ok, "batch.pickFolder", {})).resolves.toEqual({
+      ok: true,
+      r: { folder: null },
+    })
+    await expect(handler(ok, "batch.plan", batch)).resolves.toMatchObject({
+      ok: true,
+      r: { count: 2 },
+    })
+    expect(main["batch.plan"]).toHaveBeenCalledWith(ok, batch, "viewer")
+    await expect(handler(ok, "batch.start", { source, recipe })).resolves.toMatchObject({
+      ok: true,
+    })
+    await expect(handler(ok, "batch.undo", { jobId: 9 })).resolves.toMatchObject({ ok: true })
+    expect(sidecar.call).toHaveBeenLastCalledWith("batch.undo", { jobId: 9 })
+    await expect(handler(ok, "recipe.list", {})).resolves.toMatchObject({ ok: true })
+    await expect(handler(ok, "recipe.save", { id: 0, name: "Web", recipe })).resolves.toMatchObject(
+      { ok: true },
+    )
+    await expect(handler(ok, "recipe.delete", { id: 4 })).resolves.toMatchObject({ ok: true })
+
+    const bad = (change: object): object => ({ ...recipe, ...change })
+    const out = (change: object): object => ({ ...recipe, output: { ...output, ...change } })
+    for (const [m, p] of [
+      // A folder is a handle of main's, never a path.
+      ["batch.start", { source, recipe, folder: "C:\\out" }],
+      ["batch.start", { source, recipe, folderId: "C:\\out" }],
+      ["batch.plan", { source, recipe, folderId: "../../x" }],
+      ["batch.pickFolder", { defaultPath: "C:\\" }],
+      ["batch.start", { recipe }],
+      ["batch.start", { source: { ids: [1, 2] }, recipe }],
+      // Free-hand tools, unknown operations and too many of them.
+      ["batch.start", { source, recipe: bad({ ops: [{ op: "draw", p: { strokes: [] } }] }) }],
+      ["batch.start", { source, recipe: bad({ ops: [{ op: "heal", p: {} }] }) }],
+      ["batch.plan", { source, recipe: bad({ ops: [{ op: "shell", p: { cmd: "calc" } }] }) }],
+      [
+        "batch.start",
+        { source, recipe: bad({ ops: Array.from({ length: 65 }, () => recipe.ops[0]) }) },
+      ],
+      ["batch.start", { source, recipe: bad({ version: 2 }) }],
+      ["batch.start", { source, recipe: bad({ run: "calc.exe" }) }],
+      // The output: nothing that names a place, and only known rules.
+      ["batch.start", { source, recipe: out({ folder: "C:\\out" }) }],
+      ["batch.start", { source, recipe: out({ template: "..\\{name}" }) }],
+      ["batch.start", { source, recipe: out({ template: "sub/{name}" }) }],
+      ["batch.start", { source, recipe: out({ template: "{name}-{who}" }) }],
+      ["batch.start", { source, recipe: out({ template: "x".repeat(121) }) }],
+      ["batch.start", { source, recipe: out({ format: "exe" }) }],
+      ["batch.start", { source, recipe: out({ quality: 500 }) }],
+      ["batch.start", { source, recipe: out({ metadata: "everything" }) }],
+      ["batch.start", { source, recipe: out({ destination: "C:\\out" }) }],
+      ["batch.start", { source, recipe: out({ destination: "replace" }) }],
+      ["batch.start", { source, recipe: out({ conflict: "ask" }) }],
+      ["batch.start", { source, recipe: out({ dpi: -1 }) }],
+      ["batch.undo", { jobId: "9" }],
+      ["batch.undo", { jobId: 9, path: "C:\\x" }],
+      ["recipe.save", { id: 0, name: "", recipe }],
+      ["recipe.save", { id: 0, name: "n".repeat(81), recipe }],
+      ["recipe.save", { id: -1, name: "x", recipe }],
+      ["recipe.save", { id: 0, name: "x", recipe: bad({ ops: [{ op: "clone", p: {} }] }) }],
+      ["recipe.save", { id: 0, name: "x", recipe, path: "C:\\recipes\\x.json" }],
+      ["recipe.delete", { id: 0 }],
+      ["recipe.list", { all: true }],
+    ] as const) {
+      await expect(handler(ok, m, p), JSON.stringify(p).slice(0, 90)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // Replacing the originals is allowed when they keep their format.
+    await expect(
+      handler(ok, "batch.start", {
+        source,
+        recipe: out({ destination: "replace", format: "keep", template: undefined }),
+      }),
+    ).resolves.toMatchObject({ ok: true })
+    // The sidecar's own methods take a path: no renderer reaches them.
+    for (const view of [ok, commander]) {
+      for (const m of ["edit.plan", "edit.batch"] as const) {
+        await expect(
+          handler(view, m, { source, recipe, folder: "C:\\out" }),
+          m,
+        ).resolves.toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+      }
+    }
+    // The commander has no batch editing (ADR-0027).
+    for (const [m, p] of [
+      ["batch.pickFolder", {}],
+      ["batch.plan", batch],
+      ["batch.start", batch],
+      ["batch.undo", { jobId: 9 }],
+      ["recipe.list", {}],
+      ["recipe.save", { id: 0, name: "Web", recipe }],
+      ["recipe.delete", { id: 4 }],
+    ] as const) {
+      await expect(handler(commander, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    expect(main["batch.start"]).toHaveBeenCalledTimes(2)
+    expect(main["batch.pickFolder"]).toHaveBeenCalledTimes(1)
+  })
+
+  it("does not let a renderer start the save job directly", async () => {
+    const { handler, sidecar, ok, commander } = setup()
+    const sel = { queryId: 1, version: 1, ranges: [[0, 1]], include: [], exclude: [] }
+    for (const from of [ok, commander]) {
+      // Nor a batch edit or its undo (Stage 16): those go through batch.start and batch.undo.
+      for (const kind of ["editSave", "edit", "undoEdit"]) {
+        const res = await handler(from, "jobs.start", { kind, source: { selection: sel } })
+        expect(res, kind).toMatchObject({ ok: false })
+      }
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
   })
 })

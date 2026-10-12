@@ -1,0 +1,10 @@
+{
+  "e": {
+    "code": "EDIT_SESSION_GONE",
+    "message": "the editing session has ended; open the picture again",
+    "retryable": false
+  },
+  "id": 190,
+  "ok": false,
+  "t": "res"
+}

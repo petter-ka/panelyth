@@ -1,0 +1,6 @@
+{"at":"2026-10-11T15:11:33.046Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[337,317,319],"ms":317,"budgetMs":3000,"status":"Compared 202,055 entries in 0.3 s.","mountedRows":24}
+{"at":"2026-10-11T15:11:57.315Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[321,262,325],"ms":262,"budgetMs":3000,"status":"Compared 202,055 entries in 0.3 s.","mountedRows":24}
+{"at":"2026-10-11T15:23:24.143Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[268,240,242],"ms":240,"budgetMs":3000,"status":"Compared 202,055 entries in 0.2 s.","mountedRows":24}
+{"at":"2026-10-11T16:20:20.936Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[260,254,255],"ms":254,"budgetMs":3000,"status":"Compared 202,055 entries in 0.2 s.","mountedRows":24}
+{"at":"2026-10-11T17:24:07.372Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[279,255,252],"ms":252,"budgetMs":3000,"status":"Compared 202,055 entries in 0.2 s.","mountedRows":24}
+{"at":"2026-10-11T23:41:01.685Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[274,259,259],"ms":259,"budgetMs":3000,"status":"Compared 202,055 entries in 0.2 s.","mountedRows":24}

@@ -118,6 +118,7 @@ describe("copy and move", () => {
     )
     const sent = fake.api.files.start.mock.calls[0]![0]
     expect(sent).not.toHaveProperty("mask")
+    if (!("source" in sent)) throw new Error("a copy has a source")
     const sel = sent.source.selection
     expect(
       sel.ranges.reduce((n: number, [a, b]: number[]) => n + b! - a!, 0) + sel.include.length,

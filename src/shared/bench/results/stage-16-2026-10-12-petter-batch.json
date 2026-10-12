@@ -1,0 +1,70 @@
+{
+  "stage": "16",
+  "at": "2026-10-12T03:59:42+02:00",
+  "cpus": 32,
+  "go": "go1.27.0",
+  "megapixelsPerPicture": 12,
+  "sourceMBPerPicture": 3.7552947998046875,
+  "recipe": "fit 1600 px + sharpen + text watermark -\u003e JPEG 85, into a folder",
+  "runs": [
+    {
+      "workers": 1,
+      "pictures": 200,
+      "seconds": 150.1906978,
+      "picturesPerSec": 1.331640394043099,
+      "megapixelsPerSec": 15.979684728517187,
+      "peakHeapInUseMB": 171.1875,
+      "peakSysMB": 251.10375213623047,
+      "maxGoroutines": 26,
+      "goroutinesBefore": 20
+    },
+    {
+      "workers": 2,
+      "pictures": 200,
+      "seconds": 68.2552451,
+      "picturesPerSec": 2.9301777424867823,
+      "megapixelsPerSec": 35.16213290984139,
+      "peakHeapInUseMB": 259.0390625,
+      "peakSysMB": 347.38500213623047,
+      "maxGoroutines": 26,
+      "goroutinesBefore": 20
+    },
+    {
+      "workers": 4,
+      "pictures": 200,
+      "seconds": 34.038235,
+      "picturesPerSec": 5.875745319932129,
+      "megapixelsPerSec": 70.50894383918555,
+      "peakHeapInUseMB": 538.203125,
+      "peakSysMB": 736.4006271362305,
+      "maxGoroutines": 28,
+      "goroutinesBefore": 20
+    }
+  ],
+  "scaling1to4": 4.412411448478453,
+  "defaultWorkers": 4,
+  "cancel": {
+    "doneBeforeCancel": 8,
+    "latencyMs": 159.485,
+    "partialsLeft": 0
+  },
+  "plan": {
+    "pictures": 200,
+    "medianMs": 1.029,
+    "maxMs": 7.202,
+    "largePictures": 100000,
+    "largeMedianMs": 418.086,
+    "largeMaxMs": 454.378,
+    "largeScanSeconds": 3.2971276
+  },
+  "journal": {
+    "entries": 10000,
+    "ms": 4.636
+  },
+  "thumbnails": {
+    "pictures": 120,
+    "aloneSeconds": 3.1918879000000002,
+    "withBatchSeconds": 3.5164377,
+    "throughputDropPercent": 9.229505189299946
+  }
+}

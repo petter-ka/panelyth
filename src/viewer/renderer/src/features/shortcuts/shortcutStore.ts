@@ -11,6 +11,7 @@ import {
   MAX_CHORDS_PER_ACTION,
   type ActionId,
   type Keymap,
+  type Scope,
   type ShortcutOverrides,
 } from "./keymap"
 
@@ -79,7 +80,7 @@ export function setShortcutHelpOpen(open: boolean): void {
 }
 
 /** The action bound to a key chord in a scope, if any. */
-export function actionFor(scope: "global" | "viewer", chord: string): ActionId | undefined {
+export function actionFor(scope: Scope, chord: string): ActionId | undefined {
   return get().keymap.lookup[scope].get(chord)
 }
 

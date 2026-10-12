@@ -1,4 +1,5 @@
 import { useEffect } from "react"
+import { editSelection } from "../features/editor/batchStore"
 import { goBack, goForward, goUp, refresh } from "../features/folder/folderStore"
 import {
   askDeletePermanently,
@@ -47,6 +48,7 @@ const GLOBAL_HANDLERS: Partial<Record<ActionId, () => unknown>> = {
   "item.trash": trashSelection,
   "item.delete": askDeletePermanently,
   "item.properties": openProperties,
+  "item.edit": editSelection,
   "help.shortcuts": openShortcutHelp,
   "app.switch": switchToCommander,
 }

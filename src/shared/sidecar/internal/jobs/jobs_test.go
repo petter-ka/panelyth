@@ -178,33 +178,6 @@ func exist(path string) bool {
 	return err == nil
 }
 
-func TestPattern(t *testing.T) {
-	for _, tc := range []struct {
-		pattern, name string
-		isDir         bool
-		n             int
-		want          string
-	}{
-		{"Holiday {n:000}", "IMG_1.JPG", false, 7, "Holiday 007.JPG"},
-		{"{name}-{n}", "a.b.png", false, 12, "a.b-12.png"},
-		{"{n:00} {name}", "Album", true, 3, "03 Album"},
-		{"x{n:0}", "a.jpg", false, 1234, "x1234.jpg"},
-	} {
-		p, err := ParsePattern(tc.pattern)
-		if err != nil {
-			t.Fatalf("%q: %v", tc.pattern, err)
-		}
-		if got := p.Apply(tc.name, tc.isDir, tc.n); got != tc.want {
-			t.Errorf("%q on %q = %q, want %q", tc.pattern, tc.name, got, tc.want)
-		}
-	}
-	for _, bad := range []string{"", "plain", "{ext}", "{n", "{n:0a}", "{n:}"} {
-		if _, err := ParsePattern(bad); err == nil {
-			t.Errorf("%q accepted", bad)
-		}
-	}
-}
-
 func TestCopyIntoIndexedFolderAndDuplicateInPlace(t *testing.T) {
 	e := newEnv(t)
 	write(t, filepath.Join(e.root, "a.jpg"), 1000)

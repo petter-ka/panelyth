@@ -1,0 +1,28 @@
+{
+  "id": 154,
+  "ok": true,
+  "r": {
+    "left": {
+      "exclude": [],
+      "include": [],
+      "queryId": 12,
+      "ranges": [
+        [
+          0,
+          2
+        ]
+      ],
+      "version": 1
+    },
+    "leftCount": 2,
+    "right": {
+      "exclude": [],
+      "include": [],
+      "queryId": 13,
+      "ranges": [],
+      "version": 1
+    },
+    "rightCount": 0
+  },
+  "t": "res"
+}

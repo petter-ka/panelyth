@@ -22,11 +22,14 @@ export interface Launched {
  */
 export async function launchApp(env: Record<string, string> = {}): Promise<Launched> {
   const scratch = mkdtempSync(join(tmpdir(), "panelyth-e2e-"))
+  // A VS Code extension host sets ELECTRON_RUN_AS_NODE for its children; with
+  // it Electron runs as plain Node and the app never starts.
+  const { ELECTRON_RUN_AS_NODE: _runAsNode, ...inherited } = process.env as Record<string, string>
   const app = await _electron.launch({
     executablePath: electronPath,
     args: [desktopDir],
     env: {
-      ...(process.env as Record<string, string>),
+      ...inherited,
       PANELYTH_CACHE_DIR: join(scratch, "cache"),
       PANELYTH_CONFIG_DIR: join(scratch, "config"),
       PANELYTH_USER_DATA_DIR: join(scratch, "user-data"),

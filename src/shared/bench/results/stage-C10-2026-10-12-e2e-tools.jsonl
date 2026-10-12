@@ -1,0 +1,4 @@
+{"at":"2026-10-12T00:01:12.075Z","test":"viewer-scroll-100k-after-move","frames":285,"p95FrameMs":18,"maxFrameGapMs":25,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":70168,"ensureCalls":1}
+{"at":"2026-10-12T00:01:21.650Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":29,"frames":285,"p95FrameMs":18,"maxFrameGapMs":19,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":70168,"ensureCalls":1,"pageCalls":13}
+{"at":"2026-10-12T00:02:02.816Z","test":"viewer-scroll-100k-after-move","frames":285,"p95FrameMs":18,"maxFrameGapMs":22,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":70168,"ensureCalls":1}
+{"at":"2026-10-12T00:02:12.382Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":22,"frames":285,"p95FrameMs":18,"maxFrameGapMs":19,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":70168,"ensureCalls":1,"pageCalls":13}

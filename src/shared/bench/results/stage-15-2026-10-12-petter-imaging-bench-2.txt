@@ -1,0 +1,51 @@
+goos: windows
+goarch: amd64
+pkg: panelyth/sidecar/internal/imaging
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkDrawAndRetouch/2MP/brush-50px-200pt-32         	     704	   1617886 ns/op	17292712 B/op	      53 allocs/op
+BenchmarkDrawAndRetouch/2MP/brush-50px-200pt-32         	     734	   1571091 ns/op	17290103 B/op	      53 allocs/op
+BenchmarkDrawAndRetouch/2MP/brush-50px-200pt-32         	     698	   2999305 ns/op	17290070 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/brush-50px-20pt-32          	     325	   3842044 ns/op	17294726 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/brush-50px-20pt-32          	     304	   3914898 ns/op	17290090 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/brush-50px-20pt-32          	     289	   4185264 ns/op	17290073 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/draw-50-strokes-32          	     175	   5801247 ns/op	17770099 B/op	      60 allocs/op
+BenchmarkDrawAndRetouch/2MP/draw-50-strokes-32          	     266	   4636256 ns/op	17289639 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/draw-50-strokes-32          	     273	   4542886 ns/op	17290084 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/draw-50th-stroke-live-32    	     100	  12228380 ns/op	18782517 B/op	      85 allocs/op
+BenchmarkDrawAndRetouch/2MP/draw-50th-stroke-live-32    	     100	  11215766 ns/op	18797618 B/op	      86 allocs/op
+BenchmarkDrawAndRetouch/2MP/draw-50th-stroke-live-32    	     100	  10886032 ns/op	18797590 B/op	      85 allocs/op
+BenchmarkDrawAndRetouch/2MP/shapes-and-text-32          	     276	   4251692 ns/op	17327528 B/op	      53 allocs/op
+BenchmarkDrawAndRetouch/2MP/shapes-and-text-32          	     252	   4500612 ns/op	17290046 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/shapes-and-text-32          	     256	   4889225 ns/op	17290063 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/2MP/fill-32                     	     196	   6848296 ns/op	28146748 B/op	      88 allocs/op
+BenchmarkDrawAndRetouch/2MP/fill-32                     	     147	   7869299 ns/op	28099521 B/op	      88 allocs/op
+BenchmarkDrawAndRetouch/2MP/fill-32                     	     152	   8107345 ns/op	28098088 B/op	      87 allocs/op
+BenchmarkDrawAndRetouch/2MP/clone-stroke-32             	     151	   7928463 ns/op	10146487 B/op	      39 allocs/op
+BenchmarkDrawAndRetouch/2MP/clone-stroke-32             	     159	   7537469 ns/op	10146486 B/op	      39 allocs/op
+BenchmarkDrawAndRetouch/2MP/clone-stroke-32             	     158	   7658670 ns/op	10146487 B/op	      39 allocs/op
+BenchmarkDrawAndRetouch/2MP/heal-brush-256-32           	     120	  10003951 ns/op	12370439 B/op	     303 allocs/op
+BenchmarkDrawAndRetouch/2MP/heal-brush-256-32           	     136	   9057537 ns/op	12370431 B/op	     303 allocs/op
+BenchmarkDrawAndRetouch/2MP/heal-brush-256-32           	     141	   7770676 ns/op	12370438 B/op	     303 allocs/op
+BenchmarkDrawAndRetouch/2MP/heal-spot-128-32            	     178	   6876901 ns/op	10404444 B/op	      66 allocs/op
+BenchmarkDrawAndRetouch/2MP/heal-spot-128-32            	     166	   7185892 ns/op	10404446 B/op	      66 allocs/op
+BenchmarkDrawAndRetouch/2MP/heal-spot-128-32            	     160	   7476780 ns/op	10404447 B/op	      66 allocs/op
+BenchmarkDrawAndRetouch/2MP/redeye-auto-scan-32         	     120	   9695231 ns/op	13090613 B/op	     308 allocs/op
+BenchmarkDrawAndRetouch/2MP/redeye-auto-scan-32         	     129	   9369684 ns/op	13090607 B/op	     308 allocs/op
+BenchmarkDrawAndRetouch/2MP/redeye-auto-scan-32         	     127	   9953058 ns/op	13090614 B/op	     308 allocs/op
+BenchmarkDrawAndRetouch/2MP/detect-eyes-32              	     162	   7302644 ns/op	 4416542 B/op	      38 allocs/op
+BenchmarkDrawAndRetouch/2MP/detect-eyes-32              	     165	   7012224 ns/op	 4416541 B/op	      38 allocs/op
+BenchmarkDrawAndRetouch/2MP/detect-eyes-32              	     192	   6764143 ns/op	 4416541 B/op	      38 allocs/op
+BenchmarkDrawAndRetouch/24MP/replay-5000pt-stroke-32    	       2	 629999050 ns/op	208890528 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/24MP/replay-5000pt-stroke-32    	       2	 652647450 ns/op	208890656 B/op	      53 allocs/op
+BenchmarkDrawAndRetouch/24MP/replay-5000pt-stroke-32    	       2	 648518750 ns/op	208890544 B/op	      52 allocs/op
+BenchmarkDrawAndRetouch/24MP/redeye-click-32            	      55	  21595065 ns/op	96134368 B/op	      22 allocs/op
+BenchmarkDrawAndRetouch/24MP/redeye-click-32            	      51	  21220243 ns/op	96134366 B/op	      22 allocs/op
+BenchmarkDrawAndRetouch/24MP/redeye-click-32            	      55	  21869924 ns/op	96134366 B/op	      22 allocs/op
+BenchmarkDrawAndRetouch/24MP/clone-stroke-32            	      16	  68848044 ns/op	112554712 B/op	      39 allocs/op
+BenchmarkDrawAndRetouch/24MP/clone-stroke-32            	      16	  68603188 ns/op	112554696 B/op	      39 allocs/op
+BenchmarkDrawAndRetouch/24MP/clone-stroke-32            	      16	  68443481 ns/op	112554705 B/op	      39 allocs/op
+BenchmarkDrawAndRetouch/24MP/heal-spot-32               	      50	  24604748 ns/op	99620560 B/op	     319 allocs/op
+BenchmarkDrawAndRetouch/24MP/heal-spot-32               	      55	  24877520 ns/op	99620549 B/op	     319 allocs/op
+BenchmarkDrawAndRetouch/24MP/heal-spot-32               	      43	  24285828 ns/op	99620560 B/op	     319 allocs/op
+PASS
+ok  	panelyth/sidecar/internal/imaging	55.537s

@@ -81,6 +81,16 @@ var migrations = []string{
 	// 4: bookmark groups (Stage C03): the commander's hotlist groups the
 	// shared bookmarks; "" is no group (the viewer shows a flat list).
 	`ALTER TABLE bookmarks ADD COLUMN group_name TEXT NOT NULL DEFAULT '';`,
+	// 5: saved recipes of the image editor's batch mode (Stage 16,
+	// ADR-0036): the recipe as validated JSON, under a unique name.
+	`CREATE TABLE recipes (
+		id         INTEGER PRIMARY KEY,
+		name       TEXT NOT NULL,
+		name_fold  TEXT NOT NULL UNIQUE,
+		json       TEXT NOT NULL,
+		created_at INTEGER NOT NULL,
+		updated_at INTEGER NOT NULL
+	);`,
 }
 
 // Limits keep user-controlled data bounded.

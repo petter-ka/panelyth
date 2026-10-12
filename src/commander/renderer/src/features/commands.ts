@@ -1,7 +1,8 @@
 import { create } from "zustand"
 import { switchToViewer } from "./carry"
-import type { ActionId } from "./keymap"
-import { setHelpOpen } from "./keymap"
+import { isToolAction, setHelpOpen, type ActionId, type ToolActionId } from "./keymap"
+import { focusCommandLine, insertCursorText, openCommandHistory } from "./cmdline"
+import { runTool } from "./tools"
 import {
   COLUMN_SORT,
   enterArchiveAtCursor,
@@ -49,8 +50,17 @@ import {
 import { toggleQueue } from "./queue"
 import { openPack, openUnpack, testArchives } from "./archives"
 import { openFind } from "./find"
+import {
+  comparePanels,
+  openCompareFiles,
+  openHashCreate,
+  openSync,
+  verifyChecksums,
+} from "./compare"
+import { openMultiRename, undoMultiRename } from "./rename"
+import { openAttributes, openProperties } from "./attributes"
 import { openHistoryMenu, openHotlist } from "./hotlist"
-import { setSettingsOpen } from "./settings"
+import { setSettingsOpen, updateSettings, useSettingsStore } from "./settings"
 import { closeOtherTabs, closeTab, cycleTab, newTab, swapTabs, toggleLock } from "./tabs"
 
 // Runs the commander's remappable actions (keymap.ts) on the active panel.
@@ -116,7 +126,13 @@ async function markAndSize(side: Side): Promise<void> {
   }
 }
 
-export function runPanelAction(side: Side, id: ActionId): void {
+export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
+  // A user command (Stage C10): from its key, its toolbar button or the entry menu.
+  if (isToolAction(id)) {
+    closeQuickSearch()
+    void runTool(side, id.slice("tool:".length))
+    return
+  }
   switch (id) {
     case "nav.up":
       void goUp(side)
@@ -238,6 +254,17 @@ export function runPanelAction(side: Side, id: ActionId): void {
     case "view.full":
       setView(side, "full")
       break
+    case "view.thumbs":
+      setView(side, "thumbs")
+      break
+    case "cmd.insertName":
+      closeQuickSearch()
+      insertCursorText(side, false)
+      break
+    case "cmd.insertPath":
+      closeQuickSearch()
+      insertCursorText(side, true)
+      break
     case "path.edit":
       useUiStore.setState((s) => ({ editPath: { ...s.editPath, [side]: s.editPath[side] + 1 } }))
       break
@@ -269,6 +296,42 @@ export function runPanelAction(side: Side, id: ActionId): void {
     case "archive.test":
       closeQuickSearch()
       void testArchives(side)
+      break
+    case "compare.dirs":
+      closeQuickSearch()
+      void comparePanels()
+      break
+    case "compare.sync":
+      closeQuickSearch()
+      openSync()
+      break
+    case "compare.content":
+      closeQuickSearch()
+      void openCompareFiles(side)
+      break
+    case "hash.create":
+      closeQuickSearch()
+      openHashCreate(side)
+      break
+    case "hash.verify":
+      closeQuickSearch()
+      void verifyChecksums(side)
+      break
+    case "files.multiRename":
+      closeQuickSearch()
+      openMultiRename(side)
+      break
+    case "files.undoRename":
+      closeQuickSearch()
+      void undoMultiRename()
+      break
+    case "files.attributes":
+      closeQuickSearch()
+      openAttributes(side)
+      break
+    case "files.properties":
+      closeQuickSearch()
+      openProperties(side)
       break
     case "view.filter":
       closeQuickSearch()
@@ -364,6 +427,23 @@ export function runShellAction(id: ActionId): void {
       break
     case "queue.toggle":
       toggleQueue()
+      break
+    case "cmd.focus":
+      closeQuickSearch()
+      focusCommandLine()
+      break
+    case "cmd.history":
+      closeQuickSearch()
+      openCommandHistory()
+      break
+    case "view.toolbar":
+      updateSettings({ showToolbar: !useSettingsStore.getState().settings.showToolbar })
+      break
+    case "view.commandLine":
+      updateSettings({ showCommandLine: !useSettingsStore.getState().settings.showCommandLine })
+      break
+    case "view.functionKeys":
+      updateSettings({ showFunctionKeys: !useSettingsStore.getState().settings.showFunctionKeys })
       break
   }
 }

@@ -73,6 +73,19 @@ export class AppShell {
     this.switchTo(to)
   }
 
+  /**
+   * Brings the window to the front showing the viewer, and returns the
+   * viewer's web contents (null when the window is gone).
+   */
+  showViewer(): WebContents | null {
+    if (this.window.isDestroyed()) return null
+    if (this.enabled) this.requestSwitch("viewer")
+    if (this.window.isMinimized()) this.window.restore()
+    this.window.focus()
+    this.window.webContents.focus()
+    return this.window.webContents
+  }
+
   webContentsOf(app: AppId): WebContents | null {
     if (app === "viewer") return this.window.webContents
     return this.commander?.webContents ?? null

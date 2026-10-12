@@ -10,6 +10,7 @@ import {
   type EventChannel,
   type EventMessage,
   type RendererMethod,
+  type RenamePlan,
   type RpcEnvelope,
   type SelectionDescriptor,
 } from "@panelyth/contracts"
@@ -23,8 +24,25 @@ const copySelection = (s: SelectionDescriptor): SelectionDescriptor => ({
   exclude: [...s.exclude],
 })
 
+type SourceJobParams = Extract<CommanderJobParams, { source: unknown }>
+
+const copyPlan = (p: RenamePlan): RenamePlan => ({
+  nameMask: p.nameMask,
+  extMask: p.extMask,
+  search: p.search,
+  replace: p.replace,
+  regex: p.regex,
+  matchCase: p.matchCase,
+  case: p.case,
+  start: p.start,
+  step: p.step,
+  digits: p.digits,
+})
+
 /** Only the known fields of each job kind cross the bridge. */
-function jobParams(p: CommanderJobParams): CommanderJobParams {
+function jobParams(
+  p: Exclude<SourceJobParams, { kind: "hashCreate" | "multiRename" | "setAttributes" }>,
+): CommanderJobParams {
   const source = { selection: copySelection(p.source.selection) }
   switch (p.kind) {
     case "copy":
@@ -63,6 +81,56 @@ function jobParams(p: CommanderJobParams): CommanderJobParams {
   return { kind: p.kind, source }
 }
 
+/** The compare jobs (Stage C08): a sync and a comparison of two files have no selection. */
+function startParams(p: CommanderJobParams): CommanderJobParams {
+  switch (p.kind) {
+    case "sync":
+      return {
+        kind: p.kind,
+        compareId: p.compareId,
+        planVersion: p.planVersion,
+        ...(p.deletePermanently !== undefined && { deletePermanently: p.deletePermanently }),
+      }
+    case "compareFiles":
+      return { kind: p.kind, leftId: p.leftId, rightId: p.rightId }
+    // Stage C09: a multi-rename carries its plan; an undo carries nothing.
+    case "multiRename":
+      return {
+        kind: p.kind,
+        source: { selection: copySelection(p.source.selection) },
+        plan: copyPlan(p.plan),
+      }
+    case "undoRename":
+      return { kind: p.kind }
+    case "setAttributes":
+      return {
+        kind: p.kind,
+        source: { selection: copySelection(p.source.selection) },
+        ...(p.setAttrs !== undefined && { setAttrs: p.setAttrs }),
+        ...(p.clearAttrs !== undefined && { clearAttrs: p.clearAttrs }),
+        ...(p.setMode !== undefined && { setMode: p.setMode }),
+        ...(p.clearMode !== undefined && { clearMode: p.clearMode }),
+        ...(p.modifiedMs !== undefined && { modifiedMs: p.modifiedMs }),
+        ...(p.accessedMs !== undefined && { accessedMs: p.accessedMs }),
+        ...(p.recursive !== undefined && { recursive: p.recursive }),
+      }
+    case "hashCreate": {
+      const source = { selection: copySelection(p.source.selection) }
+      return p.perFile
+        ? { kind: p.kind, source, algorithm: p.algorithm, perFile: true }
+        : {
+            kind: p.kind,
+            source,
+            algorithm: p.algorithm,
+            perFile: false,
+            destinationDirId: p.destinationDirId,
+            name: p.name,
+          }
+    }
+  }
+  return jobParams(p)
+}
+
 const invoke = <R>(method: RendererMethod, params?: unknown): Promise<RpcEnvelope<R>> =>
   ipcRenderer.invoke(IPC_INVOKE, method, params) as Promise<RpcEnvelope<R>>
 
@@ -79,6 +147,8 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "bookmarks.changed",
   // Stage C06: find files.
   "find.progress",
+  // Stage C08: directory compares.
+  "compare.progress",
   // Stage C05: quick view and lister images.
   "preview.ready",
   // ADR-0033: a full-screen media window asks this panel for its next item.
@@ -99,7 +169,7 @@ ipcRenderer.on(IPC_EVENT, (_event, message: EventMessage) => {
 const api: CommanderApi = {
   app: {
     exit: () => invoke("app.exit", {}),
-    switch: (to) => invoke("app.switch", { to }),
+    switch: (to, edit) => invoke("app.switch", { to, ...(edit !== undefined && { edit }) }),
   },
   system: {
     ping: () => invoke("system.ping", {}),
@@ -155,6 +225,48 @@ const api: CommanderApi = {
     check: (selection, destinationDirId) =>
       invoke("archive.check", { selection: copySelection(selection), destinationDirId }),
     tools: () => invoke("archive.tools", {}),
+  },
+  compare: {
+    // Copied field by field: only known fields cross the bridge.
+    dirs: (p) =>
+      invoke("compare.dirs", {
+        leftDirId: p.leftDirId,
+        rightDirId: p.rightDirId,
+        toleranceMs: p.toleranceMs,
+        dst: p.dst,
+        ignoreDates: p.ignoreDates,
+        content: p.content,
+        asymmetric: p.asymmetric,
+      }),
+    cancel: (compareId) => invoke("compare.cancel", { compareId }),
+    close: (compareId) => invoke("compare.close", { compareId }),
+    show: (compareId, show) => invoke("compare.show", { compareId, show: [...show] }),
+    setAction: (compareId, selection, action) =>
+      invoke("compare.setAction", { compareId, selection: copySelection(selection), action }),
+    plan: (compareId) => invoke("compare.plan", { compareId }),
+    marks: (p) =>
+      invoke("compare.marks", {
+        leftQueryId: p.leftQueryId,
+        rightQueryId: p.rightQueryId,
+        toleranceMs: p.toleranceMs,
+        dst: p.dst,
+        ignoreDates: p.ignoreDates,
+      }),
+  },
+  diff: {
+    open: (leftId, rightId) => invoke("diff.open", { leftId, rightId }),
+    page: (diffId, offset, limit) => invoke("diff.page", { diffId, offset, limit }),
+    close: (diffId) => invoke("diff.close", { diffId }),
+  },
+  rename: {
+    preview: (selection, plan, offset, limit) =>
+      invoke("rename.preview", {
+        selection: copySelection(selection),
+        plan: copyPlan(plan),
+        offset,
+        limit,
+      }),
+    undoInfo: () => invoke("rename.undoInfo", {}),
   },
   query: {
     // Copied field by field: only known fields cross the bridge.
@@ -235,9 +347,20 @@ const api: CommanderApi = {
     open: (entryId, allowProgram) =>
       invoke("shell.open", { entryId, ...(allowProgram !== undefined && { allowProgram }) }),
     edit: (entryId) => invoke("shell.edit", { entryId }),
+    // Stage C10: only the known fields cross the bridge; never a path.
+    run: ({ command, dirId, console }) =>
+      invoke("shell.run", { command, dirId, ...(console !== undefined && { console }) }),
+    runTool: ({ toolId, dirId, otherDirId, cursorId, selection }) =>
+      invoke("shell.runTool", {
+        toolId,
+        dirId,
+        ...(otherDirId !== undefined && { otherDirId }),
+        ...(cursorId !== undefined && { cursorId }),
+        ...(selection !== undefined && { selection: copySelection(selection) }),
+      }),
   },
   files: {
-    start: (p) => invoke("jobs.start", jobParams(p)),
+    start: (p) => invoke("jobs.start", startParams(p)),
     pause: (jobId) => invoke("jobs.pause", { jobId }),
     resume: (jobId) => invoke("jobs.resume", { jobId }),
     startNow: (jobId) => invoke("jobs.startNow", { jobId }),

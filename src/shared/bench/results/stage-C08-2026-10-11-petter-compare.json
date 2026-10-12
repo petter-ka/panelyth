@@ -1,0 +1,189 @@
+{
+  "stage": "C08",
+  "at": "2026-10-11T17:05:33+02:00",
+  "numCpu": 32,
+  "entriesPerTree": 100000,
+  "compare": [
+    {
+      "elapsedMs": 360.272,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 92.45046597537907,
+      "sessionMs": 0.511
+    },
+    {
+      "elapsedMs": 280.287,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 92.02634419783898,
+      "sessionMs": 0
+    },
+    {
+      "elapsedMs": 284.32,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 99.28767665963494,
+      "sessionMs": 0.534
+    },
+    {
+      "elapsedMs": 313.103,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 92.05779877390538,
+      "sessionMs": 0.513
+    },
+    {
+      "elapsedMs": 312.83,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 100.52106050252053,
+      "sessionMs": 0.506
+    }
+  ],
+  "compareMsByWalkers": {
+    "1": 1719.857,
+    "16": 191.636,
+    "2": 870.196,
+    "4": 446.205,
+    "8": 282.84
+  },
+  "compareContent": [
+    {
+      "elapsedMs": 31943.036,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 175.2389894128017,
+      "sessionMs": 0
+    },
+    {
+      "elapsedMs": 2568.939,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 154.40306622693646,
+      "sessionMs": 1
+    },
+    {
+      "elapsedMs": 2536.037,
+      "rows": 100971,
+      "dirs": 2066,
+      "entries": 202055,
+      "bytesPerRow": 164.82031474383734,
+      "sessionMs": 1
+    }
+  ],
+  "hashBytes": 1073741824,
+  "osHashTool": "C:\\WINDOWS\\System32\\certutil.exe",
+  "hash": {
+    "crc32": {
+      "oursMs": [
+        178.453,
+        154.856,
+        152.389,
+        157.431,
+        155.413
+      ],
+      "osToolMs": null,
+      "oursMBPerSec": 6719.645118742166,
+      "osToolMBPerSec": 0,
+      "ratio": 0
+    },
+    "md5": {
+      "oursMs": [
+        1124.299,
+        1038.518,
+        1030.364,
+        1040.395,
+        1040.015
+      ],
+      "osToolMs": [
+        1611.049,
+        1617.449,
+        1607.707,
+        1607.553,
+        1615.131
+      ],
+      "oursMBPerSec": 993.8235419715751,
+      "osToolMBPerSec": 636.992994943246,
+      "ratio": 1.5601797034834293
+    },
+    "sha1": {
+      "oursMs": [
+        504.337,
+        503.447,
+        511.285,
+        504.477,
+        510.717
+      ],
+      "osToolMs": [
+        1316.752,
+        1343.609,
+        1314.298,
+        1320.013,
+        1318.11
+      ],
+      "oursMBPerSec": 2033.977757340892,
+      "osToolMBPerSec": 779.1231516748866,
+      "ratio": 2.610598533708613
+    },
+    "sha256": {
+      "oursMs": [
+        569.272,
+        535.246,
+        536.628,
+        539.584,
+        540.739
+      ],
+      "osToolMs": [
+        810.059,
+        690.943,
+        690.747,
+        691.433,
+        684.642
+      ],
+      "oursMBPerSec": 1913.1390052424492,
+      "osToolMBPerSec": 1495.672190721574,
+      "ratio": 1.2791165183859385
+    }
+  },
+  "textBytes": 10485760,
+  "textLines": 150039,
+  "textDiff": [
+    {
+      "openMs": 29.279,
+      "pageMs": 0,
+      "rows": 150053,
+      "changes": 58
+    },
+    {
+      "openMs": 17.785,
+      "pageMs": 0,
+      "rows": 150053,
+      "changes": 58
+    },
+    {
+      "openMs": 23.837,
+      "pageMs": 0,
+      "rows": 150053,
+      "changes": 58
+    },
+    {
+      "openMs": 19.457,
+      "pageMs": 0,
+      "rows": 150053,
+      "changes": 58
+    },
+    {
+      "openMs": 18.801,
+      "pageMs": 0,
+      "rows": 150053,
+      "changes": 58
+    }
+  ]
+}

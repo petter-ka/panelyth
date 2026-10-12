@@ -15,6 +15,12 @@ export const ERROR_CODES = [
   "PROTOCOL_MISMATCH",
   "METHOD_NOT_FOUND",
   "INTERNAL",
+  // The image editor (Stage 12, ADR-0035).
+  "EDIT_TOO_LARGE",
+  "EDIT_UNSUPPORTED",
+  "EDIT_SESSION_GONE",
+  "TRASH_UNAVAILABLE",
+  "EDIT_ASSET_INVALID",
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]

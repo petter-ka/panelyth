@@ -297,7 +297,14 @@ Prepare for:
 - color labels
 - collections
 - effects
-- crop/resize/rotate (the editor: `docs/viewer/IMAGE-EDITOR.md` §5, Stages 12–16)
+- crop/resize/rotate: built in Stage 12 (the editor: `docs/viewer/IMAGE-EDITOR.md` §5); the color tools in
+  Stage 13 (tool groups in the rail, the levels and curves widgets, eyedroppers with a loupe, looks, Count colors);
+  the effects in Stage 14 (regions and the lens centre on the canvas, token chips for watermark text, pictures
+  picked through the native dialog); draw and retouch in Stage 15 (a brush ring and live ink on the picture, a
+  keyboard cross, "By numbers" for everything but free-hand strokes); batch in Stage 16 (the same editor on a
+  selection: a strip of sample pictures under the canvas, Recipes…, Output… and "Run on N pictures" where Save was,
+  the free-hand tools disabled with the reason, a summary line of what will happen, and Show in folder and Undo
+  this batch on the finished job)
 - duplicate detection
 - compare/slideshow
 - custom shortcuts

@@ -1,0 +1,1 @@
+{"at":"2026-10-12T00:00:53.638Z","test":"c02-benchmarks","held":{"keys":171,"p95FrameMs":19,"maxFrameGapMs":19,"longTasks":0,"cursorRow":171},"quickSearch":{"samples":13,"all":[12,14,17,18,19,20,20,21,21,21,23,24,25],"p50Ms":20,"p95Ms":25,"maxMs":25},"markAllMs":14,"invertMs":17,"invertBackMs":14,"folderSizes":{"ms":69,"folders":6,"files":51800,"filesPerSecond":750725}}

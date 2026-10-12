@@ -10,6 +10,9 @@ per-item conflict questions and more policies, pause and resume, speed and ETA, 
 commander, and faster copies (OS fast paths, small files in flight). Where this ADR's numbers differ (2 running jobs, a
 queue of 32, one file at a time, three policies), ADR-0029 applies.
 
+Amended in Stage C09 (2026-10-11): "As built (Stage C09)" below. The batch-rename pattern is now one of two syntaxes of
+one rename engine, a case-only rename takes two steps, and the commander's multi-rename has an undo.
+
 ## Decision
 
 ### Job manager (Go, `internal/jobs`)
@@ -102,6 +105,39 @@ queue of 32, one file at a time, three policies), ADR-0029 applies.
   `meta_state = 0` for a bounded extractor: 2 workers, image headers through `imaging.ProbeFile` and videos through
   ffprobe. The extractor writes in batches and refreshes the session through the normal invalidation throttle.
   The work stops when the session closes or changes order.
+
+## As built (Stage C09): one rename engine
+
+- **One plan, two syntaxes** (`internal/rename`). The viewer's pattern (`{name}`, `{n}`, `{n:000}`, a start number; the
+  extension always kept; a token required) and the commander's Total Commander masks compile to the same `rename.Plan`:
+  a name mask and an extension mask of literals and placeholders, an optional search and replace, a case conversion and
+  a counter. The viewer's rules are unchanged; `jobs/pattern.go` is gone.
+- **The commander's syntax:** `[N]` the name and `[E]` the extension, both with character ranges (`[N2-5]`, `[N2-]`,
+  `[N2,3]`, `[N2]`); `[C]` the counter with start, step and digits from the dialog, or inline as `[C10+2:3]`;
+  `[Y] [M] [D] [h] [m] [s]` from the modification time (local time, from the index); `[[]` and `[]]` for brackets. An
+  empty extension mask gives a name without an extension. Search and replace runs on the name the masks give, with its
+  extension: plain text (case ignored unless asked) or a regular expression in Go RE2 syntax with `$1` in the
+  replacement. Case comes last: all lower, all upper, first letter, or first letter of each word (the last two leave
+  the extension alone). Folders have no extension.
+- **Resolving a batch** (`rename.Resolve`): every entry is named in selection order (the counter follows it), then each
+  name is one of *renamed*, *unchanged*, *invalid* (the name rules above) or a *conflict*: the same name twice in the
+  batch, a name an entry that keeps its name has, or names exchanged in a cycle. An entry waiting for a name that is
+  never freed is a conflict too. What remains is ordered so every name is free when its turn comes (1 → 2 → 3 renames
+  3 first). The preview (`rename.preview`) and the job use this one result. Names are compared per folder as the
+  platform compares them.
+- **Cycles still fail** rather than going through hidden temporary names, as decided above; the preview now says so
+  before anything starts.
+- **A case-only rename takes two steps** on volumes that ignore case (`fileops.Rename`): the entry goes to a temporary
+  name (`.panelyth-renaming-…`) and from there to the new one, because some file systems and shares treat a rename onto
+  the same entry as nothing to do. If the second step fails, the first is taken back. Where the other spelling is an
+  entry of its own (a hard link of the same file on a volume that tells case apart), nothing changes and the item fails
+  as `ALREADY_EXISTS`. Nothing ever removes a `.panelyth-renaming-…` name: after a crash it still holds the file.
+- **"There is no undo in the MVP" now has one exception:** the commander's multi-rename (ADR-0029 "As built
+  (Stage C09)"). The viewer's batch rename, single renames, copies and moves still have none.
+- **User metadata follows in batches:** the rename jobs hand their `path_key` changes to `library.RekeyMany`, one
+  `library.db` transaction per flush of the job (500 items or 250 ms, with the index edits) instead of one per entry.
+  Moves and single renames keep `Rekey`. Measured in the app on 10,000 files: 5.2–6.4 s in four runs before,
+  2.6–5.0 s in five runs after (the runs vary; see the Stage C09 record).
 
 ## Deviations from the analysis
 

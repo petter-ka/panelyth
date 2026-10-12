@@ -1,0 +1,36 @@
+{
+  "id": 165,
+  "ok": true,
+  "r": {
+    "offset": 0,
+    "rows": [
+      {
+        "l": 1,
+        "left": "one",
+        "op": "equal",
+        "r": 1
+      },
+      {
+        "l": 2,
+        "left": "two",
+        "op": "changed",
+        "r": 2,
+        "right": "2"
+      },
+      {
+        "l": 3,
+        "left": "three",
+        "op": "equal",
+        "r": 3
+      },
+      {
+        "l": 0,
+        "left": "",
+        "op": "added",
+        "r": 4,
+        "right": "four"
+      }
+    ]
+  },
+  "t": "res"
+}

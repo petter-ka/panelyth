@@ -28,3 +28,12 @@ export function formatBytes(bytes: number): string {
 export function formatDate(ms: number): string {
   return date().format(ms)
 }
+
+const percent = perLocale(
+  (locale) => new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 1 }),
+)
+
+/** A share (0..1) as a percentage. */
+export function formatPercent(share: number): string {
+  return percent().format(share)
+}

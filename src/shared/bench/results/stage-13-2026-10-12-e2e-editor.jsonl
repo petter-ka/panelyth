@@ -1,0 +1,9 @@
+{"at":"2026-10-12T00:33:44.643Z","test":"editor-levels","levelsFrameMs":38}
+{"at":"2026-10-12T00:33:46.028Z","test":"editor-count-colors","countMs":45}
+{"at":"2026-10-12T00:33:58.880Z","test":"editor-color-24mp","contrastPaints":53,"contrastGapP95Ms":44,"contrastSettleMs":49,"saturationPaints":53,"saturationGapP95Ms":42,"saturationSettleMs":50,"levelsBlackPaints":54,"levelsBlackGapP95Ms":45,"levelsBlackSettleMs":42,"sharpenPaints":53,"sharpenGapP95Ms":38,"sharpenSettleMs":50,"blurPaints":53,"blurGapP95Ms":41,"blurSettleMs":48,"denoisePaints":53,"denoiseGapP95Ms":47,"denoiseSettleMs":95,"looksMs":82,"longTasksOver50":0,"maxLongTaskMs":0}
+{"at":"2026-10-12T01:11:43.529Z","test":"editor-levels","levelsFrameMs":34}
+{"at":"2026-10-12T01:11:44.894Z","test":"editor-count-colors","countMs":35}
+{"at":"2026-10-12T01:11:57.756Z","test":"editor-color-24mp","contrastPaints":53,"contrastGapP95Ms":44,"contrastSettleMs":50,"saturationPaints":53,"saturationGapP95Ms":41,"saturationSettleMs":51,"levelsBlackPaints":54,"levelsBlackGapP95Ms":39,"levelsBlackSettleMs":50,"sharpenPaints":53,"sharpenGapP95Ms":42,"sharpenSettleMs":49,"blurPaints":53,"blurGapP95Ms":39,"blurSettleMs":65,"denoisePaints":53,"denoiseGapP95Ms":48,"denoiseSettleMs":86,"looksMs":85,"longTasksOver50":0,"maxLongTaskMs":0}
+{"at":"2026-10-12T02:17:44.634Z","test":"editor-levels","levelsFrameMs":33}
+{"at":"2026-10-12T02:17:45.950Z","test":"editor-count-colors","countMs":37}
+{"at":"2026-10-12T02:17:58.709Z","test":"editor-color-24mp","contrastPaints":53,"contrastGapP95Ms":46,"contrastSettleMs":47,"saturationPaints":53,"saturationGapP95Ms":49,"saturationSettleMs":46,"levelsBlackPaints":54,"levelsBlackGapP95Ms":41,"levelsBlackSettleMs":52,"sharpenPaints":53,"sharpenGapP95Ms":38,"sharpenSettleMs":49,"blurPaints":53,"blurGapP95Ms":40,"blurSettleMs":49,"denoisePaints":53,"denoiseGapP95Ms":47,"denoiseSettleMs":94,"looksMs":68,"longTasksOver50":0,"maxLongTaskMs":0}

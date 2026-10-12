@@ -1,0 +1,138 @@
+{
+  "stage": "C09",
+  "at": "2026-10-11T18:11:15+02:00",
+  "numCpu": 32,
+  "files": 10000,
+  "preview": [
+    {
+      "firstMs": 34.784,
+      "plainMs": 4.014,
+      "heavyMs": 9.934
+    },
+    {
+      "firstMs": 31.271,
+      "plainMs": 3.016,
+      "heavyMs": 8.631
+    },
+    {
+      "firstMs": 35.466,
+      "plainMs": 4.506,
+      "heavyMs": 8.187
+    },
+    {
+      "firstMs": 37.841,
+      "plainMs": 3.764,
+      "heavyMs": 6.502
+    },
+    {
+      "firstMs": 36.09,
+      "plainMs": 3.01,
+      "heavyMs": 7.915
+    }
+  ],
+  "apply": [
+    {
+      "elapsedMs": 2361.392,
+      "done": 10000,
+      "failed": 0,
+      "notified": 21
+    },
+    {
+      "elapsedMs": 2193.104,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 2238.721,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 2175.209,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 2174.961,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    }
+  ],
+  "undo": [
+    {
+      "elapsedMs": 3609.011,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 3554.037,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 3594.7,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 3617.178,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    },
+    {
+      "elapsedMs": 3628.028,
+      "done": 10000,
+      "failed": 0,
+      "notified": 20
+    }
+  ],
+  "folders": 1000,
+  "filesPerFolder": 20,
+  "sizes": [
+    {
+      "elapsedMs": 51.518,
+      "done": 1000,
+      "failed": 0,
+      "notified": 2,
+      "bytes": 20480000
+    },
+    {
+      "elapsedMs": 47.359,
+      "done": 1000,
+      "failed": 0,
+      "notified": 2,
+      "bytes": 20480000
+    },
+    {
+      "elapsedMs": 41.987,
+      "done": 1000,
+      "failed": 0,
+      "notified": 2,
+      "bytes": 20480000
+    },
+    {
+      "elapsedMs": 49.85,
+      "done": 1000,
+      "failed": 0,
+      "notified": 2,
+      "bytes": 20480000
+    },
+    {
+      "elapsedMs": 45.293,
+      "done": 1000,
+      "failed": 0,
+      "notified": 2,
+      "bytes": 20480000
+    }
+  ],
+  "sizeWritesPerFolderMs": 11.56,
+  "sizeWritesBatchedMs": 1
+}

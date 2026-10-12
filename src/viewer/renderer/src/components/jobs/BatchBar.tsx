@@ -1,5 +1,6 @@
 import type { ReactNode } from "react"
 import { Tooltip } from "@panelyth/ui"
+import { openBatchEditor } from "../../features/editor/batchStore"
 import {
   askTags,
   setFavorite,
@@ -9,7 +10,7 @@ import {
 import { useShortcutHint } from "../../features/shortcuts/shortcutStore"
 import { selectionCount, useSelectionStore } from "../../features/tiles/selectionStore"
 import { formatCount } from "../../lib/format"
-import { CopyIcon, HeartIcon, MoveIcon, TagIcon, TrashIcon } from "../ui/icons"
+import { CopyIcon, HeartIcon, MoveIcon, PencilIcon, TagIcon, TrashIcon } from "../ui/icons"
 import { t } from "@panelyth/i18n"
 
 function Action(props: { label: string; title?: string; onClick(): void; children: ReactNode }) {
@@ -36,6 +37,7 @@ function Action(props: { label: string; title?: string; onClick(): void; childre
 export function BatchBar() {
   const count = useSelectionStore(selectionCount)
   const trashKey = useShortcutHint("item.trash")
+  const editKey = useShortcutHint("item.edit")
   if (count < 2) return null
   return (
     <div
@@ -47,6 +49,17 @@ export function BatchBar() {
       <span className="px-2 text-xs font-medium tabular-nums">
         {t("{count} selected", { count: formatCount(count) })}
       </span>
+      <Action
+        label={t("Edit…")}
+        title={
+          editKey
+            ? t("Edit the selected pictures ({key})", { key: editKey })
+            : t("Edit the selected pictures")
+        }
+        onClick={() => void openBatchEditor()}
+      >
+        <PencilIcon size={14} />
+      </Action>
       <Action label={t("Copy to…")} onClick={() => void transferSelection("copy")}>
         <CopyIcon size={14} />
       </Action>

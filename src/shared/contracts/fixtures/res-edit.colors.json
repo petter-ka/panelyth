@@ -1,0 +1,29 @@
+{
+  "id": 195,
+  "ok": true,
+  "r": {
+    "distinct": 4,
+    "hasAlpha": false,
+    "height": 48,
+    "palette": [
+      {
+        "hex": "#2b2a00",
+        "share": 0.2503
+      },
+      {
+        "hex": "#2bd300",
+        "share": 0.25
+      },
+      {
+        "hex": "#d4d400",
+        "share": 0.25
+      },
+      {
+        "hex": "#d32a00",
+        "share": 0.2497
+      }
+    ],
+    "width": 64
+  },
+  "t": "res"
+}

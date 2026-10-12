@@ -290,7 +290,7 @@ Provide useful states for:
 Design system (FR-20) and cross-platform packaging (FR-21) apply to every app and live in
 `docs/shared/REQUIREMENTS.md`.
 
-### FR-23 — Image editing (Stages 12–16, planned)
+### FR-23 — Image editing (Stages 12–16, built 2026-10-12)
 
 Pictures have an **Edit** button. The editor (`docs/viewer/IMAGE-EDITOR.md`) provides:
 
@@ -299,7 +299,10 @@ Pictures have an **Edit** button. The editor (`docs/viewer/IMAGE-EDITOR.md`) pro
 - effects: border effects, frame mask, watermark, bump map, sketch, oil painting, lens, obscure (blur)
 - geometry and retouching: rotate, resize, canvas size, set DPI, crop, draw, clone and heal, red-eye remover
 - views: EXIF, histogram, file properties
-- batch mode for every feature that can work without pointing at pixels (recipes over a multi-selection)
+- batch mode for every feature that can work without pointing at pixels (recipes over a multi-selection): built
+  in Stage 16 for every operation but draw, clone, heal and red-eye, with the output chosen before the run, a
+  cancellable job and an undo of the batch. The two reports (count colors, EXIF as a table) and recipe files are
+  open (`docs/viewer/stages/16-editor-batch.md`)
 
 Requirements: the original is never lost (save as copy by default; replace goes through the trash); editing is
 non-destructive until saved, with undo/redo; sliders answer while dragged and the editor never blocks the UI or the tile
@@ -334,6 +337,12 @@ Engineering targets:
 Exact budgets are validated against representative hardware and recorded in benchmark results.
 
 ## 6. Supported media
+
+Built in Stage 12 (`docs/viewer/stages/12-editor-foundation.md`): the Edit button and the editor shell; rotate (quarter
+turns, any angle, straighten), flip, crop, resize, canvas size and set DPI; the histogram, EXIF and file panels;
+undo/redo and before/after; saving as a copy, to a chosen file or over the original through the trash, as JPEG, PNG,
+TIFF, BMP or GIF with the camera data kept, stripped or stripped of the location. Pictures up to 100 megapixels can be
+edited; animations, RAW, HEIC and AVIF cannot.
 
 ### Image MVP candidates
 

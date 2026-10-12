@@ -16,6 +16,8 @@ export interface MediaViewerOverlayProps {
   wheelMode?: "zoom" | "previousNext"
   /** Double-click on the picture or video closes the surface (the media window). */
   closeOnDoubleClick?: boolean
+  /** Shows an Edit button for pictures (the commander hands the picture to the viewer's editor; Stage 12). */
+  onEdit?: () => void
 }
 
 /** Wheel steps closer together than this count as one (as in the image viewer). */
@@ -37,6 +39,7 @@ export function MediaViewerOverlay({
   lane = "media-overlay",
   wheelMode = "zoom",
   closeOnDoubleClick = false,
+  onEdit,
 }: MediaViewerOverlayProps) {
   const root = useRef<HTMLDivElement>(null)
   const imageController = useRef<ImageViewerController>(null)
@@ -177,6 +180,11 @@ export function MediaViewerOverlay({
               +
             </button>
           </div>
+        )}
+        {isImage && onEdit && (
+          <button type="button" className={zoomButton} onClick={onEdit} data-testid="media-edit">
+            {t("Edit")}
+          </button>
         )}
         <button
           type="button"

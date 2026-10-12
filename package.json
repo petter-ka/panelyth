@@ -24,7 +24,10 @@
     "bench:index": "node scripts/go.mjs indexbench",
     "bench:previews": "node scripts/go.mjs thumbbench",
     "bench:find": "node scripts/go.mjs findbench",
-    "bench:archives": "node scripts/go.mjs archivebench"
+    "bench:archives": "node scripts/go.mjs archivebench",
+    "bench:compare": "node scripts/go.mjs comparebench",
+    "bench:rename": "node scripts/go.mjs renamebench",
+    "bench:edit": "node scripts/go.mjs editbench"
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",

@@ -34,7 +34,12 @@ Commander-specific scenarios, fixtures and safety tests. Layers, harness, isolat
 - A commander-only method called from the viewer's app view is rejected, even though both share one main process.
 - No action accepts a renderer-supplied path; destinations resolve from panel locations in Go.
 - Programs never start on Enter without the confirmation (default setting); `shell.run` runs only on Enter in the
-  command line. Under `PANELYTH_TEST_SHELL=record`, both are recorded and never executed.
+  command line, and `shell.runTool` only from a user command's button, key or menu entry. Under
+  `PANELYTH_TEST_SHELL=record`, all are recorded and never executed.
+- Main runs a command for the commander's own view only, while it is shown: a call from the viewer, from a hidden
+  commander or with a path instead of a folder id is refused (`tools.spec.ts`).
+- File names reach a user command's program as single arguments, whatever they hold: the unit tests hand hostile
+  names (`a&b %PATH%.txt`, `-rf`, `'; rm -rf ~; echo '`) to a real program through the real shell of the platform.
 - Recursive operations never follow links (a fixture with link cycles).
 - Archive extraction never writes outside the target (zip-slip, absolute paths, links in tar).
 
@@ -45,11 +50,12 @@ Built by `src/shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached
 | Fixture | Contents | Stages |
 |---|---|---|
 | `mixed-100k` | 100k entries: media, documents, executables, hidden and system files, links | P02, C01, C02 |
-| `tree-500k` | a deep tree with 500k mixed entries | C06, C09 |
+| `tree-500k` | a deep tree with 500k mixed entries | C06 |
 | `copy-small-10k`, `copy-large-4g` | copy throughput sets | P03, C04 |
 | `text-2g`, `encodings` | lister files: huge log, UTF-8/16, Latin-1, binary (as built: one folder, `fixturegen -text-log-bytes 2147483648 -encodings`: `big.log`, UTF-8 with and without BOM, UTF-16 LE/BE, Windows-1252, binary, a 100 KB line, empty, `tool.cmd`, `tool.sh`) | C05 |
 | `archives` | zip (ZIP64, UTF-8 names), tar.gz, zip-slip and zip-bomb samples | C07 |
-| `sync-pair` | two trees with known differences (newer, missing, size, content) | C08 |
+| `sync-pair` | two trees with known differences (newer, missing, size, content) (as built: `fixturegen -sync-pair` writes `left/` and `right/`: newer on each side, another size at one date, the same size with other bytes, files and folders on one side only, an empty folder, two versions of a text; `-sync-entries 100000` writes `tree-a/` and `tree-b/` with about 3 % differences for the benchmark) | C08 |
+| `rename-set` | multi-rename files (as built: `fixturegen -rename-scenario` writes `scenario/`: three pictures a minute apart, `notes.txt`, `taken.txt` and a folder; `-rename-files 10000` writes `files/` of empty pictures a second apart; `-rename-folders 1000` writes `folders/` with 20 files of 1 KiB each) | C09 |
 | `links` | symlinks, junctions, a cycle | P02, C06 |
 
 Fixtures are deterministic (fixed mtimes, fixed content). See the Storage Sense note in `docs/shared/TESTING.md`.

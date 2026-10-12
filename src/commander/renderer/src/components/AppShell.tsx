@@ -3,11 +3,10 @@ import { AppSwitcher, GlyphSprite, ShortcutsDialog, TooltipProvider } from "@pan
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
-import { switchToViewer as switchWithContext } from "../features/carry"
+import { editInViewer, switchToViewer as switchWithContext } from "../features/carry"
 import { resetSplit, setActivePanel, setSplit, usePanelsStore, type Side } from "../features/panels"
 import { runShellAction, useUiStore } from "../features/commands"
 import {
-  ACTIONS,
   actionFor,
   resetAllBindings,
   resetBinding,
@@ -27,11 +26,20 @@ import { CopyDialog, DeleteDialog, MkdirDialog } from "./FileDialogs"
 import { PackDialog, UnpackDialog } from "./ArchiveDialogs"
 import { useArchivesStore } from "../features/archives"
 import { FindDialog } from "./FindDialog"
+import { SyncDialog } from "./SyncDialog"
+import { DiffDialog } from "./DiffDialog"
+import { ChecksumDialog } from "./ChecksumDialog"
+import { useCompareStore } from "../features/compare"
+import { MultiRenameDialog } from "./MultiRenameDialog"
+import { AttributesDialog, PropertiesDialog } from "./AttributeDialogs"
+import { useRenameStore } from "../features/rename"
+import { useAttributesStore } from "../features/attributes"
 import { Lister } from "./Lister"
 import { NewFileDialog, ProgramDialog } from "./OpenDialogs"
 import { QuickView } from "./QuickView"
 import { ConflictDialog, JobDetailsDialog, QueuePanel } from "./QueuePanel"
 import { FunctionKeyBar } from "./FunctionKeyBar"
+import { CommandLine } from "./CommandLine"
 import { QuickActionBar } from "./QuickActionBar"
 import { HotlistDialog } from "./HotlistDialog"
 import { MaskDialog } from "./MaskDialog"
@@ -51,8 +59,10 @@ const switchToViewer = (): void => void switchWithContext().catch(() => undefine
 const FUNCTION_KEYS = new Set(["F3", "F4", "F5", "F6", "F7", "F8"])
 
 /**
- * The commander's shell (Stage C00, ADR-0028): app switcher rail, two panels
- * with a resizable divider, the function-key bar and the status bar.
+ * The commander's shell (Stage C00, ADR-0028): app switcher rail, the toolbar,
+ * two panels with a resizable divider, the queue, the command line, the
+ * function-key bar and the status bar. The toolbar, the command line and the
+ * function-key bar can be hidden (Stage C10).
  */
 export function AppShell() {
   const active = usePanelsStore((s) => s.active)
@@ -60,6 +70,9 @@ export function AppShell() {
   const layoutToken = usePanelsStore((s) => s.layoutToken)
   const quick = useViewersStore(quickTarget)
   const mediaViewer = useViewersStore((s) => s.mediaViewer)
+  const showToolbar = useSettingsStore((s) => s.settings.showToolbar)
+  const showCommandLine = useSettingsStore((s) => s.settings.showCommandLine)
+  const showFunctionKeys = useSettingsStore((s) => s.settings.showFunctionKeys)
   const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
 
   // The active panel's list holds keyboard focus (unless a menu just took it:
@@ -139,7 +152,21 @@ export function AppShell() {
     const offArchives = useArchivesStore.subscribe((s, prev) => {
       if ((prev.pack ?? prev.unpack) && !(s.pack ?? s.unpack)) focusActive()
     })
+    // Stage C08: synchronize, compare by content, create checksums.
+    const offCompare = useCompareStore.subscribe((s, prev) => {
+      if ((prev.sync ?? prev.diff ?? prev.hash) && !(s.sync ?? s.diff ?? s.hash)) focusActive()
+    })
+    // Stage C09: multi-rename, attributes, properties.
+    const offRename = useRenameStore.subscribe((s, prev) => {
+      if (prev.dialog && !s.dialog) focusActive()
+    })
+    const offAttributes = useAttributesStore.subscribe((s, prev) => {
+      if ((prev.dialog ?? prev.properties) && !(s.dialog ?? s.properties)) focusActive()
+    })
     return () => {
+      offRename()
+      offAttributes()
+      offCompare()
       offArchives()
       offFind()
       offMask()
@@ -169,59 +196,62 @@ export function AppShell() {
   return (
     <TooltipProvider>
       <GlyphSprite />
-      <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)_auto_auto_auto]">
+      <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)]">
         <AppSwitcher
           current="commander"
           shortcut={SWITCH_SHORTCUT}
           onSwitch={switchToViewer}
           onSettings={() => setSettingsOpen(true)}
         />
-        <QuickActionBar />
-        <Group
-          key={layoutToken}
-          id="panels"
-          orientation="horizontal"
-          defaultLayout={{ left: split, right: 100 - split }}
-          onLayoutChanged={(layout, meta) => {
-            const left = layout.left
-            if (meta.isUserInteraction && typeof left === "number") setSplit(left)
-          }}
-          className="min-h-0"
-        >
-          <ResizablePanel id="left" minSize="10%">
-            <PanelSlot side="left" quick={quick === "left"}>
-              <Panel
-                side="left"
-                active={active === "left"}
-                onActivate={() => setActivePanel("left")}
-                ref={(el) => {
-                  lists.current.left = el
-                }}
-              />
-            </PanelSlot>
-          </ResizablePanel>
-          <Separator
-            id="panels-separator"
-            aria-label={t("Resize panels")}
-            className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
-            onDoubleClick={resetSplit}
-          />
-          <ResizablePanel id="right" minSize="10%">
-            <PanelSlot side="right" quick={quick === "right"}>
-              <Panel
-                side="right"
-                active={active === "right"}
-                onActivate={() => setActivePanel("right")}
-                ref={(el) => {
-                  lists.current.right = el
-                }}
-              />
-            </PanelSlot>
-          </ResizablePanel>
-        </Group>
-        <QueuePanel />
-        <FunctionKeyBar />
-        <StatusBar />
+        <div className="flex min-h-0 min-w-0 flex-col">
+          {showToolbar && <QuickActionBar />}
+          <Group
+            key={layoutToken}
+            id="panels"
+            orientation="horizontal"
+            defaultLayout={{ left: split, right: 100 - split }}
+            onLayoutChanged={(layout, meta) => {
+              const left = layout.left
+              if (meta.isUserInteraction && typeof left === "number") setSplit(left)
+            }}
+            className="min-h-0 flex-1"
+          >
+            <ResizablePanel id="left" minSize="10%">
+              <PanelSlot side="left" quick={quick === "left"}>
+                <Panel
+                  side="left"
+                  active={active === "left"}
+                  onActivate={() => setActivePanel("left")}
+                  ref={(el) => {
+                    lists.current.left = el
+                  }}
+                />
+              </PanelSlot>
+            </ResizablePanel>
+            <Separator
+              id="panels-separator"
+              aria-label={t("Resize panels")}
+              className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
+              onDoubleClick={resetSplit}
+            />
+            <ResizablePanel id="right" minSize="10%">
+              <PanelSlot side="right" quick={quick === "right"}>
+                <Panel
+                  side="right"
+                  active={active === "right"}
+                  onActivate={() => setActivePanel("right")}
+                  ref={(el) => {
+                    lists.current.right = el
+                  }}
+                />
+              </PanelSlot>
+            </ResizablePanel>
+          </Group>
+          <QueuePanel />
+          {showCommandLine && <CommandLine />}
+          {showFunctionKeys && <FunctionKeyBar />}
+          <StatusBar />
+        </div>
         <CommanderShortcuts />
         <MaskDialog />
         <HotlistDialog />
@@ -236,6 +266,12 @@ export function AppShell() {
         <ProgramDialog />
         <NewFileDialog />
         <FindDialog />
+        <SyncDialog />
+        <DiffDialog />
+        <ChecksumDialog />
+        <MultiRenameDialog />
+        <AttributesDialog />
+        <PropertiesDialog />
         <Lister />
         {mediaViewer && (
           <MediaViewerOverlay
@@ -244,6 +280,11 @@ export function AppShell() {
             lane="cmd-open"
             onClose={closeMediaViewer}
             onStep={(direction) => void stepMediaViewer(direction)}
+            onEdit={() => {
+              const id = mediaViewer.item.id
+              closeMediaViewer()
+              void editInViewer(id).catch(() => undefined)
+            }}
           />
         )}
       </div>
@@ -275,12 +316,14 @@ function CommanderShortcuts() {
   const open = useKeymapStore((s) => s.helpOpen)
   const chords = useKeymapStore((s) => s.keymap.chords)
   const overrides = useKeymapStore((s) => s.overrides.bindings)
+  // The built-in actions and the user's commands (Stage C10).
+  const actions = useKeymapStore((s) => s.actions)
   const customized = useMemo(() => new Set(Object.keys(overrides)), [overrides])
   return (
     <ShortcutsDialog
       open={open}
       onOpenChange={setHelpOpen}
-      actions={ACTIONS}
+      actions={actions}
       chords={chords}
       customized={customized}
       onSet={setBinding}

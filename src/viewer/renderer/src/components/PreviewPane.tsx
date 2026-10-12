@@ -21,6 +21,8 @@ import { useThumb } from "../features/previews/thumbStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { formatBytes } from "../lib/format"
 import { EmptyState } from "./EmptyState"
+import { editBlocker, openEditor } from "../features/editor/editorStore"
+import { PencilIcon } from "./ui/icons"
 import { t } from "@panelyth/i18n"
 
 const zoomButton =
@@ -78,6 +80,20 @@ export function PreviewPane() {
             {shown?.name ?? t("Preview")}
           </span>
         </Tooltip>
+        {shown && shown.kind !== "dir" && (
+          <Tooltip content={editBlocker(shown) ?? t("Edit picture")}>
+            <button
+              type="button"
+              className={`${zoomButton} grid w-6 place-items-center px-0`}
+              aria-label={t("Edit picture")}
+              disabled={editBlocker(shown) !== null}
+              onClick={() => void openEditor({ id: shown.id, name: shown.name })}
+              data-testid="pane-edit"
+            >
+              <PencilIcon size={12} />
+            </button>
+          </Tooltip>
+        )}
         {isImage && (
           <div role="toolbar" aria-label={t("Zoom")} className="flex shrink-0 items-center gap-1">
             <Tooltip content={t("Fit (0)")}>

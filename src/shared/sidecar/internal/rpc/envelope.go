@@ -39,6 +39,14 @@ const (
 	CodeProtocolMismatch   ErrorCode = "PROTOCOL_MISMATCH"
 	CodeMethodNotFound     ErrorCode = "METHOD_NOT_FOUND"
 	CodeInternal           ErrorCode = "INTERNAL"
+	// The image editor (Stage 12, ADR-0035).
+	CodeEditTooLarge     ErrorCode = "EDIT_TOO_LARGE"
+	CodeEditUnsupported  ErrorCode = "EDIT_UNSUPPORTED"
+	CodeEditSessionGone  ErrorCode = "EDIT_SESSION_GONE"
+	CodeTrashUnavailable ErrorCode = "TRASH_UNAVAILABLE"
+	// CodeEditAssetInvalid: a file picked as a logo, mask or texture is not
+	// a picture the editor can use (wrong type, too large, not a file).
+	CodeEditAssetInvalid ErrorCode = "EDIT_ASSET_INVALID"
 )
 
 // Error is the explicit error envelope returned to callers.

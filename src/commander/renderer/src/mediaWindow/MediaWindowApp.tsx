@@ -81,6 +81,13 @@ export function MediaWindowApp() {
       closeOnDoubleClick
       onClose={closeWindow}
       onStep={(direction) => void step(direction)}
+      // The main window's viewer opens its editor on the picture; this window is done.
+      onEdit={() =>
+        void bridge
+          .editInViewer(item.id)
+          .then(closeWindow)
+          .catch(() => undefined)
+      }
     />
   )
 }

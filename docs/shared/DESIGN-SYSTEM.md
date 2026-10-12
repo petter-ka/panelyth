@@ -100,12 +100,57 @@ for portalled dialogs. Do not put native HTML `title` attributes on UI elements;
 visible headings or labels are unaffected. Use `side="right"` for left rails and
 `data-tooltip-side="right"` for virtualized rows; the tooltip flips if the viewport has no room on that side.
 
+### Editor controls (viewer, Stages 12 to 15)
+
+The image editor's controls live in `src/viewer/renderer/src/components/editor/controls.tsx`; they move to
+`src/shared/ui` only if the commander needs them (ADR-0035).
+
+- **Slider:** a track (a native range input, so arrows step by one, Page keys by more, Home and End jump), a number
+  field and a reset dot. Double click or Ctrl/Cmd+0 resets. The number field takes typed values with their unit
+  (`7,5°`, `50 %`, `200 px`) on Enter or blur; arrow keys step it, Shift by ten. The value is spoken with its unit
+  (`aria-valuetext`).
+- **Segmented control** for a few exclusive choices; **select** for more; a **fill field** (a color, or a named fill
+  such as transparent or edge).
+- **Canvas:** the picture sits on a neutral surround, 18 % gray (`#777777`) in both themes so colors are judged the
+  same way; Settings → Viewer → Image editor offers black, white or the theme's tone instead. What is transparent is
+  shown on a light checkerboard. No effects on the canvas.
+- **Progress:** a 2 px accent line under the toolbar for renders longer than 200 ms, pulsing in opacity (still under
+  `prefers-reduced-motion`). The canvas never goes blank: the last frame stays until the next has loaded.
+- **Gesture tools** (crop) show Apply and Cancel and take Enter and Esc; tools with parameters apply as they change
+  and sit in the edit stack.
+- **Tool groups (Stage 13):** the rail holds groups, not tools: one tab stop, arrow keys between the groups, a key
+  per group. The panel lists the group's tools as headers (`aria-expanded`); one is open at a time.
+- **Curve widget:** a square canvas (grid, the incoming histogram, the curve) with the control points as buttons
+  over it, so Tab walks them and each has its values as its name. Click adds, drag moves, arrows nudge (Shift: by
+  ten), Delete removes; two number fields edit the selected point. The curve takes the channel's color; no fill.
+- **Eyedropper and loupe:** a crosshair cursor over the picture and a bordered box beside the pointer with the
+  pixels at 8× (crisp, a white square marks the centre), a swatch, the hex value and R, G, B. Arrow keys move the
+  point, Enter takes the color, Esc cancels. The armed button is `aria-pressed`.
+- **Swatches:** squares in a grid of eight with a border; the tooltip gives the hex value and the share, a click
+  copies the value.
+- **Look tiles:** a 4:3 thumbnail of the current picture with the look's name under it, two per row.
+- **Regions and points on the canvas (Stage 14):** a box with eight handles (the ellipse is the same box with
+  round corners), polygon points and the lens centre are buttons: drag, or arrow keys for one picture pixel (ten
+  with Shift), Delete for a polygon point. Strokes are a white line with a black outline, so they show on any
+  picture; a lens ring is not interactive. Nothing on the canvas animates.
+- **Picked picture:** a 48 px thumbnail on the canvas tone, the file's name and size beside it, and a button that
+  opens the native dialog. The name is all the interface knows of the file.
+- **Position grid:** nine radio buttons with arrows (the canvas-size anchor grid), for where a mark sits.
+- **Token chips:** small rounded buttons under a text field that insert `{token}` at the caret.
+- **Painting on the picture (Stage 15):** the pointer is a ring of the brush's size (white with a black outline;
+  a crosshair for text, fill and red-eye). The stroke in progress is drawn at once in the brush's color and
+  opacity; an eraser, clone or heal stroke as a translucent white path; a red-eye box dashed. With the keyboard a
+  small cross moves by the arrow keys and Enter acts there. A tool's panel has a "By numbers" section for
+  everything that is not a free-hand stroke, and says when a pointer is needed.
+- **The editor keeps the keyboard:** what is behind it cannot take the focus, and a key pressed while the focus
+  is on the page itself still reaches it.
+
 ## Keyboard foundation
 
 - Every command key comes from the keymap (ADR-0022). Menus and tooltips show the current key, and **Keyboard
   shortcuts** (F1, Ctrl+/ or the keyboard button in the status bar) lists every command and lets the user record a
   new key or reset to the default.
-- Keymap scopes are per app: the viewer has `global` and `viewer`; the commander adds `panels`, `lister` and
+- Keymap scopes are per app: the viewer has `global`, `viewer` and `editor` (the image editor, Stage 12); the commander adds `panels`, `lister` and
   `dialogs` (ADR-0028); the shell adds `shell` for keys that work in both apps (the app switch, Ctrl/Cmd+Shift+M).
   Overrides live in the shared `library.db`, under each app's key and `shared.shortcuts` for the `shell` scope.
 - Plain keys (Backspace, Delete, letters) never fire commands while a text field has focus.

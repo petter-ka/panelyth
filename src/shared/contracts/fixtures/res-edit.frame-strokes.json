@@ -1,0 +1,22 @@
+{
+  "id": 200,
+  "ok": true,
+  "r": {
+    "frame": {
+      "file": "/cache/Panelyth/v1/tmp/clip.png",
+      "height": 48,
+      "mime": "image/jpeg",
+      "width": 64
+    },
+    "output": {
+      "dpi": {
+        "x": 0,
+        "y": 0
+      },
+      "height": 48,
+      "width": 64
+    },
+    "rev": 3
+  },
+  "t": "res"
+}

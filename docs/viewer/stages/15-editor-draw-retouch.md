@@ -1,7 +1,7 @@
 # Stage 15 — Image Editor: Draw and Retouch
 
-Status: **Planned** (2026-10-11). Track: viewer. Depends on: 12 (13 and 14 are not required, but the shell, stack and
-overlays they mature are reused). Unblocks: 16 (red-eye auto mode only). Not active.
+Status: **Implementation done** (2026-10-12). Track: viewer. Depends on: 12 (the shell, stack and overlays of 13 and
+14 are reused). Unblocks: 16. Open items are listed under "Open".
 
 <!-- File: docs/viewer/stages/15-editor-draw-retouch.md -->
 
@@ -12,74 +12,110 @@ nature, so the stage is about pointer handling, stroke latency and replayable op
 
 ## Decisions applied
 
-- ADR-0035: strokes are operations with normalized coordinates, so they replay at any resolution and undo is a list
-  snapshot; no pixel history.
-- ADR-0036 (proposed): draw, clone and heal are **not batchable**; red-eye is batchable only through auto-detect, and
-  only if the detector meets its quality gate in this stage.
+- ADR-0035 ("Decided in Stage 15" added): strokes are operations with normalized coordinates, so they replay at any
+  resolution and undo is a list snapshot; no pixel history.
+- ADR-0036 (proposed): draw, clone and heal are **not batchable**. **Red-eye Auto stays interactive-only** (decision
+  below); Stage 16 omits it.
+- ADR-0027 (amended): `edit.eyes` joins the viewer's profile.
 - ADR-0014: motion and cursors; ADR-0034: strings. Pure Go (ADR-0019).
 - `docs/viewer/IMAGE-EDITOR.md` §3.4.
 
-## Scope
+## Scope as built
 
 | Tool | Operation id | What it does |
 |---|---|---|
-| Draw | `draw` | brush, eraser, line, arrow, rectangle, ellipse, text, flood fill; color (with eyedropper), size, hardness, opacity; shift constrains lines/shapes; each finished stroke or shape is one stack entry (grouped under one "Draw" header) |
-| Clone | `clone` | clone stamp: Alt/Ctrl+click sets the source, painting copies from the moving source; aligned or fixed source; size, hardness, opacity; source cross-hair overlay |
-| Heal | `heal` | heal brush (clone with tone and texture blending at the edges) and **spot heal** (click or paint a blemish, source chosen automatically from nearby clean texture) |
-| Red-eye | `redeye` | click an eye or drag a box/ellipse; pupil detected inside, red replaced by a darkened, slightly desaturated tone keeping the catchlight; strength and pupil-size sliders; **Auto** finds red pupils in the picture and applies them |
+| Draw | `draw` | one operation is one drawing: a list of strokes. Brush and eraser (size, hardness, opacity, pen pressure), line, arrow, rectangle and ellipse (outlined or filled), text (the Stage 14 fonts and tokens), flood fill (tolerance). Color by well or by eyedropper |
+| Clone | `clone` | one operation per stroke: copies from a source that keeps its distance to the brush; size, hardness, opacity |
+| Heal | `heal` | one operation per stroke: **spot** finds its own source nearby, **brush** copies from a chosen one; both correct the copy's tone to the stroke's surroundings |
+| Red-eye | `redeye` | one operation per eye: the red of the pupil inside a box falls to its green and blue, a little darker; the catchlight stays. Strength and pupil-size settings. **Auto** finds pairs of pupils and adds an operation for each |
 
 ### Operation model
 
-- A stroke is `{ tool, params, points: [x, y, pressure?][] }` with points normalized to the image at that step and
-  simplified (Ramer–Douglas–Peucker at ¼ proxy pixel) so a long stroke stays small (≤ 100k points per edit list).
-- Rendering a stroke list is deterministic: brush dabs are stamped at fixed spacing along the polyline, in order.
-- **Live feedback:** while the pointer is down, strokes are drawn by Go into the proxy incrementally (only the dab
-  bounding boxes are re-rendered; the rest of the cached frame is reused), batched at the frame rate, with the cursor
-  circle drawn by the renderer (so the cursor never waits for Go). The final stroke is committed on pointer up as one
-  operation.
-- Clone/heal read from the pixels *as they were before the stroke began* (snapshot of the prefix result), so
-  overlapping strokes do not smear themselves.
+- Points are `[x, y]` or `[x, y, pressure]`, 0..1 of the picture at that step, with four decimals; sizes are
+  percentages of the shorter edge. A finished stroke is thinned (Ramer–Douglas–Peucker at a quarter of a proxy
+  pixel), so a straight drag is two points.
+- **A drawing is one operation with a list of strokes** (the plan had one operation per stroke). The strokes are
+  painted in order onto a transparent layer that is laid over the picture, so the **eraser removes drawn ink and
+  never the picture**, with no pixel history. Each stroke is still one undo step (undo is a list snapshot), and
+  the stack shows one "Draw" entry with its stroke count.
+- A brush stroke is the set of capsules between its points: every pixel takes the most any capsule covers it, so a
+  stroke does not darken where it crosses itself and its opacity is the stroke's. Hardness is the solid part of the
+  radius; pressure scales the radius between half and one and a half.
+- Clone and heal read their input, the picture before the stroke, so a stroke over its own source does not smear.
+- Limits: 2,000 strokes per drawing, 20,000 points per stroke, and an edit list of at most 1 MB as it travels
+  (about 60,000 points; the plan said 100,000). The editor refuses a new stroke at 0.9 MB with a message.
+- None of the four is `Batchable`.
 
-### Heal algorithm
+### Live feedback (measured decision)
 
-- Stage spike decides between (a) gradient-domain (Poisson/seamless clone with a multigrid or FFT-free Gauss–Seidel
-  solver on the masked region) and (b) patch-based fill (PatchMatch) for spot heal. Proposed default: (a) for the heal
-  brush (bounded region, cheap, predictable), PatchMatch-lite for spot heal with a bounded patch search window and a
-  fixed seed. Both deterministic. Quality is judged on a committed set of blemish/dust/scratch fixtures with a
-  reference result and a perceptual-difference bound; the chosen method and its numbers are recorded in this stage
-  document.
-- The healing region is limited to 2,048×2,048 px per stroke at final quality (larger strokes are split), to bound
-  time and memory.
+The plan was an incremental protocol (`edit.render { live: { opId, appendedPoints } }`, dabs rendered into the
+cached frame). Built instead, with no new render parameter:
 
-### Red-eye
+- **The ink is the renderer's.** The stroke in progress is drawn at once as a path on a canvas over the picture
+  (color, width and opacity of the brush), in the task of the pointer event; so is the brush ring. This is a path,
+  not picture data. 26 ms at most from the event's timestamp to ink on a 24 MP picture (budget 33 ms).
+- **Go's frames follow.** Once per animation frame the stroke as it is goes to Go as an ordinary live edit (the
+  newest only); a draft frame comes back every 51 ms at p95 and the full one on release, which replaces the ink.
+- **The layer of the strokes before the last is kept** (two layers, proxy sizes only), so a frame paints one
+  stroke, not all: a drawing of 50 strokes went from 330 ms to 11 ms for the stroke being drawn. A fill looks at
+  the picture and a text token at the file, so nothing is kept from such a stroke on.
 
-- Detection inside the user's box: candidate pixels where `R > 1.8 × max(G, B)` and `R` above a level threshold in
-  linear light, grown to a connected region, filtered by size, circularity and fill ratio, then the most plausible
-  blob per eye. Replacement lowers the red channel toward `(G + B) / 2` with a smooth falloff and a slight darkening,
-  preserving specular highlights (pixels brighter than a threshold in all channels are untouched).
-- **Auto mode:** scans the picture at proxy resolution for pairs of near-equal red blobs satisfying the same tests;
-  reports "N eyes fixed" or "No red eyes found". Ships to batch only if the committed test set (positives, negatives
-  such as red lips, red clothing, taillights, sunsets) shows ≥ 90 % true positives and ≤ 2 % false positives per
-  picture; otherwise Auto remains interactive-only and Stage 16 omits it.
+### Heal: the method (spike result)
 
-### UX
+Tone-corrected copy. The difference between the picture and the copied source is taken *around* the stroke
+(weighted by how far outside the mask a pixel is), spread smoothly across the stroke by a normalized blur, and
+added to the copy: the texture is the source's, the light is the surroundings'. It is linear in the pixels of the
+stroke's box, deterministic, and needs no solver. For a spot the source is the best of 48 offsets (16 directions,
+three distances): the one whose ring around the stroke looks most like the stroke's own ring.
 
-- Cursor: a size/hardness circle that scales with zoom; dual-color outline; `[` and `]` change size, `Shift+[`/`]`
-  hardness, number keys opacity (as in common editors, remappable).
-- Canvas zoom stays fully usable while a tool is active (wheel, space+drag to pan, `Ctrl/Cmd+wheel` zoom). Minimum
-  tool precision stays one screen pixel at any zoom.
-- Pressure from pen/touch is supported when the pointer reports it (`PointerEvent.pressure`); mouse uses constant 0.5.
-- Color picker: swatches, recent colors, hex, HSB, eyedropper with loupe; shared with watermark and border colors.
-- Text: placed on the canvas, edited in place with a floating toolbar (font, size, color, bold-weight where the family
-  has it); rendering by the Stage 14 font stack.
-- Draw/clone/heal show an `Undo` affordance (the whole stack's undo applies per stroke), an `Eraser` that removes
-  parts of **draw** strokes only (non-destructive for the rest), and a clear "Flatten" explanation (strokes become
-  pixels on save, never before).
-- Keyboard: draw and clone are pointer tools; the keyboard path offers shape tools by numeric entry (position, size),
-  a "Heal at cursor"/"Fix red eye at cursor" command driven by arrow-key cursor movement over the canvas, and
-  undo/redo/clear. This covers the accessibility baseline: every result achievable by pointer is achievable with
-  numeric input for shapes, fills, text and red-eye; free-hand strokes are explicitly pointer-only, and said so in
-  the tool's help.
+Fixtures (generated in the test: soft light, grain, a dark blemish; five sizes and places) and bound:
+
+| | Mean error in the blemish, levels of 255 |
+|---|---|
+| Before | 29.1 |
+| Spot heal | 3.6 |
+| Heal brush, source in differently lit skin | 3.5 |
+| Clone from the same source | 25.6 |
+
+The gate in the test: each fixture ends within 8 levels (the grain is ±6), heal removes at least four fifths of
+the error, and the heal brush is at least twice as good as a clone from the same source. A scratch healed by a
+stroke along it loses five sixths of its error. A gradient-domain solver and patch search were not needed to
+reach this; they remain the options if photographs show seams.
+
+One stroke heals at most 2,048 × 2,048 pixels; a larger one is refused with a message (the plan said split).
+
+### Red-eye: detection and the gate
+
+- Fix: inside the box's ellipse, a pixel counts as retina-red when its red is well above its green and blue
+  (from 1.75 times, fully at 2.25) and not dark; pixels bright in every channel (the catchlight) are left alone,
+  also after the mask is softened.
+- Auto: candidates are pixels with `R > 1.8 × max(G, B)` and `R ≥ 80`; connected blobs are kept when they are
+  0.4–8 % of the shorter edge, about as wide as high, and fill their box like a disc; two blobs are a pair of eyes
+  when they are of similar size (within 1.7×), 4–18 pupil widths apart and level within about 20°. A single red
+  blob is never touched.
+- `edit.eyes` returns the pupils of the picture as it is edited; the editor adds an ordinary `redeye` step per
+  pupil (one undo for all), so what was found can be seen and removed. The operation also has an `auto` variant
+  that detects when it is applied.
+- **Gate result:** on the test set the detection finds 138 of 138 pupils in 60 scenes with no extra detection, and
+  none of ten negatives (a single light, lips, red clothing, a sunset, two sizes, one above the other, far apart,
+  berries, a bar, far red squares). **The set is synthetic** (discs on skin tones): it shows that the rules do what
+  they say, not how they fare on photographs. The gate asked for evidence on real pictures, which this stage does
+  not have. **Decision: Auto is interactive-only; `redeye` is not batchable and Stage 16 omits it.**
+
+### UX as built
+
+- A seventh group in the rail, **Draw and retouch** (key R): Draw, Clone, Heal, Red-eye.
+- The brush is a ring of the brush's size on the picture (white with a black outline), whatever the zoom; `[` and
+  `]` change the size in steps that grow with it, `{` and `}` the hardness. Text, fill and red-eye use a
+  crosshair.
+- Draw: eight tools as a radio grid; Shift keeps a line to 45° steps and a rectangle or ellipse square on screen;
+  text and fill by a click; "Remove the last stroke"; a note that strokes become pixels only when saved.
+- Clone and the heal brush: Alt (or Ctrl) and a click choose the source, shown by a marker until the first stroke.
+- **Keyboard:** the overlay takes the focus; arrow keys move a cross, Enter does what a click does there (a dot, a
+  text, a fill, a healed spot, a fixed eye), Alt+Enter sets the source. Every panel has a "By numbers" section:
+  shapes by two points, text and fill by one, a clone stamp, a heal, an eye. Free-hand strokes need a pointer, and
+  the panel says so.
+- 63 new strings, translated into the seven other languages.
 
 ## Non-goals
 
@@ -89,75 +125,97 @@ nature, so the stage is about pointer handling, stroke latency and replayable op
 
 ## Implementation tasks
 
-- [ ] Spike: heal method comparison on the fixture set; record the decision here.
-- [ ] Go: brush engine (dab stamping with hardness falloff, opacity accumulation rules, eraser), shapes (anti-aliased
-  line/arrow/rect/ellipse), flood fill (scanline, tolerance), text (Stage 14 font stack), stroke simplification.
-- [ ] Go: incremental stroke rendering into the cached frame; snapshot-before-stroke for clone/heal.
-- [ ] Go: clone, heal (solver + masks), spot-heal source selection, region limits.
-- [ ] Go: red-eye detection and replacement; Auto scanner; fixtures and metrics tool in `src/shared/bench`.
-- [ ] Contracts, validation (point caps, region sizes), golden fixtures.
-- [ ] Renderer: pointer pipeline (coalesced events via `getCoalescedEvents`, rAF batching, no React render per
-  point), cursor overlay, tool options, color picker, text editing overlay, keyboard-numeric paths.
-- [ ] Stack: grouping of strokes under one header, per-stroke delete, memory guard on huge lists.
-- [ ] Tests, benchmarks, docs, `t()` strings.
+- [x] Spike: heal method; decision and numbers above.
+- [x] Go: brush engine (capsules with hardness, stroke opacity, eraser on the drawing's layer), shapes, flood fill
+  (scanline, tolerance), text (Stage 14 fonts), stroke simplification.
+- [x] Go: the kept layer for the stroke in progress; clone and heal read the step's input.
+- [x] Go: clone, heal (tone-corrected copy, spot source search), region limit.
+- [x] Go: red-eye fix and detection; `edit.eyes`.
+- [x] Contracts, validation, golden fixtures.
+- [x] Renderer: pointer pipeline (coalesced events, one message per frame, no React render per point), brush
+  ring, tool options, keyboard and numeric paths.
+- [x] Stack: one entry per drawing with its stroke count; the list-size guard.
+- [x] Tests, benchmarks, docs, `t()` strings.
 
 ## APIs/contracts
 
-No new methods. A new optional render parameter `edit.render { …, live?: { opId, appendedPoints } }` lets the renderer
-send only the points added since the last frame while a stroke is in progress (the committed list is sent on pointer
-up). The result is a normal frame. Operation schemas as above; limits: ≤ 100k points per list, ≤ 512 operations.
+One new method, `edit.eyes { sessionId, editList }` → `{ eyes: { x, y, w, h }[] }` (viewer profile). No render
+parameter was added. Operations `draw { strokes }`, `clone`, `heal`, `redeye` as above.
 
 ## Tests
 
-- Go: brush dab spacing/hardness golden images, determinism of replays on proxy and full size (difference bound),
-  eraser only affects draw strokes, flood fill tolerance, clone aligned/fixed offsets, clone of overlapping strokes
-  does not self-smear, heal fixtures within the perceptual bound, spot-heal on dust/scratch fixtures, red-eye
-  detection metrics (precision/recall on the committed set), highlight preservation, region limit splitting,
-  cancellation, stroke simplification error bound.
-- Renderer: pointer batching (N pointer events → ≤ 1 render per frame), cursor never waits on Go, undo per stroke,
-  keyboard-numeric shape path, color picker accessibility, strings via `t()`.
-- E2E: draw a line and a text, clone a patch, heal a blemish fixture, red-eye click and Auto, save and compare probe
-  pixels; undo/redo through all of them; pen pressure simulated through synthetic pointer events.
+- Go, `internal/imaging/paint_test.go`: 12 golden cases; brush hardness, opacity, self-crossing, pressure, a dot;
+  the eraser removes ink only, within its drawing; shapes, text, fill and its tolerance; **the proxy shows what
+  the save writes** (8 lists); the kept layer never changes a result (strokes added one at a time against fresh
+  renders); clone copies from before the stroke; the heal fixtures and their bound; a scratch; the region limit;
+  red-eye fix (pupil, catchlight, skin, lips, dull red); the detection set; path simplification within its
+  tolerance; 29 invalid parameter sets; cancellation. `internal/editor`: eyes found in the edited picture.
+- Contracts and desktop: the four operations, list size, `edit.eyes` for the viewer only.
+- Renderer, `features/editor/paint.test.ts` and `components/editor/retouch.test.tsx` (24 tests): a drag becomes a
+  thinned stroke and one history step; strokes join a drawing; pen pressure; shapes with Shift and by numbers;
+  text and fill; the keyboard cross and the size keys; **sixty pointer events in one task ask Go for at most one
+  frame**; the list-size guard; the clone source and its offset; heal modes; red-eye by click, box and Auto.
+- E2E, `specs/viewer/editor-retouch.spec.ts`: a stroke whose ink is on screen before Go answers, a text, a cloned
+  patch, a healed blemish, Auto on a pair of pupils and a click on a single one; undo and redo through all six
+  steps; the saved BMP has the brush's color along the stroke, the cloned pixels, skin where the blemish was and
+  dark pupils; the rest is untouched. On 24 MP: ink latency, frame pace, no long task.
 
 ## Benchmarks
 
-`BENCH_STAGE=15`. Proposed budgets:
+`BENCH_LARGE=1 go test ./internal/imaging -bench DrawAndRetouch` (`imaging-bench.txt` before the kept layer,
+`imaging-bench-2.txt` after) and the e2e spec. Results: `src/shared/bench/results/stage-15-*`.
 
-| Case | Budget |
-|---|---|
-| Pointer move → stroke visible (brush 50 px, 2 MP proxy) | p95 < 33 ms |
-| Cursor overlay latency (renderer only) | one frame |
-| Clone dab batch (per frame) | < 8 ms |
-| Heal brush region 256×256 | < 120 ms |
-| Spot heal region 128×128 | < 250 ms |
-| Red-eye click, 24 MP source | < 150 ms |
-| Red-eye Auto scan, 2 MP proxy | < 600 ms |
-| Replay of 5,000-point stroke list at full resolution 24 MP | < 800 ms |
+| Case | Budget | Measured |
+|---|---|---|
+| Pointer move → ink visible, 24 MP in the app | p95 < 33 ms | at most 26 ms (drawn in the event's task) |
+| Brush ring | one frame | moved in the pointer handler |
+| Go frame while a stroke is drawn, 24 MP in the app | — | 51 ms between frames at p95, no long task |
+| Brush stroke 50 px, 2 MP (the operation) | — | 1.6–4.2 ms; the 50th stroke of a drawing 11–12 ms (330 ms before the kept layer) |
+| Clone stroke, 2 MP | < 8 ms | 7.5–7.9 ms (8.4–8.7 ms before copies were made in parallel) |
+| Heal brush, region 256 × 256 | < 120 ms | 8–10 ms |
+| Spot heal, region 128 × 128 | < 250 ms | 7–7.5 ms |
+| Red-eye click, 24 MP | < 150 ms | 21–22 ms |
+| Red-eye Auto scan, 2 MP | < 600 ms | 9.5–10 ms |
+| Replay of a 5,000-point stroke at 24 MP | < 800 ms | 630–650 ms |
 
-Plus renderer long-task count during continuous drawing (none > 50 ms) and heap growth per 1,000 strokes.
+Not measured: heap growth per 1,000 strokes (a drawing is bounded by the 1 MB list; the kept layers are two
+proxy-size pictures).
 
 ## Acceptance criteria
 
-- Strokes feel immediate (cursor and ink) at any zoom; undo/redo is exact; replay at save equals the preview within
-  the documented resampling bound.
-- Heal and spot heal meet the recorded fixture quality bound; red-eye meets its detection gate or Auto stays
-  interactive-only (recorded decision).
-- Every non-freehand result has a keyboard path; free-hand limitations are stated in the UI.
+- [x] Strokes feel immediate (ring and ink) at any zoom; undo and redo are exact; a replay at save equals the
+  preview within the resampling bound (tested on eight lists).
+- [x] Heal and spot heal meet the recorded fixture bound; red-eye Auto stays interactive-only (recorded above).
+- [x] Every result that is not a free-hand stroke has a keyboard path; the limitation is stated in the panel.
 
-## Risks
+## Open
 
-| Risk | Mitigation |
+- Not built from the plan: a fixed (non-moving) clone source; text edited in place on the canvas with a floating
+  toolbar (it is typed in the panel); a color picker with swatches, recent colors and HSB (the color well and the
+  eyedropper); number keys for opacity; the size and hardness keys in the keymap (they are fixed keys of the
+  overlay); deleting a stroke other than the last; a smoothing slider.
+- While a paint tool is open a drag on the picture paints: the picture is moved with the wheel (zoom) but not
+  panned by dragging. Space+drag to pan is not built.
+- The eraser reaches the strokes of its own drawing only; ink of an earlier Draw entry is pixels to it.
+- A spot heal picks its source at the working size, so the proxy and the save may choose differently; both heal.
+- Red-eye Auto needs both eyes, level; one eye, or a picture on its side, needs a click.
+- Pen pressure is unit-tested; the e2e test uses a mouse.
+- The NVDA pass over the new panels and the overlay; the Linux and macOS runs and the race detector (CI).
+
+## Risks (as they turned out)
+
+| Risk | Outcome |
 |---|---|
-| Stroke latency through IPC + Go | incremental dab rendering, cursor in renderer, appended-points protocol, coalescing |
-| Heal quality in pure Go | spike, fixture bound, region cap, "Clone" remains the fallback tool |
-| Large stroke lists bloat messages | simplification, caps, send deltas while drawing |
-| Auto red-eye false positives | quality gate, interactive-only fallback, report of what was changed |
-| Accessibility gap for free-hand tools | numeric/shape alternatives, explicit documentation |
+| Stroke latency through IPC + Go | the ink is drawn in the renderer at once; Go follows at 51 ms |
+| Heal quality in pure Go | the fixture bound is met by a tone-corrected copy; Clone remains the fallback |
+| Large stroke lists bloat messages | simplification, four decimals, the 1 MB list and a guard before it |
+| Auto red-eye false positives | pairs only; interactive-only; each found eye is an edit the user sees |
+| Accessibility gap for free-hand tools | a keyboard cross with Enter, and numbers for everything but free-hand strokes |
 
 ## Exit checklist
 
-- [ ] implementation complete
-- [ ] tests complete
-- [ ] benchmark complete
-- [ ] performance regression reviewed (both apps when platform code changed)
-- [ ] docs/ADR updated
+- [x] implementation complete (see Open)
+- [x] tests complete
+- [x] benchmark complete
+- [x] performance regression reviewed (viewer and commander unit suites; the four editor e2e specs)
+- [x] docs/ADR updated

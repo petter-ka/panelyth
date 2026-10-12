@@ -1,0 +1,72 @@
+goos: windows
+goarch: amd64
+pkg: panelyth/sidecar/internal/imaging
+cpu: 13th Gen Intel(R) Core(TM) i9-13900K
+BenchmarkColorTools/2MP/median256-fs-32         	      20	  55459255 ns/op	 155.79 MB/s	10182419 B/op	    1058 allocs/op
+BenchmarkColorTools/2MP/median256-fs-32         	      21	  55528167 ns/op	 155.60 MB/s	10182418 B/op	    1058 allocs/op
+BenchmarkColorTools/2MP/median256-fs-32         	      20	  89690230 ns/op	  96.33 MB/s	10182419 B/op	    1058 allocs/op
+BenchmarkColorTools/2MP/median16-plain-32       	      43	  28210963 ns/op	 306.26 MB/s	10107558 B/op	     107 allocs/op
+BenchmarkColorTools/2MP/median16-plain-32       	      40	  27922858 ns/op	 309.42 MB/s	10107274 B/op	     106 allocs/op
+BenchmarkColorTools/2MP/median16-plain-32       	      43	  28563488 ns/op	 302.48 MB/s	10106453 B/op	     105 allocs/op
+BenchmarkColorTools/2MP/fused-chain-32          	     121	   9886083 ns/op	 873.96 MB/s	 8648453 B/op	      34 allocs/op
+BenchmarkColorTools/2MP/fused-chain-32          	     121	   9908344 ns/op	 871.99 MB/s	 8648597 B/op	      34 allocs/op
+BenchmarkColorTools/2MP/fused-chain-32          	     121	   9852522 ns/op	 876.93 MB/s	 8648291 B/op	      33 allocs/op
+BenchmarkColorTools/2MP/one-table-32            	     524	   2324004 ns/op	3717.72 MB/s	 8644630 B/op	      18 allocs/op
+BenchmarkColorTools/2MP/one-table-32            	     648	   2285204 ns/op	3780.84 MB/s	 8644509 B/op	      18 allocs/op
+BenchmarkColorTools/2MP/one-table-32            	     585	   2234962 ns/op	3865.84 MB/s	 8644532 B/op	      18 allocs/op
+BenchmarkColorTools/2MP/gaussian-r10-32         	      64	  20260359 ns/op	 426.45 MB/s	17375296 B/op	     242 allocs/op
+BenchmarkColorTools/2MP/gaussian-r10-32         	      57	  19411444 ns/op	 445.10 MB/s	17375303 B/op	     242 allocs/op
+BenchmarkColorTools/2MP/gaussian-r10-32         	      61	  19796016 ns/op	 436.45 MB/s	17375297 B/op	     242 allocs/op
+BenchmarkColorTools/2MP/unsharp-r10-32          	      52	  22626615 ns/op	 381.85 MB/s	17375886 B/op	     253 allocs/op
+BenchmarkColorTools/2MP/unsharp-r10-32          	      58	  22348879 ns/op	 386.60 MB/s	17375885 B/op	     253 allocs/op
+BenchmarkColorTools/2MP/unsharp-r10-32          	      61	  23571195 ns/op	 366.55 MB/s	17375881 B/op	     253 allocs/op
+BenchmarkColorTools/2MP/bilateral-32            	      10	 102416880 ns/op	  84.36 MB/s	28200108 B/op	     280 allocs/op
+BenchmarkColorTools/2MP/bilateral-32            	      10	 104703550 ns/op	  82.52 MB/s	28200128 B/op	     280 allocs/op
+BenchmarkColorTools/2MP/bilateral-32            	      10	 104784710 ns/op	  82.45 MB/s	28200115 B/op	     280 allocs/op
+BenchmarkColorTools/2MP/bilateral-draft-32      	      16	  67901344 ns/op	 127.24 MB/s	28200031 B/op	     280 allocs/op
+BenchmarkColorTools/2MP/bilateral-draft-32      	      18	  67604589 ns/op	 127.80 MB/s	28200016 B/op	     280 allocs/op
+BenchmarkColorTools/2MP/bilateral-draft-32      	      15	  68342140 ns/op	 126.42 MB/s	28200032 B/op	     280 allocs/op
+BenchmarkColorTools/2MP/nlm-32                  	       4	 254395975 ns/op	  33.96 MB/s	10835360 B/op	      27 allocs/op
+BenchmarkColorTools/2MP/nlm-32                  	       4	 253834950 ns/op	  34.04 MB/s	10835336 B/op	      27 allocs/op
+BenchmarkColorTools/2MP/nlm-32                  	       4	 253433325 ns/op	  34.09 MB/s	10835336 B/op	      27 allocs/op
+BenchmarkColorTools/2MP/nlm-draft-32            	       8	 130176838 ns/op	  66.37 MB/s	10827168 B/op	      27 allocs/op
+BenchmarkColorTools/2MP/nlm-draft-32            	       8	 129626538 ns/op	  66.65 MB/s	10827184 B/op	      27 allocs/op
+BenchmarkColorTools/2MP/nlm-draft-32            	       8	 130671050 ns/op	  66.12 MB/s	10827158 B/op	      27 allocs/op
+BenchmarkColorTools/2MP/count-colors-32         	      99	  11979457 ns/op	 721.23 MB/s	 2097152 B/op	       1 allocs/op
+BenchmarkColorTools/2MP/count-colors-32         	      96	  12043442 ns/op	 717.40 MB/s	 2097152 B/op	       1 allocs/op
+BenchmarkColorTools/2MP/count-colors-32         	      87	  12183120 ns/op	 709.18 MB/s	 2097152 B/op	       1 allocs/op
+BenchmarkColorTools/24MP/one-table-32           	      57	  20761656 ns/op	4623.91 MB/s	96004102 B/op	      18 allocs/op
+BenchmarkColorTools/24MP/one-table-32           	      58	  20993209 ns/op	4572.91 MB/s	96004008 B/op	      18 allocs/op
+BenchmarkColorTools/24MP/one-table-32           	      57	  21009737 ns/op	4569.31 MB/s	96004014 B/op	      18 allocs/op
+BenchmarkColorTools/24MP/gaussian-r10-32        	       6	 183035433 ns/op	 524.49 MB/s	192295866 B/op	     635 allocs/op
+BenchmarkColorTools/24MP/gaussian-r10-32        	       6	 182615700 ns/op	 525.69 MB/s	192295917 B/op	     636 allocs/op
+BenchmarkColorTools/24MP/gaussian-r10-32        	       6	 182991183 ns/op	 524.62 MB/s	192295869 B/op	     635 allocs/op
+BenchmarkColorTools/24MP/unsharp-r10-32         	       5	 208383460 ns/op	 460.69 MB/s	192296518 B/op	     647 allocs/op
+BenchmarkColorTools/24MP/unsharp-r10-32         	       5	 207821160 ns/op	 461.94 MB/s	192296451 B/op	     646 allocs/op
+BenchmarkColorTools/24MP/unsharp-r10-32         	       5	 206933500 ns/op	 463.92 MB/s	192296470 B/op	     646 allocs/op
+BenchmarkColorTools/24MP/bilateral-32           	       1	1060810200 ns/op	  90.50 MB/s	312369120 B/op	     673 allocs/op
+BenchmarkColorTools/24MP/bilateral-32           	       1	1059233300 ns/op	  90.63 MB/s	312369120 B/op	     673 allocs/op
+BenchmarkColorTools/24MP/bilateral-32           	       1	1058494800 ns/op	  90.69 MB/s	312369328 B/op	     675 allocs/op
+BenchmarkColorTools/24MP/bilateral-draft-32     	       2	 677502250 ns/op	 141.70 MB/s	312344616 B/op	     674 allocs/op
+BenchmarkColorTools/24MP/bilateral-draft-32     	       2	 674093750 ns/op	 142.41 MB/s	312344616 B/op	     674 allocs/op
+BenchmarkColorTools/24MP/bilateral-draft-32     	       2	 672626950 ns/op	 142.72 MB/s	312344664 B/op	     675 allocs/op
+BenchmarkColorTools/24MP/nlm-32                 	       1	2687345000 ns/op	  35.72 MB/s	120092128 B/op	      28 allocs/op
+BenchmarkColorTools/24MP/nlm-32                 	       1	2696604700 ns/op	  35.60 MB/s	120092016 B/op	      27 allocs/op
+BenchmarkColorTools/24MP/nlm-32                 	       1	2688864300 ns/op	  35.70 MB/s	120092240 B/op	      29 allocs/op
+BenchmarkColorTools/24MP/nlm-draft-32           	       1	1374054600 ns/op	  69.87 MB/s	120075744 B/op	      28 allocs/op
+BenchmarkColorTools/24MP/nlm-draft-32           	       1	1373916200 ns/op	  69.87 MB/s	120075856 B/op	      29 allocs/op
+BenchmarkColorTools/24MP/nlm-draft-32           	       1	1378651700 ns/op	  69.63 MB/s	120075856 B/op	      29 allocs/op
+BenchmarkColorTools/24MP/median256-fs-32        	       2	 596849250 ns/op	 160.84 MB/s	97645848 B/op	    1058 allocs/op
+BenchmarkColorTools/24MP/median256-fs-32        	       2	 590590300 ns/op	 162.55 MB/s	97645848 B/op	    1058 allocs/op
+BenchmarkColorTools/24MP/median256-fs-32        	       2	 596916950 ns/op	 160.83 MB/s	97645848 B/op	    1058 allocs/op
+BenchmarkColorTools/24MP/median16-plain-32      	       6	 175409017 ns/op	 547.29 MB/s	97465074 B/op	     103 allocs/op
+BenchmarkColorTools/24MP/median16-plain-32      	       6	 176916033 ns/op	 542.63 MB/s	97467653 B/op	     108 allocs/op
+BenchmarkColorTools/24MP/median16-plain-32      	       6	 176033550 ns/op	 545.35 MB/s	97465672 B/op	     104 allocs/op
+BenchmarkColorTools/24MP/fused-chain-32         	      10	 101045550 ns/op	 950.07 MB/s	96007579 B/op	      33 allocs/op
+BenchmarkColorTools/24MP/fused-chain-32         	      10	 100644750 ns/op	 953.85 MB/s	96007569 B/op	      33 allocs/op
+BenchmarkColorTools/24MP/fused-chain-32         	      12	  99693200 ns/op	 962.95 MB/s	96007580 B/op	      33 allocs/op
+BenchmarkColorTools/24MP/count-colors-32        	       7	 157586800 ns/op	 609.19 MB/s	 2097152 B/op	       1 allocs/op
+BenchmarkColorTools/24MP/count-colors-32        	       7	 155017043 ns/op	 619.29 MB/s	 2097152 B/op	       1 allocs/op
+BenchmarkColorTools/24MP/count-colors-32        	       7	 154690800 ns/op	 620.59 MB/s	 2097152 B/op	       1 allocs/op
+PASS
+ok  	panelyth/sidecar/internal/imaging	82.223s

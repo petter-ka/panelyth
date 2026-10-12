@@ -1,0 +1,14 @@
+{
+  "e": {
+    "code": "INVALID_ARGUMENT",
+    "details": {
+      "field": "nameMask",
+      "reason": "plan"
+    },
+    "message": "a [ has no ]",
+    "retryable": false
+  },
+  "id": 173,
+  "ok": false,
+  "t": "res"
+}

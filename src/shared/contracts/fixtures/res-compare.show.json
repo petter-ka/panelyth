@@ -1,0 +1,32 @@
+{
+  "id": 156,
+  "ok": true,
+  "r": {
+    "plan": {
+      "copyLeft": {
+        "bytes": 0,
+        "files": 0
+      },
+      "copyRight": {
+        "bytes": 15,
+        "files": 2
+      },
+      "counts": {
+        "copyLeft": 0,
+        "copyRight": 2,
+        "delete": 2,
+        "different": 0,
+        "equal": 1
+      },
+      "deleteLeft": 0,
+      "deleteRight": 2,
+      "folders": 0,
+      "overwriteNewer": 0,
+      "version": 3
+    },
+    "queryId": 14,
+    "total": 5,
+    "version": 4
+  },
+  "t": "res"
+}

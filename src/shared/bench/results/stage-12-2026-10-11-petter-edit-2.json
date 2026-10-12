@@ -1,0 +1,186 @@
+{
+  "stage": "12",
+  "at": "2026-10-12T00:18:38+02:00",
+  "numCpu": 32,
+  "workers": 8,
+  "go": "go1.27.0",
+  "sizes": [
+    {
+      "megapixels": 24,
+      "width": 6000,
+      "height": 4000,
+      "fileMB": 5.5,
+      "openMs": [
+        213.81,
+        213.79,
+        215.14
+      ],
+      "openPeakMB": 152,
+      "sessionMB": 72,
+      "dragRotate": {
+        "p50Ms": 15.61,
+        "p95Ms": 20.26,
+        "maxMs": 21.21,
+        "frameKB": 59.8,
+        "frameMP": 1.1
+      },
+      "dragResize": {
+        "p50Ms": 17.21,
+        "p95Ms": 26.24,
+        "maxMs": 26.63,
+        "frameKB": 60.8,
+        "frameMP": 1.09
+      },
+      "dragCrop": {
+        "p50Ms": 21.49,
+        "p95Ms": 24.26,
+        "maxMs": 26.69,
+        "frameKB": 53.4,
+        "frameMP": 0.96
+      },
+      "final": {
+        "p50Ms": 53.16,
+        "p95Ms": 67.8,
+        "maxMs": 67.8,
+        "frameKB": 158.5,
+        "frameMP": 1.66
+      },
+      "finalMaxFrame": {
+        "p50Ms": 119.91,
+        "p95Ms": 130.75,
+        "maxMs": 130.75,
+        "frameKB": 451.2,
+        "frameMP": 3.77
+      },
+      "saveJpegMs": [
+        879.22,
+        882.73,
+        881.87
+      ],
+      "savePngMs": 1672.75,
+      "savePeakMB": 244,
+      "savedMB": 2.2,
+      "estimateMs": 30.7,
+      "estimateMB": 1.1,
+      "maxGoroutines": 11
+    },
+    {
+      "megapixels": 49.99,
+      "width": 8660,
+      "height": 5773,
+      "fileMB": 11.5,
+      "openMs": [
+        677.87,
+        672.59,
+        670.81
+      ],
+      "openPeakMB": 139,
+      "sessionMB": 72,
+      "dragRotate": {
+        "p50Ms": 28.48,
+        "p95Ms": 37.51,
+        "maxMs": 44.53,
+        "frameKB": 70.5,
+        "frameMP": 1.1
+      },
+      "dragResize": {
+        "p50Ms": 31.68,
+        "p95Ms": 49.72,
+        "maxMs": 53.74,
+        "frameKB": 71.6,
+        "frameMP": 1.09
+      },
+      "dragCrop": {
+        "p50Ms": 22.13,
+        "p95Ms": 24.46,
+        "maxMs": 35.84,
+        "frameKB": 55.3,
+        "frameMP": 0.96
+      },
+      "final": {
+        "p50Ms": 53.02,
+        "p95Ms": 67.03,
+        "maxMs": 67.03,
+        "frameKB": 155.5,
+        "frameMP": 1.66
+      },
+      "finalMaxFrame": {
+        "p50Ms": 117.64,
+        "p95Ms": 126.62,
+        "maxMs": 126.62,
+        "frameKB": 399.6,
+        "frameMP": 3.78
+      },
+      "saveJpegMs": [
+        1798.55,
+        1805.88,
+        1807
+      ],
+      "savePngMs": 3496.47,
+      "savePeakMB": 431,
+      "savedMB": 4.6,
+      "estimateMs": 35.25,
+      "estimateMB": 2.5,
+      "maxGoroutines": 11
+    },
+    {
+      "megapixels": 99.88,
+      "width": 12240,
+      "height": 8160,
+      "fileMB": 22.9,
+      "openMs": [
+        1252.07,
+        1252.74,
+        1239.52
+      ],
+      "openPeakMB": 261,
+      "sessionMB": 72,
+      "dragRotate": {
+        "p50Ms": 28.21,
+        "p95Ms": 37.59,
+        "maxMs": 41.14,
+        "frameKB": 85.5,
+        "frameMP": 1.1
+      },
+      "dragResize": {
+        "p50Ms": 31.81,
+        "p95Ms": 51.51,
+        "maxMs": 54.09,
+        "frameKB": 86.7,
+        "frameMP": 1.09
+      },
+      "dragCrop": {
+        "p50Ms": 22.56,
+        "p95Ms": 25.89,
+        "maxMs": 38.6,
+        "frameKB": 63.4,
+        "frameMP": 0.96
+      },
+      "final": {
+        "p50Ms": 52.51,
+        "p95Ms": 67.68,
+        "maxMs": 67.68,
+        "frameKB": 168.7,
+        "frameMP": 1.66
+      },
+      "finalMaxFrame": {
+        "p50Ms": 115,
+        "p95Ms": 124.7,
+        "maxMs": 124.7,
+        "frameKB": 360.1,
+        "frameMP": 3.78
+      },
+      "saveJpegMs": [
+        3574.41,
+        3601.21,
+        3623.87
+      ],
+      "savePngMs": 6977.93,
+      "savePeakMB": 789,
+      "savedMB": 9.2,
+      "estimateMs": 34.33,
+      "estimateMB": 5.7,
+      "maxGoroutines": 11
+    }
+  ]
+}

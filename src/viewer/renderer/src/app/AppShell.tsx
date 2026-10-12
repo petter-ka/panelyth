@@ -12,6 +12,7 @@ import { SidebarPane } from "../components/SidebarPane"
 import { Notice } from "../components/Notice"
 import { StatusBar } from "../components/StatusBar"
 import { ViewerOverlay } from "../components/viewer/ViewerOverlay"
+import { EditorOverlay } from "../components/editor/EditorOverlay"
 import { registerPaneControls } from "../features/workspace/paneControls"
 import { setPanes, usePaneStore } from "../features/workspace/workspace"
 import { useGlobalShortcuts } from "./shortcuts"
@@ -268,6 +269,7 @@ export function AppShell() {
         </Group>
         <StatusBar />
         <ViewerOverlay />
+        <EditorOverlay />
         <Notice />
         <PropertiesDialog />
         <JobDialogs />

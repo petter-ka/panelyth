@@ -36,13 +36,17 @@ var volatile = map[string]any{
 	"createdMs": 1, "accessedMs": 1, "lastOpenedAt": 1, "paths": []any{"/fixtures/golden/file"},
 	"startedMs": 1, "finishedMs": 1, "file": "/cache/Panelyth/v1/tmp/clip.png",
 	"firstMatchMs": 1, "dirPath": "/fixtures/golden",
+	// Permission bits exist outside Windows only (Stage C09).
+	"permissions": 420,
+	// An edit session's id is random (Stage 12).
+	"sessionId": "0123456789abcdef01234567",
 	// Watcher rescans (inotify reports the test's own writes) take scan ids at
 	// timing-dependent moments.
 	"scanId": 1,
 }
 
 // platformDependent values are replaced even when null (Linux has no birth time).
-var platformDependent = map[string]bool{"createdMs": true, "accessedMs": true}
+var platformDependent = map[string]bool{"createdMs": true, "accessedMs": true, "permissions": true}
 
 func normalize(v any) any {
 	switch x := v.(type) {
@@ -497,13 +501,231 @@ func TestGoldenFrames(t *testing.T) {
 		{Path: "E:\\", Kind: "removable", NotReady: true},
 		{Path: "Z:\\", Kind: "network", NotReady: true},
 	}})
+	// Stage C08: two folders compared (a mirror), the compare's rows as a
+	// session, a filter and a direction change, the plan, Shift+F2's marks,
+	// and a text diff.
+	cmpDir := filepath.Join(t.TempDir(), "compare")
+	cmpAt := time.Date(2024, 5, 6, 7, 8, 10, 0, time.UTC)
+	for rel, data := range map[string]string{
+		"left/same.txt": "same", "right/same.txt": "same",
+		"left/notes.txt": "one\ntwo\nthree\n", "right/notes.txt": "one\n2\nthree\nfour\n",
+		"left/only-left.txt": "l", "right/sub/only-right.txt": "r",
+	} {
+		p := filepath.Join(cmpDir, filepath.FromSlash(rel))
+		_ = os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte(data), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The left notes are a minute newer; everything else has one date.
+	_ = filepath.WalkDir(cmpDir, func(p string, _ os.DirEntry, _ error) error {
+		at := cmpAt
+		if filepath.Base(p) == "notes.txt" && filepath.Base(filepath.Dir(p)) == "left" {
+			at = cmpAt.Add(time.Minute)
+		}
+		return os.Chtimes(p, at, at)
+	})
+	openListedDir := func(id int, path string) (dir map[string]any, q map[string]any) {
+		dir = call(id, byID(id, "dir.open", map[string]any{"path": path, "recursive": false})).(map[string]any)["r"].(map[string]any)
+		for done := false; !done; {
+			for _, e := range events {
+				p, _ := e["p"].(map[string]any)
+				if e["ch"] == "index.progress" && p["state"] == "completed" && p["dirId"] == dir["dirId"] {
+					done = true
+				}
+			}
+			if !done {
+				events = append(events, read().(map[string]any))
+			}
+		}
+		q = call(id+1, byID(id+1, "query.open", map[string]any{"dirId": dir["dirId"], "recursive": false,
+			"sort": []any{map[string]any{"field": "name", "direction": "asc"}}, "kinds": []any{}, "scope": "all"})).(map[string]any)["r"].(map[string]any)
+		return dir, q
+	}
+	cmpLeft, cmpLeftQ := openListedDir(150, filepath.Join(cmpDir, "left"))
+	cmpRight, cmpRightQ := openListedDir(152, filepath.Join(cmpDir, "right"))
+	cmpOpts := map[string]any{"toleranceMs": 2000, "dst": false, "ignoreDates": false}
+	golden["res-compare.marks.json"] = call(154, byID(154, "compare.marks", map[string]any{
+		"leftQueryId": cmpLeftQ["queryId"], "rightQueryId": cmpRightQ["queryId"], "toleranceMs": 2000, "dst": false, "ignoreDates": false}))
+	golden["res-compare.dirs.json"] = call(155, byID(155, "compare.dirs", map[string]any{
+		"leftDirId": cmpLeft["dirId"], "rightDirId": cmpRight["dirId"], "toleranceMs": cmpOpts["toleranceMs"], "dst": false,
+		"ignoreDates": false, "content": true, "asymmetric": true}))
+	cmpStart := golden["res-compare.dirs.json"].(map[string]any)["r"].(map[string]any)
+	cmpDone := waitEvent("compare.progress", "completed")
+	cmpDone["seq"] = float64(1) // depends on the events before it
+	golden["evt-compare.progress.json"] = cmpDone
+	golden["res-compare.show.json"] = call(156, byID(156, "compare.show", map[string]any{"compareId": cmpStart["compareId"],
+		"show": []any{"copyRight", "copyLeft", "equal", "different", "delete"}}))
+	cmpView := golden["res-compare.show.json"].(map[string]any)["r"].(map[string]any)
+	golden["res-query.page-compare.json"] = call(157, byID(157, "query.page", map[string]any{"queryId": cmpView["queryId"], "offset": 0, "limit": 10}))
+	cmpSel := map[string]any{"queryId": cmpView["queryId"], "version": cmpView["version"], "ranges": []any{[]int{0, 1}}, "include": []any{}, "exclude": []any{}}
+	golden["res-compare.setAction.json"] = call(158, byID(158, "compare.setAction", map[string]any{"compareId": cmpStart["compareId"],
+		"selection": cmpSel, "action": "none"}))
+	golden["res-compare.plan.json"] = call(159, byID(159, "compare.plan", map[string]any{"compareId": cmpStart["compareId"]}))
+	golden["res-compare.cancel.json"] = call(160, byID(160, "compare.cancel", map[string]any{"compareId": cmpStart["compareId"]}))
+	golden["res-compare.close.json"] = call(161, byID(161, "compare.close", map[string]any{"compareId": cmpStart["compareId"]}))
+	cmpPage := func(id int, q map[string]any, name string) any {
+		items := call(id, byID(id, "query.page", map[string]any{"queryId": q["queryId"], "offset": 0, "limit": 10})).(map[string]any)["r"].(map[string]any)["items"].([]any)
+		for _, it := range items {
+			if it.(map[string]any)["name"] == name {
+				return it.(map[string]any)["id"]
+			}
+		}
+		t.Fatalf("no %s in the compare fixture", name)
+		return nil
+	}
+	golden["res-diff.open.json"] = call(164, byID(164, "diff.open", map[string]any{
+		"leftId": cmpPage(162, cmpLeftQ, "notes.txt"), "rightId": cmpPage(163, cmpRightQ, "notes.txt")}))
+	diffID := golden["res-diff.open.json"].(map[string]any)["r"].(map[string]any)["diffId"]
+	golden["res-diff.page.json"] = call(165, byID(165, "diff.page", map[string]any{"diffId": diffID, "offset": 0, "limit": 10}))
+	golden["res-diff.close.json"] = call(166, byID(166, "diff.close", map[string]any{"diffId": diffID}))
+	// Stage C09: a multi-rename previewed (a page with a conflict and an
+	// invalid name), a plan that cannot be compiled, and the undo's state.
+	renDir := filepath.Join(t.TempDir(), "rename")
+	for i, name := range []string{"IMG_1.jpg", "IMG_2.jpg", "notes.txt", "taken.txt"} {
+		p := filepath.Join(renDir, name)
+		_ = os.MkdirAll(renDir, 0o755)
+		if err := os.WriteFile(p, []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+		at := time.Date(2024, 3, 9, 7, 5, i, 0, time.UTC)
+		_ = os.Chtimes(p, at, at)
+	}
+	_, renQ := openListedDir(170, renDir)
+	renSel := map[string]any{"queryId": renQ["queryId"], "version": renQ["version"], "ranges": []any{[]int{0, 3}}, "include": []any{}, "exclude": []any{}}
+	// Both pictures become img.jpg (a duplicate); the notes get an invalid name.
+	renPlan := map[string]any{"nameMask": "[N1-3]", "extMask": "[E]", "search": "not", "replace": "taken/", "regex": false,
+		"matchCase": false, "case": "lower", "start": 1, "step": 1, "digits": 1}
+	golden["res-rename.preview.json"] = call(172, byID(172, "rename.preview", map[string]any{"selection": renSel, "plan": renPlan, "offset": 0, "limit": 10}))
+	renPlan["nameMask"] = "[N"
+	golden["res-rename.preview-invalid.json"] = call(173, byID(173, "rename.preview", map[string]any{"selection": renSel, "plan": renPlan, "offset": 0, "limit": 10}))
+	golden["res-rename.undoInfo.json"] = call(174, `{"t":"req","id":174,"m":"rename.undoInfo","p":{}}`)
+	// Stage 12: the image editor. edit.frame, edit.write and edit.savedPath
+	// are answered to Electron main only (a frame file, a job, a path).
+	edit := call(180, byID(180, "edit.open", map[string]any{"entryId": firstImage, "owner": 1})).(map[string]any)
+	golden["res-edit.open.json"] = edit
+	// normalize() replaced the id in the frame; ask the sidecar for a second
+	// session to drive, and keep its real id out of the fixtures.
+	var realSession string
+	{
+		send(byID(181, "edit.open", map[string]any{"entryId": firstImage, "owner": 1}))
+		for {
+			p, err := fr.ReadFrame()
+			if err != nil {
+				t.Fatal(err)
+			}
+			var f struct {
+				T  string `json:"t"`
+				ID int    `json:"id"`
+				R  struct {
+					SessionID string `json:"sessionId"`
+				} `json:"r"`
+			}
+			if err := json.Unmarshal(p, &f); err != nil {
+				t.Fatal(err)
+			}
+			if f.T != "evt" && f.ID == 181 {
+				realSession = f.R.SessionID
+				break
+			}
+		}
+	}
+	ops := []any{map[string]any{"op": "rotate", "p": map[string]any{"angle": 90}},
+		map[string]any{"op": "crop", "p": map[string]any{"rect": map[string]any{"x": 0, "y": 0, "w": 0.5, "h": 0.5}}}}
+	golden["res-edit.frame.json"] = call(182, byID(182, "edit.frame", map[string]any{"sessionId": realSession, "rev": 1,
+		"editList": ops, "view": map[string]any{"maxEdge": 256}, "quality": "final", "histogram": true}))
+	golden["res-edit.frame-superseded.json"] = call(183, byID(183, "edit.frame", map[string]any{"sessionId": realSession, "rev": 1,
+		"editList": ops, "view": map[string]any{"maxEdge": 256}, "quality": "draft", "histogram": false}))
+	golden["res-edit.info.json"] = call(184, byID(184, "edit.info", map[string]any{"sessionId": realSession}))
+	// Stage 13: a color tool, the histogram it is given, a probe, preset
+	// thumbnails and Count colors.
+	tone := []any{map[string]any{"op": "lighting", "p": map[string]any{"contrast": 30}},
+		map[string]any{"op": "reduceColors", "p": map[string]any{"count": 4}}}
+	golden["res-edit.frame-before.json"] = call(192, byID(192, "edit.frame", map[string]any{"sessionId": realSession, "rev": 2,
+		"editList": tone, "view": map[string]any{"maxEdge": 256}, "quality": "draft", "histogram": false, "histogramAt": 1}))
+	golden["res-edit.probe.json"] = call(193, byID(193, "edit.probe", map[string]any{"sessionId": realSession,
+		"editList": tone, "view": map[string]any{"maxEdge": 256}, "x": 0.5, "y": 0.5, "radius": 2}))
+	golden["res-edit.thumbFrames.json"] = call(194, byID(194, "edit.thumbFrames", map[string]any{"sessionId": realSession,
+		"editLists": []any{[]any{}, tone, []any{map[string]any{"op": "nope", "p": map[string]any{}}}}, "edge": 64}))
+	golden["res-edit.colors.json"] = call(195, byID(195, "edit.colors", map[string]any{"sessionId": realSession,
+		"editList": tone, "scope": "edited", "maxColors": 8}))
+	golden["res-edit.source.json"] = call(191, byID(191, "edit.source", map[string]any{"sessionId": realSession}))
+	golden["res-edit.estimate.json"] = call(185, byID(185, "edit.estimate", map[string]any{"sessionId": realSession,
+		"editList": ops, "format": "png", "quality": 0, "metadata": "keep"}))
+	golden["res-edit.write.json"] = call(186, byID(186, "edit.write", map[string]any{"sessionId": realSession,
+		"editList": ops, "target": "copy", "format": "png", "quality": 0, "metadata": "strip", "dpi": 0}))
+	editJob := golden["res-edit.write.json"].(map[string]any)["r"].(map[string]any)["jobId"]
+	editDone := jobDone(editJob)
+	editDone["seq"] = float64(1)
+	golden["evt-job.progress-editSave.json"] = editDone
+	golden["res-edit.saved.json"] = call(187, byID(187, "edit.saved", map[string]any{"jobId": editJob}))
+	// The new entry's id depends on how many entries the platform indexed before it.
+	golden["res-edit.saved.json"].(map[string]any)["r"].(map[string]any)["entryId"] = float64(1)
+	golden["res-edit.savedPath.json"] = call(188, byID(188, "edit.savedPath", map[string]any{"jobId": editJob}))
+	// Stage 14: a picture picked in Electron main becomes an asset (main-only
+	// methods: they take a path), and the font families by name.
+	pics, _ := filepath.Glob(filepath.Join(imagesDir, "*.jpg"))
+	if len(pics) == 0 {
+		t.Fatal("no picture to use as an asset")
+	}
+	asset := call(196, byID(196, "edit.assetAdd", map[string]any{"sessionId": realSession, "path": pics[0]})).(map[string]any)
+	realAsset := asset["r"].(map[string]any)["assetId"]
+	// The id is a hash of the file, whose bytes the fixtures do not pin.
+	asset["r"].(map[string]any)["assetId"] = "0123456789abcdef0123456789abcdef"
+	golden["res-edit.assetAdd.json"] = asset
+	golden["res-edit.assetAdd-invalid.json"] = call(197, byID(197, "edit.assetAdd", map[string]any{"sessionId": realSession,
+		"path": filepath.Join(videosDir, "clip.mp4")}))
+	families := call(198, byID(198, "edit.fonts", map[string]any{"sessionId": realSession})).(map[string]any)
+	// The built-in families come first; what follows is the machine's.
+	families["r"].(map[string]any)["families"] = families["r"].(map[string]any)["families"].([]any)[:2]
+	golden["res-edit.fonts.json"] = families
+	golden["res-edit.assetDrop.json"] = call(199, byID(199, "edit.assetDrop", map[string]any{"sessionId": realSession, "assetId": realAsset}))
+	// Stage 15: strokes are operations like any other; red pupils are found on request.
+	strokes := []any{map[string]any{"op": "draw", "p": map[string]any{"strokes": []any{map[string]any{
+		"tool": "brush", "color": "#ff0000", "size": 5, "points": []any{[]any{0.2, 0.2}, []any{0.8, 0.8, 0.7}}}}}}}
+	golden["res-edit.frame-strokes.json"] = call(200, byID(200, "edit.frame", map[string]any{"sessionId": realSession, "rev": 3,
+		"editList": strokes, "view": map[string]any{"maxEdge": 256}, "quality": "draft", "histogram": false}))
+	golden["res-edit.eyes.json"] = call(201, byID(201, "edit.eyes", map[string]any{"sessionId": realSession, "editList": strokes}))
+	golden["res-edit.close.json"] = call(189, byID(189, "edit.close", map[string]any{"sessionId": realSession}))
+	golden["res-edit.frame-gone.json"] = call(190, byID(190, "edit.frame", map[string]any{"sessionId": realSession, "rev": 2,
+		"editList": ops, "view": map[string]any{"maxEdge": 256}, "quality": "final", "histogram": false}))
+	// Stage 16: a recipe over a selection. edit.plan and edit.batch are
+	// answered to Electron main only (their folder is a path).
+	batchDir := filepath.Join(t.TempDir(), "batch")
+	if err := fixture.GenerateImages(batchDir, fixture.ImageSpec{Count: 2, Width: 64, Height: 48}); err != nil {
+		t.Fatal(err)
+	}
+	_, batchQ := openListedDir(210, batchDir)
+	batchSel := map[string]any{"queryId": batchQ["queryId"], "version": batchQ["version"], "ranges": []any{[]int{0, 2}}, "include": []any{}, "exclude": []any{}}
+	recipe := map[string]any{"version": 1,
+		"ops":    []any{map[string]any{"op": "resize", "p": map[string]any{"mode": "percent", "w": 50}}},
+		"output": map[string]any{"format": "jpeg", "quality": 80, "metadata": "keep", "destination": "beside", "template": "{name}-half", "conflict": "keepBoth"}}
+	batch := map[string]any{"source": map[string]any{"selection": batchSel}, "recipe": recipe}
+	plan := call(212, byID(212, "edit.plan", batch)).(map[string]any)
+	// Sizes follow the JPEG encoder, ids the entries indexed before.
+	planR := plan["r"].(map[string]any)
+	planR["bytes"], planR["estimateBytes"] = float64(2000), float64(500)
+	for i, s := range planR["samples"].([]any) {
+		s.(map[string]any)["id"] = float64(i + 1)
+	}
+	golden["res-edit.plan.json"] = plan
+	golden["res-edit.batch.json"] = call(213, byID(213, "edit.batch", batch))
+	batchJob := golden["res-edit.batch.json"].(map[string]any)["r"].(map[string]any)["jobId"]
+	jobDone(batchJob)
+	// The two results go to the trash; the originals stay.
+	golden["res-batch.undo.json"] = call(214, byID(214, "batch.undo", map[string]any{"jobId": batchJob}))
+	jobDone(golden["res-batch.undo.json"].(map[string]any)["r"].(map[string]any)["jobId"])
+	golden["res-recipe.save.json"] = call(215, byID(215, "recipe.save", map[string]any{"id": 0, "name": "Half size", "recipe": recipe}))
+	golden["res-recipe.list.json"] = call(216, byID(216, "recipe.list", map[string]any{}))
+	golden["res-recipe.delete.json"] = call(217, byID(217, "recipe.delete", map[string]any{"id": 1}))
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)
 	}
 
 	// A started job's answer races the queue: it may already be running.
-	for _, name := range []string{"res-jobs.start.json", "res-jobs.start-ask.json", "res-jobs.start-dirid.json"} {
+	for _, name := range []string{"res-jobs.start.json", "res-jobs.start-ask.json", "res-jobs.start-dirid.json",
+		"res-edit.batch.json", "res-batch.undo.json"} {
 		if r, ok := golden[name].(map[string]any)["r"].(map[string]any); ok && r["state"] == "running" {
 			r["state"] = "queued"
 		}

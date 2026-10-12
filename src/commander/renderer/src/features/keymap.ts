@@ -290,6 +290,71 @@ export const ACTIONS = [
     label: msg("Test archives"),
     defaults: ["Alt+Shift+F9"],
   },
+  // Stage C08: compare, synchronize, checksums.
+  {
+    id: "compare.dirs",
+    scope: "panels",
+    group: msg("Compare"),
+    label: msg("Compare directories"),
+    defaults: ["Shift+F2"],
+  },
+  {
+    id: "compare.sync",
+    scope: "panels",
+    group: msg("Compare"),
+    label: msg("Synchronize directories"),
+    defaults: [],
+  },
+  {
+    id: "compare.content",
+    scope: "panels",
+    group: msg("Compare"),
+    label: msg("Compare by content"),
+    defaults: [],
+  },
+  {
+    id: "hash.create",
+    scope: "panels",
+    group: msg("Compare"),
+    label: msg("Create checksums"),
+    defaults: [],
+  },
+  {
+    id: "hash.verify",
+    scope: "panels",
+    group: msg("Compare"),
+    label: msg("Verify checksums"),
+    defaults: [],
+  },
+  // Stage C09: multi-rename, attributes and properties.
+  {
+    id: "files.multiRename",
+    scope: "panels",
+    group: msg("Files"),
+    label: msg("Multi-rename"),
+    defaults: ["Mod+m"],
+  },
+  {
+    id: "files.undoRename",
+    scope: "panels",
+    group: msg("Files"),
+    label: msg("Undo the last multi-rename"),
+    defaults: [],
+  },
+  {
+    id: "files.attributes",
+    scope: "panels",
+    group: msg("Files"),
+    label: msg("Change attributes"),
+    defaults: [],
+  },
+  {
+    id: "files.properties",
+    scope: "panels",
+    group: msg("Files"),
+    label: msg("Properties"),
+    defaults: ["Alt+Enter"],
+  },
   {
     id: "view.branch",
     scope: "panels",
@@ -377,6 +442,65 @@ export const ACTIONS = [
     label: msg("Calculate all folder sizes"),
     defaults: ["Alt+Shift+Enter"],
   },
+  // Stage C10: the command line, the Thumbnails view, the bars.
+  {
+    id: "cmd.focus",
+    scope: "shell",
+    group: msg("Command line"),
+    label: msg("Go to the command line"),
+    defaults: ["Mod+k"],
+    whileTyping: true,
+  },
+  {
+    id: "cmd.history",
+    scope: "shell",
+    group: msg("Command line"),
+    label: msg("Command history"),
+    defaults: ["Alt+F8"],
+    whileTyping: true,
+  },
+  {
+    id: "cmd.insertName",
+    scope: "panels",
+    group: msg("Command line"),
+    label: msg("Add the name under the cursor to the command line"),
+    defaults: ["Mod+Enter"],
+  },
+  {
+    id: "cmd.insertPath",
+    scope: "panels",
+    group: msg("Command line"),
+    label: msg("Add the full path under the cursor to the command line"),
+    defaults: ["Mod+Shift+Enter"],
+  },
+  {
+    id: "view.thumbs",
+    scope: "panels",
+    group: msg("View"),
+    label: msg("Thumbnails view"),
+    defaults: ["Mod+Shift+F1"],
+  },
+  {
+    id: "view.toolbar",
+    scope: "shell",
+    group: msg("View"),
+    label: msg("Show or hide the toolbar"),
+    defaults: [],
+  },
+  {
+    id: "view.commandLine",
+    scope: "shell",
+    group: msg("View"),
+    label: msg("Show or hide the command line"),
+    defaults: [],
+  },
+  {
+    id: "view.functionKeys",
+    scope: "shell",
+    group: msg("View"),
+    label: msg("Show or hide the function-key bar"),
+    defaults: [],
+  },
   // Lister (Stage C05): act in the full-window viewer.
   { id: "lister.close", scope: "lister", group: "Lister", label: "Close", defaults: ["Escape"] },
   { id: "lister.next", scope: "lister", group: "Lister", label: "Next file", defaults: ["n"] },
@@ -411,19 +535,32 @@ export const ACTIONS = [
 
 export type ActionId = (typeof ACTIONS)[number]["id"]
 
+/** A user command as a bindable action (Stage C10): "tool:" and its id. */
+export type ToolActionId = `tool:${string}`
+export const isToolAction = (id: string): id is ToolActionId => id.startsWith("tool:")
+export const toolAction = (id: string): ToolActionId => `tool:${id}`
+
 export const SHORTCUTS_KEY = "commander.shortcuts"
 
 interface KeymapState {
   overrides: ShortcutOverrides
   keymap: Keymap<Scope>
+  /** The built-in actions and the user's commands, as the shortcuts dialog lists them. */
+  actions: readonly ActionDef<Scope>[]
   helpOpen: boolean
 }
 
-const resolve = (o: ShortcutOverrides): Keymap<Scope> => resolveKeymap(ACTIONS, SCOPES, o)
+let toolActions: ActionDef<Scope>[] = []
+/** The overrides as stored: bindings of commands that load later are in here. */
+let stored: unknown = undefined
+
+const all = (): readonly ActionDef<Scope>[] => [...ACTIONS, ...toolActions]
+const resolve = (o: ShortcutOverrides): Keymap<Scope> => resolveKeymap(all(), SCOPES, o)
 
 export const useKeymapStore = create<KeymapState>(() => ({
   overrides: NO_OVERRIDES,
   keymap: resolve(NO_OVERRIDES),
+  actions: ACTIONS,
   helpOpen: false,
 }))
 
@@ -435,13 +572,37 @@ function apply(overrides: ShortcutOverrides): void {
 }
 
 function persist(): void {
+  stored = get().overrides
   if (isBridgeAvailable())
     void bridge.setSetting(SHORTCUTS_KEY, get().overrides).catch(() => undefined)
 }
 
-/** The action bound to a chord in a scope, if any. */
-export function actionFor(scope: Scope, chord: string): ActionId | undefined {
-  return get().keymap.lookup[scope].get(chord) as ActionId | undefined
+/**
+ * The user's commands as actions of the panels (Stage C10): each can be
+ * bound to a key in the shortcuts dialog. A binding stored for a command is
+ * applied once that command is known.
+ */
+export function setToolActions(tools: readonly { id: string; title: string }[]): void {
+  toolActions = tools.map((tool) => ({
+    id: toolAction(tool.id),
+    scope: "panels" as const,
+    group: msg("Tools"),
+    label: tool.title,
+    defaults: [],
+  }))
+  const kept = (stored as { bindings?: Record<string, unknown> } | undefined)?.bindings ?? {}
+  const overrides = parseOverrides(all(), {
+    v: 1,
+    bindings: { ...kept, ...get().overrides.bindings },
+  })
+  set({ overrides, keymap: resolve(overrides), actions: all() })
+}
+
+/** The action bound to a chord in a scope, if any. User commands are actions of the panels only. */
+export function actionFor(scope: "panels", chord: string): ActionId | ToolActionId | undefined
+export function actionFor(scope: Scope, chord: string): ActionId | undefined
+export function actionFor(scope: Scope, chord: string): ActionId | ToolActionId | undefined {
+  return get().keymap.lookup[scope].get(chord) as ActionId | ToolActionId | undefined
 }
 
 export function setBinding(id: string, chords: readonly string[]): void {
@@ -472,10 +633,18 @@ export const setHelpOpen = (helpOpen: boolean): void => set({ helpOpen })
 export async function loadShortcuts(): Promise<void> {
   if (!isBridgeAvailable()) return
   const { settings } = await bridge.library()
-  apply(parseOverrides(ACTIONS, settings[SHORTCUTS_KEY]))
+  stored = settings[SHORTCUTS_KEY]
+  apply(parseOverrides(all(), stored))
 }
 
 /** Tests. */
 export function resetKeymap(): void {
-  set({ overrides: NO_OVERRIDES, keymap: resolve(NO_OVERRIDES), helpOpen: false })
+  toolActions = []
+  stored = undefined
+  set({
+    overrides: NO_OVERRIDES,
+    keymap: resolve(NO_OVERRIDES),
+    actions: ACTIONS,
+    helpOpen: false,
+  })
 }

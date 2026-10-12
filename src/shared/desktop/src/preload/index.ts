@@ -209,6 +209,52 @@ const api: PanelythApi = {
     copyText: (text) => invoke("clipboard.copyText", { text }),
     copyImage: (entryId) => invoke("clipboard.copyImage", { entryId }),
   },
+  // The image editor (Stage 12). An edit list is plain JSON from the editor's
+  // store; main checks its structure and Go its meaning.
+  edit: {
+    open: (entryId) => invoke("edit.open", { entryId }),
+    render: ({ sessionId, rev, editList, view, quality, histogram, histogramAt }) =>
+      invoke("edit.render", {
+        sessionId,
+        rev,
+        editList,
+        view: { maxEdge: view.maxEdge },
+        quality,
+        histogram,
+        ...(histogramAt !== undefined && { histogramAt }),
+      }),
+    info: (sessionId) => invoke("edit.info", { sessionId }),
+    estimate: ({ sessionId, editList, format, quality, metadata }) =>
+      invoke("edit.estimate", { sessionId, editList, format, quality, metadata }),
+    save: ({ sessionId, editList, target, format, quality, metadata, dpi }) =>
+      invoke("edit.save", { sessionId, editList, target, format, quality, metadata, dpi }),
+    close: (sessionId) => invoke("edit.close", { sessionId }),
+    saved: (jobId) => invoke("edit.saved", { jobId }),
+    reveal: (jobId) => invoke("edit.reveal", { jobId }),
+    probe: ({ sessionId, editList, view, x, y, radius }) =>
+      invoke("edit.probe", { sessionId, editList, view: { maxEdge: view.maxEdge }, x, y, radius }),
+    thumbs: ({ sessionId, editLists, edge }) =>
+      invoke("edit.thumbs", { sessionId, editLists, edge }),
+    colors: ({ sessionId, editList, scope, maxColors }) =>
+      invoke("edit.colors", { sessionId, editList, scope, maxColors }),
+    fonts: (sessionId) => invoke("edit.fonts", { sessionId }),
+    pickAsset: (sessionId) => invoke("asset.pick", { sessionId }),
+    releaseAsset: (sessionId, assetId) => invoke("asset.release", { sessionId, assetId }),
+    eyes: ({ sessionId, editList }) => invoke("edit.eyes", { sessionId, editList }),
+  },
+  batch: {
+    pickFolder: () => invoke("batch.pickFolder", {}),
+    plan: ({ source, recipe, folderId }) =>
+      invoke("batch.plan", { source, recipe, ...(folderId !== undefined && { folderId }) }),
+    start: ({ source, recipe, folderId }) =>
+      invoke("batch.start", { source, recipe, ...(folderId !== undefined && { folderId }) }),
+    undo: (jobId) => invoke("batch.undo", { jobId }),
+  },
+  recipes: {
+    list: () => invoke("recipe.list", {}),
+    save: ({ id, name, recipe }) => invoke("recipe.save", { id, name, recipe }),
+    remove: (id) => invoke("recipe.delete", { id }),
+  },
   onEvent(channel, listener) {
     if (!knownChannels.has(channel)) throw new Error(`unknown event channel: ${String(channel)}`)
     let set = subscribers.get(channel)

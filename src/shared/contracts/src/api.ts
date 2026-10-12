@@ -1,3 +1,32 @@
+import type {
+  EditEyesParams,
+  EditEyesResult,
+  AssetPickResult,
+  EditFontsResult,
+  EditColorsParams,
+  EditColorsResult,
+  EditEstimateParams,
+  EditEstimateResult,
+  EditInfoResult,
+  EditProbeParams,
+  EditProbeResult,
+  EditThumbsParams,
+  EditThumbsResult,
+  EditOpenResult,
+  EditRenderParams,
+  EditRenderResult,
+  EditSaveParams,
+  EditSaveResult,
+  EditSavedResult,
+} from "./edit"
+import type {
+  BatchParams,
+  BatchPickFolderResult,
+  BatchPlanResult,
+  RecipeListResult,
+  RecipeSaveParams,
+  RecipeSaveResult,
+} from "./batch"
 import type { RpcEnvelope } from "./errors"
 import type { EventChannel, EventMap } from "./events"
 import type {
@@ -5,6 +34,21 @@ import type {
   ArchiveCloseResult,
   ArchiveOpenResult,
   ArchiveToolsResult,
+  CompareCancelResult,
+  CompareCloseResult,
+  CompareDirsParams,
+  CompareMarksParams,
+  CompareMarksResult,
+  ComparePlan,
+  CompareShow,
+  CompareStartResult,
+  CompareView,
+  DiffAction,
+  TextDiffOpenResult,
+  TextDiffPageResult,
+  RenamePlan,
+  RenamePreviewResult,
+  RenameUndoInfo,
   ClipMode,
   ClipState,
   ConflictDecision,
@@ -62,6 +106,8 @@ import type {
   QueryLocateResult,
   QueryMatchResult,
   SharedContext,
+  ShellRunParams,
+  ShellRunToolParams,
   SidecarStatus,
   SystemInfo,
   AppId,
@@ -192,6 +238,55 @@ export interface PanelythApi {
     copyText(text: string): Promise<RpcEnvelope<OkResult>>
     copyImage(entryId: number): Promise<RpcEnvelope<CopyImageResult>>
   }
+  /**
+   * The image editor (Stage 12, ADR-0035): a session per window, frames as
+   * token URLs, saves as jobs. Viewer profile only (ADR-0027).
+   */
+  edit: {
+    open(entryId: number): Promise<RpcEnvelope<EditOpenResult>>
+    render(params: EditRenderParams): Promise<RpcEnvelope<EditRenderResult>>
+    info(sessionId: string): Promise<RpcEnvelope<EditInfoResult>>
+    estimate(params: EditEstimateParams): Promise<RpcEnvelope<EditEstimateResult>>
+    /** "as" opens the native save dialog in main; jobId is null when it was cancelled. */
+    save(params: EditSaveParams): Promise<RpcEnvelope<EditSaveResult>>
+    close(sessionId: string): Promise<RpcEnvelope<OkResult>>
+    /** The entry a finished save wrote, once it is indexed (0 before that). */
+    saved(jobId: number): Promise<RpcEnvelope<EditSavedResult>>
+    /** Shows a finished save in the system file manager. */
+    reveal(jobId: number): Promise<RpcEnvelope<OkResult>>
+    /** Stage 13: the color at a point (eyedroppers); nothing but four numbers crosses IPC. */
+    probe(params: EditProbeParams): Promise<RpcEnvelope<EditProbeResult>>
+    /** Small renderings of several edit lists at once (preset thumbnails). */
+    thumbs(params: EditThumbsParams): Promise<RpcEnvelope<EditThumbsResult>>
+    /** Count colors: exact for the full picture, an estimate for the preview. */
+    colors(params: EditColorsParams): Promise<RpcEnvelope<EditColorsResult>>
+    /** Stage 14: the font families text can be drawn with (names only). */
+    fonts(sessionId: string): Promise<RpcEnvelope<EditFontsResult>>
+    /**
+     * Opens the native dialog in main for a picture to use as a watermark, a
+     * mask or a texture; `asset` is null when it was cancelled.
+     */
+    pickAsset(sessionId: string): Promise<RpcEnvelope<AssetPickResult>>
+    releaseAsset(sessionId: string, assetId: string): Promise<RpcEnvelope<OkResult>>
+    /** Stage 15: red pupils in the picture as the list renders it (the red-eye tool's Auto). */
+    eyes(params: EditEyesParams): Promise<RpcEnvelope<EditEyesResult>>
+  }
+  /** Batch mode of the editor (Stage 16, ADR-0036): a recipe over a selection, as a job. */
+  batch: {
+    /** Opens the native folder dialog in main; `folder` is a handle and a name, null when cancelled. */
+    pickFolder(): Promise<RpcEnvelope<BatchPickFolderResult>>
+    /** What the batch would do: counts, the first names, warnings and sample pictures. One call, no pixels. */
+    plan(params: BatchParams): Promise<RpcEnvelope<BatchPlanResult>>
+    start(params: BatchParams): Promise<RpcEnvelope<JobSnapshot>>
+    /** Sends the files a finished batch created to the trash; never the originals. */
+    undo(jobId: number): Promise<RpcEnvelope<JobSnapshot>>
+  }
+  recipes: {
+    /** The built-in recipes, then the saved ones. */
+    list(): Promise<RpcEnvelope<RecipeListResult>>
+    save(params: RecipeSaveParams): Promise<RpcEnvelope<RecipeSaveResult>>
+    remove(id: number): Promise<RpcEnvelope<OkResult>>
+  }
   /** The shared context (present only while the commander is enabled; ADR-0031). */
   context?: {
     publish(
@@ -217,7 +312,8 @@ export interface PanelythApi {
 export interface CommanderApi {
   app: {
     exit(): Promise<RpcEnvelope<OkResult>>
-    switch(to: AppId): Promise<RpcEnvelope<OkResult>>
+    /** `edit`: show the viewer and open its editor on this picture (Stage 12). */
+    switch(to: AppId, edit?: number): Promise<RpcEnvelope<OkResult>>
   }
   system: {
     ping(): Promise<RpcEnvelope<PingResult>>
@@ -257,6 +353,45 @@ export interface CommanderApi {
       destinationDirId: number,
     ): Promise<RpcEnvelope<ArchiveCheckResult>>
     tools(): Promise<RpcEnvelope<ArchiveToolsResult>>
+  }
+  /**
+   * Compare and synchronize directories (Stage C08): the rows of a compare
+   * are a query session; sync, checksum and compare-by-content jobs are
+   * files.start jobs.
+   */
+  compare: {
+    dirs(params: CompareDirsParams): Promise<RpcEnvelope<CompareStartResult>>
+    cancel(compareId: number): Promise<RpcEnvelope<CompareCancelResult>>
+    close(compareId: number): Promise<RpcEnvelope<CompareCloseResult>>
+    show(compareId: number, show: readonly CompareShow[]): Promise<RpcEnvelope<CompareView>>
+    setAction(
+      compareId: number,
+      selection: SelectionDescriptor,
+      action: DiffAction | "default",
+    ): Promise<RpcEnvelope<CompareView>>
+    plan(compareId: number): Promise<RpcEnvelope<ComparePlan>>
+    /** Shift+F2: what is unique or newer in each of two listings. */
+    marks(params: CompareMarksParams): Promise<RpcEnvelope<CompareMarksResult>>
+  }
+  /** The side-by-side text diff (Stage C08): compared in Go, rows paged. */
+  diff: {
+    open(leftId: number, rightId: number): Promise<RpcEnvelope<TextDiffOpenResult>>
+    page(diffId: number, offset: number, limit: number): Promise<RpcEnvelope<TextDiffPageResult>>
+    close(diffId: number): Promise<RpcEnvelope<OkResult>>
+  }
+  /**
+   * Multi-rename (Stage C09): a page of old and new names for a plan, and
+   * what the last multi-rename left to undo. The multiRename, undoRename
+   * and setAttributes jobs are files.start jobs.
+   */
+  rename: {
+    preview(
+      selection: SelectionDescriptor,
+      plan: RenamePlan,
+      offset: number,
+      limit: number,
+    ): Promise<RpcEnvelope<RenamePreviewResult>>
+    undoInfo(): Promise<RpcEnvelope<RenameUndoInfo>>
   }
   query: {
     open(descriptor: QueryDescriptor): Promise<RpcEnvelope<QuerySnapshot>>
@@ -318,10 +453,16 @@ export interface CommanderApi {
   document: {
     open(entryId: number, theme?: string, lang?: string): Promise<RpcEnvelope<OkResult>>
   }
-  /** Stage C05: open with the default app (programs need allowProgram) and edit (F4). */
+  /**
+   * Stage C05: open with the default app (programs need allowProgram) and
+   * edit (F4). Stage C10: the command line and user commands; both run only
+   * on the user's Enter or button press (ADR-0027).
+   */
   shell: {
     open(entryId: number, allowProgram?: boolean): Promise<RpcEnvelope<OkResult>>
     edit(entryId: number): Promise<RpcEnvelope<OkResult>>
+    run(params: ShellRunParams): Promise<RpcEnvelope<OkResult>>
+    runTool(params: ShellRunToolParams): Promise<RpcEnvelope<OkResult>>
   }
   places: {
     list(): Promise<RpcEnvelope<PlacesResult>>

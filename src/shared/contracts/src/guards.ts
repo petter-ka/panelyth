@@ -1,10 +1,44 @@
 // Small runtime guards for untrusted input crossing a process boundary.
 // Deliberately dependency-free; checks shape, not semantics.
+import {
+  BATCH_SKIP_REASONS,
+  BATCH_WARNINGS,
+  MAX_BATCH_SAMPLES,
+  MAX_PLAN_NAMES,
+  MAX_RECIPE_NAME_CHARS,
+  RECIPE_PROBLEM_CODES,
+  recipeProblem,
+  type BatchPlanResult,
+  type RecipeListResult,
+  type RecipeSaveResult,
+} from "./batch"
 import { ERROR_CODES, type RpcErrorShape } from "./errors"
-import type { EventMap, FindProgress, IndexProgress } from "./events"
+import {
+  EDIT_INFO_GROUPS,
+  SAVE_FORMATS,
+  type EditAssetFile,
+  type EditColorsResult,
+  type EditEyesResult,
+  type EditFontsResult,
+  type EditEstimateResult,
+  type EditFrameResult,
+  type EditProbeResult,
+  type EditThumbFramesResult,
+  type EditHistogram,
+  type EditInfoResult,
+  type EditOpenResult,
+  type EditSavedPathResult,
+  type EditSavedResult,
+  type EditWriteResult,
+} from "./edit"
+import type { CompareProgress, EventMap, FindProgress, IndexProgress } from "./events"
 import {
   ARCHIVE_FORMATS,
+  DIFF_ACTIONS,
+  DIFF_STATES,
   ENTRY_KINDS,
+  RENAME_STATUSES,
+  JOB_ITEM_ERROR_CODES,
   JOB_KINDS,
   JOB_STATES,
   MAX_FOLDER_COVERS,
@@ -56,6 +90,19 @@ import {
   type ArchiveToolsResult,
   type ArchiveWarning,
   type FindStartResult,
+  type CompareCancelResult,
+  type CompareCloseResult,
+  type CompareMarksResult,
+  type ComparePlan,
+  type CompareStartResult,
+  type CompareView,
+  type DiffInfo,
+  type TextDiffOpenResult,
+  type TextDiffPageResult,
+  type TextDiffRow,
+  type RenamePreviewResult,
+  type RenamePreviewRow,
+  type RenameUndoInfo,
   type ContentItem,
   type DirOpenResult,
   type EchoResult,
@@ -98,19 +145,9 @@ const isRating = (v: unknown): v is number => isInt(v) && v >= 0 && v <= MAX_RAT
 const isLabel = (v: unknown): v is number => isInt(v) && v >= 0 && v <= MAX_LABEL
 const jobKinds: ReadonlySet<string> = new Set(JOB_KINDS)
 const jobStates: ReadonlySet<string> = new Set(JOB_STATES)
-const jobItemCodes: ReadonlySet<string> = new Set([
-  "NOT_FOUND",
-  "PERMISSION_DENIED",
-  "ALREADY_EXISTS",
-  "INVALID_NAME",
-  "TRASH_UNAVAILABLE",
-  "NO_SPACE",
-  "IN_USE",
-  "INTO_ITSELF",
-  "SKIPPED_LINK",
-  "IO_ERROR",
-  "VERIFY_FAILED",
-])
+const jobItemCodes: ReadonlySet<string> = new Set(JOB_ITEM_ERROR_CODES)
+const diffStates: ReadonlySet<unknown> = new Set(DIFF_STATES)
+const diffActions: ReadonlySet<unknown> = new Set(DIFF_ACTIONS)
 const intOrNull = (v: unknown): boolean => v === null || isInt(v)
 const arrayOf = <T>(v: unknown, item: (x: unknown) => x is T): v is T[] =>
   Array.isArray(v) && v.every(item)
@@ -172,6 +209,10 @@ export function isJobConflict(v: unknown): v is JobConflict {
 
 const isRange = (v: unknown): v is [number, number] =>
   Array.isArray(v) && v.length === 2 && isCount(v[0]) && isCount(v[1]) && v[0] <= v[1]
+
+/** [first row, rows] of a text diff's changed place. */
+const isBlock = (v: unknown): v is [number, number] =>
+  Array.isArray(v) && v.length === 2 && isCount(v[0]) && isCount(v[1])
 
 export function isSelectionDescriptor(v: unknown): v is SelectionDescriptor {
   return (
@@ -236,6 +277,22 @@ function isThumb(v: unknown): v is Thumb {
   )
 }
 
+const isDiffSide = (v: unknown): boolean =>
+  v === null || (isRec(v) && isCount(v.sizeBytes) && isInt(v.modifiedMs))
+
+/** A compare row has at least one side. */
+export function isDiffInfo(v: unknown): v is DiffInfo {
+  return (
+    isRec(v) &&
+    isStr(v.dir) &&
+    diffStates.has(v.state) &&
+    diffActions.has(v.action) &&
+    isDiffSide(v.left) &&
+    isDiffSide(v.right) &&
+    (v.left !== null || v.right !== null)
+  )
+}
+
 export function isContentItem(v: unknown): v is ContentItem {
   return (
     isRec(v) &&
@@ -252,6 +309,7 @@ export function isContentItem(v: unknown): v is ContentItem {
     (v.attrs === undefined || (isCount(v.attrs) && v.attrs < 64)) &&
     (v.dirSizeBytes === undefined || isCount(v.dirSizeBytes)) &&
     (v.dirPath === undefined || isStr(v.dirPath)) &&
+    (v.diff === undefined || isDiffInfo(v.diff)) &&
     (v.thumb === null || isThumb(v.thumb))
   )
 }
@@ -292,6 +350,187 @@ export function isIndexProgress(v: unknown): v is IndexProgress {
     isInt(v.skipped) &&
     isInt(v.errors) &&
     isInt(v.elapsedMs)
+  )
+}
+
+const isAmount = (v: unknown): boolean => isRec(v) && isCount(v.files) && isCount(v.bytes)
+
+export function isComparePlan(v: unknown): v is ComparePlan {
+  return (
+    isRec(v) &&
+    isCount(v.version) &&
+    isRec(v.counts) &&
+    isCount(v.counts.copyRight) &&
+    isCount(v.counts.copyLeft) &&
+    isCount(v.counts.equal) &&
+    isCount(v.counts.different) &&
+    isCount(v.counts.delete) &&
+    isAmount(v.copyRight) &&
+    isAmount(v.copyLeft) &&
+    isCount(v.deleteRight) &&
+    isCount(v.deleteLeft) &&
+    isCount(v.folders) &&
+    isCount(v.overwriteNewer)
+  )
+}
+
+const isCompareView = (v: unknown): v is CompareView =>
+  isRec(v) && isQuerySnapshot(v) && isComparePlan(v.plan)
+
+const textEncodings: ReadonlySet<unknown> = new Set([
+  "",
+  "utf-8",
+  "utf-16le",
+  "utf-16be",
+  "windows-1252",
+])
+const isTextDiffFile = (v: unknown): boolean =>
+  isRec(v) &&
+  isStr(v.name) &&
+  isCount(v.sizeBytes) &&
+  isCount(v.lines) &&
+  textEncodings.has(v.encoding)
+const textDiffOps: ReadonlySet<unknown> = new Set(["equal", "changed", "removed", "added"])
+const isTextDiffRow = (v: unknown): v is TextDiffRow =>
+  isRec(v) &&
+  textDiffOps.has(v.op) &&
+  isCount(v.l) &&
+  isCount(v.r) &&
+  isStr(v.left) &&
+  (v.right === undefined || isStr(v.right)) &&
+  (v.cut === undefined || isBool(v.cut))
+
+const renameStatuses: ReadonlySet<unknown> = new Set(RENAME_STATUSES)
+const isRenamePreviewRow = (v: unknown): v is RenamePreviewRow =>
+  isRec(v) &&
+  isInt(v.id) &&
+  isStr(v.name) &&
+  isStr(v.newName) &&
+  renameStatuses.has(v.status) &&
+  (v.reason === undefined || isStr(v.reason))
+
+const saveFormats: ReadonlySet<unknown> = new Set(SAVE_FORMATS)
+const infoGroups: ReadonlySet<unknown> = new Set(EDIT_INFO_GROUPS)
+const isDpi = (v: unknown): boolean => isRec(v) && isNum(v.x) && isNum(v.y) && v.x >= 0 && v.y >= 0
+const isBins = (v: unknown): v is number[] =>
+  Array.isArray(v) && v.length === 256 && v.every(isCount)
+
+export function isEditHistogram(v: unknown): v is EditHistogram {
+  return (
+    isRec(v) &&
+    isBins(v.lum) &&
+    isBins(v.r) &&
+    isBins(v.g) &&
+    isBins(v.b) &&
+    isCount(v.pixels) &&
+    isCount(v.clipLow) &&
+    isCount(v.clipHigh) &&
+    isNum(v.mean)
+  )
+}
+
+/** edit.frame from the sidecar: a frame file with its output size, or superseded. */
+export function isEditFrameResult(v: unknown): v is EditFrameResult {
+  if (!isRec(v) || !isCount(v.rev)) return false
+  if (v.superseded === true) return v.frame === undefined
+  const { frame: f, output: o } = v
+  return (
+    isRec(f) &&
+    isStr(f.file) &&
+    f.file.length > 0 &&
+    isStr(f.mime) &&
+    isCount(f.width) &&
+    isCount(f.height) &&
+    isRec(o) &&
+    isCount(o.width) &&
+    isCount(o.height) &&
+    isDpi(o.dpi) &&
+    (v.histogram === undefined || isEditHistogram(v.histogram)) &&
+    (v.before === undefined || isEditHistogram(v.before))
+  )
+}
+
+/** edit.assetAdd from the sidecar: the asset and its thumbnail file. */
+export function isEditAssetFile(v: unknown): v is EditAssetFile {
+  return (
+    isRec(v) &&
+    isStr(v.assetId) &&
+    /^[0-9a-f]{32}$/.test(v.assetId) &&
+    isStr(v.name) &&
+    v.name.length > 0 &&
+    v.name.length <= 255 &&
+    isCount(v.width) &&
+    isCount(v.height) &&
+    isRec(v.thumb) &&
+    isStr(v.thumb.file) &&
+    v.thumb.file.length > 0 &&
+    isCount(v.thumb.width) &&
+    isCount(v.thumb.height)
+  )
+}
+
+const isByte = (v: unknown): boolean => isCount(v) && (v as number) <= 255
+const HEX_COLOR = /^#[0-9a-f]{6}$/
+
+/** edit.thumbFrames from the sidecar: a file per list, or null. */
+export function isEditThumbFramesResult(v: unknown): v is EditThumbFramesResult {
+  return (
+    isRec(v) &&
+    Array.isArray(v.thumbs) &&
+    v.thumbs.length <= 16 &&
+    v.thumbs.every(
+      (t) =>
+        t === null ||
+        (isRec(t) && isStr(t.file) && t.file.length > 0 && isCount(t.width) && isCount(t.height)),
+    )
+  )
+}
+
+const skipReasons: ReadonlySet<unknown> = new Set(BATCH_SKIP_REASONS)
+const batchWarnings: ReadonlySet<unknown> = new Set(BATCH_WARNINGS)
+const problemCodes: ReadonlySet<unknown> = new Set(RECIPE_PROBLEM_CODES)
+const isFileName = (v: unknown): v is string =>
+  isStr(v) && v.length > 0 && v.length <= 255 && !/[/\\]/.test(v)
+
+/** edit.plan from the sidecar: counts, names without folders, and nothing that is a path. */
+export function isBatchPlanResult(v: unknown): v is BatchPlanResult {
+  return (
+    isRec(v) &&
+    isCount(v.count) &&
+    Array.isArray(v.skipped) &&
+    v.skipped.every((s) => isRec(s) && skipReasons.has(s.reason) && isCount(s.count)) &&
+    Array.isArray(v.names) &&
+    v.names.length <= MAX_PLAN_NAMES &&
+    v.names.every(isFileName) &&
+    isCount(v.bytes) &&
+    isCount(v.estimateBytes) &&
+    Array.isArray(v.warnings) &&
+    v.warnings.every((w) => batchWarnings.has(w)) &&
+    Array.isArray(v.problems) &&
+    v.problems.every(
+      (p) => isRec(p) && problemCodes.has(p.code) && isStr(p.op) && isStr(p.detail),
+    ) &&
+    Array.isArray(v.samples) &&
+    v.samples.length <= MAX_BATCH_SAMPLES &&
+    v.samples.every((s) => isRec(s) && isInt(s.id) && s.id > 0 && isFileName(s.name))
+  )
+}
+
+/** recipe.list from the sidecar: every recipe passes the check a renderer's recipe has to pass. */
+export function isRecipeListResult(v: unknown): v is RecipeListResult {
+  return (
+    isRec(v) &&
+    Array.isArray(v.recipes) &&
+    v.recipes.every(
+      (r) =>
+        isRec(r) &&
+        isCount(r.id) &&
+        isStr(r.builtin) &&
+        isStr(r.name) &&
+        r.name.length > 0 &&
+        r.name.length <= MAX_RECIPE_NAME_CHARS &&
+        recipeProblem(r.recipe) === null,
+    )
   )
 }
 
@@ -350,6 +589,45 @@ export const sidecarResultGuards: ResultGuards = {
     arrayOf(v.warnings, (w): w is ArchiveWarning => w === "space" || w === "ratio") &&
     isBool(v.partial),
   "archive.tools": (v): v is ArchiveToolsResult => isRec(v) && isBool(v.sevenZip),
+  "compare.dirs": (v): v is CompareStartResult =>
+    isRec(v) && isInt(v.compareId) && isQuerySnapshot(v),
+  "compare.cancel": (v): v is CompareCancelResult => isRec(v) && isBool(v.cancelled),
+  "compare.close": (v): v is CompareCloseResult => isRec(v) && isBool(v.closed),
+  "compare.show": isCompareView,
+  "compare.setAction": isCompareView,
+  "compare.plan": isComparePlan,
+  "compare.marks": (v): v is CompareMarksResult =>
+    isRec(v) &&
+    isSelectionDescriptor(v.left) &&
+    isSelectionDescriptor(v.right) &&
+    isCount(v.leftCount) &&
+    isCount(v.rightCount),
+  "diff.open": (v): v is TextDiffOpenResult =>
+    isRec(v) &&
+    isCount(v.diffId) &&
+    (v.reason === "" || v.reason === "binary" || v.reason === "tooLarge") &&
+    isTextDiffFile(v.left) &&
+    isTextDiffFile(v.right) &&
+    isCount(v.rows) &&
+    isCount(v.changes) &&
+    arrayOf(v.blocks, isBlock) &&
+    isBool(v.identical),
+  "diff.page": (v): v is TextDiffPageResult =>
+    isRec(v) && isCount(v.offset) && arrayOf(v.rows, isTextDiffRow),
+  "diff.close": isOk,
+  "rename.preview": (v): v is RenamePreviewResult =>
+    isRec(v) &&
+    isCount(v.total) &&
+    isCount(v.renamed) &&
+    isCount(v.unchanged) &&
+    isCount(v.invalid) &&
+    isCount(v.conflicts) &&
+    isInt(v.firstProblem) &&
+    v.firstProblem >= -1 &&
+    isCount(v.offset) &&
+    arrayOf(v.rows, isRenamePreviewRow),
+  "rename.undoInfo": (v): v is RenameUndoInfo =>
+    isRec(v) && isCount(v.count) && isStr(v.dir) && isCount(v.finishedMs),
   "query.open": isQuerySnapshot,
   "query.page": (v): v is QueryPageResult =>
     isRec(v) &&
@@ -452,6 +730,9 @@ export const sidecarResultGuards: ResultGuards = {
     intOrNull(v.accessedMs) &&
     intOrNull(v.width) &&
     intOrNull(v.height) &&
+    (v.attrs === undefined || (isCount(v.attrs) && v.attrs < 64)) &&
+    (v.permissions === null || (isCount(v.permissions) && v.permissions <= 0o777)) &&
+    (v.linkTarget === null || isStr(v.linkTarget)) &&
     intOrNull(v.childFolders) &&
     intOrNull(v.childMedia) &&
     isBool(v.favorite) &&
@@ -489,6 +770,85 @@ export const sidecarResultGuards: ResultGuards = {
   "entry.rename": (v): v is EntryRenameResult => isRec(v) && isStr(v.name) && v.name.length > 0,
   "library.tags": (v): v is TagsResult => isRec(v) && arrayOf(v.tags, isTag),
   "library.deleteTag": isOk,
+  "edit.open": (v): v is EditOpenResult =>
+    isRec(v) &&
+    isStr(v.sessionId) &&
+    v.sessionId.length > 0 &&
+    isStr(v.name) &&
+    isCount(v.width) &&
+    isCount(v.height) &&
+    (saveFormats.has(v.format) || v.format === "webp") &&
+    isBool(v.hasAlpha) &&
+    isDpi(v.dpi) &&
+    (v.notice === undefined || v.notice === "bitDepth") &&
+    saveFormats.has(v.saveFormat) &&
+    isBool(v.canReplace),
+  "edit.frame": isEditFrameResult,
+  "edit.info": (v): v is EditInfoResult =>
+    isRec(v) &&
+    Array.isArray(v.groups) &&
+    v.groups.every(
+      (g) =>
+        isRec(g) &&
+        infoGroups.has(g.name) &&
+        Array.isArray(g.items) &&
+        g.items.every(
+          (i) =>
+            isRec(i) && isStr(i.id) && isStr(i.value) && (i.code === undefined || isStr(i.code)),
+        ),
+    ),
+  "edit.estimate": (v): v is EditEstimateResult => isRec(v) && isCount(v.bytes),
+  "edit.write": (v): v is EditWriteResult => isRec(v) && isInt(v.jobId) && isStr(v.name),
+  "edit.close": isOk,
+  "edit.saved": (v): v is EditSavedResult => isRec(v) && isCount(v.entryId) && isStr(v.name),
+  "edit.savedPath": (v): v is EditSavedPathResult => isRec(v) && isStr(v.path) && v.path.length > 0,
+  "edit.source": (v): v is EditSavedPathResult => isRec(v) && isStr(v.path) && v.path.length > 0,
+  "edit.probe": (v): v is EditProbeResult =>
+    isRec(v) &&
+    Array.isArray(v.rgba) &&
+    v.rgba.length === 4 &&
+    v.rgba.every(isByte) &&
+    isStr(v.hex) &&
+    HEX_COLOR.test(v.hex),
+  "edit.thumbFrames": isEditThumbFramesResult,
+  "edit.fonts": (v): v is EditFontsResult =>
+    isRec(v) &&
+    Array.isArray(v.families) &&
+    v.families.length <= 10_000 &&
+    v.families.every((f) => isStr(f) && f.length > 0 && f.length <= 128),
+  "edit.eyes": (v): v is EditEyesResult =>
+    isRec(v) &&
+    Array.isArray(v.eyes) &&
+    v.eyes.length <= 32 &&
+    v.eyes.every(
+      (e) => isRec(e) && isNum(e.x) && isNum(e.y) && isNum(e.w) && isNum(e.h) && e.w > 0 && e.h > 0,
+    ),
+  "edit.assetAdd": isEditAssetFile,
+  "edit.assetDrop": isOk,
+  "edit.plan": isBatchPlanResult,
+  "edit.batch": isJobSnapshot,
+  "batch.undo": isJobSnapshot,
+  "recipe.list": isRecipeListResult,
+  "recipe.save": (v): v is RecipeSaveResult =>
+    isRec(v) && isInt(v.id) && v.id > 0 && isStr(v.name) && v.name.length > 0,
+  "recipe.delete": isOk,
+  "edit.colors": (v): v is EditColorsResult =>
+    isRec(v) &&
+    isCount(v.distinct) &&
+    isBool(v.hasAlpha) &&
+    isCount(v.width) &&
+    isCount(v.height) &&
+    Array.isArray(v.palette) &&
+    v.palette.length <= 32 &&
+    v.palette.every(
+      (s) =>
+        isRec(s) &&
+        isStr(s.hex) &&
+        HEX_COLOR.test(s.hex) &&
+        isNum(s.share) &&
+        s.share >= 0 &&
+        s.share <= 1,
+    ),
 }
 
 type EventGuards = { [C in keyof EventMap]: (v: unknown) => v is EventMap[C] }
@@ -509,6 +869,24 @@ export function isFindProgress(v: unknown): v is FindProgress {
     isInt(v.matches) &&
     isBool(v.truncated) &&
     isInt(v.firstMatchMs) &&
+    isInt(v.elapsedMs)
+  )
+}
+
+export function isCompareProgress(v: unknown): v is CompareProgress {
+  return (
+    isRec(v) &&
+    isInt(v.compareId) &&
+    SCAN_STATES.includes(v.state) &&
+    (v.phase === "listing" || v.phase === "content") &&
+    isCount(v.dirs) &&
+    isCount(v.entries) &&
+    isCount(v.compared) &&
+    isCount(v.bytes) &&
+    isCount(v.errors) &&
+    isCount(v.links) &&
+    isCount(v.rows) &&
+    isBool(v.truncated) &&
     isInt(v.elapsedMs)
   )
 }
@@ -537,9 +915,12 @@ export const eventGuards: EventGuards = {
     v.bookmarks.length <= 500 &&
     v.bookmarks.every(isBookmark),
   "find.progress": isFindProgress,
+  "compare.progress": isCompareProgress,
   "mediaWindow.step": (v): v is EventMap["mediaWindow.step"] =>
     isRec(v) &&
     isInt(v.requestId) &&
     isInt(v.key) &&
     (v.direction === -1 || v.direction === 0 || v.direction === 1),
+  "edit.request": (v): v is EventMap["edit.request"] =>
+    isRec(v) && isInt(v.entryId) && v.entryId > 0,
 }

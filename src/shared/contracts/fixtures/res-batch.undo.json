@@ -1,0 +1,23 @@
+{
+  "id": 214,
+  "ok": true,
+  "r": {
+    "bytesDone": 0,
+    "bytesPerSec": 0,
+    "bytesTotal": 0,
+    "current": "",
+    "destination": "",
+    "done": 0,
+    "error": "",
+    "etaMs": 0,
+    "failed": 0,
+    "finishedMs": 1,
+    "jobId": 8,
+    "kind": "undoEdit",
+    "skipped": 0,
+    "startedMs": 1,
+    "state": "queued",
+    "total": 2
+  },
+  "t": "res"
+}

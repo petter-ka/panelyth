@@ -7,7 +7,9 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 )
 
 // PartialSuffix marks unfinished copies. The leading dot keeps them out of
@@ -156,7 +158,7 @@ func sameFile(a, b string) bool {
 }
 
 // Rename renames src to newName in the same folder. A case-only change is
-// allowed on case-insensitive volumes.
+// allowed on volumes that ignore case (renameCase).
 func Rename(src, newName string) (string, error) {
 	if err := ValidateName(newName); err != nil {
 		return "", err
@@ -165,10 +167,50 @@ func Rename(src, newName string) (string, error) {
 	if dst == src {
 		return dst, nil
 	}
-	if _, err := os.Lstat(dst); err == nil && !sameFile(src, dst) {
-		return "", Errorf(CodeExists, "%s already exists", newName)
+	if _, err := os.Lstat(dst); err == nil {
+		if !sameFile(src, dst) || !strings.EqualFold(filepath.Base(src), newName) {
+			return "", Errorf(CodeExists, "%s already exists", newName)
+		}
+		return dst, renameCase(src, dst)
 	}
-	return dst, os.Rename(src, dst)
+	return dst, renameItem(src, dst)
+}
+
+// renamingPrefix starts the name an entry has between the two steps of a
+// case-only rename. Nothing removes such a name: after a crash it still
+// holds the user's file.
+const renamingPrefix = ".panelyth-renaming-"
+
+// renameCase changes only the case of a name on a volume that ignores it
+// ("photo.jpg" → "Photo.JPG"). Some file systems and network shares treat a
+// direct rename onto the same entry as nothing to do, so it takes two steps
+// through a temporary name (Stage C09). If dst turns out to be an entry of
+// its own (a hard link of src where case matters), nothing changes.
+func renameCase(src, dst string) error {
+	dir := filepath.Dir(src)
+	tmp := ""
+	for n := 0; n < 100 && tmp == ""; n++ {
+		c := filepath.Join(dir, renamingPrefix+strconv.FormatInt(time.Now().UnixNano()+int64(n), 36))
+		if _, err := os.Lstat(c); err != nil {
+			tmp = c
+		}
+	}
+	if tmp == "" {
+		return Errorf(CodeIO, "no temporary name is free in this folder")
+	}
+	if err := renameItem(src, tmp); err != nil {
+		return err
+	}
+	err := error(Errorf(CodeExists, "%s already exists", filepath.Base(dst)))
+	if _, lerr := os.Lstat(dst); lerr != nil {
+		if err = renameItem(tmp, dst); err == nil {
+			return nil
+		}
+	}
+	if back := renameItem(tmp, src); back != nil {
+		return Errorf(CodeIO, "the rename failed half way: the item is now named %s", filepath.Base(tmp))
+	}
+	return err
 }
 
 // Delete removes a file or a folder tree permanently.

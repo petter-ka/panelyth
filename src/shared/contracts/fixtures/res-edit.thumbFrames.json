@@ -1,0 +1,20 @@
+{
+  "id": 194,
+  "ok": true,
+  "r": {
+    "thumbs": [
+      {
+        "file": "/cache/Panelyth/v1/tmp/clip.png",
+        "height": 48,
+        "width": 64
+      },
+      {
+        "file": "/cache/Panelyth/v1/tmp/clip.png",
+        "height": 48,
+        "width": 64
+      },
+      null
+    ]
+  },
+  "t": "res"
+}

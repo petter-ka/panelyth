@@ -9,16 +9,18 @@ import (
 	"panelyth/sidecar/internal/fileops"
 	"panelyth/sidecar/internal/index"
 	"panelyth/sidecar/internal/media"
-	"panelyth/sidecar/internal/scan"
+	"panelyth/sidecar/internal/pathkey"
 )
 
 // KindDirSize calculates folder sizes (Stage C02): the bytes of every file
 // below each folder. Links, junctions and mount points are never followed,
 // unreadable subfolders are counted as far as they can be read, and the
-// result goes to the index (dir_size_bytes) so the listing shows it.
+// result goes to the index (dir_size_bytes) so the listing shows it. The
+// sizes of a panel's folders are written and announced in batches (the
+// applier's, Stage C09), not one transaction and one refresh per folder.
 const KindDirSize Kind = "dirSize"
 
-func (m *Manager) dirSizes(j *job) error {
+func (m *Manager) dirSizes(j *job, a *applier) error {
 	return m.eachTarget(j, func(t index.Target) error {
 		if t.Kind != media.KindDir {
 			j.update(func(s *Snapshot) { s.Skipped++ })
@@ -31,10 +33,9 @@ func (m *Manager) dirSizes(j *job) error {
 		if unreadable > 0 {
 			j.fail(t.Name, fileops.CodePermission, "Some subfolders could not be read; the size counts the rest.")
 		}
-		if err := m.deps.Store.SetDirSize(context.WithoutCancel(j.ctx), t.ID, bytes); err != nil {
-			return err
-		}
-		m.deps.Changed([]scan.Change{{DirID: t.ParentID}})
+		a.sizes = append(a.sizes, index.DirSize{ID: t.ID, Bytes: bytes})
+		a.touch(t.ParentID, pathkey.DirKey(filepath.Dir(t.Path)))
+		a.count()
 		j.update(func(s *Snapshot) { s.Done++ })
 		m.emit(j, false)
 		return nil

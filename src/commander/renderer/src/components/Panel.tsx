@@ -13,6 +13,7 @@ import type { Side } from "../features/panels"
 import { BriefView } from "./BriefView"
 import { DriveBar, DriveMenu } from "./DriveBar"
 import { FullView, type FullViewHandle } from "./FullView"
+import { ThumbsView } from "./ThumbsView"
 import { HistoryMenu, HotlistMenu } from "./HotlistMenus"
 import { HoldRing } from "./HoldRing"
 import { PathBar, type PathBarHandle } from "./PathBar"
@@ -63,7 +64,7 @@ const TITLES: Record<PanelErrorKind, string> = {
 }
 
 /**
- * One file panel (ADR-0028): path bar, the Full view, the status line, and
+ * One file panel (ADR-0028): path bar, the Full, Brief or Thumbnails view, the status line, and
  * the listing states (CFR-28): loading, empty, permission denied, not found,
  * drive not ready, network unavailable.
  */
@@ -85,7 +86,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   const filter = useListingStore((s) => s[side].filter)
   const loading = useListingStore((s) => s[side].loading)
   const view = useListingStore((s) => s[side].view)
-  // Ctrl+F1 / Ctrl+F2 replace the focused view: the new one takes the keys.
+  // Ctrl+F1 / Ctrl+F2 / Ctrl+Shift+F1 replace the focused view: the new one takes the keys.
   const viewSeen = useRef(view)
   useEffect(() => {
     if (viewSeen.current === view) return
@@ -140,6 +141,13 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
       <div data-menu-area className="relative flex min-h-0 flex-1 flex-col">
         {view === "brief" ? (
           <BriefView
+            ref={list}
+            side={side}
+            active={active}
+            label={t("{panel} contents", { panel: label })}
+          />
+        ) : view === "thumbs" ? (
+          <ThumbsView
             ref={list}
             side={side}
             active={active}

@@ -1,0 +1,16 @@
+{
+  "id": 196,
+  "ok": true,
+  "r": {
+    "assetId": "0123456789abcdef0123456789abcdef",
+    "height": 48,
+    "name": "photo_0000.jpg",
+    "thumb": {
+      "file": "/cache/Panelyth/v1/tmp/clip.png",
+      "height": 48,
+      "width": 64
+    },
+    "width": 64
+  },
+  "t": "res"
+}

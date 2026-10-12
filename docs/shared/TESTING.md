@@ -69,8 +69,9 @@ Real geometry, scrolling and frame timing are covered by the Electron e2e tests 
 Every Electron launch, of either app, in e2e and benchmarks gets fresh `PANELYTH_CACHE_DIR`, `PANELYTH_CONFIG_DIR` and
 `PANELYTH_USER_DATA_DIR` directories, so stored preferences, caches and logs never leak between runs. The
 profile override is honoured only in unpackaged builds. `PANELYTH_TEST_SHELL=record` (set by `launchApp`) makes main
-record "open with default app", "show in file manager" and clipboard writes in `__panelythShellLog` instead of
-performing them.
+record "open with default app", "show in file manager", clipboard writes and the commander's commands
+(`shell.run`, `shell.runTool`: the program, its arguments, the folder and the added environment) in
+`__panelythShellLog` instead of performing them.
 
 Radix triggers in jsdom: with `mockViewport` every element has the same rectangle, so react-resizable-panels treats
 each pointerdown as a divider drag and prevents it. App-shell tests open dropdowns from the keyboard and type into
@@ -109,5 +110,11 @@ Track:
 - cache hit latency
 - cache miss end-to-end latency
 - renderer frame/scroll behavior
+- image editor: session open, a dragged control's render latency, save, heap per session (`pnpm bench:edit`, Stage 12);
+  the color tools' drags, full frames, probe, thumbnails, color count and saves (the `color` block, Stage 13;
+  `BENCH_LARGE=1 go test ./internal/imaging -bench ColorTools` for the single passes); the effects
+  (`-bench Effects`, Stage 14); strokes, clone, heal and red-eye (`-bench DrawAndRetouch`, Stage 15); a batch
+  through the real service: throughput per worker count, peak heap, cancel, the plan of 100,000 pictures and
+  thumbnails beside a batch (`PANELYTH_BENCH_BATCH=1 go test ./internal/app -run TestBenchBatch`, Stage 16)
 
 Do not rely only on synthetic microbenchmarks. Include a real end-to-end benchmark path.

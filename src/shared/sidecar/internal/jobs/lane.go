@@ -12,7 +12,18 @@ import (
 // jobs have no lane (ADR-0029).
 func laneOf(spec Spec, store *index.Store) string {
 	switch spec.Kind {
-	case KindCopy, KindMove, KindTrash, KindDelete, KindRename, KindExtract, KindPack, KindTestArchive:
+	case KindCopy, KindMove, KindTrash, KindDelete, KindRename, KindExtract, KindPack, KindTestArchive,
+		KindHashCreate, KindHashVerify, KindCompareFiles, KindMultiRename, KindSetAttributes, KindEdit:
+	case KindSync:
+		lane, _ := syncLane(spec)
+		return lane
+	case KindUndoRename:
+		lane, _ := renameLane(spec)
+		return lane
+	case KindEditSave:
+		return editLane(spec)
+	case KindUndoEdit:
+		return undoEditLane(spec)
 	default:
 		return ""
 	}
@@ -25,7 +36,7 @@ func laneOf(spec Spec, store *index.Store) string {
 		}
 	}
 	dst := src
-	if spec.Destination != "" {
+	if spec.Destination != "" && spec.Kind != KindHashCreate {
 		dst = fsx.VolumeID(spec.Destination)
 	}
 	return src + ">" + dst

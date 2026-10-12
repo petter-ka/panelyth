@@ -1,5 +1,7 @@
 // Package jobs runs batch operations (ADR-0010, ADR-0021, ADR-0029): copy,
-// move, trash, delete, batch rename, folder sizes and user-metadata changes.
+// move, trash, delete, batch rename (with an undo for the commander's),
+// attributes and dates, folder sizes, user-metadata changes, archives,
+// synchronizing two trees, checksums and comparing files.
 // Jobs wait in a capped queue and run in lanes, one per source and
 // destination volume: jobs of different lanes run in parallel, jobs of one
 // lane one after another. A job can be paused, resumed, started right away,
@@ -18,6 +20,7 @@ import (
 	"panelyth/sidecar/internal/archive"
 	"panelyth/sidecar/internal/index"
 	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/rename"
 	"panelyth/sidecar/internal/scan"
 )
 
@@ -100,6 +103,24 @@ type Spec struct {
 	Add      bool
 	// Archive holds the extract, pack and test fields (Stage C07).
 	Archive ArchiveSpec
+	// Sync is the plan of a sync job, Hash the checksum fields (Stage C08).
+	Sync *SyncSpec
+	Hash HashSpec
+	// Rename holds the masks of a multiRename, Attrs the change of a
+	// setAttributes job (Stage C09).
+	Rename *rename.Spec
+	Attrs  *AttrSpec
+	// Edit is the save of an editSave job (Stage 12).
+	Edit *EditSpec
+	// Batch is the recipe run of an edit job (Stage 16).
+	Batch *BatchSpec
+	// created are the files an undoEdit job removes, undoOf the edit job
+	// that wrote them (set by UndoEdit).
+	created []Created
+	undoOf  int64
+	// undo is the journal an undoRename job took (set by Start).
+	undo    []RenameStep
+	undoGen uint64
 }
 
 // Snapshot is a job's progress (the job.progress payload).
@@ -213,6 +234,11 @@ type Manager struct {
 	lanes      map[string]int // running jobs per lane
 	finished   []int64        // ids of finished jobs, oldest first
 	closed     bool
+
+	// undo is the journal of the last multi-rename (Stage C09).
+	undo undoJournal
+	// created are the files of finished edit jobs, for their undo (Stage 16).
+	created createdJournal
 }
 
 type answer struct {
@@ -267,6 +293,27 @@ func NewManager(deps Deps) *Manager {
 // Start validates and queues a job; it runs as soon as its lane and a slot
 // are free (or at once with spec.Now).
 func (m *Manager) Start(spec Spec) (Snapshot, error) {
+	if spec.Kind != KindUndoRename {
+		return m.start(spec)
+	}
+	// An undo owns the journal from here on; what it does not get to goes
+	// back (undoRename, unstarted).
+	spec.undo, spec.undoGen = m.undo.take()
+	snap, err := m.start(spec)
+	if err != nil {
+		m.undo.restore(spec.undo, spec.undoGen)
+	}
+	return snap, err
+}
+
+// unstarted is called for a job that ends without having run.
+func (m *Manager) unstarted(j *job) {
+	if j.spec.Kind == KindUndoRename {
+		m.undo.restore(j.spec.undo, j.spec.undoGen)
+	}
+}
+
+func (m *Manager) start(spec Spec) (Snapshot, error) {
 	if err := validate(spec); err != nil {
 		return Snapshot{}, err
 	}
@@ -279,14 +326,14 @@ func (m *Manager) Start(spec Spec) (Snapshot, error) {
 	if len(m.queue) >= MaxQueued {
 		return Snapshot{}, ErrBusy
 	}
-	id, err := m.deps.Store.JobStarted(m.ctx, string(spec.Kind), spec.Destination, len(spec.IDs))
+	id, err := m.deps.Store.JobStarted(m.ctx, string(spec.Kind), spec.Destination, spec.total())
 	if err != nil {
 		return Snapshot{}, err
 	}
 	ctx, cancel := context.WithCancel(m.ctx)
 	j := &job{spec: spec, lane: lane, ctx: ctx, cancel: cancel, now: spec.Now, policy: spec.Conflict,
 		answers: make(chan answer, 1), snap: Snapshot{
-			JobID: id, Kind: spec.Kind, State: StateQueued, Total: len(spec.IDs),
+			JobID: id, Kind: spec.Kind, State: StateQueued, Total: spec.total(),
 			Destination: baseName(spec.Destination), StartedMs: time.Now().UnixMilli(),
 		}}
 	m.jobs[id] = j
@@ -320,6 +367,7 @@ func (m *Manager) pumpLocked() {
 		j := m.queue[i]
 		if j.ctx.Err() != nil { // cancelled while queued
 			m.queue = slices.Delete(m.queue, i, i+1)
+			m.unstarted(j)
 			j.finish(StateCancelled, "")
 			m.retireLocked(j)
 			m.deps.Emit(j.snapshot())
@@ -388,6 +436,8 @@ func (m *Manager) retireLocked(j *job) {
 	m.finished = append(m.finished, j.snap.JobID)
 	for len(m.finished) > KeepFinished {
 		delete(m.jobs, m.finished[0])
+		// "Undo this batch" lasts as long as the job is listed.
+		m.created.drop(m.finished[0])
 		m.finished = m.finished[1:]
 	}
 }
@@ -412,6 +462,7 @@ func (m *Manager) Cancel(id int64) bool {
 	j.cancel()
 	if i := slices.Index(m.queue, j); i >= 0 {
 		m.queue = slices.Delete(m.queue, i, i+1)
+		m.unstarted(j)
 		j.finish(StateCancelled, "")
 		m.retireLocked(j)
 		m.deps.Emit(j.snapshot())

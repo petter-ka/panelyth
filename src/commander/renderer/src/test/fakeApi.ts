@@ -3,7 +3,15 @@ import {
   type Bookmark,
   type CommanderApi,
   type CommanderJobParams,
+  type CompareDirsParams,
+  type CompareMarksParams,
+  type ComparePlan,
+  type CompareProgress,
+  type CompareShow,
+  type DiffAction,
   type JobSnapshot,
+  type TextDiffOpenResult,
+  type TextDiffRow,
   type ContentItem,
   type Crumb,
   type ErrorCode,
@@ -12,6 +20,8 @@ import {
   type FindProgress,
   type FindStartParams,
   type QueryDescriptor,
+  type RenamePlan,
+  type RenamePreviewRow,
   type RecentFolder,
   type SelectionDescriptor,
   type SharedContext,
@@ -111,6 +121,108 @@ export interface FakeOptions {
   contents?: Record<number, Uint8Array>
   /** Entry ids main resolves as programs (shell.open needs allowProgram). */
   programs?: number[]
+  /**
+   * Stage C08: what diff.open answers. `rows` is the side-by-side view of a
+   * text diff; `reason` says the files are not compared as text.
+   */
+  textDiff?: { rows?: TextDiffRow[]; reason?: "binary" | "tooLarge"; identical?: boolean }
+  /** Stage C10: shell.run and shell.runTool fail with this (main refused, details.reason). */
+  runFails?: { code: ErrorCode; message: string; reason?: string }
+  /**
+   * Stage C09: props.get reports these permission bits (a system that is
+   * not Windows); without it, permissions are null as on Windows.
+   */
+  permissions?: number
+}
+
+/**
+ * Stage C09: what Go's rename engine does, as far as the tests need it:
+ * [N], [E] and [C] in the masks, search and replace, lower and upper case.
+ * A mask with an open bracket or a bad expression throws its field.
+ */
+export function fakeRename(plan: RenamePlan, name: string, isDir: boolean, index: number): string {
+  const dot = name.lastIndexOf(".")
+  const stem = isDir || dot <= 0 ? name : name.slice(0, dot)
+  const ext = isDir || dot <= 0 ? "" : name.slice(dot + 1)
+  const build = (mask: string, field: string): string => {
+    if ((mask.match(/\[/g) ?? []).length !== (mask.match(/\]/g) ?? []).length)
+      throw { field, message: "a [ has no ]" }
+    return mask.replace(/\[([^\]]*)\]/g, (_all, token: string) => {
+      if (token === "N") return stem
+      if (token === "E") return ext
+      if (token === "C") return String(plan.start + index * plan.step).padStart(plan.digits, "0")
+      throw { field, message: `unknown placeholder [${token}]` }
+    })
+  }
+  let out = build(plan.nameMask, "nameMask")
+  const newExt = build(plan.extMask, "extMask")
+  if (newExt !== "") out += "." + newExt
+  if (plan.search !== "") {
+    let re: RegExp
+    try {
+      const source = plan.regex ? plan.search : plan.search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+      re = new RegExp(source, plan.matchCase ? "g" : "gi")
+    } catch {
+      throw { field: "search", message: "missing closing )" }
+    }
+    // A plain replacement is text, not a template.
+    out = plan.regex ? out.replace(re, plan.replace) : out.replace(re, () => plan.replace)
+  }
+  if (plan.case === "lower") out = out.toLowerCase()
+  if (plan.case === "upper") out = out.toUpperCase()
+  return out
+}
+
+/** Stage C08: a row of a fake directory compare. */
+export function diffRow(
+  id: number,
+  name: string,
+  state: NonNullable<ContentItem["diff"]>["state"],
+  action: DiffAction,
+  over: { dir?: string; kind?: ContentItem["kind"]; left?: number; right?: number } = {},
+): ContentItem {
+  const side = (size: number | undefined) =>
+    size === undefined ? null : { sizeBytes: size, modifiedMs: 1_700_000_000_000 }
+  const hasLeft = state !== "rightOnly"
+  const hasRight = state !== "leftOnly"
+  return item(id, name, {
+    kind: over.kind ?? "file",
+    sizeBytes: over.left ?? over.right ?? 10,
+    diff: {
+      dir: over.dir ?? "",
+      state,
+      action,
+      left: side(hasLeft ? (over.left ?? 10) : undefined),
+      right: side(hasRight ? (over.right ?? 10) : undefined),
+    },
+  })
+}
+
+const symbolOf = (d: NonNullable<ContentItem["diff"]>): CompareShow =>
+  d.action === "copyRight"
+    ? "copyRight"
+    : d.action === "copyLeft"
+      ? "copyLeft"
+      : d.action !== "none"
+        ? "delete"
+        : d.state === "equal"
+          ? "equal"
+          : "different"
+
+/** Go's rules for a direction: a copy needs its source, deletes are for one-sided entries. */
+const allowed = (state: string, action: DiffAction): boolean => {
+  switch (action) {
+    case "none":
+      return true
+    case "copyRight":
+      return state !== "rightOnly" && state !== "mismatch"
+    case "copyLeft":
+      return state !== "leftOnly" && state !== "mismatch"
+    case "deleteRight":
+      return state === "rightOnly"
+    case "deleteLeft":
+      return state === "leftOnly"
+  }
 }
 
 /** What main would have done for shell.open / shell.edit (PANELYTH_TEST_SHELL=record). */
@@ -118,6 +230,21 @@ export interface ShellRecord {
   action: "open" | "edit" | "document"
   entryId: number
 }
+
+/**
+ * Stage C10: what main would have run for shell.run (a typed line) and
+ * shell.runTool (a user command by id, with the ids it was given).
+ */
+export type RunRecord =
+  | { action: "run"; command: string; dirId: number; console: boolean }
+  | {
+      action: "runTool"
+      toolId: string
+      dirId: number
+      otherDirId: number | null
+      cursorId: number | null
+      selection: SelectionDescriptor | null
+    }
 
 const ok = <R>(r: R) => ({ ok: true as const, r })
 const err = (code: ErrorCode, message: string, details?: unknown) => ({
@@ -160,6 +287,39 @@ export function installFakeCommander(options: FakeOptions) {
   let carried: number[] = options.carried ?? []
   let carriedVersion = options.context?.version ?? 0
   let nextJob = 0
+  /** Stage C09: the journal of the last multi-rename (entry, old name, new name). */
+  let undo: { dir: string; steps: { entry: ContentItem; old: string; next: string }[] } | null =
+    null
+  const setName = (e: ContentItem, name: string): void => {
+    e.name = name
+    const dot = name.lastIndexOf(".")
+    e.ext = e.kind === "dir" || dot <= 0 ? "" : name.slice(dot + 1).toLowerCase()
+  }
+  /** The folder listing an entry (by identity: sessions hold the same objects). */
+  const folderOf = (e: ContentItem): FakeFolder | undefined =>
+    options.folders.find((f) => f.entries.some((x) => x.id === e.id))
+  /** Names a selection as Go's rename.Resolve would. */
+  const renameRows = (sel: SelectionDescriptor, plan: RenamePlan): RenamePreviewRow[] => {
+    const rows = resolve(sel)
+    const named = rows.map((e, i) => fakeRename(plan, e.name, e.kind === "dir", i))
+    // Entries that keep their name still have it; so do the unselected ones.
+    const moving = new Set(rows.filter((e, i) => named[i] !== e.name).map((e) => e.id))
+    const lower = named.map((n, i) => (moving.has(rows[i]!.id) ? n.toLowerCase() : `\0${i}`))
+    return rows.map((e, i): RenamePreviewRow => {
+      const base = { id: e.id, name: e.name, newName: named[i]! }
+      if (named[i] === e.name) return { ...base, status: "unchanged" }
+      if (named[i] === "" || /[/\\]/.test(named[i]!))
+        return { ...base, status: "invalid", reason: "The name can't contain / or \\." }
+      if (lower.indexOf(lower[i]!) !== lower.lastIndexOf(lower[i]!))
+        return { ...base, status: "conflict", reason: "duplicate" }
+      const taken = folderOf(e)?.entries.some(
+        (x) => !moving.has(x.id) && x.name.toLowerCase() === lower[i],
+      )
+      return taken
+        ? { ...base, status: "conflict", reason: "exists" }
+        : { ...base, status: "rename" }
+    })
+  }
   let nextEntry = 900_000_000
   const jobs: JobSnapshot[] = []
   let clip: { mode: "" | "copy" | "cut"; count: number } = { mode: "", count: 0 }
@@ -265,6 +425,64 @@ export function installFakeCommander(options: FakeOptions) {
   }
   let nextScan = 0
   const listeners = new Map<EventChannel, Set<(p: never) => void>>()
+  /** Stage C08: directory compares: all their rows, the filter, and the session that lists them. */
+  interface FakeCompare {
+    params: CompareDirsParams
+    queryId: number
+    rows: ContentItem[]
+    defaults: Map<number, DiffAction>
+    show: CompareShow[]
+    planVersion: number
+    done: boolean
+  }
+  const compares = new Map<number, FakeCompare>()
+  let nextCompare = 0
+  const planOf = (c: FakeCompare): ComparePlan => {
+    const plan: ComparePlan = {
+      version: c.planVersion,
+      counts: { copyRight: 0, copyLeft: 0, equal: 0, different: 0, delete: 0 },
+      copyRight: { files: 0, bytes: 0 },
+      copyLeft: { files: 0, bytes: 0 },
+      deleteRight: 0,
+      deleteLeft: 0,
+      folders: 0,
+      overwriteNewer: 0,
+    }
+    for (const r of c.rows) {
+      const d = r.diff!
+      const sym = symbolOf(d)
+      plan.counts[sym]++
+      if (!c.show.includes(sym)) continue
+      const dir = r.kind === "dir"
+      if (d.action === "copyRight" || d.action === "copyLeft") {
+        const amount = d.action === "copyRight" ? plan.copyRight : plan.copyLeft
+        if (dir) plan.folders++
+        else {
+          amount.files++
+          amount.bytes += (d.action === "copyRight" ? d.left : d.right)?.sizeBytes ?? 0
+          if (d.state === (d.action === "copyRight" ? "rightNewer" : "leftNewer"))
+            plan.overwriteNewer++
+        }
+      } else if (d.action === "deleteRight") plan.deleteRight++
+      else if (d.action === "deleteLeft") plan.deleteLeft++
+    }
+    return plan
+  }
+  /** Re-lists a compare's session (its shown rows) as a new version. */
+  const relistCompare = (c: FakeCompare, emit: boolean) => {
+    const version = (versions.get(c.queryId) ?? 1) + 1
+    const rows = c.rows.filter((r) => c.show.includes(symbolOf(r.diff!)))
+    sessions.set(c.queryId, rows)
+    versions.set(c.queryId, version)
+    const snap = { queryId: c.queryId, version, total: rows.length }
+    if (emit)
+      listeners
+        .get("query.invalidated")
+        ?.forEach((l) => (l as (p: EventMap["query.invalidated"]) => void)(snap))
+    return snap
+  }
+  let nextDiff = 0
+  const diffs = new Map<number, TextDiffRow[]>()
 
   const opened = (f: FakeFolder) =>
     ok({
@@ -395,6 +613,166 @@ export function installFakeCommander(options: FakeOptions) {
         }),
       ),
       tools: vi.fn(async () => ok({ sevenZip: options.sevenZip ?? false })),
+    },
+    compare: {
+      dirs: vi.fn(async (p: CompareDirsParams) => {
+        if (!byId.get(p.leftDirId) || !byId.get(p.rightDirId))
+          return err("NOT_FOUND", "the folder is not in the index")
+        if (p.leftDirId === p.rightDirId)
+          return err("INVALID_ARGUMENT", "choose two separate folders", { reason: "nested" })
+        const compareId = ++nextCompare
+        sessions.set(++nextQuery, [])
+        compares.set(compareId, {
+          params: p,
+          queryId: nextQuery,
+          rows: [],
+          defaults: new Map(),
+          show: ["copyRight", "copyLeft", "different", "delete"],
+          planVersion: 1,
+          done: false,
+        })
+        return ok({ compareId, queryId: nextQuery, version: 1, total: 0 })
+      }),
+      cancel: vi.fn(async (compareId: number) =>
+        ok({ cancelled: compares.get(compareId)?.done === false }),
+      ),
+      close: vi.fn(async (compareId: number) => {
+        const c = compares.get(compareId)
+        if (c) sessions.delete(c.queryId)
+        return ok({ closed: compares.delete(compareId) })
+      }),
+      show: vi.fn(async (compareId: number, show: readonly CompareShow[]) => {
+        const c = compares.get(compareId)
+        if (!c) return err("NOT_FOUND", "the comparison is no longer available; compare again")
+        c.show = [...show]
+        c.planVersion++
+        return ok({ ...relistCompare(c, false), plan: planOf(c) })
+      }),
+      setAction: vi.fn(
+        async (compareId: number, sel: SelectionDescriptor, action: DiffAction | "default") => {
+          const c = compares.get(compareId)
+          if (!c) return err("NOT_FOUND", "the comparison is no longer available; compare again")
+          let changed = false
+          for (const r of resolve(sel)) {
+            const d = r.diff!
+            const next = action === "default" ? c.defaults.get(r.id)! : action
+            if (next !== d.action && allowed(d.state, next)) {
+              d.action = next
+              changed = true
+            }
+          }
+          if (changed) c.planVersion++
+          return ok({ ...relistCompare(c, false), plan: planOf(c) })
+        },
+      ),
+      plan: vi.fn(async (compareId: number) => {
+        const c = compares.get(compareId)
+        return c ? ok(planOf(c)) : err("NOT_FOUND", "the comparison is no longer available")
+      }),
+      // Unique or newer (by modifiedMs) files; another size at the same date marks both.
+      marks: vi.fn(async (p: CompareMarksParams) => {
+        const l = sessions.get(p.leftQueryId)
+        const r = sessions.get(p.rightQueryId)
+        if (!l || !r) return err("NOT_FOUND", "query session expired; reopen it")
+        const side = (mine: ContentItem[], theirs: ContentItem[], queryId: number) => {
+          const hits: number[] = []
+          mine.forEach((e, i) => {
+            if (e.kind === "dir") return
+            const o = theirs.find((x) => x.kind !== "dir" && x.name === e.name)
+            const newer = o && !p.ignoreDates && e.modifiedMs - o.modifiedMs > p.toleranceMs
+            const older = o && !p.ignoreDates && o.modifiedMs - e.modifiedMs > p.toleranceMs
+            if (!o || newer || (!older && o.sizeBytes !== e.sizeBytes)) hits.push(i)
+          })
+          return {
+            sel: {
+              queryId,
+              version: versions.get(queryId) ?? 1,
+              ranges: rangesOf(hits),
+              include: [],
+              exclude: [],
+            },
+            count: hits.length,
+          }
+        }
+        const left = side(l, r, p.leftQueryId)
+        const right = side(r, l, p.rightQueryId)
+        return ok({
+          left: left.sel,
+          right: right.sel,
+          leftCount: left.count,
+          rightCount: right.count,
+        })
+      }),
+    },
+    diff: {
+      open: vi.fn(async (leftId: number, rightId: number) => {
+        const l = entryById(leftId)
+        const r = entryById(rightId)
+        if (!l || !r) return err("NOT_FOUND", "not in the index")
+        const spec = options.textDiff ?? {}
+        const file = (e: ContentItem, lines: number) => ({
+          name: e.name,
+          sizeBytes: e.sizeBytes,
+          lines,
+          encoding: spec.reason ? ("" as const) : ("utf-8" as const),
+        })
+        const rows = spec.rows ?? []
+        const blocks: [number, number][] = []
+        rows.forEach((row, i) => {
+          if (row.op === "equal") return
+          const last = blocks.at(-1)
+          if (last && last[0] + last[1] === i) last[1]++
+          else blocks.push([i, 1])
+        })
+        const diffId = spec.reason ? 0 : ++nextDiff
+        if (diffId) diffs.set(diffId, rows)
+        const res: TextDiffOpenResult = {
+          diffId,
+          reason: spec.reason ?? "",
+          left: file(l, rows.filter((x) => x.l > 0).length),
+          right: file(r, rows.filter((x) => x.r > 0).length),
+          rows: rows.length,
+          changes: blocks.length,
+          blocks,
+          identical: spec.identical ?? (blocks.length === 0 && !spec.reason),
+        }
+        return ok(res)
+      }),
+      page: vi.fn(async (diffId: number, offset: number, limit: number) => {
+        const rows = diffs.get(diffId)
+        if (!rows) return err("NOT_FOUND", "the comparison is no longer open; compare again")
+        return ok({ offset, rows: rows.slice(offset, offset + limit) })
+      }),
+      close: vi.fn(async (diffId: number) => ok({ ok: diffs.delete(diffId) })),
+    },
+    // Stage C09: the multi-rename preview, one page of the named batch.
+    rename: {
+      preview: vi.fn(
+        async (sel: SelectionDescriptor, plan: RenamePlan, offset: number, limit: number) => {
+          let rows: RenamePreviewRow[]
+          try {
+            rows = renameRows(sel, plan)
+          } catch (e) {
+            const { field, message } = e as { field: string; message: string }
+            return err("INVALID_ARGUMENT", message, { reason: "plan", field })
+          }
+          const count = (status: RenamePreviewRow["status"]): number =>
+            rows.filter((r) => r.status === status).length
+          return ok({
+            total: rows.length,
+            renamed: count("rename"),
+            unchanged: count("unchanged"),
+            invalid: count("invalid"),
+            conflicts: count("conflict"),
+            firstProblem: rows.findIndex((r) => r.status === "invalid" || r.status === "conflict"),
+            offset,
+            rows: rows.slice(offset, offset + limit),
+          })
+        },
+      ),
+      undoInfo: vi.fn(async () =>
+        ok({ count: undo?.steps.length ?? 0, dir: undo?.dir ?? "", finishedMs: undo ? 1 : 0 }),
+      ),
     },
     query: {
       open: vi.fn(async (d: QueryDescriptor) => {
@@ -534,6 +912,70 @@ export function installFakeCommander(options: FakeOptions) {
     },
     files: {
       start: vi.fn(async (p: CommanderJobParams) => {
+        // Stage C08: a sync applies a compare's plan; two files are named by id.
+        if (p.kind === "sync") {
+          const c = compares.get(p.compareId)
+          if (!c) return err("NOT_FOUND", "the comparison is no longer available; compare again")
+          if (!c.done) return err("BUSY", "the comparison has not finished")
+          if (p.planVersion !== c.planVersion)
+            return err("INVALID_ARGUMENT", "the comparison changed since it was confirmed", {
+              reason: "stalePlan",
+            })
+          const plan = planOf(c)
+          const snap = job({
+            kind: "sync",
+            total:
+              plan.copyRight.files +
+              plan.copyLeft.files +
+              plan.deleteRight +
+              plan.deleteLeft +
+              plan.folders,
+            destination: byId.get(c.params.rightDirId)?.crumbs.at(-1)?.name ?? "",
+          })
+          jobs.push(snap)
+          return ok(snap)
+        }
+        if (p.kind === "compareFiles") {
+          const snap = job({ kind: "compareFiles", total: 1, state: "running" })
+          jobs.push(snap)
+          return ok(snap)
+        }
+        // Stage C09: an undo has no selection; a multi-rename renames what
+        // its preview calls "rename" and keeps the journal.
+        if (p.kind === "undoRename") {
+          if (!undo)
+            return err("INVALID_ARGUMENT", "jobs: invalid job: there is no multi-rename to undo")
+          const steps = undo.steps
+          undo = null
+          for (const s of steps.toReversed()) setName(s.entry, s.old)
+          const snap = job({ kind: "undoRename", total: steps.length, state: "running" })
+          jobs.push(snap)
+          return ok(snap)
+        }
+        if (p.kind === "multiRename") {
+          let rows: RenamePreviewRow[]
+          try {
+            rows = renameRows(p.source.selection, p.plan)
+          } catch (e) {
+            const { field, message } = e as { field: string; message: string }
+            return err("INVALID_ARGUMENT", message, { reason: "plan", field })
+          }
+          const entries = resolve(p.source.selection)
+          const steps = rows.flatMap((r, i) =>
+            r.status === "rename" ? [{ entry: entries[i]!, old: r.name, next: r.newName }] : [],
+          )
+          for (const s of steps) setName(s.entry, s.next)
+          if (steps.length > 0) undo = { dir: folderOf(steps[0]!.entry)?.path ?? "", steps }
+          const snap = job({ kind: "multiRename", total: rows.length, state: "running" })
+          jobs.push(snap)
+          return ok(snap)
+        }
+        if (p.kind === "setAttributes") {
+          for (const e of resolve(p.source.selection)) {
+            e.attrs = ((e.attrs ?? 0) & ~(p.clearAttrs ?? 0)) | (p.setAttrs ?? 0)
+            if (p.modifiedMs !== undefined) e.modifiedMs = p.modifiedMs
+          }
+        }
         const total = resolve(p.source.selection).length
         const snap = job({ kind: p.kind, total })
         if (p.kind === "copy" || p.kind === "move" || p.kind === "extract" || p.kind === "pack") {
@@ -655,6 +1097,15 @@ export function installFakeCommander(options: FakeOptions) {
     return bytes.slice(start, end + 1)
   })
   const shell: ShellRecord[] = []
+  const runs: RunRecord[] = []
+  const refuseRun = () =>
+    options.runFails
+      ? err(
+          options.runFails.code,
+          options.runFails.message,
+          options.runFails.reason ? { reason: options.runFails.reason } : undefined,
+        )
+      : null
   const entryById = (id: number): ContentItem | undefined => {
     for (const f of options.folders) {
       const found = f.entries.find((e) => e.id === id)
@@ -682,10 +1133,12 @@ export function installFakeCommander(options: FakeOptions) {
       }),
     },
     preview: {
-      ensure: vi.fn(async (p: { items: { id: number }[] }) =>
+      ensure: vi.fn(async (p: { profile?: string; items: { id: number }[] }) =>
         ok({
           items: p.items.map(({ id }) => ({
             id,
+            // As the sidecar answers: each item names its profile (the tile stores check it).
+            ...(p.profile !== undefined && { profile: p.profile }),
             url: `panelyth-thumb://t/${id.toString(16).padStart(64, "f")}.jpg`,
             width: 800,
             height: 600,
@@ -712,6 +1165,9 @@ export function installFakeCommander(options: FakeOptions) {
           height: null,
           childFolders: e.kind === "dir" ? 3 : null,
           childMedia: null,
+          ...(e.attrs ? { attrs: e.attrs } : {}),
+          permissions: options.permissions ?? null,
+          linkTarget: e.kind === "link" ? "C:\\target\\" + e.name : null,
           favorite: false,
           rating: 0,
           label: 0,
@@ -757,6 +1213,39 @@ export function installFakeCommander(options: FakeOptions) {
         shell.push({ action: "edit", entryId: id })
         return ok({ ok: true })
       }),
+      run: vi.fn(async (p: { command: string; dirId: number; console?: boolean }) => {
+        const refused = refuseRun()
+        if (refused) return refused
+        if (!byId.has(p.dirId)) return err("NOT_FOUND", "not in the index")
+        runs.push({
+          action: "run",
+          command: p.command,
+          dirId: p.dirId,
+          console: p.console === true,
+        })
+        return ok({ ok: true })
+      }),
+      runTool: vi.fn(
+        async (p: {
+          toolId: string
+          dirId: number
+          otherDirId?: number
+          cursorId?: number
+          selection?: SelectionDescriptor
+        }) => {
+          const refused = refuseRun()
+          if (refused) return refused
+          runs.push({
+            action: "runTool",
+            toolId: p.toolId,
+            dirId: p.dirId,
+            otherDirId: p.otherDirId ?? null,
+            cursorId: p.cursorId ?? null,
+            selection: p.selection ?? null,
+          })
+          return ok({ ok: true })
+        },
+      ),
     },
   }
   const fs = Object.assign(api.fs, {
@@ -873,11 +1362,49 @@ export function installFakeCommander(options: FakeOptions) {
       }
       listeners.get("find.progress")?.forEach((l) => (l as (p: FindProgress) => void)(progress))
     },
+    /**
+     * Stage C08: a compare finished with these rows: its session gets a new
+     * version, then compare.progress reports the final state.
+     */
+    finishCompare(compareId: number, rows: ContentItem[], over: Partial<CompareProgress> = {}) {
+      const c = compares.get(compareId)!
+      c.rows = rows
+      c.defaults = new Map(rows.map((r) => [r.id, r.diff!.action]))
+      c.done = (over.state ?? "completed") === "completed"
+      if (c.done) c.planVersion++
+      relistCompare(c, true)
+      const progress: CompareProgress = {
+        compareId,
+        state: "completed",
+        phase: "listing",
+        dirs: 4,
+        entries: rows.length * 2,
+        compared: 0,
+        bytes: 0,
+        errors: 0,
+        links: 0,
+        rows: rows.length,
+        truncated: false,
+        elapsedMs: 120,
+        ...over,
+      }
+      listeners
+        .get("compare.progress")
+        ?.forEach((l) => (l as (p: CompareProgress) => void)(progress))
+    },
+    /** The parameters the last compare started with. */
+    lastCompare: () => [...compares.values()].at(-1),
+    /** The compares still open in "Go". */
+    openCompares: (): number[] => [...compares.keys()],
+    /** The text diffs still open in "Go". */
+    openDiffs: (): number[] => [...diffs.keys()],
     /** The search sessions still open (the dialog's and fed panels'). */
     openSessions: (): number[] => [...sessions.keys()],
     bookmarks: (): Bookmark[] => bookmarks,
     /** Stage C05: shell actions main would have performed. */
     shell,
+    /** Stage C10: commands main would have run. */
+    runs,
     /** Stage C05: Range reads of token URLs. */
     reads,
     /** Another app (the viewer) changed the bookmarks. */

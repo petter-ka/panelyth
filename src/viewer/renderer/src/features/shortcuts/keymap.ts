@@ -15,7 +15,7 @@
 import * as core from "@panelyth/renderer-core"
 import { msg } from "@panelyth/i18n"
 
-export type Scope = "global" | "viewer"
+export type Scope = "global" | "viewer" | "editor"
 
 export type ActionDef = core.ActionDef<Scope>
 
@@ -96,6 +96,13 @@ export const ACTIONS = [
     label: msg("Delete permanently"),
     defaults: ["Shift+Delete"],
     macDefaults: ["Mod+Shift+Backspace"],
+  },
+  {
+    id: "item.edit",
+    scope: "global",
+    group: msg("Files"),
+    label: msg("Edit the selected pictures"),
+    defaults: ["Mod+e"],
   },
   {
     id: "item.properties",
@@ -194,6 +201,145 @@ export const ACTIONS = [
     label: msg("Copy picture"),
     defaults: ["Mod+c"],
   },
+  {
+    id: "viewer.edit",
+    scope: "viewer",
+    group: msg("Viewer"),
+    label: msg("Edit picture"),
+    defaults: ["e"],
+  },
+  // Image editor (Stage 12)
+  {
+    id: "editor.close",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Close the editor"),
+    defaults: ["Escape"],
+  },
+  {
+    id: "editor.undo",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Undo"),
+    defaults: ["Mod+z"],
+    whileTyping: true,
+  },
+  {
+    id: "editor.redo",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Redo"),
+    defaults: ["Mod+Shift+z", "Mod+y"],
+    whileTyping: true,
+  },
+  {
+    id: "editor.compare",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the original while held"),
+    defaults: ["\\"],
+  },
+  {
+    id: "editor.save",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Save"),
+    defaults: ["Mod+s"],
+    whileTyping: true,
+  },
+  {
+    id: "editor.run",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Run the recipe on the selected pictures"),
+    defaults: ["Mod+Enter"],
+    whileTyping: true,
+  },
+  {
+    id: "editor.search",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Find a tool"),
+    defaults: ["/", "Mod+k"],
+  },
+  {
+    id: "editor.fit",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Fit to window"),
+    defaults: ["0"],
+  },
+  {
+    id: "editor.actualSize",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Actual size"),
+    defaults: ["1"],
+  },
+  {
+    id: "editor.zoomIn",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Zoom in"),
+    defaults: ["Plus", "="],
+  },
+  {
+    id: "editor.zoomOut",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Zoom out"),
+    defaults: ["-"],
+  },
+  // The editor's tool groups (Stage 13)
+  {
+    id: "editor.group.adjust",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Adjust tools"),
+    defaults: ["a"],
+  },
+  {
+    id: "editor.group.color",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Color tools"),
+    defaults: ["c"],
+  },
+  {
+    id: "editor.group.detail",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Detail tools"),
+    defaults: ["d"],
+  },
+  {
+    id: "editor.group.effects",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Effects tools"),
+    defaults: ["e"],
+  },
+  {
+    id: "editor.group.retouch",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Draw and retouch tools"),
+    defaults: ["r"],
+  },
+  {
+    id: "editor.group.geometry",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Geometry tools"),
+    defaults: ["g"],
+  },
+  {
+    id: "editor.group.looks",
+    scope: "editor",
+    group: msg("Editor"),
+    label: msg("Show the Looks"),
+    defaults: ["l"],
+  },
 ] as const satisfies readonly ActionDef[]
 
 export type ActionId = (typeof ACTIONS)[number]["id"]
@@ -238,7 +384,7 @@ export interface Keymap {
   readonly chords: Readonly<Record<ActionId, readonly string[]>>
 }
 
-const SCOPES: readonly Scope[] = ["global", "viewer"]
+const SCOPES: readonly Scope[] = ["global", "viewer", "editor"]
 
 /** Overrides first (they win conflicts), then defaults in registry order. */
 export function resolveKeymap(overrides: ShortcutOverrides, mac = core.IS_MAC): Keymap {

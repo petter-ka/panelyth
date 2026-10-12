@@ -30,6 +30,18 @@ in `index.db`, so their pages are built from the archive's listing in Go. A sour
 2^53), so a selection descriptor never mixes them up with index ids; Go resolves them to the open archive's entries
 (ADR-0030).
 
+Amended 2026-10-11 (Stage C08): a **directory compare** is the third source (`compare.dirs` returns its session with
+its id). Its rows are not files but compared entries: they come from a third id range (from 3·2^51 up, above the
+archive range, which got an upper bound, and below 2^53), so a descriptor over a compare's session resolves to
+nothing in any job or entry method; only `compare.setAction` reads it. Page rows carry `diff { dir, state, action,
+left, right }` next to the usual fields. The session lists the rows in the compare's own order (folder, then natural
+name) and ignores the descriptor's sort; which rows it lists is a filter kept with the compare (`compare.show`), not
+a second session. Because a filter or a direction change must show at once, a source may ask for an immediate
+re-materialization (`RefreshNow`: the new snapshot is returned to the caller, and `query.invalidated` follows as
+usual) instead of the throttled one. `Rows` returns every row of a session's current version with its position; the
+flat compare behind Shift+F2 (`compare.marks`) reads two sessions with it and answers with one range descriptor per
+session. At most 4 compares are kept, each with at most 500,000 rows.
+
 ## Context
 
 Offset/limit over a table that is still growing during a scan shifts rows under the user. SQLite `OFFSET` is

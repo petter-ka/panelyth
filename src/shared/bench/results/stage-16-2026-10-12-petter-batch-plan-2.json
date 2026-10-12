@@ -1,0 +1,36 @@
+{
+  "stage": "16",
+  "at": "2026-10-12T04:14:23+02:00",
+  "cpus": 32,
+  "go": "go1.27.0",
+  "megapixelsPerPicture": 12,
+  "sourceMBPerPicture": 3.7552947998046875,
+  "recipe": "fit 1600 px + sharpen + text watermark -\u003e JPEG 85, into a folder",
+  "runs": null,
+  "scaling1to4": 0,
+  "defaultWorkers": 4,
+  "cancel": {
+    "doneBeforeCancel": 0,
+    "latencyMs": 0,
+    "partialsLeft": 0
+  },
+  "plan": {
+    "pictures": 200,
+    "medianMs": 1.023,
+    "maxMs": 7.199,
+    "largePictures": 100000,
+    "largeMedianMs": 157.275,
+    "largeMaxMs": 181.147,
+    "largeScanSeconds": 2.7484182
+  },
+  "journal": {
+    "entries": 0,
+    "ms": 0
+  },
+  "thumbnails": {
+    "pictures": 0,
+    "aloneSeconds": 0,
+    "withBatchSeconds": 0,
+    "throughputDropPercent": 0
+  }
+}

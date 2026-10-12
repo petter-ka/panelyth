@@ -119,7 +119,10 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
       }
       const r = await options.sidecar.call(
         method as SidecarMethod,
-        profileParams(app, method, params),
+        // An edit session belongs to the calling window: one each (ADR-0035).
+        method === "edit.open"
+          ? { ...(params as object), owner: event.sender.id }
+          : profileParams(app, method, params),
       )
       if (method === "library.setSetting") {
         const { key, value } = params as { key: string; value: unknown }
@@ -148,13 +151,42 @@ const COMMANDER_JOB_KINDS: ReadonlySet<unknown> = new Set([
   "extract",
   "pack",
   "testArchive",
+  // Stage C08: synchronize, checksums, compare by content.
+  "sync",
+  "hashCreate",
+  "hashVerify",
+  "compareFiles",
+  // Stage C09: multi-rename with its undo, attributes and dates.
+  "multiRename",
+  "undoRename",
+  "setAttributes",
 ])
 
-const ARCHIVE_JOB_KINDS: ReadonlySet<unknown> = new Set(["extract", "pack", "testArchive"])
+/** Jobs only the commander starts: archives (C07), compare jobs (C08), multi-rename and attributes (C09). */
+const COMMANDER_ONLY_JOB_KINDS: ReadonlySet<unknown> = new Set([
+  "extract",
+  "pack",
+  "testArchive",
+  "sync",
+  "hashCreate",
+  "hashVerify",
+  "compareFiles",
+  "multiRename",
+  "undoRename",
+  "setAttributes",
+])
 
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
   const p = params as Record<string, unknown>
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
+  // Stage 12: only the commander hands a picture over, and only to the viewer's editor.
+  if (
+    method === "app.switch" &&
+    p.edit !== undefined &&
+    (app !== "commander" || p.to !== "viewer")
+  ) {
+    return "only the commander asks the viewer to edit a picture"
+  }
   if (
     app === "viewer" &&
     method === "query.open" &&
@@ -172,14 +204,14 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
   ) {
     return "commander settings are the commander's"
   }
-  if (app === "viewer" && method === "jobs.start" && ARCHIVE_JOB_KINDS.has(p.kind)) {
-    return "archive jobs are the commander's"
+  if (app === "viewer" && method === "jobs.start" && COMMANDER_ONLY_JOB_KINDS.has(p.kind)) {
+    return "archive, compare, multi-rename and attribute jobs are the commander's"
   }
   if (app === "commander") {
     // Stage C04: its jobs are file operations, and destinations are folder
     // ids resolved in Go, never paths from the renderer (ADR-0027).
     if (method === "jobs.start" && !COMMANDER_JOB_KINDS.has(p.kind)) {
-      return "the commander starts file operations, folder sizes and archive jobs only"
+      return "the commander starts file operations, folder sizes, archive, compare, rename and attribute jobs only"
     }
     if ((method === "jobs.start" || method === "clip.paste") && p.destination !== undefined) {
       return "the commander names destinations by folder id"

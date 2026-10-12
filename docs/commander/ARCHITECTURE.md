@@ -1,6 +1,6 @@
 # Commander Architecture
 
-Status: **in progress** (C00 done, C01–C07 implemented; Stages C08–C11 planned). Panelyth Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
+Status: **in progress** (C00 done, C01–C09 implemented; Stages C10–C11 planned). Panelyth Commander runs on the shared platform (`docs/shared/ARCHITECTURE.md`):
 an app view in the Panelyth shell, next to the viewer, with the commander capability profile (ADR-0027, ADR-0031). It
 shares the viewer's sidecar, index (queried with the `all` scope, ADR-0026), preview cache, jobs, clipboard and
 `library.db`. Switching between the apps and the state they share: `docs/shared/APP-SWITCHING.md`. This document
@@ -11,7 +11,7 @@ covers what is specific to the commander.
 ```text
 src/shared/desktop                the shell: preload/commander and the commander capability profile in main
 src/commander/renderer     React app (src/shared/ui, src/shared/renderer-core, src/shared/media-ui)
-src/shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare
+src/shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare, rename
 ```
 
 ## Renderer composition
@@ -134,6 +134,63 @@ Enter on a folder
   The Commander setting can route media to the system default app. Other files go
   through `listing.enter`'s file opener (`features/open.ts`).
 
+## Compare, synchronize and checksums
+
+As built (Stage C08; `features/compare.ts`, `components/SyncDialog.tsx`, `DiffDialog.tsx`, `ChecksumDialog.tsx`):
+
+```text
+Shift+F2            → compare.marks({ leftQueryId, rightQueryId, date rules }) → marks of both panels
+Synchronize         → compare.dirs({ leftDirId, rightDirId, … }) → { compareId, queryId }   the table's session
+                      compare.progress … query.invalidated                                   rows when the walk is done
+                      compare.show / compare.setAction → { session snapshot, plan }           applied at once
+                      jobs.start({ kind: "sync", compareId, planVersion })                   the confirmed plan
+Compare by content  → diff.open({ leftId, rightId }) → rows paged with diff.page
+                      (not text, or over 50 MB: jobs.start({ kind: "compareFiles", leftId, rightId }))
+Checksums           → jobs.start({ kind: "hashCreate" | "hashVerify", source, … })
+```
+
+- The synchronize table is a page store over the compare's session, like a panel's listing: virtualized rows, pages
+  fetched for the visible range only. Its selection is the shared selection algebra, sent as a descriptor.
+- Roots are folder ids (a typed folder is opened with `dir.open` first); a sync names a compare and a plan version,
+  so no path and no list of files crosses the bridge.
+- The plan covers the rows the table shows. Go refuses a plan version older than the current one, and the job checks
+  each entry against the compare before touching it (ADR-0029 "As built (Stage C08)").
+- The text diff's rows live in a small page cache outside React state (200 rows a page, 24 pages); the text itself
+  stays in the files and in Go.
+- The date rules (`compareToleranceMs` 0 or 2000, `compareDst`, `compareIgnoreDates`) are part of
+  `commander.settings`: Shift+F2 uses them and the synchronize dialog shows and changes them.
+
+## Multi-rename, attributes and properties
+
+As built (Stage C09; `features/rename.ts`, `features/attributes.ts`, `components/MultiRenameDialog.tsx`,
+`AttributeDialogs.tsx`):
+
+```text
+Ctrl+M            → rename.preview({ selection, plan, offset, limit })      a page of old and new names, the batch's counts
+                    … again on every change of the plan, for the pages in view
+                    jobs.start({ kind: "multiRename", source, plan })       the plan the preview showed
+Undo last         → rename.undoInfo() → jobs.start({ kind: "undoRename" })  no selection: Go's journal
+Change attributes → jobs.start({ kind: "setAttributes", source, setAttrs | setMode, …, modifiedMs, recursive })
+Alt+Enter         → props.get(entryId) (attributes, permissions, link target) or selection.info for marks
+```
+
+- **Go names the batch, not the renderer.** Conflicts depend on every name of the batch, so `rename.preview` resolves
+  all of it on each call (`rename.Resolve`, the function the job applies) and returns one page plus the counts and the
+  position of the first problem. The entries of the previewed selection and the names of their folders are kept in Go
+  between calls (one selection at a time, dropped after a minute without use or when the job starts), so a key press
+  costs the naming only.
+- **The preview table is virtualized** and holds its rows outside React state: pages of 200 rows, at most 12, asked
+  for by the rows in view. One request is in flight at a time; while it is, newer plans only replace what is asked
+  next, so typing never queues requests. Rows of the plan before the current one stay visible (dimmed) until their
+  page is named again.
+- **A plan that cannot be compiled** comes back as `INVALID_ARGUMENT` with `details { reason: "plan", field }`; the
+  dialog shows Go's reason under that field and keeps the last rows.
+- **Platform differences stay in Go:** `props.get` reports `permissions` as null on Windows and the dialog shows
+  attributes or permissions accordingly; a `setAttributes` job carries either `setAttrs`/`clearAttrs` or
+  `setMode`/`clearMode`.
+- **Properties are shared:** `EntryProperties` and `SelectionProperties` (`src/shared/ui`) render the rows in both
+  apps; the viewer adds its favorite, rating, label and tag rows, the commander the attributes and the link target.
+
 ## Methods and events by stage
 
 | Stage | Methods and events |
@@ -147,9 +204,9 @@ Enter on a folder
 | C05 | `file.open` (token URL for any file kind; main-only `file.resolve`), `shell.open` with `allowProgram`, `shell.edit`, `fs.mkfile`; `media.open`, `preview.ensure`, `props.get` and the `preview.ready` event for the commander; shared `MediaViewerOverlay` above the Commander view; `entry.path.program` |
 | C06 | `find.start`, `find.cancel` (a session source); branch listings (recursive, all scope) |
 | C07 | `archive.open`, `archive.close`, `archive.check`, `archive.tools`; `query.open { archiveId, archiveDirId }` (a session source with its own rows); job kinds `extract`, `pack`, `testArchive` (ADR-0030 "As built") |
-| C08 | `compare.dirs` (a diff session), sync jobs, `hash.create`, `hash.verify` jobs |
-| C09 | `rename.preview`, rename jobs with an undo journal; attribute and timestamp jobs |
-| C10 | `shell.run` (main), user commands |
+| C08 | `compare.dirs` (a diff session with `ContentItem.diff` rows), `compare.cancel`, `compare.close`, `compare.show`, `compare.setAction`, `compare.plan`, `compare.marks` (Shift+F2); `diff.open`, `diff.page`, `diff.close` (the text diff); job kinds `sync`, `hashCreate`, `hashVerify`, `compareFiles`; the `compare.progress` event |
+| C09 | `rename.preview` (paged), `rename.undoInfo`; job kinds `multiRename`, `undoRename`, `setAttributes`; `props.get` gains `attrs`, `permissions` and `linkTarget`; `dirSize` writes in batches |
+| C10 | `shell.run` and `shell.runTool` (main-local; folders and names resolve in Go through `entry.path` and `selection.paths`); user commands in `commander.tools`; `query.page` with a thumbnail profile and `preview.ensure` lanes `cmd-tiles-left` / `cmd-tiles-right` for the Thumbnails view |
 
 Every method is batch-oriented, cancellable where it runs long, and validated in main (ADR-0012, ADR-0027).
 
@@ -162,12 +219,17 @@ historyIndex, cursorId }], active, columns } }` (v1 from C01–C02 is still read
 (Settings: size and date format, hidden files in new panels, where letters go; from C05 `mediaOpen` (viewer or system),
 `runPrograms` (ask, always, never) and `editor`, which main reads for F4); the hotlist is the shared bookmarks
 table (with groups), and recent locations are shared with the viewer. Theme and interface size come from
-`shared.appearance`. Settings are written debounced and flushed on exit, as in the viewer.
+`shared.appearance`. Settings are written debounced and flushed on exit, as in the viewer. As of Stage C10:
+`commander.tools` `{ v: 1, commands: [{ id, title, command, params, dir, icon, menu, console }] }` (read by main when
+a user command runs), `commander.toolbar` `{ v: 1, items }` (action ids, `tool:<id>`, `|` for a divider),
+`commander.commandHistory` `{ v: 1, items }` (50 lines), a tab's `view` may be `thumbs`, and `commander.settings`
+gains the three bars, the tile size, the default conflict policy and verify, and the two confirmations.
 
 ## Switching to the viewer
 
-- On switch, the commander publishes its context: the active panel's folder (or, for archive, find, branch and
-  compare locations, the folder containing the cursor entry), the cursor entry and the marks (`context.publish`).
+- On switch, the commander publishes its context: the active panel's folder (or, for archive, find and branch
+  locations, the folder containing the cursor entry), the cursor entry and the marks (`context.publish`). A compare
+  is a dialog over the panels, not a panel location (Stage C08).
 - When shown, it reads the viewer's context (`context.get`): the active panel opens that folder if needed, puts the
   cursor on the focused entry, and turns the carried selection into marks (`selection.fromContext`).
 - While hidden it does no work: no paging, no watching; on show it re-lists its visible panels.
@@ -181,5 +243,6 @@ table (with groups), and recent locations are shared with the viewer. Theme and 
 - Fixed row heights and column widths from the table model; nothing is measured while scrolling.
 - One session per visible tab; one watch per visible panel (ADR-0026).
 - Actions take ids, descriptors or panel locations, never renderer-supplied paths (ADR-0027).
-- Nothing runs without an explicit user command; programs ask first by default.
+- Nothing runs without an explicit user command; programs ask first by default. A typed line runs on Enter in the
+  command line only; a user command from its button, key or menu entry only (ADR-0027, Stage C10).
 - Recursive work (find, branch, folder sizes, copy) never follows links, is bounded, and can be cancelled.

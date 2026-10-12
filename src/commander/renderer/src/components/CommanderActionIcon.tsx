@@ -13,6 +13,14 @@ type CommanderActionIconName =
   | "branch"
   | "refresh"
   | "star"
+  | "compare"
+  | "sync"
+  // Stage C10: user commands, the command line, the Thumbnails view, the hidden-files toggle.
+  | "tool"
+  | "terminal"
+  | "play"
+  | "tiles"
+  | "keys"
 
 const ICON_NAMES: Record<CommanderActionIconName, IconName> = {
   view: "eye",
@@ -27,6 +35,14 @@ const ICON_NAMES: Record<CommanderActionIconName, IconName> = {
   branch: "branch",
   refresh: "refresh",
   star: "star",
+  compare: "flip",
+  sync: "sort",
+  // The other icon libraries have no drawing of their own for these.
+  tool: "settings",
+  terminal: "keyboard",
+  play: "play",
+  tiles: "preview",
+  keys: "keyboard",
 }
 
 /** Small, consistent line icons for commander actions. */
@@ -97,6 +113,46 @@ export function CommanderActionIcon({
         </>
       )}
       {name === "refresh" && <path d="M13 8a5 5 0 1 1-1.5-3.6M13 2.5v3h-3" />}
+      {name === "compare" && (
+        <>
+          <rect x="1.75" y="3" width="4.75" height="10" rx="1" />
+          <rect x="9.5" y="3" width="4.75" height="10" rx="1" />
+          <path d="M3.5 6h1.25M3.5 8.5h1.25M11.25 6h1.25M11.25 10.5h1.25" />
+        </>
+      )}
+      {name === "sync" && (
+        <>
+          <path d="M2.5 5.5h10m-2.5-2.5 2.5 2.5-2.5 2.5" />
+          <path d="M13.5 10.5h-10m2.5-2.5-2.5 2.5 2.5 2.5" />
+        </>
+      )}
+      {name === "tool" && (
+        <>
+          <circle cx="8" cy="8" r="2" />
+          <path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M12.4 3.6l-1.05 1.05M4.65 11.35 3.6 12.4" />
+        </>
+      )}
+      {name === "terminal" && (
+        <>
+          <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.25" />
+          <path d="m4.5 6 2 2-2 2M8.5 10h3" />
+        </>
+      )}
+      {name === "play" && <path d="M5 3.25v9.5L12.5 8 5 3.25Z" />}
+      {name === "tiles" && (
+        <>
+          <rect x="2" y="2" width="5" height="5" rx="1" />
+          <rect x="9" y="2" width="5" height="5" rx="1" />
+          <rect x="2" y="9" width="5" height="5" rx="1" />
+          <rect x="9" y="9" width="5" height="5" rx="1" />
+        </>
+      )}
+      {name === "keys" && (
+        <>
+          <rect x="1.5" y="4" width="13" height="8" rx="1.25" />
+          <path d="M4 6.75h.5M7 6.75h.5M10 6.75h.5M4.5 9.5h7" />
+        </>
+      )}
       {name === "star" && (
         <path d="m8 2 1.8 3.7 4.1.6-3 2.9.7 4.1L8 11.4l-3.6 1.9.7-4.1-3-2.9 4.1-.6L8 2Z" />
       )}

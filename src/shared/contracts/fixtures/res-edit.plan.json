@@ -1,0 +1,27 @@
+{
+  "id": 212,
+  "ok": true,
+  "r": {
+    "bytes": 2000,
+    "count": 2,
+    "estimateBytes": 500,
+    "names": [
+      "photo_0000-half.jpg",
+      "photo_0001-half.jpg"
+    ],
+    "problems": [],
+    "samples": [
+      {
+        "id": 1,
+        "name": "photo_0000.jpg"
+      },
+      {
+        "id": 2,
+        "name": "photo_0001.jpg"
+      }
+    ],
+    "skipped": [],
+    "warnings": []
+  },
+  "t": "res"
+}

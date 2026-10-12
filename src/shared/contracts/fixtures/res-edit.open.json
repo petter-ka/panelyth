@@ -1,0 +1,19 @@
+{
+  "id": 180,
+  "ok": true,
+  "r": {
+    "canReplace": true,
+    "dpi": {
+      "x": 0,
+      "y": 0
+    },
+    "format": "jpeg",
+    "hasAlpha": false,
+    "height": 48,
+    "name": "photo_0000.jpg",
+    "saveFormat": "jpeg",
+    "sessionId": "0123456789abcdef01234567",
+    "width": 64
+  },
+  "t": "res"
+}

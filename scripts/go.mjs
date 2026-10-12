@@ -101,6 +101,36 @@ if (task) {
         resultPath("archives"),
       ])
       break
+    case "comparebench":
+      run(goBinary(), [
+        "run",
+        "./cmd/comparebench",
+        "-fixtures",
+        fixtureRoot(),
+        "-out",
+        resultPath("compare"),
+      ])
+      break
+    case "renamebench":
+      run(goBinary(), [
+        "run",
+        "./cmd/renamebench",
+        "-fixtures",
+        fixtureRoot(),
+        "-out",
+        resultPath("rename"),
+      ])
+      break
+    case "editbench":
+      run(goBinary(), [
+        "run",
+        "./cmd/editbench",
+        "-fixtures",
+        fixtureRoot(),
+        "-out",
+        resultPath("edit"),
+      ])
+      break
     case "bench":
       run(goBinary(), ["test", "-run=^$", "-bench=.", "-benchmem", "-count=5", "./..."])
       break

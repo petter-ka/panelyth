@@ -54,6 +54,8 @@ export interface Sample {
 interface JobsState {
   /** Active and recently finished jobs, oldest first. */
   jobs: JobSnapshot[]
+  /** Edit jobs whose results were sent to the trash again (Stage 16). */
+  undone: ReadonlySet<number>
   /** Job ids the user closed in the panel. */
   dismissed: ReadonlySet<number>
   /** What the job does in words ("Copying 12 items to Trip"), by job id. */
@@ -66,6 +68,7 @@ interface JobsState {
 
 const initial = (): JobsState => ({
   jobs: [],
+  undone: new Set(),
   dismissed: new Set(),
   labels: new Map(),
   clip: { mode: "", count: 0 },
@@ -131,6 +134,20 @@ const KIND_LABEL: Record<JobKind, string> = {
   extract: msg("Extracting {count, plural, one {# item} other {# items}}"),
   pack: msg("Packing {count, plural, one {# item} other {# items}}"),
   testArchive: msg("Testing {count, plural, one {# item} other {# items}}"),
+  // The commander's compare jobs (Stage C08), likewise.
+  sync: msg("Synchronizing {count, plural, one {# item} other {# items}}"),
+  hashCreate: msg("Creating checksums for {count, plural, one {# item} other {# items}}"),
+  hashVerify: msg("Verifying {count, plural, one {# item} other {# items}}"),
+  compareFiles: msg("Comparing two files by content"),
+  // The commander's rename and attribute jobs (Stage C09), likewise.
+  multiRename: msg("Renaming {count, plural, one {# item} other {# items}}"),
+  undoRename: msg("Undoing the rename of {count, plural, one {# item} other {# items}}"),
+  setAttributes: msg("Changing attributes of {count, plural, one {# item} other {# items}}"),
+  // The image editor's save (Stage 12); its count is the save's steps.
+  editSave: msg("Saving an edited picture"),
+  // A recipe run over a selection, and its undo (Stage 16).
+  edit: msg("Editing {count, plural, one {# picture} other {# pictures}}"),
+  undoEdit: msg("Removing {count, plural, one {# edited picture} other {# edited pictures}}"),
 }
 
 export function jobLabel(s: JobsState, job: JobSnapshot): string {
@@ -197,6 +214,44 @@ async function start(params: JobStartParams, label: string): Promise<void> {
     const snap = await bridge.startJob(params)
     set((s) => ({ labels: new Map(s.labels).set(snap.jobId, label), error: null }))
     upsert(snap)
+  } catch (error) {
+    set({ error: describe(error) })
+  }
+}
+
+/** Shows a job another store started (the batch editor), under its own words. */
+export function adoptJob(snap: JobSnapshot, label: string): void {
+  set((s) => ({ labels: new Map(s.labels).set(snap.jobId, label), error: null }))
+  upsert(snap)
+}
+
+/** "Undo this batch": the files an edit job created go to the trash; the originals stay. */
+export async function undoBatch(job: JobSnapshot): Promise<void> {
+  try {
+    const snap = await bridge.batchUndo(job.jobId)
+    set((s) => ({ undone: new Set(s.undone).add(job.jobId) }))
+    adoptJob(
+      snap,
+      t("Removing {count, plural, one {# edited picture} other {# edited pictures}}", {
+        count: snap.total,
+      }),
+    )
+  } catch (error) {
+    // Undone before, or the job's record is gone: the button goes either way.
+    set((s) => ({
+      undone: new Set(s.undone).add(job.jobId),
+      error:
+        error instanceof PanelythError && error.code === "NOT_FOUND"
+          ? t("This batch can no longer be undone.")
+          : describe(error),
+    }))
+  }
+}
+
+/** Shows the first result of an edit job in the system file manager. */
+export async function revealBatch(jobId: number): Promise<void> {
+  try {
+    await bridge.editReveal(jobId)
   } catch (error) {
     set({ error: describe(error) })
   }

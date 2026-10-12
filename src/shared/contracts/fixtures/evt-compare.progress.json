@@ -1,0 +1,19 @@
+{
+  "ch": "compare.progress",
+  "p": {
+    "bytes": 4,
+    "compareId": 1,
+    "compared": 1,
+    "dirs": 3,
+    "elapsedMs": 1,
+    "entries": 7,
+    "errors": 0,
+    "links": 0,
+    "phase": "content",
+    "rows": 5,
+    "state": "completed",
+    "truncated": false
+  },
+  "seq": 1,
+  "t": "evt"
+}

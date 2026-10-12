@@ -24,7 +24,9 @@ import { closeViewer, jump, step, useViewerStore } from "../../features/viewer/v
 import { formatCount } from "../../lib/format"
 import { bridge } from "../../bridge"
 import { copyEntryPath, copyImage } from "../../features/clipboard/clipboard"
-import { CopyIcon, FlipIcon, RotateCcwIcon, RotateCwIcon } from "../ui/icons"
+import { CopyIcon, FlipIcon, PencilIcon, RotateCcwIcon, RotateCwIcon } from "../ui/icons"
+import { openEditor, useEditorStore } from "../../features/editor/editorStore"
+import { toEditList } from "../../features/media/mediaUi"
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -83,17 +85,23 @@ export function ViewerOverlay() {
     rotateCcw: useShortcutHint("viewer.rotateCcw"),
     flip: useShortcutHint("viewer.flip"),
     copy: useShortcutHint("viewer.copy"),
+    edit: useShortcutHint("viewer.edit"),
   }
+  const editing = useEditorStore((s) => s.status !== "closed")
 
+  // Keys come back here when the editor closes over the viewer.
   useEffect(() => {
-    if (open) rootRef.current?.focus()
-  }, [open])
+    if (open && !editing) rootRef.current?.focus()
+  }, [open, editing])
 
   if (!open || !item) return null
 
   const transform = view.id === item.id ? view.t : IDENTITY
   const updateTransform = (f: (t: ViewTransform) => ViewTransform): void =>
     setView({ id: item.id, t: f(transform) })
+
+  // The turn and flip shown here become the editor's first operations.
+  const edit = (): void => void openEditor({ id: item.id, name: item.name }, toEditList(transform))
 
   const close = (): void => {
     closeViewer()
@@ -119,6 +127,7 @@ export function ViewerOverlay() {
       "viewer.rotateCcw": () => updateTransform((t) => rotateBy(t, -1)),
       "viewer.flip": () => updateTransform(flipHorizontal),
       "viewer.copy": () => void copyImage(item.id),
+      "viewer.edit": edit,
     }
     const chord = eventChord(e.nativeEvent)
     const id = chord ? actionFor("viewer", chord) : undefined
@@ -261,6 +270,16 @@ export function ViewerOverlay() {
         >
           <CopyIcon size={14} />
         </HintButton>
+        <HintButton
+          type="button"
+          className={`${button} flex items-center gap-1.5`}
+          onClick={edit}
+          tooltip={hint(t("Edit picture"), hints.edit)}
+          data-testid="viewer-edit"
+        >
+          <PencilIcon size={14} />
+          {t("Edit")}
+        </HintButton>
       </div>
       <ContextMenuRoot>
         <ContextMenuTrigger asChild>
@@ -291,6 +310,9 @@ export function ViewerOverlay() {
           </ContextMenuItem>
           <ContextMenuItem onSelect={() => void copyEntryPath(item.id)}>
             {t("Copy path")}
+          </ContextMenuItem>
+          <ContextMenuItem action="viewer.edit" onSelect={edit}>
+            {t("Edit…")}
           </ContextMenuItem>
           <ContextMenuSeparator />
           <ContextMenuItem

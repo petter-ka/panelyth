@@ -146,6 +146,14 @@ func fastCopy(ctx context.Context, src string, in fs.FileInfo, target string, o 
 	return false, false, nil
 }
 
+// commitWaits are the pauses before a commit is tried again. A file that was
+// just written is often opened for a moment by a virus scanner or the search
+// indexer; the rename then fails with a sharing violation that is gone a few
+// milliseconds later. A batch of thousands of files meets that moment sooner
+// or later (Stage 16), so the commit waits it out, for at most 410 ms.
+var commitWaits = []time.Duration{5 * time.Millisecond, 15 * time.Millisecond, 40 * time.Millisecond,
+	100 * time.Millisecond, 250 * time.Millisecond}
+
 // renameNoReplace commits a partial copy atomically, failing when dst
 // exists (MoveFileEx without MOVEFILE_REPLACE_EXISTING).
 func renameNoReplace(partial, dst string) error {
@@ -157,7 +165,17 @@ func renameNoReplace(partial, dst string) error {
 	if err != nil {
 		return err
 	}
-	if err := windows.MoveFileEx(p, d, 0); err != nil {
+	err = windows.MoveFileEx(p, d, 0)
+	for _, wait := range commitWaits {
+		// Only the partial file being held is waited for: nothing else of a
+		// commit is transient.
+		if err == nil || !isInUse(err) {
+			break
+		}
+		time.Sleep(wait)
+		err = windows.MoveFileEx(p, d, 0)
+	}
+	if err != nil {
 		if errors.Is(err, windows.ERROR_ALREADY_EXISTS) || errors.Is(err, windows.ERROR_FILE_EXISTS) {
 			return Errorf(CodeExists, "%s already exists", filepath.Base(dst))
 		}

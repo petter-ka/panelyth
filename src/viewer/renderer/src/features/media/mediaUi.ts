@@ -10,6 +10,8 @@ configureMedia({
   ensurePreviews: (params) => bridge.ensurePreviews(params),
   openWithSystem: (entryId) => bridge.openWithSystem(entryId),
   onPreviewReady: (listener) => bridge.on("preview.ready", listener),
+  folderCovers: (params) => bridge.folderCovers(params),
+  onFolderCovers: (listener) => bridge.on("folder.covers", listener),
   settings: {
     read: async (key) => (await bridge.library()).settings[key],
     write: (key, value) => bridge.setSetting(key, value),

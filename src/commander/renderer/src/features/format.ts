@@ -5,7 +5,7 @@ import { formatRelative, type Locale as DateFnsLocale } from "date-fns"
 import { de, enUS, es, fr, hu, it, pl, ru } from "date-fns/locale"
 import type { DateFormat, SizeFormat } from "./settings"
 
-const IS_WINDOWS = typeof navigator !== "undefined" && /win/i.test(navigator.platform)
+export const IS_WINDOWS = typeof navigator !== "undefined" && /win/i.test(navigator.platform)
 
 // Numbers and dates follow the interface language (ADR-0034).
 const integer = perLocale((locale) => new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }))

@@ -1,5 +1,6 @@
 import { eventChord } from "@panelyth/renderer-core"
 import type { KeyboardEvent } from "react"
+import { typeInCommandLine } from "./cmdline"
 import { runPanelAction } from "./commands"
 import { actionFor } from "./keymap"
 import { enter, moveCursor } from "./listing"
@@ -21,8 +22,10 @@ export interface ViewGeometry {
   cursor: number
   /** PgUp / PgDn. */
   page: number
-  /** ← / →: a column of the Brief view; 0 in the Full view (the keys are free). */
+  /** ← / →: a column of the Brief view, one tile of the Thumbnails view; 0 in the Full view (the keys are free). */
   column: number
+  /** ↑ / ↓: the tiles of a row in the Thumbnails view; one row otherwise. */
+  row?: number
 }
 
 /** Alt+letter in "Alt+letters" mode (Settings → Panels): quick search. */
@@ -32,7 +35,8 @@ const isAltSearchChar = (e: KeyboardEvent): boolean =>
 /**
  * A key in a panel's view, in order: the open quick-search box, the fixed
  * cursor keys (with Shift, marking), Enter, the remappable actions, and
- * letters for quick search. The Full and Brief views share it.
+ * letters: they start quick search, or go to the command line when Settings
+ * says so (quick search then starts with Alt). The views share it.
  */
 export function onPanelKey(side: Side, e: KeyboardEvent, g: ViewGeometry): void {
   const done = (): void => {
@@ -53,9 +57,10 @@ export function onPanelKey(side: Side, e: KeyboardEvent, g: ViewGeometry): void 
   }
   // 2. Fixed keys: cursor moves (with Shift, marking), Enter.
   const { cursor, count } = g
+  const step = g.row ?? 1
   const moves: Record<string, number | undefined> = {
-    ArrowDown: cursor + 1,
-    ArrowUp: cursor - 1,
+    ArrowDown: cursor + step,
+    ArrowUp: cursor - step,
     PageDown: cursor + g.page,
     PageUp: cursor - g.page,
     Home: 0,
@@ -83,6 +88,11 @@ export function onPanelKey(side: Side, e: KeyboardEvent, g: ViewGeometry): void 
   }
   if (searchChar()) {
     typeChar(side, e.key)
+    return done()
+  }
+  // The classic way: a letter starts a command (Enter in the command line runs it).
+  if (altLetters && isSearchChar(e)) {
+    typeInCommandLine(e.key)
     return done()
   }
 }

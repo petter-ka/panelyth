@@ -1,3 +1,4 @@
+import type { EditRequestEvent } from "./edit"
 import type {
   AppId,
   Bookmark,
@@ -31,6 +32,28 @@ export interface FindProgress {
   truncated: boolean
   /** Time to the first result; -1 before it. */
   firstMatchMs: number
+  elapsedMs: number
+}
+
+/** A directory compare's progress (Stage C08): throttled, the final state always delivered. */
+export interface CompareProgress {
+  compareId: number
+  state: ScanState
+  /** "listing": reading the two trees; "content": comparing files byte by byte. */
+  phase: "listing" | "content"
+  /** Folders and entries read, both sides together. */
+  dirs: number
+  entries: number
+  /** Files compared by content, and the bytes read for it. */
+  compared: number
+  bytes: number
+  /** Folders and entries that could not be read; they are left out on both sides. */
+  errors: number
+  /** Links and special files, never followed or compared. */
+  links: number
+  rows: number
+  /** The compare stopped at MAX_COMPARE_ROWS. */
+  truncated: boolean
   elapsedMs: number
 }
 
@@ -78,8 +101,12 @@ export interface EventMap {
   "bookmarks.changed": { bookmarks: Bookmark[] }
   /** A search's progress (Stage C06, commander); results arrive through query.invalidated. */
   "find.progress": FindProgress
+  /** A directory compare's progress (Stage C08, commander); rows arrive through query.invalidated. */
+  "compare.progress": CompareProgress
   /** From main, to the window that opened a media window: find that window's next item (media.windowAnswer replies). */
   "mediaWindow.step": { requestId: number; key: number; direction: -1 | 0 | 1 }
+  /** From main, to the viewer: open the editor on this picture (the commander's Edit button; Stage 12). */
+  "edit.request": EditRequestEvent
 }
 
 export type EventChannel = keyof EventMap
@@ -97,7 +124,9 @@ export const EVENT_CHANNELS = [
   "volumes.changed",
   "bookmarks.changed",
   "find.progress",
+  "compare.progress",
   "mediaWindow.step",
+  "edit.request",
 ] as const satisfies readonly EventChannel[]
 
 /** Channels produced by the Go sidecar and forwarded by main unchanged. */
@@ -111,6 +140,7 @@ export const SIDECAR_EVENT_CHANNELS = [
   "volumes.changed",
   "bookmarks.changed",
   "find.progress",
+  "compare.progress",
 ] as const satisfies readonly EventChannel[]
 
 /** Payload of the single Electron push channel (IPC_EVENT). */

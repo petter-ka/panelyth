@@ -171,6 +171,27 @@ func TestSummarizeAndPaths(t *testing.T) {
 	if filepath.Dir(file[0].Path) != root.Path {
 		t.Fatalf("file path %+v", file)
 	}
+	// Briefs (Stage 16): the same entries without their paths, in request order.
+	briefs, err := s.Briefs(ctx, []int64{ids[len(ids)-1], 999999, ids[1], ids[0]})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(briefs) != 3 || briefs[0].ID != ids[len(ids)-1] || briefs[0].Name != filepath.Base(file[0].Path) ||
+		briefs[0].ParentID != root.ID || briefs[0].Kind == media.KindDir ||
+		briefs[1].Name != "Other" || briefs[1].Kind != media.KindDir || briefs[2].Name != "Beach trips" {
+		t.Fatalf("briefs in request order, missing skipped: %+v", briefs)
+	}
+	var total int64
+	all, _ := s.Briefs(ctx, ids)
+	for _, b := range all {
+		total += b.Size
+	}
+	if len(all) != 10 || total != sum.Bytes {
+		t.Fatalf("briefs of the folder: %d entries, %d bytes", len(all), total)
+	}
+	if none, err := s.Briefs(ctx, nil); err != nil || len(none) != 0 {
+		t.Fatalf("no ids: %v %v", none, err)
+	}
 }
 
 // TestUserSortAndFilter covers both join shapes of ADR-0021's user data:

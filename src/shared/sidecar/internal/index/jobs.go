@@ -66,6 +66,9 @@ type Target struct {
 	Path     string
 	Key      string
 	Size     int64
+	// MtimeNs is the modification time the index has (Stage C09: the date
+	// placeholders of a multi-rename).
+	MtimeNs int64
 }
 
 // Targets resolves ids (in order; missing ids are skipped).
@@ -78,7 +81,7 @@ func (s *Store) Targets(ctx context.Context, ids []int64) ([]Target, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := s.r.QueryContext(ctx, `SELECT id, COALESCE(parent_id, 0), name, path_key, size_bytes FROM entries
+	rows, err := s.r.QueryContext(ctx, `SELECT id, COALESCE(parent_id, 0), name, path_key, size_bytes, mtime_ns FROM entries
 		WHERE id IN (SELECT value FROM json_each(?))`, js)
 	if err != nil {
 		return nil, err
@@ -89,12 +92,13 @@ func (s *Store) Targets(ctx context.Context, ids []int64) ([]Target, error) {
 		name   string
 		key    string
 		size   int64
+		mtime  int64
 	}
 	byID := make(map[int64]extra, len(paths))
 	for rows.Next() {
 		var id int64
 		var e extra
-		if err := rows.Scan(&id, &e.parent, &e.name, &e.key, &e.size); err != nil {
+		if err := rows.Scan(&id, &e.parent, &e.name, &e.key, &e.size, &e.mtime); err != nil {
 			return nil, err
 		}
 		byID[id] = e
@@ -108,7 +112,56 @@ func (s *Store) Targets(ctx context.Context, ids []int64) ([]Target, error) {
 		if !ok {
 			continue
 		}
-		out = append(out, Target{ID: p.ID, ParentID: e.parent, Kind: p.Kind, Name: e.name, Path: p.Path, Key: e.key, Size: e.size})
+		out = append(out, Target{ID: p.ID, ParentID: e.parent, Kind: p.Kind, Name: e.name, Path: p.Path, Key: e.key, Size: e.size, MtimeNs: e.mtime})
+	}
+	return out, nil
+}
+
+// Brief is what a plan needs of an entry: what it is and how large, and no
+// path (Stage 16: the plan of a batch reads a whole selection).
+type Brief struct {
+	ID       int64
+	ParentID int64
+	Kind     media.Kind
+	Name     string
+	Size     int64
+}
+
+// Briefs returns the entries of ids, in order; missing ids are skipped. One
+// query without joins: a selection of 100,000 entries is read in chunks of
+// thousands, not one by one.
+func (s *Store) Briefs(ctx context.Context, ids []int64) ([]Brief, error) {
+	if len(ids) == 0 {
+		return []Brief{}, nil
+	}
+	js, err := idsJSON(ids)
+	if err != nil {
+		return nil, err
+	}
+	rows, err := s.r.QueryContext(ctx, `SELECT id, COALESCE(parent_id, 0), kind, name, size_bytes FROM entries
+		WHERE id IN (SELECT value FROM json_each(?))`, js)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	byID := make(map[int64]Brief, len(ids))
+	for rows.Next() {
+		var b Brief
+		var kind int
+		if err := rows.Scan(&b.ID, &b.ParentID, &kind, &b.Name, &b.Size); err != nil {
+			return nil, err
+		}
+		b.Kind = media.Kind(kind)
+		byID[b.ID] = b
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	out := make([]Brief, 0, len(byID))
+	for _, id := range ids {
+		if b, ok := byID[id]; ok {
+			out = append(out, b)
+		}
 	}
 	return out, nil
 }

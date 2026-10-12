@@ -1,3 +1,5 @@
+import { ASSET_EXTENSIONS, editorHandlers } from "./editor"
+import { SAVE_EXTENSIONS } from "@panelyth/contracts"
 import {
   app,
   BrowserWindow,
@@ -55,6 +57,9 @@ import { COMMANDER_ENABLED_ARG, documentKindOf, type AppId } from "@panelyth/con
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
+import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
+import { stat } from "node:fs/promises"
+import { join } from "node:path"
 import { perfMark } from "./perf"
 
 // Recorded once all main-process modules (including electron) are loaded.
@@ -221,7 +226,11 @@ async function boot(): Promise<void> {
   // The thumbnail root comes from the sidecar's hello, never from the renderer.
   handleThumbProtocol(() => sc.getHello()?.thumbnailRoot ?? null)
   const mediaTokens = new MediaTokens()
-  handleMediaProtocol(mediaTokens)
+  // The editor's frames (Stage 12): the last few are enough, a frame is loaded at once.
+  const frameTokens = new MediaTokens(16)
+  // Preset thumbnails (Stage 13): two batches' worth.
+  const thumbTokens = new MediaTokens(48)
+  handleMediaProtocol(mediaTokens, frameTokens, thumbTokens)
   sc.onStatus((status) => {
     if (status.state === "ready") perfMark("sidecar-ready")
     logger.info("sidecar status", { ...status })
@@ -284,12 +293,104 @@ async function boot(): Promise<void> {
       app.quit()
       return { ok: true }
     },
-    "app.switch": (_event, { to }) => {
+    "app.switch": (_event, { to, edit }) => {
+      // Edit in the media overlay or the media window (Stage 12): the viewer
+      // comes to the front and opens its editor on the picture. The viewer is
+      // always there, so this works without the commander too.
+      if (edit !== undefined) {
+        if (!appShell) throw new Error("no window")
+        const viewer = appShell.showViewer()
+        if (viewer) broadcast([viewer], "edit.request", { entryId: edit })
+        return { ok: true }
+      }
       if (!appShell?.enabled) throw new Error("the commander is not enabled")
       appShell.requestSwitch(to)
       return { ok: true }
     },
+    // Viewer only (the allowlist): frames, saves and reveals of the image editor (Stage 12).
+    ...editorHandlers({
+      call: (method, params) => sc.call(method, params),
+      tokens: frameTokens,
+      thumbTokens,
+      saveDialog: async (event, { defaultPath, format }) => {
+        // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.
+        const canned = app.isPackaged ? undefined : process.env.PANELYTH_TEST_SAVE_PATH
+        if (canned !== undefined) return canned || null
+        const win = BrowserWindow.fromWebContents(event.sender)
+        const options = {
+          defaultPath,
+          filters: [{ name: format.toUpperCase(), extensions: [...SAVE_EXTENSIONS[format]] }],
+        }
+        const result = await (win
+          ? dialog.showSaveDialog(win, options)
+          : dialog.showSaveDialog(options))
+        return result.canceled || !result.filePath ? null : result.filePath
+      },
+      showItemInFolder: (path) => {
+        if (recordShell) shellLog.push({ action: "reveal", value: path })
+        else shell.showItemInFolder(path)
+      },
+      folderDialog: async (event) => {
+        // As for the other dialogs: unpackaged builds accept a canned answer for the e2e tests.
+        const canned = app.isPackaged ? undefined : process.env.PANELYTH_TEST_BATCH_FOLDER
+        if (canned !== undefined) return canned || null
+        const win = BrowserWindow.fromWebContents(event.sender)
+        const options: Electron.OpenDialogOptions = {
+          title: "Folder for the edited pictures",
+          properties: ["openDirectory", "createDirectory"],
+        }
+        const result = await (win
+          ? dialog.showOpenDialog(win, options)
+          : dialog.showOpenDialog(options))
+        return result.canceled || !result.filePaths[0] ? null : result.filePaths[0]
+      },
+      openDialog: async (event, { defaultPath }) => {
+        // As for the save dialog: unpackaged builds accept a canned answer for the e2e tests.
+        const canned = app.isPackaged ? undefined : process.env.PANELYTH_TEST_ASSET_PATH
+        if (canned !== undefined) return canned || null
+        const win = BrowserWindow.fromWebContents(event.sender)
+        const options: Electron.OpenDialogOptions = {
+          defaultPath,
+          properties: ["openFile"],
+          filters: [{ name: "Pictures", extensions: [...ASSET_EXTENSIONS] }],
+        }
+        const result = await (win
+          ? dialog.showOpenDialog(win, options)
+          : dialog.showOpenDialog(options))
+        return result.canceled || !result.filePaths[0] ? null : result.filePaths[0]
+      },
+    }),
     ...workspaceHandlers(workspaceDeps),
+    // Commander only (the allowlist): the command line and user commands (Stage C10).
+    ...shellRunHandlers({
+      call: (method, params) => sc.call(method, params),
+      start: async (invocation) => {
+        if (recordShell) {
+          const { file, args, cwd, env } = invocation
+          shellLog.push({ action: "run", value: JSON.stringify({ file, args, cwd, env }) })
+          return
+        }
+        await startInvocation(invocation)
+      },
+      // The commander's own view, and only while it is the app shown: a media
+      // window runs on the commander's origin but never runs commands.
+      allowed: (event) =>
+        appShell?.activeApp === "commander" && event.sender === appShell.webContentsOf("commander"),
+      log: (message, fields) => logger.info(message, fields),
+      writeList: (paths) => writeListFile(join(app.getPath("userData"), "command-lists"), paths),
+      isDir: (path) =>
+        stat(path).then(
+          (s) => s.isDirectory(),
+          () => false,
+        ),
+      exists: (path) =>
+        stat(path).then(
+          () => true,
+          () => false,
+        ),
+      platform: process.platform,
+      processEnv: process.env,
+    }),
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),
     // Both apps: an image or video in a frameless full-screen window (ADR-0033).

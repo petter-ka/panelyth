@@ -28,10 +28,10 @@ Only one stage is active at a time. Default order:
 | 9 | C04 — File operations | commander | implementation done (2026-10-06): F5 / F6 / F7 / F8 |
 | 10 | C05 — Quick view, lister, open and edit | commander | implementation done (media routing added 2026-10-09) |
 | 11 | C06 — Find files, branch view, quick filter | commander | implementation done (2026-10-07): session sources (ADR-0017) |
-| 12 | C07 — Archives | commander | active (implementation done 2026-10-07): ADR-0030 accepted; archives as session sources |
-| 13 | C08 — Compare, synchronize, checksums | commander | |
-| 14 | C09 — Multi-rename, attributes, properties | commander | |
-| 15 | C10 — Command line, tools, customization | commander | the most sensitive feature last |
+| 12 | C07 — Archives | commander | implementation done (2026-10-07): ADR-0030 accepted; archives as session sources |
+| 13 | C08 — Compare, synchronize, checksums | commander | implementation done (2026-10-11): compares as session sources; sync and checksum jobs |
+| 14 | C09 — Multi-rename, attributes, properties | commander | implementation done (2026-10-11): one rename engine, a previewed multi-rename with an undo, attribute jobs |
+| 15 | C10 — Command line, tools, customization | commander | active (implementation done 2026-10-11): ADR-0027 accepted in full; the command line, user commands, toolbar, Thumbnails view, settings |
 | 16 | P04 — Cross-platform hardening | platform | both apps |
 | 17 | P05 — Performance hardening | platform | both apps |
 | 18 | P06 — Release engineering | platform | packages both app views with the commander enabled |
@@ -91,17 +91,21 @@ Tabbed settings, persisted startup/viewer preferences, Escape exit behavior and 
 Richer browsing without scroll cost. Folder tiles show up to four pictures or video posters from inside the folder
 (ADR-0024); video double-click plays full screen; pictures copy to the OS clipboard; additive Shift selection.
 
-### Phases 12–16 — Image editor (planned, 2026-10-11)
+### Phases 12–16 — Image editor (started 2026-10-12)
 
 An **Edit** button on pictures opens a non-destructive editor (`docs/viewer/IMAGE-EDITOR.md`, ADR-0035, ADR-0036):
 
-- **12** foundation: edit session and render pipeline, rotate / resize / canvas / DPI / crop, histogram, EXIF and file
-  panels, undo/redo, safe save (copy, as, replace through trash)
-- **13** color: lighting, colors, levels, curves, sharpen/blur, noise, swap color, reduce and count colors,
-  grayscale, sepia, negative
-- **14** effects: border, frame mask, watermark, bump map, sketch, oil painting, lens, obscure
-- **15** draw and retouch: draw, clone and heal, red-eye
-- **16** batch: recipes, the `edit` job, output rules, reports, undo
+- **12** foundation (implementation done 2026-10-12): edit session and render pipeline, rotate / resize / canvas /
+  DPI / crop, histogram, EXIF and file panels, undo/redo, safe save (copy, as, replace through trash)
+- **13** color (implementation done 2026-10-12): lighting, colors, levels, curves, sharpen/blur, noise, replace
+  color and swap channels, reduce and count colors, grayscale, sepia, negative, twelve looks
+- **14** effects (implementation done 2026-10-12): border, frame mask, watermark (text with tokens, or a picked
+  picture), bump map, sketch, oil painting, lens, obscure
+- **15** draw and retouch (implementation done 2026-10-12): draw (brush, eraser, shapes, text, fill), clone, heal,
+  red-eye with an interactive Auto
+- **16** batch (implementation done 2026-10-12): recipes built on samples of a selection, the `edit` job with
+  bounded workers, output rules (folder, names, conflicts, replace through the trash), a plan before Run, saved and
+  built-in recipes, undo of a batch. Reports and recipe files are open
 
 ### Phases 9–11 — moved
 
@@ -174,21 +178,27 @@ closed; Settings can choose the system default app instead.
 
 Find by name, content, size, date and attributes; feed to panel; flat subtree listing; quick filter.
 
-### C07 — Archives (active; implementation done 2026-10-07)
+### C07 — Archives (implementation done 2026-10-07)
 
 zip and tar(.gz) as folders; pack, unpack, test; optional 7-Zip.
 
-### C08 — Compare, synchronize and checksums
+### C08 — Compare, synchronize and checksums (implementation done 2026-10-11)
 
-Compare and synchronize directories, compare files, checksums.
+Compare directories (Shift+F2); synchronize two trees from a result table with a direction per row, as one job that
+re-checks every entry; compare files by content (a text diff, or identical-or-not); create and verify checksum files.
 
-### C09 — Multi-rename, attributes and properties
+### C09 — Multi-rename, attributes and properties (implementation done 2026-10-11)
 
-Multi-rename tool with preview and undo; attributes and timestamps; folder sizes; properties.
+Multi-rename (Ctrl+M) with Total Commander's masks, search and replace, case and a counter, previewed by the engine
+that applies it, as one job with one level of undo; attributes or permissions and dates for the marked entries,
+optionally below folders; folder sizes written in batches; properties (Alt+Enter) on rows shared with the viewer.
 
-### C10 — Command line, tools and customization
+### C10 — Command line, tools and customization (active; implementation done 2026-10-11)
 
-Command line, user commands, toolbar, thumbnails view, complete settings.
+A command line that runs a typed line through the OS shell in the active panel's folder, on Enter only, with a
+history and `cd`; user commands with placeholders, quoted by main and started from a customizable toolbar, a key or
+the menu of files; a Thumbnails view on the tile parts shared with the viewer; settings in five sections. The
+security review of `shell.run` and user commands is recorded with no open findings (ADR-0027 accepted in full).
 
 ### C11 — Commander release
 

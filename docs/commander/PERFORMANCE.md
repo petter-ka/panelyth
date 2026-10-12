@@ -62,7 +62,7 @@ reference machine and one low-end machine, and records the result in its stage d
 | C06 | find by name and content, branch view of `tree-50k`, quick filter |
 | C07 | list, extract and pack: 100k-entry zip, 1 GB tar.gz |
 | C08 | compare 100k trees, hashing throughput |
-| C09 | multi-rename preview and apply on 10k files |
+| C09 | multi-rename preview and apply on 10k files; folder sizes for a panel of 1,000 folders |
 | C10 | command line start-up cost; thumbnails view scroll (viewer tile budgets) |
 
 ## Rules

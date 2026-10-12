@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -329,5 +330,67 @@ func TestTrashManyOnThisPlatform(t *testing.T) {
 	}
 	if Code(errs[3]) != CodeNotFound {
 		t.Errorf("missing item: %v", errs[3])
+	}
+}
+
+// A case-only rename goes through a temporary name (Stage C09): where the
+// volume ignores case the entry ends up under its new name and nothing else
+// is left; where it tells case apart, the other name is another entry.
+func TestRenameCaseOnly(t *testing.T) {
+	dir := t.TempDir()
+	src := filepath.Join(dir, "photo.jpg")
+	write(t, src, 3)
+	names := func() []string {
+		entries, _ := os.ReadDir(dir)
+		out := []string{}
+		for _, e := range entries {
+			out = append(out, e.Name())
+		}
+		return out
+	}
+	if _, err := os.Lstat(filepath.Join(dir, "PHOTO.JPG")); err != nil {
+		// Case matters here: a rename to another case is an ordinary rename,
+		// and an existing entry of that name is in the way.
+		if _, err := Rename(src, "PHOTO.JPG"); err != nil || !slices.Equal(names(), []string{"PHOTO.JPG"}) {
+			t.Fatalf("rename on a case-sensitive volume: %v %v", err, names())
+		}
+		write(t, src, 3)
+		if _, err := Rename(src, "PHOTO.JPG"); Code(err) != CodeExists {
+			t.Fatalf("rename onto another entry = %v", err)
+		}
+		// A hard link of the same file under the other case stays an entry of its own.
+		link := filepath.Join(dir, "Linked.txt")
+		write(t, link, 1)
+		if err := os.Link(link, filepath.Join(dir, "linked.txt")); err == nil {
+			if _, err := Rename(link, "linked.txt"); Code(err) != CodeExists || !exists(link) {
+				t.Fatalf("rename onto a hard link of the same file = %v", err)
+			}
+		}
+		return
+	}
+	got, err := Rename(src, "Photo.JPG")
+	if err != nil || filepath.Base(got) != "Photo.JPG" || !slices.Equal(names(), []string{"Photo.JPG"}) {
+		t.Fatalf("case rename: %v %q %v", err, got, names())
+	}
+	// A folder with content too.
+	sub := filepath.Join(dir, "album")
+	write(t, filepath.Join(sub, "a.jpg"), 1)
+	if _, err := Rename(sub, "Album"); err != nil || !slices.Contains(names(), "Album") || !exists(filepath.Join(dir, "Album", "a.jpg")) {
+		t.Fatalf("folder case rename: %v %v", err, names())
+	}
+	// The second step fails: the entry gets its old name back.
+	calls := 0
+	renameItem = func(a, b string) error {
+		if calls++; calls == 2 {
+			return &os.PathError{Op: "rename", Path: b, Err: fs.ErrPermission}
+		}
+		return os.Rename(a, b)
+	}
+	t.Cleanup(func() { renameItem = os.Rename })
+	if _, err := Rename(got, "PHOTO.jpg"); Code(err) != CodePermission {
+		t.Fatalf("failed second step = %v", err)
+	}
+	if calls != 3 || !slices.Contains(names(), "Photo.JPG") || len(names()) != 2 {
+		t.Fatalf("after a failed case rename: %d calls, %v", calls, names())
 	}
 }

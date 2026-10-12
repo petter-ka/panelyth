@@ -146,11 +146,19 @@ export function corsHeaders(
   }
 }
 
-/** Serves token URLs with Range support (video seeking needs 206 responses). */
-export function handleMediaProtocol(tokens: MediaTokens): void {
+/**
+ * Serves token URLs with Range support (video seeking needs 206 responses).
+ * A token is looked up in each store: originals have one, the editor's
+ * frames another (Stage 12), so a burst of frames never evicts an original.
+ */
+export function handleMediaProtocol(...stores: MediaTokens[]): void {
   protocol.handle(MEDIA_SCHEME, async (request) => {
     const token = parseMediaUrl(request.url)
-    const target = token ? tokens.get(token) : undefined
+    let target: MediaTarget | undefined
+    for (const store of stores) {
+      target = token ? store.get(token) : undefined
+      if (target) break
+    }
     if (!target) return new Response(null, { status: 404 })
     const cors = corsHeaders(target, request.headers.get("Origin"))
     if (cors === "denied") return new Response(null, { status: 403 })

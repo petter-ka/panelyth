@@ -5,6 +5,8 @@
 //	go run ./cmd/fixturegen -out /tmp/fv-images -images 300 -width 1600 -height 1200
 //	go run ./cmd/fixturegen -out /tmp/fv-text-2g -text-log-bytes 2147483648 -encodings
 //	go run ./cmd/fixturegen -out /tmp/fv-archives -archive-samples -archive-zip-entries 100000
+//	go run ./cmd/fixturegen -out /tmp/fv-sync -sync-pair -sync-entries 100000
+//	go run ./cmd/fixturegen -out /tmp/fv-rename -rename-scenario -rename-files 10000 -rename-folders 1000
 package main
 
 import (
@@ -39,6 +41,16 @@ func main() {
 	flag.IntVar(&arch.ZipEntries, "archive-zip-entries", 0, "write many.zip with this many entries")
 	flag.Int64Var(&arch.TgzBytes, "archive-tgz-bytes", 0, "write big.tar.gz with about this many bytes")
 	flag.IntVar(&arch.PackFiles, "archive-pack-files", 0, "write pack/ with this many 4 KiB files")
+	var sync fixture.SyncSpec
+	flag.BoolVar(&sync.Pair, "sync-pair", false, "write left/ and right/ with known differences (compare fixtures)")
+	flag.IntVar(&sync.Entries, "sync-entries", 0, "write tree-a/ and tree-b/ with this many files each")
+	flag.Int64Var(&sync.TextBytes, "sync-text-bytes", 0, "write text-a.txt and text-b.txt of about this size")
+	flag.Int64Var(&sync.HashBytes, "sync-hash-bytes", 0, "write hash.bin of this size")
+	var ren fixture.RenameSpec
+	flag.BoolVar(&ren.Scenario, "rename-scenario", false, "write scenario/ with a few named files (multi-rename fixtures)")
+	flag.IntVar(&ren.Files, "rename-files", 0, "write files/ with this many empty pictures")
+	flag.IntVar(&ren.Folders, "rename-folders", 0, "write folders/ with this many folders")
+	flag.IntVar(&ren.FolderFiles, "rename-folder-files", 20, "files of 1 KiB per folder of folders/")
 	flag.Parse()
 	if *out == "" {
 		fmt.Fprintln(os.Stderr, "-out is required")
@@ -46,7 +58,21 @@ func main() {
 	}
 	start := time.Now()
 	result := map[string]any{"root": *out}
-	if arch.Samples || arch.ZipEntries > 0 || arch.TgzBytes > 0 || arch.PackFiles > 0 {
+	if ren.Scenario || ren.Files > 0 || ren.Folders > 0 {
+		if err := fixture.GenerateRename(*out, ren); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		result["rename"] = ren
+		result["expected"] = fixture.Expected{}
+	} else if sync.Pair || sync.Entries > 0 || sync.TextBytes > 0 || sync.HashBytes > 0 {
+		if err := fixture.GenerateSync(*out, sync); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		result["sync"] = sync
+		result["expected"] = fixture.Expected{}
+	} else if arch.Samples || arch.ZipEntries > 0 || arch.TgzBytes > 0 || arch.PackFiles > 0 {
 		if err := fixture.GenerateArchives(*out, arch); err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(1)

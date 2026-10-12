@@ -1,0 +1,212 @@
+{
+  "id": 216,
+  "ok": true,
+  "r": {
+    "recipes": [
+      {
+        "builtin": "web1600",
+        "id": 0,
+        "name": "Web, 1600 px",
+        "recipe": {
+          "ops": [
+            {
+              "op": "resize",
+              "p": {
+                "h": 1600,
+                "mode": "fit",
+                "noEnlarge": true,
+                "w": 1600
+              }
+            },
+            {
+              "op": "sharpen",
+              "p": {
+                "amount": 60,
+                "radius": 0.8
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "jpeg",
+            "metadata": "keep",
+            "quality": 85,
+            "template": "{name}-web"
+          },
+          "version": 1
+        }
+      },
+      {
+        "builtin": "email1024",
+        "id": 0,
+        "name": "Email, 1024 px",
+        "recipe": {
+          "ops": [
+            {
+              "op": "resize",
+              "p": {
+                "h": 1024,
+                "mode": "fit",
+                "noEnlarge": true,
+                "w": 1024
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "jpeg",
+            "metadata": "keep",
+            "quality": 80,
+            "template": "{name}-email"
+          },
+          "version": 1
+        }
+      },
+      {
+        "builtin": "thumb256",
+        "id": 0,
+        "name": "Thumbnail, 256 px square",
+        "recipe": {
+          "ops": [
+            {
+              "op": "resize",
+              "p": {
+                "h": 256,
+                "mode": "fill",
+                "w": 256
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "jpeg",
+            "metadata": "keep",
+            "quality": 85,
+            "template": "{name}-thumb"
+          },
+          "version": 1
+        }
+      },
+      {
+        "builtin": "print10x15",
+        "id": 0,
+        "name": "Print, 10 × 15 cm at 300 dpi",
+        "recipe": {
+          "ops": [
+            {
+              "op": "resize",
+              "p": {
+                "h": 1772,
+                "mode": "fit",
+                "w": 1772
+              }
+            },
+            {
+              "op": "dpi",
+              "p": {
+                "x": 300
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "jpeg",
+            "metadata": "keep",
+            "quality": 95,
+            "template": "{name}-print"
+          },
+          "version": 1
+        }
+      },
+      {
+        "builtin": "watermark",
+        "id": 0,
+        "name": "Watermark, bottom right",
+        "recipe": {
+          "ops": [
+            {
+              "op": "watermark",
+              "p": {
+                "anchor": "se",
+                "color": "#ffffff",
+                "kind": "text",
+                "margin": 3,
+                "opacity": 70,
+                "shadow": true,
+                "size": 4,
+                "text": "© {year}"
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "keep",
+            "metadata": "keep",
+            "template": "{name}-marked"
+          },
+          "version": 1
+        }
+      },
+      {
+        "builtin": "bwContrast",
+        "id": 0,
+        "name": "Black and white, more contrast",
+        "recipe": {
+          "ops": [
+            {
+              "op": "grayscale",
+              "p": {
+                "method": "luminance"
+              }
+            },
+            {
+              "op": "lighting",
+              "p": {
+                "contrast": 30
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "keep",
+            "metadata": "keep",
+            "template": "{name}-bw"
+          },
+          "version": 1
+        }
+      },
+      {
+        "builtin": "",
+        "id": 1,
+        "name": "Half size",
+        "recipe": {
+          "ops": [
+            {
+              "op": "resize",
+              "p": {
+                "mode": "percent",
+                "w": 50
+              }
+            }
+          ],
+          "output": {
+            "conflict": "keepBoth",
+            "destination": "beside",
+            "format": "jpeg",
+            "metadata": "keep",
+            "quality": 80,
+            "template": "{name}-half"
+          },
+          "version": 1
+        }
+      }
+    ]
+  },
+  "t": "res"
+}

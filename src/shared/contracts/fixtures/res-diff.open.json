@@ -1,0 +1,34 @@
+{
+  "id": 164,
+  "ok": true,
+  "r": {
+    "blocks": [
+      [
+        1,
+        1
+      ],
+      [
+        3,
+        1
+      ]
+    ],
+    "changes": 2,
+    "diffId": 1,
+    "identical": false,
+    "left": {
+      "encoding": "utf-8",
+      "lines": 3,
+      "name": "notes.txt",
+      "sizeBytes": 14
+    },
+    "reason": "",
+    "right": {
+      "encoding": "utf-8",
+      "lines": 4,
+      "name": "notes.txt",
+      "sizeBytes": 17
+    },
+    "rows": 4
+  },
+  "t": "res"
+}

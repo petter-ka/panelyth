@@ -2,12 +2,37 @@
 
 ## Status
 
-Proposed (2026-10-05). **The per-view allowlists are accepted (P01, 2026-10-05):** main maps the calling frame's
-origin to its app and checks `APP_METHODS[app]`. **The launching part is accepted (Stage C05, 2026-10-06):** open,
-programs after confirmation, the editor and file bytes through tokens, as built below. The command line is decided in
-Stage C10. Amended (2026-10-09): Commander routes Enter/double-click media to the shared overlay by default, with a
+**Accepted in full (Stage C10, 2026-10-11).** Proposed 2026-10-05. **The per-view allowlists are accepted (P01,
+2026-10-05):** main maps the calling frame's origin to its app and checks `APP_METHODS[app]`. **The launching part is
+accepted (Stage C05, 2026-10-06):** open, programs after confirmation, the editor and file bytes through tokens, as
+built below. **The command line is accepted (Stage C10, 2026-10-11),** as built in the note at the end. Amended (2026-10-09): Commander routes Enter/double-click media to the shared overlay by default, with a
 setting for the system default app. Revised by ADR-0031: both apps run in one shell, so the profile belongs to each
 app view (web contents), not to a separate app process.
+
+Amended 2026-10-12 (Stage 15, ADR-0035): `edit.eyes` (red pupils found in the picture of an edit session) joins the
+viewer's profile; the commander's has none of the editor's methods.
+
+Amended 2026-10-12 (Stage 16, ADR-0036): batch editing joins the viewer's profile: `batch.pickFolder`, `batch.plan`,
+`batch.start`, `batch.undo`, `recipe.list`, `recipe.save` and `recipe.delete`. The destination folder of a batch is
+picked in main's dialog and named to the renderer by a handle; the sidecar methods that take its path (`edit.plan`,
+`edit.batch`) are main's alone, and `jobs.start` refuses the job kinds `edit` and `undoEdit`. The commander's
+profile has none of these.
+
+Amended 2026-10-12 (Stage 14, ADR-0035): `edit.fonts`, `asset.pick` and `asset.release` join the viewer's profile.
+A picture for a watermark, a mask or a texture is chosen in main's native dialog; main gives the path to the
+main-only `edit.assetAdd` and the renderer an id and a thumbnail token. No renderer method takes a path, and an
+edit list names an asset by a content-hash id only. The commander's profile has none of these methods.
+
+Amended 2026-10-12 (Stage 13, ADR-0035): `edit.probe`, `edit.thumbs` and `edit.colors` join the viewer's profile
+under the same rules; `edit.thumbs` is answered in main (tokens for thumbnail files from the main-only
+`edit.thumbFrames`). The commander's profile still has no `edit.*` method.
+
+Amended 2026-10-12 (Stage 12, ADR-0035): the image editor's methods (`edit.open`, `edit.render`, `edit.info`,
+`edit.estimate`, `edit.save`, `edit.close`, `edit.saved`, `edit.reveal`) are in the **viewer's** profile only. The
+commander's profile has none of them; from its media overlay or the media window it may send
+`app.switch { to: "viewer", edit: entryId }`, which shows the viewer and makes it open its editor. A renderer names
+neither a path nor the session's owner: a "save as" destination comes from main's save dialog, a frame is a token
+URL, and a saved file is shown in the file manager by job id.
 
 ## Context
 
@@ -84,6 +109,31 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
   CSP keeps `connect-src 'self'`. A request whose `Origin` is not the minting app's gets 403. The e2e test shows the
   viewer cannot read a commander token even when handed its URL.
 
+## Implementation note (Stage C10)
+
+- **Two methods, both commander-only and answered in main:** `shell.run({ command, dirId, console? })` for a line
+  typed in the command line, and `shell.runTool({ toolId, dirId, otherDirId?, cursorId?, selection? })` for a user
+  command. The second was added to the decision above: a user command is named by its id, main reads it from
+  `library.db` (`commander.tools`) and fills its placeholders from ids the sidecar resolves, so the renderer never
+  builds a command line from paths.
+- **Only the commander's own view, while it is shown:** main runs a command when the call comes from the commander's
+  app view (`WebContentsView`) and the commander is the visible app. The media windows share the commander's origin
+  and preload; they are refused, as is a hidden commander.
+- **The shell:** `cmd.exe` by its full path with `/d /v:off /s /c` on Windows, `/bin/sh -c` elsewhere, with the
+  folder of `dirId` (resolved in Go, a folder) as the working folder. A typed line is passed as typed. Enter runs it
+  without a console window; the `console` flag (Shift+Enter, or a user command's switch) opens a console that stays
+  open (`start` on Windows, the terminal emulator on Linux, Terminal on macOS). An empty line is accepted only with
+  that flag: the console opens in the folder and nothing runs.
+- **File names in user commands** are quoted by one function per shell (`quoteSh`, `quoteCmd`). For cmd.exe a value
+  travels in an environment variable that the command text names, because cmd expands percent signs inside quotes. A
+  name that looks like an option is passed as a path. On Windows a user command is refused when its program, named
+  without a folder, also exists in the working folder.
+- **Accepted with the decision:** a typed line resolves programs as the shell does (cmd.exe looks in the working
+  folder first); commands are logged by main and kept in the command history, both local; the programs a command
+  starts are not ended with the app.
+- **Test mode:** under `PANELYTH_TEST_SHELL=record` (unpackaged builds) the start is recorded and nothing runs.
+- The security review is in `docs/commander/stages/C10-command-line-and-customization.md`.
+
 ## Why
 
 - The viewer's guarantees stay intact inside the shared shell, while the commander gets the powers a file manager
@@ -95,4 +145,4 @@ command execution. Added: `app.switch` and the shared-context methods (`docs/sha
 - Router and e2e tests are per app view. Each view's e2e asserts its exact preload surface (the
   `src/shared/e2e/specs/viewer/foundation.spec.ts` pattern), and a commander-only method called from the viewer view is rejected.
 - The command line is the most sensitive feature, so it comes last in the commander plan (Stage C10) and gets a
-  security review.
+  security review (recorded in the Stage C10 document, no open findings).

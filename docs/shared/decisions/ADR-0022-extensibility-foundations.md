@@ -4,6 +4,13 @@
 
 Accepted (Stage 08). It extends ADR-0021 (user metadata in `library.db`) and ADR-0014 (design system).
 
+Amended 2026-10-12 (Stage 12, ADR-0035): the edit list is version 2. Every operation is `{ op, p, off? }` with
+strictly parsed parameters and is registered with `imaging.RegisterOp` (name, version, batch-capable, parser); the
+`Effect` registry and the typed fields (`deg`, `axis`, `rect`, `maxEdge`) are gone, and `grayscale` returns as a
+registered operation in Stage 13. `rotate` takes any angle, `resize` has modes and kernels, `canvas` and `dpi` are
+new. The viewer scope gains `viewer.edit`, and the editor has a keymap scope of its own (`editor`). The viewer's
+turn and flip (`toEditList`) become the editor's first operations when Edit is pressed.
+
 Amended 2026-10-05: keymap scopes are per app. The commander adds `panels`, `lister` and `dialogs` (ADR-0028), the
 shell adds `shell` (the app switch, ADR-0031), and the overrides of both apps live in the shared `library.db` under
 their own keys.

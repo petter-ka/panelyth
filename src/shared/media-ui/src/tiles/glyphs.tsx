@@ -9,7 +9,7 @@ interface GlyphProps {
 
 export const FolderGlyph = ({ size }: GlyphProps) => <TypeGlyph glyph="folder" size={size} />
 
-export const VideoGlyph = ({ size }: GlyphProps) => <TypeGlyph glyph="video" size={size} />
+export const VideoTileGlyph = ({ size }: GlyphProps) => <TypeGlyph glyph="video" size={size} />
 
 export function UnavailableGlyph({ size }: GlyphProps) {
   return (

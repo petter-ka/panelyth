@@ -43,6 +43,33 @@ const VERBS: Partial<Record<JobSnapshot["kind"], [string, string]>> = {
     msg("Renaming {count, plural, one {# item} other {# items}}"),
     msg("Renamed {count, plural, one {# item} other {# items}}"),
   ],
+  // Stage C08.
+  sync: [
+    msg("Synchronizing {count, plural, one {# item} other {# items}}"),
+    msg("Synchronized {count, plural, one {# item} other {# items}}"),
+  ],
+  hashCreate: [
+    msg("Creating checksums for {count, plural, one {# item} other {# items}}"),
+    msg("Created checksums for {count, plural, one {# item} other {# items}}"),
+  ],
+  hashVerify: [
+    msg("Verifying {count, plural, one {# item} other {# items}}"),
+    msg("Verified {count, plural, one {# item} other {# items}}"),
+  ],
+  compareFiles: [msg("Comparing two files by content"), msg("Compared two files by content")],
+  // Stage C09.
+  multiRename: [
+    msg("Renaming {count, plural, one {# item} other {# items}}"),
+    msg("Renamed {count, plural, one {# item} other {# items}}"),
+  ],
+  undoRename: [
+    msg("Undoing the rename of {count, plural, one {# item} other {# items}}"),
+    msg("Undid the rename of {count, plural, one {# item} other {# items}}"),
+  ],
+  setAttributes: [
+    msg("Changing attributes of {count, plural, one {# item} other {# items}}"),
+    msg("Changed attributes of {count, plural, one {# item} other {# items}}"),
+  ],
 }
 
 /** "Copying 1,204 items to Backup" / "Copied 1,204 items to Backup". */

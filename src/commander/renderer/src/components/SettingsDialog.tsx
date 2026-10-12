@@ -1,6 +1,16 @@
-import { SharedSettingsDialog } from "@panelyth/ui"
+import {
+  MAX_COMMAND_CHARS,
+  MAX_TOOL_TITLE_CHARS,
+  MAX_USER_COMMANDS,
+  TOOL_ICONS,
+  type ToolIcon,
+  type UserCommand,
+} from "@panelyth/contracts"
+import { TILE_SIZE_ORDER } from "@panelyth/media-ui"
+import { Button, ChoiceGroup, SharedSettingsDialog } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
-import { setHelpOpen } from "../features/keymap"
+import { POLICIES } from "../features/files"
+import { isToolAction, setHelpOpen, toolAction, type ActionId } from "../features/keymap"
 import {
   MAX_EDITOR_CHARS,
   setSettingsOpen,
@@ -9,7 +19,25 @@ import {
   type PanelSettings,
 } from "../features/settings"
 import { useSidecarStore } from "../features/sidecar"
-import { t } from "@panelyth/i18n"
+import {
+  commandOf,
+  MAX_TOOLBAR_ITEMS,
+  newCommand,
+  removeCommand,
+  resetToolbar,
+  saveCommand,
+  SEPARATOR,
+  setToolbar,
+  TOOLBAR_ACTIONS,
+  useToolsStore,
+} from "../features/tools"
+import { CommanderActionIcon } from "./CommanderActionIcon"
+import { ACTION_ICONS, actionLabel } from "./QuickActionBar"
+import { msg, t } from "@panelyth/i18n"
+
+type BooleanSetting = {
+  [K in keyof PanelSettings]: PanelSettings[K] extends boolean ? K : never
+}[keyof PanelSettings]
 
 interface Choice<K extends keyof PanelSettings> {
   setting: K
@@ -38,9 +66,26 @@ function Radios<K extends keyof PanelSettings>({ setting: name, label, options }
   )
 }
 
+function Check({ setting: name, label }: { setting: BooleanSetting; label: string }) {
+  const checked = useSettingsStore((s) => s.settings[name])
+  return (
+    <label className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => updateSettings({ [name]: e.target.checked } as Partial<PanelSettings>)}
+      />
+      {label}
+    </label>
+  )
+}
+
 const Section = ({ children }: { children: ReactNode }) => (
   <div className="flex flex-col gap-4 text-xs">{children}</div>
 )
+
+const fieldClass =
+  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 /** F4's editor: saved when the field is left (main reads it from library.db). */
 function EditorField() {
@@ -54,7 +99,7 @@ function EditorField() {
       <span className="text-muted">{t("Editor (F4)")}</span>
       <input
         aria-label={t("Editor program")}
-        className="h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
+        className={fieldClass}
         value={value}
         maxLength={MAX_EDITOR_CHARS}
         spellCheck={false}
@@ -72,8 +117,8 @@ function EditorField() {
   )
 }
 
-function CommanderSettings() {
-  const showHidden = useSettingsStore((s) => s.settings.showHidden)
+function PanelsSection() {
+  const thumbSize = useSettingsStore((s) => s.settings.thumbSize)
   return (
     <Section>
       <Radios
@@ -92,14 +137,7 @@ function CommanderSettings() {
           { value: "iso", label: t("ISO (2026-10-06 14:05)") },
         ]}
       />
-      <label className="flex items-center gap-2">
-        <input
-          type="checkbox"
-          checked={showHidden}
-          onChange={(e) => updateSettings({ showHidden: e.target.checked })}
-        />
-        {t("Show hidden and system files in new panels")}
-      </label>
+      <Check setting="showHidden" label={t("Show hidden and system files in new panels")} />
       <Radios
         setting="letters"
         label={t("Typed letters")}
@@ -107,7 +145,7 @@ function CommanderSettings() {
           { value: "quickSearch", label: t("Start quick search") },
           {
             value: "altLetters",
-            label: t("Start quick search with Alt (letters go to the command line)"),
+            label: t("Go to the command line (quick search starts with Alt)"),
           },
         ]}
       />
@@ -135,6 +173,78 @@ function CommanderSettings() {
           { value: "system", label: t("System default app") },
         ]}
       />
+      <div className="flex flex-col gap-1.5">
+        <span className="text-muted">{t("Tiles of the Thumbnails view")}</span>
+        <ChoiceGroup
+          label={t("Tiles of the Thumbnails view")}
+          value={thumbSize}
+          disabled={false}
+          options={TILE_SIZE_ORDER.map((size) => ({
+            value: size,
+            label: size === "small" ? t("S") : size === "medium" ? t("M") : t("L"),
+            title: size === "small" ? t("Small") : size === "medium" ? t("Medium") : t("Large"),
+          }))}
+          onChange={(value) => updateSettings({ thumbSize: value })}
+        />
+      </div>
+      <fieldset className="flex flex-col gap-1.5">
+        <legend className="mb-1 text-muted">{t("Around the panels")}</legend>
+        <Check setting="showToolbar" label={t("Toolbar")} />
+        <Check setting="showCommandLine" label={t("Command line")} />
+        <Check setting="showFunctionKeys" label={t("Function-key bar")} />
+      </fieldset>
+    </Section>
+  )
+}
+
+function OperationsSection() {
+  const conflict = useSettingsStore((s) => s.settings.copyConflict)
+  return (
+    <Section>
+      <label className="flex flex-col gap-1">
+        <span className="text-muted">{t("When a file exists at the destination")}</span>
+        <select
+          aria-label={t("When a file exists at the destination")}
+          value={conflict}
+          onChange={(e) =>
+            updateSettings({ copyConflict: e.target.value as PanelSettings["copyConflict"] })
+          }
+          className={fieldClass}
+        >
+          {POLICIES.map((p) => (
+            <option key={p.value} value={p.value}>
+              {t(p.label)}
+            </option>
+          ))}
+        </select>
+        <span className="text-[0.6875rem] text-muted">
+          {t("What the copy and move dialogs start with; each job can still choose.")}
+        </span>
+      </label>
+      <Check setting="copyVerify" label={t("Verify files after copying")} />
+      <Radios
+        setting="compareToleranceMs"
+        label={t("Compare dates (Shift+F2, Synchronize directories)")}
+        options={[
+          { value: 2000, label: t("Within 2 seconds (FAT drives)") },
+          { value: 0, label: t("Exact") },
+        ]}
+      />
+      <Check
+        setting="compareDst"
+        label={t("Ignore a one-hour difference (daylight saving time)")}
+      />
+      <Check setting="compareIgnoreDates" label={t("Ignore dates")} />
+    </Section>
+  )
+}
+
+function ConfirmationsSection() {
+  return (
+    <Section>
+      <Check setting="confirmTrash" label={t("Ask before moving to the trash")} />
+      <p className="-mt-3 text-[0.6875rem] text-muted">{t("Deleting permanently always asks.")}</p>
+      <Check setting="confirmDrop" label={t("Show the copy dialog when files are dropped")} />
       <Radios
         setting="runPrograms"
         label={t("Run programs with Enter")}
@@ -144,8 +254,324 @@ function CommanderSettings() {
           { value: "never", label: t("Never") },
         ]}
       />
-      <EditorField />
     </Section>
+  )
+}
+
+const ICON_LABEL: Record<ToolIcon, string> = {
+  tool: msg("Gear"),
+  terminal: msg("Console"),
+  play: msg("Play"),
+  edit: msg("Pencil"),
+  view: msg("Eye"),
+  copy: msg("Copy"),
+  move: msg("Folder with an arrow"),
+  search: msg("Magnifier"),
+  star: msg("Star"),
+  compare: msg("Two pages"),
+  sync: msg("Two arrows"),
+  refresh: msg("Round arrow"),
+}
+
+/** One user command being added or changed. */
+function CommandForm({ initial, onDone }: { initial: UserCommand; onDone(): void }) {
+  const shownOnToolbar = useToolsStore((s) => s.toolbar.includes(toolAction(initial.id)))
+  const existing = useToolsStore((s) => s.commands.some((c) => c.id === initial.id))
+  const [draft, setDraft] = useState(initial)
+  const [onToolbar, setOnToolbar] = useState(existing ? shownOnToolbar : true)
+  const [error, setError] = useState<string | null>(null)
+  const change = (part: Partial<UserCommand>): void => {
+    setDraft({ ...draft, ...part })
+    setError(null)
+  }
+  const save = (): void => {
+    if (draft.command.trim() === "") return setError(t("Enter the command to run."))
+    if (saveCommand(draft, onToolbar)) onDone()
+    else setError(t("This command can't be saved. Remove line breaks and try again."))
+  }
+  const text = (
+    label: string,
+    key: "title" | "command" | "params" | "dir",
+    placeholder: string,
+    max = MAX_COMMAND_CHARS,
+  ) => (
+    <label className="flex flex-col gap-1">
+      <span className="text-muted">{label}</span>
+      <input
+        aria-label={label}
+        className={`${fieldClass} ${key === "title" ? "" : "font-mono"}`}
+        value={draft[key]}
+        maxLength={max}
+        spellCheck={false}
+        placeholder={placeholder}
+        onChange={(e) => change({ [key]: e.target.value })}
+      />
+    </label>
+  )
+  return (
+    <div
+      role="group"
+      aria-label={existing ? t("Change the command") : t("New command")}
+      data-testid="tool-form"
+      className="flex flex-col gap-3 rounded-md border border-border bg-canvas p-3"
+    >
+      {text(t("Name"), "title", t("Open in the editor"), MAX_TOOL_TITLE_CHARS)}
+      {text(t("Command"), "command", "code")}
+      {text(t("Parameters"), "params", "%P%N")}
+      <p className="-mt-2 text-[0.6875rem] text-muted">
+        {t(
+          "%P this panel's folder · %T the other panel's folder · %N the name under the cursor · %S the marked names · %L a file listing the marked paths. %P%N is the full path under the cursor. Names are quoted for you.",
+        )}
+      </p>
+      {text(t("Working folder"), "dir", t("The panel's folder"))}
+      <label className="flex flex-col gap-1">
+        <span className="text-muted">{t("Icon")}</span>
+        <select
+          aria-label={t("Icon")}
+          value={draft.icon}
+          onChange={(e) => change({ icon: e.target.value as ToolIcon })}
+          className={fieldClass}
+        >
+          {TOOL_ICONS.map((icon) => (
+            <option key={icon} value={icon}>
+              {t(ICON_LABEL[icon])}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={onToolbar}
+          onChange={(e) => setOnToolbar(e.target.checked)}
+        />
+        {t("Show on the toolbar")}
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={draft.menu}
+          onChange={(e) => change({ menu: e.target.checked })}
+        />
+        {t("Show in the menu of files")}
+      </label>
+      <label className="flex items-center gap-2">
+        <input
+          type="checkbox"
+          checked={draft.console}
+          onChange={(e) => change({ console: e.target.checked })}
+        />
+        {t("Run in a console window that stays open")}
+      </label>
+      {error && (
+        <p role="alert" className="text-danger">
+          {error}
+        </p>
+      )}
+      <div className="flex justify-end gap-2">
+        <Button onClick={onDone}>{t("Cancel")}</Button>
+        <Button variant="primary" onClick={save}>
+          {t("Save command")}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+function ToolsSection() {
+  const commands = useToolsStore((s) => s.commands)
+  const [editing, setEditing] = useState<UserCommand | null>(null)
+  return (
+    <Section>
+      <EditorField />
+      <div className="flex flex-col gap-2">
+        <span className="text-muted">{t("Your commands")}</span>
+        <p className="text-[0.6875rem] text-muted">
+          {t(
+            "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.",
+          )}
+        </p>
+        {commands.length > 0 && (
+          <ul aria-label={t("Your commands")} className="flex flex-col gap-1">
+            {commands.map((c) => (
+              <li
+                key={c.id}
+                className="flex items-center gap-2 rounded-md border border-border px-2 py-1"
+              >
+                <CommanderActionIcon name={c.icon} className="shrink-0 text-muted" />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{c.title}</span>
+                  <span className="block truncate font-mono text-[0.6875rem] text-muted">
+                    {c.params ? `${c.command} ${c.params}` : c.command}
+                  </span>
+                </span>
+                <Button
+                  size="sm"
+                  aria-label={t("Change {command}", { command: c.title })}
+                  onClick={() => setEditing(c)}
+                >
+                  {t("Change")}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  aria-label={t("Remove {command}", { command: c.title })}
+                  onClick={() => {
+                    if (editing?.id === c.id) setEditing(null)
+                    removeCommand(c.id)
+                  }}
+                >
+                  {t("Remove")}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {editing ? (
+          <CommandForm key={editing.id} initial={editing} onDone={() => setEditing(null)} />
+        ) : (
+          <div>
+            <Button
+              disabled={commands.length >= MAX_USER_COMMANDS}
+              onClick={() => setEditing(newCommand())}
+            >
+              {t("Add a command…")}
+            </Button>
+          </div>
+        )}
+      </div>
+    </Section>
+  )
+}
+
+function ToolbarSection() {
+  const items = useToolsStore((s) => s.toolbar)
+  const commands = useToolsStore((s) => s.commands)
+  const [adding, setAdding] = useState("")
+  const move = (index: number, by: -1 | 1): void => {
+    const next = [...items]
+    const [item] = next.splice(index, 1)
+    next.splice(index + by, 0, item!)
+    setToolbar(next)
+  }
+  const label = (item: string): string =>
+    item === SEPARATOR ? t("Divider") : (commandOf(item)?.title ?? actionLabel(item))
+  const free = [
+    ...TOOLBAR_ACTIONS.filter((a) => !items.includes(a)),
+    ...commands.map((c) => toolAction(c.id) as string).filter((a) => !items.includes(a)),
+  ]
+  return (
+    <Section>
+      <Check setting="showToolbar" label={t("Show the toolbar")} />
+      <ol aria-label={t("Toolbar buttons")} className="flex flex-col gap-1">
+        {items.map((item, index) => {
+          const tool = commandOf(item)
+          return (
+            <li
+              key={`${item}-${index}`}
+              className="flex h-8 items-center gap-2 rounded-md border border-border px-2"
+            >
+              {item === SEPARATOR ? (
+                <span aria-hidden="true" className="h-4 w-px shrink-0 bg-border" />
+              ) : (
+                <CommanderActionIcon
+                  name={
+                    tool
+                      ? tool.icon
+                      : ((isToolAction(item) ? undefined : ACTION_ICONS[item as ActionId]) ??
+                        "tool")
+                  }
+                  className="shrink-0 text-muted"
+                />
+              )}
+              <span className="min-w-0 flex-1 truncate">{label(item)}</span>
+              <Button
+                size="icon"
+                aria-label={t("Move {button} up", { button: label(item) })}
+                disabled={index === 0}
+                onClick={() => move(index, -1)}
+              >
+                ↑
+              </Button>
+              <Button
+                size="icon"
+                aria-label={t("Move {button} down", { button: label(item) })}
+                disabled={index === items.length - 1}
+                onClick={() => move(index, 1)}
+              >
+                ↓
+              </Button>
+              <Button
+                size="icon"
+                aria-label={t("Remove {button} from the toolbar", { button: label(item) })}
+                onClick={() => setToolbar(items.filter((_, i) => i !== index))}
+              >
+                ✕
+              </Button>
+            </li>
+          )
+        })}
+      </ol>
+      <div className="flex items-center gap-2">
+        <select
+          aria-label={t("Button to add")}
+          value={adding}
+          onChange={(e) => setAdding(e.target.value)}
+          className={fieldClass}
+        >
+          <option value="">{t("Choose a command…")}</option>
+          <option value={SEPARATOR}>{t("Divider")}</option>
+          {free.map((item) => (
+            <option key={item} value={item}>
+              {label(item)}
+            </option>
+          ))}
+        </select>
+        <Button
+          disabled={adding === "" || items.length >= MAX_TOOLBAR_ITEMS}
+          onClick={() => {
+            setToolbar([...items, adding])
+            setAdding("")
+          }}
+        >
+          {t("Add")}
+        </Button>
+        <Button onClick={resetToolbar}>{t("Reset")}</Button>
+      </div>
+    </Section>
+  )
+}
+
+type SectionId = "panels" | "operations" | "confirmations" | "tools" | "toolbar"
+
+/**
+ * The commander's own settings (Stage C10): Panels, Operations,
+ * Confirmations, Editor and tools, and the Toolbar. Keys and Appearance are
+ * the tabs of the dialog shared with the viewer.
+ */
+function CommanderSettings() {
+  const [section, setSection] = useState<SectionId>("panels")
+  return (
+    <div className="flex flex-col gap-4">
+      <ChoiceGroup<SectionId>
+        label={t("Commander settings")}
+        value={section}
+        disabled={false}
+        options={[
+          { value: "panels", label: t("Panels") },
+          { value: "operations", label: t("Operations") },
+          { value: "confirmations", label: t("Confirmations") },
+          { value: "tools", label: t("Editor and tools") },
+          { value: "toolbar", label: t("Toolbar") },
+        ]}
+        onChange={setSection}
+      />
+      {section === "panels" && <PanelsSection />}
+      {section === "operations" && <OperationsSection />}
+      {section === "confirmations" && <ConfirmationsSection />}
+      {section === "tools" && <ToolsSection />}
+      {section === "toolbar" && <ToolbarSection />}
+    </div>
   )
 }
 

@@ -85,6 +85,55 @@ The commander's multi-rename gets a one-level undo of its own (Stage C09).
   copy is removed.
 - **Speed and ETA:** samples every ≥ 100 ms over a 3 s window, cleared on resume and after a question.
 
+## As built (Stage C08): sync, checksums and compare by content
+
+Four job kinds joined the queue (`internal/jobs/compare.go`); all run in volume lanes, pause between items and
+chunks, cancel, and report bytes with speed and ETA.
+
+- **`sync`** has no selection and no conflict policy: it applies the plan of a finished directory compare (ADR-0017),
+  named by the compare's id and the plan version the user confirmed. Its lane is (left root's volume, right root's
+  volume). Copies and new folders run first in the plan's order, deletes afterwards from the deepest entry up. Each
+  entry is checked right before it is touched: the source and the target must still be as the compare saw them
+  (present or absent, size and date). One that is not fails as `CHANGED` and is left alone; nothing is overwritten
+  or deleted on the strength of an old comparison. Copies go through the engine's `CopyFile` (partial file, dates
+  kept, replace). Deletes go to the trash in batches of 200, or are permanent when the dialog says so; a folder is
+  removed with a plain remove, so one that is not empty stays.
+- **`hashCreate`** and **`hashVerify`** hash one file at a time through a pooled 1 MiB buffer (SHA-256, SHA-1, MD5,
+  CRC32). Creating writes each checksum file through a partial file. Verifying counts every listed file as an item;
+  entries that are absolute or leave the list's folder are refused (`UNSAFE_PATH`), and a list with a line that
+  cannot be read fails as a whole (`CORRUPT`).
+- **`compareFiles`** reads two files side by side with two pooled buffers; "different" is an item error
+  (`DIFFERENT`), so the queue's details show it like any other result.
+- Verification after copy (above) still hashes with SHA-256 in `fileops`; the checksum package is separate because
+  its formats and algorithms are the user's.
+
+## As built (Stage C09): multi-rename, its undo, attributes and folder sizes
+
+Three job kinds joined the queue; `dirSize` changed how it writes.
+
+- **`multiRename`** (`internal/jobs/rename.go`) takes a selection and a rename plan (ADR-0021 "As built (Stage C09)").
+  It names the batch, fails what is invalid or not free per item (`INVALID_NAME`, `ALREADY_EXISTS`), skips unchanged
+  names, and renames the rest in an order that never needs a temporary name. It pauses and cancels between items; what
+  was renamed stays renamed. At most 100,000 entries per job.
+- **The one level of undo:** a multi-rename that renamed anything leaves a journal of (folder, old name, new name) in
+  the order applied, replacing the previous one. It lives in the sidecar's memory: it is gone after a restart.
+  `rename.undoInfo` says what it holds. **`undoRename`** has no selection: it takes the journal (nothing else can undo
+  it meanwhile) and renames back, last first. An entry that is no longer there under its new name fails as `NOT_FOUND`,
+  one whose old name is taken again as `ALREADY_EXISTS`; both stay as they are and nothing is overwritten. A cancelled
+  undo, or one cancelled while queued, puts back what it did not reach, unless a newer multi-rename replaced the
+  journal. The index follows where it knows the entry; a listing reconciles the rest.
+- **`setAttributes`** (`internal/jobs/attrs.go`) sets and clears attributes and sets dates for a selection, optionally
+  for everything below the selected folders (children before their folder, so a folder that loses its write or search
+  permission is still walked). On Windows the bits are read-only, hidden, system and archive (every other attribute is
+  kept); elsewhere they are the nine permission bits; each platform ignores the other's. Dates are the modified and the
+  accessed time (1980 to 9999). Links are never changed and never followed. The changed rows of the selection go to the
+  index at once (date and attribute bits, batched with the job's flush); entries below a folder are reconciled by the
+  next listing.
+- **`dirSize`** writes its results through the job's batches (500 items or 250 ms): one transaction and one refresh of
+  the open listings per batch instead of one per folder. For a panel of 1,000 folders that is 2 refreshes instead of
+  1,000, and 1.0 ms of index writes instead of 11.6 ms.
+- All three rename and attribute jobs run in the lane of their volume; main lets only the commander start them.
+
 ## Why
 
 - Lanes give parallelism across disks without thrashing a single disk.

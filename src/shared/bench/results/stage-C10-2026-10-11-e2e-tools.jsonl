@@ -1,0 +1,16 @@
+{"at":"2026-10-11T17:14:39.428Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":15,"frames":649,"p95FrameMs":8,"maxFrameGapMs":9,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":159508,"ensureCalls":1,"pageCalls":29}
+{"at":"2026-10-11T17:14:39.483Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":0.7,"maxMs":0.8}
+{"at":"2026-10-11T17:18:45.342Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":14,"frames":645,"p95FrameMs":8,"maxFrameGapMs":13,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":158296,"ensureCalls":1,"pageCalls":29}
+{"at":"2026-10-11T17:18:45.391Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":0.7,"maxMs":0.8}
+{"at":"2026-10-11T17:19:06.612Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":15,"frames":647,"p95FrameMs":8,"maxFrameGapMs":9,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":159096,"ensureCalls":1,"pageCalls":29}
+{"at":"2026-10-11T17:19:06.664Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":0.8,"maxMs":0.8}
+{"at":"2026-10-11T17:19:22.440Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":15,"frames":649,"p95FrameMs":8,"maxFrameGapMs":12,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":159508,"ensureCalls":1,"pageCalls":29}
+{"at":"2026-10-11T17:19:22.490Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":0.7,"maxMs":0.7}
+{"at":"2026-10-11T17:28:12.836Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":16,"frames":648,"p95FrameMs":8,"maxFrameGapMs":9,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":159496,"ensureCalls":1,"pageCalls":29}
+{"at":"2026-10-11T17:28:12.889Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":0.8,"maxMs":0.8}
+{"at":"2026-10-11T17:43:06.259Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":19,"frames":722,"p95FrameMs":7,"maxFrameGapMs":8,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":177068,"ensureCalls":1,"pageCalls":32}
+{"at":"2026-10-11T17:43:06.318Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":1.1,"maxMs":1.6}
+{"at":"2026-10-11T17:43:58.192Z","test":"viewer-scroll-100k-after-move","frames":721,"p95FrameMs":7,"maxFrameGapMs":15,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":176668,"ensureCalls":1}
+{"at":"2026-10-11T17:44:25.552Z","test":"viewer-scroll-100k-after-move","frames":718,"p95FrameMs":7,"maxFrameGapMs":21,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":176244,"ensureCalls":1}
+{"at":"2026-10-11T17:44:34.617Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":19,"frames":718,"p95FrameMs":7,"maxFrameGapMs":14,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":175856,"ensureCalls":1,"pageCalls":32}
+{"at":"2026-10-11T17:44:34.691Z","test":"command-line-start","runs":35,"medianMs":0.7,"p95Ms":0.9,"maxMs":0.9}

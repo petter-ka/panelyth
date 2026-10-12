@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"panelyth/sidecar/internal/archive"
+	"panelyth/sidecar/internal/compare"
+	"panelyth/sidecar/internal/editor"
 	"panelyth/sidecar/internal/events"
 	"panelyth/sidecar/internal/find"
 	"panelyth/sidecar/internal/fsx"
@@ -51,6 +53,12 @@ type indexService struct {
 	finds   *find.Manager
 	// archives are the open archives (Stage C07, ADR-0030).
 	archives *archive.Manager
+	// compares are the directory compares of synchronize dialogs, diffs the
+	// open text comparisons (Stage C08).
+	compares *compare.Manager
+	diffs    textDiffs
+	// previews holds the entries of the multi-rename being previewed (Stage C09).
+	previews renamePreviews
 	watcher  *watch.Watcher
 	events   *events.Coalescer
 	disk     *preview.DiskCache
@@ -58,12 +66,16 @@ type indexService struct {
 	video    *video.Tools
 	jobs     *jobs.Manager
 	meta     *meta.Extractor
-	clip     clipboard
-	clipImg  *clipImager
-	context  *sharedContext
-	stopBg   context.CancelFunc
-	bg       context.Context
-	volumes  volumeMonitor
+	// editor holds the image editor's sessions, saves where its recent
+	// saves wrote (Stage 12, ADR-0035).
+	editor  *editor.Manager
+	saves   editSaves
+	clip    clipboard
+	clipImg *clipImager
+	context *sharedContext
+	stopBg  context.CancelFunc
+	bg      context.Context
+	volumes volumeMonitor
 	// lib is set before libReady closes; nil when library.db could not be
 	// opened (user-data methods then fail, browsing keeps working).
 	lib      *library.Library
@@ -110,6 +122,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 			svc.meta.Drop(id)
 			svc.finds.Dropped(id)
 			svc.archives.Dropped(id)
+			svc.compares.Dropped(id)
 		},
 	}, func(s query.Snapshot) {
 		svc.events.Post(evQueryInvalidated, strconv.FormatInt(s.QueryID, 10), s)
@@ -117,6 +130,9 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 	// Entries viewed from archives are extracted to <cache>/tmp/archive.
 	svc.archives = archive.NewManager(sevenZip, filepath.Join(cacheRoot, "tmp", "archive"), log)
 	svc.finds = find.NewManager(find.Deps{Store: store, Log: log, Progress: svc.emitFind, Refresh: svc.queries.Refresh})
+	// A compare's session is current before its progress says so.
+	svc.compares = compare.NewManager(compare.Deps{Log: log, Progress: svc.emitCompare,
+		Refresh: func(id int64) { _, _ = svc.queries.RefreshNow(id) }})
 	svc.scans = scan.NewManager(store, log, scan.Options{}, scan.Hooks{
 		Progress: func(p scan.Progress) {
 			svc.events.Post(evIndexProgress, strconv.FormatInt(p.ScanID, 10), p)
@@ -126,13 +142,20 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 	svc.watcher = watch.New(log, svc.scans.Relist, 300*time.Millisecond, 2*time.Second)
 	svc.jobs = jobs.NewManager(jobs.Deps{Store: store, Library: svc.library, Changed: svc.changed,
 		Emit: svc.emitJob, Ask: svc.askJob, Archive: sevenZip, Log: log})
+	// Frames go to <cache>/tmp/edit; a session's memory comes out of the
+	// decode budget previews use.
+	svc.editor = editor.NewManager(editor.Config{TmpDir: filepath.Join(cacheRoot, "tmp", "edit"),
+		Reserve: svc.preview.ReserveDecode, Log: log})
 	return svc, nil
 }
 
 func (s *indexService) close() {
 	s.stopBg()
 	s.jobs.Close()
+	s.editor.Shutdown()
 	s.finds.Close()
+	s.compares.Shutdown()
+	s.previews.drop()
 	s.watcher.Close()
 	s.scans.Close()
 	s.meta.Close()
@@ -227,7 +250,9 @@ type (
 		// DirPath is the entry's folder, in sessions spanning folders (find
 		// results, branch views; Stage C06).
 		DirPath string `json:"dirPath,omitempty"`
-		Thumb   *thumb `json:"thumb"`
+		// Diff is set on the rows of a directory compare (Stage C08).
+		Diff  *diffWire `json:"diff,omitempty"`
+		Thumb *thumb    `json:"thumb"`
 	}
 	thumb struct {
 		URL    string `json:"url"`
@@ -290,6 +315,10 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerContext(srv)
 	s.registerFind(srv)
 	s.registerArchives(srv)
+	s.registerCompare(srv)
+	s.registerRename(srv)
+	s.registerEditor(srv)
+	s.registerBatch(srv)
 	rpc.Register(srv, "query.close", func(_ context.Context, p queryCloseParams) (queryCloseResult, error) {
 		return queryCloseResult{Closed: s.queries.Close(p.QueryID)}, nil
 	})
@@ -452,6 +481,7 @@ func (s *indexService) queryPage(ctx context.Context, p queryPageParams) (queryP
 		}
 	}
 	ann := s.annotations(ctx, page.Items)
+	diffs := s.compareDiffs(p.QueryID, page.Items)
 	items := make([]contentItem, len(page.Items))
 	for i, it := range page.Items {
 		a := ann[it.PathKey]
@@ -463,6 +493,9 @@ func (s *indexService) queryPage(ctx context.Context, p queryPageParams) (queryP
 		}
 		if t, ok := thumbs[it.ID]; ok {
 			items[i].Thumb = &thumb{URL: t.URL, Width: t.Width, Height: t.Height}
+		}
+		if d, ok := diffs[it.ID]; ok {
+			items[i].Diff = diffOf(d)
 		}
 	}
 	return queryPageResult{QueryID: page.QueryID, Version: page.Version, Total: page.Total, Offset: page.Offset, Items: items}, nil

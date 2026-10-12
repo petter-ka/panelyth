@@ -2,9 +2,10 @@
 
 ## Status
 
-**Proposed** (2026-10-11), at the owner's request. Decided in **Stage 16**; no earlier stage builds on it. Depends on
+**Accepted with amendments** (2026-10-12, Stage 16). Proposed 2026-10-11 at the owner's request. Depends on
 ADR-0035 (accepted in Stage 12). Extends ADR-0021 and ADR-0029 (jobs and the queue), ADR-0017 (selection
-descriptors) and ADR-0016 (durable user data in `library.db`).
+descriptors) and ADR-0016 (durable user data in `library.db`). The text below is the proposal; where Stage 16 decided
+otherwise, "Decided in Stage 16" at the end says what was built and why, and it wins.
 
 ## Context
 
@@ -100,3 +101,56 @@ before it runs.
 - `library.db` gets a migration (`recipes`); the sidecar's job kinds gain `edit`; the jobs panel gains "Undo this
   batch" for this kind only.
 - The shared byte semaphore couples batch editing to preview decoding; Stage P05 re-measures their interference.
+
+## Decided in Stage 16 (2026-10-12)
+
+Built as proposed: a recipe is data; the selection is a descriptor resolved in Go; bounded workers on the decode
+budget previews share; operations single-threaded inside a picture; atomic outputs; cancel without partial files;
+Replace through the trash with a refusal before the first picture where there is none; undo of the created files;
+recipes in `library.db`. Decided differently:
+
+- **A batch writes each picture with the editor's own save** (`editor.Save`), not with a second, lean pipeline. The
+  save is not a session: it holds no proxy and no checkpoints; it decodes at full resolution, runs the fused
+  program and encodes. So a batch's file is byte for byte the file the editor writes for that picture and recipe
+  (tested for 1, 2 and 4 workers), and every later fix to the save applies to both.
+- **The methods are `batch.plan`, `batch.start`, `batch.undo`, `batch.pickFolder` and `recipe.*`,** not
+  `jobs.start { kind: "edit" }`, `edit.sample` and `jobs.undo`. `batch.plan` and `batch.start` are answered in
+  Electron main, which turns the handle of a picked folder into its path and calls the main-only sidecar methods
+  `edit.plan` and `edit.batch`; a renderer names a folder by a handle and never by a path. `jobs.start` refuses the
+  kinds `edit` and `undoEdit`. The plan returns the samples, so there is no separate sample call.
+- **A recipe is `{ version, ops, output }`;** its name belongs to the stored row, not to the recipe. It never holds a
+  path: the folder of a "folder" output is chosen for each run.
+- **Relative units are the editor's units.** Sizes that the editor expresses relative to the picture (border,
+  watermark, frame mask, obscure, lens, a crop rectangle) are relative in a batch. Radii of sharpen, blur and noise
+  reduction stay pixels of the full picture, as Stage 13 decided, so that a batch equals the editor; scaling them to
+  the picture's size is not built. A crop rectangle is 0..1 of the picture and therefore allowed; crop by ratio
+  with an anchor, trim borders and a canvas relative to the picture are not built. Auto levels reads each picture
+  (it exists since Stage 13). Every result is upright, because the decode applies the orientation.
+- **Red-eye is not in a batch** (Stage 15: its detector is tested on synthetic pictures only).
+- **Memory is reserved in pixels,** three times a picture's, from the 250-megapixel budget of the preview service,
+  not in bytes from a budget of the job's own. A request larger than the budget is capped to it, which is how a
+  huge picture runs alone.
+- **Names are given by one producer, in display order,** so `{n}` and the numbers of duplicate names are the same
+  for any worker count. A result never lands on its own original, on another original of the batch or on a file
+  the batch wrote; those get a number whatever the conflict policy.
+- **Conflict policies are `keepBoth`, `skip` and `replace`;** `replace` sends the file that has the name to the
+  trash first and is refused, before the first picture, where the destination has no trash. `ask` is not offered:
+  the plan shows the names before Run, and a question per picture would stall a batch.
+- **Tokens:** the name template takes the picture's tokens of Stage 14 and `{n}` / `{n:3}`; an unknown token is a
+  validation problem; an EXIF tag a picture does not carry is empty. `{n}` is not a token of watermark text.
+- **Skipped items are counted, not listed as errors:** folders, videos and files that are no pictures (the plan
+  gives the count of each reason), and names taken under `skip`. Item errors use `DECODE_FAILED`, `UNSUPPORTED`,
+  `TOO_LARGE` and the file-operation codes.
+- **The undo journal is in memory:** path, size and modification time of at most 10,000 created files per job, kept
+  while the job is listed (the last 20 finished jobs) and gone with the sidecar. The undo is a job (`undoEdit`) and
+  trashes only files that are still what the batch wrote.
+- **Stored recipes:** table `recipes(id, name, name_fold UNIQUE, json, created_at, updated_at)`, at most 200 recipes
+  of 256 KiB; saving under an existing name replaces that recipe. The six built-in recipes are data in Go, listed
+  first under a key the UI words. A stored recipe is checked for everything but its assets, which are checked when
+  it is used: asset handles end with the app (ADR-0035), so a recipe with a picture asks for it again.
+- **Not built:** the two reports (Count colors, EXIF to CSV), recipe export and import, the recipe list in the
+  single editor, the "Compare all" grid and pinning or replacing samples, mirroring subfolders. They are listed as
+  open in the stage record.
+- **Budgets** are fixed by the stage's baseline (`docs/viewer/PERFORMANCE.md` "Batch"): 5.9 pictures/s with four
+  workers on 12 MP JPEGs where the proposal named 6 (the budget is 5); a plan of 100,000 pictures in 157 ms; a
+  cancel in 0.16 s; thumbnails 9 % slower beside a batch.

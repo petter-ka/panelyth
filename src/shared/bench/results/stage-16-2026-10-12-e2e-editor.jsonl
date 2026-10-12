@@ -1,0 +1,7 @@
+{"at":"2026-10-12T02:17:03.484Z","test":"batch-cancel","cancelMs":126,"finishedBeforeCancel":16}
+{"at":"2026-10-12T02:17:21.879Z","test":"batch-200","pictures":200,"jobMs":1171,"picturesPerSec":170.8,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":19}
+{"at":"2026-10-12T02:17:23.640Z","test":"batch-cancel","cancelMs":128,"finishedBeforeCancel":16}
+{"at":"2026-10-12T02:17:37.103Z","test":"batch-200","pictures":200,"jobMs":1156,"picturesPerSec":173,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":18}
+{"at":"2026-10-12T02:17:38.941Z","test":"batch-cancel","cancelMs":127,"finishedBeforeCancel":16}
+{"at":"2026-10-12T02:25:53.599Z","test":"batch-200","pictures":200,"jobMs":1161,"picturesPerSec":172.3,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":18}
+{"at":"2026-10-12T02:25:55.411Z","test":"batch-cancel","cancelMs":127,"finishedBeforeCancel":16}

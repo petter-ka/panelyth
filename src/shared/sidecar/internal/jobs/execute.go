@@ -43,13 +43,20 @@ func validate(s Spec) error {
 		}
 	case KindExtract, KindPack, KindTestArchive:
 		return validateArchive(s)
+	case KindSync, KindHashCreate, KindHashVerify, KindCompareFiles:
+		return validateCompare(s)
 	case KindTrash, KindDelete, KindFavorite, KindDirSize:
-	case KindRename:
-		if _, err := ParsePattern(s.Pattern); err != nil {
-			return fmt.Errorf("%w: the pattern needs {name} or {n} and only those tokens", ErrInvalid)
-		}
-		if s.Start < 0 || s.Start > 1_000_000_000 {
-			return fmt.Errorf("%w: start number out of range", ErrInvalid)
+	case KindRename, KindMultiRename, KindUndoRename:
+		return validateRename(s)
+	case KindSetAttributes:
+		return validateAttrs(s)
+	case KindEditSave:
+		return validateEdit(s)
+	case KindEdit:
+		return validateBatch(s)
+	case KindUndoEdit:
+		if len(s.created) == 0 {
+			return fmt.Errorf("%w: nothing to undo", ErrInvalid)
 		}
 	case KindRating:
 		if s.Rating < 0 || s.Rating > library.MaxRating {
@@ -132,18 +139,36 @@ func (m *Manager) execute(j *job) (State, string) {
 		})
 	case KindTrash:
 		err = m.trash(j, a)
-	case KindRename:
-		err = m.rename(j, a)
+	case KindRename, KindMultiRename:
+		err = m.renameBatch(j, a)
+	case KindUndoRename:
+		err = m.undoRename(j, a)
+	case KindSetAttributes:
+		err = m.setAttributes(j, a)
 	case KindFavorite, KindRating, KindTag, KindLabel:
 		msg, err = m.annotate(j, a)
 	case KindDirSize:
-		err = m.dirSizes(j)
+		err = m.dirSizes(j, a)
 	case KindExtract:
 		msg, err = m.extract(j, a)
 	case KindPack:
 		msg, err = m.pack(j, a)
 	case KindTestArchive:
 		err = m.testArchives(j)
+	case KindSync:
+		msg, err = m.sync(j, a)
+	case KindHashCreate:
+		msg, err = m.hashCreate(j, a)
+	case KindHashVerify:
+		err = m.hashVerify(j)
+	case KindCompareFiles:
+		err = m.compareFiles(j)
+	case KindEditSave:
+		msg, err = m.editSave(j, a)
+	case KindEdit:
+		msg, err = m.editBatch(j, a)
+	case KindUndoEdit:
+		err = m.undoEdit(j, a)
 	}
 	a.flush()
 	switch {
@@ -291,91 +316,6 @@ func (m *Manager) trash(j *job, a *applier) error {
 	return err
 }
 
-type renameItem struct {
-	t       index.Target
-	newName string
-	origKey string // key of the current name (collision detection)
-}
-
-// rename applies a pattern. Items are renamed in selection order; an item
-// whose new name is still taken by another selected item waits for it, and
-// what remains after a pass without progress (a cycle, such as swapping two
-// names) fails rather than using hidden temporary names.
-func (m *Manager) rename(j *job, a *applier) error {
-	p, _ := ParsePattern(j.spec.Pattern)
-	var pending []renameItem
-	waiting := map[string]bool{}
-	n := j.spec.Start
-	err := m.eachTarget(j, func(t index.Target) error {
-		isDir := t.Kind == media.KindDir
-		newName := p.Apply(t.Name, isDir, n)
-		n++
-		if err := fileops.ValidateName(newName); err != nil {
-			j.fail(t.Name, fileops.CodeInvalidName, err.Error())
-			return nil
-		}
-		parentKey := pathkey.DirKey(filepath.Dir(t.Path))
-		it := renameItem{t: t, newName: newName, origKey: pathkey.ChildKey(parentKey, t.Name, isDir)}
-		pending = append(pending, it)
-		waiting[it.origKey] = true
-		return nil
-	})
-	if err != nil {
-		return err
-	}
-	lib := m.library(j.ctx)
-	for len(pending) > 0 {
-		progressed := false
-		var next []renameItem
-		for _, it := range pending {
-			if err := j.ctx.Err(); err != nil {
-				return err
-			}
-			isDir := it.t.Kind == media.KindDir
-			dir := filepath.Dir(it.t.Path)
-			parentKey := pathkey.DirKey(dir)
-			newKey := pathkey.ChildKey(parentKey, it.newName, isDir)
-			if newKey != it.origKey && waiting[newKey] && exists(filepath.Join(dir, it.newName)) {
-				next = append(next, it) // its name is still held by another selected item
-				continue
-			}
-			progressed = true
-			delete(waiting, it.origKey)
-			j.update(func(s *Snapshot) { s.Current = truncate(it.t.Name) })
-			m.emit(j, false)
-			if it.newName == it.t.Name {
-				j.update(func(s *Snapshot) { s.Skipped++ })
-				continue
-			}
-			newPath, err := fileops.Rename(it.t.Path, it.newName)
-			if err != nil {
-				if cerr := m.itemFailed(j, it.t.Name, err); cerr != nil {
-					return cerr
-				}
-				continue
-			}
-			j.update(func(s *Snapshot) { s.Done++ })
-			if lib != nil {
-				if err := lib.Rekey(context.WithoutCancel(j.ctx), it.t.Key, newKey); err != nil {
-					m.deps.Log.Warn("rename user metadata", "err", err)
-				}
-			}
-			a.move(index.Moved{ID: it.t.ID, ParentID: it.t.ParentID, Kind: it.t.Kind, Name: it.newName,
-				Ext: extOf(it.newName, isDir), OldKey: it.t.Key, NewKey: newKey, OldPath: it.t.Path, NewPath: newPath})
-			a.touch(it.t.ParentID, parentKey)
-			a.count()
-		}
-		if !progressed {
-			for _, it := range next {
-				j.fail(it.t.Name, fileops.CodeExists, "The new name is taken by another selected item.")
-			}
-			break
-		}
-		pending = next
-	}
-	return nil
-}
-
 // annotate applies a favorite, rating or tag change to the selected files
 // (folders carry no user metadata and are skipped).
 func (m *Manager) annotate(j *job, a *applier) (string, error) {
@@ -437,6 +377,11 @@ type applier struct {
 	changes index.Changes
 	added   []index.Row
 	forgets []string
+	// sizes and stats are folder sizes and changed dates and attributes;
+	// rekeys the renames user metadata follows, in their order (Stage C09).
+	sizes   []index.DirSize
+	stats   []index.Stat
+	rekeys  [][2]string
 	dirs    map[int64]string
 	pending int
 	last    time.Time
@@ -446,6 +391,13 @@ func (a *applier) remove(id int64)     { a.changes.Removed = append(a.changes.Re
 func (a *applier) move(mv index.Moved) { a.changes.Moved = append(a.changes.Moved, mv) }
 func (a *applier) add(r index.Row)     { a.added = append(a.added, r) }
 func (a *applier) forget(key string)   { a.forgets = append(a.forgets, key) }
+
+// rekey queues a rename for the user metadata: one library.db transaction
+// per flush instead of one per entry (Stage C09).
+func (a *applier) rekey(oldKey, newKey string) {
+	a.rekeys = append(a.rekeys, [2]string{oldKey, newKey})
+}
+
 func (a *applier) touch(id int64, k string) {
 	if id > 0 {
 		a.dirs[id] = k
@@ -466,10 +418,25 @@ func (a *applier) flush() {
 	if err := store.ApplyChanges(ctx, a.changes); err != nil {
 		a.m.deps.Log.Warn("apply job changes to the index", "err", err)
 	}
+	a.flushStats(ctx)
+	if len(a.sizes) > 0 {
+		if err := store.SetDirSizes(ctx, a.sizes); err != nil {
+			a.m.deps.Log.Warn("store folder sizes", "err", err)
+		}
+		a.sizes = nil
+	}
 	if len(a.added) > 0 {
 		if _, err := store.Commit(ctx, store.NextGeneration(), a.added, nil); err != nil {
 			a.m.deps.Log.Warn("index copied items", "err", err)
 		}
+	}
+	if len(a.rekeys) > 0 {
+		if lib := a.m.library(ctx); lib != nil {
+			if err := lib.RekeyMany(ctx, a.rekeys); err != nil {
+				a.m.deps.Log.Warn("rename user metadata", "err", err)
+			}
+		}
+		a.rekeys = nil
 	}
 	if len(a.forgets) > 0 {
 		if lib := a.m.library(ctx); lib != nil {

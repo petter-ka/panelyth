@@ -1,0 +1,10 @@
+{
+  "e": {
+    "code": "EDIT_ASSET_INVALID",
+    "message": "not a PNG, JPEG, WebP or GIF picture",
+    "retryable": false
+  },
+  "id": 197,
+  "ok": false,
+  "t": "res"
+}

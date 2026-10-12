@@ -1,0 +1,8 @@
+{"at":"2026-10-11T15:12:30.479Z","test":"pause-latency","pauseMs":108,"finalState":"paused"}
+{"at":"2026-10-11T15:13:39.243Z","test":"copy-from-ui","small10k":{"copyMs":4165,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":632,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":113}
+{"at":"2026-10-11T16:20:27.160Z","test":"pause-latency","pauseMs":110,"finalState":"paused"}
+{"at":"2026-10-11T16:21:41.477Z","test":"copy-from-ui","small10k":{"copyMs":4207,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"large2GB":{"copyMs":623,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":119}
+{"at":"2026-10-11T17:24:12.645Z","test":"pause-latency","pauseMs":115,"finalState":"paused"}
+{"at":"2026-10-11T17:25:17.256Z","test":"copy-from-ui","small10k":{"copyMs":2161,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"large2GB":{"copyMs":641,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"enter1kWhileCopyingMs":111}
+{"at":"2026-10-11T23:41:10.931Z","test":"pause-latency","pauseMs":118,"finalState":"paused"}
+{"at":"2026-10-11T23:42:20.492Z","test":"copy-from-ui","small10k":{"copyMs":2371,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":18,"keyMaxMs":18},"large2GB":{"copyMs":480,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":18,"keyMaxMs":18},"enter1kWhileCopyingMs":112}

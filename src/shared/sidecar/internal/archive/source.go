@@ -21,8 +21,12 @@ const (
 	maxSlot        = 1<<(52-slotBits) - 1
 )
 
+// idLimit ends the range of archive entry ids; the rows of directory
+// compares come above it (Stage C08).
+const idLimit = IDBase + (maxSlot+1)<<slotBits
+
 // IsID reports whether id names an archive entry.
-func IsID(id int64) bool { return id >= IDBase }
+func IsID(id int64) bool { return id >= IDBase && id < idLimit }
 
 // SplitID returns the archive id and the entry index of an archive entry id.
 func SplitID(id int64) (archiveID int64, entry int, ok bool) {

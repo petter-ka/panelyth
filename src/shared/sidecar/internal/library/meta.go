@@ -364,7 +364,14 @@ func (l *Library) Scope(ctx context.Context, lo, hi string, tagFilter []string) 
 // folder (keys ending in '/') every descendant key is rewritten. Metadata
 // already at the destination (a replaced file) is dropped first.
 func (l *Library) Rekey(ctx context.Context, oldKey, newKey string) error {
-	if oldKey == newKey {
+	return l.RekeyMany(ctx, [][2]string{{oldKey, newKey}})
+}
+
+// RekeyMany applies renames ({old key, new key}) in their order, in one
+// transaction: the batch of a job that renames many entries (Stage C09).
+func (l *Library) RekeyMany(ctx context.Context, pairs [][2]string) error {
+	pairs = slices.DeleteFunc(slices.Clone(pairs), func(p [2]string) bool { return p[0] == p[1] })
+	if len(pairs) == 0 {
 		return nil
 	}
 	tx, err := l.db.BeginTx(ctx, nil)
@@ -372,6 +379,15 @@ func (l *Library) Rekey(ctx context.Context, oldKey, newKey string) error {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
+	for _, p := range pairs {
+		if err := rekey(ctx, tx, p[0], p[1]); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+func rekey(ctx context.Context, tx *sql.Tx, oldKey, newKey string) error {
 	if strings.HasSuffix(oldKey, "/") {
 		hi := oldKey[:len(oldKey)-1] + "0"
 		if _, err := tx.ExecContext(ctx, `DELETE FROM items WHERE path_key >= ? AND path_key < ?`, newKey, newKey[:len(newKey)-1]+"0"); err != nil {
@@ -381,21 +397,15 @@ func (l *Library) Rekey(ctx context.Context, oldKey, newKey string) error {
 			WHERE path_key >= ? AND path_key < ?`, newKey, len(oldKey)+1, oldKey, hi); err != nil {
 			return err
 		}
-		if err := rekeyCollections(ctx, tx, oldKey, newKey, hi); err != nil {
-			return err
-		}
-	} else {
-		if _, err := tx.ExecContext(ctx, `DELETE FROM items WHERE path_key = ?`, newKey); err != nil {
-			return err
-		}
-		if _, err := tx.ExecContext(ctx, `UPDATE items SET path_key = ? WHERE path_key = ?`, newKey, oldKey); err != nil {
-			return err
-		}
-		if err := rekeyCollections(ctx, tx, oldKey, newKey, ""); err != nil {
-			return err
-		}
+		return rekeyCollections(ctx, tx, oldKey, newKey, hi)
 	}
-	return tx.Commit()
+	if _, err := tx.ExecContext(ctx, `DELETE FROM items WHERE path_key = ?`, newKey); err != nil {
+		return err
+	}
+	if _, err := tx.ExecContext(ctx, `UPDATE items SET path_key = ? WHERE path_key = ?`, newKey, oldKey); err != nil {
+		return err
+	}
+	return rekeyCollections(ctx, tx, oldKey, newKey, "")
 }
 
 // Forget deletes the metadata of permanently deleted keys (folder keys

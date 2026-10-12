@@ -1,4 +1,47 @@
+import type {
+  BatchParams,
+  BatchPickFolderResult,
+  BatchPlanResult,
+  EditBatchParams,
+  RecipeDeleteParams,
+  RecipeListResult,
+  RecipeSaveParams,
+  RecipeSaveResult,
+} from "./batch"
 import type { ErrorCode } from "./errors"
+import type {
+  EditEyesParams,
+  EditEyesResult,
+  AssetPickParams,
+  AssetPickResult,
+  AssetReleaseParams,
+  EditAssetAddParams,
+  EditAssetFile,
+  EditFontsResult,
+  EditColorsParams,
+  EditColorsResult,
+  EditEstimateParams,
+  EditEstimateResult,
+  EditFrameResult,
+  EditProbeParams,
+  EditProbeResult,
+  EditThumbFramesResult,
+  EditThumbsParams,
+  EditThumbsResult,
+  EditInfoResult,
+  EditJobParams,
+  EditOpenParams,
+  EditOpenResult,
+  EditRenderParams,
+  EditRenderResult,
+  EditSaveParams,
+  EditSaveResult,
+  EditSavedPathResult,
+  EditSavedResult,
+  EditSessionParams,
+  EditWriteParams,
+  EditWriteResult,
+} from "./edit"
 
 // Method contracts. TypeScript is canonical (ADR-0012); the Go structs in
 // src/shared/sidecar mirror these and golden fixtures pin both sides.
@@ -336,6 +379,8 @@ export interface ContentItem {
   dirSizeBytes?: number
   /** The entry's folder, in sessions spanning folders: find results and branch views (Stage C06). */
   dirPath?: string
+  /** The rows of a directory compare (Stage C08): both sides and what a sync does. */
+  diff?: DiffInfo
   /** Cached thumbnail for the page's thumbProfile, or null. */
   thumb: Thumb | null
 }
@@ -507,6 +552,35 @@ export interface ShellOpenParams {
   allowProgram?: boolean
 }
 
+/**
+ * shell.run (Stage C10, ADR-0027): a command typed in the commander's
+ * command line, run through the OS shell in the folder `dirId` (resolved in
+ * Go). `console` runs it in a console window that stays open; with an empty
+ * `command` it opens the console in that folder and runs nothing.
+ */
+export interface ShellRunParams {
+  command: string
+  dirId: number
+  console?: boolean
+}
+
+/**
+ * shell.runTool (Stage C10): a user command, named by its id in
+ * commander.tools. Main reads the command from library.db and fills its
+ * placeholders from these ids, which Go resolves to paths.
+ */
+export interface ShellRunToolParams {
+  toolId: string
+  /** The active panel's folder (%P, and the working folder unless the command names one). */
+  dirId: number
+  /** The other panel's folder (%T). */
+  otherDirId?: number
+  /** The cursor entry (%N). */
+  cursorId?: number
+  /** The marked entries, or the cursor entry (%S, %L). */
+  selection?: SelectionDescriptor
+}
+
 /** Sidecar -> main only (open / reveal in the system file manager). */
 export interface EntryPathResult {
   path: string
@@ -592,6 +666,12 @@ export interface Properties {
   accessedMs: number | null
   width: number | null
   height: number | null
+  /** ENTRY_ATTRS bits as they are now (Stage C09); omitted when none is set. */
+  attrs?: number
+  /** Permission bits (0o777) outside Windows; null on Windows, which has none. */
+  permissions: number | null
+  /** Where a link points, as it is stored; null for everything else. */
+  linkTarget: string | null
   /** Folders: counts from the last complete listing; null before it. */
   childFolders: number | null
   childMedia: number | null
@@ -768,6 +848,18 @@ export type JobKind =
   | "extract"
   | "pack"
   | "testArchive"
+  | "sync"
+  | "hashCreate"
+  | "hashVerify"
+  | "compareFiles"
+  | "multiRename"
+  | "undoRename"
+  | "setAttributes"
+  /** Stage 12: an edited picture being written; started by edit.save, never by jobs.start. */
+  | "editSave"
+  /** Stage 16: a recipe run over a selection (batch.start), and its undo (batch.undo). */
+  | "edit"
+  | "undoEdit"
 export const JOB_KINDS = [
   "copy",
   "move",
@@ -782,6 +874,16 @@ export const JOB_KINDS = [
   "extract",
   "pack",
   "testArchive",
+  "sync",
+  "hashCreate",
+  "hashVerify",
+  "compareFiles",
+  "multiRename",
+  "undoRename",
+  "setAttributes",
+  "editSave",
+  "edit",
+  "undoEdit",
 ] as const satisfies readonly JobKind[]
 
 /**
@@ -918,6 +1020,8 @@ export type CommanderJobParams =
     }
   | { kind: "trash" | "delete" | "dirSize"; source: JobSource }
   | ArchiveJobParams
+  | CompareJobParams
+  | RenameJobParams
 
 export const MAX_RENAME_PATTERN_CHARS = 255
 export const MAX_RENAME_START = 1_000_000_000
@@ -995,6 +1099,38 @@ export type JobItemErrorCode =
   | "ENCRYPTED"
   /** An entry expanded beyond its stored size (a bomb), or is too large to view. */
   | "TOO_LARGE"
+  /** Sync (Stage C08): the entry is not as the compare saw it, so it was left alone. */
+  | "CHANGED"
+  /** compareFiles: the two files are not the same. */
+  | "DIFFERENT"
+  /** hashVerify: the file's checksum is not the one its list has. */
+  | "CHECKSUM_MISMATCH"
+  /** A batch edit (Stage 16): the picture can't be read, or is of a kind that is not edited. */
+  | "DECODE_FAILED"
+  | "UNSUPPORTED"
+
+export const JOB_ITEM_ERROR_CODES = [
+  "NOT_FOUND",
+  "PERMISSION_DENIED",
+  "ALREADY_EXISTS",
+  "INVALID_NAME",
+  "TRASH_UNAVAILABLE",
+  "NO_SPACE",
+  "IN_USE",
+  "INTO_ITSELF",
+  "SKIPPED_LINK",
+  "IO_ERROR",
+  "VERIFY_FAILED",
+  "UNSAFE_PATH",
+  "CORRUPT",
+  "ENCRYPTED",
+  "TOO_LARGE",
+  "CHANGED",
+  "DIFFERENT",
+  "CHECKSUM_MISMATCH",
+  "DECODE_FAILED",
+  "UNSUPPORTED",
+] as const satisfies readonly JobItemErrorCode[]
 
 export interface JobItemError {
   name: string
@@ -1235,6 +1371,416 @@ export interface ArchiveToolsResult {
   sevenZip: boolean
 }
 
+// Compare, synchronize and checksums (Stage C08, commander) ------------------
+
+/**
+ * The date rules of a compare: file systems keep dates at different
+ * resolutions (FAT: 2 s), and some shift them by an hour with daylight
+ * saving time.
+ */
+export interface CompareOptions {
+  /** Dates this close are the same; 0 = exact. At most MAX_COMPARE_TOLERANCE_MS. */
+  toleranceMs: number
+  /** Dates exactly one hour apart (within the tolerance) are the same. */
+  dst: boolean
+  /** Compare by name and size (and content) only. */
+  ignoreDates: boolean
+}
+
+export const MAX_COMPARE_TOLERANCE_MS = 60_000
+/** A compare stops at this many rows (compare.progress reports truncated). */
+export const MAX_COMPARE_ROWS = 500_000
+
+/**
+ * compare.dirs: a recursive compare of two indexed folders. Its rows are a
+ * query session (ADR-0017) that starts empty and fills when the walk has
+ * finished; pages carry ContentItem.diff. Links are never followed or
+ * compared. Errors carry details.reason "nested" when one folder is inside
+ * the other.
+ */
+export interface CompareDirsParams extends CompareOptions {
+  leftDirId: number
+  rightDirId: number
+  /** Also compare files of the same size byte by byte. */
+  content: boolean
+  /** Left to right only: the right side becomes a copy of the left; files only there are deleted. */
+  asymmetric: boolean
+}
+
+export interface CompareStartResult extends QuerySnapshot {
+  compareId: number
+}
+
+export interface CompareIdParams {
+  compareId: number
+}
+
+export interface CompareCancelResult {
+  cancelled: boolean
+}
+
+export interface CompareCloseResult {
+  closed: boolean
+}
+
+/** How the two sides of a compare row relate. "mismatch": a file on one side, a folder on the other. */
+export type DiffState =
+  "equal" | "leftNewer" | "rightNewer" | "different" | "leftOnly" | "rightOnly" | "mismatch"
+export const DIFF_STATES = [
+  "equal",
+  "leftNewer",
+  "rightNewer",
+  "different",
+  "leftOnly",
+  "rightOnly",
+  "mismatch",
+] as const satisfies readonly DiffState[]
+
+/**
+ * What a sync does with a row: "copyRight" (→), "copyLeft" (←), "none" (=
+ * for equal rows, ≠ otherwise) and the deletes of one-sided entries (×).
+ */
+export type DiffAction = "none" | "copyRight" | "copyLeft" | "deleteRight" | "deleteLeft"
+export const DIFF_ACTIONS = [
+  "none",
+  "copyRight",
+  "copyLeft",
+  "deleteRight",
+  "deleteLeft",
+] as const satisfies readonly DiffAction[]
+
+export interface DiffSide {
+  sizeBytes: number
+  modifiedMs: number
+}
+
+/** A row of a directory compare. Folders have rows only when they exist on one side. */
+export interface DiffInfo {
+  /** The row's folder below the two roots, "/"-separated; "" = the roots. */
+  dir: string
+  state: DiffState
+  action: DiffAction
+  /** null when the entry is not on that side. */
+  left: DiffSide | null
+  right: DiffSide | null
+}
+
+/** The rows a compare's session lists, by the symbol of their action: → ← = ≠ ×. */
+export type CompareShow = "copyRight" | "copyLeft" | "equal" | "different" | "delete"
+export const COMPARE_SHOW = [
+  "copyRight",
+  "copyLeft",
+  "equal",
+  "different",
+  "delete",
+] as const satisfies readonly CompareShow[]
+
+export interface CompareShowParams {
+  compareId: number
+  show: CompareShow[]
+}
+
+/**
+ * compare.setAction: a direction for the selected rows of the compare's
+ * session, or "default" for the one the compare chose. Rows an action does
+ * not apply to keep theirs: a copy needs its source, and only one-sided
+ * entries can be deleted.
+ */
+export interface CompareSetActionParams {
+  compareId: number
+  selection: SelectionDescriptor
+  action: DiffAction | "default"
+}
+
+export interface CompareAmount {
+  files: number
+  bytes: number
+}
+
+/**
+ * What a sync would do now. It covers the shown rows only: a sync never
+ * touches a row the table does not show. The version changes with every
+ * change of the filter or of a direction; a sync job must name it.
+ */
+export interface ComparePlan {
+  version: number
+  /** Every row by symbol, shown or not. */
+  counts: Record<CompareShow, number>
+  copyRight: CompareAmount
+  copyLeft: CompareAmount
+  deleteRight: number
+  deleteLeft: number
+  /** Folders a sync creates. */
+  folders: number
+  /** Copies that replace a newer file. */
+  overwriteNewer: number
+}
+
+/** The table after a change of the filter or of a direction: its session and its plan. */
+export interface CompareView extends QuerySnapshot {
+  plan: ComparePlan
+}
+
+/** compare.marks (Shift+F2): the files that are unique or newer in each of two listings. */
+export interface CompareMarksParams extends CompareOptions {
+  leftQueryId: number
+  rightQueryId: number
+}
+
+export interface CompareMarksResult {
+  left: SelectionDescriptor
+  right: SelectionDescriptor
+  leftCount: number
+  rightCount: number
+}
+
+export type HashAlgorithm = "sha256" | "sha1" | "md5" | "crc32"
+export const HASH_ALGORITHMS = [
+  "sha256",
+  "sha1",
+  "md5",
+  "crc32",
+] as const satisfies readonly HashAlgorithm[]
+
+/**
+ * Compare jobs (Stage C08). sync: applies the plan of a finished compare
+ * (copies first, then deletes; an entry that changed since the compare is
+ * reported as CHANGED and left alone). hashCreate: one checksum file beside
+ * each file, or one list in a folder. hashVerify: the selected .sha256,
+ * .sha1, .md5 and .sfv files; every listed file is an item. compareFiles:
+ * two files byte by byte; done = identical, a DIFFERENT item otherwise.
+ */
+export type CompareJobParams =
+  | {
+      kind: "sync"
+      compareId: number
+      /** ComparePlan.version the user confirmed; an older one is refused (details.reason "stalePlan"). */
+      planVersion: number
+      /** Delete instead of moving to the trash. */
+      deletePermanently?: boolean
+    }
+  | { kind: "hashCreate"; source: JobSource; algorithm: HashAlgorithm; perFile: true }
+  | {
+      kind: "hashCreate"
+      source: JobSource
+      algorithm: HashAlgorithm
+      perFile: false
+      /** The folder of the list; its paths are relative to it. */
+      destinationDirId: number
+      name: string
+    }
+  | { kind: "hashVerify"; source: JobSource }
+  | { kind: "compareFiles"; leftId: number; rightId: number }
+
+/** A text diff takes files up to this size; larger ones are compared by content only. */
+export const MAX_TEXT_DIFF_BYTES = 50 * 1024 * 1024
+export const MAX_TEXT_DIFF_PAGE = 500
+
+export interface TextDiffOpenParams {
+  leftId: number
+  rightId: number
+}
+
+export type TextEncoding = "utf-8" | "utf-16le" | "utf-16be" | "windows-1252"
+
+export interface TextDiffFile {
+  name: string
+  sizeBytes: number
+  lines: number
+  /** "" when the file was not read as text. */
+  encoding: TextEncoding | ""
+}
+
+/**
+ * diff.open: two files compared line by line in Go (the text stays in the
+ * files; rows are paged with diff.page). Files that are not text, or larger
+ * than MAX_TEXT_DIFF_BYTES, come back with diffId 0 and a reason: compare
+ * them with a compareFiles job.
+ */
+export interface TextDiffOpenResult {
+  diffId: number
+  reason: "" | "binary" | "tooLarge"
+  left: TextDiffFile
+  right: TextDiffFile
+  /** Rows of the side-by-side view. */
+  rows: number
+  /** Changed places; blocks lists the first 10,000 as [first row, rows]. */
+  changes: number
+  blocks: [number, number][]
+  /** The same bytes. Files without a changed line can still differ in line ends or encoding. */
+  identical: boolean
+}
+
+export interface TextDiffPageParams {
+  diffId: number
+  offset: number
+  /** 1..MAX_TEXT_DIFF_PAGE */
+  limit: number
+}
+
+export type TextDiffOp = "equal" | "changed" | "removed" | "added"
+
+export interface TextDiffRow {
+  op: TextDiffOp
+  /** Line numbers from 1; 0 where a side has no line. */
+  l: number
+  r: number
+  /** The left line; an equal row carries its text here only. */
+  left: string
+  right?: string
+  /** A line was longer than 4 KiB and is cut. */
+  cut?: boolean
+}
+
+export interface TextDiffPageResult {
+  offset: number
+  rows: TextDiffRow[]
+}
+
+export interface TextDiffIdParams {
+  diffId: number
+}
+
+// Multi-rename, attributes and dates (Stage C09, commander) -----------------
+
+/** How the new names are cased; "first" and "words" leave the extension as it is. */
+export type RenameCase = "" | "lower" | "upper" | "first" | "words"
+export const RENAME_CASES = [
+  "",
+  "lower",
+  "upper",
+  "first",
+  "words",
+] as const satisfies readonly RenameCase[]
+
+/** Each mask and the search and replace texts take this many UTF-8 bytes. */
+export const MAX_RENAME_MASK_BYTES = 255
+export const MAX_RENAME_STEP = 1_000_000
+export const MAX_RENAME_DIGITS = 10
+/** A multi-rename (and its preview) takes this many entries. */
+export const MAX_MULTI_RENAME = 100_000
+export const MAX_RENAME_PREVIEW_PAGE = 500
+
+/**
+ * A multi-rename in Total Commander's syntax (the viewer's `{name}{n}`
+ * pattern compiles to the same plan in Go). Placeholders of the masks:
+ * `[N]` the name and `[E]` the extension, both with ranges (`[N2-5]`,
+ * `[N2-]`, `[N2,3]`, `[N2]`); `[C]` the counter (`[C10+2:3]` = from 10,
+ * step 2, 3 digits); `[Y] [M] [D] [h] [m] [s]` from the modification time;
+ * `[[]` and `[]]` for brackets. Search and replace runs on the name the
+ * masks give (with its extension); a regular expression is Go RE2 syntax
+ * with `$1` in the replacement. The case conversion comes last.
+ */
+export interface RenamePlan {
+  nameMask: string
+  /** "" = no extension. */
+  extMask: string
+  /** "" = no search and replace. */
+  search: string
+  replace: string
+  regex: boolean
+  matchCase: boolean
+  case: RenameCase
+  /** The counter of `[C]`: first value, step and minimum digits (1..MAX_RENAME_DIGITS). */
+  start: number
+  step: number
+  digits: number
+}
+
+/**
+ * rename.preview: the selection named with the plan, one page of it. The
+ * whole batch is resolved in Go on every call (conflicts depend on all of
+ * it); the counts are the batch's. A plan that cannot be compiled is
+ * INVALID_ARGUMENT with details { reason: "plan", field } (field: nameMask,
+ * extMask, search, case or counter); more than MAX_MULTI_RENAME entries is
+ * details.reason "tooMany".
+ */
+export interface RenamePreviewParams {
+  selection: SelectionDescriptor
+  plan: RenamePlan
+  offset: number
+  /** 1..MAX_RENAME_PREVIEW_PAGE */
+  limit: number
+}
+
+export type RenameStatus = "rename" | "unchanged" | "invalid" | "conflict"
+export const RENAME_STATUSES = [
+  "rename",
+  "unchanged",
+  "invalid",
+  "conflict",
+] as const satisfies readonly RenameStatus[]
+
+/**
+ * Why a new name is not free: another entry of the batch gets it too
+ * ("duplicate"), an entry that keeps its name has it ("exists"), or entries
+ * exchange names ("cycle"; that needs a third name, which a job never uses).
+ */
+export type RenameConflict = "duplicate" | "exists" | "cycle"
+
+export interface RenamePreviewRow {
+  id: number
+  name: string
+  newName: string
+  status: RenameStatus
+  /** A RenameConflict for "conflict"; the reason in words for "invalid". */
+  reason?: string
+}
+
+export interface RenamePreviewResult {
+  total: number
+  renamed: number
+  unchanged: number
+  invalid: number
+  conflicts: number
+  /** Position of the first invalid or conflicting row; -1 without one. */
+  firstProblem: number
+  offset: number
+  rows: RenamePreviewRow[]
+}
+
+/** rename.undoInfo: the multi-rename an undoRename job would take back; count 0 = none. */
+export interface RenameUndoInfo {
+  count: number
+  /** The folder of the renamed entries (the first one's). */
+  dir: string
+  finishedMs: number
+}
+
+/**
+ * Rename and attribute jobs (Stage C09). multiRename: renames what the
+ * preview calls "rename" and fails the rest per item; what it renamed is
+ * the journal of one undo. undoRename: takes the last multi-rename back
+ * (no selection); an entry that is gone, or whose old name is taken again,
+ * fails and stays. setAttributes: Windows attributes (ENTRY_ATTRS readOnly,
+ * hidden, system, archive) or, elsewhere, permission bits, each set or
+ * cleared, and dates; links are never changed or followed.
+ */
+export type RenameJobParams =
+  | { kind: "multiRename"; source: JobSource; plan: RenamePlan }
+  | { kind: "undoRename" }
+  | {
+      kind: "setAttributes"
+      source: JobSource
+      /** ENTRY_ATTRS bits to set and to clear; they apply on Windows. */
+      setAttrs?: number
+      clearAttrs?: number
+      /** Permission bits (0..0o777) to set and to clear; they apply outside Windows. */
+      setMode?: number
+      clearMode?: number
+      /** New dates; omitted = unchanged. From 1980 to 9999. */
+      modifiedMs?: number
+      accessedMs?: number
+      /** Also everything below the selected folders. */
+      recursive?: boolean
+    }
+
+/** The attribute bits a setAttributes job may set or clear. */
+export const SETTABLE_ATTRS =
+  ENTRY_ATTRS.hidden | ENTRY_ATTRS.system | ENTRY_ATTRS.readOnly | ENTRY_ATTRS.archive
+export const MIN_ATTR_TIME_MS = Date.UTC(1980, 0, 1)
+export const MAX_ATTR_TIME_MS = Date.UTC(9999, 11, 31, 23, 59, 59)
+
 export interface EntryRenameParams {
   entryId: number
   /** The full new name. Files must keep a supported extension of the same kind. */
@@ -1356,6 +1902,20 @@ export interface SidecarMethodMap {
   "archive.close": { params: ArchiveIdParams; result: ArchiveCloseResult }
   "archive.check": { params: ArchiveCheckParams; result: ArchiveCheckResult }
   "archive.tools": { params: EmptyParams; result: ArchiveToolsResult }
+  /** Stage C08: a recursive compare of two folders; its rows are a query session. */
+  "compare.dirs": { params: CompareDirsParams; result: CompareStartResult }
+  "compare.cancel": { params: CompareIdParams; result: CompareCancelResult }
+  "compare.close": { params: CompareIdParams; result: CompareCloseResult }
+  "compare.show": { params: CompareShowParams; result: CompareView }
+  "compare.setAction": { params: CompareSetActionParams; result: CompareView }
+  "compare.plan": { params: CompareIdParams; result: ComparePlan }
+  "compare.marks": { params: CompareMarksParams; result: CompareMarksResult }
+  "diff.open": { params: TextDiffOpenParams; result: TextDiffOpenResult }
+  "diff.page": { params: TextDiffPageParams; result: TextDiffPageResult }
+  "diff.close": { params: TextDiffIdParams; result: OkResult }
+  /** Stage C09: a multi-rename's names, paged; multiRename and undoRename jobs apply and undo. */
+  "rename.preview": { params: RenamePreviewParams; result: RenamePreviewResult }
+  "rename.undoInfo": { params: EmptyParams; result: RenameUndoInfo }
   "query.open": { params: QueryDescriptor; result: QuerySnapshot }
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
@@ -1395,8 +1955,11 @@ export interface SidecarMethodMap {
   "library.removeBookmark": { params: RemoveBookmarkParams; result: OkResult }
   "library.updateBookmark": { params: UpdateBookmarkParams; result: Bookmark }
   "library.reorderBookmarks": { params: ReorderBookmarksParams; result: OkResult }
-  /** Archive jobs are the commander's (main checks the caller's profile). */
-  "jobs.start": { params: JobStartParams | ArchiveJobParams; result: JobSnapshot }
+  /** Archive, compare, multi-rename and attribute jobs are the commander's (main checks the caller's profile). */
+  "jobs.start": {
+    params: JobStartParams | ArchiveJobParams | CompareJobParams | RenameJobParams
+    result: JobSnapshot
+  }
   "jobs.cancel": { params: JobIdParams; result: JobCancelResult }
   "jobs.errors": { params: JobErrorsParams; result: JobErrorsResult }
   "jobs.list": { params: EmptyParams; result: JobListResult }
@@ -1413,6 +1976,45 @@ export interface SidecarMethodMap {
   "entry.rename": { params: EntryRenameParams; result: EntryRenameResult }
   "library.tags": { params: EmptyParams; result: TagsResult }
   "library.deleteTag": { params: TagIdParams; result: OkResult }
+  /** Stage 12 (ADR-0035): opens an edit session; main adds the calling window as `owner`. */
+  "edit.open": { params: EditOpenParams; result: EditOpenResult }
+  /** Electron main only: renders a frame into the cache's tmp folder (edit.render mints its token). */
+  "edit.frame": { params: EditRenderParams; result: EditFrameResult }
+  "edit.info": { params: EditSessionParams; result: EditInfoResult }
+  "edit.estimate": { params: EditEstimateParams; result: EditEstimateResult }
+  /** Electron main only: starts the save job; a "save as" path comes from main's dialog. */
+  "edit.write": { params: EditWriteParams; result: EditWriteResult }
+  "edit.close": { params: EditSessionParams; result: OkResult }
+  /** The entry a finished save wrote, once it is indexed. */
+  "edit.saved": { params: EditJobParams; result: EditSavedResult }
+  /** Electron main only: where a save wrote (edit.reveal shows it). */
+  "edit.savedPath": { params: EditJobParams; result: EditSavedPathResult }
+  /** Electron main only: the session's file, so a "save as" dialog opens beside it. */
+  "edit.source": { params: EditSessionParams; result: EditSavedPathResult }
+  /** Stage 13: the color at a point of the rendered picture (eyedroppers). */
+  "edit.probe": { params: EditProbeParams; result: EditProbeResult }
+  /** Electron main only: small renderings of several edit lists (edit.thumbs mints their tokens). */
+  "edit.thumbFrames": { params: EditThumbsParams; result: EditThumbFramesResult }
+  /** Count colors: the exact number of distinct colors and the dominant palette. */
+  "edit.colors": { params: EditColorsParams; result: EditColorsResult }
+  /** Stage 15: red pupils in the rendered picture, for the red-eye tool's Auto. */
+  "edit.eyes": { params: EditEyesParams; result: EditEyesResult }
+  /** Stage 14: the font families text can be drawn with, by name. */
+  "edit.fonts": { params: EditSessionParams; result: EditFontsResult }
+  /** Electron main only: registers the picture its file dialog returned (asset.pick). */
+  "edit.assetAdd": { params: EditAssetAddParams; result: EditAssetFile }
+  /** Electron main only: forgets an asset (asset.release). */
+  "edit.assetDrop": { params: AssetReleaseParams; result: OkResult }
+  /** Electron main only (Stage 16, ADR-0036): what a batch would do; the folder is a path from main's dialog. */
+  "edit.plan": { params: EditBatchParams; result: BatchPlanResult }
+  /** Electron main only: starts the edit job (batch.start). */
+  "edit.batch": { params: EditBatchParams; result: JobSnapshot }
+  /** Sends the files a finished edit job created to the trash (never the originals); a batch is undone once. */
+  "batch.undo": { params: JobIdParams; result: JobSnapshot }
+  /** The built-in recipes, then the saved ones by name. */
+  "recipe.list": { params: EmptyParams; result: RecipeListResult }
+  "recipe.save": { params: RecipeSaveParams; result: RecipeSaveResult }
+  "recipe.delete": { params: RecipeDeleteParams; result: OkResult }
 }
 
 export type SidecarMethod = keyof SidecarMethodMap
@@ -1442,6 +2044,8 @@ export const APP_IDS = ["viewer", "commander"] as const satisfies readonly AppId
 
 export interface AppSwitchParams {
   to: AppId
+  /** Commander only (Stage 12): show the viewer and open its editor on this picture. */
+  edit?: number
 }
 
 /** Methods answered by Electron main itself (never forwarded to Go). */
@@ -1470,6 +2074,10 @@ export interface MainMethodMap {
   "document.open": { params: DocumentOpenParams; result: OkResult }
   /** Commander (Stage C05, F4): opens a file in the editor from settings, else the OS text editor. */
   "shell.edit": { params: EntryParams; result: OkResult }
+  /** Commander (Stage C10): runs a typed command through the OS shell in a panel's folder. */
+  "shell.run": { params: ShellRunParams; result: OkResult }
+  /** Commander (Stage C10): runs a user command from commander.tools on the panel's entries. */
+  "shell.runTool": { params: ShellRunToolParams; result: OkResult }
   /** Shows an indexed entry in the system file manager. */
   "shell.reveal": { params: EntryParams; result: OkResult }
   /** Shows a folder from the sidebar or breadcrumb in the system file manager. */
@@ -1479,6 +2087,29 @@ export interface MainMethodMap {
   "clipboard.copyText": { params: CopyTextParams; result: OkResult }
   /** Puts an indexed image on the OS clipboard as a picture (decoded in Go). */
   "clipboard.copyImage": { params: EntryParams; result: CopyImageResult }
+  /** Viewer (Stage 12): a frame of the edit session as a one-shot token URL. */
+  "edit.render": { params: EditRenderParams; result: EditRenderResult }
+  /** Viewer: starts a save; "save as" opens the native dialog here, so no path comes from a renderer. */
+  "edit.save": { params: EditSaveParams; result: EditSaveResult }
+  /** Viewer: shows a finished save in the system file manager. */
+  "edit.reveal": { params: EditJobParams; result: OkResult }
+  /** Viewer (Stage 13): preset thumbnails as token URLs, a batch at a time. */
+  "edit.thumbs": { params: EditThumbsParams; result: EditThumbsResult }
+  /**
+   * Viewer (Stage 14): picks a picture for a watermark, a mask or a texture in the native dialog.
+   * The renderer gets an id and a thumbnail token, never the path.
+   */
+  "asset.pick": { params: AssetPickParams; result: AssetPickResult }
+  "asset.release": { params: AssetReleaseParams; result: OkResult }
+  /**
+   * Viewer (Stage 16): the folder a batch writes into, picked in the native dialog.
+   * The renderer gets a handle and the folder's name.
+   */
+  "batch.pickFolder": { params: EmptyParams; result: BatchPickFolderResult }
+  /** Viewer: what a batch would do (counts, names, warnings, samples); main puts the folder's path in. */
+  "batch.plan": { params: BatchParams; result: BatchPlanResult }
+  /** Viewer: starts the batch as a job. */
+  "batch.start": { params: BatchParams; result: JobSnapshot }
 }
 
 export type MethodMap = SidecarMethodMap & MainMethodMap
@@ -1546,9 +2177,36 @@ export const VIEWER_METHODS = [
   "entry.rename",
   "library.tags",
   "library.deleteTag",
+  // Stage 12: the image editor (ADR-0035); the commander's profile has none of these.
+  "edit.open",
+  "edit.render",
+  "edit.info",
+  "edit.estimate",
+  "edit.save",
+  "edit.close",
+  "edit.saved",
+  "edit.reveal",
+  // Stage 13: eyedroppers, preset thumbnails, Count colors.
+  "edit.probe",
+  "edit.thumbs",
+  "edit.colors",
+  // Stage 14: fonts by name, and pictures picked through main's dialog.
+  "edit.fonts",
+  "asset.pick",
+  "asset.release",
+  // Stage 15: Auto of the red-eye tool.
+  "edit.eyes",
+  // Stage 16: batch mode (ADR-0036).
+  "batch.pickFolder",
+  "batch.plan",
+  "batch.start",
+  "batch.undo",
+  "recipe.list",
+  "recipe.save",
+  "recipe.delete",
 ] as const
 
-/** Methods only the commander's profile has (ADR-0027): any file's bytes, the editor, new files. */
+/** Methods only the commander's profile has (ADR-0027): any file's bytes, the editor, new files, commands. */
 export const COMMANDER_ONLY_METHODS = [
   "file.open",
   "document.open",
@@ -1562,6 +2220,20 @@ export const COMMANDER_ONLY_METHODS = [
   "archive.close",
   "archive.check",
   "archive.tools",
+  "compare.dirs",
+  "compare.cancel",
+  "compare.close",
+  "compare.show",
+  "compare.setAction",
+  "compare.plan",
+  "compare.marks",
+  "diff.open",
+  "diff.page",
+  "diff.close",
+  "rename.preview",
+  "rename.undoInfo",
+  "shell.run",
+  "shell.runTool",
 ] as const
 
 /** Every method some renderer may invoke. Main rejects everything else. */
@@ -1647,6 +2319,25 @@ export const COMMANDER_METHODS = [
   "archive.close",
   "archive.check",
   "archive.tools",
+  // Stage C08: compare and synchronize directories, the text diff; sync,
+  // checksum and compare-by-content jobs go through jobs.start.
+  "compare.dirs",
+  "compare.cancel",
+  "compare.close",
+  "compare.show",
+  "compare.setAction",
+  "compare.plan",
+  "compare.marks",
+  "diff.open",
+  "diff.page",
+  "diff.close",
+  // Stage C09: the multi-rename preview and its undo; multiRename,
+  // undoRename and setAttributes jobs go through jobs.start.
+  "rename.preview",
+  "rename.undoInfo",
+  // Stage C10: the command line and user commands (main runs them; ADR-0027).
+  "shell.run",
+  "shell.runTool",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */
@@ -1669,9 +2360,20 @@ export const MAIN_METHODS = [
   "places.list",
   "shell.open",
   "shell.edit",
+  "shell.run",
+  "shell.runTool",
   "shell.reveal",
   "shell.revealPath",
   "clipboard.copyPaths",
   "clipboard.copyText",
   "clipboard.copyImage",
+  "edit.render",
+  "edit.save",
+  "edit.reveal",
+  "edit.thumbs",
+  "asset.pick",
+  "asset.release",
+  "batch.pickFolder",
+  "batch.plan",
+  "batch.start",
 ] as const satisfies readonly (keyof MainMethodMap)[]

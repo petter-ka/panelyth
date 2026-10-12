@@ -101,6 +101,12 @@ export async function switchToViewer(): Promise<void> {
   await bridge.switchTo("viewer")
 }
 
+/** Edit in the media overlay: the same switch, and the viewer opens its editor on the picture (Stage 12). */
+export async function editInViewer(entryId: number): Promise<void> {
+  await publishContext(true).catch(() => undefined)
+  await bridge.editInViewer(entryId)
+}
+
 /**
  * Start: read the context first, so a folder carried over from the viewer
  * opens directly instead of after the persisted one; then follow events.

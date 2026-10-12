@@ -2,6 +2,8 @@ import type { JobSnapshot } from "@panelyth/contracts"
 import {
   cancelJob,
   clearJobError,
+  revealBatch,
+  undoBatch,
   dismissFinished,
   dismissJob,
   isActive,
@@ -35,7 +37,10 @@ function percent(job: JobSnapshot): number {
 
 function JobRow({ job }: { job: JobSnapshot }) {
   const label = useJobsStore((s) => jobLabel(s, job))
+  const undone = useJobsStore((s) => s.undone.has(job.jobId))
   const active = isActive(job)
+  // A finished batch edit (Stage 16) can be shown and taken back.
+  const edited = job.kind === "edit" && !active && job.done > 0
   const tone =
     job.state === "failed" || job.failed > 0
       ? "bg-danger"
@@ -101,6 +106,31 @@ function JobRow({ job }: { job: JobSnapshot }) {
           </button>
         )}
       </div>
+      {edited && (
+        <div className="flex items-center gap-2 text-[0.6875rem]">
+          <button
+            type="button"
+            className="rounded px-1 text-text underline-offset-2 hover:underline"
+            onClick={() => void revealBatch(job.jobId)}
+          >
+            {t("Show in folder")}
+          </button>
+          {!undone && (
+            <Tooltip
+              content={t("Sends the edited pictures to the trash. The originals are not touched.")}
+            >
+              <button
+                type="button"
+                className="rounded px-1 text-text underline-offset-2 hover:underline"
+                onClick={() => void undoBatch(job)}
+                data-testid="job-undo-batch"
+              >
+                {t("Undo this batch")}
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      )}
       {job.error && <p className="text-[0.6875rem] text-danger">{job.error}</p>}
     </li>
   )

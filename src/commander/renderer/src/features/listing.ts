@@ -14,6 +14,7 @@ import { createPageStore, type PageStore } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError, isBridgeAvailable } from "../bridge"
 import { usePanelsStore, type Side } from "./panels"
+import { thumbsOf } from "./thumbs"
 import { t } from "@panelyth/i18n"
 
 // Panel listings (Stage C01, ADR-0028): one query session per panel in the
@@ -56,7 +57,11 @@ export const COLUMN_SORT: Record<ColumnId, SortField> = {
 export const DEFAULT_SORT: SortKey = { field: "name", direction: "asc" }
 
 /** Full (table, Ctrl+F2) or Brief (names in columns, Ctrl+F1); per tab (ADR-0028). */
-export type ViewMode = "full" | "brief"
+/** Full (table), Brief (name columns) or Thumbnails (tiles; Stage C10). */
+export type ViewMode = "full" | "brief" | "thumbs"
+export const VIEW_MODES: readonly ViewMode[] = ["full", "brief", "thumbs"]
+export const readView = (v: unknown): ViewMode =>
+  VIEW_MODES.includes(v as ViewMode) ? (v as ViewMode) : "full"
 
 export type PanelErrorKind = "notFound" | "denied" | "notReady" | "network" | "other"
 
@@ -178,10 +183,21 @@ export function patch(side: Side, value: Partial<PanelState>): void {
 export const isExpired = (error: unknown): boolean =>
   error instanceof PanelythError && error.code === "NOT_FOUND"
 
-const makeStore = (): PageStore =>
-  createPageStore({ fetch: (q, offset, limit) => bridge.page(q, offset, limit), isExpired })
+// In the Thumbnails view a page brings the cached thumbnails of its entries
+// (the viewer's pages do the same); the other views ask for none.
+const makeStore = (side: Side): PageStore =>
+  createPageStore({
+    fetch: async (q, offset, limit) => {
+      const thumbs = thumbsOf(side)
+      const profile = getPanel(side).view === "thumbs" ? thumbs.getProfile() : null
+      const res = await bridge.page(q, offset, limit, profile)
+      if (profile) thumbs.seed(res.items, profile)
+      return res
+    },
+    isExpired,
+  })
 
-const stores: Record<Side, PageStore> = { left: makeStore(), right: makeStore() }
+const stores: Record<Side, PageStore> = { left: makeStore("left"), right: makeStore("right") }
 
 export const pageStoreOf = (side: Side): PageStore => stores[side]
 
@@ -860,7 +876,7 @@ export function setFolderChangeHook(hook: ((side: Side) => void) | null): void {
   folderChangeHook = hook
 }
 
-/** Ctrl+F1 / Ctrl+F2: the Brief or the Full view. */
+/** Ctrl+F1 / Ctrl+F2 / Ctrl+Shift+F1: the Brief, the Full or the Thumbnails view. */
 export function setView(side: Side, view: ViewMode): void {
   if (getPanel(side).view === view) return
   patch(side, { view, revealToken: getPanel(side).revealToken + 1 })

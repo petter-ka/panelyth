@@ -43,6 +43,10 @@ Under it:
 
 Do not hardcode platform-specific directories in application code.
 
+`tmp/` holds short-lived files that never join the preview cache: a picture on its way to the clipboard, entries
+viewed from archives (`tmp/archive`) and the image editor's frames (`tmp/edit`, Stage 12: a few JPEGs per open
+session, removed when the session closes and wiped at start). The preview cache never stores editor frames.
+
 ## Cache key
 
 The key must include:

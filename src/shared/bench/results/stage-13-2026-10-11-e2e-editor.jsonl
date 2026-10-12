@@ -1,0 +1,3 @@
+{"at":"2026-10-11T23:36:32.337Z","test":"editor-levels","levelsFrameMs":37}
+{"at":"2026-10-11T23:36:33.765Z","test":"editor-count-colors","countMs":47}
+{"at":"2026-10-11T23:36:46.496Z","test":"editor-color-24mp","contrastPaints":53,"contrastGapP95Ms":43,"contrastSettleMs":47,"saturationPaints":53,"saturationGapP95Ms":48,"saturationSettleMs":50,"levelsBlackPaints":54,"levelsBlackGapP95Ms":45,"levelsBlackSettleMs":49,"sharpenPaints":53,"sharpenGapP95Ms":41,"sharpenSettleMs":49,"blurPaints":53,"blurGapP95Ms":37,"blurSettleMs":65,"denoisePaints":53,"denoiseGapP95Ms":51,"denoiseSettleMs":94,"looksMs":66,"longTasksOver50":0,"maxLongTaskMs":0}

@@ -1,6 +1,12 @@
 // The only module that touches window.panelyth. Feature code imports from
 // here and receives plain results or PanelythError, never envelopes.
 import type {
+  BatchFolder,
+  BatchParams,
+  BatchPlanResult,
+  RecipeSaveParams,
+  RecipeSaveResult,
+  StoredRecipe,
   ClipMode,
   ClipState,
   ConflictPolicy,
@@ -36,6 +42,23 @@ import type {
   QuerySnapshot,
   QueryIndexOfResult,
   SharedContext,
+  EditAsset,
+  EditEyesParams,
+  NormalizedRect,
+  EditColorsParams,
+  EditColorsResult,
+  EditEstimateParams,
+  EditInfoGroup,
+  EditProbeParams,
+  EditProbeResult,
+  EditThumbsParams,
+  EditThumbsResult,
+  EditOpenResult,
+  EditRenderParams,
+  EditRenderResult,
+  EditSaveParams,
+  EditSaveResult,
+  EditSavedResult,
   ErrorCode,
   EventChannel,
   EventMap,
@@ -199,6 +222,54 @@ export const bridge = {
   tags: async (): Promise<Tag[]> => (await unwrap(() => api().library.tags())).tags,
   deleteTag: async (id: number): Promise<void> => {
     await unwrap(() => api().library.deleteTag(id))
+  },
+  // The image editor (Stage 12, ADR-0035).
+  editOpen: (entryId: number): Promise<EditOpenResult> => unwrap(() => api().edit.open(entryId)),
+  editRender: (params: EditRenderParams): Promise<EditRenderResult> =>
+    unwrap(() => api().edit.render(params)),
+  editInfo: async (sessionId: string): Promise<EditInfoGroup[]> =>
+    (await unwrap(() => api().edit.info(sessionId))).groups,
+  editEstimate: async (params: EditEstimateParams): Promise<number> =>
+    (await unwrap(() => api().edit.estimate(params))).bytes,
+  editSave: (params: EditSaveParams): Promise<EditSaveResult> =>
+    unwrap(() => api().edit.save(params)),
+  editClose: async (sessionId: string): Promise<void> => {
+    await unwrap(() => api().edit.close(sessionId))
+  },
+  editSaved: (jobId: number): Promise<EditSavedResult> => unwrap(() => api().edit.saved(jobId)),
+  editReveal: async (jobId: number): Promise<void> => {
+    await unwrap(() => api().edit.reveal(jobId))
+  },
+  editProbe: (params: EditProbeParams): Promise<EditProbeResult> =>
+    unwrap(() => api().edit.probe(params)),
+  editThumbs: (params: EditThumbsParams): Promise<EditThumbsResult> =>
+    unwrap(() => api().edit.thumbs(params)),
+  editColors: (params: EditColorsParams): Promise<EditColorsResult> =>
+    unwrap(() => api().edit.colors(params)),
+  editEyes: async (params: EditEyesParams): Promise<NormalizedRect[]> =>
+    (await unwrap(() => api().edit.eyes(params))).eyes,
+  editFonts: async (sessionId: string): Promise<string[]> =>
+    (await unwrap(() => api().edit.fonts(sessionId))).families,
+  /** Opens main's file dialog; null when it was cancelled. */
+  assetPick: async (sessionId: string): Promise<EditAsset | null> =>
+    (await unwrap(() => api().edit.pickAsset(sessionId))).asset,
+  assetRelease: async (sessionId: string, assetId: string): Promise<void> => {
+    await unwrap(() => api().edit.releaseAsset(sessionId, assetId))
+  },
+  /** Batch mode (Stage 16): main's folder dialog; a handle and a name, null when cancelled. */
+  batchPickFolder: async (): Promise<BatchFolder | null> =>
+    (await unwrap(() => api().batch.pickFolder())).folder,
+  batchPlan: (params: BatchParams): Promise<BatchPlanResult> =>
+    unwrap(() => api().batch.plan(params)),
+  batchStart: (params: BatchParams): Promise<JobSnapshot> =>
+    unwrap(() => api().batch.start(params)),
+  batchUndo: (jobId: number): Promise<JobSnapshot> => unwrap(() => api().batch.undo(jobId)),
+  recipeList: async (): Promise<StoredRecipe[]> =>
+    (await unwrap(() => api().recipes.list())).recipes,
+  recipeSave: (params: RecipeSaveParams): Promise<RecipeSaveResult> =>
+    unwrap(() => api().recipes.save(params)),
+  recipeDelete: async (id: number): Promise<void> => {
+    await unwrap(() => api().recipes.remove(id))
   },
   on<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void {
     return api().onEvent(channel, listener)

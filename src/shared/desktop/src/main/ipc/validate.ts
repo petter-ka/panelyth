@@ -1,5 +1,8 @@
 import { isAbsolute } from "node:path"
 import {
+  BATCH_FOLDER_ID,
+  MAX_RECIPE_NAME_CHARS,
+  recipeProblem,
   CONFLICT_DECISIONS,
   isContentItem,
   CONFLICT_POLICIES,
@@ -30,8 +33,36 @@ import {
   FIND_ATTR_BITS,
   FIND_ENCODINGS,
   ARCHIVE_CREATE_FORMATS,
+  COMPARE_SHOW,
+  DIFF_ACTIONS,
+  HASH_ALGORITHMS,
+  MAX_COMPARE_TOLERANCE_MS,
+  MAX_TEXT_DIFF_PAGE,
+  MAX_ATTR_TIME_MS,
+  MAX_RENAME_DIGITS,
+  MAX_RENAME_MASK_BYTES,
+  MAX_RENAME_PREVIEW_PAGE,
+  MAX_RENAME_STEP,
+  MIN_ATTR_TIME_MS,
+  RENAME_CASES,
+  SETTABLE_ATTRS,
   MAX_FIND_ROOTS,
   MAX_FIND_TEXT_CHARS,
+  MAX_COMMAND_CHARS,
+  isCommandText,
+  EDIT_QUALITIES,
+  MAX_DPI,
+  MAX_EDIT_EDGE,
+  MAX_JPEG_QUALITY,
+  METADATA_POLICIES,
+  SAVE_FORMATS,
+  SAVE_TARGETS,
+  ASSET_ID,
+  COLOR_SCOPES,
+  MAX_EDIT_THUMBS,
+  MAX_SWATCHES,
+  MAX_THUMB_EDGE,
+  editListProblem,
   type RendererMethod,
 } from "@panelyth/contracts"
 
@@ -176,6 +207,80 @@ function findStartProblem(p: unknown): string | null {
   }
   return null
 }
+const hashAlgorithms: ReadonlySet<unknown> = new Set(HASH_ALGORITHMS)
+const compareShow: ReadonlySet<unknown> = new Set(COMPARE_SHOW)
+const diffActions: ReadonlySet<unknown> = new Set([...DIFF_ACTIONS, "default"])
+
+/** The date rules of a compare (Stage C08). */
+function compareOptionsProblem(p: Obj): string | null {
+  if (!isCount(p.toleranceMs) || p.toleranceMs > MAX_COMPARE_TOLERANCE_MS)
+    return `toleranceMs must be 0..${MAX_COMPARE_TOLERANCE_MS}`
+  if (typeof p.dst !== "boolean" || typeof p.ignoreDates !== "boolean")
+    return "invalid dst or ignoreDates"
+  return null
+}
+const compareIdParams: Validator = (p) =>
+  shape(p, ["compareId"]) && isId(p.compareId) ? null : "expected { compareId }"
+
+const renameCases: ReadonlySet<unknown> = new Set(RENAME_CASES)
+const RENAME_PLAN_KEYS = [
+  "nameMask",
+  "extMask",
+  "search",
+  "replace",
+  "regex",
+  "matchCase",
+  "case",
+  "start",
+  "step",
+  "digits",
+]
+const isMaskText = (v: unknown): boolean =>
+  typeof v === "string" && v.length <= MAX_RENAME_MASK_BYTES && !v.includes("\0")
+const intIn = (v: unknown, min: number, max: number): boolean =>
+  Number.isSafeInteger(v) && (v as number) >= min && (v as number) <= max
+
+/**
+ * A multi-rename plan (Stage C09): shape and bounds. Whether the masks and
+ * the expression compile is Go's to say (rename.preview reports the field).
+ */
+function renamePlanProblem(plan: unknown): string | null {
+  if (!shape(plan, RENAME_PLAN_KEYS)) return `expected plan { ${RENAME_PLAN_KEYS.join(", ")} }`
+  for (const k of ["nameMask", "extMask", "search", "replace"]) {
+    if (!isMaskText(plan[k])) return `invalid ${k}`
+  }
+  if (typeof plan.regex !== "boolean" || typeof plan.matchCase !== "boolean")
+    return "invalid regex or matchCase"
+  if (!renameCases.has(plan.case)) return "invalid case"
+  if (!intIn(plan.start, -MAX_RENAME_START, MAX_RENAME_START)) return "invalid start"
+  if (!intIn(plan.step, -MAX_RENAME_STEP, MAX_RENAME_STEP)) return "invalid step"
+  return intIn(plan.digits, 1, MAX_RENAME_DIGITS) ? null : "invalid digits"
+}
+
+/** setAttributes: bits to set and to clear never overlap; at least one change. */
+function attributesProblem(p: Obj): string | null {
+  const bits = (set: unknown, clear: unknown, all: number): boolean =>
+    (set === undefined || intIn(set, 0, all)) &&
+    (clear === undefined || intIn(clear, 0, all)) &&
+    (((set as number | undefined) ?? 0) & ((clear as number | undefined) ?? 0)) === 0 &&
+    ((((set as number | undefined) ?? 0) | ((clear as number | undefined) ?? 0)) & ~all) === 0
+  if (!bits(p.setAttrs, p.clearAttrs, SETTABLE_ATTRS)) return "invalid setAttrs or clearAttrs"
+  if (!bits(p.setMode, p.clearMode, 0o777)) return "invalid setMode or clearMode"
+  for (const k of ["modifiedMs", "accessedMs"]) {
+    if (p[k] !== undefined && !intIn(p[k], MIN_ATTR_TIME_MS, MAX_ATTR_TIME_MS))
+      return `invalid ${k}`
+  }
+  if (p.recursive !== undefined && typeof p.recursive !== "boolean") return "invalid recursive"
+  const changes =
+    ((p.setAttrs as number | undefined) ?? 0) |
+    ((p.clearAttrs as number | undefined) ?? 0) |
+    ((p.setMode as number | undefined) ?? 0) |
+    ((p.clearMode as number | undefined) ?? 0)
+  return changes !== 0 || p.modifiedMs !== undefined || p.accessedMs !== undefined
+    ? null
+    : "nothing to change"
+}
+
 const jobIdParams: Validator = (p) =>
   shape(p, ["jobId"]) && isId(p.jobId) ? null : "expected { jobId }"
 const isLabel = (v: unknown): boolean =>
@@ -264,7 +369,61 @@ function jobStartProblem(p: unknown): string | null {
         return "invalid deleteOriginals"
       return sourceProblem(p.source)
     case "testArchive":
+    case "hashVerify":
       return shape(p, ["kind", "source"]) ? sourceProblem(p.source) : "expected { kind, source }"
+    case "sync":
+      // A sync has no source: it applies the plan of a compare held in Go.
+      if (!shapeWithOptional(p, ["kind", "compareId", "planVersion"], ["deletePermanently"]))
+        return "expected { kind, compareId, planVersion, deletePermanently? }"
+      if (!isId(p.compareId) || !isId(p.planVersion)) return "invalid compareId or planVersion"
+      return p.deletePermanently === undefined || typeof p.deletePermanently === "boolean"
+        ? null
+        : "invalid deletePermanently"
+    case "hashCreate":
+      if (
+        !shapeWithOptional(
+          p,
+          ["kind", "source", "algorithm", "perFile"],
+          ["destinationDirId", "name"],
+        )
+      )
+        return "expected { kind, source, algorithm, perFile, destinationDirId?, name? }"
+      if (!hashAlgorithms.has(p.algorithm)) return "invalid algorithm"
+      if (typeof p.perFile !== "boolean") return "invalid perFile"
+      // One list needs its folder and name; one file per file takes neither.
+      if (p.perFile && (p.destinationDirId !== undefined || p.name !== undefined))
+        return "perFile takes no destinationDirId or name"
+      if (!p.perFile && (!isId(p.destinationDirId) || !isName(p.name)))
+        return "a checksum list needs destinationDirId and name"
+      return sourceProblem(p.source)
+    case "compareFiles":
+      return shape(p, ["kind", "leftId", "rightId"]) && isId(p.leftId) && isId(p.rightId)
+        ? null
+        : "expected { kind, leftId, rightId }"
+    case "multiRename":
+      if (!shape(p, ["kind", "source", "plan"])) return "expected { kind, source, plan }"
+      return renamePlanProblem(p.plan) ?? sourceProblem(p.source)
+    case "undoRename":
+      // An undo has no source: it takes back the journal Go keeps.
+      return shape(p, ["kind"]) ? null : "expected { kind }"
+    case "setAttributes":
+      if (
+        !shapeWithOptional(
+          p,
+          ["kind", "source"],
+          [
+            "setAttrs",
+            "clearAttrs",
+            "setMode",
+            "clearMode",
+            "modifiedMs",
+            "accessedMs",
+            "recursive",
+          ],
+        )
+      )
+        return "expected { kind, source, setAttrs?, clearAttrs?, setMode?, clearMode?, modifiedMs?, accessedMs?, recursive? }"
+      return attributesProblem(p) ?? sourceProblem(p.source)
     case "favorite":
       if (!shape(p, ["kind", "source", "favorite"]) || typeof p.favorite !== "boolean")
         return "expected { kind, source, favorite }"
@@ -300,10 +459,161 @@ const windowParams: Validator = (p) =>
     ? null
     : "expected { entryId, theme?, lang? }"
 
+// The image editor (Stage 12, ADR-0035). An edit list is checked for its
+// structure here (editListProblem) and for its meaning in Go.
+const SESSION_ID = /^[0-9a-f]{24}$/
+const isSessionId = (v: unknown): v is string => typeof v === "string" && SESSION_ID.test(v)
+const editQualities: ReadonlySet<unknown> = new Set(EDIT_QUALITIES)
+const saveFormats: ReadonlySet<unknown> = new Set(SAVE_FORMATS)
+const saveTargets: ReadonlySet<unknown> = new Set(SAVE_TARGETS)
+const metadataPolicies: ReadonlySet<unknown> = new Set(METADATA_POLICIES)
+const isQuality = (v: unknown): boolean =>
+  Number.isSafeInteger(v) && (v as number) >= 0 && (v as number) <= MAX_JPEG_QUALITY
+const sessionParams: Validator = (p) =>
+  shape(p, ["sessionId"]) && isSessionId(p.sessionId) ? null : "expected { sessionId }"
+
+const isView = (v: unknown): boolean =>
+  shape(v, ["maxEdge"]) &&
+  Number.isSafeInteger(v.maxEdge) &&
+  (v.maxEdge as number) >= 1 &&
+  (v.maxEdge as number) <= MAX_EDIT_EDGE
+const colorScopes: ReadonlySet<unknown> = new Set(COLOR_SCOPES)
+const isUnit = (v: unknown): boolean => typeof v === "number" && v >= 0 && v <= 1
+
+function editProbeProblem(p: unknown): string | null {
+  if (!shape(p, ["sessionId", "editList", "view", "x", "y", "radius"]))
+    return "expected { sessionId, editList, view, x, y, radius }"
+  if (!isSessionId(p.sessionId) || !isView(p.view)) return "invalid sessionId or view"
+  if (!isUnit(p.x) || !isUnit(p.y)) return "the point is 0..1 of the picture"
+  if (!isCount(p.radius) || p.radius > 16) return "invalid radius"
+  return editListProblem(p.editList)
+}
+
+function editThumbsProblem(p: unknown): string | null {
+  if (!shape(p, ["sessionId", "editLists", "edge"]))
+    return "expected { sessionId, editLists, edge }"
+  if (!isSessionId(p.sessionId)) return "invalid sessionId"
+  if (
+    !Number.isSafeInteger(p.edge) ||
+    (p.edge as number) < 32 ||
+    (p.edge as number) > MAX_THUMB_EDGE
+  )
+    return "invalid edge"
+  if (!Array.isArray(p.editLists) || p.editLists.length > MAX_EDIT_THUMBS)
+    return `at most ${MAX_EDIT_THUMBS} thumbnails`
+  for (const list of p.editLists) {
+    const problem = editListProblem(list)
+    if (problem) return problem
+  }
+  return null
+}
+
+function editColorsProblem(p: unknown): string | null {
+  if (!shape(p, ["sessionId", "editList", "scope", "maxColors"]))
+    return "expected { sessionId, editList, scope, maxColors }"
+  if (!isSessionId(p.sessionId) || !colorScopes.has(p.scope)) return "invalid sessionId or scope"
+  if (!isCount(p.maxColors) || p.maxColors < 1 || p.maxColors > MAX_SWATCHES)
+    return "invalid maxColors"
+  return editListProblem(p.editList)
+}
+
+function editRenderProblem(p: unknown): string | null {
+  if (
+    !shapeWithOptional(
+      p,
+      ["sessionId", "rev", "editList", "view", "quality", "histogram"],
+      ["histogramAt"],
+    )
+  )
+    return "expected { sessionId, rev, editList, view, quality, histogram, histogramAt? }"
+  if (!isSessionId(p.sessionId) || !isId(p.rev)) return "invalid sessionId or rev"
+  if (p.histogramAt !== undefined && (!isCount(p.histogramAt) || p.histogramAt > 512))
+    return "invalid histogramAt"
+  if (!isView(p.view)) return "invalid view"
+  if (!editQualities.has(p.quality) || typeof p.histogram !== "boolean")
+    return "invalid quality or histogram"
+  return editListProblem(p.editList)
+}
+
+function editEstimateProblem(p: unknown): string | null {
+  if (!shape(p, ["sessionId", "editList", "format", "quality", "metadata"]))
+    return "expected { sessionId, editList, format, quality, metadata }"
+  if (!isSessionId(p.sessionId)) return "invalid sessionId"
+  if (!saveFormats.has(p.format) || !isQuality(p.quality) || !metadataPolicies.has(p.metadata))
+    return "invalid format, quality or metadata"
+  return editListProblem(p.editList)
+}
+
+function editSaveProblem(p: unknown): string | null {
+  // No path: a "save as" destination comes from main's own dialog (ADR-0027).
+  if (!shape(p, ["sessionId", "editList", "target", "format", "quality", "metadata", "dpi"]))
+    return "expected { sessionId, editList, target, format, quality, metadata, dpi }"
+  if (!isSessionId(p.sessionId)) return "invalid sessionId"
+  if (!saveTargets.has(p.target) || !saveFormats.has(p.format)) return "invalid target or format"
+  if (!isQuality(p.quality) || !metadataPolicies.has(p.metadata))
+    return "invalid quality or metadata"
+  if (typeof p.dpi !== "number" || !(p.dpi >= 0 && p.dpi <= MAX_DPI)) return "invalid dpi"
+  return editListProblem(p.editList)
+}
+
+/** A batch (Stage 16): a selection and a recipe; the folder is a handle of main's, never a path. */
+function batchProblem(p: unknown): string | null {
+  if (!shapeWithOptional(p, ["source", "recipe"], ["folderId"]))
+    return "expected { source, recipe, folderId? }"
+  if (
+    p.folderId !== undefined &&
+    !(typeof p.folderId === "string" && BATCH_FOLDER_ID.test(p.folderId))
+  )
+    return "invalid folderId"
+  return sourceProblem(p.source) ?? recipeProblem(p.recipe)
+}
+
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
   "app.switch": (p) =>
-    shape(p, ["to"]) && (p.to === "viewer" || p.to === "commander") ? null : "expected { to }",
+    shapeWithOptional(p, ["to"], ["edit"]) &&
+    (p.to === "viewer" || p.to === "commander") &&
+    (p.edit === undefined || isId(p.edit))
+      ? null
+      : "expected { to, edit? }",
+  "edit.open": (p) => (shape(p, ["entryId"]) && isId(p.entryId) ? null : "expected { entryId }"),
+  "edit.render": editRenderProblem,
+  "edit.info": sessionParams,
+  "edit.estimate": editEstimateProblem,
+  "edit.save": editSaveProblem,
+  "edit.close": sessionParams,
+  "edit.saved": jobIdParams,
+  "edit.reveal": jobIdParams,
+  "edit.probe": editProbeProblem,
+  "edit.thumbs": editThumbsProblem,
+  "edit.colors": editColorsProblem,
+  "edit.fonts": sessionParams,
+  "edit.eyes": (p) => {
+    if (!shape(p, ["sessionId", "editList"])) return "expected { sessionId, editList }"
+    if (!isSessionId(p.sessionId)) return "invalid sessionId"
+    return editListProblem(p.editList)
+  },
+  "asset.pick": sessionParams,
+  "batch.pickFolder": empty,
+  "batch.plan": batchProblem,
+  "batch.start": batchProblem,
+  "batch.undo": jobIdParams,
+  "recipe.list": empty,
+  "recipe.save": (p) => {
+    if (!shape(p, ["id", "name", "recipe"])) return "expected { id, name, recipe }"
+    if (!isCount(p.id)) return "invalid id"
+    if (typeof p.name !== "string" || p.name.length === 0 || p.name.length > MAX_RECIPE_NAME_CHARS)
+      return "invalid name"
+    return recipeProblem(p.recipe)
+  },
+  "recipe.delete": (p) => (shape(p, ["id"]) && isId(p.id) ? null : "expected { id }"),
+  "asset.release": (p) =>
+    shape(p, ["sessionId", "assetId"]) &&
+    isSessionId(p.sessionId) &&
+    typeof p.assetId === "string" &&
+    ASSET_ID.test(p.assetId)
+      ? null
+      : "expected { sessionId, assetId }",
   "system.ping": empty,
   "system.info": empty,
   "sidecar.getStatus": empty,
@@ -349,6 +659,68 @@ export const validators: Record<RendererMethod, Validator> = {
     return selectionProblem(p.selection)
   },
   "archive.tools": empty,
+  // Stage C08. The roots of a compare are folder ids: a sync writes to them.
+  "compare.dirs": (p) => {
+    const keys = [
+      "leftDirId",
+      "rightDirId",
+      "toleranceMs",
+      "dst",
+      "ignoreDates",
+      "content",
+      "asymmetric",
+    ]
+    if (!shape(p, keys)) return `expected { ${keys.join(", ")} }`
+    if (!isId(p.leftDirId) || !isId(p.rightDirId)) return "invalid leftDirId or rightDirId"
+    if (typeof p.content !== "boolean" || typeof p.asymmetric !== "boolean")
+      return "invalid content or asymmetric"
+    return compareOptionsProblem(p)
+  },
+  "compare.cancel": compareIdParams,
+  "compare.close": compareIdParams,
+  "compare.plan": compareIdParams,
+  "compare.show": (p) =>
+    shape(p, ["compareId", "show"]) &&
+    isId(p.compareId) &&
+    Array.isArray(p.show) &&
+    p.show.length <= COMPARE_SHOW.length &&
+    p.show.every((s) => compareShow.has(s))
+      ? null
+      : "expected { compareId, show }",
+  "compare.setAction": (p) => {
+    if (!shape(p, ["compareId", "selection", "action"]) || !isId(p.compareId))
+      return "expected { compareId, selection, action }"
+    return diffActions.has(p.action) ? selectionProblem(p.selection) : "invalid action"
+  },
+  "compare.marks": (p) => {
+    const keys = ["leftQueryId", "rightQueryId", "toleranceMs", "dst", "ignoreDates"]
+    if (!shape(p, keys)) return `expected { ${keys.join(", ")} }`
+    if (!isId(p.leftQueryId) || !isId(p.rightQueryId) || p.leftQueryId === p.rightQueryId)
+      return "expected two different sessions"
+    return compareOptionsProblem(p)
+  },
+  "diff.open": (p) =>
+    shape(p, ["leftId", "rightId"]) && isId(p.leftId) && isId(p.rightId)
+      ? null
+      : "expected { leftId, rightId }",
+  "diff.page": (p) => {
+    if (!shape(p, ["diffId", "offset", "limit"]) || !isId(p.diffId) || !isCount(p.offset))
+      return "expected { diffId, offset, limit }"
+    const limit = p.limit as number
+    return Number.isSafeInteger(limit) && limit >= 1 && limit <= MAX_TEXT_DIFF_PAGE
+      ? null
+      : `limit must be 1..${MAX_TEXT_DIFF_PAGE}`
+  },
+  "diff.close": (p) => (shape(p, ["diffId"]) && isId(p.diffId) ? null : "expected { diffId }"),
+  // Stage C09: the multi-rename preview, one page of it.
+  "rename.preview": (p) => {
+    if (!shape(p, ["selection", "plan", "offset", "limit"]) || !isCount(p.offset))
+      return "expected { selection, plan, offset, limit }"
+    if (!intIn(p.limit, 1, MAX_RENAME_PREVIEW_PAGE))
+      return `limit must be 1..${MAX_RENAME_PREVIEW_PAGE}`
+    return renamePlanProblem(p.plan) ?? selectionProblem(p.selection)
+  },
+  "rename.undoInfo": empty,
   "dir.cancelScan": (p) => (shape(p, ["scanId"]) && isId(p.scanId) ? null : "expected { scanId }"),
   "query.open": (p) => {
     const keys = [
@@ -525,6 +897,31 @@ export const validators: Record<RendererMethod, Validator> = {
       ? null
       : "expected { entryId, allowProgram? }",
   "shell.edit": entryParams,
+  // Stage C10: a typed line and the folder id it runs in; never a path.
+  "shell.run": (p) =>
+    shapeWithOptional(p, ["command", "dirId"], ["console"]) &&
+    isCommandText(p.command, MAX_COMMAND_CHARS) &&
+    isId(p.dirId) &&
+    (p.console === undefined || typeof p.console === "boolean") &&
+    // An empty line only opens a console (Shift+Enter); it never runs.
+    (p.command.trim() !== "" || p.console === true)
+      ? null
+      : "expected { command, dirId, console? }",
+  // A user command by its id, with entry ids and a selection: main reads the
+  // command itself from library.db.
+  "shell.runTool": (p) => {
+    if (
+      !shapeWithOptional(p, ["toolId", "dirId"], ["otherDirId", "cursorId", "selection"]) ||
+      typeof p.toolId !== "string" ||
+      !/^[a-z0-9]{1,16}$/.test(p.toolId) ||
+      !isId(p.dirId) ||
+      (p.otherDirId !== undefined && !isId(p.otherDirId)) ||
+      (p.cursorId !== undefined && !isId(p.cursorId))
+    ) {
+      return "expected { toolId, dirId, otherDirId?, cursorId?, selection? }"
+    }
+    return p.selection === undefined ? null : selectionProblem(p.selection)
+  },
   "file.open": entryParams,
   "document.open": windowParams,
   "media.openWindow": (p) =>

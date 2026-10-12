@@ -116,6 +116,91 @@ fs.mkfile({ parentDirId, name })   // commander, Shift+F4 → { entryId, created
 > only with `allowProgram` (otherwise `PERMISSION_DENIED` with `details.reason: "program"`, which the commander answers
 > per its "Run programs with Enter" setting). `shell.edit` starts the editor without a shell; under
 > `PANELYTH_TEST_SHELL=record` both are recorded instead.
+>
+> As built (Stage C10, ADR-0027): `shell.run({ command, dirId, console? })` runs a typed line through the OS shell in
+> the folder `dirId`; `shell.runTool({ toolId, dirId, otherDirId?, cursorId?, selection? })` runs a user command that
+> main reads from `commander.tools` and fills from these ids. Both are the commander's, answered in main, and accepted
+> only from the commander's own view while it is shown. Refusals carry `details.reason`: `hidden`, `folder`, `unc`,
+> `noEntry`, `noOther`, `tooMany`, `tooLong`, `dir`, `shadowed`, `name`.
+
+## Image editor (Stages 12 to 15, viewer only)
+
+```ts
+edit.open({ entryId })             // → { sessionId, name, width, height, format, hasAlpha, dpi, saveFormat, canReplace }
+edit.render({ sessionId, rev, editList, view: { maxEdge }, quality, histogram })
+                                   // → { rev, frame: { url, width, height }, output, histogram? } | { rev, superseded }
+edit.info({ sessionId })           // EXIF tags in groups
+edit.estimate({ sessionId, editList, format, quality, metadata })   // → { bytes }
+edit.save({ sessionId, editList, target, format, quality, metadata, dpi })   // → { jobId, name }; an editSave job
+edit.close({ sessionId })
+edit.saved({ jobId })              // → { entryId, name } once the saved file is indexed
+edit.reveal({ jobId })             // shows the saved file in the file manager
+// Stage 13
+edit.render({ …, histogramAt })    // also → before: the histogram after that many active operations
+edit.probe({ sessionId, editList, view, x, y, radius })       // → { rgba, hex }: the color around a point (0..1)
+edit.thumbs({ sessionId, editLists, edge })                   // → { thumbs: ({ url, width, height } | null)[] }
+edit.colors({ sessionId, editList, scope, maxColors })        // → { distinct, palette: { hex, share }[], hasAlpha, width, height }
+// Stage 14
+edit.fonts({ sessionId })          // → { families: string[] }: names only, the built-in ones first
+asset.pick({ sessionId })          // → { asset: { assetId, name, width, height, thumbUrl } | null }: main's file dialog
+asset.release({ sessionId, assetId })
+// Stage 15
+edit.eyes({ sessionId, editList })  // → { eyes: { x, y, w, h }[] }: red pupils in the rendered picture, in pairs
+// Stage 16: batch mode (ADR-0036)
+batch.pickFolder()                              // → { folder: { folderId, name } | null }: main's folder dialog
+batch.plan({ source, recipe, folderId? })       // → { count, skipped, names, bytes, estimateBytes, warnings, problems, samples }
+batch.start({ source, recipe, folderId? })      // → JobSnapshot (kind "edit")
+batch.undo({ jobId })                           // → JobSnapshot (kind "undoEdit"): the created files go to the trash
+recipe.list()                                   // → { recipes: { id, builtin, name, recipe }[] }
+recipe.save({ id, name, recipe })               // → { id, name }
+recipe.delete({ id })
+```
+
+> As built (Stage 12, ADR-0035, ADR-0027): the methods are in the viewer's profile only. An edit list is
+> `{ op, p, off? }[]` (`rotate`, `flip`, `crop`, `resize`, `canvas`, `dpi`); main checks its structure
+> (`editListProblem`: at most 512 operations, 1 MB, plain JSON with finite numbers) and Go its meaning. `rev` orders
+> renders: a higher one replaces every lower one, which answers `superseded`. A frame is a JPEG in `<cache>/tmp/edit`
+> behind a `panelyth-media:` token; `edit.render`, `edit.save` and `edit.reveal` are answered in main, which calls the
+> main-only sidecar methods `edit.frame`, `edit.source`, `edit.write` and `edit.savedPath`, so no path reaches a
+> renderer: a "save as" destination comes from main's save dialog. `target` is `copy` (`name (edited).ext` beside
+> the original), `as` or `replace` (the original goes to the trash first; `TRASH_UNAVAILABLE` where there is none).
+> The commander's Edit is `app.switch({ to: "viewer", edit: entryId })`; main shows the viewer and sends it
+> `edit.request`.
+>
+> As built (Stage 13): the list also takes `lighting`, `colors`, `levels`, `curves`, `grayscale`, `sepia`,
+> `negative`, `swapChannels`, `replaceColor`, `sharpen`, `blur`, `denoise` and `reduceColors`; a missing parameter is
+> the value that changes nothing. `edit.probe` is how an eyedropper reads a color (no pixel reaches the renderer);
+> `edit.thumbs` renders at most 16 lists at up to 256 px in one call and is answered in main through the main-only
+> `edit.thumbFrames`; `edit.colors` counts the proxy (`preview`, an estimate for the palette display) or the whole
+> picture (`edited`, `original`: exact, decodes the source again). All three are in the viewer's profile only.
+>
+> As built (Stage 14): the list also takes `border`, `frameMask`, `watermark`, `obscure`, `lens`, `bump`, `sketch`
+> and `oil`; sizes are percentages of the picture's shorter edge. A picture for a watermark, a mask or a texture is
+> an **asset**: `asset.pick` opens the native dialog in main, which hands the path to the main-only `edit.assetAdd`;
+> the sidecar checks the file (a regular PNG, JPEG, WebP or GIF by content, at most 16 MB and 8,000 px, not
+> animated; otherwise `EDIT_ASSET_INVALID`) and answers with an id that is a hash of its content and a thumbnail
+> file, which main turns into a token. An edit list names the asset by that id (`assetId`); no renderer method takes
+> a path. Fonts are named by family; an unknown family is drawn with the built-in default.
+>
+> As built (Stage 15): `draw { strokes }` (one drawing; a stroke is `{ tool, color, size, hardness, opacity,
+> points, … }` with `tool` one of brush, eraser, line, arrow, rect, ellipse, text, fill), `clone { points, source,
+> size, … }`, `heal { mode: "spot" | "brush", points, source?, size }` and `redeye { rect | auto, strength, pupil }`.
+> Points are `[x, y]` or `[x, y, pressure]`, 0..1 of the picture. A stroke in progress is sent as an ordinary
+> `edit.render` of the list as it is, once per animation frame; there is no incremental parameter. The whole list
+> is at most 1 MB. None of these operations is batchable. `edit.eyes` only finds; the editor adds a `redeye` step
+> per pupil.
+>
+> As built (Stage 16): a recipe is `{ version: 1, ops, output }` with `output { format: "keep" | SaveFormat,
+> quality?, metadata, dpi?, destination: "beside" | "folder" | "replace", template?, conflict: "keepBoth" | "skip" |
+> "replace" }`; `ops` holds at most 64 operations and none of `draw`, `clone`, `heal`, `redeye`. `source` is
+> `{ selection }`. Main checks a recipe's structure (`recipeProblem`) and answers `batch.pickFolder`, `batch.plan`
+> and `batch.start` itself: a picked folder is a 16-digit handle to the renderer, and main puts its path in when it
+> calls the main-only `edit.plan` and `edit.batch`. `jobs.start` refuses the kinds `edit` and `undoEdit`. The plan
+> reads no pixels: `skipped` is `{ reason: "folder" | "video" | "other" | "unsupported" | "notWritable", count }[]`,
+> `warnings` are `trashUnavailable`, `formatChange` and `alphaLoss`, `problems` are `{ code, op, detail }` (the
+> recipe cannot run), `names` the first five result names and `samples` up to twelve `{ id, name }` to judge the
+> recipe on. Item errors of an edit job add `DECODE_FAILED` and `UNSUPPORTED` to the job codes. All of it is in the
+> viewer's profile only.
 
 ## Events
 

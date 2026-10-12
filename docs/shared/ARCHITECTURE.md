@@ -60,10 +60,11 @@ Shared code:
   app switcher rail;
 - `src/shared/renderer-core` (Stage P01): bridge, page store, selection algebra, keymap, theme, settings and sidecar
   stores;
-- `src/shared/media-ui` (Stage C05): `ImageViewer`, `VideoPlayer`, their request logic (viewer-fit previews, original
+- `src/shared/media-ui` (Stage C05; the tile parts since Stage C10: geometry, thumbnail and cover stores, the
+  preview frame `TileThumb`): `ImageViewer`, `VideoPlayer`, their request logic (viewer-fit previews, original
   URLs, video preferences) and zoom/transform math, behind a small port (`configureMedia`) that each app sets up with
-  its own bridge; preview lanes are per app, so the two apps never drop each other's queued work. Later the tile
-  components (Stage C10).
+  its own bridge; preview lanes are per app (per panel in the commander's Thumbnails view), so no view drops
+  another's queued work. Each app keeps the tile itself (selection or cursor and marks, the name line, drag and drop).
 
 ## Responsibility boundaries
 

@@ -7,9 +7,17 @@ import type {
   ClipMode,
   ClipState,
   CommanderJobParams,
+  CompareDirsParams,
+  CompareMarksParams,
+  CompareMarksResult,
+  ComparePlan,
+  CompareShow,
+  CompareStartResult,
+  CompareView,
   ConflictDecision,
   ConflictPolicy,
   CopyPathsResult,
+  DiffAction,
   FsMkdirResult,
   FsMkfileResult,
   FileOpenResult,
@@ -18,7 +26,11 @@ import type {
   MediaOpenResult,
   PreviewEnsureParams,
   PreviewEnsureResult,
+  PreviewProfile,
   Properties,
+  RenamePlan,
+  RenamePreviewResult,
+  RenameUndoInfo,
   JobErrorsResult,
   CommanderApi,
   DirOpenResult,
@@ -38,7 +50,10 @@ import type {
   QuerySnapshot,
   RpcEnvelope,
   SharedContext,
+  ShellRunToolParams,
   SidecarStatus,
+  TextDiffOpenResult,
+  TextDiffPageResult,
   Volume,
 } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
@@ -80,6 +95,10 @@ export function resetBridgeCache(): void {
 export const bridge = {
   switchTo: async (to: AppId): Promise<void> => {
     await unwrap(() => api().app.switch(to))
+  },
+  /** Shows the viewer with its editor open on a picture (Stage 12); the commander itself edits nothing (ADR-0027). */
+  editInViewer: async (entryId: number): Promise<void> => {
+    await unwrap(() => api().app.switch("viewer", entryId))
   },
   exit: async (): Promise<void> => {
     await unwrap(() => api().app.exit())
@@ -134,12 +153,54 @@ export const bridge = {
   ): Promise<ArchiveCheckResult> => unwrap(() => api().archive.check(selection, destinationDirId)),
   /** Whether 7-Zip was found (7z, rar and others; creating 7z). */
   sevenZip: async (): Promise<boolean> => (await unwrap(() => api().archive.tools())).sevenZip,
+  // Stage C08: compare and synchronize directories, the text diff.
+  compareDirs: (p: CompareDirsParams): Promise<CompareStartResult> =>
+    unwrap(() => api().compare.dirs(p)),
+  compareCancel: async (compareId: number): Promise<boolean> =>
+    (await unwrap(() => api().compare.cancel(compareId))).cancelled,
+  compareClose: async (compareId: number): Promise<void> => {
+    await unwrap(() => api().compare.close(compareId))
+  },
+  compareShow: (compareId: number, show: readonly CompareShow[]): Promise<CompareView> =>
+    unwrap(() => api().compare.show(compareId, show)),
+  compareSetAction: (
+    compareId: number,
+    selection: SelectionDescriptor,
+    action: DiffAction | "default",
+  ): Promise<CompareView> => unwrap(() => api().compare.setAction(compareId, selection, action)),
+  comparePlan: (compareId: number): Promise<ComparePlan> =>
+    unwrap(() => api().compare.plan(compareId)),
+  /** Shift+F2: what is unique or newer in each of two listings. */
+  compareMarks: (p: CompareMarksParams): Promise<CompareMarksResult> =>
+    unwrap(() => api().compare.marks(p)),
+  diffOpen: (leftId: number, rightId: number): Promise<TextDiffOpenResult> =>
+    unwrap(() => api().diff.open(leftId, rightId)),
+  diffPage: (diffId: number, offset: number, limit: number): Promise<TextDiffPageResult> =>
+    unwrap(() => api().diff.page(diffId, offset, limit)),
+  diffClose: async (diffId: number): Promise<void> => {
+    await unwrap(() => api().diff.close(diffId))
+  },
+  // Stage C09: the multi-rename preview (one page of it) and what can be undone.
+  renamePreview: (
+    selection: SelectionDescriptor,
+    plan: RenamePlan,
+    offset: number,
+    limit: number,
+  ): Promise<RenamePreviewResult> =>
+    unwrap(() => api().rename.preview(selection, plan, offset, limit)),
+  renameUndoInfo: (): Promise<RenameUndoInfo> => unwrap(() => api().rename.undoInfo()),
   cancelScan: async (scanId: number): Promise<void> => {
     await unwrap(() => api().dir.cancelScan(scanId))
   },
   openQuery: (d: QueryDescriptor): Promise<QuerySnapshot> => unwrap(() => api().query.open(d)),
-  page: (queryId: number, offset: number, limit: number): Promise<QueryPageResult> =>
-    unwrap(() => api().query.page({ queryId, offset, limit, thumbProfile: null })),
+  /** thumbProfile: the Thumbnails view's pages carry their cached thumbnails (Stage C10). */
+  page: (
+    queryId: number,
+    offset: number,
+    limit: number,
+    thumbProfile: PreviewProfile | null = null,
+  ): Promise<QueryPageResult> =>
+    unwrap(() => api().query.page({ queryId, offset, limit, thumbProfile })),
   closeQuery: async (queryId: number): Promise<void> => {
     await unwrap(() => api().query.close(queryId))
   },
@@ -249,6 +310,17 @@ export const bridge = {
   },
   shellEdit: async (entryId: number): Promise<void> => {
     await unwrap(() => api().shell.edit(entryId))
+  },
+  /**
+   * Stage C10: a line typed in the command line, run by main through the OS
+   * shell in the folder `dirId`. Called on Enter only (ADR-0027).
+   */
+  shellRun: async (command: string, dirId: number, console = false): Promise<void> => {
+    await unwrap(() => api().shell.run({ command, dirId, ...(console && { console: true }) }))
+  },
+  /** A user command, by its id in commander.tools; main fills its placeholders from these ids. */
+  shellRunTool: async (params: ShellRunToolParams): Promise<void> => {
+    await unwrap(() => api().shell.runTool(params))
   },
   mkfile: (parentDirId: number, name: string): Promise<FsMkfileResult> =>
     unwrap(() => api().fs.mkfile(parentDirId, name)),

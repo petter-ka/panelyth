@@ -65,14 +65,20 @@ test.describe("commander foundation (Stage C00)", () => {
         // C02 marks (selection) and folder sizes (jobs); C04 file
         // operations (files, clip, clipboard, fs.mkdir, fs.canTrash); C05
         // quick view, lister, open and edit (media, preview, props, file,
-        // shell, fs.mkfile); C07 archives.
+        // shell, fs.mkfile); C07 archives; C08 compare and the text diff;
+        // ADR-0033 the document window and the media window's methods; C09
+        // the multi-rename preview (rename); C10 the command line and user
+        // commands (shell.run, shell.runTool).
         apiKeys: [
           "app",
           "archive",
           "clip",
           "clipboard",
+          "compare",
           "context",
+          "diff",
           "dir",
+          "document",
           "file",
           "files",
           "find",
@@ -85,6 +91,7 @@ test.describe("commander foundation (Stage C00)", () => {
           "preview",
           "props",
           "query",
+          "rename",
           "selection",
           "shell",
           "sidecar",
@@ -105,11 +112,11 @@ test.describe("commander foundation (Stage C00)", () => {
         fs: ["canTrash", "mkdir", "mkfile", "volumes"],
         clip: ["get", "paste", "set"],
         clipboard: ["copyPaths", "copyText"],
-        media: ["open"],
+        media: ["open", "openWindow", "windowAnswer", "windowStep"],
         preview: ["ensure"],
         props: ["get"],
         file: ["open"],
-        shell: ["edit", "open"],
+        shell: ["edit", "open", "run", "runTool"],
       })
     } finally {
       await app.close()

@@ -4,9 +4,10 @@ import { memo, useState } from "react"
 import { bridge } from "../../bridge"
 import { openFolderEntry, useFolderStore } from "../../features/folder/folderStore"
 import { labelColor, labelName } from "../../features/labels/labels"
-import { reportBroken, useThumb } from "../../features/previews/thumbStore"
-import { reportBrokenCover, useCover } from "../../features/previews/coverStore"
+import { tileThumbs } from "../../features/previews/thumbStore"
+import { tileCovers } from "../../features/previews/coverStore"
 import { TILE_METRICS, type TileSize } from "../../features/tiles/layout"
+import { TileThumb, tileFrameClass } from "../../features/media/mediaUi"
 import { usePageItem } from "../../features/tiles/pageStore"
 import {
   askDropTransfer,
@@ -25,9 +26,8 @@ import {
 } from "../../features/tiles/selectionStore"
 import { openFullscreenAt } from "../../features/viewer/viewerStore"
 import { useSettingsStore } from "../../features/settings/settingsStore"
-import { HeartIcon, PlayIcon } from "../ui/icons"
+import { HeartIcon } from "../ui/icons"
 import { formatBytes, formatDate } from "../../lib/format"
-import { FolderGlyph, UnavailableGlyph, VideoGlyph } from "./glyphs"
 import { msg, t } from "@panelyth/i18n"
 
 const KIND_LABEL = {
@@ -43,96 +43,6 @@ function tooltip(item: ContentItem): string {
   return `${item.name}\n${t(KIND_LABEL[item.kind])} (${item.ext}), ${formatBytes(item.sizeBytes)}\n${t("Modified {date}", { date: formatDate(item.modifiedMs) })}`
 }
 
-/** Visual state shared by each fixed tile slot and its fitted preview frame. */
-interface TileVisualState {
-  selected: boolean
-  focused: boolean
-  dragOver: boolean
-}
-
-function frameClass({ selected, focused, dragOver }: TileVisualState): string {
-  return [
-    // Selected: a thick border with a glow and shadow (styles/index.css).
-    selected ? "tile-selected" : dragOver ? "outline-2 -outline-offset-2 outline-accent" : "",
-    focused && !selected ? "outline-1 -outline-offset-1 outline-dashed outline-accent/70" : "",
-  ].join(" ")
-}
-
-function fallbackFrameClass(visual: TileVisualState): string {
-  const surface = visual.dragOver ? "bg-accent/20" : "bg-skeleton/60"
-  return [
-    "relative flex size-full items-center justify-center overflow-hidden rounded-[3px] text-muted",
-    surface,
-    frameClass(visual),
-  ].join(" ")
-}
-
-function fittedPreviewSize(
-  box: number,
-  width: number,
-  height: number,
-): { width: number; height: number } {
-  if (width <= 0 || height <= 0) return { width: box, height: box }
-  const scale = Math.min(box / width, box / height)
-  return { width: width * scale, height: height * scale }
-}
-
-/** A folder shows one square cover or a mosaic, with its folder glyph until a cover is ready. */
-function FolderThumb({
-  item,
-  box,
-  visual,
-}: {
-  item: ContentItem
-  box: number
-  visual: TileVisualState
-}) {
-  const cover = useCover(item.id)
-  const glyph = Math.round(box * 0.36)
-  if (!cover?.some((c) => typeof c === "object")) {
-    return (
-      <div className={fallbackFrameClass(visual)}>
-        <FolderGlyph size={glyph} />
-        <UserBadge item={item} />
-      </div>
-    )
-  }
-  const single = cover.length === 1
-  return (
-    <div
-      className={`relative grid size-full gap-px overflow-hidden rounded-[3px] ${single ? "" : "grid-cols-2 grid-rows-2"} ${frameClass(visual)}`}
-      data-testid="folder-cover"
-      data-covers={cover.length}
-      data-preview-frame
-      data-tooltip-anchor
-    >
-      {cover.map((c, slot) =>
-        typeof c === "object" ? (
-          <img
-            key={slot}
-            src={c.url}
-            alt=""
-            decoding="async"
-            draggable={false}
-            className="size-full min-h-0 min-w-0 object-cover"
-            onError={() => reportBrokenCover(item.id, slot)}
-          />
-        ) : (
-          <span key={slot} className="bg-skeleton" />
-        ),
-      )}
-      <span
-        className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome/85 p-0.5 text-text"
-        data-testid="folder-badge"
-        aria-hidden="true"
-      >
-        <FolderGlyph size={Math.max(12, Math.round(box * 0.11))} />
-      </span>
-      <UserBadge item={item} />
-    </div>
-  )
-}
-
 /** Set on mousedown on an already selected tile; cleared by the next click. */
 let pendingCollapse: {
   index: number
@@ -140,108 +50,6 @@ let pendingCollapse: {
   include: SelectionState["include"]
   exclude: SelectionState["exclude"]
 } | null = null
-
-/** The preview or fallback inside the tile's fixed square slot. */
-function TileThumb({
-  item,
-  box,
-  visual,
-}: {
-  item: ContentItem
-  box: number
-  visual: TileVisualState
-}) {
-  if (item.kind === "dir") return <FolderThumb item={item} box={box} visual={visual} />
-  return <MediaThumb item={item} box={box} visual={visual} />
-}
-
-function MediaThumb({
-  item,
-  box,
-  visual,
-}: {
-  item: ContentItem
-  box: number
-  visual: TileVisualState
-}) {
-  const state = useThumb(item.id)
-  const glyph = Math.round(box * 0.36)
-  if (item.kind === "video" && state?.status !== "ready") {
-    return (
-      <div className={fallbackFrameClass(visual)}>
-        <VideoGlyph size={glyph} />
-        <UserBadge item={item} />
-      </div>
-    )
-  }
-  if (state?.status === "ready") {
-    const previewSize = fittedPreviewSize(box, state.thumb.width, state.thumb.height)
-    const img = (
-      <img
-        src={state.thumb.url}
-        alt=""
-        width={state.thumb.width}
-        height={state.thumb.height}
-        decoding="async"
-        draggable={false}
-        className="size-full object-contain"
-        onError={() => reportBroken(item.id)}
-      />
-    )
-    if (item.kind !== "video") {
-      return (
-        <div
-          className={`relative shrink-0 overflow-hidden rounded-[3px] ${frameClass(visual)}`}
-          style={previewSize}
-          data-preview-frame
-          data-tooltip-anchor
-        >
-          {img}
-          <UserBadge item={item} />
-        </div>
-      )
-    }
-    // Video posters carry a small play badge so they never read as photos.
-    return (
-      <div
-        className={`relative shrink-0 overflow-hidden rounded-[3px] ${frameClass(visual)}`}
-        style={previewSize}
-        data-preview-frame
-        data-tooltip-anchor
-      >
-        {img}
-        <span
-          className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome/85 p-0.5 text-text"
-          data-testid="video-badge"
-          aria-hidden="true"
-        >
-          <PlayIcon size={Math.max(10, Math.round(box * 0.09))} />
-        </span>
-        <UserBadge item={item} />
-      </div>
-    )
-  }
-  if (state?.status === "failed") {
-    return (
-      <div className={fallbackFrameClass(visual)}>
-        <UnavailableGlyph size={glyph} />
-        <UserBadge item={item} />
-      </div>
-    )
-  }
-  if (item.kind === "image") {
-    return (
-      <div className={fallbackFrameClass(visual)} data-testid="thumb-loading">
-        <UserBadge item={item} />
-      </div>
-    )
-  }
-  return (
-    <div className={fallbackFrameClass(visual)}>
-      <UserBadge item={item} />
-    </div>
-  )
-}
 
 /** Label, favorite and rating, drawn inside the thumbnail frame. */
 function UserBadge({ item }: { item: ContentItem }) {
@@ -308,7 +116,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
     ? "relative flex items-center justify-center rounded-[3px]"
     : [
         "relative flex items-center justify-center overflow-hidden rounded-[3px] bg-skeleton",
-        frameClass(visual),
+        tileFrameClass(visual),
       ].join(" ")
 
   return (
@@ -384,7 +192,16 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
         data-thumb-box
         data-tooltip-anchor
       >
-        {item && <TileThumb item={item} box={m.tile} visual={visual} />}
+        {item && (
+          <TileThumb
+            item={item}
+            box={m.tile}
+            visual={visual}
+            thumbs={tileThumbs}
+            covers={tileCovers}
+            badge={<UserBadge item={item} />}
+          />
+        )}
         {opening && (
           <span className="absolute inset-0 grid place-items-center rounded-[3px] bg-canvas/60 text-text">
             <Spinner size={28} />

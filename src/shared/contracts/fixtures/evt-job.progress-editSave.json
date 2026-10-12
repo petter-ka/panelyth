@@ -1,0 +1,23 @@
+{
+  "ch": "job.progress",
+  "p": {
+    "bytesDone": 764,
+    "bytesPerSec": 0,
+    "bytesTotal": 764,
+    "current": "",
+    "destination": "",
+    "done": 5,
+    "error": "",
+    "etaMs": 0,
+    "failed": 0,
+    "finishedMs": 1,
+    "jobId": 6,
+    "kind": "editSave",
+    "skipped": 0,
+    "startedMs": 1,
+    "state": "completed",
+    "total": 5
+  },
+  "seq": 1,
+  "t": "evt"
+}

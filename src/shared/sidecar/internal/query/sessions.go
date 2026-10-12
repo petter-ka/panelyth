@@ -60,7 +60,7 @@ type Options struct {
 }
 
 // Source supplies a session's ids instead of the index (ADR-0017 as amended
-// by Stage C06): find results now, archives (C07) and compares (C08) later.
+// by Stage C06): find results, archives (C07) and directory compares (C08).
 // A source sorts and filters in Go by the descriptor's Sort, NameMask and
 // ShowHidden; DirID and Recursive do not apply. Sessions over a source are
 // never refreshed by index changes; the source asks with Manager.Refresh.
@@ -352,6 +352,71 @@ func (m *Manager) Refresh(id int64) {
 	if s := m.sessions[id]; s != nil {
 		m.markLocked(s)
 	}
+}
+
+// RefreshNow re-materializes a session at once and returns its new snapshot
+// (a source whose filter the user just changed: Stage C08). The usual
+// query.invalidated event follows. While a refresh is already running, that
+// one is followed by another and the current snapshot is returned.
+func (m *Manager) RefreshNow(id int64) (Snapshot, error) {
+	m.mu.Lock()
+	s := m.sessions[id]
+	if s == nil || m.closed {
+		m.mu.Unlock()
+		return Snapshot{}, ErrUnknownSession
+	}
+	if s.running {
+		s.dirtyAgain = true
+	} else {
+		if s.timer != nil {
+			s.timer.Stop()
+		}
+		s.pending = true
+	}
+	running := s.running
+	m.mu.Unlock()
+	if !running {
+		m.refresh(id)
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if s = m.sessions[id]; s == nil {
+		return Snapshot{}, ErrUnknownSession
+	}
+	return Snapshot{QueryID: s.id, Version: s.version, Total: len(s.ids)}, nil
+}
+
+// Rows returns every row of a session's current version with its position,
+// and that version (Stage C08: comparing two listings). Rows that left the
+// index since the version was built are missing.
+func (m *Manager) Rows(ctx context.Context, id int64) (items []index.Item, positions []int, version int64, err error) {
+	m.mu.Lock()
+	s := m.sessions[id]
+	if s == nil {
+		m.mu.Unlock()
+		return nil, nil, 0, ErrUnknownSession
+	}
+	s.lastUsed = time.Now()
+	ids, version, src := s.ids, s.version, s.src
+	m.mu.Unlock()
+	if is, ok := src.(ItemSource); ok {
+		items, err = is.Items(ctx, ids)
+	} else {
+		items, err = m.store.LoadItems(ctx, ids)
+	}
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	// Items keep the order of ids; the missing ones are skipped.
+	positions = make([]int, len(items))
+	k := 0
+	for i, entry := range ids {
+		if k < len(items) && items[k].ID == entry {
+			positions[k] = i
+			k++
+		}
+	}
+	return items[:k], positions[:k], version, nil
 }
 
 // Shutdown stops all refresh timers.

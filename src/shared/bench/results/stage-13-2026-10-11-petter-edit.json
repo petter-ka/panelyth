@@ -1,0 +1,456 @@
+{
+  "stage": "13",
+  "at": "2026-10-12T01:29:45+02:00",
+  "numCpu": 32,
+  "workers": 8,
+  "go": "go1.27.0",
+  "sizes": [
+    {
+      "megapixels": 24,
+      "width": 6000,
+      "height": 4000,
+      "fileMB": 5.5,
+      "openMs": [
+        214.28,
+        213.97,
+        218.25
+      ],
+      "openPeakMB": 152,
+      "sessionMB": 72,
+      "dragRotate": {
+        "p50Ms": 15.56,
+        "p95Ms": 19.69,
+        "maxMs": 21.34,
+        "frameKB": 59.8,
+        "frameMP": 1.1
+      },
+      "dragResize": {
+        "p50Ms": 16.94,
+        "p95Ms": 26.21,
+        "maxMs": 27.78,
+        "frameKB": 60.8,
+        "frameMP": 1.09
+      },
+      "dragCrop": {
+        "p50Ms": 21.57,
+        "p95Ms": 23.36,
+        "maxMs": 24.18,
+        "frameKB": 53.4,
+        "frameMP": 0.96
+      },
+      "final": {
+        "p50Ms": 52.9,
+        "p95Ms": 70.33,
+        "maxMs": 70.33,
+        "frameKB": 158.5,
+        "frameMP": 1.66
+      },
+      "finalMaxFrame": {
+        "p50Ms": 120.63,
+        "p95Ms": 128.26,
+        "maxMs": 128.26,
+        "frameKB": 451.2,
+        "frameMP": 3.77
+      },
+      "saveJpegMs": [
+        874.47,
+        872.27,
+        884.53
+      ],
+      "savePngMs": 1691.7,
+      "savePeakMB": 244,
+      "savedMB": 2.2,
+      "estimateMs": 35.91,
+      "estimateMB": 1.1,
+      "maxGoroutines": 11,
+      "color": {
+        "dragPointChain": {
+          "p50Ms": 25.83,
+          "p95Ms": 28.64,
+          "maxMs": 39.71,
+          "frameKB": 70.4,
+          "frameMP": 1.09
+        },
+        "dragLevelsWithBefore": {
+          "p50Ms": 27.52,
+          "p95Ms": 30.37,
+          "maxMs": 42.24,
+          "frameKB": 0,
+          "frameMP": 0
+        },
+        "dragSharpen": {
+          "p50Ms": 32.35,
+          "p95Ms": 35.82,
+          "maxMs": 38.03,
+          "frameKB": 70.3,
+          "frameMP": 1.09
+        },
+        "dragBlur": {
+          "p50Ms": 34.52,
+          "p95Ms": 41.64,
+          "maxMs": 42.92,
+          "frameKB": 64,
+          "frameMP": 1.09
+        },
+        "dragDenoise": {
+          "p50Ms": 61.63,
+          "p95Ms": 64.52,
+          "maxMs": 65.08,
+          "frameKB": 65.2,
+          "frameMP": 1.09
+        },
+        "dragDenoiseHigh": {
+          "p50Ms": 106.78,
+          "p95Ms": 109.86,
+          "maxMs": 110.32,
+          "frameKB": 64.8,
+          "frameMP": 1.09
+        },
+        "finalPointChain": {
+          "p50Ms": 40.88,
+          "p95Ms": 51.7,
+          "maxMs": 51.7,
+          "frameKB": 157.9,
+          "frameMP": 1.71
+        },
+        "finalSharpen": {
+          "p50Ms": 52.66,
+          "p95Ms": 55.23,
+          "maxMs": 55.23,
+          "frameKB": 187.5,
+          "frameMP": 1.71
+        },
+        "finalDenoise": {
+          "p50Ms": 97.59,
+          "p95Ms": 98.42,
+          "maxMs": 98.42,
+          "frameKB": 142.2,
+          "frameMP": 1.71
+        },
+        "finalDenoiseHigh": {
+          "p50Ms": 278.03,
+          "p95Ms": 281.16,
+          "maxMs": 281.16,
+          "frameKB": 137.2,
+          "frameMP": 1.71
+        },
+        "finalReduce256Dither": {
+          "p50Ms": 123.94,
+          "p95Ms": 136.62,
+          "maxMs": 136.62,
+          "frameKB": 508.3,
+          "frameMP": 1.71
+        },
+        "probeMs": 1.01,
+        "thumbs12Ms": 16.36,
+        "countPreviewMs": 63.26,
+        "countEditedMs": 563.76,
+        "countPeakMB": 285,
+        "distinct": 715026,
+        "saveColorJpegMs": 1296.93,
+        "saveColorPeakMB": 339,
+        "saveDenoiseJpegMs": 1777.91,
+        "saveIndexedPngMs": 1712.56,
+        "indexedMB": 9.4
+      }
+    },
+    {
+      "megapixels": 49.99,
+      "width": 8660,
+      "height": 5773,
+      "fileMB": 11.5,
+      "openMs": [
+        675.27,
+        677.77,
+        675.34
+      ],
+      "openPeakMB": 139,
+      "sessionMB": 72,
+      "dragRotate": {
+        "p50Ms": 27.75,
+        "p95Ms": 40.25,
+        "maxMs": 63.65,
+        "frameKB": 70.5,
+        "frameMP": 1.1
+      },
+      "dragResize": {
+        "p50Ms": 31.93,
+        "p95Ms": 50.03,
+        "maxMs": 55.2,
+        "frameKB": 71.6,
+        "frameMP": 1.09
+      },
+      "dragCrop": {
+        "p50Ms": 22.01,
+        "p95Ms": 23.64,
+        "maxMs": 38.13,
+        "frameKB": 55.3,
+        "frameMP": 0.96
+      },
+      "final": {
+        "p50Ms": 53.17,
+        "p95Ms": 61.36,
+        "maxMs": 61.36,
+        "frameKB": 155.5,
+        "frameMP": 1.66
+      },
+      "finalMaxFrame": {
+        "p50Ms": 117.52,
+        "p95Ms": 125.62,
+        "maxMs": 125.62,
+        "frameKB": 399.6,
+        "frameMP": 3.78
+      },
+      "saveJpegMs": [
+        1817.63,
+        1800.72,
+        1802.53
+      ],
+      "savePngMs": 3480.6,
+      "savePeakMB": 431,
+      "savedMB": 4.6,
+      "estimateMs": 38.61,
+      "estimateMB": 2.5,
+      "maxGoroutines": 11,
+      "color": {
+        "dragPointChain": {
+          "p50Ms": 26.1,
+          "p95Ms": 27.57,
+          "maxMs": 38.98,
+          "frameKB": 81,
+          "frameMP": 1.09
+        },
+        "dragLevelsWithBefore": {
+          "p50Ms": 27.65,
+          "p95Ms": 30.02,
+          "maxMs": 42.55,
+          "frameKB": 0,
+          "frameMP": 0
+        },
+        "dragSharpen": {
+          "p50Ms": 31.1,
+          "p95Ms": 34.67,
+          "maxMs": 35.98,
+          "frameKB": 81.3,
+          "frameMP": 1.09
+        },
+        "dragBlur": {
+          "p50Ms": 35.48,
+          "p95Ms": 40.32,
+          "maxMs": 40.97,
+          "frameKB": 79,
+          "frameMP": 1.09
+        },
+        "dragDenoise": {
+          "p50Ms": 61.11,
+          "p95Ms": 64.55,
+          "maxMs": 65.36,
+          "frameKB": 79.7,
+          "frameMP": 1.09
+        },
+        "dragDenoiseHigh": {
+          "p50Ms": 107.59,
+          "p95Ms": 109.26,
+          "maxMs": 109.54,
+          "frameKB": 79.6,
+          "frameMP": 1.09
+        },
+        "finalPointChain": {
+          "p50Ms": 40.81,
+          "p95Ms": 51.1,
+          "maxMs": 51.1,
+          "frameKB": 159.6,
+          "frameMP": 1.71
+        },
+        "finalSharpen": {
+          "p50Ms": 50.21,
+          "p95Ms": 53.69,
+          "maxMs": 53.69,
+          "frameKB": 187.3,
+          "frameMP": 1.71
+        },
+        "finalDenoise": {
+          "p50Ms": 95.89,
+          "p95Ms": 97.92,
+          "maxMs": 97.92,
+          "frameKB": 163.3,
+          "frameMP": 1.71
+        },
+        "finalDenoiseHigh": {
+          "p50Ms": 277.52,
+          "p95Ms": 280.05,
+          "maxMs": 280.05,
+          "frameKB": 163.7,
+          "frameMP": 1.71
+        },
+        "finalReduce256Dither": {
+          "p50Ms": 128.94,
+          "p95Ms": 132.46,
+          "maxMs": 132.46,
+          "frameKB": 530.2,
+          "frameMP": 1.71
+        },
+        "probeMs": 1,
+        "thumbs12Ms": 14.25,
+        "countPreviewMs": 70.14,
+        "countEditedMs": 1167.76,
+        "countPeakMB": 520,
+        "distinct": 760808,
+        "saveColorJpegMs": 2679.8,
+        "saveColorPeakMB": 636,
+        "saveDenoiseJpegMs": 3674.67,
+        "saveIndexedPngMs": 3541.28,
+        "indexedMB": 20.1
+      }
+    },
+    {
+      "megapixels": 99.88,
+      "width": 12240,
+      "height": 8160,
+      "fileMB": 22.9,
+      "openMs": [
+        1241.88,
+        1235.85,
+        1248.53
+      ],
+      "openPeakMB": 261,
+      "sessionMB": 72,
+      "dragRotate": {
+        "p50Ms": 28.67,
+        "p95Ms": 38.45,
+        "maxMs": 43.06,
+        "frameKB": 85.5,
+        "frameMP": 1.1
+      },
+      "dragResize": {
+        "p50Ms": 32.66,
+        "p95Ms": 51.53,
+        "maxMs": 54.41,
+        "frameKB": 86.7,
+        "frameMP": 1.09
+      },
+      "dragCrop": {
+        "p50Ms": 22.1,
+        "p95Ms": 23.73,
+        "maxMs": 36.44,
+        "frameKB": 63.4,
+        "frameMP": 0.96
+      },
+      "final": {
+        "p50Ms": 52.6,
+        "p95Ms": 66.18,
+        "maxMs": 66.18,
+        "frameKB": 168.7,
+        "frameMP": 1.66
+      },
+      "finalMaxFrame": {
+        "p50Ms": 115.2,
+        "p95Ms": 123.47,
+        "maxMs": 123.47,
+        "frameKB": 360.1,
+        "frameMP": 3.78
+      },
+      "saveJpegMs": [
+        3628.84,
+        3599.8,
+        3611.01
+      ],
+      "savePngMs": 6943.5,
+      "savePeakMB": 789,
+      "savedMB": 9.2,
+      "estimateMs": 30.54,
+      "estimateMB": 5.7,
+      "maxGoroutines": 11,
+      "color": {
+        "dragPointChain": {
+          "p50Ms": 26.56,
+          "p95Ms": 28.92,
+          "maxMs": 34.42,
+          "frameKB": 98.3,
+          "frameMP": 1.09
+        },
+        "dragLevelsWithBefore": {
+          "p50Ms": 28.28,
+          "p95Ms": 30.31,
+          "maxMs": 39.5,
+          "frameKB": 0,
+          "frameMP": 0
+        },
+        "dragSharpen": {
+          "p50Ms": 32.68,
+          "p95Ms": 35.67,
+          "maxMs": 38.19,
+          "frameKB": 98.7,
+          "frameMP": 1.09
+        },
+        "dragBlur": {
+          "p50Ms": 35.52,
+          "p95Ms": 41,
+          "maxMs": 41.14,
+          "frameKB": 97.8,
+          "frameMP": 1.09
+        },
+        "dragDenoise": {
+          "p50Ms": 60.46,
+          "p95Ms": 63.4,
+          "maxMs": 65.37,
+          "frameKB": 98.1,
+          "frameMP": 1.09
+        },
+        "dragDenoiseHigh": {
+          "p50Ms": 108.31,
+          "p95Ms": 110.82,
+          "maxMs": 111.82,
+          "frameKB": 98.3,
+          "frameMP": 1.09
+        },
+        "finalPointChain": {
+          "p50Ms": 40.93,
+          "p95Ms": 54.44,
+          "maxMs": 54.44,
+          "frameKB": 177.5,
+          "frameMP": 1.71
+        },
+        "finalSharpen": {
+          "p50Ms": 49.8,
+          "p95Ms": 53.11,
+          "maxMs": 53.11,
+          "frameKB": 202.2,
+          "frameMP": 1.71
+        },
+        "finalDenoise": {
+          "p50Ms": 93.07,
+          "p95Ms": 97.36,
+          "maxMs": 97.36,
+          "frameKB": 192.4,
+          "frameMP": 1.71
+        },
+        "finalDenoiseHigh": {
+          "p50Ms": 277.75,
+          "p95Ms": 282.66,
+          "maxMs": 282.66,
+          "frameKB": 193,
+          "frameMP": 1.71
+        },
+        "finalReduce256Dither": {
+          "p50Ms": 129.86,
+          "p95Ms": 133.13,
+          "maxMs": 133.13,
+          "frameKB": 543.2,
+          "frameMP": 1.71
+        },
+        "probeMs": 0.97,
+        "thumbs12Ms": 13.69,
+        "countPreviewMs": 66.01,
+        "countEditedMs": 2313.87,
+        "countPeakMB": 972,
+        "distinct": 809354,
+        "saveColorJpegMs": 5349.8,
+        "saveColorPeakMB": 1207,
+        "saveDenoiseJpegMs": 7219.91,
+        "saveIndexedPngMs": 7014.55,
+        "indexedMB": 39.7
+      }
+    }
+  ]
+}

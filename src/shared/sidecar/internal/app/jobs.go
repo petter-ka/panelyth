@@ -70,6 +70,27 @@ type (
 		Format          string `json:"format"`
 		Level           int    `json:"level"`
 		DeleteOriginals bool   `json:"deleteOriginals"`
+		// Stage C08. sync: the compare and the plan the user confirmed (it
+		// has no source). hashCreate: the algorithm, one file per file or one
+		// list (name) in destinationDirId. compareFiles: two entries.
+		CompareID         int64  `json:"compareId"`
+		PlanVersion       int64  `json:"planVersion"`
+		DeletePermanently bool   `json:"deletePermanently"`
+		Algorithm         string `json:"algorithm"`
+		PerFile           bool   `json:"perFile"`
+		LeftID            int64  `json:"leftId"`
+		RightID           int64  `json:"rightId"`
+		// Stage C09. multiRename: the plan the dialog previewed. undoRename
+		// has no fields. setAttributes: attribute bits to set and clear
+		// (Windows), permission bits (elsewhere), dates, and recursive.
+		Plan       *renamePlanWire `json:"plan"`
+		SetAttrs   int             `json:"setAttrs"`
+		ClearAttrs int             `json:"clearAttrs"`
+		SetMode    int             `json:"setMode"`
+		ClearMode  int             `json:"clearMode"`
+		ModifiedMs *int64          `json:"modifiedMs"`
+		AccessedMs *int64          `json:"accessedMs"`
+		Recursive  bool            `json:"recursive"`
 	}
 	jobIDParams struct {
 		JobID int64 `json:"jobId"`
@@ -261,12 +282,35 @@ func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Sn
 		}
 		spec.Destination = dest
 	}
+	// Stage C08: a sync applies a compare's plan and comparing two files
+	// names them by id; neither has a selection.
+	switch spec.Kind {
+	case jobs.KindSync:
+		if err := s.syncJob(p, &spec); err != nil {
+			return jobs.Snapshot{}, err
+		}
+		return s.startJob(spec)
+	case jobs.KindCompareFiles:
+		if err := s.compareJob(ctx, p, &spec); err != nil {
+			return jobs.Snapshot{}, err
+		}
+		return s.startJob(spec)
+	case jobs.KindUndoRename:
+		// Stage C09: its items are the journal of the last multi-rename.
+		return s.startJob(spec)
+	}
 	ids, err := s.resolveSelection(p.Source.Selection)
 	if err != nil {
 		return jobs.Snapshot{}, err
 	}
 	spec.IDs = ids
 	if err := s.archiveJob(p, &spec, ids); err != nil {
+		return jobs.Snapshot{}, err
+	}
+	if err := s.compareJob(ctx, p, &spec); err != nil {
+		return jobs.Snapshot{}, err
+	}
+	if err := s.renameJob(p, &spec); err != nil {
 		return jobs.Snapshot{}, err
 	}
 	return s.startJob(spec)

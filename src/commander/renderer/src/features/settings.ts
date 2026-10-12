@@ -1,3 +1,5 @@
+import { CONFLICT_POLICIES, type ConflictPolicy } from "@panelyth/contracts"
+import { TILE_SIZE_ORDER, type TileSize } from "@panelyth/media-ui"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 
@@ -12,7 +14,7 @@ export const MAX_EDITOR_CHARS = 1024
 export type SizeFormat = "bytes" | "units"
 /** Configured date format for Quick View and Commander lists in `configured` mode. */
 export type DateFormat = "locale" | "iso"
-/** Where typed letters go: quick search, or quick search with Alt (plain letters free for the C10 command line). */
+/** Where typed letters go: quick search, or the command line (quick search then starts with Alt; Stage C10). */
 export type LettersMode = "quickSearch" | "altLetters"
 /** "Run programs with Enter" (ADR-0027, Stage C05): ask first (default), always, never. */
 export type RunPrograms = "ask" | "always" | "never"
@@ -22,6 +24,9 @@ export type MediaOpen = "viewer" | "system"
 export type DocumentOpen = "window" | "system"
 /** The right mouse button: marks (hold for the menu; classic Total Commander), or opens the menu at once. */
 export type RightButton = "mark" | "menu"
+
+/** Date tolerance of compares: exact, or the 2 s of FAT file systems. */
+export type CompareTolerance = 0 | 2000
 
 export interface PanelSettings {
   sizeFormat: SizeFormat
@@ -35,6 +40,27 @@ export interface PanelSettings {
   runPrograms: RunPrograms
   /** F4's editor: an absolute program path; "" = the system's text editor. Main reads it from library.db. */
   editor: string
+  /**
+   * How dates are compared (Stage C08: Shift+F2 and Synchronize directories):
+   * the tolerance in ms (0 = exact, 2000 for FAT drives), whether a
+   * difference of exactly one hour counts as the same (daylight saving
+   * time), and whether dates are ignored.
+   */
+  compareToleranceMs: CompareTolerance
+  compareDst: boolean
+  compareIgnoreDates: boolean
+  /** Stage C10: the bars around the panels. */
+  showToolbar: boolean
+  showCommandLine: boolean
+  showFunctionKeys: boolean
+  /** The tile size of the Thumbnails view (Ctrl+Shift+F1). */
+  thumbSize: TileSize
+  /** Operations: what the copy and move dialogs start with. */
+  copyConflict: ConflictPolicy
+  copyVerify: boolean
+  /** Confirmations: F8 asks before moving to the trash; a drop shows the copy dialog first. */
+  confirmTrash: boolean
+  confirmDrop: boolean
 }
 
 export const DEFAULT_SETTINGS: PanelSettings = {
@@ -47,7 +73,21 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   rightButton: "mark",
   runPrograms: "ask",
   editor: "",
+  compareToleranceMs: 2000,
+  compareDst: false,
+  compareIgnoreDates: false,
+  showToolbar: true,
+  showCommandLine: true,
+  showFunctionKeys: true,
+  thumbSize: "small",
+  copyConflict: "ask",
+  copyVerify: false,
+  confirmTrash: true,
+  confirmDrop: true,
 }
+
+const policies: ReadonlySet<unknown> = new Set(CONFLICT_POLICIES)
+const tileSizes: ReadonlySet<unknown> = new Set(TILE_SIZE_ORDER)
 
 interface SettingsState {
   settings: PanelSettings
@@ -73,6 +113,17 @@ export function readSettings(value: unknown): PanelSettings {
     rightButton: v.rightButton === "menu" ? "menu" : "mark",
     runPrograms: v.runPrograms === "always" || v.runPrograms === "never" ? v.runPrograms : "ask",
     editor: typeof v.editor === "string" ? v.editor.slice(0, MAX_EDITOR_CHARS) : "",
+    compareToleranceMs: v.compareToleranceMs === 0 ? 0 : 2000,
+    compareDst: v.compareDst === true,
+    compareIgnoreDates: v.compareIgnoreDates === true,
+    showToolbar: v.showToolbar !== false,
+    showCommandLine: v.showCommandLine !== false,
+    showFunctionKeys: v.showFunctionKeys !== false,
+    thumbSize: tileSizes.has(v.thumbSize) ? (v.thumbSize as TileSize) : "small",
+    copyConflict: policies.has(v.copyConflict) ? (v.copyConflict as ConflictPolicy) : "ask",
+    copyVerify: v.copyVerify === true,
+    confirmTrash: v.confirmTrash !== false,
+    confirmDrop: v.confirmDrop !== false,
   }
 }
 

@@ -1,0 +1,129 @@
+{
+  "id": 157,
+  "ok": true,
+  "r": {
+    "items": [
+      {
+        "diff": {
+          "action": "copyRight",
+          "dir": "",
+          "left": {
+            "modifiedMs": 1714979350000,
+            "sizeBytes": 14
+          },
+          "right": {
+            "modifiedMs": 1714979290000,
+            "sizeBytes": 17
+          },
+          "state": "leftNewer"
+        },
+        "ext": "txt",
+        "favorite": false,
+        "id": 6755399442104321,
+        "kind": "file",
+        "label": 0,
+        "modifiedMs": 1714979350000,
+        "name": "notes.txt",
+        "rating": 0,
+        "sizeBytes": 14,
+        "thumb": null
+      },
+      {
+        "diff": {
+          "action": "copyRight",
+          "dir": "",
+          "left": {
+            "modifiedMs": 1714979290000,
+            "sizeBytes": 1
+          },
+          "right": null,
+          "state": "leftOnly"
+        },
+        "ext": "txt",
+        "favorite": false,
+        "id": 6755399442104322,
+        "kind": "file",
+        "label": 0,
+        "modifiedMs": 1714979290000,
+        "name": "only-left.txt",
+        "rating": 0,
+        "sizeBytes": 1,
+        "thumb": null
+      },
+      {
+        "diff": {
+          "action": "none",
+          "dir": "",
+          "left": {
+            "modifiedMs": 1714979290000,
+            "sizeBytes": 4
+          },
+          "right": {
+            "modifiedMs": 1714979290000,
+            "sizeBytes": 4
+          },
+          "state": "equal"
+        },
+        "ext": "txt",
+        "favorite": false,
+        "id": 6755399442104323,
+        "kind": "file",
+        "label": 0,
+        "modifiedMs": 1714979290000,
+        "name": "same.txt",
+        "rating": 0,
+        "sizeBytes": 4,
+        "thumb": null
+      },
+      {
+        "diff": {
+          "action": "deleteRight",
+          "dir": "",
+          "left": null,
+          "right": {
+            "modifiedMs": 1714979290000,
+            "sizeBytes": 0
+          },
+          "state": "rightOnly"
+        },
+        "ext": "",
+        "favorite": false,
+        "id": 6755399442104324,
+        "kind": "dir",
+        "label": 0,
+        "modifiedMs": 1714979290000,
+        "name": "sub",
+        "rating": 0,
+        "sizeBytes": 0,
+        "thumb": null
+      },
+      {
+        "diff": {
+          "action": "deleteRight",
+          "dir": "sub",
+          "left": null,
+          "right": {
+            "modifiedMs": 1714979290000,
+            "sizeBytes": 1
+          },
+          "state": "rightOnly"
+        },
+        "ext": "txt",
+        "favorite": false,
+        "id": 6755399442104325,
+        "kind": "file",
+        "label": 0,
+        "modifiedMs": 1714979290000,
+        "name": "only-right.txt",
+        "rating": 0,
+        "sizeBytes": 1,
+        "thumb": null
+      }
+    ],
+    "offset": 0,
+    "queryId": 14,
+    "total": 5,
+    "version": 4
+  },
+  "t": "res"
+}

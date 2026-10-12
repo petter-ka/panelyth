@@ -1,0 +1,18 @@
+{
+  "at": "2026-10-11T17:19:26.594Z",
+  "test": "shell-start",
+  "platform": "win32",
+  "shell": "cmd.exe",
+  "processStarted": {
+    "runs": 30,
+    "medianMs": 1.45,
+    "p95Ms": 1.54,
+    "maxMs": 1.64
+  },
+  "emptyCommandEnded": {
+    "runs": 30,
+    "medianMs": 14.16,
+    "p95Ms": 15.58,
+    "maxMs": 15.58
+  }
+}

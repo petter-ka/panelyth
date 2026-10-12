@@ -12,6 +12,11 @@ stage's code (`docs/commander/stages/C01-panels-and-listing.md`). Implementation
 visible window's row indexes, and rows read their entries from the page store. Column geometry comes from TanStack
 sizes and only the bounded mounted window is rendered while the user resizes or changes layout.
 
+Stage C10 built the Thumbnails view: rows of fixed-size tiles on `@tanstack/react-virtual`, with the tile geometry,
+the thumbnail store and the preview frame moved from the viewer to `src/shared/media-ui`. On 100,000 entries it
+mounts at most 77 tiles and scrolls with 0 long tasks (`docs/commander/stages/C10-command-line-and-customization.md`).
+Folder tiles show the folder symbol; folder covers are not in the commander's profile.
+
 ## Context
 
 - The commander is a dual-panel file manager (ADR-0025). Users expect a detailed list (name, extension, size, date,

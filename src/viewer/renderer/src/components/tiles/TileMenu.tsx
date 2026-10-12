@@ -1,3 +1,5 @@
+import { openBatchEditor } from "../../features/editor/batchStore"
+import { openEditor } from "../../features/editor/editorStore"
 import { bridge } from "../../bridge"
 import { openFolderEntry, refresh, useFolderStore } from "../../features/folder/folderStore"
 import { LABELS, labelColor } from "../../features/labels/labels"
@@ -87,9 +89,17 @@ function SelectionItems() {
             </ContextMenuItem>
           )}
           {item?.kind === "image" && (
-            <ContextMenuItem shortcut="Enter" onSelect={() => openFullscreenAt(focusIndex)}>
-              {t("Open")}
-            </ContextMenuItem>
+            <>
+              <ContextMenuItem shortcut="Enter" onSelect={() => openFullscreenAt(focusIndex)}>
+                {t("Open")}
+              </ContextMenuItem>
+              <ContextMenuItem
+                onSelect={() => void openEditor({ id: item.id, name: item.name })}
+                data-testid="menu-edit"
+              >
+                {t("Edit…")}
+              </ContextMenuItem>
+            </>
           )}
           {item?.kind === "video" && (
             <>
@@ -114,9 +124,18 @@ function SelectionItems() {
         </>
       )}
       {count > 1 && (
-        <ContextMenuLabel>
-          {t("{count} items selected", { count: formatCount(count) })}
-        </ContextMenuLabel>
+        <>
+          <ContextMenuLabel>
+            {t("{count} items selected", { count: formatCount(count) })}
+          </ContextMenuLabel>
+          <ContextMenuItem
+            action="item.edit"
+            onSelect={() => void openBatchEditor()}
+            data-testid="menu-edit-batch"
+          >
+            {t("Edit pictures…")}
+          </ContextMenuItem>
+        </>
       )}
       <FileItems
         pictureId={item?.kind === "image" ? item.id : undefined}
