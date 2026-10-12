@@ -73,6 +73,21 @@ record "open with default app", "show in file manager", clipboard writes and the
 (`shell.run`, `shell.runTool`: the program, its arguments, the folder and the added environment) in
 `__panelythShellLog` instead of performing them.
 
+`PANELYTH_TEST_UPDATE` (unpackaged builds only) gives main a scripted update engine in place of the feed and the
+installer: `{"version":"9.9.9","notes":"…"}` is found and "downloads", `{}` is up to date, `{"error":"…"}` fails the
+check, `"mode":"manual"` is a build that cannot install; an install is recorded in `__panelythShellLog`. The native
+menu is driven from the main process (`Menu.getApplicationMenu().getMenuItemById(id).click()`).
+
+### Packaged builds
+
+- `pnpm test:smoke` (`src/shared/e2e/smoke/`) runs the output of `pnpm package --dir`: the package's version (shell
+  and sidecar), the product's menu, the update mode, the licence notices and the media tools, then a walk through
+  both apps. `PANELYTH_SMOKE_FEED=1` requires the update feed (installer builds), `PANELYTH_SMOKE_MEDIA_TOOLS=1`
+  requires the bundled ffmpeg.
+- `pnpm test:update` (`src/shared/e2e/update/`, Windows) packages two versions against a feed on the machine,
+  installs the older one, updates it from Settings → About, checks the restarted version and uninstalls. It
+  installs a real program for the current user: see `docs/RELEASING.md` before running it locally.
+
 Radix triggers in jsdom: with `mockViewport` every element has the same rectangle, so react-resizable-panels treats
 each pointerdown as a divider drag and prevents it. App-shell tests open dropdowns from the keyboard and type into
 already focused inputs (`skipClick`). Pointer behavior is covered by the Electron e2e tests.

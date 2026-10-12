@@ -8,6 +8,7 @@ import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import { parseArgs } from "node:util"
 import { goBinary } from "./go.mjs"
+import { sidecarVersion } from "./version.mjs"
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const goRoot = join(root, "src", "shared", "sidecar")
@@ -22,15 +23,8 @@ const platform = values.platform
 const goos = { win32: "windows", darwin: "darwin", linux: "linux" }[platform]
 if (!goos) throw new Error(`unsupported platform ${platform}`)
 
-let version = "dev"
-try {
-  version = execFileSync("git", ["describe", "--always", "--dirty"], {
-    cwd: root,
-    encoding: "utf8",
-  }).trim()
-} catch {
-  // not a git checkout
-}
+// The product's version and the commit (scripts/version.mjs): one version for the shell and the sidecar.
+const version = sidecarVersion()
 
 for (const arch of values.arch.split(",")) {
   const goarch = { x64: "amd64", arm64: "arm64" }[arch]

@@ -69,6 +69,9 @@ const api = core.api
 
 export const isBridgeAvailable = core.isAvailable
 
+/** The preload API of Settings → About: the version, updates and the native menu's items (Stage P06). */
+export const aboutApi = (): CommanderApi => core.api()
+
 let library: Promise<LibraryState> | null = null
 
 /** Tests: forget the cached library.db read. */

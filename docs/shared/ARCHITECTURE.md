@@ -107,6 +107,9 @@ Owns:
 - start/stop of the Go sidecar
 - the app views and the switch between them (ADR-0031)
 - each app view's capability profile: which renderer methods and shell actions are allowed (ADR-0027)
+- the native application menu, in the language of the apps (ADR-0038)
+- updates: the check, the download and the install, as a state the apps show in Settings → About (ADR-0038);
+  the update feed is the only thing main fetches from the network
 
 Electron main does not own:
 

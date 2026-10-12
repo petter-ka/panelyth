@@ -1,4 +1,4 @@
-import type { SidecarStatus } from "@panelyth/contracts"
+import type { SidecarStatus, UpdateState } from "@panelyth/contracts"
 import type { IpcMainInvokeEvent } from "electron"
 import { describe, expect, it, vi } from "vitest"
 import {
@@ -32,8 +32,39 @@ function eventFrom(url: string, parent: object | null = null): IpcMainInvokeEven
   } as unknown as IpcMainInvokeEvent
 }
 
+const updateState: UpdateState = {
+  mode: "auto",
+  phase: "idle",
+  currentVersion: "1.0.0",
+  version: null,
+  releaseDate: null,
+  notes: [],
+  percent: 0,
+  transferredBytes: 0,
+  totalBytes: 0,
+  checkedAt: null,
+  error: null,
+  auto: true,
+}
+
 const mainHandlers = (): MainHandlers => ({
   "app.exit": vi.fn(async () => ({ ok: true })),
+  "app.about": vi.fn(() => ({
+    name: "Panelyth",
+    version: "1.0.0",
+    sidecarVersion: null,
+    electron: "",
+    chrome: "",
+    node: "",
+    platform: "win32 x64",
+    packaged: false,
+    copyright: "",
+  })),
+  "app.openTarget": vi.fn(async () => ({ ok: true })),
+  "update.get": vi.fn(() => updateState),
+  "update.check": vi.fn(() => updateState),
+  "update.download": vi.fn(() => updateState),
+  "update.install": vi.fn(() => ({ ok: false })),
   "app.switch": vi.fn(() => ({ ok: true })),
   "sidecar.getStatus": vi.fn(() => status),
   "dialog.openFolder": vi.fn(async () => ({ path: "/picked" })),
@@ -1281,6 +1312,41 @@ describe("invoke router", () => {
     await expect(
       handler(commander, "context.publish", { app: "commander", dirId: 0, focusId: null }),
     ).resolves.toMatchObject({ ok: false, e: { code: "INVALID_ARGUMENT" } })
+  })
+
+  it("gives both apps the About methods; a renderer names a target, never a URL (Stage P06)", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    for (const event of [ok, commander]) {
+      for (const m of ["app.about", "update.get", "update.check", "update.download"]) {
+        await expect(handler(event, m, {}), m).resolves.toMatchObject({ ok: true })
+        await expect(handler(event, m, { url: "https://example.com" }), m).resolves.toMatchObject({
+          ok: false,
+          e: { code: "INVALID_ARGUMENT" },
+        })
+      }
+      await expect(handler(event, "update.install", {})).resolves.toEqual({
+        ok: true,
+        r: { ok: false },
+      })
+      await expect(handler(event, "app.openTarget", { target: "logs" })).resolves.toEqual({
+        ok: true,
+        r: { ok: true },
+      })
+      for (const params of [
+        {},
+        { target: "https://example.com" },
+        { target: "C:\\Windows\\System32\\calc.exe" },
+        { target: "logs", path: "/etc/passwd" },
+        { target: ["logs"] },
+      ]) {
+        await expect(handler(event, "app.openTarget", params)).resolves.toMatchObject({
+          ok: false,
+          e: { code: "INVALID_ARGUMENT" },
+        })
+      }
+    }
+    expect(main["app.openTarget"]).toHaveBeenCalledTimes(2)
+    expect(sidecar.call).not.toHaveBeenCalled()
   })
 
   it("validates app.switch", async () => {

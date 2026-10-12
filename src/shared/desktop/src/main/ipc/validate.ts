@@ -72,6 +72,7 @@ import {
   MAX_REMOTE_PATH_CHARS,
   MAX_REMOTE_TRANSFERS,
   REMOTE_TLS,
+  APP_TARGETS,
   type RendererMethod,
 } from "@panelyth/contracts"
 
@@ -696,6 +697,16 @@ function batchProblem(p: unknown): string | null {
 
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
+  "app.about": empty,
+  // A fixed list: main opens its own folders and the project's pages, never a renderer's URL.
+  "app.openTarget": (p) =>
+    shape(p, ["target"]) && (APP_TARGETS as readonly unknown[]).includes(p.target)
+      ? null
+      : "expected { target }",
+  "update.get": empty,
+  "update.check": empty,
+  "update.download": empty,
+  "update.install": empty,
   "app.openRequest": empty,
   "media.windowReveal": empty,
   "app.switch": (p) =>

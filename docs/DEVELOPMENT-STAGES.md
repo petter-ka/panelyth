@@ -7,7 +7,7 @@ Only one stage is active at a time, across all tracks. The order across tracks i
 | Track | Stage IDs | Stage documents | Bench result IDs |
 |---|---|---|---|
 | Viewer | `00`…`08.6` (history), `12`…`16` (image editor); next new stage `17` | `docs/viewer/stages/` | `stage-03-…`, `stage-08.6-…`, `stage-12-…`, `stage-13-…`, `stage-14-…`, `stage-15-…`, `stage-16-…` |
-| Platform | `P01`…`P06` | `docs/shared/stages/` | `stage-P01-…` |
+| Platform | `P01`…`P06` | `docs/shared/stages/` | `stage-P01-…`, `stage-P06-…` |
 | Commander | `C00`…`C11`, with `C10.5` between C10 and C11 | `docs/commander/stages/` | `stage-C00-…`, `stage-C10.5-…` |
 
 - The viewer stages 00–08.6 also built most of the shared platform; their records stay in the viewer track.
@@ -64,7 +64,7 @@ A stage is complete only when:
 | P03 | File-operation engine v2 | P02 | implementation done (2026-10-06); Linux/macOS paths in P04 |
 | P04 | Cross-platform hardening (formerly 09) | P03 and the app stages in scope | in progress: packaging, CI, release builds and the Linux pass done (2026-10-08); paths, volumes, media tools, wheel input and the viewer's e2e specs done on Windows and Linux (2026-10-12); the macOS items, budgets on Linux and macOS and four stale commander e2e tests remain |
 | P05 | Performance hardening (formerly 10) | P04 | planned |
-| P06 | Release engineering (formerly 11) | P05 | planned |
+| P06 | Release engineering (formerly 11) | P05 | implementation done on Windows (2026-10-12, taken before P05 at the owner's request); ADR-0038 accepted; an update feed installed apps can read, the signing certificates, a small ffmpeg build and the macOS and Linux runs remain |
 
 ### Commander
 
@@ -101,6 +101,29 @@ A stage is complete only when:
 
 ## Active stage
 
+`P06 — Release engineering` (`docs/shared/stages/P06-release.md`), started 2026-10-12 at the owner's request while
+P04's macOS items and P05 stay open; implementation done on Windows the same day. ADR-0038 is accepted. The owner
+added two things to the stage: the app is upgraded from inside the app, and a native menu. **Updates:** Electron
+main looks for a newer version 15 s after start and every six hours, downloads it only when asked and installs it
+on restart; Settings → About (a tab of the shared settings dialog, both apps) shows the version, the state, the
+newer version's notes as plain text and the next step. A build that cannot install (an unsigned macOS app, a Linux
+tar.gz) offers the download page. **The native menu** replaces Electron's default one: File, Edit, View and Help,
+in the eight languages, with About, Check for Updates…, the log folder, the licences and the project's pages.
+**One version** for the shell and the sidecar (`PANELYTH_VERSION`; the sidecar reports `1.2.3+g<commit>`).
+**The pipeline:** `pnpm package` builds, fetches a pinned LGPL ffmpeg beside the sidecar (Windows and Linux),
+writes one generated licence notice file and signs and notarizes when the certificates are configured; a pushed tag
+builds all three OSes into a draft release with the update metadata. **Data across versions:** `library.db` opens
+from every schema with its rows, released migrations are pinned, and `index.db` is recreated from a newer schema as
+from an older one. Tested on Windows end to end: version 0.9.0 installed, found 0.9.1 in About, downloaded it,
+restarted into it and was uninstalled (2.1 minutes). Measured: startup and idle memory as before (ready-to-show
+253 ms, 149 MB over the Electron floor); the installer grows from 137 to 190 MB with ffmpeg.
+
+Open from P06: an update feed installed apps can read (the GitHub repository is not public); the signing
+certificates (nothing of the signed or notarized path has run); the first version number; a small ffmpeg build of
+our own (the pinned one is a full LGPL 3 build and is absent on macOS); the macOS and Linux runs of the package, the
+menu and an update; the release workflow's first run. `docs/RELEASING.md` and `docs/INSTALL.md` are new.
+
+Before that (still in progress):
 `P04 — Cross-platform hardening` (`docs/shared/stages/P04-cross-platform.md`), started 2026-10-08 and taken up
 again on 2026-10-12 at the owner's request, after P02; still in progress. This slice did the items that were not
 started, on the reference machine and (the Go suite) on Linux as root and as an ordinary user. **Paths:** a
@@ -344,5 +367,5 @@ driver/hardware decision (`docs/viewer/stages/07-batch-and-metadata.md`). Seen a
 12 runs of `cmd/indexbench` ended in an access violation inside the driver while a query was stepping.
 
 Carried over: idle memory is still near the budget edge (Stage 08: 52.9 MB over the Electron floor, budget 60). Cold
-scans are 12–15 % slower since Stage 05. Both are to be re-measured in Stage P05. Shipping an LGPL ffmpeg/ffprobe build
-is a Stage P06 packaging task (ADR-0018).
+scans are 12–15 % slower since Stage 05. Both are to be re-measured in Stage P05. An LGPL ffmpeg/ffprobe build ships
+with the Windows and Linux packages since Stage P06 (ADR-0018, amended; macOS open).

@@ -1,0 +1,88 @@
+{
+  "//": "Components scripts/notices.mjs cannot find by itself (Stage P06). npm packages and Go modules are found from the build; list here only what is copied into the sources or shipped beside the app. `files` are licence texts in the repository or in an installed package; `when: media-tools` lists a component only when scripts/media-tools.mjs fetched it.",
+  "components": [
+    {
+      "name": "Electron",
+      "versionFrom": "src/shared/desktop/node_modules/electron/package.json",
+      "licence": "MIT",
+      "source": "https://github.com/electron/electron",
+      "files": ["src/shared/desktop/node_modules/electron/LICENSE"],
+      "note": "Electron includes Chromium and Node.js; their notices are in LICENSES.chromium.html in the application folder."
+    },
+    {
+      "name": "Inter (typeface)",
+      "version": "4",
+      "licence": "OFL-1.1",
+      "source": "https://github.com/rsms/inter",
+      "files": ["src/shared/ui/src/fonts/Inter-LICENSE.txt"]
+    },
+    {
+      "name": "JetBrains Mono (typeface)",
+      "version": "2",
+      "licence": "OFL-1.1",
+      "source": "https://github.com/JetBrains/JetBrainsMono",
+      "files": ["src/shared/ui/src/fonts/JetBrainsMono-OFL.txt"]
+    },
+    {
+      "name": "Fluent System Icons",
+      "version": "",
+      "licence": "MIT",
+      "source": "https://github.com/microsoft/fluentui-system-icons",
+      "note": "The icons the apps use, as path data (src/shared/ui/src/iconPaths.ts).",
+      "text": [
+        "MIT License",
+        "",
+        "Copyright (c) 2020 Microsoft Corporation",
+        "",
+        "Permission is hereby granted, free of charge, to any person obtaining a copy",
+        "of this software and associated documentation files (the \"Software\"), to deal",
+        "in the Software without restriction, including without limitation the rights",
+        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell",
+        "copies of the Software, and to permit persons to whom the Software is",
+        "furnished to do so, subject to the following conditions:",
+        "",
+        "The above copyright notice and this permission notice shall be included in all",
+        "copies or substantial portions of the Software.",
+        "",
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR",
+        "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,",
+        "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE",
+        "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER",
+        "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,",
+        "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE",
+        "SOFTWARE."
+      ]
+    },
+    {
+      "name": "Material Symbols",
+      "version": "",
+      "licence": "Apache-2.0",
+      "source": "https://github.com/google/material-design-icons",
+      "note": "The icons the apps use, as path data (src/shared/ui/src/iconPaths.ts). Copyright Google LLC.",
+      "text": [
+        "Licensed under the Apache License, Version 2.0 (the \"License\"); you may not use",
+        "these icons except in compliance with the License. You may obtain a copy of the",
+        "License at",
+        "",
+        "    https://www.apache.org/licenses/LICENSE-2.0",
+        "",
+        "Unless required by applicable law or agreed to in writing, software distributed",
+        "under the License is distributed on an \"AS IS\" BASIS, WITHOUT WARRANTIES OR",
+        "CONDITIONS OF ANY KIND, either express or implied. See the License for the",
+        "specific language governing permissions and limitations under the License.",
+        "",
+        "The full text of the Apache License 2.0 is printed in this file with the other",
+        "components under that licence."
+      ]
+    },
+    {
+      "name": "FFmpeg",
+      "when": "media-tools",
+      "versionFrom": "src/shared/desktop/resources/media-tools.lock.json",
+      "licence": "LGPL-3.0-or-later",
+      "source": "https://ffmpeg.org",
+      "files": ["src/shared/desktop/resources/media-tools.LICENSE.txt"],
+      "note": "ffmpeg and ffprobe are separate programs beside the sidecar, started as child processes and never linked into Panelyth. They are an unmodified LGPL version 3 build (no GPL or non-free parts). The build, its source and its configuration, which names every library linked into it, are in bin/FFMPEG-BUILD.txt in the application's resources. You may replace them with another build of the same version."
+    }
+  ]
+}

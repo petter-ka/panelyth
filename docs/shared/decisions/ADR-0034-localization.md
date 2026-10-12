@@ -59,5 +59,9 @@ one shared setting; it changes no other decision.
 
 - Text produced by the Go sidecar (for example the `message` of an error the app has no text for) and by the operating
   system's own dialogs stays in English. The native "Open folder" dialog title is main's.
+- The native menu (Stage P06, ADR-0038) is translated, by main: `src/shared/desktop/src/main/menuText.ts` has its
+  36 labels in the eight languages and follows the language setting. It is not part of the renderers' catalogs; a
+  test in the desktop package keeps the eight tables whole. A failed update check's reason is the update library's
+  English text.
 - The translations were written without a native-speaker review; they are plain UI language and meant to be corrected
   in the message files.

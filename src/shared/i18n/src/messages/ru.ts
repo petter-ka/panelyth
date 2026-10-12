@@ -50,6 +50,7 @@ const messages: Messages = {
   "A texture…": "Текстура…",
   "A to Z": "От А до Я",
   "ALL UPPERCASE": "ВСЕ ПРОПИСНЫЕ",
+  About: "О программе",
   "Accepted certificate (SHA-256):": "Принятый сертификат (SHA-256):",
   Accessed: "Последний доступ",
   Across: "По горизонтали",
@@ -246,6 +247,9 @@ const messages: Messages = {
   Channel: "Канал",
   "Channel mixer": "Микширование каналов",
   "Channels to invert": "Каналы для инверсии",
+  "Check automatically": "Проверять автоматически",
+  "Check for updates": "Проверить обновления",
+  "Checking for updates…": "Проверка обновлений…",
   "Checking the size…": "Проверка размера…",
   "Checksum files": "Файлы контрольных сумм",
   "Checksums created for {count, plural, one {# file} other {# files}}.":
@@ -519,9 +523,11 @@ const messages: Messages = {
   "Double-click edge": "Двойной щелчок по границе",
   Down: "По вертикали",
   Download: "Скачать",
+  "Download and install": "Загрузить и установить",
   "Download {what}{amount}": "Скачать {what}{amount}",
   "Downloaded {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Скачан # элемент} few {Скачано # элемента} many {Скачано # элементов} other {Скачано # элемента}}",
+  "Downloading version {version}… {percent} %": "Загрузка версии {version}… {percent} %",
   "Downloading {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Скачивание # элемента} few {Скачивание # элементов} many {Скачивание # элементов} other {Скачивание # элемента}}",
   Downloads: "Загрузки",
@@ -933,6 +939,8 @@ const messages: Messages = {
   Longitude: "Долгота",
   "Looking…": "Поиск…",
   Looks: "Стили",
+  "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.":
+    "Ищет новую версию при запуске и каждые несколько часов. Ничего не загружается, пока вы не попросите.",
   "Lowest first": "Сначала низкие",
   Luminance: "Яркость (luma)",
   "Luminance noise": "Яркостный шум",
@@ -1096,6 +1104,7 @@ const messages: Messages = {
     "Среди выбранных элементов нет изображений, которые можно редактировать.",
   Normal: "Обычное",
   "Not available": "Недоступно",
+  "Not checked yet.": "Проверка ещё не выполнялась.",
   "Not connected": "Нет подключения",
   "Not encrypted": "Без шифрования",
   "Not encrypted: the password and the files can be read on the way.":
@@ -1153,7 +1162,9 @@ const messages: Messages = {
   "Open in the left panel": "Открыть в левой панели",
   "Open in the right panel": "Открыть в правой панели",
   "Open keyboard shortcuts": "Открыть сочетания клавиш",
+  "Open log folder": "Открыть папку журналов",
   "Open the archive under the cursor": "Открыть архив под курсором",
+  "Open the download page": "Открыть страницу загрузки",
   "Open with default app": "Открыть в приложении по умолчанию",
   "Opening the picture…": "Открытие изображения…",
   "Opening…": "Открытие…",
@@ -1207,6 +1218,7 @@ const messages: Messages = {
     "У Panelyth нет разрешения на чтение этого файла.",
   "Panelyth doesn't have permission to read this picture.":
     "У Panelyth нет разрешения на чтение этого изображения.",
+  "Panelyth is up to date.": "Установлена последняя версия Panelyth.",
   "Panelyth will close.": "Panelyth будет закрыт.",
   "Paper tone": "Тон бумаги",
   Parameters: "Параметры",
@@ -1337,6 +1349,7 @@ const messages: Messages = {
   Region: "Область",
   "Region to obscure; arrow keys move it": "Скрываемая область; стрелки перемещают её",
   "Regular expression": "Регулярное выражение",
+  "Release notes": "Примечания к выпуску",
   "Relief from": "Рельеф по",
   Reload: "Перезагрузить",
   "Remind me to save changes": "Напоминать о сохранении изменений",
@@ -1396,6 +1409,7 @@ const messages: Messages = {
   "Replace with": "Заменить на",
   "Replace {pictures}?": "Заменить: {pictures}?",
   "Replaces a newer file": "Заменяет более новый файл",
+  "Report a problem": "Сообщить о проблеме",
   "Resample to keep the print size": "Пересчитать, чтобы сохранить размер печати",
   Resampling: "Пересчёт",
   Reset: "Сбросить",
@@ -1414,6 +1428,7 @@ const messages: Messages = {
   "Resize {name}": "Изменить размер: {name}",
   Resolution: "Разрешение",
   "Resolution (0 keeps the picture's)": "Разрешение (0 — как у изображения)",
+  "Restart to update": "Перезапустить для обновления",
   Results: "Результаты",
   Resume: "Продолжить",
   "Retouch area; arrow keys move the cross, Enter applies there, Alt+Enter sets the source":
@@ -1726,6 +1741,7 @@ const messages: Messages = {
   "The destination has no trash, so existing files can't be replaced safely.":
     "В месте назначения нет корзины, поэтому существующие файлы нельзя безопасно заменить.",
   "The details are no longer available.": "Подробности больше недоступны.",
+  "The download failed: {reason}": "Не удалось загрузить обновление: {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "Диск не готов. Вставьте диск или подключите его снова.",
   "The editing session has ended. Close the editor and open the picture again.":
@@ -1815,6 +1831,7 @@ const messages: Messages = {
   "The text is too long.": "Текст слишком длинный.",
   "The tree opens folders as the cursor moves": "Дерево открывает папки при движении курсора",
   "The two panels have the same files.": "В обеих панелях одни и те же файлы.",
+  "The update check failed: {reason}": "Не удалось проверить обновления: {reason}",
   "The working folder of {command} was not found.": "Рабочая папка команды «{command}» не найдена.",
   Theme: "Тема",
   "Theme: {theme}": "Тема: {theme}",
@@ -1831,10 +1848,12 @@ const messages: Messages = {
     "Это не текстовые файлы; сравниваются их байты.",
   "These files are too large for a text comparison; their bytes are compared.":
     "Эти файлы слишком велики для сравнения текста; сравниваются их байты.",
+  "Third-party licenses": "Лицензии сторонних компонентов",
   Thirds: "Трети",
   "This PDF is protected. Enter its password.": "Этот PDF защищён. Введите пароль.",
   "This and every later conflict of this job": "Этот и все последующие конфликты этой задачи",
   "This batch can no longer be undone.": "Этот пакет уже нельзя отменить.",
+  "This build does not update itself.": "Эта сборка не обновляется сама.",
   "This can't be undone.": "Это действие нельзя отменить.",
   "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
     "Будет закрыто: {count, plural, one {# закреплённая вкладка} few {# закреплённые вкладки} many {# закреплённых вкладок} other {# закреплённой вкладки}}. Нажмите «Открыть» ещё раз, чтобы продолжить.",
@@ -1964,6 +1983,8 @@ const messages: Messages = {
   "Unpin column": "Открепить столбец",
   Up: "Вверх",
   "Up one folder": "На уровень вверх",
+  "Update available": "Доступно обновление",
+  Updates: "Обновления",
   "Updating drives…": "Обновление списка дисков…",
   "Updating favorites {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Обновление избранного для # элемента} few {Обновление избранного для # элементов} many {Обновление избранного для # элементов} other {Обновление избранного для # элемента}}",
@@ -1989,6 +2010,10 @@ const messages: Messages = {
   "Verifying {count, plural, one {# item} other {# items}}":
     "Проверка {count, plural, one {# элемента} few {# элементов} many {# элементов} other {# элемента}}",
   "Verifying {what}…": "Проверка: {what}…",
+  "Version {version}": "Версия {version}",
+  "Version {version} is available.": "Доступна версия {version}.",
+  "Version {version} is ready. It installs when Panelyth restarts.":
+    "Версия {version} готова. Она установится при перезапуске Panelyth.",
   Vertical: "По вертикали",
   Vibrance: "Сочность",
   Video: "Видео",
@@ -2019,6 +2044,7 @@ const messages: Messages = {
     "С этого начинают окна копирования и перемещения; в каждой задаче можно выбрать иначе.",
   "What to draw": "Что рисовать",
   "What will happen": "Что произойдёт",
+  "What's new": "Что нового",
   "When a file exists at the destination": "Если файл уже существует в месте назначения",
   "When a name is taken": "Если имя занято",
   "When switching apps, carry over": "При переключении приложений переносить",

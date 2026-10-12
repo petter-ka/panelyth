@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"testing"
 
 	"panelyth/sidecar/internal/media"
@@ -218,6 +219,43 @@ func TestOlderSchemaIsRecreated(t *testing.T) {
 	root, _ := s.EnsureDir(ctx, filepath.Join(t.TempDir(), "r"))
 	if _, err := s.Commit(ctx, s.NextGeneration(), []Row{fileRow(root, "a.jpg", 1, 1)}, nil); err != nil {
 		t.Fatalf("commit after upgrade: %v", err)
+	}
+}
+
+// A downgrade (Stage P06): an index.db a newer build wrote is as
+// disposable as an older one. It is recreated, never read with the wrong
+// schema, and indexing works at once.
+func TestNewerSchemaIsRecreated(t *testing.T) {
+	s, path := openTest(t)
+	root, _ := s.EnsureDir(ctx, filepath.Join(t.TempDir(), "r"))
+	if _, err := s.Commit(ctx, s.NextGeneration(), []Row{fileRow(root, "old.jpg", 1, 1)}, nil); err != nil {
+		t.Fatal(err)
+	}
+	_ = s.Close()
+	db, err := sql.Open("sqlite", path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`UPDATE meta SET value = ? WHERE key = 'schema_version'`, strconv.Itoa(schemaVersion+1)); err != nil {
+		t.Fatal(err)
+	}
+	_ = db.Close()
+
+	s, err = Open(path, slog.New(slog.DiscardHandler))
+	if err != nil {
+		t.Fatalf("an index from a newer build should be recreated: %v", err)
+	}
+	defer s.Close()
+	var entries int
+	if err := s.r.QueryRow(`SELECT COUNT(*) FROM entries`).Scan(&entries); err != nil {
+		t.Fatal(err)
+	}
+	if entries != 0 {
+		t.Fatalf("%d rows of the newer schema were kept", entries)
+	}
+	root, _ = s.EnsureDir(ctx, filepath.Join(t.TempDir(), "r2"))
+	if _, err := s.Commit(ctx, s.NextGeneration(), []Row{fileRow(root, "a.jpg", 1, 1)}, nil); err != nil {
+		t.Fatalf("commit after the downgrade: %v", err)
 	}
 }
 

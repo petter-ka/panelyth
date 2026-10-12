@@ -48,10 +48,13 @@ test.describe("app switch (ADR-0031)", () => {
       await waitForReady(page)
       await expect(page.getByRole("toolbar", { name: "Navigation" })).toBeVisible()
       await expect(page.getByTestId("app-switch")).toHaveCount(0)
-      // No switch; openRequest is the viewer asking what it was started to show ("Open with").
+      // No switch; openRequest is the viewer asking what it was started to show ("Open with"),
+      // about and openTarget are Settings → About (Stage P06).
       expect(await page.evaluate(() => Object.keys(window.panelyth!.app).sort())).toEqual([
+        "about",
         "exit",
         "openRequest",
+        "openTarget",
       ])
       await page.keyboard.press("Control+Shift+M")
       await page.waitForTimeout(300)

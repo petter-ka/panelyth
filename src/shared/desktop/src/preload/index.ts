@@ -87,6 +87,14 @@ const api: PanelythApi = {
   app: {
     exit: () => invoke("app.exit", {}),
     openRequest: () => invoke("app.openRequest", {}),
+    about: () => invoke("app.about", {}),
+    openTarget: (target) => invoke("app.openTarget", { target }),
+  },
+  update: {
+    get: () => invoke("update.get", {}),
+    check: () => invoke("update.check", {}),
+    download: () => invoke("update.download", {}),
+    install: () => invoke("update.install", {}),
   },
   system: {
     ping: () => invoke("system.ping", {}),

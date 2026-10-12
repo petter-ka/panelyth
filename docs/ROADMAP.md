@@ -35,7 +35,7 @@ Only one stage is active at a time. Default order:
 | 15a | C10.5 — Tab sets, folder tree, FTP connections, compare selected files | commander | implementation done (2026-10-12, owner request): ADR-0037 accepted with amendments; tab sets, the folder tree on shared code, FTP and FTPS as a session source with saved connections, compare for several files. P04 covers FTP and the tree on all three OSes |
 | 16 | P04 — Cross-platform hardening | platform | active (in progress since 2026-10-08, taken up again 2026-10-12): packaging, CI, the Linux pass, paths, volumes, media tools, wheel input and the viewer's e2e specs done; the macOS items remain |
 | 17 | P05 — Performance hardening | platform | both apps |
-| 18 | P06 — Release engineering | platform | packages both app views with the commander enabled |
+| 18 | P06 — Release engineering | platform | implementation done on Windows (2026-10-12, owner request, before P05): ADR-0038 accepted; one version, updates from Settings → About, the native menu, signing by secrets, notices, ffmpeg, migration tests, the release workflow and docs. Certificates, a public update feed and the macOS and Linux runs remain |
 | 19 | C11 — Commander release | commander | completes the commander-specific release checks and acceptance |
 | — | 12–16 — Image editor | viewer | planned, not scheduled (owner request 2026-10-11); proposed slot: after P04, before P05, so P05 profiles the editor too |
 
@@ -151,6 +151,13 @@ Profile real use of both apps; tune scanner, SQLite, decoder, cache, IPC, render
 
 Signing, notarization, update strategy, installers, migrations, notices and release documentation for the product
 (both apps in one shell, with the commander enabled in packaged builds).
+
+Implementation done on 2026-10-12 (ADR-0038): one product version for the shell and the sidecar; updates found,
+downloaded and installed from Settings → About, with the release's notes; a native menu in eight languages; packages
+signed and notarized when the certificates are configured; one generated licence notice file; a pinned LGPL ffmpeg
+beside the sidecar on Windows and Linux; `library.db` tested from every schema; a tag builds all three OSes into a
+draft release. Tested on Windows end to end (install, update inside the app, uninstall). Open: the certificates, a
+feed that installed apps can read, and the macOS and Linux runs (`docs/shared/stages/P06-release.md`).
 
 ## Commander track
 

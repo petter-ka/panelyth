@@ -51,6 +51,7 @@ const messages: Messages = {
   "A texture…": "Eine Textur …",
   "A to Z": "A bis Z",
   "ALL UPPERCASE": "ALLES GROSSBUCHSTABEN",
+  About: "Info",
   "Accepted certificate (SHA-256):": "Akzeptiertes Zertifikat (SHA-256):",
   Accessed: "Zugriff",
   Across: "Waagerecht",
@@ -249,6 +250,9 @@ const messages: Messages = {
   Channel: "Kanal",
   "Channel mixer": "Kanalmixer",
   "Channels to invert": "Zu invertierende Kanäle",
+  "Check automatically": "Automatisch suchen",
+  "Check for updates": "Nach Updates suchen",
+  "Checking for updates…": "Suche nach Updates…",
   "Checking the size…": "Größe wird geprüft…",
   "Checksum files": "Prüfsummendateien",
   "Checksums created for {count, plural, one {# file} other {# files}}.":
@@ -526,9 +530,11 @@ const messages: Messages = {
   "Double-click edge": "Doppelklick auf den Rand",
   Down: "Senkrecht",
   Download: "Herunterladen",
+  "Download and install": "Laden und installieren",
   "Download {what}{amount}": "{what}{amount} herunterladen",
   "Downloaded {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element heruntergeladen} other {# Elemente heruntergeladen}}",
+  "Downloading version {version}… {percent} %": "Version {version} wird geladen… {percent} %",
   "Downloading {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element wird heruntergeladen} other {# Elemente werden heruntergeladen}}",
   Downloads: "Downloads",
@@ -940,6 +946,8 @@ const messages: Messages = {
   Longitude: "Längengrad",
   "Looking…": "Suche …",
   Looks: "Looks",
+  "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.":
+    "Sucht beim Start und alle paar Stunden nach einer neueren Version. Geladen wird erst, wenn Sie es verlangen.",
   "Lowest first": "Niedrigste zuerst",
   Luminance: "Luminanz",
   "Luminance noise": "Helligkeitsrauschen",
@@ -1104,6 +1112,7 @@ const messages: Messages = {
     "Keines der ausgewählten Elemente ist ein Bild, das bearbeitet werden kann.",
   Normal: "Normal",
   "Not available": "Nicht verfügbar",
+  "Not checked yet.": "Noch nicht geprüft.",
   "Not connected": "Nicht verbunden",
   "Not encrypted": "Unverschlüsselt",
   "Not encrypted: the password and the files can be read on the way.":
@@ -1162,7 +1171,9 @@ const messages: Messages = {
   "Open in the left panel": "Im linken Bereich öffnen",
   "Open in the right panel": "Im rechten Bereich öffnen",
   "Open keyboard shortcuts": "Tastenkürzel öffnen",
+  "Open log folder": "Protokollordner öffnen",
   "Open the archive under the cursor": "Archiv unter dem Cursor öffnen",
+  "Open the download page": "Download-Seite öffnen",
   "Open with default app": "Mit Standard-App öffnen",
   "Opening the picture…": "Bild wird geöffnet…",
   "Opening…": "Wird geöffnet…",
@@ -1216,6 +1227,7 @@ const messages: Messages = {
     "Panelyth hat keine Berechtigung, diese Datei zu lesen.",
   "Panelyth doesn't have permission to read this picture.":
     "Panelyth hat keine Berechtigung, dieses Bild zu lesen.",
+  "Panelyth is up to date.": "Panelyth ist auf dem neuesten Stand.",
   "Panelyth will close.": "Panelyth wird geschlossen.",
   "Paper tone": "Papierton",
   Parameters: "Parameter",
@@ -1348,6 +1360,7 @@ const messages: Messages = {
   "Region to obscure; arrow keys move it":
     "Unkenntlich zu machender Bereich; die Pfeiltasten verschieben ihn",
   "Regular expression": "Regulärer Ausdruck",
+  "Release notes": "Versionshinweise",
   "Relief from": "Relief aus",
   Reload: "Neu laden",
   "Remind me to save changes": "Mich ans Speichern von Änderungen erinnern",
@@ -1409,6 +1422,7 @@ const messages: Messages = {
   "Replace with": "Ersetzen durch",
   "Replace {pictures}?": "{pictures} ersetzen?",
   "Replaces a newer file": "Ersetzt eine neuere Datei",
+  "Report a problem": "Problem melden",
   "Resample to keep the print size": "Neu berechnen, um die Druckgröße zu behalten",
   Resampling: "Neuberechnung",
   Reset: "Zurücksetzen",
@@ -1427,6 +1441,7 @@ const messages: Messages = {
   "Resize {name}": "Größe ändern: {name}",
   Resolution: "Auflösung",
   "Resolution (0 keeps the picture's)": "Auflösung (0 behält die des Bildes)",
+  "Restart to update": "Für das Update neu starten",
   Results: "Ergebnisse",
   Resume: "Fortsetzen",
   "Retouch area; arrow keys move the cross, Enter applies there, Alt+Enter sets the source":
@@ -1743,6 +1758,7 @@ const messages: Messages = {
   "The destination has no trash, so existing files can't be replaced safely.":
     "Das Ziel hat keinen Papierkorb, daher können vorhandene Dateien nicht sicher ersetzt werden.",
   "The details are no longer available.": "Die Details sind nicht mehr verfügbar.",
+  "The download failed: {reason}": "Der Download ist fehlgeschlagen: {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "Das Laufwerk ist nicht bereit. Legen Sie einen Datenträger ein oder verbinden Sie es erneut.",
   "The editing session has ended. Close the editor and open the picture again.":
@@ -1841,6 +1857,7 @@ const messages: Messages = {
   "The tree opens folders as the cursor moves":
     "Der Baum öffnet Ordner, während sich der Cursor bewegt",
   "The two panels have the same files.": "Beide Bereiche enthalten dieselben Dateien.",
+  "The update check failed: {reason}": "Die Suche nach Updates ist fehlgeschlagen: {reason}",
   "The working folder of {command} was not found.":
     "Der Arbeitsordner von {command} wurde nicht gefunden.",
   Theme: "Design",
@@ -1860,11 +1877,13 @@ const messages: Messages = {
     "Dies sind keine Textdateien; ihre Bytes werden verglichen.",
   "These files are too large for a text comparison; their bytes are compared.":
     "Diese Dateien sind für einen Textvergleich zu groß; ihre Bytes werden verglichen.",
+  "Third-party licenses": "Lizenzen von Drittanbietern",
   Thirds: "Drittel",
   "This PDF is protected. Enter its password.":
     "Dieses PDF ist geschützt. Geben Sie das Passwort ein.",
   "This and every later conflict of this job": "Dieser und jeder weitere Konflikt dieser Aufgabe",
   "This batch can no longer be undone.": "Dieser Stapel kann nicht mehr rückgängig gemacht werden.",
+  "This build does not update itself.": "Dieser Build aktualisiert sich nicht selbst.",
   "This can't be undone.": "Das kann nicht rückgängig gemacht werden.",
   "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
     "Dadurch {count, plural, one {wird # gesperrter Tab} other {werden # gesperrte Tabs}} geschlossen. Wählen Sie erneut „Öffnen“, um fortzufahren.",
@@ -1997,6 +2016,8 @@ const messages: Messages = {
   "Unpin column": "Spalte lösen",
   Up: "Hoch",
   "Up one folder": "Einen Ordner nach oben",
+  "Update available": "Update verfügbar",
+  Updates: "Updates",
   "Updating drives…": "Laufwerke werden aktualisiert…",
   "Updating favorites {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Favoriten von # Element werden aktualisiert} other {Favoriten von # Elementen werden aktualisiert}}",
@@ -2021,6 +2042,10 @@ const messages: Messages = {
   "Verifying {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element wird} other {# Elemente werden}} geprüft",
   "Verifying {what}…": "{what} wird geprüft…",
+  "Version {version}": "Version {version}",
+  "Version {version} is available.": "Version {version} ist verfügbar.",
+  "Version {version} is ready. It installs when Panelyth restarts.":
+    "Version {version} ist bereit. Sie wird beim Neustart von Panelyth installiert.",
   Vertical: "Vertikal",
   Vibrance: "Dynamik",
   Video: "Video",
@@ -2051,6 +2076,7 @@ const messages: Messages = {
     "Die Vorgabe der Kopier- und Verschiebedialoge; jede Aufgabe kann weiterhin selbst wählen.",
   "What to draw": "Was gezeichnet wird",
   "What will happen": "Was geschehen wird",
+  "What's new": "Neuigkeiten",
   "When a file exists at the destination": "Wenn eine Datei am Ziel bereits existiert",
   "When a name is taken": "Wenn ein Name vergeben ist",
   "When switching apps, carry over": "Beim Wechsel der App übernehmen",

@@ -53,8 +53,29 @@ export async function launchApp(
     args: [desktopDir, ...args],
     env: launchEnv(env),
   })
-  const page = await app.firstWindow()
-  return { app, page }
+  return { app, page: await mainPage(app) }
+}
+
+/**
+ * The page of the first window: the viewer's when the app's own window
+ * opened. With the commander shown at start its view loads at the same
+ * moment, and Playwright's first page is then sometimes the commander's;
+ * a test that takes it for the viewer finds no tiles in it. A window that is
+ * neither (a media window of a file opened from the OS) is returned as it is.
+ */
+async function mainPage(app: ElectronApplication): Promise<Page> {
+  const first = await app.firstWindow()
+  const deadline = Date.now() + 10_000
+  while (first.url() === "about:blank" && Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 25))
+  }
+  if (!first.url().startsWith("app://commander/index.html")) return first
+  for (;;) {
+    const viewer = app.windows().find((p) => p.url().startsWith("app://panelyth/"))
+    if (viewer) return viewer
+    if (Date.now() > deadline) return first
+    await new Promise((r) => setTimeout(r, 25))
+  }
 }
 
 export function sidecarStatus(page: Page): Promise<SidecarStatus> {

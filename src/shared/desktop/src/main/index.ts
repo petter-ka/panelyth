@@ -7,6 +7,7 @@ import {
   dialog,
   ClipboardItem,
   ipcMain,
+  Menu,
   safeStorage,
   session,
   shell,
@@ -38,10 +39,12 @@ import {
   commanderPreloadPath,
   documentsDevUrl,
   documentsDistPath,
+  noticesPath,
   preloadPath,
   rendererDevUrl,
   rendererDistPath,
   sidecarBinaryPath,
+  updateFeedPath,
 } from "./paths"
 import {
   APP_HOST,
@@ -58,18 +61,27 @@ import { AppShell, startAppFrom } from "./shell"
 import {
   COMMANDER_ENABLED_ARG,
   documentKindOf,
+  readUpdateSettings,
+  SHARED_UPDATES_KEY,
   type AppId,
+  type AppTarget,
+  type MenuCommand,
   type OpenRequest,
+  type UpdateMode,
 } from "@panelyth/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
 import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
 import { statSync } from "node:fs"
-import { stat } from "node:fs/promises"
+import { readFile, stat } from "node:fs/promises"
 import { join } from "node:path"
 import { perfMark } from "./perf"
 import { electronSecretStore, noSecretStore, remoteHandlers } from "./remote"
+import { markActiveApp, menuKey, menuTemplate, type MenuActions, type MenuContext } from "./menu"
+import { menuText } from "./menuText"
+import { aboutInfo, openTarget } from "./product"
+import { electronUpdaterEngine, resolveUpdateMode, scriptedEngine, UpdateService } from "./updates"
 
 // Recorded once all main-process modules (including electron) are loaded.
 perfMark("main-loaded")
@@ -97,6 +109,10 @@ const userDataOverride = app.isPackaged ? undefined : process.env.PANELYTH_USER_
 if (userDataOverride) app.setPath("userData", userDataOverride)
 
 registerAppScheme()
+
+// Electron builds its default menu when the app becomes ready unless a menu
+// was set before; ours is built in boot() (Stage P06).
+Menu.setApplicationMenu(null)
 
 // Benchmark hook (main process only, like __panelythPerf).
 ;(globalThis as { __panelythIpcCounts?: () => Record<string, number> }).__panelythIpcCounts =
@@ -134,6 +150,12 @@ let startFile: string | null = fileFrom(process.argv, process.cwd())
 let booted = false
 /** A file's folder and entry waiting for the viewer to start (app.openRequest takes it). */
 let pendingOpen: OpenRequest | null = null
+/** A native menu item chosen while no window was open (macOS); the viewer gets it once it listens. */
+let pendingCommand: MenuCommand | null = null
+let updates: UpdateService | null = null
+/** The language of Settings → Appearance, for the native menu. */
+let menuLanguage = "en"
+let shownMenu = ""
 
 const documentsOrigin = (): string => {
   const devUrl = documentsDevUrl()
@@ -219,8 +241,8 @@ function openWindow(): BrowserWindow {
     announceVisibleApp,
   )
   const shell = appShell
-  // Opened to show a file's folder: the viewer, whichever app was used last.
-  if (pendingOpen) return win
+  // Opened to show a file's folder or for a menu item: the viewer, whichever app was used last.
+  if (pendingOpen || pendingCommand) return win
   if (forcedStartApp === "commander") shell.switchTo("commander")
   else if (forcedStartApp === null)
     void lastUsedApp().then((last) => {
@@ -240,9 +262,114 @@ function openWindow(): BrowserWindow {
 let visibleSeq = 0
 
 function announceVisibleApp(visible: AppId): void {
+  // View's mark follows the app, on the menu that is there: a switch builds nothing.
+  markActiveApp(Menu.getApplicationMenu(), visible)
   sidecar?.call("app.setVisible", { app: visible, seq: ++visibleSeq }).catch((error: unknown) => {
     logger.warn("app.setVisible failed", { error: String(error) })
   })
+}
+
+/** Rebuilds the native menu when what it shows changed: the language or the update's next step. */
+function refreshMenu(): void {
+  const context: MenuContext = {
+    platform: process.platform,
+    packaged: app.isPackaged,
+    commanderEnabled,
+    activeApp: appShell?.activeApp ?? "viewer",
+    update: updates?.state ?? { mode: "off", phase: "idle" },
+    text: menuText(menuLanguage),
+  }
+  const key = menuKey(context, menuLanguage)
+  if (key === shownMenu) return
+  shownMenu = key
+  Menu.setApplicationMenu(Menu.buildFromTemplate(menuTemplate(context, menuActions)))
+}
+
+/** An item the app on screen carries out; with no window, the viewer is opened for it. */
+function sendMenuCommand(command: MenuCommand): void {
+  const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
+  const target = win && appShell ? appShell.webContentsOf(appShell.activeApp) : null
+  if (win && target && !target.isDestroyed() && !target.isLoading()) {
+    if (win.isMinimized()) win.restore()
+    win.focus()
+    broadcast([target], "menu.command", { command })
+    return
+  }
+  // Delivered when the app on screen asks for the update state: it listens by then.
+  pendingCommand = command
+  if (!win && booted && shutdownState === "running") openWindow()
+}
+
+/** The Help menu's and the About tab's fixed places (product.ts). */
+async function openAppTarget(target: AppTarget): Promise<void> {
+  if (recordShell) {
+    shellLog.push({ action: "openTarget", value: target })
+    return
+  }
+  await openTarget(target, {
+    logsDir: () => app.getPath("logs"),
+    noticesPath,
+    exists: (path) =>
+      stat(path).then(
+        () => true,
+        () => false,
+      ),
+    openPath: (path) => shell.openPath(path),
+    openExternal: (url) => shell.openExternal(url),
+  })
+}
+
+const menuActions: MenuActions = {
+  command: sendMenuCommand,
+  switchApp: (to) => {
+    if (appShell?.enabled && mainWindow && !mainWindow.isDestroyed()) appShell.requestSwitch(to)
+    // The radio item checked itself; show what is true.
+    markActiveApp(Menu.getApplicationMenu(), appShell?.activeApp ?? "viewer")
+  },
+  openTarget: (target) =>
+    void openAppTarget(target).catch((error: unknown) =>
+      logger.warn("menu target failed", { target, error: String(error) }),
+    ),
+}
+
+/**
+ * What this build can do with a newer version (ADR-0038). The e2e tests of
+ * unpackaged builds script an engine with PANELYTH_TEST_UPDATE.
+ */
+async function updateMode(scripted: string | undefined): Promise<UpdateMode> {
+  if (scripted !== undefined) {
+    const mode = (JSON.parse(scripted) as { mode?: unknown }).mode
+    return mode === "manual" || mode === "off" ? mode : "auto"
+  }
+  if (!app.isPackaged) return "off"
+  const [hasFeed, signed] = await Promise.all([
+    stat(updateFeedPath()).then(
+      () => true,
+      () => false,
+    ),
+    // scripts/package.mjs records a Developer ID signature in the packaged package.json.
+    readFile(join(app.getAppPath(), "package.json"), "utf8").then(
+      (json) => (JSON.parse(json) as { panelythSigned?: unknown }).panelythSigned === true,
+      () => false,
+    ),
+  ])
+  return resolveUpdateMode({
+    packaged: true,
+    platform: process.platform,
+    hasFeed,
+    signed,
+    appImage: process.env.APPIMAGE,
+  })
+}
+
+/** The settings main itself follows: the menu's language and the automatic update check. */
+function applySharedSetting(key: string, value: unknown): void {
+  if (key === SHARED_UPDATES_KEY) updates?.setAuto(readUpdateSettings(value).auto)
+  if (key === "shared.appearance") {
+    const language = (value as { language?: unknown } | null | undefined)?.language
+    menuLanguage = typeof language === "string" ? language : "en"
+    refreshMenu()
+  }
 }
 
 /** Settings → General "Start with", else the app the previous run ended in. */
@@ -326,6 +453,23 @@ async function boot(): Promise<void> {
       perfMark("sidecar-ready")
       // A new sidecar process knows nothing: at start and after a restart.
       announceVisibleApp(appShell?.activeApp ?? "viewer")
+      // One product version (Stage P06): the sidecar is built with the shell's.
+      const sidecarVersion = sc.getHello()?.version ?? ""
+      if (app.isPackaged && sidecarVersion.split("+")[0] !== app.getVersion()) {
+        logger.error("the sidecar is not this version's", {
+          sidecar: sidecarVersion,
+          app: app.getVersion(),
+        })
+      }
+      void sc.call("library.get", {}).then(
+        (library) => {
+          const settings = (library as { settings?: Record<string, unknown> }).settings ?? {}
+          for (const key of [SHARED_UPDATES_KEY, "shared.appearance"]) {
+            if (key in settings) applySharedSetting(key, settings[key])
+          }
+        },
+        () => undefined,
+      )
     }
     logger.info("sidecar status", { ...status })
     broadcast(webContents.getAllWebContents(), "sidecar.status", status)
@@ -382,11 +526,68 @@ async function boot(): Promise<void> {
       ])
     },
   }
+  const scriptedUpdate = app.isPackaged ? undefined : process.env.PANELYTH_TEST_UPDATE
+  const updateService = new UpdateService({
+    // Known a moment later: a file is looked for, off the startup path.
+    mode: "off",
+    currentVersion: app.getVersion(),
+    engine: () =>
+      scriptedUpdate !== undefined
+        ? Promise.resolve(
+            scriptedEngine(scriptedUpdate, (version) =>
+              shellLog.push({ action: "update.install", value: version }),
+            ),
+          )
+        : electronUpdaterEngine((level, message) => logger[level](`updater: ${message}`)),
+    onState: (state) => {
+      broadcast(webContents.getAllWebContents(), "update.state", state)
+      refreshMenu()
+    },
+    log: (message, fields) => logger.warn(message, fields),
+  })
+  updates = updateService
+  void updateMode(scriptedUpdate).then(
+    (mode) => {
+      updateService.setMode(mode)
+      updateService.start()
+    },
+    (error: unknown) => logger.warn("updates are off", { error: String(error) }),
+  )
+  refreshMenu()
+
   const main: MainHandlers = {
     "app.exit": () => {
       app.quit()
       return { ok: true }
     },
+    "app.about": () =>
+      aboutInfo({
+        version: app.getVersion(),
+        sidecarVersion: sc.getHello()?.version ?? null,
+        packaged: app.isPackaged,
+        versions: process.versions,
+        platform: process.platform,
+        arch: process.arch,
+      }),
+    "app.openTarget": async (_event, { target }) => {
+      await openAppTarget(target)
+      return { ok: true }
+    },
+    // An app asks once it listens for update.state and menu.command, so a menu item
+    // chosen before the app on screen was up (no window yet, or a view still
+    // loading) is handed over here, to that app.
+    "update.get": (event) => {
+      const command = pendingCommand
+      if (command && appShell && event.sender === appShell.webContentsOf(appShell.activeApp)) {
+        pendingCommand = null
+        const view = event.sender
+        setImmediate(() => broadcast([view], "menu.command", { command }))
+      }
+      return updateService.state
+    },
+    "update.check": () => updateService.check(),
+    "update.download": () => updateService.download(),
+    "update.install": () => ({ ok: updateService.install() }),
     // Viewer, once at start: what a file opened from the OS asked it to show.
     "app.openRequest": () => {
       const request = pendingOpen
@@ -575,8 +776,10 @@ async function boot(): Promise<void> {
     devMethods,
     activeApp: () => appShell?.activeApp ?? "viewer",
     // Shared settings (theme, interface size) reach the other app at once (ADR-0031).
-    onSharedSetting: (key, value) =>
-      broadcast(webContents.getAllWebContents(), "settings.changed", { key, value }),
+    onSharedSetting: (key, value) => {
+      broadcast(webContents.getAllWebContents(), "settings.changed", { key, value })
+      applySharedSetting(key, value)
+    },
   })
 
   // Sidecar and window start in parallel; calls wait for the handshake.

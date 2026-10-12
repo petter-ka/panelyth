@@ -99,12 +99,25 @@ jobs:
       #     fi
       # Packaging runs even when an e2e spec failed: the release builds
       # depend on it, and it needs only the build.
+      # Stage P06: the package is the release's (licence notices, the pinned
+      # ffmpeg beside the sidecar, the native menu, one version).
+      - name: Cache the ffmpeg builds
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/cache@v4
+        with:
+          path: .media-tools
+          key: media-tools-${{ runner.os }}-${{ hashFiles('src/shared/desktop/media-tools.json') }}
       - name: Package (unpacked)
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        env:
+          PANELYTH_MEDIA_TOOLS_CACHE: ${{ github.workspace }}/.media-tools
         run: pnpm package --dir
       - name: Packaged smoke test
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         shell: bash
+        env:
+          # ffmpeg is in the Windows and Linux packages (src/shared/desktop/media-tools.json).
+          PANELYTH_SMOKE_MEDIA_TOOLS: ${{ runner.os != 'macOS' && '1' || '' }}
         run: |
           if [ "$RUNNER_OS" = "Linux" ]; then
             xvfb-run -a -s "-screen 0 1920x1080x24" pnpm test:smoke

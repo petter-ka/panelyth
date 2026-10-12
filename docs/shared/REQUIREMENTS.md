@@ -89,6 +89,11 @@ Corrupt cache entries are removable/regenerable.
 
 Core browsing, viewing and file management require no cloud service.
 
+The app reaches the network by itself for one thing: looking for a newer version (ADR-0038, added in Stage P06 at
+the owner's request). The check reads the release feed and sends no account and no identifier of the user or the
+machine; nothing is downloaded until the user asks; Settings → About turns the automatic check off. (The
+commander's FTP connections go where the user points them, and only on a command; ADR-0037.)
+
 ### NFR-07 — Security
 
 Renderer has no arbitrary Node.js access.

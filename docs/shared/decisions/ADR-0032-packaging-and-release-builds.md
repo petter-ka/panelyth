@@ -5,6 +5,18 @@
 Accepted (Stage P04, 2026-10-08). Settles the packager choice ADR-0013 deferred to P04. Signing, notarization,
 updates and the ffmpeg/ffprobe build to ship stay Stage P06 decisions.
 
+Amended (Stage P06, 2026-10-12) by ADR-0038, which decides those four. What changed here:
+
+- The configuration is `src/shared/desktop/electron-builder.config.mjs` (a script: signing and the update feed come
+  from the environment); `electron-builder.yml` is gone.
+- `pnpm package` also fetches the ffmpeg build and writes the licence notices; both are in the package
+  (`resources/bin`, `resources/lib` on Linux, `resources/THIRD-PARTY-NOTICES.txt`).
+- `publish` names the update feed, so a package has `app-update.yml` and the installers come with `latest*.yml`.
+  electron-builder writes the feed for installer targets only, never for `--dir`.
+- `release.yml` runs on a pushed tag `v*` (not on a published release), builds Linux too, and attaches
+  everything to a draft release that the owner publishes.
+- The version comes from `PANELYTH_VERSION` (`scripts/version.mjs`), not from an electron-builder argument.
+
 ## Context
 
 - One product package per OS holds the shell with both apps (ADR-0031): main, two preloads, the viewer's and the

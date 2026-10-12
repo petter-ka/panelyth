@@ -49,6 +49,7 @@ const messages: Messages = {
   "A texture…": "Egy textúra…",
   "A to Z": "A–Z",
   "ALL UPPERCASE": "CSUPA NAGYBETŰ",
+  About: "Névjegy",
   "Accepted certificate (SHA-256):": "Elfogadott tanúsítvány (SHA-256):",
   Accessed: "Hozzáférés",
   Across: "Vízszintesen",
@@ -245,6 +246,9 @@ const messages: Messages = {
   Channel: "Csatorna",
   "Channel mixer": "Csatornakeverő",
   "Channels to invert": "Invertálandó csatornák",
+  "Check automatically": "Automatikus keresés",
+  "Check for updates": "Frissítések keresése",
+  "Checking for updates…": "Frissítések keresése…",
   "Checking the size…": "Méret ellenőrzése…",
   "Checksum files": "Ellenőrzőösszeg-fájlok",
   "Checksums created for {count, plural, one {# file} other {# files}}.":
@@ -520,9 +524,11 @@ const messages: Messages = {
   "Double-click edge": "Dupla kattintás a szegélyre",
   Down: "Függőlegesen",
   Download: "Letöltés",
+  "Download and install": "Letöltés és telepítés",
   "Download {what}{amount}": "Letöltés: {what}{amount}",
   "Downloaded {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elem letöltve} other {# elem letöltve}}",
+  "Downloading version {version}… {percent} %": "A(z) {version} verzió letöltése… {percent} %",
   "Downloading {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elem letöltése} other {# elem letöltése}}",
   Downloads: "Letöltések",
@@ -934,6 +940,8 @@ const messages: Messages = {
   Longitude: "Hosszúság",
   "Looking…": "Keresés…",
   Looks: "Stílusok",
+  "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.":
+    "Indításkor és néhány óránként újabb verziót keres. Semmit sem tölt le, amíg nem kéri.",
   "Lowest first": "Legalacsonyabb elöl",
   Luminance: "Fénysűrűség",
   "Luminance noise": "Fényességzaj",
@@ -1097,6 +1105,7 @@ const messages: Messages = {
     "A kijelölt elemek között nincs szerkeszthető kép.",
   Normal: "Normál",
   "Not available": "Nem érhető el",
+  "Not checked yet.": "Még nem volt ellenőrzés.",
   "Not connected": "Nincs kapcsolat",
   "Not encrypted": "Nincs titkosítva",
   "Not encrypted: the password and the files can be read on the way.":
@@ -1154,7 +1163,9 @@ const messages: Messages = {
   "Open in the left panel": "Megnyitás a bal panelen",
   "Open in the right panel": "Megnyitás a jobb panelen",
   "Open keyboard shortcuts": "Billentyűparancsok megnyitása",
+  "Open log folder": "Naplómappa megnyitása",
   "Open the archive under the cursor": "Az kurzor alatti archívum megnyitása",
+  "Open the download page": "A letöltési oldal megnyitása",
   "Open with default app": "Megnyitás az alapértelmezett alkalmazással",
   "Opening the picture…": "Kép megnyitása…",
   "Opening…": "Megnyitás…",
@@ -1208,6 +1219,7 @@ const messages: Messages = {
     "A Panelythnek nincs engedélye a fájl olvasásához.",
   "Panelyth doesn't have permission to read this picture.":
     "A Panelyth nem jogosult a kép olvasására.",
+  "Panelyth is up to date.": "A Panelyth naprakész.",
   "Panelyth will close.": "A Panelyth bezárul.",
   "Paper tone": "Papírtónus",
   Parameters: "Paraméterek",
@@ -1339,6 +1351,7 @@ const messages: Messages = {
   Region: "Terület",
   "Region to obscure; arrow keys move it": "Kitakarandó terület; a nyilak mozgatják",
   "Regular expression": "Reguláris kifejezés",
+  "Release notes": "Kiadási megjegyzések",
   "Relief from": "Dombormű forrása",
   Reload: "Újratöltés",
   "Remind me to save changes": "Emlékeztessen a módosítások mentésére",
@@ -1399,6 +1412,7 @@ const messages: Messages = {
   "Replace with": "Csere erre",
   "Replace {pictures}?": "Lecserél {pictures}?",
   "Replaces a newer file": "Újabb fájlt ír felül",
+  "Report a problem": "Hiba bejelentése",
   "Resample to keep the print size": "Újramintavételezés a nyomtatási méret megtartásához",
   Resampling: "Újramintavételezés",
   Reset: "Visszaállítás",
@@ -1417,6 +1431,7 @@ const messages: Messages = {
   "Resize {name}": "Átméretezés: {name}",
   Resolution: "Felbontás",
   "Resolution (0 keeps the picture's)": "Felbontás (0: a képé marad)",
+  "Restart to update": "Újraindítás a frissítéshez",
   Results: "Eredmények",
   Resume: "Folytatás",
   "Retouch area; arrow keys move the cross, Enter applies there, Alt+Enter sets the source":
@@ -1729,6 +1744,7 @@ const messages: Messages = {
   "The destination has no trash, so existing files can't be replaced safely.":
     "A célhelyen nincs kuka, ezért a meglévő fájlok nem cserélhetők le biztonságosan.",
   "The details are no longer available.": "A részletek már nem érhetők el.",
+  "The download failed: {reason}": "A letöltés nem sikerült: {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "A meghajtó nem áll készen. Helyezzen be egy lemezt, vagy csatlakoztassa újra.",
   "The editing session has ended. Close the editor and open the picture again.":
@@ -1820,6 +1836,7 @@ const messages: Messages = {
   "The text is too long.": "A szöveg túl hosszú.",
   "The tree opens folders as the cursor moves": "A fa megnyitja a mappákat, ahogy a kurzor mozog",
   "The two panels have the same files.": "A két panel ugyanazokat a fájlokat tartalmazza.",
+  "The update check failed: {reason}": "A frissítések keresése nem sikerült: {reason}",
   "The working folder of {command} was not found.": "A(z) {command} munkamappája nem található.",
   Theme: "Téma",
   "Theme: {theme}": "Téma: {theme}",
@@ -1836,10 +1853,12 @@ const messages: Messages = {
     "Ezek nem szövegfájlok; a bájtjaik kerülnek összehasonlításra.",
   "These files are too large for a text comparison; their bytes are compared.":
     "Ezek a fájlok túl nagyok a szöveges összehasonlításhoz; a bájtjaik kerülnek összehasonlításra.",
+  "Third-party licenses": "Harmadik felek licencei",
   Thirds: "Harmadok",
   "This PDF is protected. Enter its password.": "Ez a PDF védett. Adja meg a jelszavát.",
   "This and every later conflict of this job": "Ez és a feladat minden további ütközése",
   "This batch can no longer be undone.": "Ez a köteg már nem vonható vissza.",
+  "This build does not update itself.": "Ez a változat nem frissíti önmagát.",
   "This can't be undone.": "Ez nem vonható vissza.",
   "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
     "Ez bezár {count, plural, one {# rögzített lapot} other {# rögzített lapot}}. A folytatáshoz válassza újra a „Megnyitás” gombot.",
@@ -1968,6 +1987,8 @@ const messages: Messages = {
   "Unpin column": "Oszlop rögzítésének feloldása",
   Up: "Fel",
   "Up one folder": "Egy mappával feljebb",
+  "Update available": "Frissítés érhető el",
+  Updates: "Frissítések",
   "Updating drives…": "Meghajtók frissítése…",
   "Updating favorites {count, plural, one {# item} other {# items}}":
     "Kedvencek frissítése: {count, plural, one {# elem} other {# elem}}",
@@ -1993,6 +2014,10 @@ const messages: Messages = {
   "Verifying {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elem} other {# elem}} ellenőrzése",
   "Verifying {what}…": "{what} ellenőrzése…",
+  "Version {version}": "{version} verzió",
+  "Version {version} is available.": "Elérhető a(z) {version} verzió.",
+  "Version {version} is ready. It installs when Panelyth restarts.":
+    "A(z) {version} verzió készen áll. A Panelyth újraindításakor települ.",
   Vertical: "Függőleges",
   Vibrance: "Élénkség",
   Video: "Videó",
@@ -2023,6 +2048,7 @@ const messages: Messages = {
     "Ezzel indulnak a másolás és az áthelyezés párbeszédablakai; minden feladatnál módosítható.",
   "What to draw": "Mit rajzoljon",
   "What will happen": "Mi fog történni",
+  "What's new": "Újdonságok",
   "When a file exists at the destination": "Ha a fájl már létezik a célhelyen",
   "When a name is taken": "Ha a név foglalt",
   "When switching apps, carry over": "Alkalmazásváltáskor átvitele",

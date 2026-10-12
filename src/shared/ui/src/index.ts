@@ -1,3 +1,4 @@
+export * from "./AboutPanel"
 export * from "./appearance"
 export * from "./AppSwitchButton"
 export * from "./AppSwitcher"

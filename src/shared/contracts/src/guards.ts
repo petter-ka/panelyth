@@ -127,6 +127,7 @@ import {
   type SidecarStatus,
   type SystemInfo,
 } from "./rpc"
+import { isMenuCommandEvent, isUpdateState } from "./update"
 import type { EventFrame, HelloFrame, InboundFrame, ResponseFrame } from "./wire"
 
 type Rec = Record<string, unknown>
@@ -1013,6 +1014,8 @@ export const eventGuards: EventGuards = {
     (v.direction === -1 || v.direction === 0 || v.direction === 1),
   "edit.request": (v): v is EventMap["edit.request"] =>
     isRec(v) && isInt(v.entryId) && v.entryId > 0,
+  "update.state": isUpdateState,
+  "menu.command": isMenuCommandEvent,
   "open.request": (v): v is EventMap["open.request"] =>
     isRec(v) && isInt(v.dirId) && v.dirId > 0 && isInt(v.entryId) && v.entryId > 0,
 }

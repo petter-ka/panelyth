@@ -1,4 +1,5 @@
 import type { EditRequestEvent } from "./edit"
+import type { MenuCommandEvent, UpdateState } from "./update"
 import type {
   AppId,
   Bookmark,
@@ -113,6 +114,10 @@ export interface EventMap {
   "edit.request": EditRequestEvent
   /** From main, to the viewer: open this folder and select this entry (a file opened from the OS). */
   "open.request": OpenRequest
+  /** From main, to both apps (ADR-0038): the update state; a download reports at most 4 times a second. */
+  "update.state": UpdateState
+  /** From main, to the app on screen: an item of the native menu it carries out. */
+  "menu.command": MenuCommandEvent
 }
 
 export type EventChannel = keyof EventMap
@@ -135,6 +140,8 @@ export const EVENT_CHANNELS = [
   "mediaWindow.step",
   "edit.request",
   "open.request",
+  "update.state",
+  "menu.command",
 ] as const satisfies readonly EventChannel[]
 
 /** Channels produced by the Go sidecar and forwarded by main unchanged. */

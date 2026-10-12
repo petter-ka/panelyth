@@ -50,6 +50,7 @@ const messages: Messages = {
   "A texture…": "Une texture…",
   "A to Z": "De A à Z",
   "ALL UPPERCASE": "TOUT EN MAJUSCULES",
+  About: "À propos",
   "Accepted certificate (SHA-256):": "Certificat accepté (SHA-256) :",
   Accessed: "Dernier accès",
   Across: "Horizontalement",
@@ -247,6 +248,9 @@ const messages: Messages = {
   Channel: "Couche",
   "Channel mixer": "Mélangeur de couches",
   "Channels to invert": "Couches à inverser",
+  "Check automatically": "Rechercher automatiquement",
+  "Check for updates": "Rechercher des mises à jour",
+  "Checking for updates…": "Recherche de mises à jour…",
   "Checking the size…": "Vérification de la taille…",
   "Checksum files": "Fichiers de somme de contrôle",
   "Checksums created for {count, plural, one {# file} other {# files}}.":
@@ -523,9 +527,12 @@ const messages: Messages = {
   "Double-click edge": "Double-clic sur le bord",
   Down: "Verticalement",
   Download: "Télécharger",
+  "Download and install": "Télécharger et installer",
   "Download {what}{amount}": "Télécharger {what}{amount}",
   "Downloaded {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# élément téléchargé} many {# éléments téléchargés} other {# éléments téléchargés}}",
+  "Downloading version {version}… {percent} %":
+    "Téléchargement de la version {version}… {percent} %",
   "Downloading {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Téléchargement de # élément} many {Téléchargement de # éléments} other {Téléchargement de # éléments}}",
   Downloads: "Téléchargements",
@@ -938,6 +945,8 @@ const messages: Messages = {
   Longitude: "Longitude",
   "Looking…": "Recherche…",
   Looks: "Styles",
+  "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.":
+    "Recherche une version plus récente au démarrage, puis toutes les quelques heures. Rien n'est téléchargé sans votre demande.",
   "Lowest first": "Plus basse d'abord",
   Luminance: "Luminance",
   "Luminance noise": "Bruit de luminance",
@@ -1102,6 +1111,7 @@ const messages: Messages = {
     "Aucun des éléments sélectionnés n'est une image modifiable.",
   Normal: "Normale",
   "Not available": "Non disponible",
+  "Not checked yet.": "Pas encore vérifié.",
   "Not connected": "Non connecté",
   "Not encrypted": "Non chiffré",
   "Not encrypted: the password and the files can be read on the way.":
@@ -1159,7 +1169,9 @@ const messages: Messages = {
   "Open in the left panel": "Ouvrir dans le panneau de gauche",
   "Open in the right panel": "Ouvrir dans le panneau de droite",
   "Open keyboard shortcuts": "Ouvrir les raccourcis clavier",
+  "Open log folder": "Ouvrir le dossier des journaux",
   "Open the archive under the cursor": "Ouvrir l'archive sous le curseur",
+  "Open the download page": "Ouvrir la page de téléchargement",
   "Open with default app": "Ouvrir avec l'application par défaut",
   "Opening the picture…": "Ouverture de l'image…",
   "Opening…": "Ouverture…",
@@ -1213,6 +1225,7 @@ const messages: Messages = {
     "Panelyth n'a pas l'autorisation de lire ce fichier.",
   "Panelyth doesn't have permission to read this picture.":
     "Panelyth n'a pas l'autorisation de lire cette image.",
+  "Panelyth is up to date.": "Panelyth est à jour.",
   "Panelyth will close.": "Panelyth va se fermer.",
   "Paper tone": "Ton du papier",
   Parameters: "Paramètres",
@@ -1343,6 +1356,7 @@ const messages: Messages = {
   Region: "Zone",
   "Region to obscure; arrow keys move it": "Zone à masquer ; les flèches la déplacent",
   "Regular expression": "Expression régulière",
+  "Release notes": "Notes de version",
   "Relief from": "Relief d'après",
   Reload: "Recharger",
   "Remind me to save changes": "Me rappeler d'enregistrer les modifications",
@@ -1404,6 +1418,7 @@ const messages: Messages = {
   "Replace with": "Remplacer par",
   "Replace {pictures}?": "Remplacer {pictures} ?",
   "Replaces a newer file": "Remplace un fichier plus récent",
+  "Report a problem": "Signaler un problème",
   "Resample to keep the print size": "Rééchantillonner pour garder la taille d'impression",
   Resampling: "Rééchantillonnage",
   Reset: "Réinitialiser",
@@ -1422,6 +1437,7 @@ const messages: Messages = {
   "Resize {name}": "Redimensionner : {name}",
   Resolution: "Résolution",
   "Resolution (0 keeps the picture's)": "Résolution (0 garde celle de l'image)",
+  "Restart to update": "Redémarrer pour mettre à jour",
   Results: "Résultats",
   Resume: "Reprendre",
   "Retouch area; arrow keys move the cross, Enter applies there, Alt+Enter sets the source":
@@ -1738,6 +1754,7 @@ const messages: Messages = {
   "The destination has no trash, so existing files can't be replaced safely.":
     "La destination n'a pas de corbeille : les fichiers existants ne peuvent pas être remplacés en toute sécurité.",
   "The details are no longer available.": "Les détails ne sont plus disponibles.",
+  "The download failed: {reason}": "Le téléchargement a échoué : {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "Le lecteur n'est pas prêt. Insérez un disque ou reconnectez-le.",
   "The editing session has ended. Close the editor and open the picture again.":
@@ -1834,6 +1851,7 @@ const messages: Messages = {
   "The tree opens folders as the cursor moves":
     "L'arborescence ouvre les dossiers au déplacement du curseur",
   "The two panels have the same files.": "Les deux panneaux contiennent les mêmes fichiers.",
+  "The update check failed: {reason}": "La recherche de mises à jour a échoué : {reason}",
   "The working folder of {command} was not found.":
     "Le dossier de travail de {command} est introuvable.",
   Theme: "Thème",
@@ -1852,10 +1870,12 @@ const messages: Messages = {
     "Ce ne sont pas des fichiers texte ; leurs octets sont comparés.",
   "These files are too large for a text comparison; their bytes are compared.":
     "Ces fichiers sont trop volumineux pour une comparaison de texte ; leurs octets sont comparés.",
+  "Third-party licenses": "Licences tierces",
   Thirds: "Tiers",
   "This PDF is protected. Enter its password.": "Ce PDF est protégé. Saisissez son mot de passe.",
   "This and every later conflict of this job": "Ce conflit et tous les suivants de cette tâche",
   "This batch can no longer be undone.": "Ce lot ne peut plus être annulé.",
+  "This build does not update itself.": "Cette version ne se met pas à jour elle-même.",
   "This can't be undone.": "Cette action est irréversible.",
   "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
     "Cela ferme {count, plural, one {# onglet verrouillé} many {# onglets verrouillés} other {# onglets verrouillés}}. Choisissez « Ouvrir » à nouveau pour continuer.",
@@ -1986,6 +2006,8 @@ const messages: Messages = {
   "Unpin column": "Détacher la colonne",
   Up: "Haut",
   "Up one folder": "Dossier parent",
+  "Update available": "Mise à jour disponible",
+  Updates: "Mises à jour",
   "Updating drives…": "Mise à jour des lecteurs…",
   "Updating favorites {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Mise à jour des favoris de # élément} many {Mise à jour des favoris de # éléments} other {Mise à jour des favoris de # éléments}}",
@@ -2011,6 +2033,10 @@ const messages: Messages = {
   "Verifying {count, plural, one {# item} other {# items}}":
     "Vérification de {count, plural, one {# élément} many {# éléments} other {# éléments}}",
   "Verifying {what}…": "Vérification de {what}…",
+  "Version {version}": "Version {version}",
+  "Version {version} is available.": "La version {version} est disponible.",
+  "Version {version} is ready. It installs when Panelyth restarts.":
+    "La version {version} est prête. Elle s'installe au redémarrage de Panelyth.",
   Vertical: "Vertical",
   Vibrance: "Vibrance",
   Video: "Vidéo",
@@ -2041,6 +2067,7 @@ const messages: Messages = {
     "Ce que proposent d'abord les boîtes de dialogue de copie et de déplacement ; chaque tâche peut encore choisir.",
   "What to draw": "Quoi dessiner",
   "What will happen": "Ce qui va se passer",
+  "What's new": "Nouveautés",
   "When a file exists at the destination": "Lorsqu'un fichier existe déjà à la destination",
   "When a name is taken": "Quand un nom est déjà pris",
   "When switching apps, carry over": "Lors du changement d'application, conserver",

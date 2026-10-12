@@ -1,0 +1,42 @@
+{
+  "//": "The ffmpeg and ffprobe builds packaged beside the sidecar (ADR-0018, Stage P06); scripts/media-tools.mjs fetches them and refuses anything whose SHA-256 differs. Change a build by changing its url and sha256 together, after reading its licence and configuration. Only LGPL builds: never --enable-gpl or --enable-nonfree. A platform without an entry ships none and uses an ffmpeg installed on the system.",
+  "ffmpeg": "8.1.3",
+  "licence": "LGPL-3.0-or-later",
+  "source": "https://github.com/FFmpeg/FFmpeg/tree/29e619e767 (release/8.1, n8.1.3-9-g29e619e767)",
+  "buildScripts": "https://github.com/BtbN/FFmpeg-Builds/tree/autobuild-2026-09-30-13-08",
+  "builds": {
+    "win32-x64": {
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-win64-lgpl-shared-8.1.zip",
+      "sha256": "3e47bda1607740550141e37c0e49d1e5182b34699f15adfd137ee266d346811a",
+      "root": "ffmpeg-n8.1.3-9-g29e619e767-win64-lgpl-shared-8.1",
+      "licenceFile": "LICENSE.txt",
+      "bin": [
+        "bin/ffmpeg.exe",
+        "bin/ffprobe.exe",
+        "bin/avcodec-62.dll",
+        "bin/avdevice-62.dll",
+        "bin/avfilter-11.dll",
+        "bin/avformat-62.dll",
+        "bin/avutil-60.dll",
+        "bin/swresample-6.dll",
+        "bin/swscale-9.dll"
+      ]
+    },
+    "linux-x64": {
+      "url": "https://github.com/BtbN/FFmpeg-Builds/releases/download/autobuild-2026-09-30-13-08/ffmpeg-n8.1.3-9-g29e619e767-linux64-lgpl-shared-8.1.tar.xz",
+      "sha256": "d4d7b6936f492c0b866b1cb4a29a1bbae09d6a064b4ec4eb90c95bed7969535a",
+      "root": "ffmpeg-n8.1.3-9-g29e619e767-linux64-lgpl-shared-8.1",
+      "licenceFile": "LICENSE.txt",
+      "bin": ["bin/ffmpeg", "bin/ffprobe"],
+      "lib": [
+        "lib/libavcodec.so.62",
+        "lib/libavdevice.so.62",
+        "lib/libavfilter.so.11",
+        "lib/libavformat.so.62",
+        "lib/libavutil.so.60",
+        "lib/libswresample.so.6",
+        "lib/libswscale.so.9"
+      ]
+    }
+  }
+}

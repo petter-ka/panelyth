@@ -4,6 +4,15 @@
 
 Accepted (Stage 06). Resolves `docs/shared/ARCHITECTURE-ANALYSIS.md` C5.
 
+Amended (Stage P06, 2026-10-12, ADR-0038): the build that ships. `src/shared/desktop/media-tools.json` pins an LGPL
+build per platform by URL and SHA-256, and `scripts/media-tools.mjs` puts it beside the sidecar and refuses a
+different checksum or a build configured with `--enable-gpl` or `--enable-nonfree`. Shipped: BtbN's LGPL version 3
+shared builds of FFmpeg 8.1.3 for Windows x64 (programs and libraries in `resources/bin`) and Linux x64 (programs
+in `resources/bin`, libraries in `resources/lib`, which is where their RPATH looks). macOS has no entry and uses an
+installed ffmpeg. Measured on Windows: the installer grows from 137 to 190 MB; the build probes and makes posters
+from H.264, HEVC, VP9, AV1, MPEG-4, ProRes and WMV files with the sidecar's own arguments. The Go tests make their
+sample videos with `libx264`, which an LGPL build lacks, so they need a full ffmpeg on the developer's `PATH`.
+
 ## Context
 
 ADR-0009 gives poster generation and video metadata to Go, and Go has no video decoder. ADR-0019 keeps the

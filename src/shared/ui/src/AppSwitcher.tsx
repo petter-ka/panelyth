@@ -2,6 +2,7 @@ import type { AppId } from "@panelyth/contracts"
 import { CommanderGlyph, ViewerGlyph } from "./AppSwitchButton"
 import { Tooltip } from "./Tooltip"
 import { t } from "@panelyth/i18n"
+import { updateWaiting, useAboutStore } from "@panelyth/renderer-core"
 
 const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
 const APPS: AppId[] = ["viewer", "commander"]
@@ -15,6 +16,9 @@ export interface AppSwitcherProps {
 
 /** A shared left rail for switching between Panelyth and Panelyth Commander. */
 export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwitcherProps) {
+  // A newer version was found or is downloaded: Settings → About has it (Stage P06).
+  const waiting = useAboutStore(updateWaiting)
+  const settingsLabel = waiting ? `${t("Settings")} — ${t("Update available")}` : t("Settings")
   return (
     <nav
       aria-label={t("Applications")}
@@ -51,14 +55,21 @@ export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwit
         )
       })}
       <div className="mt-auto flex w-full justify-center border-t border-border pt-2">
-        <Tooltip side="right" content={t("Settings")}>
+        <Tooltip side="right" content={settingsLabel}>
           <button
             type="button"
             onClick={onSettings}
-            aria-label={t("Settings")}
+            aria-label={settingsLabel}
             data-testid="app-settings"
-            className="grid size-9 shrink-0 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
+            data-update={waiting ? "waiting" : undefined}
+            className="relative grid size-9 shrink-0 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
           >
+            {waiting && (
+              <span
+                aria-hidden="true"
+                className="absolute top-1.5 right-1.5 size-2 rounded-full bg-accent"
+              />
+            )}
             <svg
               width="18"
               height="18"

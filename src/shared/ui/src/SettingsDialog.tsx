@@ -1,5 +1,10 @@
-import { setSwitchSettings, useSwitchSettings } from "@panelyth/renderer-core"
-import { useId, useState, type KeyboardEvent, type ReactNode } from "react"
+import {
+  setAutoUpdateCheck,
+  setSwitchSettings,
+  useAboutStore,
+  useSwitchSettings,
+} from "@panelyth/renderer-core"
+import { useEffect, useState, type KeyboardEvent, type ReactNode } from "react"
 import { LOCALES, LOCALE_NAMES, t, type Locale, useLocaleStore } from "@panelyth/i18n"
 import {
   ICON_SET_OPTIONS,
@@ -9,13 +14,21 @@ import {
   useInterfaceSizeStore,
   useThemeStore,
 } from "./appearance"
+import {
+  AboutPanel,
+  requestSettingsTab,
+  useSettingsTabRequest,
+  type SettingsTab,
+} from "./AboutPanel"
 import { Button } from "./button"
 import { DialogWindow } from "./dialog"
 import { fieldClass } from "./field"
+import { SwitchRow } from "./SwitchRow"
 import { Tooltip } from "./Tooltip"
 
+export { SwitchRow }
+
 type AppId = "viewer" | "commander"
-type SettingsTab = "general" | AppId | "appearance" | "shortcuts"
 
 const tabButton =
   "h-8 rounded-md px-3 text-xs text-muted hover:bg-raised hover:text-text aria-selected:bg-raised aria-selected:text-text aria-selected:shadow-sm"
@@ -23,49 +36,6 @@ const tabButton =
 // control in the viewer's toolbar has the same look).
 const choiceButton =
   "h-7 min-w-0 flex-auto truncate rounded-[5px] border border-transparent px-2 text-xs font-medium text-muted hover:text-text aria-pressed:border-border aria-pressed:bg-raised aria-pressed:font-semibold aria-pressed:text-text aria-pressed:shadow-sm disabled:opacity-50"
-
-export function SwitchRow({
-  label,
-  description,
-  checked,
-  disabled,
-  onChange,
-}: {
-  label: string
-  description: string
-  checked: boolean
-  disabled: boolean
-  onChange(value: boolean): void
-}) {
-  const id = useId()
-  return (
-    <div className="flex items-center gap-4 border-b border-border py-3 last:border-b-0">
-      <div className="min-w-0 flex-1">
-        <div id={`${id}-label`} className="text-xs font-medium">
-          {label}
-        </div>
-        <div id={`${id}-description`} className="mt-0.5 text-2xs text-muted">
-          {description}
-        </div>
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-labelledby={`${id}-label`}
-        aria-describedby={`${id}-description`}
-        disabled={disabled}
-        onClick={() => onChange(!checked)}
-        className="relative h-5 w-9 shrink-0 rounded-full bg-border transition-colors aria-checked:bg-accent disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <span
-          aria-hidden="true"
-          className={`absolute top-0.5 left-0.5 size-4 rounded-full bg-raised shadow-sm transition-transform ${checked ? "translate-x-4" : ""}`}
-        />
-      </button>
-    </div>
-  )
-}
 
 export function ChoiceGroup<T extends string>({
   label,
@@ -238,6 +208,11 @@ interface SharedSettingsDialogProps {
 }
 
 export function SharedSettingsDialog(props: SharedSettingsDialogProps) {
+  const { open } = props
+  // A tab asked for from the native menu lasts for one opening of the dialog.
+  useEffect(() => {
+    if (!open) requestSettingsTab(null)
+  }, [open])
   return <SharedSettingsDialogContent key={`${props.currentApp}:${props.open}`} {...props} />
 }
 
@@ -250,14 +225,22 @@ function SharedSettingsDialogContent({
   appSettings,
   onOpenShortcuts,
 }: SharedSettingsDialogProps) {
-  const [tab, setTab] = useState<SettingsTab>(currentApp)
+  // The tab the user chose, unless the native menu asked for another one since.
+  const request = useSettingsTabRequest()
+  const [chosen, setChosen] = useState<{ tab: SettingsTab; seq: number } | null>(null)
+  const tab: SettingsTab =
+    chosen && chosen.seq === request.seq ? chosen.tab : (request.tab ?? currentApp)
+  const setTab = (next: SettingsTab): void => setChosen({ tab: next, seq: request.seq })
   const appLabel = currentApp === "viewer" ? "Viewer" : "Commander"
   const tabs: readonly { id: SettingsTab; label: string }[] = [
     ...(showGeneral ? [{ id: "general" as const, label: t("General") }] : []),
     { id: currentApp, label: appLabel },
     { id: "appearance", label: t("Appearance") },
     { id: "shortcuts", label: t("Shortcuts") },
+    { id: "about", label: t("About") },
   ]
+
+  const autoUpdate = useAboutStore((s) => s.update?.auto ?? true)
 
   const selectAdjacentTab = (e: KeyboardEvent<HTMLDivElement>): void => {
     const index = tabs.findIndex((item) => item.id === tab)
@@ -331,6 +314,21 @@ function SharedSettingsDialogContent({
                 {t("Open keyboard shortcuts")}
               </Button>
             </section>
+          )}
+          {tab === "about" && (
+            <AboutPanel
+              autoSwitch={
+                <SwitchRow
+                  label={t("Check automatically")}
+                  description={t(
+                    "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.",
+                  )}
+                  checked={autoUpdate}
+                  disabled={!settingsReady}
+                  onChange={setAutoUpdateCheck}
+                />
+              }
+            />
           )}
         </div>
       </div>

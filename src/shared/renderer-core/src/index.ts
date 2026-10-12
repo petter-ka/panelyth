@@ -70,3 +70,18 @@ export {
   type SettingsStore,
   type SettingsStoreOptions,
 } from "./settingsStore"
+export {
+  aboutPortOf,
+  checkForUpdates,
+  downloadUpdate,
+  installUpdate,
+  loadAbout,
+  openAppTarget,
+  setAutoUpdateCheck,
+  startAboutSync,
+  updateWaiting,
+  useAboutStore,
+  type AboutApi,
+  type AboutPort,
+  type AboutState,
+} from "./aboutStore"

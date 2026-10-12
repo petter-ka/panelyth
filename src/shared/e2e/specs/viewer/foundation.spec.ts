@@ -50,7 +50,8 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
       process: "undefined",
       ipcRenderer: "undefined",
       electron: "undefined",
-      // The viewer's profile (ADR-0027); edit, batch and recipes are the image editor's (Stages 12 and 16).
+      // The viewer's profile (ADR-0027); edit, batch and recipes are the image editor's (Stages 12
+      // and 16), update is Settings → About (Stage P06).
       apiKeys: [
         "app",
         "batch",
@@ -75,6 +76,7 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         "shell",
         "sidecar",
         "system",
+        "update",
       ],
       systemKeys: ["info", "ping"],
     })

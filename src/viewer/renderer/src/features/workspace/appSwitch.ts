@@ -1,7 +1,14 @@
 import type { SharedContext } from "@panelyth/contracts"
-import { startSwitchSettingsSync, useSwitchSettings } from "@panelyth/renderer-core"
-import { startSharedAppearanceSync } from "@panelyth/ui"
-import { bridge, canSwitchApps, isBridgeAvailable } from "../../bridge"
+import {
+  aboutPortOf,
+  startAboutSync,
+  startSwitchSettingsSync,
+  useSwitchSettings,
+} from "@panelyth/renderer-core"
+import { menuCommandHandler, startSharedAppearanceSync } from "@panelyth/ui"
+import { aboutApi, bridge, canSwitchApps, isBridgeAvailable } from "../../bridge"
+import { openSettings } from "../settings/settingsStore"
+import { openShortcutHelp } from "../shortcuts/shortcutStore"
 import { openFolderEntry, useFolderStore } from "../folder/folderStore"
 import { notify } from "../clipboard/clipboard"
 import { getItem } from "../tiles/pageStore"
@@ -42,9 +49,15 @@ export function startAppearanceSync(): () => void {
   }
   const offAppearance = startSharedAppearanceSync(port)
   const offSwitch = startSwitchSettingsSync(port)
+  // Settings → About and the native menu's items (Stage P06).
+  const offAbout = startAboutSync(
+    aboutPortOf(aboutApi, port.saveSetting),
+    menuCommandHandler({ openSettings, openShortcuts: openShortcutHelp }),
+  )
   return () => {
     offAppearance()
     offSwitch()
+    offAbout()
   }
 }
 

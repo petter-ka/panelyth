@@ -28,6 +28,7 @@ import type {
   RecipeSaveResult,
 } from "./batch"
 import type { RpcEnvelope } from "./errors"
+import type { AboutInfo, AppTarget, UpdateState } from "./update"
 import type { EventChannel, EventMap } from "./events"
 import type {
   ArchiveCheckResult,
@@ -142,6 +143,18 @@ export interface PanelythApi {
     switch?(to: AppId): Promise<RpcEnvelope<OkResult>>
     /** Once at start: the folder and entry the app was started to show (a file opened from the OS). */
     openRequest(): Promise<RpcEnvelope<OpenRequestResult>>
+    /** The product's version and what it runs on (Settings → About). */
+    about(): Promise<RpcEnvelope<AboutInfo>>
+    /** Opens the log folder, the licence notices or a page of the project. */
+    openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
+  }
+  /** Updates (ADR-0038): main checks, downloads and installs; the state arrives as update.state events. */
+  update: {
+    get(): Promise<RpcEnvelope<UpdateState>>
+    check(): Promise<RpcEnvelope<UpdateState>>
+    download(): Promise<RpcEnvelope<UpdateState>>
+    /** Quits, installs the downloaded version and starts it. */
+    install(): Promise<RpcEnvelope<OkResult>>
   }
   system: {
     ping(): Promise<RpcEnvelope<PingResult>>
@@ -323,6 +336,18 @@ export interface CommanderApi {
     exit(): Promise<RpcEnvelope<OkResult>>
     /** `edit`: show the viewer and open its editor on this picture (Stage 12). */
     switch(to: AppId, edit?: number): Promise<RpcEnvelope<OkResult>>
+    /** The product's version and what it runs on (Settings → About). */
+    about(): Promise<RpcEnvelope<AboutInfo>>
+    /** Opens the log folder, the licence notices or a page of the project. */
+    openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
+  }
+  /** Updates (ADR-0038): main checks, downloads and installs; the state arrives as update.state events. */
+  update: {
+    get(): Promise<RpcEnvelope<UpdateState>>
+    check(): Promise<RpcEnvelope<UpdateState>>
+    download(): Promise<RpcEnvelope<UpdateState>>
+    /** Quits, installs the downloaded version and starts it. */
+    install(): Promise<RpcEnvelope<OkResult>>
   }
   system: {
     ping(): Promise<RpcEnvelope<PingResult>>

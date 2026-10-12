@@ -9,6 +9,17 @@ export function appIconPath(): string {
   return join(app.getAppPath(), "build", "icon.png")
 }
 
+/** The licence notices: beside the app's resources when packaged, else where `pnpm notices` writes them. */
+export function noticesPath(): string {
+  if (app.isPackaged) return join(process.resourcesPath, "THIRD-PARTY-NOTICES.txt")
+  return join(app.getAppPath(), "build", "THIRD-PARTY-NOTICES.txt")
+}
+
+/** Written by electron-builder when the build names an update feed (ADR-0038). */
+export function updateFeedPath(): string {
+  return join(process.resourcesPath, "app-update.yml")
+}
+
 /**
  * Sidecar binary location. Packaged builds ship it in resources/bin;
  * unpackaged builds use the output of `pnpm build:sidecar`.

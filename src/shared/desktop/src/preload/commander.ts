@@ -196,6 +196,9 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "find.progress",
   // Stage C08: directory compares.
   "compare.progress",
+  // Stage P06: Settings → About and the native menu's items.
+  "update.state",
+  "menu.command",
   // Stage C05: quick view and lister images.
   "preview.ready",
   // ADR-0033: a full-screen media window asks this panel for its next item.
@@ -217,6 +220,14 @@ const api: CommanderApi = {
   app: {
     exit: () => invoke("app.exit", {}),
     switch: (to, edit) => invoke("app.switch", { to, ...(edit !== undefined && { edit }) }),
+    about: () => invoke("app.about", {}),
+    openTarget: (target) => invoke("app.openTarget", { target }),
+  },
+  update: {
+    get: () => invoke("update.get", {}),
+    check: () => invoke("update.check", {}),
+    download: () => invoke("update.download", {}),
+    install: () => invoke("update.install", {}),
   },
   system: {
     ping: () => invoke("system.ping", {}),

@@ -99,8 +99,10 @@ test.describe("commander foundation (Stage C00)", () => {
           "shell",
           "sidecar",
           "system",
+          "update",
         ],
-        app: ["exit", "switch"],
+        // P06: Settings → About (about, openTarget, update).
+        app: ["about", "exit", "openTarget", "switch"],
         library: [
           "addBookmark",
           "get",

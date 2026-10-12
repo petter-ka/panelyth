@@ -40,6 +40,8 @@ BENCH_STAGE=02 pnpm bench:startup   # startup / idle memory / IPC → src/shared
 BENCH_STAGE=02 pnpm bench:index     # scan / write batches / paging on 100k files
 BENCH_STAGE=02 pnpm bench:previews  # thumbnail throughput, cache hits, coalescing
 pnpm bench:go       # Go micro-benchmarks
+pnpm package        # installers for this OS (docs/RELEASING.md); --dir for the unpacked app
+pnpm test:smoke     # the packaged smoke test
 ```
 
 These commands build and run the shell with the viewer. The commander joins them in Stage C00, behind a feature
@@ -56,6 +58,8 @@ docs/
   ROADMAP.md                   phases of every track and the order across tracks
   DEVELOPMENT-STAGES.md        stage gates, stage IDs, sequence, completed and active stages
   STAGE-TEMPLATE.md            template for new stage documents
+  RELEASING.md                 how a release is built, signed, tested and published; the release rules
+  INSTALL.md                   for users: install, update, data locations, uninstall, known limits
   shared/                      the platform, used by both apps
     REQUIREMENTS.md            platform requirements (FR-20, FR-21, NFR-01…NFR-14)
     PRODUCT-PRINCIPLES.md
@@ -152,6 +156,7 @@ Claude Code should read these files in this order:
 | 0035 | Image editor engine: sessions, proxy rendering, save semantics | viewer | Accepted with amendments (Stage 12, 2026-10-12; notes from Stages 13 to 15) |
 | 0036 | Batch image editing: recipes, edit jobs, output rules | viewer | Accepted with amendments (Stage 16) |
 | 0037 | Remote locations: FTP connections as folders | commander | Accepted with amendments (Stage C10.5) |
+| 0038 | Updates, the native menu and the release pipeline | shared | Accepted (Stage P06) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

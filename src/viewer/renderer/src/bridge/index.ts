@@ -82,6 +82,9 @@ const api = core.api
 
 export const isBridgeAvailable = core.isAvailable
 
+/** The preload API of Settings → About: the version, updates and the native menu's items (Stage P06). */
+export const aboutApi = (): PanelythApi => core.api()
+
 /** True while the commander is enabled: preload then exposes app.switch (ADR-0031). */
 export function canSwitchApps(): boolean {
   return window.panelyth?.app.switch !== undefined

@@ -1,6 +1,6 @@
 import { existsSync, mkdtempSync, readdirSync, readFileSync } from "node:fs"
 import { tmpdir } from "node:os"
-import { join } from "node:path"
+import { dirname, join } from "node:path"
 import { _electron, expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../fixtures"
 import { desktopDir, isAlive, waitForExit, waitForReady } from "../launch"
@@ -27,6 +27,103 @@ function packagedApp(): string {
   if (!found) throw new Error(`no packaged app under ${release}; run \`pnpm package --dir\``)
   return found
 }
+
+/** The package's resources folder: beside the executable, or in the bundle on macOS. */
+function resourcesDir(): string {
+  const exe = packagedApp()
+  return process.platform === "darwin"
+    ? join(dirname(dirname(exe)), "Resources")
+    : join(dirname(exe), "resources")
+}
+
+// Stage P06: what a release package must hold and say about itself.
+test("packaged: one version, our menu, the update feed, notices and media tools", async () => {
+  const scratch = mkdtempSync(join(tmpdir(), "panelyth-smoke-about-"))
+  const { ELECTRON_RUN_AS_NODE: _runAsNode, ...inherited } = process.env as Record<string, string>
+  const app = await _electron.launch({
+    executablePath: packagedApp(),
+    args: [`--user-data-dir=${join(scratch, "user-data")}`],
+    env: {
+      ...inherited,
+      PANELYTH_CACHE_DIR: join(scratch, "cache"),
+      PANELYTH_CONFIG_DIR: join(scratch, "config"),
+    },
+  })
+  try {
+    const page = await app.firstWindow()
+    const status = await waitForReady(page)
+    const version = await app.evaluate(({ app: a }) => a.getVersion())
+    // One product version: the sidecar reports the shell's, with its commit after "+".
+    expect(status.version?.split("+")[0]).toBe(version)
+    const named = process.env.PANELYTH_VERSION
+    if (named) expect(version).toBe(named)
+
+    // The native menu is the product's; a release has no Reload and no developer tools.
+    const menu = await app.evaluate(({ Menu }) => {
+      const ids: string[] = []
+      const roles: string[] = []
+      const walk = (items: Electron.MenuItem[]): void => {
+        for (const item of items) {
+          if (item.id) ids.push(item.id)
+          if (item.role) roles.push(String(item.role).toLowerCase())
+          if (item.submenu) walk(item.submenu.items)
+        }
+      }
+      walk(Menu.getApplicationMenu()?.items ?? [])
+      return { ids, roles }
+    })
+    expect(menu.ids).toEqual(expect.arrayContaining(["about", "settings", "open-notices"]))
+    expect(menu.roles).not.toContain("reload")
+    expect(menu.roles).not.toContain("toggledevtools")
+
+    // The package names its update feed; what it can do with a newer version depends on the OS.
+    const resources = resourcesDir()
+    const feed = join(resources, "app-update.yml")
+    // macOS installs only into a Developer ID signed app (the packaging step's certificate);
+    // a Linux folder that is no AppImage offers the download page.
+    const macSigned = Boolean(process.env.CSC_LINK || process.env.CSC_NAME)
+    const expected = !existsSync(feed)
+      ? "off"
+      : process.platform === "win32" || (process.platform === "darwin" && macSigned)
+        ? "auto"
+        : "manual"
+    await expect
+      .poll(() =>
+        page.evaluate(async () => {
+          const res = await window.panelyth!.update.get()
+          return res.ok ? res.r.mode : null
+        }),
+      )
+      .toBe(expected)
+    // electron-builder writes the feed for installer targets only, never for `--dir`:
+    // the release workflow, which builds installers, asks for it.
+    if (process.env.PANELYTH_SMOKE_FEED === "1") {
+      expect(existsSync(feed), "the package has no update feed (app-update.yml)").toBe(true)
+    }
+
+    // Settings → About, through the UI.
+    await page.getByTestId("app-settings").click()
+    await page.getByRole("tab", { name: "About" }).click()
+    await expect(page.getByTestId("about-version")).toHaveText(`Version ${version}`)
+    await expect(page.getByTestId("about-details")).toContainText(`Sidecar ${version}`)
+
+    // The licence notices are in the package and name what it holds.
+    const notices = readFileSync(join(resources, "THIRD-PARTY-NOTICES.txt"), "utf8")
+    for (const name of ["Electron", "react", "modernc.org/sqlite", "Inter (typeface)"]) {
+      expect(notices, `${name} is missing from the notices`).toContain(name)
+    }
+    // ffmpeg beside the sidecar, whole or not at all, and then in the notices.
+    const exe = process.platform === "win32" ? ".exe" : ""
+    const bundled = existsSync(join(resources, "bin", "FFMPEG-BUILD.txt"))
+    for (const tool of ["ffmpeg", "ffprobe"]) {
+      expect(existsSync(join(resources, "bin", tool + exe)), `${tool} in the package`).toBe(bundled)
+    }
+    expect(notices.includes("FFmpeg")).toBe(bundled)
+    if (process.env.PANELYTH_SMOKE_MEDIA_TOOLS === "1") expect(bundled).toBe(true)
+  } finally {
+    await app.close()
+  }
+})
 
 test("packaged: open, preview, switch, list, copy, quit", async () => {
   const fx = ensureFixture("images-smoke-4", {

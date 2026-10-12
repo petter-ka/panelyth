@@ -14,6 +14,7 @@
     "@types/node": "24.19.0",
     "electron": "44.5.1",
     "electron-builder": "26.15.3",
+    "electron-updater": "6.8.9",
     "vite": "8.3.1",
     "vitest": "5.0.3"
   }

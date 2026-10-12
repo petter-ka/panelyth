@@ -9,6 +9,7 @@ import type {
   RecipeSaveResult,
 } from "./batch"
 import type { ErrorCode } from "./errors"
+import type { AboutInfo, AppOpenTargetParams, UpdateState } from "./update"
 import type {
   EditEyesParams,
   EditEyesResult,
@@ -2385,6 +2386,18 @@ export interface MainMethodMap {
   "app.exit": { params: EmptyParams; result: OkResult }
   /** Shows the other app's view in the same window (ADR-0031). */
   "app.switch": { params: AppSwitchParams; result: OkResult }
+  /** Both apps (Stage P06): the product's version and what it runs on. */
+  "app.about": { params: EmptyParams; result: AboutInfo }
+  /** Both apps: opens the log folder, the licence notices or a page of the project; never a renderer's URL. */
+  "app.openTarget": { params: AppOpenTargetParams; result: OkResult }
+  /** Both apps (ADR-0038): the update state; changes arrive as update.state events. */
+  "update.get": { params: EmptyParams; result: UpdateState }
+  /** Looks for a newer version now; the answer is the state the check started from. */
+  "update.check": { params: EmptyParams; result: UpdateState }
+  /** Downloads the version a check found ("auto" builds); progress arrives as events. */
+  "update.download": { params: EmptyParams; result: UpdateState }
+  /** Quits, installs the downloaded version and starts it. */
+  "update.install": { params: EmptyParams; result: OkResult }
   "sidecar.getStatus": { params: EmptyParams; result: SidecarStatus }
   "dialog.openFolder": { params: EmptyParams; result: OpenFolderDialogResult }
   /** Resolves through the sidecar and mints a panelyth-media token. */
@@ -2468,6 +2481,12 @@ export type Result<M extends Method> = MethodMap[M]["result"]
 export const VIEWER_METHODS = [
   "app.exit",
   "app.switch",
+  "app.about",
+  "app.openTarget",
+  "update.get",
+  "update.check",
+  "update.download",
+  "update.install",
   "app.openRequest",
   "system.ping",
   "system.info",
@@ -2614,6 +2633,12 @@ export type RendererMethod =
 export const COMMANDER_METHODS = [
   "app.exit",
   "app.switch",
+  "app.about",
+  "app.openTarget",
+  "update.get",
+  "update.check",
+  "update.download",
+  "update.install",
   "system.ping",
   "system.info",
   "sidecar.getStatus",
@@ -2727,6 +2752,12 @@ export const APP_METHODS: Record<AppId, readonly RendererMethod[]> = {
 export const MAIN_METHODS = [
   "app.exit",
   "app.switch",
+  "app.about",
+  "app.openTarget",
+  "update.get",
+  "update.check",
+  "update.download",
+  "update.install",
   "app.openRequest",
   "sidecar.getStatus",
   "dialog.openFolder",

@@ -1,19 +1,24 @@
-import { initInterfaceSize, initTheme, startSharedAppearanceSync } from "@panelyth/ui"
+import {
+  initInterfaceSize,
+  initTheme,
+  menuCommandHandler,
+  startSharedAppearanceSync,
+} from "@panelyth/ui"
 import { initLocale, LocaleBoundary } from "@panelyth/i18n"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
-import { bridge, isBridgeAvailable } from "./bridge"
+import { aboutApi, bridge, isBridgeAvailable } from "./bridge"
 import { AppShell } from "./components/AppShell"
-import { startSwitchSettingsSync } from "@panelyth/renderer-core"
+import { aboutPortOf, startAboutSync, startSwitchSettingsSync } from "@panelyth/renderer-core"
 import { startPanels } from "./features/carry"
 import { startDrives } from "./features/drives"
 import { startHotlist } from "./features/hotlist"
 import { startQueue } from "./features/queue"
-import { loadShortcuts } from "./features/keymap"
+import { loadShortcuts, setHelpOpen } from "./features/keymap"
 import { loadCommandHistory } from "./features/cmdline"
 import { loadTools } from "./features/tools"
 import { startThumbs } from "./features/thumbs"
-import { loadSettings } from "./features/settings"
+import { loadSettings, setSettingsOpen } from "./features/settings"
 import { loadTabSets } from "./features/tabsets"
 import { startTree } from "./features/tree"
 import { startRemote } from "./features/remote"
@@ -52,6 +57,17 @@ if (isBridgeAvailable()) {
     saveSetting: (key, value) => void bridge.setSetting(key, value).catch(() => undefined),
     onSettingChanged: (listener) => bridge.on("settings.changed", (e) => listener(e.key, e.value)),
   })
+  // Settings → About and the native menu's items (Stage P06).
+  startAboutSync(
+    aboutPortOf(
+      aboutApi,
+      (key, value) => void bridge.setSetting(key, value).catch(() => undefined),
+    ),
+    menuCommandHandler({
+      openSettings: () => setSettingsOpen(true),
+      openShortcuts: () => setHelpOpen(true),
+    }),
+  )
   // The user's commands first: their key bindings are among the shortcuts (C10).
   void loadTools()
     .catch(() => undefined)

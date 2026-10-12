@@ -7,7 +7,10 @@
 accepted (Stage C05, 2026-10-06):** open, programs after confirmation, the editor and file bytes through tokens, as
 built below. **The command line is accepted (Stage C10, 2026-10-11),** as built in the note at the end. Amended (2026-10-09): Commander routes Enter/double-click media to the shared overlay by default, with a
 setting for the system default app. Revised by ADR-0031: both apps run in one shell, so the profile belongs to each
-app view (web contents), not to a separate app process.
+app view (web contents), not to a separate app process. Amended (Stage P06, 2026-10-12, ADR-0038): both profiles
+get `app.about`, `app.openTarget` and `update.get` / `check` / `download` / `install`. They are answered in main
+and take no path, URL or version: `app.openTarget` takes one of five names that main maps to its own folders and
+the project's pages.
 
 Amended 2026-10-12 (Stage 15, ADR-0035): `edit.eyes` (red pupils found in the picture of an edit session) joins the
 viewer's profile; the commander's has none of the editor's methods.

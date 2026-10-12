@@ -6,7 +6,8 @@
   "scripts": {
     "test": "playwright test",
     "typecheck": "tsc -p tsconfig.json",
-    "smoke": "playwright test -c playwright.smoke.config.ts"
+    "smoke": "playwright test -c playwright.smoke.config.ts",
+    "update-test": "playwright test -c playwright.update.config.ts"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.13.0",

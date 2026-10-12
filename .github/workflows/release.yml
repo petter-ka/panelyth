@@ -1,14 +1,23 @@
-# Builds the Windows and macOS packages when a GitHub release is published and
-# attaches them to it (ADR-0032). The tag names the version: v1.2.3 → 1.2.3.
-# Unsigned until Stage P06: Windows SmartScreen warns, and macOS needs
-# right-click → Open (or `xattr -dr com.apple.quarantine Panelyth.app`).
+# Builds, signs, tests and collects a release (ADR-0032, ADR-0038, Stage P06).
+# docs/RELEASING.md has the procedure and the secrets.
+#
+# Push a tag `v1.2.3`: Windows, macOS and Linux are packaged as version 1.2.3,
+# each package is smoke-tested, Windows is installed, updated from inside the
+# app and uninstalled, and everything is attached to a DRAFT release with the
+# update metadata (latest*.yml). Installed apps see the release when the draft
+# is published, with every file already in place.
+#
 # Run by hand (workflow_dispatch) to build the packages as workflow artifacts
 # without a release.
+#
+# Signing is configured by secrets; a package without them is built unsigned
+# and says so in the job summary. Set the repository variable
+# PANELYTH_REQUIRE_SIGNING to 1 to fail instead.
 name: Release
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
     inputs:
       version:
@@ -19,41 +28,54 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-  package:
-    name: package (${{ matrix.os }})
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [windows-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    timeout-minutes: 60
-    env:
-      # No signing identity until Stage P06 (mac uses an ad-hoc signature).
-      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # git describe names the sidecar's version
       - name: Version
         id: version
         shell: bash
         env:
-          TAG: ${{ github.event.release.tag_name }}
           INPUT: ${{ inputs.version }}
         run: |
-          if [ -n "$TAG" ]; then
-            v="${TAG#v}"
+          if [ "$GITHUB_REF_TYPE" = "tag" ]; then
+            v="${GITHUB_REF_NAME#v}"
           elif [ -n "$INPUT" ]; then
             v="$INPUT"
           else
             v="0.0.0-dev.${GITHUB_RUN_NUMBER}"
           fi
-          if ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::'$v' is not a semver version (tag the release as v1.2.3)"
+          if ! [[ "$v" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::'$v' is not a version (tag the release as v1.2.3)"
             exit 1
           fi
           echo "version=$v" >> "$GITHUB_OUTPUT"
+
+  package:
+    name: package (${{ matrix.os }})
+    needs: version
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      PANELYTH_VERSION: ${{ needs.version.outputs.version }}
+      PANELYTH_REQUIRE_SIGNING: ${{ vars.PANELYTH_REQUIRE_SIGNING }}
+      # A static HTTPS feed in place of the GitHub releases, if the project uses one.
+      PANELYTH_UPDATE_URL: ${{ vars.PANELYTH_UPDATE_URL }}
+      PANELYTH_MEDIA_TOOLS_CACHE: ${{ github.workspace }}/.media-tools
+      # Only the certificate named below is used; nothing is taken from a keychain.
+      CSC_IDENTITY_AUTO_DISCOVERY: "false"
+    steps:
+      - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -64,31 +86,187 @@ jobs:
           go-version-file: src/shared/sidecar/go.mod
           cache-dependency-path: src/shared/sidecar/go.sum
       - run: pnpm install --frozen-lockfile
+      - name: Cache the ffmpeg builds
+        uses: actions/cache@v4
+        with:
+          path: .media-tools
+          key: media-tools-${{ runner.os }}-${{ hashFiles('src/shared/desktop/media-tools.json') }}
+
+      # macOS: a Developer ID certificate (.p12, base64) and an App Store Connect API key for the notary.
+      - name: Signing (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        env:
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          if [ -n "$MAC_CSC_LINK" ]; then
+            echo "CSC_LINK=$MAC_CSC_LINK" >> "$GITHUB_ENV"
+            echo "CSC_KEY_PASSWORD=$MAC_CSC_KEY_PASSWORD" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$APPLE_API_KEY_P8" ]; then
+            key="$RUNNER_TEMP/notary-key.p8"
+            printf '%s' "$APPLE_API_KEY_P8" > "$key"
+            echo "APPLE_API_KEY=$key" >> "$GITHUB_ENV"
+            echo "APPLE_API_KEY_ID=$APPLE_API_KEY_ID" >> "$GITHUB_ENV"
+            echo "APPLE_API_ISSUER=$APPLE_API_ISSUER" >> "$GITHUB_ENV"
+          fi
+      # Windows: Azure Trusted Signing, or a certificate file (.pfx, base64).
+      - name: Signing (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZURE_SIGN_ENDPOINT: ${{ vars.AZURE_SIGN_ENDPOINT }}
+          AZURE_SIGN_ACCOUNT: ${{ vars.AZURE_SIGN_ACCOUNT }}
+          AZURE_SIGN_PROFILE: ${{ vars.AZURE_SIGN_PROFILE }}
+          AZURE_SIGN_PUBLISHER: ${{ vars.AZURE_SIGN_PUBLISHER }}
+        run: |
+          for name in WIN_CSC_LINK WIN_CSC_KEY_PASSWORD AZURE_TENANT_ID AZURE_CLIENT_ID \
+            AZURE_CLIENT_SECRET AZURE_SIGN_ENDPOINT AZURE_SIGN_ACCOUNT AZURE_SIGN_PROFILE AZURE_SIGN_PUBLISHER; do
+            if [ -n "${!name}" ]; then echo "$name=${!name}" >> "$GITHUB_ENV"; fi
+          done
+
+      # The AppImage needs FUSE to run; the smoke test runs the unpacked folder.
+      - name: Allow the Chromium sandbox (Linux)
+        if: runner.os == 'Linux'
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+
       - name: Package
-        run: pnpm package "-c.extraMetadata.version=${{ steps.version.outputs.version }}"
+        run: pnpm package
+
       - name: Packaged smoke test
-        run: pnpm test:smoke
-      - name: Attach to the release
-        if: github.event_name == 'release'
+        shell: bash
+        env:
+          PANELYTH_SMOKE_FEED: ${{ vars.PANELYTH_UPDATE_URL != 'none' && '1' || '' }}
+          # ffmpeg is in the Windows and Linux packages (src/shared/desktop/media-tools.json).
+          PANELYTH_SMOKE_MEDIA_TOOLS: ${{ runner.os != 'macOS' && '1' || '' }}
+        run: |
+          if [ "$RUNNER_OS" = "Linux" ]; then
+            xvfb-run -a -s "-screen 0 1920x1080x24" pnpm test:smoke
+          else
+            pnpm test:smoke
+          fi
+
+      # What the OS will say about the package, in the job summary.
+      - name: Signatures (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem src/shared/desktop/release/*.exe | Select-Object -First 1
+          $signature = Get-AuthenticodeSignature $installer.FullName
+          "### Windows`n`n$($installer.Name): signature **$($signature.Status)** $($signature.SignerCertificate.Subject)" >> $env:GITHUB_STEP_SUMMARY
+          if ($env:PANELYTH_REQUIRE_SIGNING -eq "1" -and $signature.Status -ne "Valid") {
+            throw "the installer's signature is $($signature.Status)"
+          }
+      - name: Signatures (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          {
+            echo "### macOS"
+            echo
+            for app in src/shared/desktop/release/mac*/Panelyth.app; do
+              echo "$app"
+              echo '```'
+              codesign --verify --deep --strict --verbose=2 "$app" 2>&1 | tail -3 || true
+              spctl --assess --type execute --verbose "$app" 2>&1 || true
+              xcrun stapler validate "$app" 2>&1 | tail -1 || true
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$PANELYTH_REQUIRE_SIGNING" = "1" ]; then
+            for app in src/shared/desktop/release/mac*/Panelyth.app; do
+              spctl --assess --type execute "$app"
+              xcrun stapler validate "$app"
+            done
+          fi
+
+      - name: Upload the packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: panelyth-${{ needs.version.outputs.version }}-${{ runner.os }}
+          # The installers, what an installed app downloads to update (the same
+          # files and their block maps), and the update metadata.
+          path: |
+            src/shared/desktop/release/*.exe
+            src/shared/desktop/release/*.exe.blockmap
+            src/shared/desktop/release/*.dmg
+            src/shared/desktop/release/*.zip
+            src/shared/desktop/release/*.zip.blockmap
+            src/shared/desktop/release/*.AppImage
+            src/shared/desktop/release/*.tar.gz
+            src/shared/desktop/release/latest*.yml
+          if-no-files-found: error
+
+  # Install, update from inside the app, uninstall: on a clean Windows machine.
+  update:
+    name: install, update, uninstall (windows)
+    needs: version
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: src/shared/sidecar/go.mod
+          cache-dependency-path: src/shared/sidecar/go.sum
+      - run: pnpm install --frozen-lockfile
+      - name: Install, update, uninstall
+        run: pnpm test:update
+
+  release:
+    name: draft release
+    if: github.ref_type == 'tag'
+    needs: [version, package, update]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: dist
+          merge-multiple: true
+      - name: Checksums
+        working-directory: dist
+        shell: bash
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.RELEASE_GPG_PRIVATE_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.RELEASE_GPG_PASSPHRASE }}
+        run: |
+          ls -la
+          sha256sum -- *.exe *.dmg *.zip *.AppImage *.tar.gz > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+          # Linux packages carry no signature of their own: the checksum file is signed instead.
+          if [ -n "$GPG_PRIVATE_KEY" ]; then
+            printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+            gpg --batch --yes --pinentry-mode loopback --passphrase "$GPG_PASSPHRASE" \
+              --armor --detach-sign SHA256SUMS.txt
+          fi
+      - name: Draft release
+        working-directory: dist
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
         run: |
-          shopt -s nullglob
-          files=(src/shared/desktop/release/*.exe src/shared/desktop/release/*.dmg src/shared/desktop/release/*.zip)
-          if [ ${#files[@]} -eq 0 ]; then
-            echo "::error::no packages in src/shared/desktop/release"
-            exit 1
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" ./* --clobber
+          else
+            # A version with a suffix (1.2.3-beta.1) is a pre-release: installed apps skip it.
+            case "$TAG" in *-*) pre="--prerelease" ;; *) pre="" ;; esac
+            gh release create "$TAG" ./* --draft --verify-tag --generate-notes $pre \
+              --title "Panelyth ${TAG#v}"
           fi
-          gh release upload "$TAG" "${files[@]}" --clobber
-      - name: Upload packages
-        if: github.event_name != 'release'
-        uses: actions/upload-artifact@v4
-        with:
-          name: panelyth-${{ steps.version.outputs.version }}-${{ runner.os }}
-          path: |
-            src/shared/desktop/release/*.exe
-            src/shared/desktop/release/*.dmg
-            src/shared/desktop/release/*.zip
-          if-no-files-found: error
+          echo "Draft release $TAG has every package. Edit its notes (the app shows them under What's new), then publish it." >> "$GITHUB_STEP_SUMMARY"

@@ -254,6 +254,28 @@ recipe.delete({ id })
 > recipe on. Item errors of an edit job add `DECODE_FAILED` and `UNSUPPORTED` to the job codes. All of it is in the
 > viewer's profile only.
 
+## About, updates and the native menu (Stage P06, both apps, ADR-0038)
+
+Answered in Electron main. No method takes a URL, a path or a version.
+
+```ts
+app.about()                       // { name, version, sidecarVersion, electron, chrome, node, platform, packaged, copyright }
+app.openTarget({ target })        // "logs" | "notices" | "releases" | "issues" | "website": main opens the fixed place
+update.get()                      // UpdateState; an app calls it once it listens to the two events below
+update.check()                    // look for a newer version now
+update.download()                 // "auto" builds, after a version was found
+update.install()                  // quit, install the downloaded version, start it; { ok: false } when none is ready
+onUpdateState(state)              // update.state: { mode, phase, currentVersion, version, notes[], percent, …, auto }
+                                  //   mode: auto | manual | off; phase: idle | checking | upToDate | available |
+                                  //   downloading | ready | error; a download reports at most 4 times a second;
+                                  //   notes are plain text (main strips a feed's markup), at most 20 × 8,000 characters
+onMenuCommand({ command })        // menu.command, to the app on screen: about | checkForUpdates | settings | shortcuts
+```
+
+`shared.updates` (`{ v: 1, auto }`, through `library.setSetting`) turns the automatic check on and off; main
+follows it. The state shown comes from the events alone: the answer of `check` or `download` can be older than an
+event that overtook it.
+
 ## Events
 
 Coalesce events into batches:
