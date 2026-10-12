@@ -10,10 +10,10 @@ import { CheckIcon, ChevronRightIcon } from "./icons"
 const content =
   "motion-pop z-50 min-w-48 overflow-hidden rounded-md border border-border bg-raised p-1 text-xs text-text shadow-lg shadow-black/30"
 const item =
-  "relative flex h-7 cursor-default select-none items-center gap-2 rounded-[3px] pr-2 pl-7 outline-none data-[disabled]:text-muted data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
+  "group relative flex h-7 cursor-default select-none items-center gap-2 rounded-[3px] pr-2 pl-7 outline-none data-[disabled]:text-muted data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
 const separator = "my-1 h-px bg-border"
-const label = "px-2 pt-1.5 pb-1 text-[0.6875rem] text-muted"
-const shortcut = "ml-auto pl-6 text-[0.6875rem] opacity-70"
+const label = "px-2 pt-1.5 pb-1 text-2xs text-muted"
+const shortcut = "ml-auto pl-6 text-2xs opacity-70 group-data-[highlighted]:opacity-100"
 
 function Shortcut({ children }: { children?: ReactNode }) {
   return children ? <span className={shortcut}>{children}</span> : null

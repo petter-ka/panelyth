@@ -1,6 +1,6 @@
 import { chordAllowedWhileTyping, eventChord } from "@panelyth/renderer-core"
 import { ImageViewer, VideoPlayer } from "@panelyth/media-ui"
-import { Tooltip } from "@panelyth/ui"
+import { fieldLook, Tooltip } from "@panelyth/ui"
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent, type RefObject } from "react"
 import { formatBytes } from "../features/format"
 import { actionFor, type ActionId } from "../features/keymap"
@@ -37,9 +37,8 @@ const MODE_ACTIONS: Partial<Record<ActionId, ListerMode>> = {
 let lastWrap = false
 
 const chip =
-  "h-6 rounded-md border border-border px-2 text-[0.6875rem] text-text enabled:hover:border-muted disabled:text-muted aria-pressed:border-accent aria-pressed:text-accent"
-const field =
-  "h-6 rounded-md border border-border bg-canvas px-1.5 text-[0.6875rem] text-text outline-none focus:border-accent"
+  "h-6 rounded-md border border-border px-2 text-2xs text-text enabled:hover:border-muted disabled:text-muted aria-pressed:border-accent aria-pressed:text-accent"
+const field = `h-6 px-1.5 text-2xs ${fieldLook}`
 
 /**
  * The lister (F3, Stage C05): a full window over the panels. Text (wrap,
@@ -328,7 +327,7 @@ function ListerWindow({ l }: { l: ListerState }) {
           onPosition={onPosition}
         />
       </div>
-      <div className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
+      <div className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted">
         <span data-testid="lister-position">
           {mode === "text" || mode === "hex" ? `${Math.round(position * 100)}%` : ""}
         </span>

@@ -51,7 +51,7 @@ function QuickSearchBox({ side }: { side: Side }) {
       <span className={missed ? "text-danger" : "text-text"} aria-live="polite">
         {text}
       </span>
-      <span className="text-[0.6875rem] text-muted">{t("↑↓ next · Esc")}</span>
+      <span className="text-2xs text-muted">{t("↑↓ next · Esc")}</span>
     </div>
   )
 }

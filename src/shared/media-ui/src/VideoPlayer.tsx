@@ -399,10 +399,7 @@ export function VideoPlayer({
             {playing ? <PauseIcon /> : <PlayIcon />}
           </button>
         </span>
-        <span
-          className="shrink-0 px-1 text-[0.6875rem] text-muted tabular-nums"
-          data-testid="video-time"
-        >
+        <span className="shrink-0 px-1 text-2xs text-muted tabular-nums" data-testid="video-time">
           {formatTime(current)} / {formatTime(total)}
         </span>
         <Slider

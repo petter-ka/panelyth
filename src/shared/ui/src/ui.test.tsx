@@ -11,6 +11,7 @@ import {
   initTheme,
   setLanguage,
   Icon,
+  ShortcutsDialog,
   useIconSetStore,
   useInterfaceSizeStore,
   useThemeStore,
@@ -224,5 +225,44 @@ describe("Icon", () => {
     renderIcon()
     act(() => useIconSetStore.getState().setIconSet("material"))
     expect(screen.getByTestId("icon")).toHaveAttribute("viewBox", "0 0 24 24")
+  })
+})
+
+describe("ShortcutsDialog", () => {
+  const actions = [
+    {
+      id: "nav.back",
+      scope: "global",
+      group: "Navigation",
+      label: "Back",
+      defaults: ["Alt+ArrowLeft"],
+    },
+    {
+      id: "nav.up",
+      scope: "global",
+      group: "Navigation",
+      label: "Up one folder",
+      defaults: ["Backspace"],
+    },
+  ]
+
+  it("offers Reset only for a shortcut that was changed", () => {
+    const onReset = vi.fn()
+    render(
+      <ShortcutsDialog
+        open
+        onOpenChange={() => undefined}
+        actions={actions}
+        chords={{ "nav.back": ["Alt+ArrowLeft"], "nav.up": ["Ctrl+U"] }}
+        customized={new Set(["nav.up"])}
+        onSet={() => undefined}
+        onReset={onReset}
+        onResetAll={() => undefined}
+      />,
+    )
+    expect(screen.getByRole("button", { name: "Change shortcut for Back" })).toBeEnabled()
+    expect(screen.queryByRole("button", { name: "Reset shortcut for Back" })).toBeNull()
+    fireEvent.click(screen.getByRole("button", { name: "Reset shortcut for Up one folder" }))
+    expect(onReset).toHaveBeenCalledWith("nav.up")
   })
 })

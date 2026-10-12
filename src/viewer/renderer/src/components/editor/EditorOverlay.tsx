@@ -6,7 +6,7 @@
 // tools to the registry and panels; the shell stays as it is.
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { isBatchOp } from "@panelyth/contracts"
-import { Tooltip } from "@panelyth/ui"
+import { Tooltip, fieldLook } from "@panelyth/ui"
 import { t } from "@panelyth/i18n"
 import { openBatchDialog, runBatch, useBatchStore } from "../../features/editor/batchStore"
 import { CROP_RATIOS, ratioValue } from "../../features/editor/crop"
@@ -192,7 +192,7 @@ function ToolRail({
                 pick(results[0].id)
               }
             }}
-            className="mb-1 h-7 w-full rounded border border-border bg-canvas px-2 text-xs outline-none focus:border-accent"
+            className={`mb-1 h-7 w-full px-2 text-xs ${fieldLook}`}
           />
           <ul role="listbox" aria-label={t("Tools")}>
             {results.map((r, i) => (
@@ -208,7 +208,7 @@ function ToolRail({
               </li>
             ))}
             {results.length === 0 && (
-              <li className="px-2 py-1 text-[0.6875rem] text-muted">{t("No tool matches")}</li>
+              <li className="px-2 py-1 text-2xs text-muted">{t("No tool matches")}</li>
             )}
           </ul>
         </div>
@@ -274,7 +274,7 @@ function StackChip({ item, index, count }: { item: EditItem; index: number; coun
           className="flex items-baseline gap-1.5 px-1 hover:underline"
         >
           <span>{label}</span>
-          <span className="text-[0.6875rem] text-muted tabular-nums">{describeOp(item.op)}</span>
+          <span className="text-2xs text-muted tabular-nums">{describeOp(item.op)}</span>
         </button>
       </Tooltip>
       <button
@@ -318,7 +318,7 @@ function EditStack() {
       data-testid="edit-stack"
     >
       {items.length === 0 ? (
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {batch
             ? t("No steps yet. Pick a tool to build the recipe, or use one under Recipes.")
             : t("No edits yet. Pick a tool to begin.")}
@@ -577,15 +577,12 @@ export function EditorOverlay() {
             {entry.name}
           </span>
           {size && (
-            <span
-              className="shrink-0 text-[0.6875rem] text-muted tabular-nums"
-              data-testid="editor-size"
-            >
+            <span className="shrink-0 text-2xs text-muted tabular-nums" data-testid="editor-size">
               {formatCount(size.width)} × {formatCount(size.height)}
             </span>
           )}
           {dirty && !batch && (
-            <span className="shrink-0 text-[0.6875rem] text-warning" data-testid="editor-unsaved">
+            <span className="shrink-0 text-2xs text-warning" data-testid="editor-unsaved">
               ● {t("unsaved")}
             </span>
           )}
@@ -718,7 +715,7 @@ export function EditorOverlay() {
             {status === "opening" && (
               <p
                 role="status"
-                className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-black/60 px-2.5 py-1 text-[0.6875rem] text-white"
+                className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md bg-black/60 px-2.5 py-1 text-2xs text-white"
               >
                 {t("Opening the picture…")}
               </p>
@@ -738,7 +735,7 @@ export function EditorOverlay() {
             {renderError && status === "ready" && (
               <p
                 role="alert"
-                className="absolute bottom-3 left-1/2 max-w-[80%] -translate-x-1/2 truncate rounded-md bg-black/70 px-2.5 py-1 text-[0.6875rem] text-white"
+                className="absolute bottom-3 left-1/2 max-w-[80%] -translate-x-1/2 truncate rounded-md bg-black/70 px-2.5 py-1 text-2xs text-white"
                 data-testid="editor-render-error"
               >
                 {renderError}

@@ -31,7 +31,7 @@ export function StatusBar() {
   const notice = useCarryNotice((s) => s.message)
   const filesNotice = useFilesStore((s) => s.notice)
   return (
-    <footer className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
+    <footer className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted">
       <span className="flex items-center gap-1.5" data-testid="sidecar-status" data-state={state}>
         <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT[state]}`} />
         {t(LABEL[state])}
@@ -51,7 +51,7 @@ export function StatusBar() {
         <button
           type="button"
           onClick={cycle}
-          className="rounded px-1 hover:text-text"
+          className="h-6 rounded px-1.5 font-normal hover:bg-raised hover:text-text"
           data-testid="theme-toggle"
         >
           {t("Theme: {theme}", { theme: themeLabel })}

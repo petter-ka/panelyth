@@ -352,7 +352,7 @@ const TreeRowView = memo(function TreeRowView({
   if (row.type === "note") {
     return (
       <div
-        className="flex h-full items-center truncate pr-2 text-[0.6875rem] text-muted"
+        className="flex h-full items-center truncate pr-2 text-2xs text-muted"
         style={{ paddingLeft: 24 + row.depth * INDENT }}
       >
         {row.label}
@@ -421,7 +421,7 @@ const TreeRowView = memo(function TreeRowView({
         <TypeGlyph glyph={depth === 0 ? "drive" : "folder"} size={14} />
       </span>
       <span className="min-w-0 flex-1 truncate">{node.name}</span>
-      {node.loading && <span className="text-[0.625rem] text-muted">…</span>}
+      {node.loading && <span className="text-3xs text-muted">…</span>}
     </div>
   )
 })

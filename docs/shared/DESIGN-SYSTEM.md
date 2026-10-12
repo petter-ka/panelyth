@@ -80,8 +80,30 @@ themes. The optional palettes keep those contrast targets while adding their sur
 - Inter Regular (400) is the default for normal text, Inter Medium (500) is used for navigation, and Inter SemiBold
   (600) is used for the app title and buttons. JetBrains Mono is used for paths, IDs, code and numeric values.
 - Base 13px. 12px for secondary text and 11px for the status bar.
+- Captions use the `text-2xs` (11px) and `text-3xs` (10px) tokens, never an arbitrary size. They follow the interface
+  size but stop at 10px, the smallest text a desktop interface should show; at the small interface size 11px text
+  would otherwise be 9.6px.
 - Sentence case everywhere. No all-caps section labels.
 - Tabular numerals for numbers that update or align (ping, sizes, dimensions, counts).
+- Mono is for what could be typed or what lines up in a column: paths, commands, key caps, the data columns of a file
+  list. `tabular-nums` switches to it. A sentence that has numbers in it (a status line, "152 items", "2 of 155
+  marked") stays in Inter with tabular figures (`prose-nums`), and a bar uses one text face and one weight.
+
+### Form fields
+
+- Text fields and selects use `fieldClass` or `fieldLook` from `src/shared/ui` (`field.ts`): the `raised` surface, as
+  the token table says, so a field is lighter than the chrome around it and an empty field does not look unavailable.
+- A field's border is `muted` at 70 %, stronger than a region separator: 3.1:1 on `chrome` in Light and 3.9:1 in
+  Dark (`tokens.test.ts`). Focus is the accent border plus a 1px accent ring.
+- Fields edited in place on the content (the commander's path, rename and command line) stay on `canvas`.
+- Native checkboxes, radio buttons and ranges take the palette's accent (`accent-color`).
+
+### Segmented control
+
+`ChoiceGroup` (settings) and the viewer's tile size control mark the chosen segment the same way: it is filled with
+`raised` and the others are `muted` text with no border of their own. `ChoiceGroup` sits on a `canvas` track. The
+accent is not used: a filled segment already says which one is chosen. Use it for a few exclusive values, or to switch
+the sections of one settings tab.
 
 ### Motion and effects
 
@@ -149,7 +171,7 @@ The image editor's controls live in `src/viewer/renderer/src/components/editor/c
 
 - Every command key comes from the keymap (ADR-0022). Menus and tooltips show the current key, and **Keyboard
   shortcuts** (F1, Ctrl+/ or the keyboard button in the status bar) lists every command and lets the user record a
-  new key or reset to the default.
+  new key or reset to the default. Reset is shown only for a command whose key was changed.
 - Keymap scopes are per app: the viewer has `global`, `viewer` and `editor` (the image editor, Stage 12); the commander adds `panels`, `lister` and
   `dialogs` (ADR-0028); the shell adds `shell` for keys that work in both apps (the app switch, Ctrl/Cmd+Shift+M).
   Overrides live in the shared `library.db`, under each app's key and `shared.shortcuts` for the `shell` scope.

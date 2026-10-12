@@ -56,7 +56,7 @@ function JobRow({ job }: { job: JobSnapshot }) {
         {active ? (
           <button
             type="button"
-            className="shrink-0 rounded px-1.5 text-[0.6875rem] text-muted hover:bg-raised hover:text-text"
+            className="shrink-0 rounded px-1.5 text-2xs text-muted hover:bg-raised hover:text-text"
             onClick={() => void cancelJob(job.jobId)}
           >
             {t("Cancel")}
@@ -76,7 +76,7 @@ function JobRow({ job }: { job: JobSnapshot }) {
       <div className="h-1 overflow-hidden rounded-full bg-raised" aria-hidden="true">
         <div className={`h-full ${tone}`} style={{ width: `${percent(job)}%` }} />
       </div>
-      <div className="flex items-center gap-2 text-[0.6875rem] text-muted tabular-nums">
+      <div className="flex items-center gap-2 text-2xs text-muted tabular-nums">
         <span className="min-w-0 flex-1 truncate">
           {STATE_TEXT[job.state] && <span className="mr-1">{t(STATE_TEXT[job.state])}:</span>}
           {jobCounts(job)}
@@ -107,7 +107,7 @@ function JobRow({ job }: { job: JobSnapshot }) {
         )}
       </div>
       {edited && (
-        <div className="flex items-center gap-2 text-[0.6875rem]">
+        <div className="flex items-center gap-2 text-2xs">
           <button
             type="button"
             className="rounded px-1 text-text underline-offset-2 hover:underline"
@@ -131,7 +131,7 @@ function JobRow({ job }: { job: JobSnapshot }) {
           )}
         </div>
       )}
-      {job.error && <p className="text-[0.6875rem] text-danger">{job.error}</p>}
+      {job.error && <p className="text-2xs text-danger">{job.error}</p>}
     </li>
   )
 }
@@ -155,7 +155,7 @@ export function JobsPanel() {
       className="absolute right-3 bottom-3 z-10 flex max-h-[50%] w-80 flex-col overflow-hidden rounded-lg border border-border bg-chrome shadow-lg shadow-black/30"
       data-testid="jobs-panel"
     >
-      <header className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-3 text-[0.6875rem] text-muted">
+      <header className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-3 text-2xs text-muted">
         <span className="flex-1 font-medium text-text">{t("Operations")}</span>
         {finished > 0 && (
           <button type="button" className="rounded px-1 hover:text-text" onClick={dismissFinished}>
@@ -164,7 +164,7 @@ export function JobsPanel() {
         )}
       </header>
       {error && (
-        <p className="flex items-start gap-2 border-b border-border px-3 py-2 text-[0.6875rem] text-danger">
+        <p className="flex items-start gap-2 border-b border-border px-3 py-2 text-2xs text-danger">
           <span className="flex-1">{error}</span>
           <button
             type="button"

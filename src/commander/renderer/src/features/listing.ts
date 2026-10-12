@@ -37,7 +37,7 @@ export interface ColumnLayout {
   visibility: ColumnVisibility
   pinning: ColumnPinning
 }
-export const DEFAULT_COLUMNS: ColumnWidths = { ext: 64, size: 112, date: 136, attr: 56 }
+export const DEFAULT_COLUMNS: ColumnWidths = { ext: 64, size: 112, date: 168, attr: 56 }
 export const DEFAULT_COLUMN_LAYOUT: ColumnLayout = {
   order: ["name", "ext", "size", "date", "attr"],
   visibility: { name: true, ext: true, size: true, date: true, attr: true },

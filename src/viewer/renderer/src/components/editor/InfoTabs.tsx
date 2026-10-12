@@ -156,11 +156,10 @@ function copy(text: string): void {
 
 function ExifTab({ groups }: { groups: readonly EditInfoGroup[] | null }) {
   const metadata = useEditorStore((s) => s.saveOptions.metadata)
-  if (groups === null)
-    return <p className="px-3 py-3 text-[0.6875rem] text-muted">{t("Loading…")}</p>
+  if (groups === null) return <p className="px-3 py-3 text-2xs text-muted">{t("Loading…")}</p>
   if (groups.length === 0) {
     return (
-      <p className="px-3 py-3 text-[0.6875rem] text-muted" data-testid="exif-empty">
+      <p className="px-3 py-3 text-2xs text-muted" data-testid="exif-empty">
         {t("This picture has no EXIF data.")}
       </p>
     )
@@ -172,7 +171,7 @@ function ExifTab({ groups }: { groups: readonly EditInfoGroup[] | null }) {
     <div className="space-y-3 px-3 py-2.5" data-testid="exif">
       {groups.map((g) => (
         <section key={g.name} aria-label={groupName(g.name)}>
-          <h4 className="mb-1 text-[0.6875rem] font-medium text-muted">{groupName(g.name)}</h4>
+          <h4 className="mb-1 text-2xs font-medium text-muted">{groupName(g.name)}</h4>
           <dl className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-x-2 gap-y-1 text-xs">
             {g.items.map((item) => (
               <div key={item.id} className="contents">
@@ -200,7 +199,7 @@ function ExifTab({ groups }: { groups: readonly EditInfoGroup[] | null }) {
       <div className="flex items-center gap-3 border-t border-border pt-2">
         <button
           type="button"
-          className="text-[0.6875rem] text-muted underline-offset-2 hover:text-text hover:underline"
+          className="text-2xs text-muted underline-offset-2 hover:text-text hover:underline"
           onClick={() => copy(all)}
         >
           {t("Copy all")}
@@ -304,9 +303,7 @@ function ColorsTab() {
         />
       )}
       {stale && (
-        <p className="text-[0.6875rem] text-muted">
-          {t("The picture has changed since the last count.")}
-        </p>
+        <p className="text-2xs text-muted">{t("The picture has changed since the last count.")}</p>
       )}
       {result && (
         <div className="space-y-2" data-testid="colors-result" role="status">
@@ -316,18 +313,18 @@ function ColorsTab() {
             </span>{" "}
             {t("distinct colors")}
           </p>
-          <p className="text-[0.6875rem] text-muted">
+          <p className="text-2xs text-muted">
             {t("{w} × {h} pixels", {
               w: formatCount(result.width),
               h: formatCount(result.height),
             })}
             {result.hasAlpha && ` · ${t("with transparency")}`}
           </p>
-          <h4 className="text-[0.6875rem] font-medium text-muted">{t("Most common colors")}</h4>
+          <h4 className="text-2xs font-medium text-muted">{t("Most common colors")}</h4>
           <Swatches palette={result.palette} />
           <button
             type="button"
-            className="text-[0.6875rem] text-muted underline-offset-2 hover:text-text hover:underline"
+            className="text-2xs text-muted underline-offset-2 hover:text-text hover:underline"
             onClick={() => copy(list)}
           >
             {t("Copy the list")}
@@ -364,7 +361,7 @@ export function InfoTabs() {
             aria-selected={tab === item.id}
             aria-controls={`editor-tabpanel-${item.id}`}
             onClick={() => setTab(item.id)}
-            className="h-7 rounded-md px-2.5 text-[0.6875rem] text-muted hover:text-text aria-selected:bg-raised aria-selected:text-text"
+            className="h-7 rounded-md px-2.5 text-2xs text-muted hover:text-text aria-selected:bg-raised aria-selected:text-text"
           >
             {item.label}
           </button>

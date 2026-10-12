@@ -109,9 +109,9 @@ function SaveOptionsDialog({ open, onClose }: { open: boolean; onClose(): void }
             onChange={(quality) => setSaveOptions({ quality })}
           />
         )}
-        {note && <p className="text-[0.6875rem] text-muted">{note}</p>}
+        {note && <p className="text-2xs text-muted">{note}</p>}
         {session.format === "webp" && (
-          <p className="text-[0.6875rem] text-muted">
+          <p className="text-2xs text-muted">
             {t("WebP can't be written, so this picture is saved as PNG or JPEG.")}
           </p>
         )}
@@ -171,7 +171,7 @@ export function SaveControls() {
   return (
     <div className="flex items-center gap-1.5" data-testid="save-controls" data-save={state.state}>
       {saving && (
-        <span className="flex items-center gap-1.5 text-[0.6875rem] text-muted" role="status">
+        <span className="flex items-center gap-1.5 text-2xs text-muted" role="status">
           <Spinner size={12} />
           <span className="max-w-40 truncate">
             {state.name ? t("Saving {name}…", { name: state.name }) : t("Saving…")}
@@ -186,7 +186,7 @@ export function SaveControls() {
         </span>
       )}
       {state.state === "done" && (
-        <span className="flex items-center gap-1.5 text-[0.6875rem] text-muted" role="status">
+        <span className="flex items-center gap-1.5 text-2xs text-muted" role="status">
           <span className="max-w-40 truncate" data-testid="save-done">
             {t("Saved as {name}", { name: state.name })}
           </span>
@@ -200,7 +200,7 @@ export function SaveControls() {
         </span>
       )}
       {state.state === "failed" && (
-        <span className="flex items-center gap-1.5 text-[0.6875rem] text-danger" role="alert">
+        <span className="flex items-center gap-1.5 text-2xs text-danger" role="alert">
           <Tooltip content={state.error}>
             <span className="max-w-64 truncate" data-testid="save-error">
               {state.error}

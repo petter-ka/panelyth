@@ -7,6 +7,7 @@ import {
   PropertyRow,
   SelectionProperties,
   type PropertiesFormat,
+  fieldClass as field,
 } from "@panelyth/ui"
 import { useEffect, useMemo, useState } from "react"
 import { bridge, PanelythError } from "../bridge"
@@ -31,9 +32,6 @@ import { inArchive } from "../features/files"
 import { formatBytes, formatCount, formatDate } from "../features/format"
 import { useSettingsStore } from "../features/settings"
 import { t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 /**
  * Change attributes (Stage C09, CFR-23): the Windows attributes or, on
@@ -65,11 +63,11 @@ export function AttributesDialog() {
             {d.windows ? t("Attributes") : t("Permissions")}
           </legend>
           {d.windows ? <WindowsBits d={d} /> : <PermissionBits d={d} />}
-          <p className="text-[0.6875rem] text-muted">
+          <p className="text-2xs text-muted">
             {t("✓ sets it, an empty box clears it, – leaves it as it is.")}
           </p>
           {d.current && (
-            <p className="text-[0.6875rem] text-muted" data-testid="attributes-current">
+            <p className="text-2xs text-muted" data-testid="attributes-current">
               {t("Now: {attributes}", { attributes: describeAttributes(d.current) })}
             </p>
           )}
@@ -86,7 +84,7 @@ export function AttributesDialog() {
             value={d.accessed}
             onChange={(accessed) => updateAttributes({ accessed })}
           />
-          <p className="text-[0.6875rem] text-muted">{t("An empty date stays as it is.")}</p>
+          <p className="text-2xs text-muted">{t("An empty date stays as it is.")}</p>
         </fieldset>
         <label className="flex items-center gap-2">
           <input
@@ -136,7 +134,7 @@ function TriBox({
     >
       <span
         aria-hidden="true"
-        className="grid size-4 place-items-center rounded border border-border bg-canvas text-[0.6875rem] leading-none group-focus-visible:border-accent"
+        className="grid size-4 place-items-center rounded border border-border bg-canvas text-2xs leading-none group-focus-visible:border-accent"
       >
         {value === "set" ? "✓" : value === "keep" ? "–" : ""}
       </span>

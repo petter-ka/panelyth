@@ -18,9 +18,9 @@ import { formatCount } from "../../lib/format"
 import { buttonClass } from "../ui/button"
 import { DialogWindow } from "../ui/dialog"
 import { msg, t } from "@panelyth/i18n"
+import { fieldClass } from "@panelyth/ui"
 
-const input =
-  "h-8 w-full rounded-md border border-border bg-raised px-2 text-xs focus:border-accent focus:outline-none"
+const input = fieldClass
 const primary = buttonClass("primary")
 const secondary = buttonClass("secondary")
 const danger = buttonClass("danger")
@@ -133,7 +133,7 @@ function BatchRenameDialog(props: {
           />
         </label>
       </div>
-      <p className="mt-2 text-[0.6875rem] text-muted">
+      <p className="mt-2 text-2xs text-muted">
         {t("{name} is the current name, {n} a number, {n:000} a number with three digits.", {
           name: "{name}",
           n: "{n}",
@@ -333,9 +333,7 @@ function TagDialog({ selection, count }: { selection: SelectionDescriptor; count
           {matches.map((tag) => (
             <li key={tag.id} className="flex items-center gap-2">
               <span className="min-w-0 flex-1 truncate">{tag.name}</span>
-              <span className="text-[0.6875rem] text-muted tabular-nums">
-                {formatCount(tag.count)}
-              </span>
+              <span className="text-2xs text-muted tabular-nums">{formatCount(tag.count)}</span>
               <button type="button" className={secondary} onClick={() => apply(tag.name, true)}>
                 {t("Add")}
               </button>

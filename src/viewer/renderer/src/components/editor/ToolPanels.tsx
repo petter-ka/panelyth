@@ -39,7 +39,7 @@ import {
 } from "../../features/editor/editorStore"
 import { Check, FillField, NumberField, PanelSection, Segmented, Select, Slider } from "./controls"
 
-const note = "text-[0.6875rem] text-muted"
+const note = "text-2xs text-muted"
 
 /**
  * The operation the open panel edits: the active one from the list, or the
@@ -205,7 +205,7 @@ export function CropPanel({
               type="button"
               aria-pressed={ratioId === r.id}
               onClick={() => pick(r.id)}
-              className="h-6 rounded border border-border text-[0.6875rem] text-muted hover:border-muted hover:text-text aria-pressed:border-accent aria-pressed:text-accent"
+              className="h-6 rounded border border-border text-2xs text-muted hover:border-muted hover:text-text aria-pressed:border-accent aria-pressed:text-accent"
             >
               {t(r.label)}
             </button>
@@ -270,7 +270,7 @@ export function CropPanel({
         </div>
         <button
           type="button"
-          className="text-[0.6875rem] text-muted underline-offset-2 hover:text-text hover:underline"
+          className="text-2xs text-muted underline-offset-2 hover:text-text hover:underline"
           onClick={() => setCropRect(FULL)}
           disabled={!frame || !session}
         >

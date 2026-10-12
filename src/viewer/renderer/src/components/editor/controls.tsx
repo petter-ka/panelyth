@@ -11,7 +11,7 @@ import {
   type PointerEvent,
   type ReactNode,
 } from "react"
-import { Tooltip } from "@panelyth/ui"
+import { fieldLook, Tooltip } from "@panelyth/ui"
 import { t } from "@panelyth/i18n"
 
 const clamp = (v: number, lo: number, hi: number): number => Math.min(Math.max(v, lo), hi)
@@ -87,10 +87,10 @@ export function NumberField({
   return (
     <label
       htmlFor={id}
-      className={`flex items-center gap-1 text-[0.6875rem] text-muted ${className ?? ""}`}
+      className={`flex items-center gap-1 text-2xs text-muted ${className ?? ""}`}
     >
       {!hideLabel && <span className="min-w-0 flex-1 truncate">{label}</span>}
-      <span className="flex h-7 items-center rounded-md border border-border bg-canvas focus-within:border-accent">
+      <span className="flex h-7 items-center rounded-md border border-muted/70 bg-raised focus-within:border-accent focus-within:ring-1 focus-within:ring-accent">
         <input
           id={id}
           type="text"
@@ -105,7 +105,7 @@ export function NumberField({
           className="w-14 bg-transparent px-1.5 text-right text-xs text-text tabular-nums outline-none disabled:opacity-50"
         />
         {unit && (
-          <span className="pr-1.5 text-[0.6875rem] text-muted" aria-hidden="true">
+          <span className="pr-1.5 text-2xs text-muted" aria-hidden="true">
             {unit}
           </span>
         )}
@@ -169,7 +169,7 @@ export function Slider({
   return (
     <div className="space-y-1" data-slider={label}>
       <div className="flex items-center gap-1.5">
-        <label htmlFor={id} className="min-w-0 flex-1 truncate text-[0.6875rem] text-muted">
+        <label htmlFor={id} className="min-w-0 flex-1 truncate text-2xs text-muted">
           {label}
         </label>
         <NumberField
@@ -250,7 +250,7 @@ export function Segmented<T extends string>({
             aria-label={o.title ?? o.label}
             disabled={disabled}
             onClick={() => onChange(o.value)}
-            className="h-6 min-w-0 flex-1 truncate rounded px-1.5 text-[0.6875rem] text-muted hover:text-text aria-checked:bg-raised aria-checked:text-text aria-checked:shadow-sm disabled:opacity-50"
+            className="h-6 min-w-0 flex-1 truncate rounded px-1.5 text-2xs text-muted hover:text-text aria-checked:bg-raised aria-checked:text-text aria-checked:shadow-sm disabled:opacity-50"
           >
             {o.label}
           </button>
@@ -275,14 +275,14 @@ export function Select<T extends string>({
 }) {
   const id = useId()
   return (
-    <label htmlFor={id} className="flex items-center gap-2 text-[0.6875rem] text-muted">
+    <label htmlFor={id} className="flex items-center gap-2 text-2xs text-muted">
       <span className="min-w-0 flex-1 truncate">{label}</span>
       <select
         id={id}
         value={value}
         disabled={disabled}
         onChange={(e) => onChange(e.target.value as T)}
-        className="h-7 max-w-[60%] rounded-md border border-border bg-canvas px-1.5 text-xs text-text outline-none focus:border-accent disabled:opacity-50"
+        className={`h-7 max-w-[60%] px-1.5 text-xs disabled:opacity-50 ${fieldLook}`}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -308,7 +308,7 @@ export function Check({
   description?: string
 }) {
   return (
-    <label className="flex items-start gap-2 text-[0.6875rem] text-text">
+    <label className="flex items-start gap-2 text-2xs text-text">
       <input
         type="checkbox"
         checked={checked}
@@ -349,7 +349,7 @@ export function FillField({
         onChange={(v) => onChange(v === "color" ? "#ffffff" : v)}
       />
       {isColor && (
-        <label className="flex items-center gap-2 text-[0.6875rem] text-muted">
+        <label className="flex items-center gap-2 text-2xs text-muted">
           <span className="min-w-0 flex-1 truncate">{t("Fill color")}</span>
           <input
             type="color"
@@ -367,7 +367,7 @@ export function FillField({
 export function PanelSection({ title, children }: { title?: string; children: ReactNode }) {
   return (
     <section className="space-y-2 border-b border-border px-3 py-2.5 last:border-b-0">
-      {title && <h3 className="text-[0.6875rem] font-medium text-muted">{title}</h3>}
+      {title && <h3 className="text-2xs font-medium text-muted">{title}</h3>}
       {children}
     </section>
   )

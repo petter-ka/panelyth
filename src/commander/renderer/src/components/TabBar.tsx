@@ -55,7 +55,7 @@ export function TabBar({ side }: { side: Side }) {
   return (
     <div
       data-testid={`tabs-${side}`}
-      className="relative flex h-7 shrink-0 items-end gap-px border-b border-border bg-chrome px-1 text-[0.6875rem]"
+      className="relative flex h-7 shrink-0 items-end gap-px border-b border-border bg-chrome px-1 text-2xs"
     >
       <div
         role="tablist"
@@ -255,7 +255,7 @@ function TabTitleField({
           done(null)
         }
       }}
-      className="h-5 w-28 min-w-0 rounded-sm border border-accent bg-canvas px-1 text-[0.6875rem] text-text outline-none"
+      className="h-5 w-28 min-w-0 rounded-sm border border-accent bg-canvas px-1 text-2xs text-text outline-none"
     />
   )
 }

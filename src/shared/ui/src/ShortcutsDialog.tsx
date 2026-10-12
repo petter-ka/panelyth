@@ -63,7 +63,7 @@ export function ShortcutsDialog({
       <div className="-mx-4 -mt-4 max-h-[60vh] overflow-y-auto px-4 pt-2" data-testid="shortcuts">
         {[...new Set(actions.map((a) => a.group))].map((group) => (
           <section key={group} aria-label={t(group)} className="pt-2">
-            <h3 className="pb-1 text-[0.6875rem] font-medium text-muted">{t(group)}</h3>
+            <h3 className="pb-1 text-2xs font-medium text-muted">{t(group)}</h3>
             <ul>
               {actions
                 .filter((a) => a.group === group)
@@ -79,18 +79,36 @@ export function ShortcutsDialog({
                       <span className="min-w-0 flex-1 truncate">
                         {t(a.label)}
                         {custom && (
-                          <span className="pl-1.5 text-[0.6875rem] text-muted">
-                            {t("(custom)")}
-                          </span>
+                          <span className="pl-1.5 text-2xs text-muted">{t("(custom)")}</span>
                         )}
                       </span>
+                      {/* Only a changed shortcut can be reset. Before the keys, so those and Change stay in their columns. */}
+                      {custom && (
+                        <Tooltip
+                          content={t("Default: {chords}", {
+                            chords:
+                              defaultChords(a)
+                                .map((c) => formatChord(c))
+                                .join(", ") || t("none"),
+                          })}
+                        >
+                          <Button
+                            size="sm"
+                            className="h-6 px-2"
+                            aria-label={t("Reset shortcut for {action}", { action: t(a.label) })}
+                            onClick={() => onReset(a.id)}
+                          >
+                            {t("Reset")}
+                          </Button>
+                        </Tooltip>
+                      )}
                       {recording === a.id ? (
                         <button
                           type="button"
                           autoFocus
                           onKeyDown={(e) => onRecordKey(e, a.id)}
                           onBlur={() => setRecording(null)}
-                          className="h-6 rounded border border-accent px-2 text-[0.6875rem] text-accent"
+                          className="h-6 rounded border border-accent px-2 text-2xs text-accent"
                         >
                           {t("Press keys… (Esc cancels)")}
                         </button>
@@ -99,7 +117,7 @@ export function ShortcutsDialog({
                           {own.length > 0 ? (
                             own.map((c) => <Kbd key={c}>{formatChord(c)}</Kbd>)
                           ) : (
-                            <span className="text-[0.6875rem] text-muted">{t("Not set")}</span>
+                            <span className="text-2xs text-muted">{t("Not set")}</span>
                           )}
                         </span>
                       )}
@@ -111,24 +129,6 @@ export function ShortcutsDialog({
                       >
                         {t("Change")}
                       </Button>
-                      <Tooltip
-                        content={t("Default: {chords}", {
-                          chords:
-                            defaultChords(a)
-                              .map((c) => formatChord(c))
-                              .join(", ") || t("none"),
-                        })}
-                      >
-                        <Button
-                          size="sm"
-                          className="h-6 px-2"
-                          disabled={!custom}
-                          aria-label={t("Reset shortcut for {action}", { action: t(a.label) })}
-                          onClick={() => onReset(a.id)}
-                        >
-                          {t("Reset")}
-                        </Button>
-                      </Tooltip>
                     </li>
                   )
                 })}

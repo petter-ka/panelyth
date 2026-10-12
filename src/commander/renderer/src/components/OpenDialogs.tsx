@@ -1,4 +1,4 @@
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useState } from "react"
 import {
   cancelProgram,
@@ -8,9 +8,6 @@ import {
   useOpenStore,
 } from "../features/open"
 import { t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 /**
  * Enter on a program (ADR-0027, Stage C05): it runs only after this

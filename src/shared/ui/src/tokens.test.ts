@@ -1,6 +1,7 @@
 // Guards the design rules in docs/shared/DESIGN-SYSTEM.md ("Theme and color") against
 // the real token file: neutral grays and WCAG AA contrast in both themes.
 import { describe, expect, it } from "vitest"
+import { fieldLook } from "./field"
 import css from "./styles.css?raw"
 
 function block(selector: string): Record<string, string> {
@@ -59,5 +60,36 @@ describe.each(Object.entries(themes))("%s theme tokens", (_name, t) => {
 
   it("canvas is darker than chrome, so media sits on the deepest field", () => {
     expect(luminance(t.canvas!)).toBeLessThan(luminance(t.chrome!))
+  })
+
+  it("a field's border meets non-text contrast (3:1) on the chrome around it", () => {
+    // fieldLook draws the border as `muted` at a share of opacity over the field's own fill.
+    const share = Number(/border-muted\/(\d+)/.exec(fieldLook)![1]) / 100
+    const border = `#${[1, 3, 5]
+      .map((i) => {
+        const [fg, bg] = [t.muted!, t.raised!].map((hex) => parseInt(hex.slice(i, i + 2), 16))
+        return Math.round(fg! * share + bg! * (1 - share))
+          .toString(16)
+          .padStart(2, "0")
+      })
+      .join("")}`
+    expect(contrast(border, t.chrome!)).toBeGreaterThanOrEqual(3)
+  })
+})
+
+describe("caption sizes", () => {
+  // The small interface size has a 14 px root: 0.6875rem alone would be 9.6 px.
+  const roots = [...css.matchAll(/data-interface-size="\w+"\] \{\s*font-size: (\d+)px/g)].map((m) =>
+    Number(m[1]),
+  )
+
+  it.each(["2xs", "3xs"])("--text-%s never goes under 10 px", (name) => {
+    const value = new RegExp(`--text-${name}: max\\(([\\d.]+)rem, (\\d+)px\\)`).exec(css)
+    expect(value, `--text-${name}`).not.toBeNull()
+    const [rem, floor] = [Number(value![1]), Number(value![2])]
+    expect(roots.length).toBe(3)
+    expect(floor).toBeGreaterThanOrEqual(10)
+    // The floor is only a floor: the medium and large sizes keep the size in rem.
+    expect(rem * Math.max(...roots)).toBeGreaterThan(floor)
   })
 })

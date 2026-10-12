@@ -162,7 +162,7 @@ export function PopupMenu({
           <div
             key={entry.id}
             role="presentation"
-            className="px-3 pt-2 pb-1 text-[0.6875rem] font-semibold tracking-wide text-muted uppercase"
+            className="px-3 pt-2 pb-1 text-2xs font-semibold tracking-wide text-muted uppercase"
           >
             {entry.label}
           </div>
@@ -211,9 +211,7 @@ export function PopupMenu({
             </span>
             <span className="min-w-0 flex-1 truncate">{entry.label}</span>
             {entry.detail !== undefined && (
-              <span className="shrink-0 text-[0.6875rem] text-muted tabular-nums">
-                {entry.detail}
-              </span>
+              <span className="shrink-0 text-2xs text-muted tabular-nums">{entry.detail}</span>
             )}
           </div>
         ),

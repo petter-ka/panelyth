@@ -60,13 +60,13 @@ export function FolderSummary() {
       className="flex h-8 shrink-0 items-center gap-3 border-b border-border bg-chrome px-4 text-xs text-muted"
       data-testid="folder-summary"
     >
-      <span role="status" aria-live="polite" className="tabular-nums">
+      <span role="status" aria-live="polite" className="prose-nums">
         {parts.join(". ")}
       </span>
       {scanning && (
         <button
           type="button"
-          className="rounded px-1 text-text hover:underline"
+          className="h-6 rounded px-1.5 text-text hover:bg-raised"
           onClick={() => void cancelScan()}
         >
           {t("Stop")}

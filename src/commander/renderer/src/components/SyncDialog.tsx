@@ -1,7 +1,7 @@
 import type { CompareProgress, CompareShow, ComparePlan, DiffAction } from "@panelyth/contracts"
 import { COMPARE_SHOW } from "@panelyth/contracts"
 import { isMarked, usePageItem } from "@panelyth/renderer-core"
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useEffect, useRef, type KeyboardEvent } from "react"
 import {
@@ -31,9 +31,6 @@ import {
 import { formatBytes, formatCount, formatDate } from "../features/format"
 import { useSettingsStore } from "../features/settings"
 import { msg, t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const ROW_HEIGHT = 22
 const PAGE_ROWS = 14
@@ -382,7 +379,7 @@ function Table({ s }: { s: SyncDialogState }) {
   return (
     <div className="flex flex-col rounded-md border border-border">
       <div
-        className={`${COLUMNS} h-7 border-b border-border bg-chrome px-2 text-[0.6875rem] font-semibold tracking-wide text-muted uppercase`}
+        className={`${COLUMNS} h-7 border-b border-border bg-chrome px-2 text-2xs font-semibold tracking-wide text-muted uppercase`}
         aria-hidden="true"
       >
         <span>{t("Name")}</span>
@@ -415,7 +412,7 @@ function Table({ s }: { s: SyncDialogState }) {
           ))}
         </div>
       </div>
-      <p className="border-t border-border px-2 py-1 text-[0.6875rem] text-muted">
+      <p className="border-t border-border px-2 py-1 text-2xs text-muted">
         {t(
           "Keys: → and ← set the direction, = leaves a row alone, Delete deletes a one-sided entry, Backspace restores the default.",
         )}

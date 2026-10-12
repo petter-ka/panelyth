@@ -6,7 +6,7 @@ import {
   type RemoteTls,
   type SavedConnection,
 } from "@panelyth/contracts"
-import { Button, DialogWindow, Spinner } from "@panelyth/ui"
+import { Button, DialogWindow, Spinner, fieldClass as field } from "@panelyth/ui"
 import { useState, type KeyboardEvent, type ReactNode } from "react"
 import type { Side } from "../features/panels"
 import {
@@ -30,9 +30,6 @@ import {
   type RemotePrompt,
 } from "../features/remote"
 import { msg, t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const TLS_LABELS: Record<RemoteTls, string> = {
   explicit: msg("FTPS, explicit TLS (recommended)"),
@@ -177,9 +174,7 @@ function ConnectionList({ side }: { side: Side }) {
           {groupConnections(connections).map(([group, list]) => (
             <div key={group} role="group" aria-label={group || t("Connections")}>
               {group !== "" && (
-                <p className="px-3 pt-1.5 pb-0.5 text-[0.6875rem] font-medium text-muted">
-                  {group}
-                </p>
+                <p className="px-3 pt-1.5 pb-0.5 text-2xs font-medium text-muted">{group}</p>
               )}
               {list.map((c) => (
                 <div
@@ -200,7 +195,7 @@ function ConnectionList({ side }: { side: Side }) {
                     {c.port !== DEFAULT_PORT[c.tls] && `:${c.port}`}
                   </span>
                   {c.tls === "none" && (
-                    <span className="shrink-0 rounded border border-danger/50 px-1 text-[0.625rem] text-danger">
+                    <span className="shrink-0 rounded border border-danger/50 px-1 text-3xs text-danger">
                       {t("Not encrypted")}
                     </span>
                   )}

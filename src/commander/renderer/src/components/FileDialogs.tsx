@@ -1,4 +1,4 @@
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useState } from "react"
 import {
   closeCopy,
@@ -16,9 +16,6 @@ import {
 import { formatBytes } from "../features/format"
 import { ArchiveWarnings } from "./ArchiveDialogs"
 import { t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const amount = (bytes: number | null): string => (bytes === null ? "" : ` (${formatBytes(bytes)})`)
 

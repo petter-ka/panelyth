@@ -66,7 +66,7 @@ function UserBadge({ item }: { item: ContentItem }) {
     <span
       role="img"
       aria-label={label}
-      className="absolute top-1 left-1 flex max-w-full items-center gap-0.5 truncate rounded-sm bg-chrome/85 px-1 text-[0.625rem] leading-4 text-text"
+      className="absolute top-1 left-1 flex max-w-full items-center gap-0.5 truncate rounded-sm bg-chrome/85 px-1 text-3xs leading-4 text-text"
       data-testid="user-badge"
     >
       {color && (

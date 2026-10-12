@@ -170,7 +170,7 @@ export function MediaViewerOverlay({
             >
               −
             </button>
-            <span className="w-10 text-center text-[0.6875rem] tabular-nums">
+            <span className="w-10 text-center text-2xs tabular-nums">
               {Math.round(zoom.value * 100)}%
             </span>
             <button

@@ -478,7 +478,7 @@ function PickerOverlay() {
       <div
         ref={loupe}
         hidden
-        className="pointer-events-none absolute z-10 rounded-md border border-border bg-raised p-1 text-[0.625rem] text-text tabular-nums"
+        className="pointer-events-none absolute z-10 rounded-md border border-border bg-raised p-1 text-3xs text-text tabular-nums"
         data-testid="loupe"
       >
         <div className="relative" style={{ width: LOUPE_SIZE, height: LOUPE_SIZE }}>

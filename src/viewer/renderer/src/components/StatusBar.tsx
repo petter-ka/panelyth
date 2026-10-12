@@ -29,6 +29,9 @@ const DOT: Record<SidecarState, string> = {
   failed: "bg-danger",
 }
 
+/** A control in the bar: the bar's text weight, and a target that is not just the text's height. */
+const barButton = "h-6 rounded px-1.5 font-normal hover:bg-raised hover:text-text"
+
 const SIZE_DELAY_MS = 150
 
 /**
@@ -59,7 +62,7 @@ function SelectionSummary() {
   if (count === 0) return null
   const bytes = size && size.key === selection ? `, ${formatBytes(size.bytes)}` : ""
   return (
-    <span className="tabular-nums text-text" data-testid="selection-summary">
+    <span className="text-text prose-nums" data-testid="selection-summary">
       {t("{count} selected", { count: formatCount(count) })}
       {count > 1 ? bytes : ""}
     </span>
@@ -78,7 +81,7 @@ export function StatusBar() {
   const shortcutHint = useShortcutHint("help.shortcuts")
 
   return (
-    <footer className="flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
+    <footer className="flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted">
       <span
         role="status"
         aria-live="polite"
@@ -93,7 +96,7 @@ export function StatusBar() {
           <button
             type="button"
             onClick={() => void measurePing()}
-            className="rounded px-1 tabular-nums hover:text-text"
+            className={`${barButton} prose-nums`}
             data-testid="ping"
           >
             {pingMs === null ? t("ping …") : t("ping {ms} ms", { ms: pingMs.toFixed(1) })}
@@ -114,18 +117,13 @@ export function StatusBar() {
           type="button"
           onClick={openShortcutHelp}
           aria-label={t("Keyboard shortcuts")}
-          className="grid place-items-center rounded px-1 hover:text-text"
+          className={`${barButton} grid place-items-center`}
         >
           <KeyboardIcon size={14} />
         </button>
       </Tooltip>
       <Tooltip content={t("Change theme")}>
-        <button
-          type="button"
-          onClick={cycleTheme}
-          className="rounded px-1 capitalize hover:text-text"
-          data-testid="theme-toggle"
-        >
+        <button type="button" onClick={cycleTheme} className={barButton} data-testid="theme-toggle">
           {t("Theme: {theme}", { theme: themeLabel })}
         </button>
       </Tooltip>

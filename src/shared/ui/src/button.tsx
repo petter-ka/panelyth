@@ -58,7 +58,7 @@ export function Button({
 /** A key cap, for shortcut references. */
 export function Kbd({ children }: { children: ReactNode }) {
   return (
-    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-raised px-1 font-mono text-[0.6875rem] text-text tabular-nums">
+    <kbd className="inline-flex h-5 min-w-5 items-center justify-center rounded border border-border bg-raised px-1 font-mono text-2xs text-text tabular-nums">
       {children}
     </kbd>
   )

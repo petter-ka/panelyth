@@ -6,7 +6,7 @@
 import { useEffect, useState } from "react"
 import type { DrawTool, StrokePoint } from "@panelyth/contracts"
 import { MAX_WATERMARK_CHARS } from "@panelyth/contracts"
-import { Button } from "@panelyth/ui"
+import { Button, fieldLook } from "@panelyth/ui"
 import { msg, t } from "@panelyth/i18n"
 import {
   drawnStrokes,
@@ -161,7 +161,7 @@ export function DrawPanel() {
               aria-checked={tool === d.value}
               data-draw-tool={d.value}
               onClick={() => setPaint({ drawTool: d.value })}
-              className="h-7 truncate rounded border border-border px-1 text-[0.6875rem] text-muted hover:border-muted hover:text-text aria-checked:border-accent aria-checked:bg-raised aria-checked:text-accent"
+              className="h-7 truncate rounded border border-border px-1 text-2xs text-muted hover:border-muted hover:text-text aria-checked:border-accent aria-checked:bg-raised aria-checked:text-accent"
             >
               {t(d.label)}
             </button>
@@ -200,14 +200,14 @@ export function DrawPanel() {
         )}
         {tool === "text" && (
           <>
-            <label className="block space-y-1 text-[0.6875rem] text-muted">
+            <label className="block space-y-1 text-2xs text-muted">
               <span>{t("Text")}</span>
               <textarea
                 rows={2}
                 maxLength={MAX_WATERMARK_CHARS}
                 value={paint.text}
                 onChange={(e) => setPaint({ text: e.target.value })}
-                className="block w-full resize-y rounded-md border border-border bg-canvas px-2 py-1 text-xs text-text outline-none focus:border-accent"
+                className={`block w-full resize-y px-2 py-1 text-xs ${fieldLook}`}
                 data-testid="draw-text"
               />
             </label>
@@ -284,7 +284,7 @@ export function DrawPanel() {
         </PanelSection>
       )}
       <PanelSection>
-        <p className="text-[0.6875rem] text-text" data-testid="draw-count">
+        <p className="text-2xs text-text" data-testid="draw-count">
           {activeId === null || strokes === 0
             ? t("Nothing drawn yet.")
             : t("Strokes in this drawing: {count}", { count: strokes })}
@@ -310,7 +310,7 @@ function SourceSection() {
   const set = paint.source !== null
   return (
     <PanelSection title={t("Copy from")}>
-      <p className="text-[0.6875rem] text-text" data-testid="paint-source-state" role="status">
+      <p className="text-2xs text-text" data-testid="paint-source-state" role="status">
         {set ? t("The source is set; it moves with the brush.") : t("No source yet.")}
       </p>
       <p className={note}>{t("Hold Alt and click the picture where to copy from.")}</p>

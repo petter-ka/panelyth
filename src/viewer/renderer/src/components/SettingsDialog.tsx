@@ -41,7 +41,7 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
       <div id="editor-settings-label" className="text-xs font-medium">
         {t("Image editor")}
       </div>
-      <div className="text-[0.6875rem] text-muted">{t("The Save button")}</div>
+      <div className="text-2xs text-muted">{t("The Save button")}</div>
       <ChoiceGroup<SaveTarget>
         label={t("The Save button")}
         value={settings.saveTarget}
@@ -54,11 +54,11 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
         onChange={(value) => set("saveTarget", value)}
       />
       {settings.saveTarget === "replace" && (
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {t("The original goes to the trash first, and Panelyth asks every time.")}
         </p>
       )}
-      <div className="text-[0.6875rem] text-muted">{t("Camera data (EXIF)")}</div>
+      <div className="text-2xs text-muted">{t("Camera data (EXIF)")}</div>
       <ChoiceGroup<MetadataPolicy>
         label={t("Camera data (EXIF)")}
         value={settings.metadata}
@@ -70,7 +70,7 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
         ]}
         onChange={(value) => set("metadata", value)}
       />
-      <label className="flex items-center gap-3 text-[0.6875rem] text-muted">
+      <label className="flex items-center gap-3 text-2xs text-muted">
         <span className="min-w-0 flex-1">{t("JPEG quality")}</span>
         <input
           type="range"
@@ -86,7 +86,7 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
           {settings.jpegQuality}
         </span>
       </label>
-      <div className="text-[0.6875rem] text-muted">{t("Around the picture")}</div>
+      <div className="text-2xs text-muted">{t("Around the picture")}</div>
       <ChoiceGroup<Surround>
         label={t("Around the picture")}
         value={settings.surround}
@@ -94,7 +94,7 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
         options={SURROUNDS.map((value) => ({ value, label: surroundLabel(value) }))}
         onChange={(value) => set("surround", value)}
       />
-      <p className="text-[0.6875rem] text-muted">
+      <p className="text-2xs text-muted">
         {t("Neutral gray lets you judge colors the same way in both themes.")}
       </p>
     </section>
@@ -117,7 +117,7 @@ function ViewerSettings() {
       {!libraryLoaded && (
         <p
           role="status"
-          className="rounded-md border border-border bg-canvas px-3 py-2 text-[0.6875rem] text-muted"
+          className="rounded-md border border-border bg-canvas px-3 py-2 text-2xs text-muted"
         >
           {t("Settings will be available when the library is ready.")}
         </p>
@@ -138,14 +138,12 @@ function ViewerSettings() {
           onChange={(value) => setPreference("startupFolder", value)}
         />
         {preferences.startupFolder === "systemDefault" && (
-          <p className="text-[0.6875rem] text-muted">
-            {t("System default opens the Home folder.")}
-          </p>
+          <p className="text-2xs text-muted">{t("System default opens the Home folder.")}</p>
         )}
         {preferences.startupFolder === "specified" && (
           <div className="flex min-w-0 items-center gap-2 pl-1">
             <Tooltip content={preferences.specifiedFolder ?? undefined}>
-              <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-muted">
+              <span className="min-w-0 flex-1 truncate text-2xs text-muted">
                 {preferences.specifiedFolder ?? t("Choose a folder to use at startup")}
               </span>
             </Tooltip>
@@ -210,7 +208,7 @@ function ViewerSettings() {
           onChange={(value) => setPreference("wheelMode", value)}
         />
         {preferences.wheelMode === "previousNext" && (
-          <p className="text-[0.6875rem] text-muted">{t("Ctrl + mouse wheel zooms in or out.")}</p>
+          <p className="text-2xs text-muted">{t("Ctrl + mouse wheel zooms in or out.")}</p>
         )}
       </section>
       <EditorSettings disabled={!libraryLoaded} />

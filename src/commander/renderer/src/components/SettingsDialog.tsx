@@ -7,7 +7,7 @@ import {
   type UserCommand,
 } from "@panelyth/contracts"
 import { TILE_SIZE_ORDER } from "@panelyth/media-ui"
-import { Button, ChoiceGroup, SharedSettingsDialog } from "@panelyth/ui"
+import { Button, ChoiceGroup, SharedSettingsDialog, fieldClass } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
 import { POLICIES } from "../features/files"
 import { setTreeMode, usePanelsStore, type TreeMode } from "../features/panels"
@@ -85,9 +85,6 @@ const Section = ({ children }: { children: ReactNode }) => (
   <div className="flex flex-col gap-4 text-xs">{children}</div>
 )
 
-const fieldClass =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
-
 /** F4's editor: saved when the field is left (main reads it from library.db). */
 function EditorField() {
   const stored = useSettingsStore((s) => s.settings.editor)
@@ -111,9 +108,7 @@ function EditorField() {
           if (e.key === "Enter") save()
         }}
       />
-      <span className="text-[0.6875rem] text-muted">
-        {t("The full path of a program, or empty.")}
-      </span>
+      <span className="text-2xs text-muted">{t("The full path of a program, or empty.")}</span>
     </label>
   )
 }
@@ -255,7 +250,7 @@ function OperationsSection() {
             </option>
           ))}
         </select>
-        <span className="text-[0.6875rem] text-muted">
+        <span className="text-2xs text-muted">
           {t("What the copy and move dialogs start with; each job can still choose.")}
         </span>
       </label>
@@ -281,7 +276,7 @@ function ConfirmationsSection() {
   return (
     <Section>
       <Check setting="confirmTrash" label={t("Ask before moving to the trash")} />
-      <p className="-mt-3 text-[0.6875rem] text-muted">{t("Deleting permanently always asks.")}</p>
+      <p className="-mt-3 text-2xs text-muted">{t("Deleting permanently always asks.")}</p>
       <Check setting="confirmDrop" label={t("Show the copy dialog when files are dropped")} />
       <Radios
         setting="runPrograms"
@@ -356,7 +351,7 @@ function CommandForm({ initial, onDone }: { initial: UserCommand; onDone(): void
       {text(t("Name"), "title", t("Open in the editor"), MAX_TOOL_TITLE_CHARS)}
       {text(t("Command"), "command", "code")}
       {text(t("Parameters"), "params", "%P%N")}
-      <p className="-mt-2 text-[0.6875rem] text-muted">
+      <p className="-mt-2 text-2xs text-muted">
         {t(
           "%P this panel's folder · %T the other panel's folder · %N the name under the cursor · %S the marked names · %L a file listing the marked paths. %P%N is the full path under the cursor. Names are quoted for you.",
         )}
@@ -424,7 +419,7 @@ function ToolsSection() {
       <EditorField />
       <div className="flex flex-col gap-2">
         <span className="text-muted">{t("Your commands")}</span>
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {t(
             "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.",
           )}
@@ -439,7 +434,7 @@ function ToolsSection() {
                 <CommanderActionIcon name={c.icon} className="shrink-0 text-muted" />
                 <span className="min-w-0 flex-1">
                   <span className="block truncate">{c.title}</span>
-                  <span className="block truncate font-mono text-[0.6875rem] text-muted">
+                  <span className="block truncate font-mono text-2xs text-muted">
                     {c.params ? `${c.command} ${c.params}` : c.command}
                   </span>
                 </span>

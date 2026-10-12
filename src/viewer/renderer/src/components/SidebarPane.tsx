@@ -227,7 +227,7 @@ function FolderPathHeader({ crumbs }: { crumbs: Crumb[] }) {
                     data-path={crumb.path}
                     onKeyDown={(event) => event.stopPropagation()}
                     onClick={() => void openFolder(crumb.path)}
-                    className={`min-w-0 truncate rounded px-1 py-0.5 text-[0.6875rem] ${last ? "max-w-[7rem] font-medium text-text" : "max-w-[4rem] text-muted hover:bg-raised hover:text-text"}`}
+                    className={`min-w-0 truncate rounded px-1 py-0.5 text-2xs ${last ? "max-w-[7rem] font-medium text-text" : "max-w-[4rem] text-muted hover:bg-raised hover:text-text"}`}
                   >
                     {crumb.name}
                   </button>
@@ -268,7 +268,7 @@ const RowView = memo(function RowView({
   const opening = useFolderStore((s) => s.opening && path !== null && s.openingTarget === path)
   if (row.type === "header") {
     return (
-      <div className="flex h-full items-end px-3 pb-1 text-[0.6875rem] font-medium text-muted">
+      <div className="flex h-full items-end px-3 pb-1 text-2xs font-medium text-muted">
         {row.label}
       </div>
     )
@@ -276,7 +276,7 @@ const RowView = memo(function RowView({
   if (row.type === "note") {
     return (
       <div
-        className="flex h-full items-center truncate pr-2 text-[0.6875rem] text-muted"
+        className="flex h-full items-center truncate pr-2 text-2xs text-muted"
         style={{ paddingLeft: (26 + row.depth * INDENT) * interfaceScale }}
       >
         {row.label}
@@ -356,7 +356,7 @@ const RowView = memo(function RowView({
         )}
       </span>
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {node?.loading && <span className="text-[0.625rem] text-muted">…</span>}
+      {node?.loading && <span className="text-3xs text-muted">…</span>}
     </div>
   )
 })

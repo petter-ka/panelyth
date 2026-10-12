@@ -46,7 +46,7 @@ export function BatchBar() {
       className="absolute bottom-3 left-3 z-10 flex items-center gap-0.5 rounded-lg border border-border bg-chrome p-1 shadow-lg shadow-black/30"
       data-testid="batch-bar"
     >
-      <span className="px-2 text-xs font-medium tabular-nums">
+      <span className="px-2 text-xs font-medium prose-nums">
         {t("{count} selected", { count: formatCount(count) })}
       </span>
       <Action

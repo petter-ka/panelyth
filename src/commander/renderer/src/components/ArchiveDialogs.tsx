@@ -1,5 +1,5 @@
 import type { ArchiveWarning } from "@panelyth/contracts"
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useState } from "react"
 import {
   closePack,
@@ -17,9 +17,6 @@ import {
 import { POLICIES } from "../features/files"
 import { formatBytes } from "../features/format"
 import { msg, t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const WARNING_TEXT: Record<ArchiveWarning, string> = {
   space: msg("The extracted files need more space than the destination drive has free."),

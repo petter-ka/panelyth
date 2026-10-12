@@ -109,7 +109,7 @@ function PasswordForm({
           autoFocus
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          className="h-8 rounded border border-border bg-canvas px-2 text-sm text-text outline-none focus:border-accent"
+          className="h-8 px-2 text-sm rounded-md border border-muted/70 bg-canvas text-text outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         />
       </label>
       <button type="submit" className="h-8 rounded bg-accent text-accent-foreground">
@@ -298,7 +298,7 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
             if (e.key === "Enter") goTo(Number(pageInput) || 1)
           }}
           onBlur={() => setPageInput(String(current))}
-          className="h-7 w-12 rounded border border-border bg-canvas px-1 text-center text-text tabular-nums outline-none focus:border-accent"
+          className="h-7 w-12 px-1 text-center tabular-nums rounded-md border border-muted/70 bg-canvas text-text outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         />
         <span className="text-muted tabular-nums">/ {doc.numPages}</span>
         <Button
@@ -319,7 +319,7 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
             const v = e.target.value
             setZoom(v === "width" || v === "page" ? v : Number(v))
           }}
-          className="h-7 rounded border border-border bg-canvas px-1 text-text outline-none"
+          className="h-7 px-1 rounded-md border border-muted/70 bg-canvas text-text outline-none focus:border-accent focus:ring-1 focus:ring-accent"
         >
           <option value="width">{t("Fit width ({percent}%)", { percent })}</option>
           <option value="page">{t("Fit page")}</option>
@@ -373,7 +373,7 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
                 box.current?.focus()
               }
             }}
-            className="h-7 w-64 rounded border border-border bg-canvas px-2 text-text outline-none focus:border-accent"
+            className="h-7 w-64 px-2 rounded-md border border-muted/70 bg-canvas text-text outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           />
           <span aria-live="polite" className="w-40 text-muted tabular-nums">
             {needle === ""

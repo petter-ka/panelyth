@@ -82,7 +82,7 @@ export function PdfThumbs({ doc, aspect, current, onSelect }: PdfThumbsProps) {
               aria-label={t("Page {page}", { page })}
               aria-current={page === current || undefined}
               onClick={() => onSelect(page)}
-              className="absolute left-0 flex w-full flex-col items-center gap-1 pt-2 text-[0.6875rem] text-muted"
+              className="absolute left-0 flex w-full flex-col items-center gap-1 pt-2 text-2xs text-muted"
               style={{ transform: `translateY(${row.start}px)`, height: row.size }}
             >
               <span className={`rounded p-0.5 ${page === current ? "bg-accent" : ""}`}>

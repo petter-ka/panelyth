@@ -52,7 +52,7 @@ import { formatPercent } from "../../lib/format"
 import { Check, NumberField, PanelSection, Segmented, Select, Slider } from "./controls"
 import { useOp } from "./ToolPanels"
 
-export const note = "text-[0.6875rem] text-muted"
+export const note = "text-2xs text-muted"
 
 export interface Spec<K extends string> {
   key: K
@@ -100,7 +100,7 @@ export function ResetButton({ kind }: { kind: EditOpKind }) {
   return (
     <button
       type="button"
-      className="text-[0.6875rem] text-muted underline-offset-2 hover:text-text hover:underline"
+      className="text-2xs text-muted underline-offset-2 hover:text-text hover:underline"
       onClick={() => setParams(defaultOp(kind, { width: 1, height: 1, dpi: 0 }))}
     >
       {t("Reset this tool")}
@@ -184,7 +184,7 @@ function BalanceRow({
   const names = [t("Red"), t("Green"), t("Blue")]
   return (
     <fieldset className="space-y-1">
-      <legend className="text-[0.6875rem] font-medium text-muted">{label}</legend>
+      <legend className="text-2xs font-medium text-muted">{label}</legend>
       {names.map((name, i) => (
         <Slider
           key={name}
@@ -222,7 +222,7 @@ export function ColorsPanel() {
           type="button"
           aria-expanded={open}
           onClick={() => setOpen(!open)}
-          className="flex w-full items-center gap-1 text-left text-[0.6875rem] font-medium text-muted hover:text-text"
+          className="flex w-full items-center gap-1 text-left text-2xs font-medium text-muted hover:text-text"
         >
           <span aria-hidden="true">{open ? "▾" : "▸"}</span>
           {t("Color balance")}
@@ -587,7 +587,7 @@ export function ColorWell({
   onChange(hex: string): void
 }) {
   return (
-    <label className="flex items-center gap-2 text-[0.6875rem] text-muted">
+    <label className="flex items-center gap-2 text-2xs text-muted">
       <span className="min-w-0 flex-1 truncate">{label}</span>
       <span className="text-xs text-text tabular-nums">{value}</span>
       <input
@@ -881,7 +881,7 @@ export function LooksPanel() {
                     />
                   )}
                 </span>
-                <span className="mt-1 block truncate text-[0.6875rem]">{t(look.label)}</span>
+                <span className="mt-1 block truncate text-2xs">{t(look.label)}</span>
               </button>
             </li>
           )

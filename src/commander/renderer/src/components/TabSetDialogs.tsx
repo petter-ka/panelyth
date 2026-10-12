@@ -1,4 +1,4 @@
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useState } from "react"
 import { notice } from "../features/files"
 import type { Side } from "../features/panels"
@@ -17,9 +17,6 @@ import {
   type TabSet,
 } from "../features/tabsets"
 import { t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const tabCount = (count: number): string =>
   t("{count, plural, one {# tab} other {# tabs}}", { count })
@@ -195,7 +192,7 @@ function ManageTabSetsDialog({ side }: { side: Side }) {
               className="flex cursor-default flex-col px-2 py-1 aria-selected:bg-accent/20"
             >
               <span className="truncate">{s.name}</span>
-              <span className="truncate text-[0.6875rem] text-muted">{setSummary(s)}</span>
+              <span className="truncate text-2xs text-muted">{setSummary(s)}</span>
             </li>
           ))}
           {sets.length === 0 && (
@@ -262,14 +259,12 @@ function TabSetForm({ set, side }: { set: TabSet; side: Side }) {
           panel.tabs.map((tab, i) => (
             <li key={`${p}-${i}`} className="flex items-center gap-2 px-2 py-0.5">
               {set.panels.length === 2 && (
-                <span className="w-10 shrink-0 text-[0.6875rem] text-muted">
+                <span className="w-10 shrink-0 text-2xs text-muted">
                   {p === 0 ? t("Left") : t("Right")}
                 </span>
               )}
               <span className="shrink-0 truncate">{tab.title || tab.name}</span>
-              <span className="min-w-0 flex-1 truncate text-[0.6875rem] text-muted">
-                {tab.path}
-              </span>
+              <span className="min-w-0 flex-1 truncate text-2xs text-muted">{tab.path}</span>
             </li>
           )),
         )}

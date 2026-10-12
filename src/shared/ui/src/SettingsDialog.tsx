@@ -11,6 +11,7 @@ import {
 } from "./appearance"
 import { Button } from "./button"
 import { DialogWindow } from "./dialog"
+import { fieldClass } from "./field"
 import { Tooltip } from "./Tooltip"
 
 type AppId = "viewer" | "commander"
@@ -18,8 +19,10 @@ type SettingsTab = "general" | AppId | "appearance" | "shortcuts"
 
 const tabButton =
   "h-8 rounded-md px-3 text-xs text-muted hover:bg-raised hover:text-text aria-selected:bg-raised aria-selected:text-text aria-selected:shadow-sm"
+// A segmented control: the chosen segment is the filled one (the tile size
+// control in the viewer's toolbar has the same look).
 const choiceButton =
-  "h-8 flex-1 rounded-md border border-border px-2 text-xs text-muted hover:border-muted hover:text-text aria-pressed:border-accent aria-pressed:text-accent disabled:opacity-50"
+  "h-7 min-w-0 flex-auto truncate rounded-[5px] border border-transparent px-2 text-xs font-medium text-muted hover:text-text aria-pressed:border-border aria-pressed:bg-raised aria-pressed:font-semibold aria-pressed:text-text aria-pressed:shadow-sm disabled:opacity-50"
 
 export function SwitchRow({
   label,
@@ -41,7 +44,7 @@ export function SwitchRow({
         <div id={`${id}-label`} className="text-xs font-medium">
           {label}
         </div>
-        <div id={`${id}-description`} className="mt-0.5 text-[0.6875rem] text-muted">
+        <div id={`${id}-description`} className="mt-0.5 text-2xs text-muted">
           {description}
         </div>
       </div>
@@ -83,7 +86,7 @@ export function ChoiceGroup<T extends string>({
     <div
       role="group"
       aria-label={label}
-      className={`${layout === "grid" ? "grid grid-cols-4" : "flex"} gap-1 rounded-lg border border-border bg-canvas p-1`}
+      className={`${layout === "grid" ? "grid grid-cols-4" : "flex"} gap-0.5 rounded-lg border border-border bg-canvas p-0.5`}
     >
       {options.map((option) => (
         <Tooltip key={option.value} content={option.title}>
@@ -111,7 +114,7 @@ function GeneralSettings({ settingsReady }: { settingsReady: boolean }) {
 
   return (
     <section aria-label={t("Switching apps")} data-testid="settings-general">
-      <h3 className="pb-1 text-[0.6875rem] font-medium text-muted">
+      <h3 className="pb-1 text-2xs font-medium text-muted">
         {t("When switching apps, carry over")}
       </h3>
       <SwitchRow
@@ -137,7 +140,7 @@ function GeneralSettings({ settingsReady }: { settingsReady: boolean }) {
         disabled={!settingsReady}
         onChange={(value) => setCarry("selection", value)}
       />
-      <h3 className="pt-4 pb-2 text-[0.6875rem] font-medium text-muted">{t("Start with")}</h3>
+      <h3 className="pt-4 pb-2 text-2xs font-medium text-muted">{t("Start with")}</h3>
       <ChoiceGroup
         label={t("Start with")}
         value={startWith}
@@ -173,7 +176,7 @@ function AppearanceSettings() {
           onChange={setPreference}
           layout="grid"
         />
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {t("System follows your operating system's light or dark setting.")}
         </p>
       </section>
@@ -190,9 +193,7 @@ function AppearanceSettings() {
           ]}
           onChange={setInterfaceSize}
         />
-        <p className="text-[0.6875rem] text-muted">
-          {t("Adjusts interface text, padding, and spacing.")}
-        </p>
+        <p className="text-2xs text-muted">{t("Adjusts interface text, padding, and spacing.")}</p>
       </section>
       <section className="space-y-2 border-t border-border pt-3">
         <h3 className="text-xs font-medium">{t("Icon library")}</h3>
@@ -203,7 +204,7 @@ function AppearanceSettings() {
           options={ICON_SET_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
           onChange={setIconSet}
         />
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {t("Applies to the toolbar and menu icons in the viewer and the commander.")}
         </p>
       </section>
@@ -213,7 +214,7 @@ function AppearanceSettings() {
           aria-label={t("Interface language")}
           value={language}
           onChange={(e) => void setLanguage(e.target.value as Locale)}
-          className="h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
+          className={fieldClass}
         >
           {LOCALES.map((locale) => (
             <option key={locale} value={locale}>

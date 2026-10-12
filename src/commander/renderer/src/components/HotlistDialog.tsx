@@ -1,5 +1,5 @@
 import type { Bookmark } from "@panelyth/contracts"
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useState } from "react"
 import { PanelythError } from "../bridge"
 import {
@@ -12,9 +12,6 @@ import {
 } from "../features/hotlist"
 import { usePanelsStore } from "../features/panels"
 import { t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 /**
  * Hotlist → Configure… (Stage C03, CFR-10): edit, group, reorder and remove
@@ -51,7 +48,7 @@ export function HotlistDialog() {
                 className="flex cursor-default items-center gap-2 px-2 py-1 aria-selected:bg-accent/20"
               >
                 <span className="min-w-0 flex-1 truncate">{b.label}</span>
-                {b.group && <span className="truncate text-[0.6875rem] text-muted">{b.group}</span>}
+                {b.group && <span className="truncate text-2xs text-muted">{b.group}</span>}
               </li>
             ))}
             {bookmarks.length === 0 && (

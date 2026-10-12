@@ -98,7 +98,7 @@ export function Histogram() {
           <Tooltip content={t("Clipped shadows")}>
             <span
               data-testid="clip-low"
-              className="absolute top-1 left-1 rounded bg-black/60 px-1 text-[0.625rem] text-white tabular-nums"
+              className="absolute top-1 left-1 rounded bg-black/60 px-1 text-3xs text-white tabular-nums"
             >
               ◣ {formatPercent(low)}
             </span>
@@ -108,7 +108,7 @@ export function Histogram() {
           <Tooltip content={t("Clipped highlights")}>
             <span
               data-testid="clip-high"
-              className="absolute top-1 right-1 rounded bg-black/60 px-1 text-[0.625rem] text-white tabular-nums"
+              className="absolute top-1 right-1 rounded bg-black/60 px-1 text-3xs text-white tabular-nums"
             >
               {formatPercent(high)} ◥
             </span>
@@ -136,7 +136,7 @@ export function Histogram() {
             aria-pressed={log}
             onClick={() => setLog(!log)}
             aria-label={t("Logarithmic scale")}
-            className="h-7 rounded-md border border-border px-1.5 text-[0.6875rem] text-muted hover:text-text aria-pressed:border-accent aria-pressed:text-accent"
+            className="h-7 rounded-md border border-border px-1.5 text-2xs text-muted hover:text-text aria-pressed:border-accent aria-pressed:text-accent"
           >
             log
           </button>

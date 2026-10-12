@@ -168,7 +168,7 @@ export function ViewerOverlay() {
           <span className="truncate text-xs font-medium" data-testid="viewer-name">
             {item.name}
           </span>
-          <span className="shrink-0 text-[0.6875rem] text-muted tabular-nums">
+          <span className="shrink-0 text-2xs text-muted tabular-nums">
             {formatCount(index + 1)} / {formatCount(total)}
           </span>
         </div>

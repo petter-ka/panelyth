@@ -1,4 +1,4 @@
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldLook } from "@panelyth/ui"
 import { useState } from "react"
 import { useUiStore } from "../features/commands"
 import { markByMask } from "../features/marks"
@@ -56,7 +56,7 @@ function MaskForm({
           spellCheck={false}
           onChange={(e) => setMask(e.target.value)}
           onFocus={(e) => e.target.select()}
-          className="h-8 rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
+          className={`h-8 px-2 text-xs ${fieldLook}`}
         />
         <div className="flex justify-end gap-2">
           <Button onClick={close}>{t("Cancel")}</Button>

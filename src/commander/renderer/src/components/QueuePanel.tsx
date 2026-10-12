@@ -172,7 +172,7 @@ function JobRow({ j }: { j: JobSnapshot }) {
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <div className="flex min-w-0 items-baseline gap-2">
           <span className="truncate text-text">{describeJob(j)}</span>
-          <span className="shrink-0 truncate text-[0.6875rem] text-muted tabular-nums">
+          <span className="shrink-0 truncate text-2xs text-muted tabular-nums">
             {progressText(j)}
           </span>
         </div>
@@ -305,9 +305,7 @@ function Side({
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-1 rounded-md border border-border p-3">
-      <span className="text-[0.6875rem] font-semibold tracking-wide text-muted uppercase">
-        {title}
-      </span>
+      <span className="text-2xs font-semibold tracking-wide text-muted uppercase">{title}</span>
       <Tooltip content={name}>
         <span className="truncate text-text">{name}</span>
       </Tooltip>

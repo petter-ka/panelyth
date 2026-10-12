@@ -1,5 +1,5 @@
 import type { RenamePlan, RenamePreviewRow } from "@panelyth/contracts"
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useEffect, useRef, useState } from "react"
 import {
@@ -18,9 +18,6 @@ import {
 } from "../features/rename"
 import { formatCount } from "../features/format"
 import { msg, t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent aria-invalid:border-danger"
 
 const ROW_HEIGHT = 22
 const COLUMNS = "grid grid-cols-[minmax(0,1fr)_1.25rem_minmax(0,1fr)_9.5rem] items-center gap-x-2"

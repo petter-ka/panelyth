@@ -274,7 +274,7 @@ export function CurvesPanel() {
             onChange={(y) => put(movePoint(points, at, point[0], y))}
           />
         </div>
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {t("Arrow keys move the point (Shift: by ten). Delete removes it.")}
         </p>
       </PanelSection>
@@ -296,7 +296,7 @@ export function CurvesPanel() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            className="text-[0.6875rem] text-muted underline-offset-2 hover:text-text hover:underline disabled:opacity-40 disabled:hover:no-underline"
+            className="text-2xs text-muted underline-offset-2 hover:text-text hover:underline disabled:opacity-40 disabled:hover:no-underline"
             disabled={points.length <= 2}
             onClick={() => remove(at)}
           >
@@ -304,7 +304,7 @@ export function CurvesPanel() {
           </button>
           <button
             type="button"
-            className="text-[0.6875rem] text-muted underline-offset-2 hover:text-text hover:underline"
+            className="text-2xs text-muted underline-offset-2 hover:text-text hover:underline"
             onClick={() => {
               latest.current = { points: IDENTITY_CURVE, p: {}, channel }
               setParams({ op: "curves", p: {} })

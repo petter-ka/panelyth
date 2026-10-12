@@ -179,7 +179,7 @@ export function ToolList(crop: CropOptions) {
               >
                 <ToolIcon id={def.id} />
                 <span className="min-w-0 flex-1 truncate">{name}</span>
-                <span aria-hidden="true" className="text-[0.625rem] text-muted">
+                <span aria-hidden="true" className="text-3xs text-muted">
                   {open ? "▾" : "▸"}
                 </span>
               </button>
@@ -188,7 +188,7 @@ export function ToolList(crop: CropOptions) {
             {single && (
               <p
                 id={`editor-tool-${def.id}-why`}
-                className="px-3 pb-2 text-[0.6875rem] text-muted"
+                className="px-3 pb-2 text-2xs text-muted"
                 data-testid="tool-single-only"
               >
                 {t("One picture at a time: this tool needs a place in the picture.")}

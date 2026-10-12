@@ -20,7 +20,7 @@ import {
   type MetadataPolicy,
   type StoredRecipe,
 } from "@panelyth/contracts"
-import { Button, DialogWindow, Spinner, Tooltip } from "@panelyth/ui"
+import { Button, DialogWindow, Spinner, Tooltip, fieldLook } from "@panelyth/ui"
 import { msg, t } from "@panelyth/i18n"
 import {
   applyRecipe,
@@ -92,7 +92,7 @@ export function BatchSummary() {
   const folder = useBatchStore((s) => s.folder?.name)
   if (!plan) {
     return (
-      <p className="text-[0.6875rem] text-muted" data-testid="batch-summary" role="status">
+      <p className="text-2xs text-muted" data-testid="batch-summary" role="status">
         {t("Counting the pictures…")}
       </p>
     )
@@ -100,7 +100,7 @@ export function BatchSummary() {
   const skipped = plan.skipped.reduce((n, s) => n + s.count, 0)
   return (
     <p
-      className="flex min-w-0 items-baseline gap-1.5 text-[0.6875rem] text-muted tabular-nums"
+      className="flex min-w-0 items-baseline gap-1.5 text-2xs text-muted tabular-nums"
       data-testid="batch-summary"
       role="status"
     >
@@ -161,7 +161,7 @@ export function BatchStrip() {
                   tabIndex={selected ? 0 : -1}
                   data-sample={sample.id}
                   onClick={() => selectSample(sample)}
-                  className={`grid size-12 place-items-center overflow-hidden rounded-md border bg-canvas text-[0.625rem] text-muted tabular-nums ${selected ? "border-accent ring-1 ring-accent" : "border-border hover:border-muted"}`}
+                  className={`grid size-12 place-items-center overflow-hidden rounded-md border bg-canvas text-3xs text-muted tabular-nums ${selected ? "border-accent ring-1 ring-accent" : "border-border hover:border-muted"}`}
                 >
                   {thumbs[sample.id] ? (
                     <img
@@ -180,7 +180,7 @@ export function BatchStrip() {
         })}
       </ul>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-[0.6875rem] text-muted">
+        <p className="truncate text-2xs text-muted">
           {t("The recipe is shown on samples of the selection. It runs on every picture.")}
         </p>
         <BatchSummary />
@@ -200,8 +200,7 @@ const TOKENS: readonly { token: string; label: string }[] = [
   { token: "{exif.model}", label: msg("Camera") },
 ]
 
-const field =
-  "h-7 w-full rounded border border-border bg-canvas px-2 text-xs outline-none focus:border-accent"
+const field = `h-7 w-full px-2 text-xs ${fieldLook}`
 
 function Radio<T extends string>({
   name,
@@ -235,7 +234,7 @@ function Radio<T extends string>({
           {label}
           {children}
         </span>
-        {note && <span className="block text-[0.6875rem] text-muted">{note}</span>}
+        {note && <span className="block text-2xs text-muted">{note}</span>}
       </span>
     </label>
   )
@@ -285,14 +284,14 @@ function OutputDialog() {
           >
             <button
               type="button"
-              className="rounded border border-border px-2 py-0.5 text-[0.6875rem] hover:border-muted"
+              className="rounded border border-border px-2 py-0.5 text-2xs hover:border-muted"
               onClick={() => void pickFolder()}
               data-testid="batch-pick-folder"
             >
               {folder ? t("Change…") : t("Choose…")}
             </button>
             {folder && (
-              <span className="truncate text-[0.6875rem] text-muted" data-testid="batch-folder">
+              <span className="truncate text-2xs text-muted" data-testid="batch-folder">
                 {folder.name}
               </span>
             )}
@@ -333,7 +332,7 @@ function OutputDialog() {
                   key={tk.token}
                   type="button"
                   onClick={() => insert(tk.token)}
-                  className="rounded border border-border px-1.5 py-0.5 text-[0.6875rem] text-muted hover:border-muted hover:text-text"
+                  className="rounded border border-border px-1.5 py-0.5 text-2xs text-muted hover:border-muted hover:text-text"
                 >
                   {t(tk.label)}
                 </button>
@@ -399,7 +398,7 @@ function OutputDialog() {
           </p>
           <BatchSummary />
           {plan && plan.names.length > 0 && (
-            <ul className="text-[0.6875rem] text-muted" data-testid="batch-names">
+            <ul className="text-2xs text-muted" data-testid="batch-names">
               {plan.names.map((name, i) => (
                 <li key={`${i}-${name}`} className="truncate">
                   {name}
@@ -409,22 +408,17 @@ function OutputDialog() {
             </ul>
           )}
           {plan?.warnings.map((w) => (
-            <p key={w} className="text-[0.6875rem] text-warning" data-testid="batch-warning">
+            <p key={w} className="text-2xs text-warning" data-testid="batch-warning">
               {t(WARNING_TEXT[w])}
             </p>
           ))}
           {plan?.problems.map((p, i) => (
-            <p
-              key={i}
-              role="alert"
-              className="text-[0.6875rem] text-danger"
-              data-testid="batch-problem"
-            >
+            <p key={i} role="alert" className="text-2xs text-danger" data-testid="batch-problem">
               {problemText(p)}
             </p>
           ))}
           {error && (
-            <p role="alert" className="text-[0.6875rem] text-danger">
+            <p role="alert" className="text-2xs text-danger">
               {error}
             </p>
           )}
@@ -491,7 +485,7 @@ function RecipesDialog() {
       contentClassName="w-[min(28rem,calc(100vw-2rem))]"
     >
       <div className="space-y-3 p-4" data-testid="batch-recipes">
-        <p className="text-[0.6875rem] text-muted">
+        <p className="text-2xs text-muted">
           {t(
             "A recipe is the list of steps with its output settings. Using one replaces the current steps; Undo brings them back.",
           )}
@@ -512,7 +506,7 @@ function RecipesDialog() {
                   data-recipe={r.builtin || r.id}
                 >
                   <span className="min-w-0 flex-1 truncate">{label}</span>
-                  <span className="shrink-0 text-[0.6875rem] text-muted">
+                  <span className="shrink-0 text-2xs text-muted">
                     {r.builtin
                       ? t("built in")
                       : t("{count, plural, one {# step} other {# steps}}", {
@@ -569,18 +563,18 @@ function RecipesDialog() {
               {t("Save")}
             </Button>
           </div>
-          <p className="text-[0.6875rem] text-muted">
+          <p className="text-2xs text-muted">
             {steps === 0
               ? t("Add a step first: an empty recipe changes nothing.")
               : t("A recipe with the same name is replaced.")}
           </p>
           {saved && (
-            <p role="status" className="text-[0.6875rem] text-muted" data-testid="recipe-saved">
+            <p role="status" className="text-2xs text-muted" data-testid="recipe-saved">
               {t("Saved as {name}", { name: saved })}
             </p>
           )}
           {error && (
-            <p role="alert" className="text-[0.6875rem] text-danger">
+            <p role="alert" className="text-2xs text-danger">
               {error}
             </p>
           )}

@@ -25,7 +25,7 @@ import type {
   WatermarkParams,
 } from "@panelyth/contracts"
 import { CANVAS_ANCHORS, MAX_POLYGON_POINTS, MAX_WATERMARK_CHARS } from "@panelyth/contracts"
-import { Button } from "@panelyth/ui"
+import { Button, fieldLook } from "@panelyth/ui"
 import { msg, t } from "@panelyth/i18n"
 import {
   endGesture,
@@ -60,7 +60,7 @@ function AssetPicker({
             <img src={asset.thumbUrl} alt="" draggable={false} className="max-h-full max-w-full" />
           )}
         </span>
-        <span className="min-w-0 flex-1 text-[0.6875rem]">
+        <span className="min-w-0 flex-1 text-2xs">
           <span className="block truncate text-text" data-testid="asset-name">
             {asset
               ? asset.name
@@ -473,7 +473,7 @@ export function WatermarkPanel() {
         />
         {kind === "text" ? (
           <>
-            <label className="block space-y-1 text-[0.6875rem] text-muted">
+            <label className="block space-y-1 text-2xs text-muted">
               <span>{t("Text")}</span>
               <textarea
                 ref={area}
@@ -481,7 +481,7 @@ export function WatermarkPanel() {
                 maxLength={MAX_WATERMARK_CHARS}
                 value={p.text ?? ""}
                 onChange={(e) => update({ text: e.target.value })}
-                className="block w-full resize-y rounded-md border border-border bg-canvas px-2 py-1 text-xs text-text outline-none focus:border-accent"
+                className={`block w-full resize-y px-2 py-1 text-xs ${fieldLook}`}
                 data-testid="watermark-text"
               />
             </label>
@@ -496,7 +496,7 @@ export function WatermarkPanel() {
                   type="button"
                   data-token={tk.token}
                   onClick={() => insert(tk.token)}
-                  className="h-6 rounded-full border border-border px-2 text-[0.6875rem] text-muted hover:border-muted hover:text-text"
+                  className="h-6 rounded-full border border-border px-2 text-2xs text-muted hover:border-muted hover:text-text"
                 >
                   {t(tk.label)}
                 </button>

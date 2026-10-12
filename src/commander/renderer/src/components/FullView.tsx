@@ -40,6 +40,7 @@ import {
 import {
   baseName,
   formatAttrs,
+  formatDate,
   formatListDate,
   formatSize,
   glyphOf,
@@ -859,6 +860,9 @@ function Cells({
           key={column.id}
           role="gridcell"
           data-column={column.id}
+          data-tooltip-content={
+            column.id === "date" ? formatDate(item.modifiedMs, dateFormat) : undefined
+          }
           style={columnStyle(column)}
           className={
             column.id === "name"

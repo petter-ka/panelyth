@@ -26,7 +26,7 @@ import { PencilIcon } from "./ui/icons"
 import { t } from "@panelyth/i18n"
 
 const zoomButton =
-  "h-6 rounded-md border border-border bg-raised px-2 text-[0.6875rem] enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
+  "h-6 rounded-md border border-border bg-raised px-2 text-2xs enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
 
 /**
  * The preview pane (Stage 06): the selected image with fit / 1:1 / zoom / pan,
@@ -70,13 +70,16 @@ export function PreviewPane() {
     <aside
       aria-label={t("Preview")}
       data-pane="preview"
-      className="flex h-full min-h-0 flex-col overflow-hidden border-t border-border"
+      className="@container flex h-full min-h-0 flex-col overflow-hidden border-t border-border"
       data-testid="preview-pane"
       data-entry-id={shown?.id}
     >
-      <div className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3">
+      {/* In a narrow pane the zoom controls wrap under the name, so the name is not cut to two letters. */}
+      <div className="flex min-h-11 shrink-0 flex-wrap items-center gap-x-2 gap-y-1.5 border-b border-border bg-chrome px-3 py-2">
         <Tooltip content={shown?.name}>
-          <span className="min-w-0 flex-1 truncate text-xs font-medium">
+          <span
+            className={`min-w-0 flex-1 truncate text-xs font-medium ${isImage ? "basis-full @sm:basis-0" : ""}`}
+          >
             {shown?.name ?? t("Preview")}
           </span>
         </Tooltip>
@@ -95,7 +98,11 @@ export function PreviewPane() {
           </Tooltip>
         )}
         {isImage && (
-          <div role="toolbar" aria-label={t("Zoom")} className="flex shrink-0 items-center gap-1">
+          <div
+            role="toolbar"
+            aria-label={t("Zoom")}
+            className="ml-auto flex shrink-0 items-center gap-1"
+          >
             <Tooltip content={t("Fit (0)")}>
               <button
                 type="button"
@@ -126,7 +133,7 @@ export function PreviewPane() {
               </button>
             </Tooltip>
             <span
-              className="w-9 text-center text-[0.6875rem] tabular-nums"
+              className="w-9 text-center text-2xs tabular-nums"
               data-testid="pane-zoom"
               aria-live="polite"
             >
@@ -273,7 +280,7 @@ function PaneDetails({ item }: { item: ContentItem }) {
   ].filter(Boolean)
   return (
     <div
-      className="flex h-7 shrink-0 items-center truncate border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted tabular-nums"
+      className="flex h-7 shrink-0 items-center truncate border-t border-border bg-chrome px-3 text-2xs text-muted tabular-nums"
       data-testid="preview-details"
     >
       {parts.join(" · ")}

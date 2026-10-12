@@ -1,6 +1,6 @@
 import { FIND_ENCODINGS } from "@panelyth/contracts"
 import { usePageItem } from "@panelyth/renderer-core"
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from "react"
 import {
@@ -26,9 +26,6 @@ import {
 import { formatCount, formatSize } from "../features/format"
 import { useSettingsStore } from "../features/settings"
 import { msg, t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 const ROW_HEIGHT = 22
 const PAGE_ROWS = 12

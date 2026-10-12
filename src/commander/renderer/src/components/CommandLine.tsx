@@ -139,7 +139,7 @@ export function CommandLine() {
         autoCapitalize="off"
         onChange={(e) => setCommandText(e.target.value)}
         onKeyDown={onKeyDown}
-        className="h-6 min-w-0 flex-1 rounded border border-transparent bg-canvas px-1.5 font-mono text-text outline-none focus:border-accent"
+        className="h-6 min-w-0 flex-1 rounded border border-transparent bg-canvas px-1.5 font-mono text-text outline-none placeholder:font-sans focus:border-accent"
       />
       <Tooltip
         content={

@@ -1,4 +1,4 @@
-import { Button, DialogWindow } from "@panelyth/ui"
+import { Button, DialogWindow, fieldClass as field } from "@panelyth/ui"
 import { useState } from "react"
 import {
   ALGORITHMS,
@@ -11,9 +11,6 @@ import {
 } from "../features/compare"
 import type { HashAlgorithm } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
-
-const field =
-  "h-8 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none focus:border-accent"
 
 /**
  * Create checksums (Stage C08, CFR-21): SHA-256, SHA-1, MD5 or CRC32, as one
@@ -100,7 +97,7 @@ function ChecksumForm({ h }: { h: HashDialogState }) {
               />
               <span className="shrink-0 text-muted">{ext}</span>
             </span>
-            <span className="text-[0.6875rem] break-all text-muted">
+            <span className="text-2xs break-all text-muted">
               {t("In {folder}; an existing list of that name is replaced.", { folder: h.folder })}
             </span>
           </label>

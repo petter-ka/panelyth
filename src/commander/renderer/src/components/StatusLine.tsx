@@ -63,7 +63,7 @@ export function StatusLine({ side }: { side: Side }) {
   const marked = hasMarks(marks) ? markCount(marks) : 0
   return (
     <div
-      className="flex h-6 shrink-0 items-center gap-2 border-t border-border bg-chrome px-2 text-[0.6875rem] text-muted tabular-nums"
+      className="flex h-6 shrink-0 items-center gap-2 border-t border-border bg-chrome px-2 text-2xs text-muted prose-nums"
       data-testid={`status-${side}`}
       aria-live="polite"
     >
@@ -78,7 +78,7 @@ export function StatusLine({ side }: { side: Side }) {
             type="button"
             tabIndex={-1}
             onClick={() => stopListing(side)}
-            className="rounded px-1 text-text hover:bg-raised"
+            className="h-5 min-h-[20px] rounded px-1.5 text-text hover:bg-raised"
           >
             {t("Stop")}
           </button>
@@ -105,7 +105,7 @@ export function StatusLine({ side }: { side: Side }) {
             type="button"
             tabIndex={-1}
             onClick={() => stopSizes(side)}
-            className="rounded px-1 text-text hover:bg-raised"
+            className="h-5 min-h-[20px] rounded px-1.5 text-text hover:bg-raised"
           >
             {t("Stop")}
           </button>

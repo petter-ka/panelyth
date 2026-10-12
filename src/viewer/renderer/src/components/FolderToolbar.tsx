@@ -223,7 +223,7 @@ function SearchBox({ disabled }: { disabled: boolean }) {
             commit("", 0)
           } else if (e.key === "Enter") commit(text, 0)
         }}
-        className="h-full w-full rounded-md border border-border bg-raised pr-7 pl-7 text-xs placeholder:text-muted focus:border-accent focus:outline-none disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden"
+        className="h-full w-full rounded-md border border-muted/70 bg-raised pr-7 pl-7 text-xs placeholder:text-muted focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden"
       />
       {text && (
         <button
@@ -315,7 +315,7 @@ function Filters({ disabled }: { disabled: boolean }) {
             aria-pressed={on}
             disabled={disabled}
             onClick={() => toggleKind(c.kind)}
-            className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[0.6875rem] disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`}
+            className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`}
           >
             {c.label}
             {count !== undefined && (
@@ -327,7 +327,7 @@ function Filters({ disabled }: { disabled: boolean }) {
       <DropdownRoot>
         <DropdownTrigger
           disabled={disabled || !facets || facets.exts.length === 0}
-          className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[0.6875rem] disabled:opacity-50 ${exts.length > 0 ? "border-accent bg-accent text-accent-foreground" : "border-border enabled:hover:border-muted"}`}
+          className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${exts.length > 0 ? "border-accent bg-accent text-accent-foreground" : "border-border enabled:hover:border-muted"}`}
         >
           <FilterIcon size={12} />
           {exts.length > 0 ? exts.map((e) => e.toUpperCase()).join(", ") : t("File types")}
@@ -345,7 +345,7 @@ function Filters({ disabled }: { disabled: boolean }) {
               }
             >
               {e.ext.toUpperCase()}
-              <span className="ml-auto pl-6 text-[0.6875rem] tabular-nums opacity-70">
+              <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
                 {formatCount(e.count)}
               </span>
             </DropdownCheckboxItem>
@@ -362,7 +362,7 @@ function Filters({ disabled }: { disabled: boolean }) {
       {filtered && (
         <button
           type="button"
-          className="shrink-0 rounded px-1.5 text-[0.6875rem] text-muted hover:text-text"
+          className="shrink-0 rounded px-1.5 text-2xs text-muted hover:text-text"
           onClick={clearFilters}
         >
           {t("Clear")}
@@ -373,7 +373,7 @@ function Filters({ disabled }: { disabled: boolean }) {
 }
 
 const chip = (on: boolean) =>
-  `flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-[0.6875rem] disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`
+  `flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`
 
 /** Favorites, minimum rating and tags (library.db, ADR-0021). */
 function UserFilters({ disabled }: { disabled: boolean }) {
@@ -451,7 +451,7 @@ function UserFilters({ disabled }: { disabled: boolean }) {
                 }
               >
                 {tag.name}
-                <span className="ml-auto pl-6 text-[0.6875rem] tabular-nums opacity-70">
+                <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
                   {formatCount(tag.count)}
                 </span>
               </DropdownCheckboxItem>

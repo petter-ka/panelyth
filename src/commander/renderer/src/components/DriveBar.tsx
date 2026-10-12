@@ -82,7 +82,7 @@ export function DriveBar({ side }: { side: Side }) {
       role="toolbar"
       aria-label={`${side === "left" ? "Left" : "Right"} drives`}
       data-testid={`drives-${side}`}
-      className="flex h-7 shrink-0 items-center gap-0.5 overflow-hidden border-b border-border bg-chrome px-1.5 text-[0.6875rem]"
+      className="flex h-7 shrink-0 items-center gap-0.5 overflow-hidden border-b border-border bg-chrome px-1.5 text-2xs"
     >
       <Tooltip content={`Drive menu (${side === "left" ? "Alt+F1" : "Alt+F2"})`}>
         <button
@@ -149,7 +149,7 @@ export function DriveBar({ side }: { side: Side }) {
       )}
       <span className="flex-1" />
       {current && spaceText(current) && (
-        <span className="shrink-0 truncate pl-2 text-muted tabular-nums">{spaceText(current)}</span>
+        <span className="shrink-0 truncate pl-2 text-muted prose-nums">{spaceText(current)}</span>
       )}
     </div>
   )
@@ -178,7 +178,7 @@ export function DriveMenu({ side }: { side: Side }) {
             <span className="font-medium">{name}</span>
             {v.label && v.label !== name && <span className="text-muted">{v.label}</span>}
             {MARKERS[v.kind] && (
-              <span className="rounded border border-border px-1 text-[0.625rem] text-muted">
+              <span className="rounded border border-border px-1 text-3xs text-muted">
                 {t(MARKERS[v.kind]!)}
               </span>
             )}
@@ -232,9 +232,7 @@ export function DriveMenu({ side }: { side: Side }) {
       entries={entries}
       onClose={closeDriveMenu}
       footer={
-        loading && (
-          <p className="px-3 pt-1 pb-0.5 text-[0.6875rem] text-muted">{t("Updating drives…")}</p>
-        )
+        loading && <p className="px-3 pt-1 pb-0.5 text-2xs text-muted">{t("Updating drives…")}</p>
       }
     />
   )

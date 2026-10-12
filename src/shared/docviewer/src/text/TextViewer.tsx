@@ -229,7 +229,7 @@ export function TextViewer({ params }: { params: DocumentParams }) {
                 step(e.shiftKey ? -1 : 1)
               }
             }}
-            className="h-7 w-64 rounded border border-border bg-canvas px-2 text-text outline-none focus:border-accent"
+            className="h-7 w-64 px-2 rounded-md border border-muted/70 bg-canvas text-text outline-none focus:border-accent focus:ring-1 focus:ring-accent"
           />
           <span aria-live="polite" className="w-28 text-muted tabular-nums">
             {query === ""
@@ -331,7 +331,7 @@ export function TextViewer({ params }: { params: DocumentParams }) {
           )}
         </p>
       )}
-      <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-border bg-chrome px-3 text-[0.6875rem] text-muted">
+      <footer className="flex h-7 shrink-0 items-center gap-4 border-t border-border bg-chrome px-3 text-2xs text-muted">
         <span>{t("{count, plural, one {# line} other {# lines}}", { count: lines.length })}</span>
         <span>{formatBytes(params.sizeBytes)}</span>
         <span>{decoded?.encoding}</span>
