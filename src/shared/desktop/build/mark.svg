@@ -1,20 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="128" viewBox="0 0 192 128">
-  <title>Panelyth fast media panel</title>
-  <path d="M10 33h42l8 4-8 4H10a4 4 0 0 1 0-8Z" fill="#c9e878" fill-opacity=".68" />
-  <path d="M4 60h48l8 4-8 4H4a4 4 0 0 1 0-8Z" fill="#c9e878" />
-  <path d="M16 84h36l8 4-8 4H16a4 4 0 0 1 0-8Z" fill="#c9e878" fill-opacity=".8" />
-
-  <rect x="60" y="10" width="122" height="108" rx="15" fill="#eff1e5" />
-  <rect x="67" y="17" width="33" height="94" rx="10" fill="#c9e878" />
-  <rect x="76" y="28" width="15" height="15" rx="4" fill="#43523b" />
-  <rect x="75" y="52" width="18" height="4" rx="2" fill="#738358" />
-  <rect x="75" y="63" width="18" height="4" rx="2" fill="#738358" />
-  <rect x="75" y="74" width="14" height="4" rx="2" fill="#738358" />
-
-  <rect x="109" y="24" width="61" height="7" rx="3.5" fill="#687263" />
-  <rect x="109" y="39" width="61" height="36" rx="5" fill="#35483c" />
-  <circle cx="158" cy="49" r="4" fill="#e8c98d" />
-  <path d="m113 69 16-19 12 14 9-8 17 15v1h-54Z" fill="#b9cf91" />
-  <rect x="109" y="84" width="39" height="5" rx="2.5" fill="#8c9680" />
-  <rect x="109" y="96" width="57" height="4" rx="2" fill="#c0c4b7" />
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <title>Panelyth panels</title>
+  <defs>
+    <linearGradient id="lime" x1="0" y1="0" x2="96" y2="96" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#cfec80" />
+      <stop offset="1" stop-color="#9bcb3f" />
+    </linearGradient>
+  </defs>
+  <rect width="24" height="96" rx="10" fill="url(#lime)" />
+  <rect x="32" width="64" height="56" rx="10" fill="url(#lime)" />
+  <rect x="32" y="64" width="64" height="32" rx="10" fill="#557f2f" />
 </svg>

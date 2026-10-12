@@ -42,7 +42,7 @@ button { border: 0; }
   backdrop-filter: blur(18px);
 }
 .brand { display: inline-flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 600; letter-spacing: -0.045em; white-space: nowrap; }
-.brand-mark { display: block; width: 30px; height: 20px; flex: 0 0 auto; }
+.brand-mark { display: block; width: 20px; height: 20px; flex: 0 0 auto; }
 .site-nav { display: flex; align-items: center; gap: clamp(24px, 4.2vw, 65px); margin: 0 auto; padding: 0 28px; color: #c3c4bb; font-size: 12px; }
 .site-nav a, .footer-top { transition: color 160ms ease; }
 .site-nav a:hover, .footer-top:hover { color: var(--accent); }

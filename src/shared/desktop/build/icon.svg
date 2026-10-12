@@ -1,49 +1,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
   <defs>
-    <linearGradient id="background" x1="82" y1="60" x2="946" y2="966" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#293a2d" />
-      <stop offset=".52" stop-color="#18231c" />
-      <stop offset="1" stop-color="#101713" />
-    </linearGradient>
-    <radialGradient id="glow" cx="0" cy="0" r="1" gradientTransform="matrix(476 454 -466 489 265 268)" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#c9e878" stop-opacity=".16" />
-      <stop offset="1" stop-color="#c9e878" stop-opacity="0" />
-    </radialGradient>
-    <linearGradient id="panel" x1="421" y1="307" x2="843" y2="767" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#f3f4e9" />
-      <stop offset="1" stop-color="#dce5d2" />
-    </linearGradient>
-    <linearGradient id="sidebar" x1="423" y1="334" x2="538" y2="726" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#d7eea3" />
-      <stop offset="1" stop-color="#a8cf68" />
-    </linearGradient>
-    <linearGradient id="photo" x1="575" y1="436" x2="720" y2="597" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#728b83" />
-      <stop offset="1" stop-color="#33493d" />
+    <linearGradient id="lime" x1="128" y1="128" x2="896" y2="896" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#cfec80" />
+      <stop offset="1" stop-color="#9bcb3f" />
     </linearGradient>
   </defs>
 
-  <rect width="1024" height="1024" fill="url(#background)" />
-  <rect width="1024" height="1024" fill="url(#glow)" />
-  <rect x="18" y="18" width="988" height="988" rx="214" fill="none" stroke="#f4f5e9" stroke-opacity=".08" stroke-width="4" />
-
-  <g transform="translate(136 268) scale(4.25)">
-    <path d="M10 33h42l8 4-8 4H10a4 4 0 0 1 0-8Z" fill="#c9e878" fill-opacity=".68" />
-    <path d="M4 60h48l8 4-8 4H4a4 4 0 0 1 0-8Z" fill="#c9e878" />
-    <path d="M16 84h36l8 4-8 4H16a4 4 0 0 1 0-8Z" fill="#c9e878" fill-opacity=".8" />
-
-    <rect x="60" y="10" width="122" height="108" rx="15" fill="url(#panel)" />
-    <rect x="67" y="17" width="33" height="94" rx="10" fill="url(#sidebar)" />
-    <rect x="76" y="28" width="15" height="15" rx="4" fill="#43523b" />
-    <rect x="75" y="52" width="18" height="4" rx="2" fill="#738358" />
-    <rect x="75" y="63" width="18" height="4" rx="2" fill="#738358" />
-    <rect x="75" y="74" width="14" height="4" rx="2" fill="#738358" />
-
-    <rect x="109" y="24" width="61" height="7" rx="3.5" fill="#687263" />
-    <rect x="109" y="39" width="61" height="36" rx="5" fill="url(#photo)" />
-    <circle cx="158" cy="49" r="4" fill="#e8c98d" />
-    <path d="m113 69 16-19 12 14 9-8 17 15v1h-54Z" fill="#b9cf91" />
-    <rect x="109" y="84" width="39" height="5" rx="2.5" fill="#8c9680" />
-    <rect x="109" y="96" width="57" height="4" rx="2" fill="#c0c4b7" />
-  </g>
+  <!-- Three panels on a 16-unit grid (1 unit = 64): the gaps land on whole pixels at 16, 32, 48 and 64 px. -->
+  <rect x="128" y="128" width="192" height="768" rx="80" fill="url(#lime)" />
+  <rect x="384" y="128" width="512" height="448" rx="80" fill="url(#lime)" />
+  <rect x="384" y="640" width="512" height="256" rx="80" fill="#557f2f" />
 </svg>
