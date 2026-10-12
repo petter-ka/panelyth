@@ -145,6 +145,9 @@ names the update check as the one network request the app makes by itself.
   reports the mode `off`; the smoke test asks for the feed only where an installer was built.
 - A Linux LGPL shared build finds its libraries in `../lib` (RPATH `$ORIGIN/../lib`), so they cannot sit beside the
   programs. The package has `resources/lib` for them. Checked in a container; the packaged Linux app was not run.
+  Before packaging the two folders are `resources/bin/linux-x64` and `resources/lib/linux-x64`, where that RPATH
+  finds nothing, so `scripts/media-tools.mjs` names the library folder (`LD_LIBRARY_PATH`) when it asks the build
+  for its configuration (2026-10-12; the first Linux run of `ci.yml` failed there).
 - The Go video tests make their samples with `libx264`, which no LGPL build has. They need a full ffmpeg on the
   `PATH`; the bundled build is for the product, and `pnpm media-tools --clean` takes it out of the development tree.
 

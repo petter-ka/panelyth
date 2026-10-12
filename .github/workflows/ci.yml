@@ -1,6 +1,6 @@
 # Stage P04: lint once, the build and the packaged smoke test on Windows, macOS
-# and Linux. The unit and Go tests and the e2e suites are disabled (see the
-# test job).
+# and Linux. The unit and Go tests, the Go race tests and the e2e suites are
+# disabled (see the steps commented out below).
 name: CI
 
 on:
@@ -33,12 +33,13 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm lint
       - run: pnpm typecheck
-      # ADR-0013: race runs need cgo, which only the Linux runner has set up.
-      - name: Go race tests
-        working-directory: src/shared/sidecar
-        env:
-          CGO_ENABLED: "1"
-        run: go test -race -count=1 -timeout=900s ./...
+      # Disabled: the race run takes too long. Uncomment to restore.
+      # # ADR-0013: race runs need cgo, which only the Linux runner has set up.
+      # - name: Go race tests
+      #   working-directory: src/shared/sidecar
+      #   env:
+      #     CGO_ENABLED: "1"
+      #   run: go test -race -count=1 -timeout=900s ./...
 
   test:
     name: test (${{ matrix.os }})

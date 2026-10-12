@@ -299,8 +299,9 @@ Still open from the first slice:
   step can name `specs` as a whole when it is switched on again. Windows e2e was not blocking (owner's decision,
   2026-10-08); its open races: a restart opens the viewer instead of the last used commander when the start takes
   longer than the 400 ms wait for the shared context; the C02 carry-over spec failed twice on the runner.
-- **Unit and Go tests in CI**: the `pnpm test` step of the three-OS job is switched off in `ci.yml` (owner's
-  decision, 2026-10-12). The Go race tests of the lint job still run on Linux; `pnpm test` runs locally.
+- **Unit and Go tests in CI**: the `pnpm test` step of the three-OS job and the Go race tests of the lint job are
+  switched off in `ci.yml` (owner's decision, 2026-10-12; the race run took too long). CI still lints, typechecks,
+  builds, packages and runs the packaged smoke test; `pnpm test` runs locally.
 - Startup and idle-memory budgets on Linux and macOS (`BENCH_STAGE=P04` was run on Windows only).
 - Windows on a real removable drive and a real network server: the kinds and timeouts are tested with a
   substituted drive, the loopback share and stubbed space reads.

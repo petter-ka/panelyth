@@ -27,7 +27,7 @@ import {
   writeFileSync,
 } from "node:fs"
 import { tmpdir } from "node:os"
-import { basename, dirname, join } from "node:path"
+import { basename, delimiter, dirname, join } from "node:path"
 import { Readable } from "node:stream"
 import { pipeline } from "node:stream/promises"
 import { fileURLToPath } from "node:url"
@@ -139,7 +139,14 @@ async function install(manifest, platform, arch) {
     let configuration = "(not run: built for another platform or architecture)"
     if (platform === process.platform && arch === process.arch) {
       const exe = join(out, platform === "win32" ? "ffmpeg.exe" : "ffmpeg")
-      const version = execFileSync(exe, ["-version"], { encoding: "utf8" })
+      // Here the libraries are not in ../lib, where the package puts them: name their folder.
+      const env = { ...process.env }
+      if (libraries.length > 0) {
+        env.LD_LIBRARY_PATH = [libDir(platform, arch), process.env.LD_LIBRARY_PATH]
+          .filter(Boolean)
+          .join(delimiter)
+      }
+      const version = execFileSync(exe, ["-version"], { encoding: "utf8", env })
       configuration = version.match(/^configuration: (.*)$/m)?.[1] ?? ""
       if (!version.startsWith("ffmpeg version") || !configuration) {
         throw new Error(`${key}: ${exe} did not report its configuration`)
