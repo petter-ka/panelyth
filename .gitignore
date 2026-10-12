@@ -34,3 +34,6 @@ src/shared/desktop/resources/media-tools.LICENSE.txt
 
 # the ffmpeg download cache of CI (PANELYTH_MEDIA_TOOLS_CACHE)
 .media-tools/
+
+# the showcase's demo library (showcase/scripts/demo-library.mjs)
+showcase/.demo/

@@ -112,6 +112,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // The showcase's capture scripts run in Node and hand functions to the app's pages.
+    files: ["showcase/scripts/**/*.mjs"],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+  },
+  {
     files: ["**/*.cjs"],
     languageOptions: { sourceType: "commonjs", globals: globals.node },
     rules: { "@typescript-eslint/no-require-imports": "off" },

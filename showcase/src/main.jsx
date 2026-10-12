@@ -1,9 +1,31 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { createRoot } from "react-dom/client"
 import "./styles.css"
+import heroMp4 from "./media/hero.mp4"
+import heroPoster from "./media/hero-poster.jpg"
+import heroWebm from "./media/hero.webm"
+import shotCommander from "./media/commander-panels.webp"
+import shotQuickView from "./media/commander-quick-view.webp"
+import shotEditor from "./media/viewer-editor.webp"
+import shotLight from "./media/viewer-light.webp"
+import shotPhoto from "./media/viewer-photo.webp"
+import shotTiles from "./media/viewer-tiles.webp"
 
-const Arrow = ({ diagonal = false }) => (
-  <svg aria-hidden="true" viewBox="0 0 20 20" className={diagonal ? "arrow arrow-diagonal" : "arrow"}>
+const REPO = "petter-ka/panelyth"
+const GITHUB = `https://github.com/${REPO}`
+const RELEASES = `${GITHUB}/releases`
+const LATEST = `${RELEASES}/latest`
+const INSTALL_GUIDE = `${GITHUB}/blob/main/docs/INSTALL.md`
+
+/** The window's content size the screenshots and the video were taken at. */
+const FRAME = { width: 2160, height: 1350 }
+
+const Arrow = ({ diagonal = false, down = false }) => (
+  <svg
+    aria-hidden="true"
+    viewBox="0 0 20 20"
+    className={`arrow${diagonal ? " arrow-diagonal" : ""}${down ? " arrow-down" : ""}`}
+  >
     <path d={diagonal ? "M5 15 15 5M6 5h9v9" : "M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5"} />
   </svg>
 )
@@ -18,153 +40,515 @@ function BrandMark() {
   )
 }
 
-const highlights = [
+const principles = [
   {
-    title: "A library that stays local",
-    copy: "Browse folders on your computer. Your photos and videos stay on your device.",
+    title: "Keys you already know",
+    copy: "Tab between the panels, F5 to copy, F6 to move, Insert to mark. The keyboard model follows Total Commander, and every shortcut can be remapped.",
   },
   {
-    title: "Built for big folders",
-    copy: "Move through large collections with a responsive grid and previews ready when you are.",
+    title: "An interface for today",
+    copy: "One design system across both apps, in light and dark, at the interface size you choose, in eight languages.",
   },
   {
-    title: "Photos and video together",
-    copy: "Scan stills, play clips, and keep the whole shoot in one familiar place.",
-  },
-  {
-    title: "A closer look, quickly",
-    copy: "Open a focused preview, check file details, and move to the next item without losing your place.",
-  },
-  {
-    title: "Folders and archives",
-    copy: "Navigate everyday folders and browse supported ZIP and TAR archives in the same workspace.",
-  },
-  {
-    title: "Work that keeps moving",
-    copy: "Search, copy, rename, and queue file tasks with progress you can follow.",
+    title: "Nothing waits",
+    copy: "Scrolling and the cursor never wait for thumbnails, listings or a running copy. Long work goes to a background queue you can watch, pause and cancel.",
   },
 ]
 
-const media = [
-  { name: "Tre Cime", kind: "alpine", selected: true },
-  { name: "Morning light", kind: "lake" },
-  { name: "Ridge trail", kind: "ridge" },
-  { name: "Pine forest", kind: "forest" },
-  { name: "Last light", kind: "sunset" },
+const viewerFeatures = [
+  {
+    title: "Tiles for very large folders",
+    copy: "Small, medium or large tiles that reflow with the window. Only what is on screen is drawn, so a folder of 100,000 pictures scrolls like a folder of a hundred.",
+  },
+  {
+    title: "A closer look",
+    copy: "Zoom and pan a still, play local video, and step through the folder with the arrow keys or the wheel. Thumbnails are cached, so a second visit is immediate.",
+  },
+  {
+    title: "Search, sort and filter",
+    copy: "Find a file by name, sort by name, date, size or type, and keep bookmarks and recent folders in the sidebar next to the folder tree.",
+  },
+  {
+    title: "An editor built in",
+    copy: "Crop and straighten, adjust light and color with levels and curves, add borders and watermarks, retouch. Save the steps as a recipe and run it over a whole folder.",
+  },
 ]
 
-function ProductWindow() {
+const commanderFeatures = [
+  {
+    title: "Three views per panel",
+    copy: "Full with sortable, resizable columns, Brief with names in columns, and Thumbnails. Tabs in each panel, and tab sets you can save.",
+  },
+  {
+    title: "A queue for the heavy work",
+    copy: "Copy, move and delete run in the background with progress, pause and a clear dialog for conflicts. Both panels stay usable throughout.",
+  },
+  {
+    title: "Find, compare, synchronize",
+    copy: "Find files by name, content, size or date. Compare two folders and synchronize them, compare files line by line, create and verify checksums.",
+  },
+  {
+    title: "Archives and servers as folders",
+    copy: "Enter a zip or tar archive as you would a folder, pack and unpack, and connect to FTP and FTPS servers with saved connections.",
+  },
+  {
+    title: "Rename many at once",
+    copy: "A multi-rename tool with counters, search and replace and a preview of every new name, plus undo for the last run.",
+  },
+  {
+    title: "Quick view and lister",
+    copy: "See the file under the cursor in the other panel, or open text, hex, pictures and video in the lister with F3.",
+  },
+]
+
+const functionKeys = [
+  ["F3", "View"],
+  ["F4", "Edit"],
+  ["F5", "Copy"],
+  ["F6", "Move"],
+  ["F7", "New folder"],
+  ["F8", "Delete"],
+]
+
+const shared = [
+  {
+    value: "4–6 ms",
+    label: "to switch between the two apps, once both are open",
+  },
+  {
+    value: "100k",
+    label: "entries in one folder is the size both apps are budgeted and tested for",
+  },
+  {
+    value: "0",
+    label: "accounts, uploads or cloud services. Everything runs on your computer",
+  },
+  {
+    value: "8",
+    label: "interface languages, with a light and a dark theme",
+  },
+]
+
+const shots = [
+  {
+    src: shotTiles,
+    label: "VIEWER / TILES",
+    title: "A folder at a glance, with the preview beside it.",
+    alt: "The Panelyth viewer showing a folder of landscape photographs as tiles, with the folder tree and a preview of the selected picture on the left",
+    wide: true,
+  },
+  {
+    src: shotPhoto,
+    label: "VIEWER / PICTURE",
+    title: "One picture, the whole window.",
+    alt: "A single photograph opened in Panelyth's media window",
+  },
+  {
+    src: shotEditor,
+    label: "VIEWER / EDITOR",
+    title: "Adjust, retouch and save a copy.",
+    alt: "Panelyth's image editor with its tools beside a photograph",
+  },
+  {
+    src: shotCommander,
+    label: "COMMANDER / PANELS",
+    title: "Two folders, side by side.",
+    alt: "Panelyth Commander with two file panels in the Full view and the function-key bar",
+    wide: true,
+  },
+  {
+    src: shotQuickView,
+    label: "COMMANDER / QUICK VIEW",
+    title: "The file under the cursor, in the other panel.",
+    alt: "Panelyth Commander showing a quick view of a picture in the right panel",
+  },
+  {
+    src: shotLight,
+    label: "VIEWER / LIGHT THEME",
+    title: "Large tiles, in the light theme.",
+    alt: "The Panelyth viewer in the light theme, showing a folder of photographs as large tiles",
+  },
+]
+
+/** The two wide shots head the app sections; the gallery shows the rest. */
+const gallery = shots.filter((shot) => !shot.wide)
+
+const platforms = [
+  {
+    id: "windows",
+    name: "Windows",
+    requirement: "Windows 10 or 11, 64-bit",
+    note: "Installs for your account, without administrator rights.",
+    files: [{ label: "Installer (.exe)", suffix: "-win-x64.exe" }],
+  },
+  {
+    id: "macos",
+    name: "macOS",
+    requirement: "Apple silicon or Intel",
+    note: "Open the disk image and drag Panelyth to Applications.",
+    files: [
+      { label: "Apple silicon (.dmg)", suffix: "-mac-arm64.dmg" },
+      { label: "Intel (.dmg)", suffix: "-mac-x64.dmg" },
+    ],
+  },
+  {
+    id: "linux",
+    name: "Linux",
+    requirement: "64-bit",
+    note: "The AppImage needs FUSE 2 (libfuse2); the archive runs from any folder.",
+    files: [
+      { label: "AppImage", suffix: "-linux-x86_64.AppImage" },
+      { label: "Archive (.tar.gz)", suffix: "-linux-x64.tar.gz" },
+    ],
+  },
+]
+
+function currentPlatform() {
+  const name = (navigator.userAgentData?.platform ?? navigator.platform ?? "").toLowerCase()
+  if (name.includes("win")) return "windows"
+  if (name.includes("mac")) return "macos"
+  if (name.includes("linux")) return "linux"
+  return null
+}
+
+const megabytes = (bytes) => `${Math.round(bytes / (1024 * 1024))} MB`
+
+/**
+ * The newest published release, from GitHub. Until one is published (or when
+ * GitHub cannot be reached) the page links to the releases page instead.
+ */
+function useLatestRelease() {
+  const [release, setRelease] = useState(null)
+  useEffect(() => {
+    const controller = new AbortController()
+    fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
+      signal: controller.signal,
+      headers: { Accept: "application/vnd.github+json" },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!data?.tag_name) return
+        setRelease({
+          version: data.tag_name.replace(/^v/, ""),
+          url: data.html_url,
+          date: data.published_at?.slice(0, 10) ?? "",
+          assets: (data.assets ?? []).map((a) => ({
+            name: a.name,
+            url: a.browser_download_url,
+            size: a.size,
+          })),
+        })
+      })
+      .catch(() => {})
+    return () => controller.abort()
+  }, [])
+  return release
+}
+
+function AppWindow({ title, children }) {
   return (
-    <div className="product-window" role="img" aria-label="Illustration of Panelyth browsing a photo folder">
-      <div className="window-chrome">
-        <div className="chrome-controls" aria-hidden="true"><i /><i /><i /></div>
-        <div className="chrome-brand"><BrandMark /><span>panelyth</span></div>
-        <div className="chrome-location"><span>Pictures</span><b>/</b><strong>Dolomites</strong></div>
-        <span className="chrome-status"><i /> LOCAL LIBRARY</span>
-      </div>
-      <div className="window-body">
-        <aside className="app-sidebar" aria-hidden="true">
-          <div className="sidebar-label">LIBRARY</div>
-          <div className="sidebar-item is-active"><span>▦</span> All media <small>248</small></div>
-          <div className="sidebar-item"><span>▧</span> Photos <small>212</small></div>
-          <div className="sidebar-item"><span>▷</span> Video <small>36</small></div>
-          <div className="sidebar-label sidebar-label-spaced">PLACES</div>
-          <div className="sidebar-place"><i /> Pictures</div>
-          <div className="sidebar-place is-nested"><i /> Dolomites</div>
-          <div className="sidebar-place"><i /> Recent folders</div>
-          <div className="sidebar-bottom"><span className="drive-icon">C:</span><span>Local disk<small>412 GB free</small></span></div>
-        </aside>
-        <div className="app-main">
-          <div className="app-toolbar">
-            <div><strong>Dolomites</strong><span>248 items</span></div>
-            <div className="toolbar-tools"><span>⌕</span><span>⇅</span><span className="view-toggle">▦ &nbsp; ▤</span></div>
-          </div>
-          <div className="media-grid">
-            {media.map((item, index) => (
-              <div key={item.name} className={`media-tile${index === 0 ? " media-tile-large" : ""}${item.selected ? " is-selected" : ""}`}>
-                <div className={`landscape landscape-${item.kind}`} aria-hidden="true"><i /><b /><span /></div>
-                <span className="tile-title">{item.name}</span>
-                <span className="tile-meta">{index === 0 ? "JPG · 8.4 MB" : index === 2 ? "MP4 · 00:18" : "JPG · 5.1 MB"}</span>
-                {item.kind === "ridge" && <span className="video-mark" aria-hidden="true">▶</span>}
-              </div>
-            ))}
-          </div>
-          <div className="app-status"><span>248 ITEMS</span><span>1 SELECTED</span><span>100%</span></div>
+    <div className="app-window">
+      <div className="app-window-bar" aria-hidden="true">
+        <div className="app-window-dots">
+          <i />
+          <i />
+          <i />
         </div>
-        <aside className="app-inspector" aria-hidden="true">
-          <div className="inspector-title">INFORMATION <span>···</span></div>
-          <div className="inspector-preview"><div className="landscape landscape-alpine"><i /><b /><span /></div></div>
-          <strong>Tre Cime</strong>
-          <small>IMG_1842.JPG</small>
-          <div className="inspector-rule" />
-          <div className="inspector-row"><span>Dimensions</span><b>4032 × 3024</b></div>
-          <div className="inspector-row"><span>File size</span><b>8.4 MB</b></div>
-          <div className="inspector-row"><span>Created</span><b>18 Jun 2025</b></div>
-          <div className="inspector-tag"><i /> ON THIS DEVICE</div>
-        </aside>
+        <span>{title}</span>
       </div>
-      <div className="window-foot"><span><kbd>←</kbd><kbd>→</kbd> Navigate</span><span><kbd>SPACE</kbd> Preview</span><span>PICTURES / DOLOMITES</span></div>
+      {children}
     </div>
   )
 }
 
-function MiniWindow({ variant }) {
+function HeroVideo() {
+  const video = useRef(null)
+  const [playing, setPlaying] = useState(true)
+
+  useEffect(() => {
+    // People who asked for less motion get the still frame and a play button.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      video.current?.pause()
+      setPlaying(false)
+    }
+  }, [])
+
+  const toggle = () => {
+    const el = video.current
+    if (!el) return
+    if (el.paused) void el.play()
+    else el.pause()
+  }
+
   return (
-    <div className={`mini-window mini-window-${variant}`} aria-hidden="true">
-      <div className="mini-top"><span /><span /><span /><b>panelyth</b><i>···</i></div>
-      <div className="mini-content">
-        <div className="mini-rail"><i /><i /><i /><i /></div>
-        {variant === "grid" && <div className="mini-grid">{["alpine", "lake", "ridge", "forest", "sunset", "lake"].map((kind, i) => <i key={i} className={`landscape landscape-${kind}`} />)}</div>}
-        {variant === "preview" && <div className="mini-preview"><i className="landscape landscape-alpine" /><div><b>Tre Cime</b><span>4032 × 3024 · JPG</span><span>8.4 MB</span></div></div>}
-        {variant === "jobs" && <div className="mini-jobs"><b>Background jobs</b><div><i /><span>Copy selected files<small>68 of 124 files</small></span><em>54%</em></div><div><i /><span>Build previews<small>Preparing thumbnails</small></span><em>RUNNING</em></div><div><i /><span>Archive folder<small>Waiting in queue</small></span><em>QUEUED</em></div></div>}
+    <div className="hero-visual">
+      <AppWindow title="Panelyth">
+        <video
+          ref={video}
+          className="hero-video"
+          width={FRAME.width}
+          height={FRAME.height}
+          poster={heroPoster}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="metadata"
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
+          aria-label="A recording of Panelyth: browsing a folder of photographs in the viewer, opening a picture, then switching to the two-panel commander in the same window"
+        >
+          <source src={heroWebm} type="video/webm" />
+          <source src={heroMp4} type="video/mp4" />
+        </video>
+      </AppWindow>
+      <div className="visual-caption">
+        <span>Recorded in the app, on a demo library</span>
+        <button type="button" onClick={toggle}>
+          {playing ? "Pause" : "Play"}
+        </button>
       </div>
     </div>
+  )
+}
+
+function FeatureList({ items }) {
+  return (
+    <ul className="feature-list">
+      {items.map((item, index) => (
+        <li key={item.title}>
+          <span className="feature-number">{String(index + 1).padStart(2, "0")}</span>
+          <div>
+            <h3>{item.title}</h3>
+            <p>{item.copy}</p>
+          </div>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+function Screenshot({ shot, eager = false }) {
+  return (
+    <a className="shot-link" href={shot.src} target="_blank" rel="noreferrer">
+      <img
+        src={shot.src}
+        alt={shot.alt}
+        width={FRAME.width}
+        height={FRAME.height}
+        loading={eager ? "eager" : "lazy"}
+        decoding="async"
+      />
+    </a>
+  )
+}
+
+function Download({ release }) {
+  const [mine, setMine] = useState(null)
+  useEffect(() => setMine(currentPlatform()), [])
+  const asset = (suffix) => release?.assets.find((a) => a.name.endsWith(suffix))
+  const checksums = release?.assets.find((a) => a.name === "SHA256SUMS.txt")
+
+  return (
+    <section className="download-section" id="download">
+      <div className="section-topline">
+        <span>07 / DOWNLOAD</span>
+        <span>
+          {release ? `VERSION ${release.version} · ${release.date}` : "WINDOWS · macOS · LINUX"}{" "}
+          <i>✳</i>
+        </span>
+      </div>
+      <div className="section-heading">
+        <h2>
+          Get
+          <br />
+          <em>Panelyth.</em>
+        </h2>
+        <p>
+          One download brings both apps. Releases are published on GitHub, with a checksum for every
+          file, and the app updates itself from Settings → About when you ask it to.
+        </p>
+      </div>
+      <div className="platform-grid">
+        {platforms.map((platform) => (
+          <article
+            className={platform.id === mine ? "platform is-mine" : "platform"}
+            key={platform.id}
+          >
+            <div className="platform-head">
+              <h3>{platform.name}</h3>
+              {platform.id === mine && <span>YOUR SYSTEM</span>}
+            </div>
+            <p className="platform-requirement">{platform.requirement}</p>
+            <ul>
+              {platform.files.map((file) => {
+                const found = asset(file.suffix)
+                return (
+                  <li key={file.suffix}>
+                    <a href={found?.url ?? LATEST} className="download-link">
+                      <span>{file.label}</span>
+                      <small>{found ? megabytes(found.size) : "Latest release"}</small>
+                      <Arrow down />
+                    </a>
+                  </li>
+                )
+              })}
+            </ul>
+            <p className="platform-note">{platform.note}</p>
+          </article>
+        ))}
+      </div>
+      <div className="download-foot">
+        <a href={release?.url ?? RELEASES}>
+          {release ? `Release notes for ${release.version}` : "All releases"} <Arrow diagonal />
+        </a>
+        <a href={checksums?.url ?? LATEST}>
+          SHA256SUMS.txt <Arrow diagonal />
+        </a>
+        <a href={INSTALL_GUIDE}>
+          Install, update and remove <Arrow diagonal />
+        </a>
+        <a href={GITHUB}>
+          Source on GitHub <Arrow diagonal />
+        </a>
+      </div>
+      <p className="download-smallprint">
+        A build that is not yet signed is announced by the system on first start: on Windows choose
+        More info → Run anyway; on macOS right-click Panelyth in Applications and choose Open.
+        Videos on macOS need ffmpeg installed, and 7z and RAR archives need 7-Zip; the install guide
+        has the details.
+      </p>
+    </section>
   )
 }
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const closeMenu = () => setMenuOpen(false)
+  const release = useLatestRelease()
 
   return (
     <div className="site-shell">
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="Panelyth home" onClick={closeMenu}><BrandMark /><span>panelyth</span></a>
-        <button className="menu-toggle" type="button" aria-expanded={menuOpen} aria-controls="site-nav" onClick={() => setMenuOpen(!menuOpen)}>
-          <span>{menuOpen ? "Close" : "Menu"}</span><i className={menuOpen ? "menu-icon is-open" : "menu-icon"}><b /><b /></i>
+        <a className="brand" href="#top" aria-label="Panelyth home" onClick={closeMenu}>
+          <BrandMark />
+          <span>panelyth</span>
+        </a>
+        <button
+          className="menu-toggle"
+          type="button"
+          aria-expanded={menuOpen}
+          aria-controls="site-nav"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          <span>{menuOpen ? "Close" : "Menu"}</span>
+          <i className={menuOpen ? "menu-icon is-open" : "menu-icon"}>
+            <b />
+            <b />
+          </i>
         </button>
-        <nav className={menuOpen ? "site-nav is-open" : "site-nav"} id="site-nav" aria-label="Main navigation">
-          <a href="#highlights" onClick={closeMenu}>Highlights</a>
-          <a href="#screenshots" onClick={closeMenu}>Screenshots</a>
-          <a href="#about" onClick={closeMenu}>About Panelyth</a>
+        <nav
+          className={menuOpen ? "site-nav is-open" : "site-nav"}
+          id="site-nav"
+          aria-label="Main navigation"
+        >
+          <a href="#why" onClick={closeMenu}>
+            Why
+          </a>
+          <a href="#viewer" onClick={closeMenu}>
+            Viewer
+          </a>
+          <a href="#commander" onClick={closeMenu}>
+            Commander
+          </a>
+          <a href="#screenshots" onClick={closeMenu}>
+            Screenshots
+          </a>
+          <a href={GITHUB} onClick={closeMenu}>
+            GitHub
+          </a>
         </nav>
-        <a className="header-cta" href="#highlights" onClick={closeMenu}>Explore Panelyth <Arrow diagonal /></a>
+        <a className="header-cta" href="#download" onClick={closeMenu}>
+          Download <Arrow down />
+        </a>
       </header>
 
       <main>
         <section className="hero" id="top">
           <div className="hero-heading">
-            <div className="section-label"><span>01</span><i /> PANELYTH</div>
-            <h1>Your media,<br /><em>in clear view.</em></h1>
-            <div className="hero-intro">
-              <p>A thoughtful desktop browser for photo and video libraries. Fast to navigate, easy to focus, and always on your device.</p>
-              <a className="hero-link" href="#highlights">Explore the highlights <span><Arrow /></span></a>
+            <div className="section-label">
+              <span>01</span>
+              <i /> PANELYTH · VIEWER + COMMANDER
             </div>
-            <div className="platform-line"><span>WINDOWS</span><i /> <span>macOS</span><i /> <span>LINUX</span><b>LOCAL FIRST · DESKTOP APP</b></div>
+            <h1>
+              Every file,
+              <br />
+              <em>in clear view.</em>
+            </h1>
+            <div className="hero-intro">
+              <p>
+                A photo and video browser and a keyboard-first, two-panel file manager, sharing one
+                window. Quick with very large folders, calm to look at, and entirely on your own
+                computer.
+              </p>
+              <div className="hero-actions">
+                <a className="button button-primary" href="#download">
+                  Download{release ? ` ${release.version}` : ""} <Arrow down />
+                </a>
+                <a className="button" href={GITHUB}>
+                  View on GitHub <Arrow diagonal />
+                </a>
+              </div>
+            </div>
+            <div className="platform-line">
+              <span>WINDOWS</span>
+              <i /> <span>macOS</span>
+              <i /> <span>LINUX</span>
+              <b>LOCAL FIRST · NO ACCOUNT</b>
+            </div>
           </div>
-          <div className="hero-visual">
-            <ProductWindow />
-            <div className="visual-caption"><span>Panelyth · Media browser</span><span>Illustrative interface</span></div>
-          </div>
+          <HeroVideo />
         </section>
 
-        <section className="highlights-section" id="highlights">
-          <div className="section-topline"><span>02 / HIGHLIGHTS</span><span>MADE FOR YOUR FILES <i>✳</i></span></div>
-          <div className="highlights-heading"><h2>What's<br />inside.</h2><p>Everything you need to move through a media folder, without getting between you and the work.</p></div>
-          <div className="highlight-grid">
-            {highlights.map((item, index) => (
-              <article className="highlight" key={item.title}>
-                <div className="highlight-number">0{index + 1}<span> / 06</span></div>
+        <section className="why-section" id="why">
+          <div className="section-topline">
+            <span>02 / WHY PANELYTH</span>
+            <span>
+              A FAMILIAR WAY OF WORKING <i>✳</i>
+            </span>
+          </div>
+          <div className="why-content">
+            <h2>
+              A classic idea,
+              <br />
+              <em>carried forward.</em>
+            </h2>
+            <div className="why-copy">
+              <p>
+                Two-panel file managers are still one of the quickest ways to work with files, and
+                Total Commander has set the standard for them for more than thirty years. Panelyth
+                began with respect for that way of working, and a wish to have it in an interface
+                made for today&apos;s screens and today&apos;s folder sizes.
+              </p>
+              <p>
+                So the Commander keeps the keys many hands already know and pairs them with a
+                current design, lists that stay smooth at a hundred thousand entries, and file
+                operations that run in a visible background queue.
+              </p>
+              <p>
+                The other half of the idea is a media browser that earns its place. Photos and
+                videos get an app of their own, the Viewer, and the two share one window, so you
+                never have to choose between managing your files and looking at them.
+              </p>
+            </div>
+          </div>
+          <div className="principle-grid">
+            {principles.map((item, index) => (
+              <article className="principle" key={item.title}>
+                <div className="principle-number">
+                  0{index + 1}
+                  <span> / 03</span>
+                </div>
                 <h3>{item.title}</h3>
                 <p>{item.copy}</p>
               </article>
@@ -172,29 +556,201 @@ function App() {
           </div>
         </section>
 
-        <section className="screenshots-section" id="screenshots">
-          <div className="section-topline"><span>03 / IN THE APP</span><span>ONE PLACE FOR THE WHOLE FOLDER <i>✳</i></span></div>
-          <div className="screenshots-heading"><h2>Made to keep<br /><em>you moving.</em></h2><p>From the first scan to the last file in the queue, the details stay close at hand.</p></div>
-          <div className="shot-grid">
-            <figure className="shot-card shot-card-wide"><MiniWindow variant="grid" /><figcaption><span>01 / MEDIA GRID</span><b>See the folder at a glance.</b></figcaption></figure>
-            <figure className="shot-card"><MiniWindow variant="preview" /><figcaption><span>02 / QUICK PREVIEW</span><b>Stay with the moment.</b></figcaption></figure>
-            <figure className="shot-card"><MiniWindow variant="jobs" /><figcaption><span>03 / BACKGROUND WORK</span><b>Know what's happening.</b></figcaption></figure>
+        <section className="app-section" id="viewer">
+          <div className="section-topline">
+            <span>03 / VIEWER</span>
+            <span>
+              PHOTOS AND VIDEO <i>✳</i>
+            </span>
+          </div>
+          <div className="section-heading">
+            <h2>
+              Photos and video,
+              <br />
+              <em>without the wait.</em>
+            </h2>
+            <p>
+              Open a folder and start browsing straight away. Thumbnails arrive as you scroll, and
+              the picture you select is already in the preview.
+            </p>
+          </div>
+          <div className="app-layout">
+            <AppWindow title="Panelyth — Viewer">
+              <Screenshot shot={shots[0]} />
+            </AppWindow>
+            <FeatureList items={viewerFeatures} />
           </div>
         </section>
 
+        <section className="app-section app-section-alt" id="commander">
+          <div className="section-topline">
+            <span>04 / COMMANDER</span>
+            <span>
+              TWO PANELS · KEYBOARD FIRST <i>✳</i>
+            </span>
+          </div>
+          <div className="section-heading">
+            <h2>
+              Two panels.
+              <br />
+              <em>Hands on the keys.</em>
+            </h2>
+            <p>
+              Two folders side by side and every operation a key press away. Nothing happens to a
+              file without an explicit command, and nothing blocks while it runs.
+            </p>
+          </div>
+          <div className="app-layout app-layout-reverse">
+            <AppWindow title="Panelyth — Commander">
+              <Screenshot shot={shots[3]} />
+            </AppWindow>
+            <FeatureList items={commanderFeatures} />
+          </div>
+          <div className="key-bar" aria-label="The function keys of the commander">
+            {functionKeys.map(([key, action]) => (
+              <span key={key}>
+                <kbd>{key}</kbd> {action}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        <section className="together-section" id="together">
+          <div className="section-topline">
+            <span>05 / ONE WINDOW</span>
+            <span>
+              SHARED STATE <i>✳</i>
+            </span>
+          </div>
+          <div className="section-heading">
+            <h2>
+              Switch apps,
+              <br />
+              <em>keep your place.</em>
+            </h2>
+            <p>
+              <kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>M</kbd> or the rail on the left moves between
+              the Viewer and the Commander. The other app opens in the folder you are in, and what
+              you selected comes with you. Bookmarks, recent folders and appearance are shared too.
+            </p>
+          </div>
+          <dl className="stat-grid">
+            {shared.map((item) => (
+              <div className="stat" key={item.value}>
+                <dt>{item.value}</dt>
+                <dd>{item.label}</dd>
+              </div>
+            ))}
+          </dl>
+          <p className="stat-note">
+            The switch time was measured on the project&apos;s reference machine; the first switch,
+            which creates the second app, took 92 ms there.
+          </p>
+        </section>
+
+        <section className="screenshots-section" id="screenshots">
+          <div className="section-topline">
+            <span>06 / IN THE APP</span>
+            <span>
+              SCREENSHOTS <i>✳</i>
+            </span>
+          </div>
+          <div className="section-heading">
+            <h2>
+              A look
+              <br />
+              <em>inside.</em>
+            </h2>
+            <p>
+              Taken from the app itself, on a library of generated pictures. Select a screenshot to
+              open it at full size.
+            </p>
+          </div>
+          <div className="shot-grid">
+            {gallery.map((shot) => (
+              <figure className="shot-card" key={shot.label}>
+                <Screenshot shot={shot} />
+                <figcaption>
+                  <span>{shot.label}</span>
+                  <b>{shot.title}</b>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </section>
+
+        <Download release={release} />
+
         <section className="about-section" id="about">
-          <div className="section-topline"><span>04 / ABOUT PANELYTH</span><span>LOCAL FILES · CLEAR WORKFLOW</span></div>
+          <div className="section-topline">
+            <span>08 / ABOUT</span>
+            <span>LOCAL FILES · CLEAR WORKFLOW</span>
+          </div>
           <div className="about-content">
-            <div className="about-copy"><h2>Your library.<br /><em>Your machine.</em></h2><p>Panelyth is a local-first desktop app for browsing photo and video folders. It is built around a simple idea: your files should stay yours, and finding the right one should feel effortless.</p><a href="#top" className="about-link">Back to the top <Arrow /></a></div>
-            <div className="stack-card"><div className="stack-card-head"><span>PROJECT / STACK</span><span>01 — 03</span></div><div className="stack-row"><span>01</span><b>React</b><small>Interface</small></div><div className="stack-row"><span>02</span><b>Electron</b><small>Desktop app</small></div><div className="stack-row"><span>03</span><b>Go</b><small>File services</small></div><div className="stack-card-foot"><i /> LOCAL FIRST EXPERIENCE <span>BUILT FOR DESKTOP</span></div></div>
+            <div className="about-copy">
+              <h2>
+                Your files.
+                <br />
+                <em>Your machine.</em>
+              </h2>
+              <p>
+                Panelyth needs no account and no network to browse, preview, play or manage your
+                files. Thumbnails live in your system&apos;s cache folder, never beside your
+                pictures, and can be deleted at any time; settings, bookmarks and tags are kept
+                across updates.
+              </p>
+              <div className="about-links">
+                <a href={GITHUB}>
+                  Repository <Arrow diagonal />
+                </a>
+                <a href={RELEASES}>
+                  Releases <Arrow diagonal />
+                </a>
+                <a href={`${GITHUB}/issues`}>
+                  Issues and ideas <Arrow diagonal />
+                </a>
+              </div>
+            </div>
+            <div className="stack-card">
+              <div className="stack-card-head">
+                <span>HOW IT IS BUILT</span>
+                <span>01 — 03</span>
+              </div>
+              <div className="stack-row">
+                <span>01</span>
+                <b>React</b>
+                <small>Both interfaces, virtualized</small>
+              </div>
+              <div className="stack-row">
+                <span>02</span>
+                <b>Electron</b>
+                <small>One shell, one window</small>
+              </div>
+              <div className="stack-row">
+                <span>03</span>
+                <b>Go</b>
+                <small>Index, previews, file operations</small>
+              </div>
+              <div className="stack-card-foot">
+                <i /> LOCAL FIRST <span>BUILT FOR DESKTOP</span>
+              </div>
+            </div>
           </div>
         </section>
       </main>
 
       <footer className="site-footer">
-        <a className="brand footer-brand" href="#top"><BrandMark /><span>panelyth</span></a>
-        <span className="footer-note">A CLEARER WAY THROUGH YOUR MEDIA.</span>
-        <a className="footer-top" href="#top">BACK TO TOP <span>↑</span></a>
+        <a className="brand footer-brand" href="#top">
+          <BrandMark />
+          <span>panelyth</span>
+        </a>
+        <span className="footer-note">A VIEWER AND A COMMANDER, IN ONE WINDOW.</span>
+        <a className="footer-top" href={GITHUB}>
+          GITHUB <span>↗</span>
+        </a>
+        <a className="footer-top footer-top-plain" href="#top">
+          BACK TO TOP <span>↑</span>
+        </a>
         <span className="footer-copy">© 2026 PANELYTH</span>
       </footer>
     </div>

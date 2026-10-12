@@ -12,6 +12,30 @@ The two apps live in one window. A left rail switches between them, and the othe
 where you are: same folder, same file, same selection. Bookmarks, recent folders, appearance and the file clipboard
 are shared (`docs/shared/APP-SWITCHING.md`).
 
+## Screenshots
+
+The viewer: a folder as tiles, with the folder tree and the preview of the selected picture beside it.
+
+![The Panelyth viewer showing a folder of photographs as tiles, with the folder tree and a preview on the left](../showcase/src/media/viewer-tiles.webp)
+
+The commander: two panels, here the Full view with marked files on the left and the Thumbnails view on the right.
+
+![Panelyth Commander with two file panels and the function-key bar](../showcase/src/media/commander-panels.webp)
+
+<p>
+  <img src="../showcase/src/media/viewer-photo.webp" width="49%" alt="A single photograph opened in the media window" />
+  <img src="../showcase/src/media/viewer-editor.webp" width="49%" alt="The image editor with the Lighting tool open beside a photograph" />
+</p>
+<p>
+  <img src="../showcase/src/media/commander-quick-view.webp" width="49%" alt="The commander's quick view showing the picture under the cursor in the right panel" />
+  <img src="../showcase/src/media/viewer-light.webp" width="49%" alt="The viewer in the light theme with large tiles" />
+</p>
+
+One picture in the media window and the image editor; the commander's quick view and the viewer in the light theme.
+
+The screenshots are taken from the app itself, on a library of generated pictures, and are shared with the product
+page; `showcase/README.md` says how to take them again.
+
 Both apps share the platform:
 
 - Go sidecar for filesystem indexing, metadata, thumbnail generation, cache and file operations
