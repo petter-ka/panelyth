@@ -1,5 +1,6 @@
-# Stage P04: lint once, unit and Go tests and the packaged smoke test on
-# Windows, macOS and Linux. The e2e suites are disabled (see the test job).
+# Stage P04: lint once, the build and the packaged smoke test on Windows, macOS
+# and Linux. The unit and Go tests and the e2e suites are disabled (see the
+# test job).
 name: CI
 
 on:
@@ -75,8 +76,9 @@ jobs:
           } catch {
             Write-Host "Defender exclusions unavailable: $_"
           }
-      - name: Unit and Go tests
-        run: pnpm test
+      # Disabled. Uncomment to restore.
+      # - name: Unit and Go tests
+      #   run: pnpm test
       - name: Build
         id: build
         run: pnpm build

@@ -1,8 +1,7 @@
 # Panelyth
 
-**An open-source, keyboard-first, two-panel file manager with a photo and video viewer beside it, in one desktop app
-for Windows, macOS and Linux.** It is built for very large folders, runs entirely on your own computer, and needs no
-account.
+**An open-source two-panel file manager with a photo and video viewer beside it, in one desktop app for Windows,
+macOS and Linux.** It is built for very large folders, runs entirely on your own computer, and needs no account.
 
 ![Panelyth Commander with two folders of files in the Full view, five files marked in the left panel](../showcase/src/media/commander-files.webp)
 

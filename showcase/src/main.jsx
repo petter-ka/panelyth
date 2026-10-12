@@ -558,9 +558,9 @@ function App() {
             </h1>
             <div className="hero-intro">
               <p>
-                An open-source photo and video browser and a keyboard-first, two-panel file manager,
-                sharing one window. Quick with very large folders, calm to look at, and entirely on
-                your own computer.
+                An open-source photo and video browser and a two-panel file manager, sharing one
+                window. Quick with very large folders, calm to look at, and entirely on your own
+                computer.
               </p>
               <div className="hero-actions">
                 <a className="button button-primary" href="#download">
@@ -657,7 +657,7 @@ function App() {
           <div className="section-topline">
             <span>04 / COMMANDER</span>
             <span>
-              TWO PANELS · KEYBOARD FIRST <i>✳</i>
+              TWO-PANEL FILE MANAGER <i>✳</i>
             </span>
           </div>
           <div className="section-heading">

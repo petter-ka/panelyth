@@ -1,8 +1,8 @@
 # Panelyth Showcase
 
-The product page of Panelyth: a photo and video viewer and a keyboard-first, two-panel file manager (the commander)
-in one desktop app. It is a standalone React page with its own package manifest and a nested pnpm workspace; it
-imports nothing from the repository's apps or shared packages.
+The product page of Panelyth: a photo and video viewer and a two-panel file manager (the commander) in one desktop
+app. It is a standalone React page with its own package manifest and a nested pnpm workspace; it imports nothing from
+the repository's apps or shared packages.
 
 ## Run it
 
