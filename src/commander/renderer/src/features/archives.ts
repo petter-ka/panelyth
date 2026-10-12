@@ -7,7 +7,14 @@ import type {
 } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError, isBridgeAvailable } from "../bridge"
-import { inArchive, notice, operand, otherPanelTarget, READ_ONLY } from "./files"
+import {
+  inArchive,
+  notice,
+  operand,
+  otherPanelTarget,
+  READ_ONLY,
+  refusedOnConnection,
+} from "./files"
 import { pageStoreOf, parentRows, useListingStore } from "./listing"
 import { marksDescriptor, markNone } from "./marks"
 import { otherSide, type Side } from "./panels"
@@ -110,6 +117,8 @@ function describe(side: Side, d: SelectionDescriptor): string {
 
 /** The other panel's folder, unless it shows an archive (nothing is written into one). */
 function target(side: Side): Target | null {
+  // Nothing is packed or unpacked straight onto a server (ADR-0037).
+  if (refusedOnConnection(otherSide(side))) return null
   if (inArchive(otherSide(side))) {
     notice(t("Archives are read-only. Choose a folder in the other panel."))
     return null
@@ -161,6 +170,7 @@ async function resolveDir(dest: Target): Promise<number> {
 
 /** Alt+F5: the marks (or the cursor entry) into a new archive in the other panel's folder. */
 export function openPack(side: Side): void {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t(READ_ONLY))
     return
@@ -232,6 +242,7 @@ export async function startPack(): Promise<boolean> {
 
 /** Alt+F9: whole archives into the other panel's folder. */
 export async function openUnpack(side: Side): Promise<void> {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t("Inside an archive, copy entries out with F5."))
     return
@@ -300,6 +311,7 @@ const testing = new Set<number>()
 
 /** Alt+Shift+F9: reads the archives through; the result is announced. */
 export async function testArchives(side: Side): Promise<void> {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t("Test the archive itself: leave it with Backspace first."))
     return

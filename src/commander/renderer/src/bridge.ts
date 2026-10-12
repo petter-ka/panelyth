@@ -38,6 +38,7 @@ import type {
   EventChannel,
   EventMap,
   LibraryState,
+  ListDirsResult,
   Place,
   QueryDescriptor,
   QueryIndexOfResult,
@@ -48,7 +49,11 @@ import type {
   SelectionInfo,
   QueryPageResult,
   QuerySnapshot,
+  RemoteConnectParams,
+  RemoteConnectResult,
+  RemoteOpenResult,
   RpcEnvelope,
+  SavedConnection,
   SharedContext,
   ShellRunToolParams,
   SidecarStatus,
@@ -207,6 +212,44 @@ export const bridge = {
   indexOf: (queryId: number, entryId: number): Promise<QueryIndexOfResult> =>
     unwrap(() => api().query.indexOf(queryId, entryId)),
   volumes: async (): Promise<Volume[]> => (await unwrap(() => api().fs.volumes())).volumes,
+  // Stage C10.5 (ADR-0037): connections. A password goes to main and never comes back.
+  connections: async (): Promise<SavedConnection[]> =>
+    (await unwrap(() => api().remote.connections())).connections,
+  saveConnection: (
+    connection: SavedConnection,
+    password?: string,
+    forget?: boolean,
+  ): Promise<SavedConnection> => unwrap(() => api().remote.save(connection, password, forget)),
+  removeConnection: async (connectionId: number): Promise<void> => {
+    await unwrap(() => api().remote.remove(connectionId))
+  },
+  trustConnection: async (connectionId: number, fingerprint: string): Promise<void> => {
+    await unwrap(() => api().remote.trust(connectionId, fingerprint))
+  },
+  remoteConnect: (params: RemoteConnectParams): Promise<RemoteConnectResult> =>
+    unwrap(() => api().remote.connect(params)),
+  remoteCancel: async (attempt: number): Promise<void> => {
+    await unwrap(() => api().remote.cancel(attempt))
+  },
+  remoteDisconnect: async (remoteId: number): Promise<void> => {
+    await unwrap(() => api().remote.disconnect(remoteId))
+  },
+  remoteOpen: (
+    remoteId: number,
+    folder: string | number,
+    attempt?: number,
+  ): Promise<RemoteOpenResult> => unwrap(() => api().remote.open(remoteId, folder, attempt)),
+  remoteMkdir: async (remoteDirId: number, name: string): Promise<void> => {
+    await unwrap(() => api().remote.mkdir(remoteDirId, name))
+  },
+  remoteRename: async (entryId: number, name: string): Promise<void> => {
+    await unwrap(() => api().remote.rename(entryId, name))
+  },
+  secureStore: async (): Promise<boolean> =>
+    (await unwrap(() => api().remote.secureStore())).available,
+  /** Stage C10.5: the folder tree; one level of subfolders. */
+  listDirs: (path: string, showHidden: boolean): Promise<ListDirsResult> =>
+    unwrap(() => api().fs.listDirs(path, showHidden)),
   places: async (): Promise<Place[]> => (await unwrap(() => api().places.list())).places,
   homePath: async (): Promise<string | null> => {
     const { places } = await unwrap(() => api().places.list())

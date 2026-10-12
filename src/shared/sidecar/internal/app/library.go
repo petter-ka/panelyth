@@ -26,6 +26,7 @@ import (
 	"panelyth/sidecar/internal/pathkey"
 	"panelyth/sidecar/internal/preview"
 	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/remote"
 	"panelyth/sidecar/internal/rpc"
 	"panelyth/sidecar/internal/scan"
 	"panelyth/sidecar/internal/video"
@@ -53,6 +54,10 @@ type indexService struct {
 	finds   *find.Manager
 	// archives are the open archives (Stage C07, ADR-0030).
 	archives *archive.Manager
+	// remotes are the connections to FTP servers, connecting the connects
+	// under way (Stage C10.5, ADR-0037).
+	remotes    *remote.Manager
+	connecting connecting
 	// compares are the directory compares of synchronize dialogs, diffs the
 	// open text comparisons (Stage C08).
 	compares *compare.Manager
@@ -123,12 +128,15 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 			svc.finds.Dropped(id)
 			svc.archives.Dropped(id)
 			svc.compares.Dropped(id)
+			svc.remotes.Dropped(id)
 		},
 	}, func(s query.Snapshot) {
 		svc.events.Post(evQueryInvalidated, strconv.FormatInt(s.QueryID, 10), s)
 	})
 	// Entries viewed from archives are extracted to <cache>/tmp/archive.
 	svc.archives = archive.NewManager(sevenZip, filepath.Join(cacheRoot, "tmp", "archive"), log)
+	// Nothing connects until a remote.connect asks for it.
+	svc.remotes = remote.NewManager(log, nil, filepath.Join(cacheRoot, "tmp", "remote"))
 	svc.finds = find.NewManager(find.Deps{Store: store, Log: log, Progress: svc.emitFind, Refresh: svc.queries.Refresh})
 	// A compare's session is current before its progress says so.
 	svc.compares = compare.NewManager(compare.Deps{Log: log, Progress: svc.emitCompare,
@@ -162,6 +170,7 @@ func (s *indexService) close() {
 	s.preview.Close()
 	s.queries.Shutdown()
 	s.archives.Shutdown()
+	s.remotes.Shutdown()
 	s.events.Close()
 	if err := s.store.Close(); err != nil {
 		s.log.Warn("close index", "err", err)
@@ -225,6 +234,10 @@ type (
 		// ArchiveDirID is the folder's entry id, 0 for the root.
 		ArchiveID    int64 `json:"archiveId"`
 		ArchiveDirID int64 `json:"archiveDirId"`
+		// RemoteID opens a listed folder of a connection (Stage C10.5):
+		// RemoteDirID is the folder's id from remote.open.
+		RemoteID    int64 `json:"remoteId"`
+		RemoteDirID int64 `json:"remoteDirId"`
 	}
 	queryPageParams struct {
 		QueryID int64 `json:"queryId"`
@@ -315,6 +328,7 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerContext(srv)
 	s.registerFind(srv)
 	s.registerArchives(srv)
+	s.registerRemote(srv)
 	s.registerCompare(srv)
 	s.registerRename(srv)
 	s.registerEditor(srv)
@@ -427,6 +441,12 @@ func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.
 		d.Tags = append(d.Tags, clean)
 	}
 	d.FavoriteOnly, d.MinRating = p.Favorite, p.MinRating
+	if p.RemoteID != 0 {
+		if d.Scope != index.ScopeAll || d.Recursive || p.FindID != 0 || p.ArchiveID != 0 {
+			return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "remote folders need the all scope and no recursion")
+		}
+		return s.openRemoteQuery(ctx, p.RemoteID, p.RemoteDirID, d)
+	}
 	if p.ArchiveID != 0 {
 		if d.Scope != index.ScopeAll || d.Recursive || p.FindID != 0 {
 			return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "archive folders need the all scope and no recursion")

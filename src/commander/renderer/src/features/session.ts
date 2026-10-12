@@ -1,4 +1,4 @@
-import type { SortKey } from "@panelyth/contracts"
+import { MAX_REMOTE_HOST_CHARS, MAX_REMOTE_PATH_CHARS, type SortKey } from "@panelyth/contracts"
 import { bridge } from "../bridge"
 import {
   hasNavigated,
@@ -14,18 +14,31 @@ import {
   readSort,
   setFolderChangeHook,
   setPersistHandler,
+  showDisconnected,
   SIDES,
   useListingStore,
+  type DisconnectedLocation,
   type ColumnWidths,
   type ColumnLayout,
   type ViewMode,
 } from "./listing"
 import { usePanelsStore, type Side } from "./panels"
 import { readSettings, SETTINGS_KEY } from "./settings"
-import { captureActive, installTabHooks, MAX_TABS, setTabs, useTabsStore, type Tab } from "./tabs"
+import {
+  captureActive,
+  installTabHooks,
+  MAX_TAB_TITLE,
+  MAX_TABS,
+  setTabs,
+  useTabsStore,
+  type Tab,
+} from "./tabs"
 
 // Session restore (Stage C03): both panels with their tabs, views, sorts,
-// column widths, histories and cursor entries, in commander.panels.
+// column widths, histories and cursor entries, in commander.panels. Since
+// Stage C10.5 (v3) a tab also keeps the title the user gave it, and a tab on
+// a connection keeps where it was on the server: no password, and nothing
+// that connects by itself (ADR-0037).
 
 export const PANELS_KEY = "commander.panels"
 const MAX_STORED_HISTORY = 50
@@ -37,9 +50,13 @@ export interface StoredTab {
   showHidden: boolean
   view: ViewMode
   locked: boolean
+  /** v3; "" in older sessions. */
+  title: string
   history: string[]
   historyIndex: number
   cursorId: number | null
+  /** v3: the tab was on a connection; restored as "Not connected". */
+  remote?: DisconnectedLocation
 }
 
 export interface StoredPanel {
@@ -52,7 +69,7 @@ export interface StoredPanel {
 }
 
 export interface StoredPanels {
-  v: 2
+  v: 3
   active: Side
   left?: StoredPanel
   right?: StoredPanel
@@ -60,7 +77,28 @@ export interface StoredPanels {
 
 const isPath = (v: unknown): v is string => typeof v === "string" && v !== "" && v.length < 32_768
 
-function readTab(v: unknown): StoredTab | null {
+const isText = (v: unknown, max: number): v is string => typeof v === "string" && v.length <= max
+
+/** Where a tab was on a server; anything of another shape is dropped. */
+function readRemote(v: unknown): DisconnectedLocation | null {
+  const r = (v ?? {}) as Partial<Record<keyof DisconnectedLocation, unknown>>
+  if (!isText(r.host, MAX_REMOTE_HOST_CHARS) || r.host === "") return null
+  if (typeof r.port !== "number" || !Number.isInteger(r.port) || r.port < 1 || r.port > 65535)
+    return null
+  if (!isText(r.path, MAX_REMOTE_PATH_CHARS) || !r.path.startsWith("/")) return null
+  const saved = typeof r.connectionId === "number" && Number.isSafeInteger(r.connectionId)
+  return {
+    connectionId: saved && (r.connectionId as number) > 0 ? (r.connectionId as number) : null,
+    label: isText(r.label, 512) ? r.label : r.host,
+    host: r.host,
+    port: r.port,
+    user: isText(r.user, 255) ? r.user : "",
+    encrypted: r.encrypted === true,
+    path: r.path,
+  }
+}
+
+export function readTab(v: unknown): StoredTab | null {
   const t = (v ?? {}) as Partial<Record<keyof StoredTab, unknown>>
   if (!isPath(t.path)) return null
   const history = Array.isArray(t.history)
@@ -74,19 +112,24 @@ function readTab(v: unknown): StoredTab | null {
     showHidden: t.showHidden === true,
     view: readView(t.view),
     locked: t.locked === true,
+    title: typeof t.title === "string" ? t.title.trim().slice(0, MAX_TAB_TITLE) : "",
     history,
     historyIndex: history.length === 0 ? -1 : Math.max(0, Math.min(index, history.length - 1)),
     cursorId:
       typeof t.cursorId === "number" && Number.isSafeInteger(t.cursorId) && t.cursorId > 0
         ? t.cursorId
         : null,
+    ...(t.remote !== undefined && readRemote(t.remote) && { remote: readRemote(t.remote)! }),
   }
 }
 
-/** Validated stored panels; unknown shapes fall back to defaults. Reads v1 (C01–C02, one folder per panel). */
+/**
+ * Validated stored panels; unknown shapes fall back to defaults. Reads v2
+ * (C03, tabs without titles) and v1 (C01–C02, one folder per panel).
+ */
 export function readStoredPanels(value: unknown): StoredPanels {
   const v = (value ?? {}) as Record<string, unknown>
-  const out: StoredPanels = { v: 2, active: v.active === "right" ? "right" : "left" }
+  const out: StoredPanels = { v: 3, active: v.active === "right" ? "right" : "left" }
   for (const side of SIDES) {
     const p = (v[side] ?? {}) as Record<string, unknown>
     if (v.v === 1) {
@@ -103,7 +146,7 @@ export function readStoredPanels(value: unknown): StoredPanels {
       }
       continue
     }
-    if (v.v !== 2 || !Array.isArray(p.tabs)) continue
+    if ((v.v !== 2 && v.v !== 3) || !Array.isArray(p.tabs)) continue
     const tabs = p.tabs
       .slice(0, MAX_TABS)
       .map(readTab)
@@ -129,14 +172,33 @@ const storedTab = (t: Tab): StoredTab => ({
   showHidden: t.showHidden,
   view: t.view,
   locked: t.locked,
+  title: t.title,
   history: t.history.slice(-MAX_STORED_HISTORY),
   historyIndex: Math.min(t.historyIndex, MAX_STORED_HISTORY - 1),
-  cursorId: t.cursorId,
+  // An entry of a connection has no id after a restart.
+  cursorId: t.remote ? null : t.cursorId,
+  ...(t.remote && {
+    remote: {
+      connectionId: t.remote.connectionId,
+      label: t.remote.label,
+      host: t.remote.host,
+      port: t.remote.port,
+      user: t.remote.user,
+      encrypted: t.remote.encrypted,
+      path: t.remote.path,
+    },
+  }),
 })
+
+/** A stored tab as the tab bar holds it: its connection, if any, is not open. */
+const restoredTab = (t: StoredTab): Omit<Tab, "id"> => {
+  const { remote, ...rest } = t
+  return { ...rest, remote: remote ? { remoteId: 0, ...remote } : null }
+}
 
 /** What commander.panels holds now. */
 export function storedPanels(): StoredPanels {
-  const out: StoredPanels = { v: 2, active: usePanelsStore.getState().active }
+  const out: StoredPanels = { v: 3, active: usePanelsStore.getState().active }
   for (const side of SIDES) {
     captureActive(side)
     const { tabs, active } = useTabsStore.getState()[side]
@@ -184,7 +246,7 @@ export async function restorePanels(
       // context) wins over the stored session.
       if (hasNavigated(side)) return
       const saved = stored[side]
-      if (saved) setTabs(side, saved.tabs, saved.active)
+      if (saved) setTabs(side, saved.tabs.map(restoredTab), saved.active)
       else setTabs(side, [], 0)
       const tab = saved?.tabs[saved.active]
       patch(side, {
@@ -203,11 +265,14 @@ export async function restorePanels(
         return openFolderEntry(side, carried.dirId, { focusId: carried.focusId })
       }
       if (tab) {
-        return openPath(side, tab.path, {
+        await openPath(side, tab.path, {
           focusId: tab.cursorId,
           tabLoad: true,
           ...(tab.history.length > 0 && { historyIndex: tab.historyIndex }),
         })
+        // The tab was on a server: "Not connected", with Connect. Nothing dials at startup.
+        if (tab.remote) showDisconnected(side, tab.remote)
+        return
       }
       home ??= bridge.homePath().catch(() => null)
       const path = await home

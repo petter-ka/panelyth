@@ -1,14 +1,25 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef, type KeyboardEvent } from "react"
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react"
 import { Tooltip } from "@panelyth/ui"
 import { useUiStore } from "../features/commands"
 import { useQuickSearch } from "../features/quicksearch"
 import {
   dismissError,
+  leaveDisconnected,
   openHome,
+  remoteUrl,
   retry,
+  stopRemoteListing,
   useListingStore,
   type PanelErrorKind,
 } from "../features/listing"
+import { reconnect } from "../features/remote"
 import type { Side } from "../features/panels"
 import { BriefView } from "./BriefView"
 import { DriveBar, DriveMenu } from "./DriveBar"
@@ -49,6 +60,42 @@ export interface PanelHandle {
   focus(): void
 }
 
+/** How long a server may take before the panel says it is waiting for it. */
+const REMOTE_WAIT_MS = 400
+
+/**
+ * "Waiting for the server…" with Stop (Stage C10.5), mounted while a panel
+ * waits for a listing. It shows only once the server takes a moment, so a
+ * quick listing does not flash it.
+ */
+function RemoteWaiting({ side }: { side: Side }) {
+  const [shown, setShown] = useState(false)
+  useEffect(() => {
+    const timer = setTimeout(() => setShown(true), REMOTE_WAIT_MS)
+    return () => clearTimeout(timer)
+  }, [])
+  if (!shown) return null
+  return (
+    <div
+      role="status"
+      data-testid={`remote-busy-${side}`}
+      className="absolute right-2 bottom-2 z-10 flex items-center gap-2 rounded border border-border bg-raised px-2 py-1 text-xs shadow-lg"
+    >
+      <span className="text-muted">{t("Waiting for the server…")}</span>
+      <Tooltip content="Esc">
+        <button
+          type="button"
+          tabIndex={-1}
+          onClick={() => stopRemoteListing(side)}
+          className="rounded px-1 text-text hover:bg-canvas"
+        >
+          {t("Stop")}
+        </button>
+      </Tooltip>
+    </div>
+  )
+}
+
 interface PanelProps {
   side: Side
   active: boolean
@@ -60,6 +107,7 @@ const TITLES: Record<PanelErrorKind, string> = {
   denied: msg("Permission denied"),
   notReady: msg("Drive not ready"),
   network: msg("Network location unavailable"),
+  remote: msg("The server can't be reached"),
   other: msg("This folder can't be opened"),
 }
 
@@ -85,6 +133,8 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   const branch = useListingStore((s) => s[side].branch)
   const filter = useListingStore((s) => s[side].filter)
   const loading = useListingStore((s) => s[side].loading)
+  const disconnected = useListingStore((s) => s[side].disconnected)
+  const remoteBusy = useListingStore((s) => s[side].remoteBusy)
   const view = useListingStore((s) => s[side].view)
   // Ctrl+F1 / Ctrl+F2 / Ctrl+Shift+F1 replace the focused view: the new one takes the keys.
   const viewSeen = useRef(view)
@@ -115,6 +165,9 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
     if (e.key === "Escape" && error) {
       e.preventDefault()
       dismissError(side)
+    } else if (e.key === "Escape" && remoteBusy && stopRemoteListing(side)) {
+      // Esc stops waiting for a server; the panel keeps what it showed.
+      e.preventDefault()
     }
   }
 
@@ -170,6 +223,40 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
         {message && (
           <div className="pointer-events-none absolute inset-x-0 top-14 text-center text-xs text-muted">
             {message.title}
+          </div>
+        )}
+        {remoteBusy && <RemoteWaiting side={side} />}
+        {disconnected && !error && (
+          // A tab of a connection that is not open (after a restart, or once
+          // it closed). Nothing connects until Connect is pressed (ADR-0037).
+          <div
+            role="status"
+            data-testid={`disconnected-${side}`}
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-canvas px-6 text-center"
+          >
+            <div>
+              <p className="text-sm text-text">{t("Not connected")}</p>
+              <p className="mt-1 font-mono text-xs break-all text-muted">
+                {remoteUrl(disconnected)}
+              </p>
+            </div>
+            <div className="flex gap-2 text-xs">
+              <button
+                type="button"
+                disabled={loading}
+                onClick={() => void reconnect(side)}
+                className="rounded border border-accent px-2.5 py-1 text-text hover:bg-raised disabled:opacity-50"
+              >
+                {t("Connect")}
+              </button>
+              <button
+                type="button"
+                onClick={() => void leaveDisconnected(side)}
+                className="rounded border border-border px-2.5 py-1 text-text hover:bg-raised"
+              >
+                {t("Show the folder of this computer")}
+              </button>
+            </div>
           </div>
         )}
         {error && (

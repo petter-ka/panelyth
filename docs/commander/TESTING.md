@@ -27,6 +27,18 @@ Commander-specific scenarios, fixtures and safety tests. Layers, harness, isolat
     `docs/shared/APP-SWITCHING.md`; same-folder switches keep each app's state; a copy keeps running across switches;
     a bookmark or theme change shows in both apps.
 
+19. Tabs by mouse and by key: "+", rename, duplicate, close, reopen; save a tab set, restart, open it with replace
+    and with add (Stage C10.5).
+20. Folder tree: show one and two trees; expand, follow the panel, open a folder with Enter and by click, type to a
+    node, drop files on a node; mounted rows stay bounded in `tree-50k` (Stage C10.5).
+21. FTP: save a connection, restart, connect; browse a 10,000-entry folder; download and upload with pause, resume and
+    cancel; a conflict; new folder, rename and delete on the server; a wrong password; a server that stops answering
+    while the other panel stays responsive; a restored tab says "Not connected" (Stage C10.5). As built
+    (`ftp.spec.ts`): pause and resume of a transfer are not in the scenario (the queue's pause is the one every job
+    uses; cancel is in the benchmark, with the partial file gone), and the 10,000-entry folder is in the benchmark.
+22. Compare by content: two marked files, one marked in each panel, and 20 marked files against the other panel with
+    the result list and a diff opened from it (Stage C10.5).
+
 ## Safety tests
 
 - The commander's preload exposes exactly its API (the `foundation.spec.ts` pattern), and the viewer's surface is
@@ -43,6 +55,22 @@ Commander-specific scenarios, fixtures and safety tests. Layers, harness, isolat
 - Recursive operations never follow links (a fixture with link cycles).
 - Archive extraction never writes outside the target (zip-slip, absolute paths, links in tar).
 
+Remote connections (Stage C10.5, ADR-0037; as built: `ftp.spec.ts`, `test/remote.test.ts` and `test/router.test.ts`
+in the desktop package, `remote.test.tsx` in the commander, and the Go tests of `internal/remote`, `internal/jobs`
+and `internal/app`; the stage document's security review names the test for each line):
+
+- The viewer's app view is refused every `remote.*` method and the `download`, `upload` and `remoteDelete` jobs.
+- No renderer method returns a password. After saving a connection, the clear password is in no file under the
+  profile (`library.db` holds ciphertext only) and in no log line of main or the sidecar.
+- Without a secure store (`safeStorage` unavailable, forced in the test), a password is not saved.
+- A connection set to TLS fails against a server without TLS; it never continues unencrypted. A certificate that
+  does not verify is refused until the user accepts its fingerprint; a changed pinned fingerprint is refused again.
+- Names from the server with `..`, separators, absolute paths or control characters are not listed, and a download
+  never writes outside its target.
+- A PASV reply that names another host does not make the app connect to it.
+- No connection is opened at startup, by session restore, or while the commander is hidden without a running job.
+- Tests reach loopback only; no test opens a connection to another host.
+
 ## Fixtures
 
 Built by `src/shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached under `<tmp>/panelyth-fixtures/`:
@@ -57,5 +85,7 @@ Built by `src/shared/sidecar/cmd/fixturegen` (extended in Stage P02/C01), cached
 | `sync-pair` | two trees with known differences (newer, missing, size, content) (as built: `fixturegen -sync-pair` writes `left/` and `right/`: newer on each side, another size at one date, the same size with other bytes, files and folders on one side only, an empty folder, two versions of a text; `-sync-entries 100000` writes `tree-a/` and `tree-b/` with about 3 % differences for the benchmark) | C08 |
 | `rename-set` | multi-rename files (as built: `fixturegen -rename-scenario` writes `scenario/`: three pictures a minute apart, `notes.txt`, `taken.txt` and a folder; `-rename-files 10000` writes `files/` of empty pictures a second apart; `-rename-folders 1000` writes `folders/` with 20 files of 1 KiB each) | C09 |
 | `links` | symlinks, junctions, a cycle | P02, C06 |
+| `ftp-server` | a loopback FTP and FTPS server started by the harness over a generated tree: a 10,000-entry folder, UTF-8 and code-page names, a 1 GiB file, 1,000 small files, hostile names; switches for no MLSD, no TLS, a bad certificate, a wrong PASV host, a stall (as built: `src/shared/sidecar/cmd/ftpfixture` on `internal/remote/ftptest`, built and started by `ftp.spec.ts`; flags `-tls`, `-implicit`, `-user`, `-password`, `-stall`, `-no-mlsd`, `-discard-uploads`; it answers `stats` on its input with the sessions, commands and clear-text passwords it has seen. The spec writes the tree: `many/` of 10,000 files, `small/` of 1,000 × 10 KB and `big.bin` of 1 GiB, cached under `<tmp>/panelyth-fixtures/ftp-server`. Code-page names, hostile names and the wrong PASV host are the Go tests' fixtures) | C10.5 |
+| `tree-wide` | a folder with 1,000 subfolders (the deep tree is `tree-50k`) (as built: written by `tabstree.spec.ts`) | C10.5 |
 
 Fixtures are deterministic (fixed mtimes, fixed content). See the Storage Sense note in `docs/shared/TESTING.md`.

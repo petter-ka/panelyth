@@ -160,6 +160,10 @@ const COMMANDER_JOB_KINDS: ReadonlySet<unknown> = new Set([
   "multiRename",
   "undoRename",
   "setAttributes",
+  // Stage C10.5: between a connection and this computer (ADR-0037).
+  "download",
+  "upload",
+  "remoteDelete",
 ])
 
 /** Jobs only the commander starts: archives (C07), compare jobs (C08), multi-rename and attributes (C09). */
@@ -174,6 +178,9 @@ const COMMANDER_ONLY_JOB_KINDS: ReadonlySet<unknown> = new Set([
   "multiRename",
   "undoRename",
   "setAttributes",
+  "download",
+  "upload",
+  "remoteDelete",
 ])
 
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
@@ -190,7 +197,10 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
   if (
     app === "viewer" &&
     method === "query.open" &&
-    (p.scope === "all" || p.findId !== undefined || p.archiveId !== undefined)
+    (p.scope === "all" ||
+      p.findId !== undefined ||
+      p.archiveId !== undefined ||
+      p.remoteId !== undefined)
   ) {
     return "the viewer lists media only"
   }
@@ -203,6 +213,10 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
     p.key.startsWith("commander.")
   ) {
     return "commander settings are the commander's"
+  }
+  // Stage C10.5: hidden folders are the commander's to list (ADR-0026).
+  if (app === "viewer" && method === "fs.listDirs" && p.showHidden !== undefined) {
+    return "the viewer's tree lists visible folders only"
   }
   if (app === "viewer" && method === "jobs.start" && COMMANDER_ONLY_JOB_KINDS.has(p.kind)) {
     return "archive, compare, multi-rename and attribute jobs are the commander's"

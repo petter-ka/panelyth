@@ -49,6 +49,27 @@ reference machine and one low-end machine, and records the result in its stage d
 | Zip with 100k entries → listing | < 1 s; ≤ 100 bytes per entry in memory |
 | Compare two 100k-entry trees by name/size/date | < 3 s |
 
+### Tree, tabs and connections (Stage C10.5)
+
+The server is the loopback fixture (`docs/commander/TESTING.md`), so the numbers measure the app, not a network.
+All of these pass as of 2026-10-12 (Windows; the stage document has the numbers). Upload throughput is measured
+against a server that receives without writing (`ftpfixture -discard-uploads`), with the app and `curl` taking
+turns and the best run of each counted: a server that writes to the same disk measures that disk, not the app.
+
+| Metric | Budget |
+|---|---|
+| Expand a tree node with 1,000 subfolders → rows painted | p95 < 100 ms |
+| Mounted tree rows | ≤ visible rows + 2 × overscan |
+| Held arrow key in a tree of 10,000 visible nodes | no long tasks > 50 ms |
+| Enter a folder with the tree shown | the listing budgets above, unchanged (the tree follows afterwards) |
+| Open a tab set of 16 tabs → the visible tab painted | the cached-folder budget; one session opened |
+| Remote folder with 10,000 entries → first rows painted | < 500 ms |
+| Memory per remote entry | ≤ 120 bytes |
+| Download or upload of one 1 GiB file | ≥ 80 % of `curl`'s throughput on the same machine |
+| A server that does not answer: the other panel's cursor | ≤ 1 frame; Cancel effective < 200 ms |
+| Renderer during a transfer | no long tasks > 50 ms; both panels navigable |
+| Compare by content of 1,000 pairs of small files | recorded; one job, no long task in the renderer |
+
 ## Benchmarks per stage
 
 | Stage | Benchmarks |
@@ -64,6 +85,7 @@ reference machine and one low-end machine, and records the result in its stage d
 | C08 | compare 100k trees, hashing throughput |
 | C09 | multi-rename preview and apply on 10k files; folder sizes for a panel of 1,000 folders |
 | C10 | command line start-up cost; thumbnails view scroll (viewer tile budgets) |
+| C10.5 | tree expand and held key, folder enter with the tree shown, tab set open, remote listing and transfers against `curl`, a dead server, multi-file compare; the viewer's sidebar tree on the shared code |
 
 ## Rules
 

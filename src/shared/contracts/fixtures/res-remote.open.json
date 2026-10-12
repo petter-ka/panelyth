@@ -1,0 +1,21 @@
+{
+  "id": 225,
+  "ok": true,
+  "r": {
+    "crumbs": [
+      {
+        "name": "/",
+        "path": "/"
+      },
+      {
+        "name": "golden",
+        "path": "/fixtures/golden"
+      }
+    ],
+    "name": "/",
+    "path": "/fixtures/golden",
+    "rejected": 0,
+    "remoteDirId": 7881299348946945
+  },
+  "t": "res"
+}

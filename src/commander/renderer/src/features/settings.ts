@@ -25,6 +25,9 @@ export type DocumentOpen = "window" | "system"
 /** The right mouse button: marks (hold for the menu; classic Total Commander), or opens the menu at once. */
 export type RightButton = "mark" | "menu"
 
+/** The tab bar (Stage C10.5): always there with its "+" button, or only once a panel has several tabs. */
+export type TabBarMode = "always" | "multiple"
+
 /** Date tolerance of compares: exact, or the 2 s of FAT file systems. */
 export type CompareTolerance = 0 | 2000
 
@@ -61,6 +64,10 @@ export interface PanelSettings {
   /** Confirmations: F8 asks before moving to the trash; a drop shows the copy dialog first. */
   confirmTrash: boolean
   confirmDrop: boolean
+  /** Stage C10.5: when the tab bar shows. */
+  tabBar: TabBarMode
+  /** The folder tree opens a folder in the panel once its cursor rests on it (off: Enter or a click opens). */
+  treeFollowCursor: boolean
 }
 
 export const DEFAULT_SETTINGS: PanelSettings = {
@@ -84,6 +91,8 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   copyVerify: false,
   confirmTrash: true,
   confirmDrop: true,
+  tabBar: "always",
+  treeFollowCursor: false,
 }
 
 const policies: ReadonlySet<unknown> = new Set(CONFLICT_POLICIES)
@@ -124,6 +133,8 @@ export function readSettings(value: unknown): PanelSettings {
     copyVerify: v.copyVerify === true,
     confirmTrash: v.confirmTrash !== false,
     confirmDrop: v.confirmDrop !== false,
+    tabBar: v.tabBar === "multiple" ? "multiple" : "always",
+    treeFollowCursor: v.treeFollowCursor === true,
   }
 }
 

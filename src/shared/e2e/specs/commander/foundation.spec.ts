@@ -55,6 +55,7 @@ test.describe("commander foundation (Stage C00)", () => {
           props: Object.keys(api.props ?? {}).sort(),
           file: Object.keys(api.file ?? {}).sort(),
           shell: Object.keys(api.shell ?? {}).sort(),
+          remote: Object.keys(api.remote ?? {}).sort(),
         }
       })
       expect(probe).toEqual({
@@ -68,7 +69,8 @@ test.describe("commander foundation (Stage C00)", () => {
         // shell, fs.mkfile); C07 archives; C08 compare and the text diff;
         // ADR-0033 the document window and the media window's methods; C09
         // the multi-rename preview (rename); C10 the command line and user
-        // commands (shell.run, shell.runTool).
+        // commands (shell.run, shell.runTool); C10.5 the folder tree
+        // (fs.listDirs) and connections (remote: no method reads a password).
         apiKeys: [
           "app",
           "archive",
@@ -91,6 +93,7 @@ test.describe("commander foundation (Stage C00)", () => {
           "preview",
           "props",
           "query",
+          "remote",
           "rename",
           "selection",
           "shell",
@@ -109,7 +112,7 @@ test.describe("commander foundation (Stage C00)", () => {
         query: ["close", "indexOf", "locate", "match", "open", "page"],
         jobs: ["cancel", "dirSize"],
         files: ["errors", "list", "pause", "rename", "resolve", "resume", "start", "startNow"],
-        fs: ["canTrash", "mkdir", "mkfile", "volumes"],
+        fs: ["canTrash", "listDirs", "mkdir", "mkfile", "volumes"],
         clip: ["get", "paste", "set"],
         clipboard: ["copyPaths", "copyText"],
         media: ["open", "openWindow", "windowAnswer", "windowStep"],
@@ -117,6 +120,19 @@ test.describe("commander foundation (Stage C00)", () => {
         props: ["get"],
         file: ["open"],
         shell: ["edit", "open", "run", "runTool"],
+        remote: [
+          "cancel",
+          "connect",
+          "connections",
+          "disconnect",
+          "mkdir",
+          "open",
+          "remove",
+          "rename",
+          "save",
+          "secureStore",
+          "trust",
+        ],
       })
     } finally {
       await app.close()

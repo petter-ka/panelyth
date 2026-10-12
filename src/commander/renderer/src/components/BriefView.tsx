@@ -84,7 +84,9 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
   useScrollMemory(
     box,
     side,
-    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive && !panel.remote
+      ? panel.dirId
+      : null,
     "left",
   )
   useEffect(() => virtualizer.measure(), [columnWidth, virtualizer])

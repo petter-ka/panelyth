@@ -2,7 +2,14 @@ import type { TextDiffFile, TextDiffOpenResult, TextDiffRow } from "@panelyth/co
 import { Button, DialogWindow } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
 import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent } from "react"
-import { closeDiff, diffRows, useCompareStore, type DiffDialogState } from "../features/compare"
+import {
+  closeDiff,
+  diffRows,
+  hasManyDiff,
+  openManyDiff,
+  useCompareStore,
+  type DiffDialogState,
+} from "../features/compare"
 import { formatBytes, formatCount } from "../features/format"
 import { t } from "@panelyth/i18n"
 
@@ -26,10 +33,13 @@ const RIGHT_TONE: Record<TextDiffRow["op"], string> = {
 /**
  * Compare by content (Stage C08): two text files side by side, compared line
  * by line in Go and paged from it; files that are not text, or too large,
- * get the answer of a streamed comparison: identical or not.
+ * get the answer of a streamed comparison: identical or not. Opened from
+ * the list of several compared files (Stage C10.5), it also steps to the
+ * next and the previous file that differs.
  */
 export function DiffDialog() {
   const d = useCompareStore((s) => s.diff)
+  const fromList = useCompareStore((s) => s.many !== null)
   if (!d) return null
   return (
     <DialogWindow
@@ -56,12 +66,13 @@ export function DiffDialog() {
         ) : d.info.diffId === 0 ? (
           <ContentAnswer d={d} info={d.info} />
         ) : (
-          <TextDiff info={d.info} maxChars={d.maxChars} />
+          <TextDiff key={d.info.diffId} info={d.info} maxChars={d.maxChars} fromList={fromList} />
         )}
         {(d.error || !d.info || d.info.diffId === 0) && (
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            {fromList && <FileSteps />}
             <Button onClick={closeDiff} autoFocus>
-              {t("Close")}
+              {fromList ? t("Back to the list") : t("Close")}
             </Button>
           </div>
         )}
@@ -139,7 +150,39 @@ function summary(info: TextDiffOpenResult): string {
     : t("{count, plural, one {# difference} other {# differences}}", { count: info.changes })
 }
 
-function TextDiff({ info, maxChars }: { info: TextDiffOpenResult; maxChars: number }) {
+/** Opened from the list of several files: the previous and the next file that differs. */
+function FileSteps() {
+  return (
+    <>
+      <Button
+        size="sm"
+        disabled={!hasManyDiff(-1)}
+        onClick={() => void openManyDiff(-1)}
+        title="Shift+P"
+      >
+        {t("Previous file")}
+      </Button>
+      <Button
+        size="sm"
+        disabled={!hasManyDiff(1)}
+        onClick={() => void openManyDiff(1)}
+        title="Shift+N"
+      >
+        {t("Next file")}
+      </Button>
+    </>
+  )
+}
+
+function TextDiff({
+  info,
+  maxChars,
+  fromList,
+}: {
+  info: TextDiffOpenResult
+  maxChars: number
+  fromList: boolean
+}) {
   const scroll = useRef<HTMLDivElement>(null)
   // The visible rows render again when a page of them arrives.
   useSyncExternalStore(diffRows.subscribe, diffRows.getVersion)
@@ -171,6 +214,12 @@ function TextDiff({ info, maxChars }: { info: TextDiffOpenResult; maxChars: numb
   }
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     if (e.ctrlKey || e.metaKey || e.altKey) return
+    // Shift+N / Shift+P: the next and the previous file of the list.
+    if (fromList && (e.key === "N" || e.key === "P")) {
+      e.preventDefault()
+      void openManyDiff(e.key === "N" ? 1 : -1)
+      return
+    }
     if (e.key === "n") {
       e.preventDefault()
       step(1)
@@ -197,8 +246,9 @@ function TextDiff({ info, maxChars }: { info: TextDiffOpenResult; maxChars: numb
         <Button size="sm" disabled={none} onClick={() => step(1)} title="N">
           {t("Next difference")}
         </Button>
+        {fromList && <FileSteps />}
         <Button size="sm" onClick={closeDiff}>
-          {t("Close")}
+          {fromList ? t("Back to the list") : t("Close")}
         </Button>
       </div>
       <div
@@ -227,6 +277,20 @@ function TextDiff({ info, maxChars }: { info: TextDiffOpenResult; maxChars: numb
   )
 }
 
+/** A changed line with the part that differs marked (not by color alone: it is underlined too). */
+function Marked({ text, from, to }: { text: string; from: number; to: number }) {
+  if (to <= from) return <>{text}</>
+  return (
+    <>
+      {text.slice(0, from)}
+      <mark className="rounded-sm bg-warning/40 text-inherit underline decoration-dotted underline-offset-2">
+        {text.slice(from, to)}
+      </mark>
+      {text.slice(to)}
+    </>
+  )
+}
+
 function Line({ index, start }: { index: number; start: number }) {
   const row = diffRows.getRow(index)
   const style = { position: "absolute" as const, top: start, height: ROW_HEIGHT, left: 0, right: 0 }
@@ -247,7 +311,13 @@ function Line({ index, start }: { index: number; start: number }) {
           {row.l || ""}
         </span>
         <span className={text}>
-          {row.l ? row.left : ""}
+          {!row.l ? (
+            ""
+          ) : row.spans ? (
+            <Marked text={row.left} from={row.spans[0]} to={row.spans[1]} />
+          ) : (
+            row.left
+          )}
           {row.cut && row.l ? "…" : ""}
         </span>
       </div>
@@ -256,7 +326,13 @@ function Line({ index, start }: { index: number; start: number }) {
           {row.r || ""}
         </span>
         <span className={text}>
-          {row.r ? right : ""}
+          {!row.r ? (
+            ""
+          ) : row.spans ? (
+            <Marked text={right} from={row.spans[2]} to={row.spans[3]} />
+          ) : (
+            right
+          )}
           {row.cut && row.r ? "…" : ""}
         </span>
       </div>

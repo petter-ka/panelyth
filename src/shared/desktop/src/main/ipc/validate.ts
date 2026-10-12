@@ -63,6 +63,15 @@ import {
   MAX_SWATCHES,
   MAX_THUMB_EDGE,
   editListProblem,
+  FINGERPRINT_HEX_CHARS,
+  MAX_CONNECTION_NAME_CHARS,
+  MAX_REMOTE_ENCODING_CHARS,
+  MAX_REMOTE_HOST_CHARS,
+  MAX_REMOTE_NAME_CHARS,
+  MAX_REMOTE_PASSWORD_BYTES,
+  MAX_REMOTE_PATH_CHARS,
+  MAX_REMOTE_TRANSFERS,
+  REMOTE_TLS,
   type RendererMethod,
 } from "@panelyth/contracts"
 
@@ -320,10 +329,28 @@ function jobStartProblem(p: unknown): string | null {
         return "invalid mask"
       if (p.name !== undefined && !isName(p.name)) return "invalid name"
       return destinationProblem(p) ?? sourceProblem(p.source)
+    // remoteDelete (Stage C10.5): the selection is of a remote session; Go refuses any other.
     case "trash":
     case "delete":
     case "dirSize":
+    case "remoteDelete":
       return shape(p, ["kind", "source"]) ? sourceProblem(p.source) : "expected { kind, source }"
+    case "download":
+      // Into a local folder by its id, never a path.
+      if (!shapeWithOptional(p, ["kind", "source", "destinationDirId", "conflict"], ["move"]))
+        return "expected { kind, source, destinationDirId, conflict, move? }"
+      if (!isId(p.destinationDirId)) return "invalid destinationDirId"
+      if (!conflicts.has(p.conflict)) return "invalid conflict policy"
+      if (p.move !== undefined && typeof p.move !== "boolean") return "invalid move"
+      return sourceProblem(p.source)
+    case "upload":
+      // Into a folder of a connection by its id from remote.open.
+      if (!shapeWithOptional(p, ["kind", "source", "remoteDirId", "conflict"], ["move"]))
+        return "expected { kind, source, remoteDirId, conflict, move? }"
+      if (!isId(p.remoteDirId)) return "invalid remoteDirId"
+      if (!conflicts.has(p.conflict)) return "invalid conflict policy"
+      if (p.move !== undefined && typeof p.move !== "boolean") return "invalid move"
+      return sourceProblem(p.source)
     case "rename":
       if (!shape(p, ["kind", "source", "pattern", "start"]))
         return "expected { kind, source, pattern, start }"
@@ -397,6 +424,12 @@ function jobStartProblem(p: unknown): string | null {
         return "a checksum list needs destinationDirId and name"
       return sourceProblem(p.source)
     case "compareFiles":
+      // Two entries by id, or (Stage C10.5) a selection against a folder by its id.
+      if ("source" in p) {
+        return shape(p, ["kind", "source", "destinationDirId"]) && isId(p.destinationDirId)
+          ? sourceProblem(p.source)
+          : "expected { kind, source, destinationDirId }"
+      }
       return shape(p, ["kind", "leftId", "rightId"]) && isId(p.leftId) && isId(p.rightId)
         ? null
         : "expected { kind, leftId, rightId }"
@@ -449,6 +482,99 @@ const selectionParams: Validator = (p) =>
 
 const entryParams: Validator = (p) =>
   shape(p, ["entryId"]) && isId(p.entryId) ? null : "expected { entryId }"
+
+// Connections (Stage C10.5, ADR-0037). A host and a path on a server are
+// the only typed inputs; both are one line of text without control
+// characters, so nothing typed can start another command on the wire.
+const remoteTls: ReadonlySet<unknown> = new Set(REMOTE_TLS)
+
+/** One line of text of at most `max` characters; `min` 0 allows "". */
+const isLine = (v: unknown, max: number, min = 0): v is string =>
+  typeof v === "string" &&
+  v.length >= min &&
+  v.length <= max &&
+  // eslint-disable-next-line no-control-regex
+  !/[\u0000-\u001f\u007f]/.test(v)
+
+const isHost = (v: unknown): boolean =>
+  isLine(v, MAX_REMOTE_HOST_CHARS, 1) && !/[\s/\\@]/.test(v as string)
+
+const isPort = (v: unknown): boolean =>
+  Number.isSafeInteger(v) && (v as number) >= 1 && (v as number) <= 65535
+
+const isTransfers = (v: unknown): boolean =>
+  Number.isSafeInteger(v) && (v as number) >= 1 && (v as number) <= MAX_REMOTE_TRANSFERS
+
+const isFingerprint = (v: unknown, allowEmpty: boolean): boolean =>
+  typeof v === "string" &&
+  ((allowEmpty && v === "") || (v.length === FINGERPRINT_HEX_CHARS && /^[0-9a-fA-F]+$/.test(v)))
+
+/** A password: one line, bounded in UTF-8 bytes. Never logged, never echoed in a reason. */
+const isPassword = (v: unknown): boolean =>
+  typeof v === "string" &&
+  Buffer.byteLength(v, "utf8") <= MAX_REMOTE_PASSWORD_BYTES &&
+  // eslint-disable-next-line no-control-regex
+  !/[\r\n\u0000]/.test(v)
+
+function connectionProblem(c: unknown): string | null {
+  const keys = [
+    "id",
+    "name",
+    "group",
+    "host",
+    "port",
+    "tls",
+    "user",
+    "startPath",
+    "localPath",
+    "active",
+    "encoding",
+    "transfers",
+    "fingerprint",
+    "hasPassword",
+  ]
+  if (!shape(c, keys)) return `expected connection { ${keys.join(", ")} }`
+  if (!isCount(c.id)) return "invalid connection id"
+  if (!isLine(c.name, MAX_CONNECTION_NAME_CHARS, 1) || (c.name as string).trim() === "")
+    return "invalid connection name"
+  if (!isLine(c.group, MAX_CONNECTION_NAME_CHARS)) return "invalid group"
+  if (!isHost(c.host)) return "invalid host"
+  if (!isPort(c.port)) return "invalid port"
+  if (!remoteTls.has(c.tls)) return "invalid encryption"
+  if (!isLine(c.user, MAX_CONNECTION_NAME_CHARS)) return "invalid user"
+  if (
+    !isLine(c.startPath, MAX_REMOTE_PATH_CHARS) ||
+    (c.startPath !== "" && !c.startPath.startsWith("/"))
+  )
+    return "invalid startPath"
+  if (!isLine(c.localPath, MAX_REMOTE_PATH_CHARS)) return "invalid localPath"
+  if (typeof c.active !== "boolean" || typeof c.hasPassword !== "boolean") return "invalid flag"
+  if (!isLine(c.encoding, MAX_REMOTE_ENCODING_CHARS)) return "invalid encoding"
+  if (!isTransfers(c.transfers)) return "invalid transfers"
+  if (!isFingerprint(c.fingerprint, true)) return "invalid fingerprint"
+  return null
+}
+
+function quickProblem(q: unknown): string | null {
+  const keys = ["host", "port", "tls", "user", "active", "encoding", "transfers"]
+  if (!shape(q, keys)) return `expected quick { ${keys.join(", ")} }`
+  if (!isHost(q.host)) return "invalid host"
+  if (!isPort(q.port)) return "invalid port"
+  if (!remoteTls.has(q.tls)) return "invalid encryption"
+  if (!isLine(q.user, MAX_CONNECTION_NAME_CHARS)) return "invalid user"
+  if (typeof q.active !== "boolean") return "invalid active"
+  if (!isLine(q.encoding, MAX_REMOTE_ENCODING_CHARS)) return "invalid encoding"
+  if (!isTransfers(q.transfers)) return "invalid transfers"
+  return null
+}
+
+/** A name typed for a new folder or a rename on a server: one path element. */
+const isRemoteName = (v: unknown): boolean =>
+  isLine(v, MAX_REMOTE_NAME_CHARS, 1) &&
+  !/[/\\]/.test(v as string) &&
+  v !== "." &&
+  v !== ".." &&
+  (v as string).trim() !== ""
 
 /** document.open and media.openWindow: an entry, the theme name and the language. */
 const windowParams: Validator = (p) =>
@@ -659,6 +785,67 @@ export const validators: Record<RendererMethod, Validator> = {
     return selectionProblem(p.selection)
   },
   "archive.tools": empty,
+  // Stage C10.5 (ADR-0037): connections. The password is a write-only field
+  // of saveConnection and connect; main answers both.
+  "remote.connections": empty,
+  "remote.secureStore": empty,
+  "remote.saveConnection": (p) => {
+    if (!shapeWithOptional(p, ["connection"], ["password", "forget"]))
+      return "expected { connection, password?, forget? }"
+    if (p.password !== undefined && (!isPassword(p.password) || p.password === ""))
+      return "invalid password"
+    if (p.forget !== undefined && typeof p.forget !== "boolean") return "invalid forget"
+    if (p.password !== undefined && p.forget === true) return "a password is saved or forgotten"
+    return connectionProblem(p.connection)
+  },
+  "remote.removeConnection": (p) =>
+    shape(p, ["connectionId"]) && isId(p.connectionId) ? null : "expected { connectionId }",
+  "remote.trust": (p) =>
+    shape(p, ["connectionId", "fingerprint"]) &&
+    isId(p.connectionId) &&
+    isFingerprint(p.fingerprint, true)
+      ? null
+      : "expected { connectionId, fingerprint }",
+  "remote.connect": (p) => {
+    if (!isPlainObject(p)) return "expected { connectionId | quick, attempt, password?, accept? }"
+    const saved = "connectionId" in p
+    if (saved === "quick" in p) return "a saved connection or a typed one"
+    if (
+      !shapeWithOptional(p, [saved ? "connectionId" : "quick", "attempt"], ["password", "accept"])
+    )
+      return "expected { connectionId | quick, attempt, password?, accept? }"
+    if (!isId(p.attempt)) return "invalid attempt"
+    if (p.password !== undefined && !isPassword(p.password)) return "invalid password"
+    if (p.accept !== undefined && !isFingerprint(p.accept, false)) return "invalid accept"
+    return saved ? (isId(p.connectionId) ? null : "invalid connectionId") : quickProblem(p.quick)
+  },
+  "remote.cancel": (p) =>
+    shape(p, ["attempt"]) && isId(p.attempt) ? null : "expected { attempt }",
+  "remote.disconnect": (p) =>
+    shape(p, ["remoteId"]) && isId(p.remoteId) ? null : "expected { remoteId }",
+  "remote.open": (p) => {
+    if (!isPlainObject(p) || !isId(p.remoteId))
+      return "expected { remoteId, path | dirId, attempt? }"
+    if (p.attempt !== undefined && !isId(p.attempt)) return "invalid attempt"
+    if ("dirId" in p)
+      return shapeWithOptional(p, ["remoteId", "dirId"], ["attempt"]) && isId(p.dirId)
+        ? null
+        : "invalid dirId"
+    // A path on the server: absolute, one line. Go cleans it and refuses "..".
+    return shapeWithOptional(p, ["remoteId", "path"], ["attempt"]) &&
+      isLine(p.path, MAX_REMOTE_PATH_CHARS, 1) &&
+      p.path.startsWith("/")
+      ? null
+      : "expected { remoteId, path | dirId, attempt? }"
+  },
+  "remote.mkdir": (p) =>
+    shape(p, ["remoteDirId", "name"]) && isId(p.remoteDirId) && isRemoteName(p.name)
+      ? null
+      : "expected { remoteDirId, name }",
+  "remote.rename": (p) =>
+    shape(p, ["entryId", "name"]) && isId(p.entryId) && isRemoteName(p.name)
+      ? null
+      : "expected { entryId, name }",
   // Stage C08. The roots of a compare are folder ids: a sync writes to them.
   "compare.dirs": (p) => {
     const keys = [
@@ -734,7 +921,16 @@ export const validators: Record<RendererMethod, Validator> = {
       "minRating",
       "tags",
     ]
-    const optional = ["scope", "showHidden", "nameMask", "findId", "archiveId", "archiveDirId"]
+    const optional = [
+      "scope",
+      "showHidden",
+      "nameMask",
+      "findId",
+      "archiveId",
+      "archiveDirId",
+      "remoteId",
+      "remoteDirId",
+    ]
     if (!shapeWithOptional(p, keys, optional))
       return `expected { ${keys.join(", ")} } and optionally ${optional.join(", ")}`
     if (p.scope !== undefined && !scopes.has(p.scope)) return "invalid scope"
@@ -754,6 +950,19 @@ export const validators: Record<RendererMethod, Validator> = {
       return "archiveId needs the all scope, no recursion and no findId"
     if (p.archiveDirId !== undefined && (p.archiveId === undefined || !isCount(p.archiveDirId)))
       return "archiveDirId needs an archiveId"
+    // Stage C10.5: a listed folder of a connection, by the ids remote.open gave.
+    if ((p.remoteId === undefined) !== (p.remoteDirId === undefined))
+      return "remoteId and remoteDirId go together"
+    if (
+      p.remoteId !== undefined &&
+      (!isId(p.remoteId) ||
+        !isId(p.remoteDirId) ||
+        p.scope !== "all" ||
+        p.recursive !== false ||
+        p.findId !== undefined ||
+        p.archiveId !== undefined)
+    )
+      return "remoteId needs the all scope, no recursion, no findId and no archiveId"
     if (typeof p.favorite !== "boolean" || !isRating(p.minRating))
       return "invalid favorite or minRating"
     if (!Array.isArray(p.tags) || p.tags.length > MAX_TAG_FILTERS || !p.tags.every(isTagName))
@@ -855,7 +1064,11 @@ export const validators: Record<RendererMethod, Validator> = {
   "selection.rebase": selectionParams,
   "props.get": entryParams,
   "fs.volumes": empty,
-  "fs.listDirs": (p) => (shape(p, ["path"]) ? pathProblem(p.path) : "expected { path }"),
+  "fs.listDirs": (p) => {
+    if (!shapeWithOptional(p, ["path"], ["showHidden"])) return "expected { path, showHidden? }"
+    if (p.showHidden !== undefined && typeof p.showHidden !== "boolean") return "invalid showHidden"
+    return pathProblem(p.path)
+  },
   "library.get": empty,
   "library.setSetting": (p) => {
     if (!shape(p, ["key", "value"])) return "expected { key, value }"

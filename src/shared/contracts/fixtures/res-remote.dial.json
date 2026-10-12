@@ -1,0 +1,19 @@
+{
+  "id": 224,
+  "ok": true,
+  "r": {
+    "encrypted": false,
+    "features": {
+      "mlsd": true,
+      "resume": true,
+      "utf8": true
+    },
+    "host": "127.0.0.1",
+    "localPath": "",
+    "port": 21,
+    "remoteId": 1,
+    "startPath": "/",
+    "user": ""
+  },
+  "t": "res"
+}

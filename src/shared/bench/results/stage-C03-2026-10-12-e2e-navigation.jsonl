@@ -1,0 +1,10 @@
+{"at":"2026-10-12T06:50:44.770Z","test":"session-restore","restoreMs":402,"budgetMs":1300}
+{"at":"2026-10-12T06:51:07.452Z","test":"tab-switch-1k","warmP95Ms":17,"warmMedianMs":12.5,"coldMedianMs":16.6,"coldP95Ms":18.2,"budgetP95Ms":50}
+{"at":"2026-10-12T06:51:09.755Z","test":"drive-menu-dead-share","menuOpenMs":5,"otherPanelCursorMs":1,"deadShareListedAfterMs":1340,"shareDelayMs":8000}
+{"at":"2026-10-12T08:28:26.636Z","test":"session-restore","restoreMs":390,"budgetMs":1300}
+{"at":"2026-10-12T08:28:54.334Z","test":"tab-switch-1k","warmP95Ms":17.1,"warmMedianMs":12.4,"coldMedianMs":15.6,"coldP95Ms":16.2,"budgetP95Ms":50}
+{"at":"2026-10-12T08:28:56.568Z","test":"drive-menu-dead-share","menuOpenMs":6,"otherPanelCursorMs":2,"deadShareListedAfterMs":1341,"shareDelayMs":8000}
+{"at":"2026-10-12T08:42:58.376Z","test":"session-restore","restoreMs":380,"budgetMs":1300}
+{"at":"2026-10-12T08:43:20.891Z","test":"tab-switch-1k","warmP95Ms":19.6,"warmMedianMs":12.4,"coldMedianMs":15.8,"coldP95Ms":19.5,"budgetP95Ms":50}
+{"at":"2026-10-12T08:43:23.045Z","test":"drive-menu-dead-share","menuOpenMs":6,"otherPanelCursorMs":1,"deadShareListedAfterMs":1345,"shareDelayMs":8000}
+{"at":"2026-10-12T09:04:27.352Z","test":"session-restore","restoreMs":381,"budgetMs":1300}

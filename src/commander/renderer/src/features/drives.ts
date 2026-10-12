@@ -1,8 +1,8 @@
 import type { Crumb, Place, Volume } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
-import { openPath } from "./listing"
-import { setActivePanel, type Side } from "./panels"
+import { openPath, useListingStore } from "./listing"
+import { otherSide, setActivePanel, type Side } from "./panels"
 
 // Drives and places (Stage C03, CFR-09): the drive bar and the drive menus
 // (Alt+F1 / Alt+F2) read one small store. Go reads each volume's space with
@@ -91,8 +91,37 @@ export function closeDriveMenu(): void {
   set({ menu: null })
 }
 
-/** A drive button or menu entry: its root opens in that panel (a drive not ready shows its state there). */
+/**
+ * Where a drive button leads. When the other panel is on that drive, it is
+ * the other panel's folder (Total Commander's rule): one click puts both
+ * panels in the same place. Otherwise, and when this panel already shows
+ * that folder, it is the drive's root.
+ */
+export function driveTarget(side: Side, drive: string): string {
+  const panels = useListingStore.getState()
+  const other = panels[otherSide(side)]
+  // A panel on a connection is on no drive: its folder of this computer is hidden behind it.
+  if (other.dirId === null || other.remote || other.disconnected) return drive
+  const volume = volumeFor(get().volumes, other.crumbs)
+  if (!volume || fold(volume.path) !== fold(drive)) return drive
+  const here = panels[side]
+  const plain = !here.remote && !here.archive && !here.find && !here.branch
+  return plain && fold(here.path) === fold(other.path) ? drive : other.path
+}
+
+/**
+ * A drive button or menu entry: the drive opens in that panel, at the other
+ * panel's folder when that panel is on it, else at its root (a drive not
+ * ready shows its state there).
+ */
 export function openDrive(side: Side, path: string): Promise<void> {
+  closeDriveMenu()
+  setActivePanel(side)
+  return openPath(side, driveTarget(side, path))
+}
+
+/** A place of the drive menu (Home, Documents, …): always that folder. */
+export function openPlace(side: Side, path: string): Promise<void> {
   closeDriveMenu()
   setActivePanel(side)
   return openPath(side, path)

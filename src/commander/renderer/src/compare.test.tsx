@@ -6,6 +6,7 @@ import { resetBridgeCache } from "./bridge"
 import { AppShell } from "./components/AppShell"
 import { resetCarry, startPanels } from "./features/carry"
 import {
+  compareLabel,
   hashResult,
   resetCompare,
   startCompareEvents,
@@ -710,6 +711,269 @@ describe("compare by content", () => {
     await run("compare.sync")
     expect(noticeText()).toContain("Archives can't be synchronized")
     expect(screen.queryByTestId("sync-dialog")).toBeNull()
+  })
+})
+
+describe("compare several files (Stage C10.5)", () => {
+  const ROWS: TextDiffRow[] = [
+    { op: "equal", l: 1, r: 1, left: "one" },
+    { op: "changed", l: 2, r: 2, left: "two words", right: "two birds", spans: [4, 8, 4, 8] },
+  ]
+  const DIFFERENT = "The files differ in size: 9 and 3 bytes."
+  const MISSING = "The other folder has no file of this name."
+
+  const mark = async (names: string[], side: "left" | "right" = "left") => {
+    for (const name of names) {
+      await cursorTo(name, side)
+      await key({ key: "Insert" }, side)
+    }
+  }
+  /** The compareFiles job the dialog started, finished with these items. */
+  async function finish(
+    fake: Awaited<ReturnType<typeof start>>,
+    items: [string, "DIFFERENT" | "NOT_FOUND" | "IO_ERROR"][],
+    done: number,
+    skipped = 0,
+  ) {
+    fake.api.files.errors.mockResolvedValue({
+      ok: true,
+      r: {
+        errors: items.map(([name, code]) => ({
+          name,
+          code,
+          message: code === "DIFFERENT" ? DIFFERENT : code === "NOT_FOUND" ? MISSING : "I/O error",
+        })),
+        total: items.length,
+      },
+    } as never)
+    const jobId = (await fake.api.files.list()).r.jobs.at(-1)!.jobId
+    await act(async () =>
+      fake.emit(
+        "job.progress",
+        fake.job({
+          jobId,
+          kind: "compareFiles",
+          state: "completed",
+          total: done + items.length + skipped,
+          done,
+          failed: items.length,
+          skipped,
+        }),
+      ),
+    )
+    return jobId
+  }
+  const manyRowsOf = () => [
+    ...screen.getByTestId("compare-many-rows").querySelectorAll<HTMLElement>("[role=option]"),
+  ]
+
+  it("compares one marked file of each panel with each other", async () => {
+    const fake = await start({ textDiff: { rows: ROWS } })
+    await mark(["newer.txt"])
+    await mark(["only-right.txt"], "right")
+    expect(compareLabel("left")).toBe("Compare 2 files")
+    // From either panel, the left panel's file is the left side.
+    await run("compare.content", "right")
+    await waitFor(() => expect(fake.api.diff.open).toHaveBeenCalledWith(L + 101, R + 102))
+    expect(fake.api.files.start).not.toHaveBeenCalled()
+    // What differs inside the changed line is marked on both sides.
+    await waitFor(() =>
+      expect(
+        [...screen.getByTestId("diff-rows").querySelectorAll("mark")].map((m) => m.textContent),
+      ).toEqual(["word", "bird"]),
+    )
+  })
+
+  it("compares more than two marked files with the other panel as one job, and lists what is not identical", async () => {
+    const fake = await start({ textDiff: { rows: ROWS } })
+    await mark(["same.txt", "newer.txt", "only-left.txt"])
+    expect(compareLabel("left")).toBe("Compare 3 files with the other panel")
+    await run("compare.content")
+    const dialog = await screen.findByTestId("compare-many")
+    await waitFor(() => expect(fake.api.files.start).toHaveBeenCalledTimes(1))
+    const params = fake.api.files.start.mock.calls[0]![0] as {
+      kind: string
+      destinationDirId: number
+      source: { selection: { ranges: [number, number][]; include: number[] } }
+    }
+    expect(params.kind).toBe("compareFiles")
+    expect(params.destinationDirId).toBe(20)
+    const { ranges, include } = params.source.selection
+    expect(ranges.reduce((n, [a, b]) => n + b - a, 0) + include.length).toBe(3)
+    expect(screen.getByRole("dialog")).toHaveTextContent(
+      "3 marked files, each with the file of its name in C:\\Backup",
+    )
+    // No file was opened for a diff, and nothing is read by the renderer.
+    expect(fake.api.diff.open).not.toHaveBeenCalled()
+
+    const jobId = (await fake.api.files.list()).r.jobs.at(-1)!.jobId
+    await act(async () =>
+      fake.emit(
+        "job.progress",
+        fake.job({ jobId, kind: "compareFiles", state: "running", total: 3, done: 1 }),
+      ),
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId("compare-many-status")).toHaveTextContent("Comparing… 1 of 3"),
+    )
+    await finish(
+      fake,
+      [
+        ["newer.txt", "DIFFERENT"],
+        ["only-left.txt", "NOT_FOUND"],
+      ],
+      1,
+    )
+    await waitFor(() =>
+      expect(screen.getByTestId("compare-many-status")).toHaveTextContent(
+        "Identical: 1 · Not identical: 2",
+      ),
+    )
+    await waitFor(() => expect(manyRowsOf()).toHaveLength(2))
+    // One request for the job's items, not one per row.
+    expect(fake.api.files.errors).toHaveBeenCalledTimes(1)
+    expect(manyRowsOf()[0]).toHaveTextContent("newer.txt")
+    expect(manyRowsOf()[0]).toHaveTextContent("Different")
+    expect(manyRowsOf()[0]).toHaveTextContent(DIFFERENT)
+    expect(manyRowsOf()[1]).toHaveTextContent("Missing")
+    expect(within(dialog).getByRole("button", { name: "Different 1" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    )
+    expect(within(dialog).getByRole("button", { name: "Not read 0" })).toBeDisabled()
+
+    // A filter button hides its rows.
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Different 1" }))
+    })
+    expect(manyRowsOf().map((r) => r.dataset.result)).toEqual(["missing"])
+    // Enter on a missing file opens nothing.
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("compare-many-rows"), { key: "Enter" })
+    })
+    expect(fake.api.diff.open).not.toHaveBeenCalled()
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Different 1" }))
+    })
+    expect(manyRowsOf()).toHaveLength(2)
+
+    // Enter on the differing file: the pair side by side; the list steps aside and comes back.
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("compare-many-rows"), { key: "Enter" })
+    })
+    await waitFor(() => expect(fake.api.diff.open).toHaveBeenCalledWith(L + 101, R + 101))
+    await screen.findByTestId("diff-dialog")
+    expect(screen.queryByTestId("compare-many")).toBeNull()
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Back to the list" }))
+    })
+    await waitFor(() => expect(screen.queryByTestId("diff-dialog")).toBeNull())
+    expect(manyRowsOf()).toHaveLength(2)
+    expect(manyRowsOf()[0]).toHaveAttribute("aria-selected", "true")
+
+    await act(async () => {
+      fireEvent.click(
+        within(screen.getByTestId("compare-many")).getByRole("button", { name: "Close" }),
+      )
+    })
+    expect(useCompareStore.getState().many).toBeNull()
+    expect(fake.api.jobs.cancel).not.toHaveBeenCalled()
+  })
+
+  it("steps from one differing file to the next from the diff, and lets the first go", async () => {
+    const fake = await start({ textDiff: { rows: ROWS } })
+    await mark(["newer.txt", "only-left.txt", "fat.txt", "same.txt"])
+    await run("compare.content")
+    await screen.findByTestId("compare-many")
+    await waitFor(() => expect(fake.api.files.start).toHaveBeenCalled())
+    await finish(
+      fake,
+      [
+        ["fat.txt", "DIFFERENT"],
+        ["only-left.txt", "NOT_FOUND"],
+        ["newer.txt", "DIFFERENT"],
+      ],
+      1,
+    )
+    await waitFor(() => expect(manyRowsOf()).toHaveLength(3))
+    // ↓ moves the cursor; ↑ back to the first row.
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("compare-many-rows"), { key: "ArrowDown" })
+    })
+    expect(manyRowsOf()[1]).toHaveAttribute("aria-selected", "true")
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("compare-many-rows"), { key: "Home" })
+    })
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("compare-many-rows"), { key: "Enter" })
+    })
+    await waitFor(() => expect(fake.api.diff.open).toHaveBeenLastCalledWith(L + 105, R + 105))
+    await waitFor(() => expect(fake.openDiffs()).toHaveLength(1))
+    const first = fake.openDiffs()[0]
+    expect(screen.getByRole("button", { name: "Previous file" })).toBeDisabled()
+
+    // Shift+N: the next file that differs (the missing one is passed over).
+    await waitFor(() => expect(screen.getByTestId("diff-rows")).toBeInTheDocument())
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("diff-rows"), { key: "N", shiftKey: true })
+    })
+    await waitFor(() => expect(fake.api.diff.open).toHaveBeenLastCalledWith(L + 101, R + 101))
+    await waitFor(() => expect(fake.openDiffs()).toHaveLength(1))
+    expect(fake.openDiffs()[0]).not.toBe(first)
+    await waitFor(() => expect(screen.getByRole("button", { name: "Next file" })).toBeDisabled())
+    expect(useCompareStore.getState().many?.cursor).toBe(2)
+  })
+
+  it("says so when every file is identical, and counts what it left out", async () => {
+    const fake = await start()
+    await mark(["same.txt", "fat.txt", "data.bin"])
+    await run("compare.content")
+    await screen.findByTestId("compare-many")
+    await waitFor(() => expect(fake.api.files.start).toHaveBeenCalled())
+    await finish(fake, [], 2, 1)
+    await waitFor(() =>
+      expect(screen.getByTestId("compare-many-status")).toHaveTextContent(
+        "All 2 files are identical. · 1 folder or link left out",
+      ),
+    )
+    expect(screen.queryByTestId("compare-many-rows")).toBeNull()
+    expect(fake.api.files.errors).not.toHaveBeenCalled()
+  })
+
+  it("stops the job when the dialog closes while it runs", async () => {
+    const fake = await start()
+    await mark(["same.txt", "fat.txt", "data.bin"])
+    await run("compare.content")
+    const dialog = await screen.findByTestId("compare-many")
+    await waitFor(() => expect(fake.api.files.start).toHaveBeenCalled())
+    const jobId = (await fake.api.files.list()).r.jobs.at(-1)!.jobId
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Stop" }))
+    })
+    expect(fake.api.jobs.cancel).toHaveBeenCalledWith(jobId)
+    expect(screen.queryByTestId("compare-many")).toBeNull()
+  })
+
+  it("needs a folder in the other panel", async () => {
+    const fake = await start()
+    await mark(["same.txt", "fat.txt", "data.bin"])
+    await act(async () => {
+      useListingStore.setState((s) => ({
+        right: { ...s.right, find: { findId: 1, label: "*.txt" } },
+      }))
+    })
+    await run("compare.content")
+    expect(noticeText()).toContain("Open a folder in the other panel")
+    expect(fake.api.files.start).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("compare-many")).toBeNull()
+  })
+
+  it("still compares one marked file with the file of its name in the other panel", async () => {
+    const fake = await start({ textDiff: { rows: ROWS } })
+    await mark(["newer.txt"])
+    expect(compareLabel("left")).toBe("Compare by content")
+    await run("compare.content")
+    await waitFor(() => expect(fake.api.diff.open).toHaveBeenCalledWith(L + 101, R + 101))
   })
 })
 

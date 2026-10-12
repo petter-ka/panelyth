@@ -2,7 +2,15 @@ import type { ArchiveWarning, ConflictPolicy, SelectionDescriptor } from "@panel
 import { isMarked } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
-import { focusEntry, pageStoreOf, parentRows, useListingStore } from "./listing"
+import {
+  focusEntry,
+  focusName,
+  pageStoreOf,
+  parentRows,
+  remoteMessage,
+  remoteUrl,
+  useListingStore,
+} from "./listing"
 import { cursorDescriptor, marksDescriptor, marksOf, markNone } from "./marks"
 import { otherSide, setActivePanel, usePanelsStore, type Side } from "./panels"
 import { useSettingsStore } from "./settings"
@@ -16,8 +24,12 @@ import { msg, t } from "@panelyth/i18n"
 // on the cursor entry when nothing is marked. Jobs run on the engine v2
 // queue (ADR-0029); destinations are folder ids resolved in Go (ADR-0027).
 
-/** "extract": F5 from an archive panel copies its entries out (Stage C07). */
-export type CopyKind = "copy" | "move" | "extract"
+/**
+ * "extract": F5 from an archive panel copies its entries out (Stage C07).
+ * "download" and "upload": between a connection and this computer (Stage
+ * C10.5); F6 is the same job with `move`.
+ */
+export type CopyKind = "copy" | "move" | "extract" | "download" | "upload"
 
 /** What every changing command says inside an archive (ADR-0030: read-only). */
 /** Source text: translate with t() where it is shown (ADR-0034). */
@@ -26,6 +38,24 @@ const INTO_ARCHIVE = msg("Files can't be copied into an archive. Pack them with 
 
 /** Whether a panel shows an archive (Stage C07). */
 export const inArchive = (side: Side): boolean => useListingStore.getState()[side].archive !== null
+
+/** Whether a panel shows a folder of a connection (Stage C10.5, ADR-0037). */
+export const inRemote = (side: Side): boolean => useListingStore.getState()[side].remote !== null
+
+/** What a command that needs files of this computer says on a connection. */
+export const NOT_ON_CONNECTION = msg(
+  "This is not available on a connection. Copy the files to this computer first.",
+)
+const BETWEEN_SERVERS = msg(
+  "Files can't be copied from one server to another. Copy them to this computer first.",
+)
+
+/** True, with that notice, when the panel shows a connection. */
+export function refusedOnConnection(side: Side): boolean {
+  if (!inRemote(side)) return false
+  notice(t(NOT_ON_CONNECTION))
+  return true
+}
 
 /** The conflict policies the copy dialog offers (UX-DESIGN "Dialogs"). */
 export const POLICIES: readonly { value: ConflictPolicy; label: string }[] = [
@@ -49,6 +79,10 @@ export interface CopyDialogState {
   /** The destination as shown (editable); dirId is its folder while unedited. */
   destination: string
   destinationDirId: number | null
+  /** upload: the folder on the server (the destination is then not edited). */
+  remoteDirId: number | null
+  /** download, upload: F6, each source is removed once its copy is whole. */
+  move: boolean
   /** Shift+F5: a single item copied into its own folder under this name. */
   name: string | null
   mask: string
@@ -72,6 +106,8 @@ export interface DeleteDialogState {
   trash: boolean | null
   /** The entry the cursor goes to once the items are gone. */
   next: number | null
+  /** On a connection: deleted on the server, which has no trash. */
+  remote: boolean
 }
 
 export interface MkdirDialogState {
@@ -154,6 +190,13 @@ function errorText(error: unknown): string {
   return String(error)
 }
 
+/** A failed command on a connection, in the user's language (details.reason). */
+function remoteErrorText(error: unknown): string {
+  if (!(error instanceof PanelythError)) return String(error)
+  const reason = (error.details as { reason?: unknown } | undefined)?.reason
+  return remoteMessage(reason, error.message)
+}
+
 // Copy and move --------------------------------------------------------------------
 
 export interface CopyTarget {
@@ -161,14 +204,23 @@ export interface CopyTarget {
   path: string
   /** Its folder id when known (a panel's open folder). */
   dirId: number | null
+  /** A folder of a connection (its panel shows it): the copy is an upload. */
+  remoteDirId?: number
 }
 
 const defaults = () => useSettingsStore.getState().settings
 
 /** The other panel's folder: F5 / F6's default destination. */
 export function otherPanelTarget(side: Side): CopyTarget | null {
-  const p = panel(otherSide(side))
-  return p.dirId === null ? null : { path: p.path, dirId: p.dirId }
+  return panelTarget(otherSide(side))
+}
+
+/** A panel's folder as a destination: the folder it shows, on this computer or on a server. */
+export function panelTarget(side: Side): CopyTarget | null {
+  const p = panel(side)
+  if (p.dirId === null) return null
+  if (p.remote) return { path: remoteUrl(p.remote), dirId: null, remoteDirId: p.remote.dirId }
+  return { path: p.path, dirId: p.dirId }
 }
 
 /** F5 / F6 (and a drop): the dialog with the destination and the item count. */
@@ -184,7 +236,22 @@ export async function openCopy(
     notice(t(INTO_ARCHIVE))
     return
   }
-  if (inArchive(side)) {
+  // Between a connection and this computer (Stage C10.5): a download or an
+  // upload; F6 is the same job, and removes each source once its copy is whole.
+  const fromServer = inRemote(side)
+  const toServer = dest.remoteDirId !== undefined
+  if (fromServer && toServer) {
+    notice(t(BETWEEN_SERVERS))
+    return
+  }
+  const move = kind === "move" && (fromServer || toServer)
+  if (toServer && inArchive(side)) {
+    notice(t("Copy the files out of the archive first, then to the server."))
+    return
+  }
+  if (fromServer) kind = "download"
+  else if (toServer) kind = "upload"
+  else if (inArchive(side)) {
     if (kind === "move") {
       notice(t(READ_ONLY))
       return
@@ -202,6 +269,8 @@ export async function openCopy(
       bytes: null,
       destination: dest.path,
       destinationDirId: dest.dirId,
+      remoteDirId: dest.remoteDirId ?? null,
+      move,
       name: null,
       mask: "*.*",
       // Settings → Operations: what the dialog starts with.
@@ -230,6 +299,7 @@ export function openCopyHere(side: Side): void {
   const source = cursorDescriptor(side)
   const p = panel(side)
   if (!item || !source || p.dirId === null) return
+  if (refusedOnConnection(side)) return
   if (p.archive) {
     notice(t(READ_ONLY))
     return
@@ -244,6 +314,8 @@ export function openCopyHere(side: Side): void {
       bytes: item.kind === "dir" ? null : item.sizeBytes,
       destination: p.path,
       destinationDirId: p.dirId,
+      remoteDirId: null,
+      move: false,
       name: item.name,
       mask: "*.*",
       conflict: defaults().copyConflict,
@@ -277,13 +349,35 @@ export async function startCopy(now: boolean): Promise<boolean> {
   if (!c) return false
   let dirId = c.destinationDirId
   try {
+    if (c.kind === "upload" && c.remoteDirId !== null) {
+      await bridge.startJob({
+        kind: "upload",
+        source: { selection: c.source },
+        remoteDirId: c.remoteDirId,
+        conflict: c.conflict,
+        ...(c.move && { move: true }),
+      })
+      set({ copy: null })
+      if (marksDescriptor(c.side)) markNone(c.side)
+      return true
+    }
     if (dirId === null) {
       const typed = c.destination.trim()
       if (typed === "") throw new Error(t("Enter a destination folder."))
       dirId = (await bridge.openDir(typed)).dirId
     }
     const mask = c.mask.trim()
-    if (c.kind === "extract") {
+    if (c.kind === "download") {
+      await bridge.startJob({
+        kind: "download",
+        source: { selection: c.source },
+        destinationDirId: dirId,
+        conflict: c.conflict,
+        ...(c.move && { move: true }),
+      })
+    } else if (c.kind === "upload") {
+      throw new Error(t("The connection is closed."))
+    } else if (c.kind === "extract") {
       await bridge.startJob({
         kind: "extract",
         source: { selection: c.source },
@@ -312,7 +406,9 @@ export async function startCopy(now: boolean): Promise<boolean> {
         ? t("This folder doesn't exist. Check the destination.")
         : reason === "notReady"
           ? t("The destination drive is not ready.")
-          : errorText(error)
+          : c.kind === "download" || c.kind === "upload"
+            ? remoteErrorText(error)
+            : errorText(error)
     if (get().copy) set({ copy: { ...get().copy!, error: message } })
     return false
   }
@@ -352,6 +448,9 @@ export async function openDelete(side: Side, permanent: boolean): Promise<void> 
     return
   }
   const count = source.ranges.reduce((n, [a, b]) => n + b - a, 0) + source.include.length
+  // A server has no trash: F8 there always asks, and says it is for good.
+  const remote = p.remote !== null
+  if (remote) permanent = true
   const request: DeleteDialogState = {
     side,
     source,
@@ -361,6 +460,7 @@ export async function openDelete(side: Side, permanent: boolean): Promise<void> 
     permanent,
     trash: permanent ? true : null,
     next: nextSurvivor(side),
+    remote,
   }
   // Settings → Confirmations: the trash needs no question (the items can be
   // taken back). Without a trash the dialog still asks, as a permanent delete does.
@@ -395,13 +495,13 @@ export async function confirmDelete(): Promise<void> {
 async function startDelete(r: DeleteDialogState): Promise<void> {
   try {
     await bridge.startJob({
-      kind: r.permanent ? "delete" : "trash",
+      kind: r.remote ? "remoteDelete" : r.permanent ? "delete" : "trash",
       source: { selection: r.source },
     })
     if (marksDescriptor(r.side)) markNone(r.side)
     if (r.next !== null) void focusEntry(r.side, r.next)
   } catch (error) {
-    notice(errorText(error))
+    notice(r.remote ? remoteErrorText(error) : errorText(error))
   }
 }
 
@@ -419,6 +519,20 @@ export async function createFolder(path: string): Promise<boolean> {
   const m = get().mkdir
   const dirId = m ? panel(m.side).dirId : null
   if (!m || dirId === null) return false
+  // On a connection: one folder in the folder shown; the server lists it again.
+  const remote = panel(m.side).remote
+  if (remote) {
+    const name = path.trim()
+    try {
+      await bridge.remoteMkdir(remote.dirId, name)
+      set({ mkdir: null })
+      void focusName(m.side, name)
+      return true
+    } catch (error) {
+      set({ mkdir: { ...m, error: remoteErrorText(error) } })
+      return false
+    }
+  }
   try {
     const res = await bridge.mkdir(dirId, path)
     set({ mkdir: null })
@@ -460,6 +574,18 @@ export async function commitRename(name: string): Promise<boolean> {
     set({ rename: null })
     return true
   }
+  if (inRemote(r.side)) {
+    try {
+      await bridge.remoteRename(r.entryId, next)
+      set({ rename: null })
+      // On a server the renamed entry is a new one: the cursor finds it by name.
+      void focusName(r.side, next)
+      return true
+    } catch (error) {
+      set({ rename: { ...r, error: remoteErrorText(error) } })
+      return false
+    }
+  }
   try {
     await bridge.rename(r.entryId, next)
     set({ rename: null })
@@ -478,6 +604,7 @@ export async function commitRename(name: string): Promise<boolean> {
 export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<void> {
   const source = operand(side)
   if (!source) return
+  if (refusedOnConnection(side)) return
   if (panel(side).archive) {
     notice(t(READ_ONLY))
     return
@@ -498,6 +625,7 @@ export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<vo
 export async function clipboardPaste(side: Side): Promise<void> {
   const dirId = panel(side).dirId
   if (dirId === null) return
+  if (refusedOnConnection(side)) return
   if (panel(side).archive) {
     notice(t(INTO_ARCHIVE))
     return
@@ -517,6 +645,7 @@ export async function clipboardPaste(side: Side): Promise<void> {
 export async function copyAsText(side: Side, namesOnly: boolean): Promise<void> {
   const source = operand(side)
   if (!source) return
+  if (refusedOnConnection(side)) return
   try {
     const res = await bridge.copyPaths(source, namesOnly)
     const copied = namesOnly
@@ -551,7 +680,14 @@ export function dropOn(from: Side, target: CopyTarget, shift: boolean): void {
   const source = operand(from)
   // Settings → Confirmations: a drop starts at once, with the default policy.
   // Out of an archive, or onto a folder not open yet, the dialog still shows.
-  if (!defaults().confirmDrop && source && target.dirId !== null && !inArchive(from)) {
+  // To or from a connection it shows as well: a transfer is never started by a slip.
+  if (
+    !defaults().confirmDrop &&
+    source &&
+    target.dirId !== null &&
+    !inArchive(from) &&
+    !inRemote(from)
+  ) {
     void bridge
       .startJob({
         kind: shift ? "move" : "copy",
@@ -574,7 +710,9 @@ export function tabTarget(side: Side, index: number): CopyTarget | null {
   const t = useTabsStore.getState()[side]
   const tab = t.tabs[index]
   if (!tab?.path) return null
-  if (index === t.active) return { path: panel(side).path, dirId: panel(side).dirId }
+  if (index === t.active) return panelTarget(side)
+  // A tab on a connection that is not shown has no folder to drop on.
+  if (tab.remote) return null
   return { path: tab.path, dirId: null }
 }
 

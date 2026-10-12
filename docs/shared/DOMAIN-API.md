@@ -123,6 +123,43 @@ fs.mkfile({ parentDirId, name })   // commander, Shift+F4 → { entryId, created
 > only from the commander's own view while it is shown. Refusals carry `details.reason`: `hidden`, `folder`, `unc`,
 > `noEntry`, `noOther`, `tooMany`, `tooLong`, `dir`, `shadowed`, `name`.
 
+## Connections (Stage C10.5, commander only, ADR-0037)
+
+```ts
+remote.connections()                                  // → { connections }: saved connections, no secrets (hasPassword)
+remote.saveConnection({ connection, password?, forget? })   // main encrypts the password; none is ever returned
+remote.removeConnection({ connectionId })
+remote.trust({ connectionId, fingerprint })           // remember an accepted certificate ("" forgets it)
+remote.connect({ connectionId } | { quick }, { attempt, password?, accept? })   // → { remoteId, host, port, user, encrypted, features, startPath, localPath }
+remote.cancel({ attempt })                            // a connect or a listing that is under way
+remote.disconnect({ remoteId })
+remote.open({ remoteId, path | dirId, attempt? })     // lists a folder on the server → { remoteDirId, path, name, crumbs, rejected }
+remote.mkdir({ remoteDirId, name })
+remote.rename({ entryId, name })
+remote.secureStore()                                  // → { available }: can this computer keep passwords?
+query.open({ …, remoteId, remoteDirId })              // a session over a listed folder
+files.start({ kind: "download", source, destinationDirId, conflict, move? })
+files.start({ kind: "upload", source, remoteDirId, conflict, move? })
+files.start({ kind: "remoteDelete", source })
+```
+
+> As built (Stage C10.5): every `remote.*` method and the three job kinds are in the commander's profile only; main
+> refuses them, and `query.open` with `remoteId`, from the viewer. `remote.saveConnection`, `remote.connect` and
+> `remote.secureStore` are answered in main, which is the only place a password is ever in the clear outside the
+> one `remote.dial` call: it encrypts with Electron's `safeStorage` before `remote.storeConnection` (main-only), and
+> for a saved connection reads the ciphertext with `remote.secret` (main-only) and decrypts it for `remote.dial`
+> (main-only). No method returns a password. A connection is `{ id, name, group, host, port, tls: "explicit" |
+> "implicit" | "none", user, startPath, localPath, active, encoding, transfers, fingerprint, hasPassword }`; main
+> checks every field (one line, no control characters, lengths, port 1–65535, 1–4 transfers, a fingerprint of 64
+> hex digits), a host without spaces or separators, and a server path that starts with `/`. Failures carry
+> `details.reason`: `auth`, `needsPassword` (a stored password that can't be decrypted here), `noSecureStore`,
+> `host`, `timeout`, `unreachable`, `tlsRequired`, `certificate` (with `fingerprint`, `subject` and `changed`),
+> `refused` (the server's own words as the message), `closed`, `notFound`, `name`, `tooLarge`, `unsupported`,
+> `duplicate` (a connection's name is taken). The `connections.changed` event carries the saved connections after
+> any change. Entries of a connection have ids from 7·2^50 up; `selection.info` and `props.get` answer for them,
+> `file.resolve` serves a temporary copy to view (at most 256 MiB), and every other entry method and job refuses
+> them ("this is not available on a connection").
+
 ## Image editor (Stages 12 to 15, viewer only)
 
 ```ts

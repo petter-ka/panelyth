@@ -28,8 +28,12 @@ const (
 // stops there and the result says it is truncated.
 const MaxRows = 500_000
 
+// idLimit ends the range of compare rows: the entries of remote
+// connections come above it (Stage C10.5, internal/remote).
+const idLimit int64 = 7 << 50
+
 // IsID reports whether id names a compare row.
-func IsID(id int64) bool { return id >= IDBase }
+func IsID(id int64) bool { return id >= IDBase && id < idLimit }
 
 func rowID(compareID int64, row int) int64 {
 	return IDBase + compareID<<rowBits + int64(row) + 1

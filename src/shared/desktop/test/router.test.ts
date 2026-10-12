@@ -89,6 +89,9 @@ const mainHandlers = (): MainHandlers => ({
     samples: [{ id: 3, name: "a.jpg" }],
   })),
   "batch.start": vi.fn(async () => ({ jobId: 9 }) as never),
+  "remote.saveConnection": vi.fn(async (_e, p) => ({ ...p.connection, id: 1 })),
+  "remote.connect": vi.fn(async () => ({ remoteId: 1 }) as never),
+  "remote.secureStore": vi.fn(() => ({ available: true })),
 })
 
 function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
@@ -506,6 +509,8 @@ describe("invoke router", () => {
       ],
       ["jobs.start", { kind: "hashVerify", source: { selection: sel } }],
       ["jobs.start", { kind: "compareFiles", leftId: 7, rightId: 8 }],
+      // Stage C10.5: several files against a folder.
+      ["jobs.start", { kind: "compareFiles", source: { selection: sel }, destinationDirId: 9 }],
     ] as const) {
       const res = await handler(commander, m, p)
       expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
@@ -547,6 +552,10 @@ describe("invoke router", () => {
       ["jobs.start", { kind: "hashVerify" }],
       ["jobs.start", { kind: "compareFiles", leftId: 7 }],
       ["jobs.start", { kind: "compareFiles", leftId: 7, rightId: 8, source: { selection: sel } }],
+      ["jobs.start", { kind: "compareFiles", source: { selection: sel } }],
+      ["jobs.start", { kind: "compareFiles", source: { selection: sel }, destinationDirId: 0 }],
+      ["jobs.start", { kind: "compareFiles", source: { selection: sel }, destination: "/tmp" }],
+      ["jobs.start", { kind: "compareFiles", source: {}, destinationDirId: 9 }],
     ] as const) {
       const res = await handler(commander, m, p)
       expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({
@@ -740,6 +749,205 @@ describe("invoke router", () => {
     ).resolves.toMatchObject({ ok: true })
     await expect(handler(commander, "fs.volumes", {})).resolves.toMatchObject({ ok: true })
     expect(sidecar.call).toHaveBeenCalledWith("query.open", descriptor)
+  })
+
+  it("lets the commander's tree list a folder's subfolders, hidden ones too; the viewer's never", async () => {
+    const { handler, sidecar, commander, ok: viewer } = setup()
+    const path = process.platform === "win32" ? "C:\\data" : "/data"
+    for (const params of [{ path }, { path, showHidden: true }, { path, showHidden: false }]) {
+      await expect(handler(commander, "fs.listDirs", params)).resolves.toMatchObject({ ok: true })
+      expect(sidecar.call).toHaveBeenLastCalledWith("fs.listDirs", params)
+    }
+    for (const params of [
+      { path, showHidden: "yes" },
+      { path, showHidden: true, depth: 2 },
+      { path: "relative", showHidden: true },
+      { showHidden: true },
+    ]) {
+      await expect(handler(commander, "fs.listDirs", params)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The viewer lists visible folders only (ADR-0026).
+    await expect(handler(viewer, "fs.listDirs", { path })).resolves.toMatchObject({ ok: true })
+    vi.mocked(sidecar.call).mockClear()
+    await expect(handler(viewer, "fs.listDirs", { path, showHidden: true })).resolves.toMatchObject(
+      { ok: false },
+    )
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("gives connections to the commander only, with every typed value checked (Stage C10.5)", async () => {
+    const { handler, sidecar, main, commander, ok: viewer } = setup()
+    const sel = { queryId: 1, version: 2, ranges: [[0, 3]], include: [], exclude: [] }
+    const connection = {
+      id: 0,
+      name: "Work",
+      group: "",
+      host: "ftp.example.org",
+      port: 21,
+      tls: "explicit",
+      user: "alice",
+      startPath: "/pub",
+      localPath: "",
+      active: false,
+      encoding: "",
+      transfers: 2,
+      fingerprint: "",
+      hasPassword: false,
+    }
+    const quick = {
+      host: "10.0.0.7",
+      port: 2121,
+      tls: "none",
+      user: "",
+      active: false,
+      encoding: "",
+      transfers: 1,
+    }
+    const descriptor = {
+      dirId: 1,
+      recursive: false,
+      sort: [{ field: "name", direction: "asc" }],
+      kinds: [],
+      search: "",
+      exts: [],
+      favorite: false,
+      minRating: 0,
+      tags: [],
+      scope: "all",
+    }
+    const print = "ab".repeat(32)
+    const good: [string, unknown][] = [
+      ["remote.connections", {}],
+      ["remote.secureStore", {}],
+      ["remote.saveConnection", { connection }],
+      ["remote.saveConnection", { connection, password: "s3cret" }],
+      ["remote.saveConnection", { connection: { ...connection, id: 4 }, forget: true }],
+      ["remote.removeConnection", { connectionId: 4 }],
+      ["remote.trust", { connectionId: 4, fingerprint: print }],
+      ["remote.trust", { connectionId: 4, fingerprint: "" }],
+      ["remote.connect", { connectionId: 4, attempt: 1 }],
+      ["remote.connect", { connectionId: 4, attempt: 1, password: "", accept: print }],
+      ["remote.connect", { quick, attempt: 2, password: "typed" }],
+      ["remote.cancel", { attempt: 2 }],
+      ["remote.disconnect", { remoteId: 1 }],
+      ["remote.open", { remoteId: 1, path: "/pub/my photos" }],
+      ["remote.open", { remoteId: 1, dirId: 7881299348946945 }],
+      ["remote.open", { remoteId: 1, path: "/pub", attempt: 9 }],
+      ["remote.mkdir", { remoteDirId: 7881299348946945, name: "new folder" }],
+      ["remote.rename", { entryId: 7881299348946946, name: "read me.txt" }],
+      ["query.open", { ...descriptor, remoteId: 1, remoteDirId: 7881299348946945 }],
+      [
+        "jobs.start",
+        { kind: "download", source: { selection: sel }, destinationDirId: 9, conflict: "ask" },
+      ],
+      [
+        "jobs.start",
+        {
+          kind: "upload",
+          source: { selection: sel },
+          remoteDirId: 9,
+          conflict: "skip",
+          move: true,
+        },
+      ],
+      ["jobs.start", { kind: "remoteDelete", source: { selection: sel } }],
+    ]
+    for (const [m, p] of good) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
+      // The viewer has none of it.
+      const refused = await handler(viewer, m, p)
+      expect(refused, `viewer ${m}`).toMatchObject({ ok: false })
+    }
+    // The three that pass a password are answered by main, never forwarded as they came.
+    expect(main["remote.saveConnection"]).toHaveBeenCalledTimes(3)
+    expect(main["remote.connect"]).toHaveBeenCalledTimes(3)
+    for (const [method] of vi.mocked(sidecar.call).mock.calls) {
+      expect(["remote.saveConnection", "remote.connect", "remote.secureStore"]).not.toContain(
+        method,
+      )
+    }
+    // A renderer can name neither of main's own three.
+    for (const m of ["remote.storeConnection", "remote.dial", "remote.secret"]) {
+      await expect(handler(commander, m, { connectionId: 1 })).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+
+    const bad: [string, unknown][] = [
+      ["remote.connections", { all: true }],
+      ["remote.saveConnection", { connection: { ...connection, host: "" } }],
+      ["remote.saveConnection", { connection: { ...connection, host: "bob@example.org" } }],
+      ["remote.saveConnection", { connection: { ...connection, host: "example.org/x" } }],
+      ["remote.saveConnection", { connection: { ...connection, host: "a\r\nUSER root" } }],
+      ["remote.saveConnection", { connection: { ...connection, port: 0 } }],
+      ["remote.saveConnection", { connection: { ...connection, port: 65536 } }],
+      ["remote.saveConnection", { connection: { ...connection, tls: "maybe" } }],
+      ["remote.saveConnection", { connection: { ...connection, name: "  " } }],
+      ["remote.saveConnection", { connection: { ...connection, user: "a\nb" } }],
+      ["remote.saveConnection", { connection: { ...connection, startPath: "pub" } }],
+      ["remote.saveConnection", { connection: { ...connection, transfers: 5 } }],
+      ["remote.saveConnection", { connection: { ...connection, fingerprint: "abc" } }],
+      ["remote.saveConnection", { connection: { ...connection, secret: "AAAA" } }],
+      ["remote.saveConnection", { connection, password: "" }],
+      ["remote.saveConnection", { connection, password: "two\nlines" }],
+      ["remote.saveConnection", { connection, password: "x".repeat(1025) }],
+      ["remote.saveConnection", { connection, password: "x", forget: true }],
+      ["remote.saveConnection", { connection, secret: "AAAA" }],
+      ["remote.removeConnection", { connectionId: 0 }],
+      ["remote.trust", { connectionId: 4, fingerprint: "zz".repeat(32) }],
+      ["remote.connect", { attempt: 1 }],
+      ["remote.connect", { connectionId: 4 }],
+      ["remote.connect", { connectionId: 4, quick, attempt: 1 }],
+      ["remote.connect", { connectionId: 4, attempt: 1, password: "a\r\nDELE x" }],
+      ["remote.connect", { connectionId: 4, attempt: 1, accept: "" }],
+      ["remote.connect", { quick: { ...quick, host: "a b" }, attempt: 1 }],
+      ["remote.connect", { quick: { ...quick, password: "x" }, attempt: 1 }],
+      ["remote.cancel", {}],
+      ["remote.disconnect", { remoteId: -1 }],
+      ["remote.open", { remoteId: 1 }],
+      ["remote.open", { remoteId: 1, path: "pub" }],
+      ["remote.open", { remoteId: 1, path: "/a\nb" }],
+      ["remote.open", { remoteId: 1, path: "/a", dirId: 2 }],
+      ["remote.open", { remoteId: 1, path: "/a", attempt: "x" }],
+      ["remote.open", { remoteId: 1, path: "/a", extra: 1 }],
+      ["remote.mkdir", { remoteDirId: 9, name: "a/b" }],
+      ["remote.mkdir", { remoteDirId: 9, name: ".." }],
+      ["remote.mkdir", { remoteDirId: 9, name: "a\\b" }],
+      ["remote.rename", { entryId: 9, name: "" }],
+      ["remote.rename", { entryId: 9, name: "x\ny" }],
+      ["query.open", { ...descriptor, remoteId: 1 }],
+      ["query.open", { ...descriptor, remoteId: 1, remoteDirId: 2, scope: "media" }],
+      ["query.open", { ...descriptor, remoteId: 1, remoteDirId: 2, archiveId: 3 }],
+      ["query.open", { ...descriptor, remoteId: 1, remoteDirId: 2, recursive: true }],
+      [
+        "jobs.start",
+        { kind: "download", source: { selection: sel }, destination: "/tmp", conflict: "ask" },
+      ],
+      ["jobs.start", { kind: "download", source: { selection: sel }, destinationDirId: 9 }],
+      ["jobs.start", { kind: "upload", source: { selection: sel }, conflict: "ask" }],
+      [
+        "jobs.start",
+        { kind: "upload", source: { selection: sel }, remoteDirId: 9, conflict: "ask", move: 1 },
+      ],
+      ["jobs.start", { kind: "remoteDelete", source: { selection: sel }, permanent: true }],
+    ]
+    vi.mocked(sidecar.call).mockClear()
+    for (const [m, p] of bad) {
+      const res = await handler(commander, m, p)
+      expect(res, `${m} ${JSON.stringify(p)}`).toMatchObject({ ok: false })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+    // A refusal never repeats a password.
+    const echo = await handler(commander, "remote.saveConnection", {
+      connection,
+      password: "hunter2\nx",
+    })
+    expect(JSON.stringify(echo)).not.toContain("hunter2")
   })
 
   it("lets the commander run file operations with folder ids as destinations (Stage C04)", async () => {

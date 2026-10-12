@@ -13,6 +13,10 @@ const messages: Messages = {
   "5 levels": "5 Ebenen",
   "7-Zip isn't installed, so {name} opens with its default app.":
     "7-Zip ist nicht installiert, daher wird {name} mit der Standard-App geöffnet.",
+  "A connection that is not saved. Nothing is kept once it is closed.":
+    "Eine Verbindung, die nicht gespeichert wird. Nach dem Schließen bleibt nichts erhalten.",
+  "A connection with this name already exists.":
+    "Es gibt bereits eine Verbindung mit diesem Namen.",
   "A drive here has no trash, so nothing can be replaced safely. Choose another destination or policy.":
     "Ein Laufwerk hier hat keinen Papierkorb, daher kann nichts sicher ersetzt werden. Wählen Sie ein anderes Ziel oder eine andere Regel.",
   "A drive in this selection has no trash, so the originals can't be replaced safely.":
@@ -25,6 +29,8 @@ const messages: Messages = {
     "Eine größere Leinwand fügt Platz um das Bild hinzu; eine kleinere schneidet es ab.",
   "A look adds ordinary steps you can change in the edit stack.":
     "Ein Look fügt gewöhnliche Schritte hinzu, die sich im Bearbeitungsstapel ändern lassen.",
+  "A panel has no folder open yet.": "In einem Bereich ist noch kein Ordner geöffnet.",
+  "A password is stored": "Ein Passwort ist gespeichert",
   "A picture from another session": "Ein Bild aus einer anderen Sitzung",
   "A picture that is already smaller stays as it is.":
     "Ein Bild, das bereits kleiner ist, bleibt unverändert.",
@@ -32,12 +38,25 @@ const messages: Messages = {
   "A recipe is the list of steps with its output settings. Using one replaces the current steps; Undo brings them back.":
     "Ein Rezept ist die Liste der Schritte mit ihren Ausgabeeinstellungen. Ein Rezept zu verwenden ersetzt die aktuellen Schritte; Rückgängig bringt sie zurück.",
   "A recipe with the same name is replaced.": "Ein Rezept mit demselben Namen wird ersetzt.",
+  "A server has no trash. This can't be undone.":
+    "Ein Server hat keinen Papierkorb. Das kann nicht rückgängig gemacht werden.",
+  "A set of one panel opens in the left panel; a set of both panels opens in both.":
+    "Ein Satz eines Bereichs wird im linken Bereich geöffnet; ein Satz beider Bereiche in beiden.",
+  "A set of one panel opens in the right panel; a set of both panels opens in both.":
+    "Ein Satz eines Bereichs wird im rechten Bereich geöffnet; ein Satz beider Bereiche in beiden.",
+  "A tab set keeps each tab's folder, name, sort, view and lock. Open it again from the tab menu.":
+    "Ein Tab-Satz speichert für jeden Tab Ordner, Namen, Sortierung, Ansicht und Sperre. Öffnen Sie ihn später über das Tab-Menü.",
+  "A tab set with this name exists and will be replaced.":
+    "Ein Tab-Satz mit diesem Namen ist vorhanden und wird ersetzt.",
   "A texture…": "Eine Textur …",
   "A to Z": "A bis Z",
   "ALL UPPERCASE": "ALLES GROSSBUCHSTABEN",
+  "Accepted certificate (SHA-256):": "Akzeptiertes Zertifikat (SHA-256):",
   Accessed: "Zugriff",
   Across: "Waagerecht",
   Action: "Action",
+  "Active mode (the server connects back; only where passive mode fails)":
+    "Aktiver Modus (der Server verbindet sich zurück; nur wenn der passive Modus scheitert)",
   "Actual size": "Originalgröße",
   "Actual size (1)": "Originalgröße (1)",
   Add: "Hinzufügen",
@@ -57,6 +76,9 @@ const messages: Messages = {
   "Add the shape": "Form hinzufügen",
   "Add the text": "Text hinzufügen",
   "Add to favorites": "Zu Favoriten hinzufügen",
+  "Add to the directory hotlist": "Zur Ordner-Schnellliste hinzufügen",
+  "Add to the tabs": "Zu den Tabs hinzufügen",
+  "Added to the directory hotlist.": "Zur Ordner-Schnellliste hinzugefügt.",
   "Adding {count, plural, one {# file} other {# files}} to favorites":
     "{count, plural, one {# Datei wird} other {# Dateien werden}} zu Favoriten hinzugefügt",
   "Adds a Levels step fitted to this picture; adjust it there.":
@@ -74,6 +96,8 @@ const messages: Messages = {
   "Also removes a color cast": "Entfernt auch einen Farbstich",
   Altitude: "Höhe über NN",
   Always: "Immer",
+  "Always shown": "Immer anzeigen",
+  "Always trust this certificate": "Diesem Zertifikat immer vertrauen",
   Amount: "Stärke",
   "An empty date stays as it is.": "Ein leeres Datum bleibt, wie es ist.",
   "An existing file of that name opens as it is.":
@@ -81,6 +105,8 @@ const messages: Messages = {
   Angle: "Winkel",
   "Another hotlist entry has this folder.":
     "Ein anderer Eintrag der Schnellliste enthält diesen Ordner bereits.",
+  "Another tab set has this name, or it is empty.":
+    "Ein anderer Tab-Satz hat diesen Namen, oder der Name ist leer.",
   Any: "Beliebig",
   "Any angle": "Beliebiger Winkel",
   "Any rating": "Beliebige Bewertung",
@@ -134,6 +160,7 @@ const messages: Messages = {
   Back: "Zurück",
   "Back to folder": "Zurück zum Ordner",
   "Back to the folder (Backspace)": "Zurück zum Ordner (Backspace)",
+  "Back to the list": "Zurück zur Liste",
   "Backend ready": "Hintergrunddienst bereit",
   "Backend restarting": "Hintergrunddienst startet neu",
   "Backend starting": "Hintergrunddienst startet",
@@ -159,6 +186,7 @@ const messages: Messages = {
   Bold: "Fett",
   Bookmarks: "Lesezeichen",
   Border: "Rahmen",
+  "Both panels' ({tabs})": "Die beider Bereiche ({tabs})",
   Bottom: "Unten",
   "Bottom edge": "Unterer Rand",
   "Bottom left": "Unten links",
@@ -276,6 +304,7 @@ const messages: Messages = {
   "Close other tabs": "Andere Tabs schließen",
   "Close quick view (Ctrl+Q)": "Schnellansicht schließen (Ctrl+Q)",
   "Close tab": "Tab schließen",
+  "Close tabs to the right": "Tabs rechts schließen",
   "Close the editor": "Editor schließen",
   "Close without running?": "Ohne Ausführen schließen?",
   "Close {name}": "{name} schließen",
@@ -296,15 +325,20 @@ const messages: Messages = {
   "Command history": "Befehlsverlauf",
   "Command line": "Befehlszeile",
   "Commander settings": "Commander-Einstellungen",
+  "Commands run in a folder of this computer. Leave the connection first.":
+    "Befehle laufen in einem Ordner dieses Computers. Verlassen Sie zuerst die Verbindung.",
   "Commands run only while Commander is shown.":
     "Befehle werden nur ausgeführt, solange Commander angezeigt wird.",
   Compare: "Vergleichen",
+  "Compare 2 files": "2 Dateien vergleichen",
   "Compare again": "Erneut vergleichen",
   "Compare by content": "Nach Inhalt vergleichen",
   "Compare contents": "Inhalte vergleichen",
   "Compare dates (Shift+F2, Synchronize directories)":
     "Datumsvergleich (Shift+F2, Ordner synchronisieren)",
   "Compare directories": "Ordner vergleichen",
+  "Compare {count} files with the other panel":
+    "{count} Dateien mit dem anderen Bereich vergleichen",
   "Compared two files by content": "Zwei Dateien nach Inhalt verglichen",
   "Compared {entries} entries in {seconds} s.": "{entries} Einträge in {seconds} s verglichen.",
   "Compared: {left} marked on the left, {right} on the right.":
@@ -314,6 +348,7 @@ const messages: Messages = {
   "Comparing: {entries} entries in {folders} folders":
     "Vergleich läuft: {entries} Einträge in {folders} Ordnern",
   "Comparing…": "Vergleich läuft…",
+  "Comparing… {done} of {total}": "Vergleich läuft… {done} von {total}",
   "Comparing… {percent} %": "Vergleich läuft… {percent} %",
   Compression: "Komprimierung",
   "Configure…": "Konfigurieren…",
@@ -321,6 +356,11 @@ const messages: Messages = {
   "Confirm on Escape exit": "Beenden mit Esc bestätigen",
   "Confirmation and reminders": "Bestätigungen und Erinnerungen",
   Confirmations: "Bestätigungen",
+  Connect: "Verbinden",
+  "Connecting to {name}…": "Verbindung mit {name} wird hergestellt…",
+  Connections: "Verbindungen",
+  "Connections to FTP servers (Ctrl+F)": "Verbindungen zu FTP-Servern (Strg+F)",
+  "Connections…": "Verbindungen…",
   Console: "Konsole",
   Contains: "Enthält",
   Content: "Inhalt",
@@ -337,12 +377,15 @@ const messages: Messages = {
   "Copy here under a new name": "Hier unter neuem Namen kopieren",
   "Copy name": "Namen kopieren",
   "Copy names as text": "Namen als Text kopieren",
+  "Copy of {name}": "Kopie von {name}",
   "Copy or cut and paste {count, plural, one {# item} other {# items}} into “{folder}”?":
     "{count, plural, one {# Element} other {# Elemente}} kopieren oder ausschneiden und in „{folder}“ einfügen?",
   "Copy or move items?": "Elemente kopieren oder verschieben?",
   "Copy path": "Pfad kopieren",
   "Copy paths": "Pfade kopieren",
   "Copy picture": "Bild kopieren",
+  "Copy the files out of the archive first, then to the server.":
+    "Kopieren Sie die Dateien zuerst aus dem Archiv heraus und dann auf den Server.",
   "Copy the files out of the archive to compare them.":
     "Kopieren Sie die Dateien aus dem Archiv, um sie zu vergleichen.",
   "Copy the files out of the archive to create checksums for them.":
@@ -441,12 +484,17 @@ const messages: Messages = {
   "Delete {count, plural, one {# entry} other {# entries}} on the right: {path}":
     "{count, plural, one {# Eintrag} other {# Einträge}} rechts löschen: {path}",
   "Delete {name}": "{name} löschen",
+  "Delete {what} on the server?": "{what} auf dem Server löschen?",
   "Delete {what} permanently?": "{what} endgültig löschen?",
   "Deleted {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element gelöscht} other {# Elemente gelöscht}}",
+  "Deleted {count, plural, one {# item} other {# items}} on the server":
+    "{count, plural, one {# Element auf dem Server gelöscht} other {# Elemente auf dem Server gelöscht}}",
   "Deleting permanently always asks.": "Vor dem endgültigen Löschen wird immer gefragt.",
   "Deleting {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element wird gelöscht} other {# Elemente werden gelöscht}}",
+  "Deleting {count, plural, one {# item} other {# items}} on the server":
+    "{count, plural, one {# Element wird auf dem Server gelöscht} other {# Elemente werden auf dem Server gelöscht}}",
   Depth: "Tiefe",
   Desaturate: "Entsättigen",
   Description: "Beschreibung",
@@ -456,12 +504,15 @@ const messages: Messages = {
   Details: "Details",
   "Did not fire": "Nicht ausgelöst",
   Differences: "Unterschiede",
+  Different: "Verschieden",
   "Different, no direction": "Unterschiedlich, keine Richtung",
   Digitized: "Digitalisiert",
   Digits: "Stellen",
   Dimensions: "Abmessungen",
   "Direction of the selected rows": "Richtung der ausgewählten Zeilen",
   "Directory hotlist": "Ordner-Schnellliste",
+  Disconnect: "Trennen",
+  "Disconnect (Ctrl+Shift+F)": "Trennen (Strg+Umschalt+F)",
   Dismiss: "Ausblenden",
   "Dismiss the message": "Meldung schließen",
   "Distance from the edge": "Abstand vom Rand",
@@ -474,6 +525,12 @@ const messages: Messages = {
   "Double-click": "Doppelklick",
   "Double-click edge": "Doppelklick auf den Rand",
   Down: "Senkrecht",
+  Download: "Herunterladen",
+  "Download {what}{amount}": "{what}{amount} herunterladen",
+  "Downloaded {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {# Element heruntergeladen} other {# Elemente heruntergeladen}}",
+  "Downloading {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {# Element wird heruntergeladen} other {# Elemente werden heruntergeladen}}",
   Downloads: "Downloads",
   "Drag on the picture to paint a copy of what is at the source. Each stroke is one edit.":
     "Im Bild ziehen, um eine Kopie dessen zu malen, was an der Quelle ist. Jeder Strich ist eine Bearbeitung.",
@@ -502,10 +559,14 @@ const messages: Messages = {
   "Drives, left panel": "Laufwerke, linker Bereich",
   "Drives, right panel": "Laufwerke, rechter Bereich",
   "Drop shadow": "Schlagschatten",
+  Duplicate: "Duplizieren",
+  "Duplicate tab": "Tab duplizieren",
   Duration: "Dauer",
   "Each JPEG save loses a little quality; PNG does not.":
     "Jedes Speichern als JPEG kostet etwas Qualität; PNG nicht.",
   "Each channel": "Jeder Kanal",
+  "Each file is removed from where it was once its copy is complete.":
+    "Jede Datei wird an ihrem alten Ort entfernt, sobald ihre Kopie vollständig ist.",
   "Each original goes to the trash first, so you can get it back.":
     "Jedes Original kommt zuerst in den Papierkorb, sodass Sie es zurückholen können.",
   "Each original goes to the trash first, so you can get it back. The edited picture then takes its name.":
@@ -513,6 +574,7 @@ const messages: Messages = {
   "Each pixel keeps its own brightness.": "Jedes Pixel behält seine eigene Helligkeit.",
   Edge: "Rand",
   Edit: "Bearbeiten",
+  "Edit connection": "Verbindung bearbeiten",
   "Edit picture": "Bild bearbeiten",
   "Edit pictures…": "Bilder bearbeiten…",
   "Edit the path": "Pfad bearbeiten",
@@ -539,18 +601,26 @@ const messages: Messages = {
   Ellipse: "Ellipse",
   "Email, 1024 px": "E-Mail, 1024 px",
   Encoding: "Kodierung",
+  "Encoding of names": "Kodierung der Namen",
+  "Encoding of names (empty: UTF-8)": "Kodierung der Namen (leer: UTF-8)",
+  "Encrypted connection (TLS)": "Verschlüsselte Verbindung (TLS)",
+  Encryption: "Verschlüsselung",
   "Enter a date between 1980 and 9999.": "Geben Sie ein Datum zwischen 1980 und 9999 ein.",
   "Enter a destination folder.": "Geben Sie einen Zielordner an.",
   "Enter a folder to search in.": "Geben Sie einen Ordner für die Suche an.",
   "Enter a full folder path.": "Geben Sie einen vollständigen Ordnerpfad an.",
   "Enter a name for the archive.": "Geben Sie einen Namen für das Archiv an.",
   "Enter a name for the checksum file.": "Geben Sie einen Namen für die Prüfsummendatei ein.",
+  "Enter a name for the tab set.": "Geben Sie einen Namen für den Tab-Satz ein.",
   "Enter runs the line · Shift+Enter runs it in a console window":
     "Enter führt die Zeile aus · Umschalt+Enter in einem Konsolenfenster",
   "Enter sizes as numbers.": "Geben Sie die Größen als Zahlen an.",
   "Enter the command to run.": "Geben Sie den auszuführenden Befehl ein.",
+  "Enter the server's name or address.": "Geben Sie den Namen oder die Adresse des Servers ein.",
   "Enter the two folders to compare.": "Geben Sie die beiden zu vergleichenden Ordner ein.",
   "Enter valid dates.": "Geben Sie gültige Datumsangaben an.",
+  "Entries whose names can't be used safely on this computer are not listed.":
+    "Einträge, deren Namen auf diesem Computer nicht sicher verwendet werden können, werden nicht aufgelistet.",
   Entry: "Eintrag",
   "Entry commands": "Befehle für den Eintrag",
   Equal: "Gleich",
@@ -580,6 +650,10 @@ const messages: Messages = {
   "Eyedropper; arrow keys move it, Enter takes the color, Esc cancels":
     "Pipette; Pfeiltasten bewegen sie, Eingabe übernimmt die Farbe, Esc bricht ab",
   Eyedroppers: "Pipetten",
+  "FTP, not encrypted": "FTP, unverschlüsselt",
+  FTPS: "FTPS",
+  "FTPS, explicit TLS (recommended)": "FTPS, explizites TLS (empfohlen)",
+  "FTPS, implicit TLS": "FTPS, implizites TLS",
   Faded: "Verblasst",
   Failed: "Fehlgeschlagen",
   Fast: "Schnell",
@@ -596,10 +670,13 @@ const messages: Messages = {
   "File names": "Dateinamen",
   "File types": "Dateitypen",
   Files: "Dateien",
+  "Files can't be copied from one server to another. Copy them to this computer first.":
+    "Dateien können nicht von einem Server auf einen anderen kopiert werden. Kopieren Sie sie zuerst auf diesen Computer.",
   "Files can't be copied into an archive. Pack them with Alt+F5.":
     "Dateien können nicht in ein Archiv kopiert werden. Packen Sie sie mit Alt+F5.",
   "Files inside an archive can't be edited. Copy them out with F5 first.":
     "Dateien in einem Archiv können nicht bearbeitet werden. Kopieren Sie sie zuerst mit F5 heraus.",
+  "Files that are not identical": "Dateien, die nicht identisch sind",
   "Files with all of": "Dateien mit allen dieser Tags",
   Fill: "Füllen",
   "Fill and crop": "Füllen und zuschneiden",
@@ -621,6 +698,7 @@ const messages: Messages = {
   "Finds clean texture nearby by itself": "Findet selbst saubere Struktur in der Nähe",
   "Finds pairs of red pupils that are level. Each one becomes an edit you can remove.":
     "Findet Paare roter Pupillen auf gleicher Höhe. Jede wird zu einer Bearbeitung, die sich entfernen lässt.",
+  "Fingerprint (SHA-256):": "Fingerabdruck (SHA-256):",
   Fired: "Ausgelöst",
   "First Letter Of Each Word": "Jedes Wort Groß Beginnen",
   "First image": "Erstes Bild",
@@ -649,18 +727,29 @@ const messages: Messages = {
   "Folder history": "Ordnerverlauf",
   "Folder name": "Ordnername",
   "Folder not found": "Ordner nicht gefunden",
+  "Folder on the server": "Ordner auf dem Server",
+  "Folder on the server (empty: /)": "Ordner auf dem Server (leer: /)",
+  "Folder on this computer": "Ordner auf diesem Computer",
+  "Folder on this computer for the other panel": "Ordner auf diesem Computer für das andere Panel",
   "Folder path": "Ordnerpfad",
   "Folder properties": "Ordnereigenschaften",
   "Folder sizes are not included.": "Ordnergrößen sind nicht enthalten.",
+  "Folder tree": "Ordnerbaum",
+  "Folder tree, left panel": "Ordnerbaum, linker Bereich",
+  "Folder tree, right panel": "Ordnerbaum, rechter Bereich",
+  "Folder tree: off, one, one per panel": "Ordnerbaum: aus, einer, einer pro Bereich",
   "Folder with an arrow": "Ordner mit Pfeil",
   "Folder. Press Enter to open it.": "Ordner. Zum Öffnen die Eingabetaste drücken.",
   Folders: "Ordner",
   "Folders always show their name. A hidden name still appears when you point at the tile.":
     "Ordner zeigen immer ihren Namen. Ein ausgeblendeter Name erscheint trotzdem, wenn Sie auf die Kachel zeigen.",
   "Folders can't be edited": "Ordner können nicht bearbeitet werden",
+  "Folders of the tab set": "Ordner des Tab-Satzes",
   Font: "Schrift",
   "Font and spacing": "Schrift und Abstände",
   "Font and spacing size": "Größe von Schrift und Abständen",
+  Forget: "Vergessen",
+  "Forget the stored password": "Gespeichertes Passwort vergessen",
   Format: "Format",
   Forward: "Vorwärts",
   "Frame color": "Rahmenfarbe",
@@ -686,12 +775,14 @@ const messages: Messages = {
   "Go to the command line": "Zur Befehlszeile wechseln",
   "Go to the command line (quick search starts with Alt)":
     "In die Befehlszeile gehen (Schnellsuche startet mit Alt)",
+  "Go to the folder tree": "Zum Ordnerbaum wechseln",
   Golden: "Goldener Schnitt",
   Gray: "Grau",
   "Gray levels": "Graustufen",
   Grayscale: "Graustufen",
   Green: "Grün",
   Group: "Gruppe",
+  "Group (optional)": "Gruppe (optional)",
   "Grow the picture to keep everything": "Das Bild vergrößern, um alles zu behalten",
   Guides: "Hilfslinien",
   Hardness: "Härte",
@@ -729,6 +820,7 @@ const messages: Messages = {
   "ISO (2026-10-06 14:05)": "ISO (2026-10-06 14:05)",
   Icon: "Symbol",
   "Icon library": "Symbolbibliothek",
+  "Identical: {same} · Not identical: {other}": "Identisch: {same} · Nicht identisch: {other}",
   "If the name exists": "Wenn der Name bereits existiert",
   "Ignore a one-hour difference (daylight saving time)":
     "Unterschied von einer Stunde ignorieren (Sommerzeit)",
@@ -758,6 +850,7 @@ const messages: Messages = {
   "Invalid name": "Ungültiger Name",
   Invert: "Umkehren",
   "Invert marks": "Markierung umkehren",
+  "Issued to:": "Ausgestellt für:",
   Italic: "Kursiv",
   "Items that failed": "Fehlgeschlagene Elemente",
   "JPEG has no transparency: transparent areas become white.":
@@ -815,6 +908,7 @@ const messages: Messages = {
   "Left size": "Größe links",
   "Left to right only (the right side becomes a copy of the left)":
     "Nur von links nach rechts (die rechte Seite wird eine Kopie der linken)",
+  "Left: {left} · Right: {right}": "Links: {left} · Rechts: {right}",
   Length: "Länge",
   Lens: "Objektiv",
   "Lens maker": "Objektivhersteller",
@@ -862,8 +956,6 @@ const messages: Messages = {
   "Mark by mask…": "Nach Maske markieren…",
   "Mark files": "Dateien markieren",
   "Mark files with the same extension": "Dateien mit gleicher Endung markieren",
-  "Mark two files to compare them, or none to compare with the other panel.":
-    "Markieren Sie zwei Dateien, um sie zu vergleichen, oder keine, um mit dem anderen Bereich zu vergleichen.",
   "Marked files stay selected, up to 10,000; files the viewer doesn't show are left out.":
     "Markierte Dateien bleiben ausgewählt (bis zu 10.000); Dateien, die Viewer nicht anzeigt, werden ausgelassen.",
   Marking: "Markierung",
@@ -883,6 +975,7 @@ const messages: Messages = {
   Method: "Methode",
   Midtones: "Mitteltöne",
   "Minimum rating": "Mindestbewertung",
+  Missing: "Fehlt",
   Model: "Modell",
   Modified: "Geändert",
   "Modified from": "Geändert ab",
@@ -912,6 +1005,8 @@ const messages: Messages = {
   "Move {name} later": "{name} nach hinten verschieben",
   "Move {what} to the trash?": "{what} in den Papierkorb verschieben?",
   "Move {what}{amount}": "{what}{amount} verschieben",
+  "Move {what}{amount} from the server": "{what}{amount} vom Server verschieben",
+  "Move {what}{amount} to the server": "{what}{amount} auf den Server verschieben",
   "Moved {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element verschoben} other {# Elemente verschoben}}",
   "Moved {count, plural, one {# item} other {# items}} to the trash":
@@ -954,6 +1049,7 @@ const messages: Messages = {
   New: "Neu",
   "New area": "Neue Fläche",
   "New command": "Neuer Befehl",
+  "New connection": "Neue Verbindung",
   "New folder": "Neuer Ordner",
   "New name": "Neuer Name",
   "New or existing tag": "Neuer oder vorhandener Tag",
@@ -961,8 +1057,10 @@ const messages: Messages = {
   "New tab": "Neuer Tab",
   "New text file": "Neue Textdatei",
   "Newest first": "Neueste zuerst",
+  "New…": "Neu…",
   Next: "Weiter",
   "Next difference": "Nächster Unterschied",
+  "Next file": "Nächste Datei",
   "Next image": "Nächstes Bild",
   "Next match (Enter)": "Nächster Treffer (Enter)",
   "Next media": "Nächstes Medium",
@@ -971,6 +1069,10 @@ const messages: Messages = {
   "Next to the originals": "Neben den Originalen",
   "Night mode (invert pages)": "Nachtmodus (Seiten invertieren)",
   No: "Nein",
+  "No authority this computer trusts signed it, or it is for another name. Compare the fingerprint with one you got from the server's owner before you trust it.":
+    "Keine Stelle, der dieser Computer vertraut, hat es signiert, oder es gilt für einen anderen Namen. Vergleichen Sie den Fingerabdruck mit dem, den Sie vom Betreiber des Servers erhalten haben, bevor Sie ihm vertrauen.",
+  "No connections saved yet. Add one with New, or use Quick connect.":
+    "Noch keine Verbindungen gespeichert. Fügen Sie eine mit „Neu“ hinzu oder verwenden Sie „Schnellverbindung“.",
   "No edits yet. Pick a tool to begin.":
     "Noch keine Bearbeitungen. Wählen Sie ein Werkzeug, um zu beginnen.",
   "No file under the cursor": "Keine Datei unter dem Cursor",
@@ -988,10 +1090,13 @@ const messages: Messages = {
   "No picture chosen": "Kein Bild gewählt",
   "No rating": "Keine Bewertung",
   "No red eyes found.": "Keine roten Augen gefunden.",
+  "No rows with the chosen results.": "Keine Zeilen mit den gewählten Ergebnissen.",
   "No source yet.": "Noch keine Quelle.",
   "No steps yet. Pick a tool to build the recipe, or use one under Recipes.":
     "Noch keine Schritte. Wählen Sie ein Werkzeug, um das Rezept zu erstellen, oder verwenden Sie eines unter Rezepte.",
   "No subfolders": "Keine Unterordner",
+  "No tab sets yet. Save the tabs from the tab menu.":
+    "Noch keine Tab-Sätze. Speichern Sie die Tabs über das Tab-Menü.",
   "No tags yet": "Noch keine Tags",
   "No tool matches": "Kein passendes Werkzeug",
   None: "Keine",
@@ -999,10 +1104,16 @@ const messages: Messages = {
     "Keines der ausgewählten Elemente ist ein Bild, das bearbeitet werden kann.",
   Normal: "Normal",
   "Not available": "Nicht verfügbar",
+  "Not connected": "Nicht verbunden",
+  "Not encrypted": "Unverschlüsselt",
+  "Not encrypted: the password and the files can be read on the way.":
+    "Unverschlüsselt: Das Passwort und die Dateien können unterwegs mitgelesen werden.",
   "Not found": "Nicht gefunden",
   "Not listed yet": "Noch nicht aufgelistet",
   "Not rated": "Nicht bewertet",
+  "Not read": "Nicht gelesen",
   "Not set": "Nicht gesetzt",
+  "Not shown": "Nicht anzeigen",
   Note: "Hinweis",
   Nothing: "Nichts",
   "Nothing drawn yet.": "Noch nichts gezeichnet.",
@@ -1021,10 +1132,12 @@ const messages: Messages = {
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Nach dem Speichern lässt sich das Unkenntlichgemachte aus der gespeicherten Datei nicht zurückholen. Das Original bleibt unverändert, solange Sie es nicht ersetzen.",
   "One beside each file ({example})": "Eine neben jeder Datei ({example})",
+  "One beside each panel": "Einer neben jedem Bereich",
   "One list for all of them": "Eine Liste für alle",
   "One of the folders could not be read.": "Einer der Ordner konnte nicht gelesen werden.",
   "One picture at a time: this tool needs a place in the picture.":
     "Nur ein Bild auf einmal: Dieses Werkzeug braucht eine Stelle im Bild.",
+  "One, for the active panel": "Einer, für den aktiven Bereich",
   "Only files can be compared by content.": "Nur Dateien können nach Inhalt verglichen werden.",
   "Only files matching": "Nur Dateien, die passen zu",
   "Only the first 20,000 folders are shown": "Es werden nur die ersten 20.000 Ordner angezeigt",
@@ -1032,14 +1145,18 @@ const messages: Messages = {
   "Only the rows the table shows are synchronized. An entry that changed since the comparison is left alone and reported.":
     "Nur die in der Tabelle angezeigten Zeilen werden synchronisiert. Ein seit dem Vergleich geänderter Eintrag bleibt unberührt und wird gemeldet.",
   "Only these folders": "Nur diese Ordner",
+  "Only with several tabs": "Nur bei mehreren Tabs",
   Opacity: "Deckkraft",
   Open: "Öffnen",
   "Open PDFs and text files with": "PDF- und Textdateien öffnen mit",
+  "Open a folder in the other panel to compare the marked files with it.":
+    "Öffnen Sie im anderen Bereich einen Ordner, um die markierten Dateien damit zu vergleichen.",
   "Open a folder in the panel first.": "Öffnen Sie zuerst einen Ordner im Bereich.",
   "Open a folder to start browsing images and videos.":
     "Öffnen Sie einen Ordner, um Bilder und Videos zu durchsuchen.",
   "Open folder…": "Ordner öffnen…",
   "Open images and videos with": "Bilder und Videos öffnen mit",
+  "Open in a new tab": "In neuem Tab öffnen",
   "Open in the editor": "Im Editor öffnen",
   "Open in the left panel": "Im linken Bereich öffnen",
   "Open in the right panel": "Im rechten Bereich öffnen",
@@ -1102,6 +1219,10 @@ const messages: Messages = {
   "Parent folder": "Übergeordneter Ordner",
   "Part of the name": "Teil des Namens",
   Partial: "Selektiv",
+  Password: "Passwort",
+  "Password (anonymous)": "Passwort (anonym)",
+  "Password for {name}": "Passwort für {name}",
+  "Password of {user}": "Passwort von {user}",
   Paste: "Einfügen",
   "Paste and overwrite conflicts...": "Einfügen und Konflikte überschreiben...",
   "Paste {count, plural, one {# item} other {# items}}":
@@ -1147,6 +1268,7 @@ const messages: Messages = {
   "Point {n} of {count}: input {x}, output {y}": "Punkt {n} von {count}: Eingabe {x}, Ausgabe {y}",
   "Points to": "Verweist auf",
   Polygon: "Vieleck",
+  Port: "Port",
   Portrait: "Porträt",
   "Position of the watermark": "Position des Wasserzeichens",
   Preset: "Vorgabe",
@@ -1184,6 +1306,8 @@ const messages: Messages = {
   "Quarter turns": "Vierteldrehungen",
   Queue: "Warteschlange",
   "Quick access": "Schnellzugriff",
+  "Quick connect": "Schnellverbindung",
+  "Quick connect…": "Schnellverbindung…",
   "Quick filter": "Schnellfilter",
   "Quick filter (Ctrl+S); click to clear": "Schnellfilter (Ctrl+S); zum Löschen klicken",
   "Quick search": "Schnellsuche",
@@ -1198,6 +1322,7 @@ const messages: Messages = {
   Read: "Lesen",
   "Read-only": "Schreibgeschützt",
   "Reading the names…": "Namen werden gelesen…",
+  "Reading the results…": "Ergebnisse werden gelesen…",
   "Reading…": "Wird gelesen…",
   Recent: "Zuletzt",
   Recipe: "Rezept",
@@ -1234,6 +1359,7 @@ const messages: Messages = {
   "Remove {button} from the toolbar": "{button} aus der Symbolleiste entfernen",
   "Remove {command}": "{command} entfernen",
   "Remove {name}": "{name} entfernen",
+  "Remove “{name}” and its stored password?": "„{name}“ und das gespeicherte Passwort entfernen?",
   "Removing {count, plural, one {# edited picture} other {# edited pictures}}":
     "{count, plural, one {# bearbeitetes Bild wird entfernt} other {# bearbeitete Bilder werden entfernt}}",
   "Removing {count, plural, one {# file} other {# files}} from favorites":
@@ -1244,6 +1370,8 @@ const messages: Messages = {
   "Rename existing": "Vorhandenes umbenennen",
   "Rename items": "Elemente umbenennen",
   "Rename new": "Neues umbenennen",
+  "Rename tab": "Tab umbenennen",
+  "Rename tab…": "Tab umbenennen…",
   "Rename {count}": "{count} umbenennen",
   "Renamed {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element umbenannt} other {# Elemente umbenannt}}",
@@ -1257,6 +1385,7 @@ const messages: Messages = {
   "Renaming {what}; progress is in the queue (Ctrl+J).":
     "{what} wird umbenannt; der Fortschritt steht in der Warteschlange (Ctrl+J).",
   Rendering: "Wird gerendert",
+  "Reopen closed tab": "Geschlossenen Tab wieder öffnen",
   Repeat: "Wiederholen",
   "Repeat and blend": "Wiederholen und mischen",
   "Repeat over the picture": "Über das Bild wiederholen",
@@ -1292,6 +1421,7 @@ const messages: Messages = {
   "Resize left column": "Größe der linken Spalte ändern",
   "Resize panels": "Größe der Bereiche ändern",
   "Resize preview column": "Größe der Vorschauspalte ändern",
+  "Resize {name}": "Größe ändern: {name}",
   Resolution: "Auflösung",
   "Resolution (0 keeps the picture's)": "Auflösung (0 behält die des Bildes)",
   Results: "Ergebnisse",
@@ -1334,6 +1464,7 @@ const messages: Messages = {
   Saturation: "Sättigung",
   Save: "Speichern",
   "Save a copy": "Kopie speichern",
+  "Save and connect": "Speichern und verbinden",
   "Save as PNG or GIF to keep the palette; other formats store full color.":
     "Als PNG oder GIF speichern, um die Palette zu behalten; andere Formate speichern volle Farbe.",
   "Save as PNG to keep the transparent part.":
@@ -1344,11 +1475,18 @@ const messages: Messages = {
     "Speicherformat auf PNG gesetzt: Es behält die reduzierten Farben als Palette.",
   "Save options": "Speicheroptionen",
   "Save options… ({format})": "Speicheroptionen… ({format})",
+  "Save tabs": "Tabs speichern",
+  "Save tabs…": "Tabs speichern…",
   "Save the current recipe as": "Aktuelles Rezept speichern als",
+  "Save the password (encrypted by this computer's secret store)":
+    "Passwort speichern (verschlüsselt durch den Schlüsselspeicher dieses Computers)",
+  "Save this connection…": "Diese Verbindung speichern…",
   "Save your changes?": "Änderungen speichern?",
   "Saved as {format}, the picture is stored with this palette.":
     "Als {format} gespeichert, wird das Bild mit dieser Palette abgelegt.",
   "Saved as {name}": "Gespeichert als {name}",
+  "Saved connections": "Gespeicherte Verbindungen",
+  "Saved connections…": "Gespeicherte Verbindungen…",
   "Saved size": "Gespeicherte Größe",
   "Saving an edited picture": "Bearbeitetes Bild wird gespeichert",
   "Saving {name}…": "{name} wird gespeichert…",
@@ -1385,6 +1523,7 @@ const messages: Messages = {
   "Sends the edited pictures to the trash. The originals are not touched.":
     "Verschiebt die bearbeiteten Bilder in den Papierkorb. Die Originale bleiben unberührt.",
   Sepia: "Sepia",
+  Server: "Server",
   Set: "Gesetzt",
   "Set DPI": "DPI festlegen",
   Settings: "Einstellungen",
@@ -1431,6 +1570,7 @@ const messages: Messages = {
   "Show the copy dialog when files are dropped":
     "Kopierdialog anzeigen, wenn Dateien abgelegt werden",
   "Show the first one": "Ersten anzeigen",
+  "Show the folder of this computer": "Ordner dieses Computers anzeigen",
   "Show the original while held": "Original anzeigen, solange gedrückt",
   "Show the palette": "Palette anzeigen",
   "Show the panel": "Bereich einblenden",
@@ -1528,7 +1668,15 @@ const messages: Messages = {
   "TIFF keeps the color profile and the resolution, not the camera data.":
     "TIFF behält das Farbprofil und die Auflösung, nicht die Kameradaten.",
   Tab: "Tab",
+  "Tab bar": "Tab-Leiste",
+  "Tab name": "Tab-Name",
+  "Tab set “{name}” saved.": "Tab-Satz „{name}“ gespeichert.",
+  "Tab set “{name}” saved; {count, plural, one {# tab} other {# tabs}} without a folder left out.":
+    "Tab-Satz „{name}“ gespeichert; {count, plural, one {# Tab} other {# Tabs}} ohne Ordner ausgelassen.",
+  "Tab sets": "Tab-Sätze",
+  "Tab sets…": "Tab-Sätze…",
   Tabs: "Tabs",
+  "Tabs to save": "Zu speichernde Tabs",
   "Tag {count, plural, one {# file} other {# files}} (folders are skipped)":
     "{count, plural, one {# Datei} other {# Dateien}} mit Tag versehen (Ordner werden übersprungen)",
   "Tagging {count, plural, one {# file} other {# files}} “{tag}”":
@@ -1566,6 +1714,9 @@ const messages: Messages = {
     "Der Hintergrunddienst konnte nicht gestartet werden. Starten Sie Panelyth neu; Details stehen im Protokoll.",
   "The brush is measured in pixels of the full picture.":
     "Der Pinsel wird in Pixeln des ganzen Bildes gemessen.",
+  "The certificate of {name} can't be verified":
+    "Das Zertifikat von {name} kann nicht überprüft werden",
+  "The certificate of {name} has changed": "Das Zertifikat von {name} hat sich geändert",
   "The changes to this picture have not been saved.":
     "Die Änderungen an diesem Bild wurden nicht gespeichert.",
   "The checksum job failed.": "Der Prüfsummenvorgang ist fehlgeschlagen.",
@@ -1578,6 +1729,10 @@ const messages: Messages = {
   "The comparison is no longer available. Compare again.":
     "Der Vergleich ist nicht mehr verfügbar. Vergleichen Sie erneut.",
   "The comparison was cancelled.": "Der Vergleich wurde abgebrochen.",
+  "The comparison was stopped.": "Der Vergleich wurde angehalten.",
+  "The connection has listed too many entries. Connect again to go on.":
+    "Die Verbindung hat zu viele Einträge aufgelistet. Verbinden Sie sich erneut, um fortzufahren.",
+  "The connection is closed.": "Die Verbindung ist geschlossen.",
   "The cursor or the selected tile lands on the same file.":
     "Der Cursor oder die ausgewählte Kachel landet auf derselben Datei.",
   "The date range is empty.": "Der Datumsbereich ist leer.",
@@ -1615,10 +1770,12 @@ const messages: Messages = {
     "Der Ordner hat sich geändert. Wählen Sie die Elemente erneut aus.",
   "The folder changed. Select the pictures again.":
     "Der Ordner hat sich geändert. Wählen Sie die Bilder erneut aus.",
+  "The folder on the server starts with “/”.": "Der Ordner auf dem Server beginnt mit „/“.",
   "The frame covers the edge instead of growing the picture.":
     "Der Rahmen bedeckt den Rand, statt das Bild zu vergrößern.",
   "The full path of a program, or empty.": "Der vollständige Pfad eines Programms oder leer.",
   "The home folder is not known.": "Der Benutzerordner ist nicht bekannt.",
+  "The left panel's ({tabs})": "Die des linken Bereichs ({tabs})",
   "The mask can't be used: {reason}": "Die Maske kann nicht verwendet werden: {reason}",
   "The minimum size is larger than the maximum.":
     "Die Mindestgröße ist größer als die Höchstgröße.",
@@ -1635,6 +1792,8 @@ const messages: Messages = {
   "The other app opens the folder you are in.":
     "Die andere App öffnet den Ordner, in dem Sie sich befinden.",
   "The panel's folder": "Der Ordner des Bereichs",
+  "The panels no longer show both files. Compare again.":
+    "Die Bereiche zeigen nicht mehr beide Dateien. Vergleichen Sie erneut.",
   "The picture can't be read.": "Das Bild kann nicht gelesen werden.",
   "The picture could not be saved.": "Das Bild konnte nicht gespeichert werden.",
   "The picture could not be searched for red eyes.":
@@ -1642,6 +1801,7 @@ const messages: Messages = {
   "The picture has changed since the last count.":
     "Das Bild hat sich seit der letzten Zählung geändert.",
   "The picture no longer exists.": "Das Bild existiert nicht mehr.",
+  "The port is a number from 1 to 65535.": "Der Port ist eine Zahl von 1 bis 65535.",
   "The radius is in pixels of the full picture; the preview shows it at its own scale.":
     "Der Radius ist in Pixeln des ganzen Bildes angegeben; die Vorschau zeigt ihn in ihrem eigenen Maßstab.",
   "The recipe has not been run and is not saved. Save it under Recipes to use it again.":
@@ -1649,17 +1809,34 @@ const messages: Messages = {
   "The recipe is shown on samples of the selection. It runs on every picture.":
     "Das Rezept wird an Beispielen der Auswahl gezeigt. Es läuft über jedes Bild.",
   "The resolution is 1 to 10,000 dpi.": "Die Auflösung liegt zwischen 1 und 10.000 dpi.",
+  "The right panel's ({tabs})": "Die des rechten Bereichs ({tabs})",
   "The search results are no longer available.": "Die Suchergebnisse sind nicht mehr verfügbar.",
   "The selection": "Die Auswahl",
   "The selection is too large to carry over": "Die Auswahl ist zu groß, um übernommen zu werden",
+  "The server can't be reached": "Der Server ist nicht erreichbar",
+  "The server could not be reached.": "Der Server konnte nicht erreicht werden.",
+  "The server did not answer in time.": "Der Server hat nicht rechtzeitig geantwortet.",
+  "The server does not offer encryption (TLS).":
+    "Der Server bietet keine Verschlüsselung (TLS) an.",
+  "The server does not support this.": "Der Server unterstützt das nicht.",
+  "The server refused the user name or the password.":
+    "Der Server hat den Benutzernamen oder das Passwort abgelehnt.",
+  "The server said: {message}": "Der Server meldet: {message}",
+  "The server's certificate could not be verified.":
+    "Das Zertifikat des Servers konnte nicht überprüft werden.",
+  "The server's name could not be found.": "Der Name des Servers wurde nicht gefunden.",
   "The source is set; it moves with the brush.":
     "Die Quelle ist gesetzt; sie bewegt sich mit dem Pinsel.",
+  "The stored password can't be read on this computer. Type it to connect.":
+    "Das gespeicherte Passwort kann auf diesem Computer nicht gelesen werden. Geben Sie es ein, um die Verbindung herzustellen.",
   "The system's text editor": "Der Texteditor des Systems",
   "The table changed since you confirmed. Check it and confirm again.":
     "Die Tabelle hat sich seit Ihrer Bestätigung geändert. Prüfen Sie sie und bestätigen Sie erneut.",
   "The text can't be written in this encoding":
     "Der Text kann in dieser Kodierung nicht geschrieben werden",
   "The text is too long.": "Der Text ist zu lang.",
+  "The tree opens folders as the cursor moves":
+    "Der Baum öffnet Ordner, während sich der Cursor bewegt",
   "The two panels have the same files.": "Beide Bereiche enthalten dieselben Dateien.",
   "The working folder of {command} was not found.":
     "Der Arbeitsordner von {command} wurde nicht gefunden.",
@@ -1671,6 +1848,11 @@ const messages: Messages = {
     "Im anderen Bereich gibt es keine Datei zum Vergleichen.",
   "There is no multi-rename to undo.":
     "Es gibt kein Mehrfach-Umbenennen, das rückgängig gemacht werden kann.",
+  "There is no room for another tab set. Remove one first.":
+    "Für einen weiteren Tab-Satz ist kein Platz. Entfernen Sie zuerst einen.",
+  "There is no such file or folder on the server.":
+    "Auf dem Server gibt es keine solche Datei und keinen solchen Ordner.",
+  "There was no file to compare.": "Es gab keine Datei zum Vergleichen.",
   "These are not text files; their bytes are compared.":
     "Dies sind keine Textdateien; ihre Bytes werden verglichen.",
   "These files are too large for a text comparison; their bytes are compared.":
@@ -1681,9 +1863,15 @@ const messages: Messages = {
   "This and every later conflict of this job": "Dieser und jeder weitere Konflikt dieser Aufgabe",
   "This batch can no longer be undone.": "Dieser Stapel kann nicht mehr rückgängig gemacht werden.",
   "This can't be undone.": "Das kann nicht rückgängig gemacht werden.",
+  "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
+    "Dadurch {count, plural, one {wird # gesperrter Tab} other {werden # gesperrte Tabs}} geschlossen. Wählen Sie erneut „Öffnen“, um fortzufahren.",
   "This command can't be saved. Remove line breaks and try again.":
     "Dieser Befehl kann nicht gespeichert werden. Entfernen Sie Zeilenumbrüche und versuchen Sie es erneut.",
   "This command no longer exists.": "Dieser Befehl existiert nicht mehr.",
+  "This computer has no secure store for passwords, so the password was not saved.":
+    "Dieser Computer hat keinen sicheren Speicher für Passwörter, daher wurde das Passwort nicht gespeichert.",
+  "This computer has no secure store for passwords. Passwords are not saved; you are asked each time.":
+    "Dieser Computer hat keinen sicheren Speicher für Passwörter. Passwörter werden nicht gespeichert; Sie werden jedes Mal gefragt.",
   "This drive has no trash, so the original can't be replaced. Save a copy instead.":
     "Dieses Laufwerk hat keinen Papierkorb, daher kann das Original nicht ersetzt werden. Speichern Sie stattdessen eine Kopie.",
   "This drive has no trash. The items can only be deleted permanently.":
@@ -1702,6 +1890,8 @@ const messages: Messages = {
     "Dieser Ordner enthält eine Datei mit dem Namen des Programms von {command}. Geben Sie beim Befehl den vollständigen Pfad an.",
   "This folder has no supported images, videos or subfolders.":
     "Dieser Ordner enthält keine unterstützten Bilder, Videos oder Unterordner.",
+  "This folder is already in the directory hotlist.":
+    "Dieser Ordner ist bereits in der Ordner-Schnellliste.",
   "This folder is empty": "Dieser Ordner ist leer",
   "This folder no longer exists.": "Dieser Ordner existiert nicht mehr.",
   "This format can't be written.": "Dieses Format kann nicht geschrieben werden.",
@@ -1709,7 +1899,13 @@ const messages: Messages = {
     "Dieses Format wird vom integrierten Player nicht unterstützt.",
   "This image can't be displayed": "Dieses Bild kann nicht angezeigt werden",
   "This is not a valid PDF file.": "Das ist keine gültige PDF-Datei.",
+  "This is not available on a connection. Copy the files to this computer first.":
+    "Das ist in einer Verbindung nicht verfügbar. Kopieren Sie die Dateien zuerst auf diesen Computer.",
+  "This is not the certificate you accepted for this connection. Someone may be listening in, or the server got a new certificate. Go on only if you know why it changed.":
+    "Das ist nicht das Zertifikat, das Sie für diese Verbindung akzeptiert haben. Vielleicht hört jemand mit, oder der Server hat ein neues Zertifikat bekommen. Fahren Sie nur fort, wenn Sie wissen, warum es sich geändert hat.",
   "This kind of picture can't be edited.": "Diese Art von Bild kann nicht bearbeitet werden.",
+  "This name can't be used on a server.":
+    "Dieser Name kann auf einem Server nicht verwendet werden.",
   "This panel has no folder for a checksum list.":
     "Dieser Bereich hat keinen Ordner für eine Prüfsummenliste.",
   "This picture": "Dieses Bild",
@@ -1758,7 +1954,10 @@ const messages: Messages = {
   "Top right": "Oben rechts",
   "Top right corner": "Ecke oben rechts",
   "Total size": "Gesamtgröße",
+  "Transfers at once": "Gleichzeitige Übertragungen",
+  "Transfers at once: 1 to {max}.": "Gleichzeitige Übertragungen: 1 bis {max}.",
   Transparent: "Transparent",
+  "Trust this time": "Dieses Mal vertrauen",
   "Try again": "Erneut versuchen",
   "Two arrows": "Zwei Pfeile",
   "Two pages": "Zwei Seiten",
@@ -1798,10 +1997,18 @@ const messages: Messages = {
   "Updating drives…": "Laufwerke werden aktualisiert…",
   "Updating favorites {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Favoriten von # Element werden aktualisiert} other {Favoriten von # Elementen werden aktualisiert}}",
+  Upload: "Hochladen",
+  "Upload {what}{amount}": "{what}{amount} hochladen",
+  "Uploaded {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {# Element hochgeladen} other {# Elemente hochgeladen}}",
+  "Uploading {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {# Element wird hochgeladen} other {# Elemente werden hochgeladen}}",
   Use: "Verwenden",
   "Use / to create folders inside each other, e.g. 2026/Trip/Raw.":
     "Mit / lassen sich Ordner ineinander anlegen, z. B. 2026/Reise/Raw.",
   "Use {name}": "{name} verwenden",
+  "User name": "Benutzername",
+  "User name (empty: anonymous)": "Benutzername (leer: anonym)",
   "Verified {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element} other {# Elemente}} geprüft",
   "Verify after copying (compare checksums)": "Nach dem Kopieren prüfen (Prüfsummen vergleichen)",
@@ -1826,6 +2033,7 @@ const messages: Messages = {
   Volume: "Lautstärke",
   Waiting: "Wartet",
   "Waiting for an answer": "Wartet auf eine Antwort",
+  "Waiting for the server…": "Warten auf den Server…",
   Warm: "Warm",
   Watermark: "Wasserzeichen",
   "Watermark, bottom right": "Wasserzeichen, unten rechts",
@@ -1979,6 +2187,8 @@ const messages: Messages = {
     "{count, plural, one {# Datei} other {# Dateien}} geprüft: alle stimmen überein.",
   "{count, plural, one {# file} other {# files}}, {size}":
     "{count, plural, one {# Datei} other {# Dateien}}, {size}",
+  "{count, plural, one {# folder or link left out} other {# folders or links left out}}":
+    "{count, plural, one {# Ordner oder Link ausgelassen} other {# Ordner oder Links ausgelassen}}",
   "{count, plural, one {# folder} other {# folders}}":
     "{count, plural, one {# Ordner} other {# Ordner}}",
   "{count, plural, one {# folder} other {# folders}} couldn't be read":
@@ -2015,6 +2225,8 @@ const messages: Messages = {
     "{count, plural, one {# Name ist ungültig} other {# Namen sind ungültig}}",
   "{count, plural, one {# name is} other {# names are}} not free":
     "{count, plural, one {# Name ist nicht frei} other {# Namen sind nicht frei}}",
+  "{count, plural, one {# name left out} other {# names left out}}":
+    "{count, plural, one {# Name ausgelassen} other {# Namen ausgelassen}}",
   "{count, plural, one {# name} other {# names}} copied":
     "{count, plural, one {# Name kopiert} other {# Namen kopiert}}",
   "{count, plural, one {# newer file is} other {# newer files are}} replaced by an older one.":
@@ -2037,8 +2249,11 @@ const messages: Messages = {
     "{count, plural, one {# Stern} other {# Sterne}}",
   "{count, plural, one {# step} other {# steps}}":
     "{count, plural, one {# Schritt} other {# Schritte}}",
+  "{count, plural, one {# tab} other {# tabs}}": "{count, plural, one {# Tab} other {# Tabs}}",
   "{count, plural, one {# video} other {# videos}}":
     "{count, plural, one {# Video} other {# Videos}}",
+  "{count, plural, one {The file is identical.} other {All # files are identical.}}":
+    "{count, plural, one {Die Datei ist identisch.} other {Alle # Dateien sind identisch.}}",
   "{count} differences (the first {shown} can be stepped through)":
     "{count} Unterschiede (die ersten {shown} lassen sich durchgehen)",
   "{count} failed": "{count} fehlgeschlagen",
@@ -2048,6 +2263,8 @@ const messages: Messages = {
   "{count} items selected": "{count} Elemente ausgewählt",
   "{count} links were not compared.": "{count} Verknüpfungen wurden nicht verglichen.",
   "{count} marked": "{count} markiert",
+  "{count} marked files, each with the file of its name in {folder}":
+    "{count} markierte Dateien, jede mit der gleichnamigen Datei in {folder}",
   "{count} selected": "{count} ausgewählt",
   "{count} skipped": "{count} übersprungen",
   "{current} of {total}": "{current} von {total}",
@@ -2101,6 +2318,7 @@ const messages: Messages = {
   "“{name}” already exists": "„{name}“ existiert bereits",
   "“{path}” doesn't exist. Check the folder.": "„{path}“ existiert nicht. Prüfen Sie den Ordner.",
   "… ({count} more characters)": "… ({count} weitere Zeichen)",
+  "… more folders than the tree lists": "… mehr Ordner, als der Baum auflistet",
   "↑↓ next · Esc": "↑↓ weiter · Esc",
   "✓ sets it, an empty box clears it, – leaves it as it is.":
     "✓ setzt es, ein leeres Kästchen entfernt es, – lässt es, wie es ist.",

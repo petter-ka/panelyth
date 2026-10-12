@@ -42,6 +42,18 @@ usual) instead of the throttled one. `Rows` returns every row of a session's cur
 flat compare behind Shift+F2 (`compare.marks`) reads two sessions with it and answers with one range descriptor per
 session. At most 4 compares are kept, each with at most 500,000 rows.
 
+Amended 2026-10-12 (Stage C10.5, ADR-0037): a **folder of a connection** (FTP, FTPS) is the fourth source. The
+descriptor's `remoteId` and `remoteDirId` select it; `remote.open` lists the folder from the server first, and the
+session sorts, filters and pages that listing in Go like any other, with its own rows (`query.ItemSource`,
+`SingleFolder`). Its entries come from a fourth id range, from 7·2^50 up to 2^53 (`7·2^50 + connection·2^20 +
+entry`); the compare range got an upper bound there. A descriptor over a remote session resolves only in the three
+jobs made for it (`download`, `upload`'s target, `remoteDelete`), in `selection.info` and `props.get`, and in
+`file.resolve` (a bounded temporary copy to view); every other job and entry method refuses it, and `entry.path`
+never returns a path for it. An entry keeps its id while its folder is read again, so the cursor and the marks
+follow it; a session is refreshed (`RefreshNow`) when its folder was listed again, never by the index. The viewer's
+sessions are untouched: the source is reached only through the commander's descriptor fields, which main refuses
+from the viewer.
+
 ## Context
 
 Offset/limit over a table that is still growing during a scan shifts rows under the user. SQLite `OFFSET` is

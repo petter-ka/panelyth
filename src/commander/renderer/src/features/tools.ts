@@ -8,7 +8,7 @@ import {
 import { t } from "@panelyth/i18n"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable, PanelythError } from "../bridge"
-import { notice, operand } from "./files"
+import { notice, operand, refusedOnConnection } from "./files"
 import { ACTIONS, isToolAction, setToolActions, toolAction, type ActionId } from "./keymap"
 import { cursorEntryId, useListingStore } from "./listing"
 import { otherSide, type Side } from "./panels"
@@ -33,6 +33,7 @@ export const DEFAULT_TOOLBAR: readonly ToolbarItem[] = [
   SEPARATOR,
   "compare.dirs",
   "compare.sync",
+  "compare.content",
   SEPARATOR,
   "view.quick",
   "view.refresh",
@@ -185,6 +186,8 @@ export async function runTool(side: Side, id: string): Promise<void> {
   const tool = get().commands.find((c) => c.id === id)
   const p = useListingStore.getState()[side]
   if (!tool || p.dirId === null) return
+  // A program gets folders and files of this computer only (ADR-0037).
+  if (refusedOnConnection(side)) return
   const other = useListingStore.getState()[otherSide(side)]
   // Entries inside an archive have no path a program could open.
   const cursorId = p.archive ? null : cursorEntryId(side)
@@ -193,7 +196,7 @@ export async function runTool(side: Side, id: string): Promise<void> {
     await bridge.shellRunTool({
       toolId: id,
       dirId: p.dirId,
-      ...(other.dirId !== null && { otherDirId: other.dirId }),
+      ...(other.dirId !== null && !other.remote && { otherDirId: other.dirId }),
       ...(cursorId !== null && { cursorId }),
       ...(selection && { selection }),
     })

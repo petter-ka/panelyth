@@ -16,6 +16,7 @@ import (
 	"panelyth/sidecar/internal/media"
 	"panelyth/sidecar/internal/pathkey"
 	"panelyth/sidecar/internal/query"
+	"panelyth/sidecar/internal/remote"
 	"panelyth/sidecar/internal/rpc"
 )
 
@@ -56,6 +57,9 @@ type (
 	}
 	fsListDirsParams struct {
 		Path string `json:"path"`
+		// ShowHidden lists hidden and system folders too (the commander's
+		// tree, Stage C10.5); the viewer never sends it.
+		ShowHidden bool `json:"showHidden"`
 	}
 	fsListDirsResult struct {
 		Path      string         `json:"path"`
@@ -167,6 +171,9 @@ func (s *indexService) registerWorkspace(srv *rpc.Server) {
 		ids, err := s.resolveSelection(p.Selection)
 		if err != nil {
 			return index.Summary{}, err
+		}
+		if remoteOnly(ids) {
+			return s.remoteSummary(ids)
 		}
 		if archiveOnly(ids) {
 			return s.archiveSummary(ids)
@@ -328,7 +335,7 @@ func (s *indexService) fsListDirs(ctx context.Context, p fsListDirsParams) (fsLi
 	if err != nil {
 		return fsListDirsResult{}, rpc.NewError(rpc.CodeInvalidPath, "folder path must be absolute")
 	}
-	dirs, truncated, err := fsx.ListDirs(ctx, clean, fsx.ListOptions{})
+	dirs, truncated, err := fsx.ListDirs(ctx, clean, fsx.ListOptions{ShowHidden: p.ShowHidden})
 	if err != nil {
 		if ctx.Err() != nil {
 			return fsListDirsResult{}, ctx.Err()
@@ -342,6 +349,11 @@ func (s *indexService) fsListDirs(ctx context.Context, p fsListDirsParams) (fsLi
 }
 
 func (s *indexService) entryPath(ctx context.Context, p entryParams) (entryPathResult, error) {
+	if remote.IsID(p.EntryID) {
+		// A file on a server has no path on this computer: nothing is started
+		// with it, revealed or handed to a command (ADR-0037).
+		return entryPathResult{}, rpc.NewError(rpc.CodeInvalidArgument, "this is not available on a connection")
+	}
 	if archive.IsID(p.EntryID) {
 		// Opened with its program from a temporary extraction (Stage C07).
 		f, err := s.archiveFileResolve(ctx, p.EntryID)
@@ -377,6 +389,9 @@ func msPtr(ns int64) *int64 {
 }
 
 func (s *indexService) propsGet(ctx context.Context, p entryParams) (propsResult, error) {
+	if remote.IsID(p.EntryID) {
+		return s.remoteProps(p.EntryID)
+	}
 	if archive.IsID(p.EntryID) {
 		return s.archiveProps(p.EntryID)
 	}

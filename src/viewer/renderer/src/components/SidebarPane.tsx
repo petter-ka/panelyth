@@ -1,6 +1,6 @@
 import type { Crumb, PlaceId } from "@panelyth/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Spinner, Tooltip, TypeGlyph } from "@panelyth/ui"
+import { Spinner, Tooltip, TreeTwisty, TypeGlyph } from "@panelyth/ui"
 import {
   memo,
   useEffect,
@@ -335,26 +335,12 @@ const RowView = memo(function RowView({
       onContextMenu={() => onMenu(row)}
     >
       {row.type === "tree" ? (
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-label={
-            row.expanded
-              ? t("Collapse {name}", { name: label })
-              : t("Expand {name}", { name: label })
-          }
-          className={`grid size-4 shrink-0 place-items-center rounded text-muted hover:text-text ${node?.hasChildren ? "" : "invisible"}`}
-          onClick={(e) => {
-            e.stopPropagation()
-            toggle(row.key)
-          }}
-        >
-          <span
-            className={`grid transition-transform duration-[var(--motion-fast)] ease-[var(--motion-ease)] motion-reduce:transition-none ${row.expanded ? "rotate-90" : ""}`}
-          >
-            <ChevronRightIcon size={12} />
-          </span>
-        </button>
+        <TreeTwisty
+          name={label}
+          expanded={row.expanded}
+          hasChildren={node?.hasChildren ?? false}
+          onToggle={() => toggle(row.key)}
+        />
       ) : null}
       <span className={`shrink-0 ${active ? "text-accent" : "text-muted"}`}>
         {opening ? (

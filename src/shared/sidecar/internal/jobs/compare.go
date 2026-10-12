@@ -74,8 +74,13 @@ func validateCompare(s Spec) error {
 			return fmt.Errorf("%w: %s", ErrInvalid, err.Error())
 		}
 	case KindCompareFiles:
-		if len(s.IDs) != 2 {
+		// Two files, or (Stage C10.5) files each compared with the file of
+		// its name in the folder Destination.
+		if s.Destination == "" && len(s.IDs) != 2 {
 			return fmt.Errorf("%w: two files are compared", ErrInvalid)
+		}
+		if s.Destination != "" && len(s.IDs) == 0 {
+			return fmt.Errorf("%w: nothing to compare", ErrInvalid)
 		}
 	}
 	return nil
@@ -86,10 +91,12 @@ func (s Spec) total() int {
 	switch {
 	case s.Kind == KindSync && s.Sync != nil && s.Sync.Plan != nil:
 		return len(s.Sync.Plan.Items)
-	case s.Kind == KindCompareFiles:
+	case s.Kind == KindCompareFiles && s.Destination == "":
 		return 1
 	case s.Kind == KindUndoRename:
 		return len(s.undo)
+	case (s.Kind == KindDownload || s.Kind == KindRemoteDelete) && s.Remote != nil:
+		return len(s.Remote.Items)
 	case s.Kind == KindEditSave:
 		return editSaveSteps
 	case s.Kind == KindUndoEdit:
@@ -624,6 +631,9 @@ func (m *Manager) hashVerify(j *job) error {
 // compareFiles reads two files side by side: done when they are the same,
 // a DIFFERENT item when they are not.
 func (m *Manager) compareFiles(j *job) error {
+	if j.spec.Destination != "" {
+		return m.compareWithFolder(j)
+	}
 	targets, err := m.deps.Store.Targets(j.ctx, j.spec.IDs)
 	if err != nil {
 		return err
@@ -668,6 +678,58 @@ func (m *Manager) compareFiles(j *job) error {
 		j.update(func(s *Snapshot) { s.Done++ })
 	}
 	return nil
+}
+
+// compareWithFolder compares each file with the file of its name in another
+// folder (Stage C10.5): done when the two are the same, a DIFFERENT item
+// when they are not, NOT_FOUND when the other folder has no such file.
+// Folders and links are skipped. One file is read at a time, with the two
+// pooled buffers of a comparison of two files.
+func (m *Manager) compareWithFolder(j *job) error {
+	other := j.spec.Destination
+	o := &compare.StreamOptions{Gate: j.gate, Progress: func(n int64) {
+		j.update(func(s *Snapshot) { s.BytesDone += n })
+		m.emit(j, false)
+	}}
+	return m.eachTarget(j, func(t index.Target) error {
+		lfi, err := os.Lstat(t.Path)
+		if err != nil {
+			return m.itemFailed(j, t.Name, err)
+		}
+		if !lfi.Mode().IsRegular() {
+			j.update(func(s *Snapshot) { s.Skipped++ })
+			return nil
+		}
+		right := filepath.Join(other, t.Name)
+		rfi, err := os.Stat(right)
+		switch {
+		case errors.Is(err, fs.ErrNotExist):
+			j.fail(t.Name, fileops.CodeNotFound, "The other folder has no file of this name.")
+			return nil
+		case err != nil:
+			return m.itemFailed(j, t.Name, err)
+		case !rfi.Mode().IsRegular():
+			j.fail(t.Name, fileops.CodeNotFound, "The other folder has a folder of this name, not a file.")
+			return nil
+		case os.SameFile(lfi, rfi):
+			// Both panels show one folder: a file is the same as itself.
+			j.update(func(s *Snapshot) { s.Done++ })
+			return nil
+		case lfi.Size() != rfi.Size():
+			j.fail(t.Name, CodeDifferent, fmt.Sprintf("The files differ in size: %d and %d bytes.", lfi.Size(), rfi.Size()))
+			return nil
+		}
+		equal, at, err := compare.EqualFiles(j.ctx, t.Path, right, o)
+		switch {
+		case err != nil:
+			return m.itemFailed(j, t.Name, err)
+		case !equal:
+			j.fail(t.Name, CodeDifferent, fmt.Sprintf("The files have the same size but differ; the first difference is at byte %d.", at))
+		default:
+			j.update(func(s *Snapshot) { s.Done++ })
+		}
+		return nil
+	})
 }
 
 // syncLane is a sync's lane: the volumes of its two roots.

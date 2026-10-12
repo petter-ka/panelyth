@@ -143,6 +143,10 @@ const KIND_LABEL: Record<JobKind, string> = {
   multiRename: msg("Renaming {count, plural, one {# item} other {# items}}"),
   undoRename: msg("Undoing the rename of {count, plural, one {# item} other {# items}}"),
   setAttributes: msg("Changing attributes of {count, plural, one {# item} other {# items}}"),
+  // The commander's transfers to and from FTP servers (Stage C10.5), likewise.
+  download: msg("Downloading {count, plural, one {# item} other {# items}}"),
+  upload: msg("Uploading {count, plural, one {# item} other {# items}}"),
+  remoteDelete: msg("Deleting {count, plural, one {# item} other {# items}} on the server"),
   // The image editor's save (Stage 12); its count is the save's steps.
   editSave: msg("Saving an edited picture"),
   // A recipe run over a selection, and its undo (Stage 16).

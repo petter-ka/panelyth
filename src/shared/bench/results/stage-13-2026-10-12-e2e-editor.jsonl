@@ -7,3 +7,6 @@
 {"at":"2026-10-12T02:17:44.634Z","test":"editor-levels","levelsFrameMs":33}
 {"at":"2026-10-12T02:17:45.950Z","test":"editor-count-colors","countMs":37}
 {"at":"2026-10-12T02:17:58.709Z","test":"editor-color-24mp","contrastPaints":53,"contrastGapP95Ms":46,"contrastSettleMs":47,"saturationPaints":53,"saturationGapP95Ms":49,"saturationSettleMs":46,"levelsBlackPaints":54,"levelsBlackGapP95Ms":41,"levelsBlackSettleMs":52,"sharpenPaints":53,"sharpenGapP95Ms":38,"sharpenSettleMs":49,"blurPaints":53,"blurGapP95Ms":40,"blurSettleMs":49,"denoisePaints":53,"denoiseGapP95Ms":47,"denoiseSettleMs":94,"looksMs":68,"longTasksOver50":0,"maxLongTaskMs":0}
+{"at":"2026-10-12T08:31:12.821Z","test":"editor-levels","levelsFrameMs":20}
+{"at":"2026-10-12T08:31:14.035Z","test":"editor-count-colors","countMs":25}
+{"at":"2026-10-12T08:31:23.751Z","test":"editor-color-24mp","contrastPaints":53,"contrastGapP95Ms":33,"contrastSettleMs":40,"saturationPaints":53,"saturationGapP95Ms":34,"saturationSettleMs":40,"levelsBlackPaints":54,"levelsBlackGapP95Ms":32,"levelsBlackSettleMs":40,"sharpenPaints":53,"sharpenGapP95Ms":32,"sharpenSettleMs":49,"blurPaints":53,"blurGapP95Ms":32,"blurSettleMs":55,"denoisePaints":52,"denoiseGapP95Ms":37,"denoiseSettleMs":84,"looksMs":51,"longTasksOver50":0,"maxLongTaskMs":0}

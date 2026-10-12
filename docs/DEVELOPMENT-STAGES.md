@@ -8,7 +8,7 @@ Only one stage is active at a time, across all tracks. The order across tracks i
 |---|---|---|---|
 | Viewer | `00`…`08.6` (history), `12`…`16` (image editor); next new stage `17` | `docs/viewer/stages/` | `stage-03-…`, `stage-08.6-…`, `stage-12-…`, `stage-13-…`, `stage-14-…`, `stage-15-…`, `stage-16-…` |
 | Platform | `P01`…`P06` | `docs/shared/stages/` | `stage-P01-…` |
-| Commander | `C00`…`C11` | `docs/commander/stages/` | `stage-C00-…` |
+| Commander | `C00`…`C11`, with `C10.5` between C10 and C11 | `docs/commander/stages/` | `stage-C00-…`, `stage-C10.5-…` |
 
 - The viewer stages 00–08.6 also built most of the shared platform; their records stay in the viewer track.
 - The viewer's planned Stages 09, 10 and 11 became P04, P05 and P06 (2026-10-05, ADR-0025). Viewer numbers 09–11 are
@@ -16,6 +16,9 @@ Only one stage is active at a time, across all tracks. The order across tracks i
 - Viewer Stages 12–16 (2026-10-11, owner request) are the image editor (`docs/viewer/IMAGE-EDITOR.md`; ADR-0035,
   accepted in Stage 12, and ADR-0036, accepted with amendments in Stage 16). The owner scheduled them on 2026-10-12,
   in order, after C10.
+- Commander Stage C10.5 (2026-10-12, owner request) adds tab sets, a folder tree, FTP connections (ADR-0037,
+  accepted with amendments in the stage) and comparing several selected files. It sits before the release stage, as
+  08.5 and 08.6 sat before the viewer's hardening stages. The owner started it the day it was planned, after 16.
 - New stage documents start from `docs/STAGE-TEMPLATE.md`.
 
 ## Stage gates
@@ -78,7 +81,8 @@ A stage is complete only when:
 | C08 | Compare, synchronize and checksums | C07 | implementation done (2026-10-11); the NVDA pass and a FAT/network run of a sync remain |
 | C09 | Multi-rename, attributes and properties | C08 | implementation done (2026-10-11); the NVDA pass and the Linux and macOS runs remain |
 | C10 | Command line, tools and customization | C09 | implementation done (2026-10-11); the NVDA pass, the Linux and macOS runs and the viewer's e2e tile suite remain |
-| C11 | Commander release | C10, P04, P05, P06 | planned |
+| C10.5 | Tab sets, folder tree, FTP connections, compare selected files | C10 | implementation done (2026-10-12); ADR-0037 accepted with amendments; the owner's confirmation of FTP in the first release, the Linux and macOS runs and the NVDA pass remain |
+| C11 | Commander release | C10, C10.5, P04, P05, P06 | planned |
 
 ## Completed stages
 
@@ -97,6 +101,29 @@ A stage is complete only when:
 
 ## Active stage
 
+`C10.5 — Tab sets, folder tree, FTP connections and compare selected files`
+(`docs/commander/stages/C10.5-tabs-tree-ftp-compare.md`), started 2026-10-12 at the owner's request right after 16;
+implementation done the same day. ADR-0037 is accepted with amendments. The tab bar is always there with a "+"
+button; a tab can be renamed, duplicated and brought back after closing, and a panel's tabs (or both panels') are
+saved as a named **tab set** and opened again in place of the tabs or after them. A **folder tree** sits beside the
+panels (one that follows the active panel, or one per panel) on the viewer's tree store, moved to
+`src/shared/renderer-core`. **FTP and FTPS** servers are panel locations: a fourth session source over a folder's
+listing, an FTP client of our own, saved connections in `library.db` with passwords encrypted by Electron main
+(no method returns one, and nothing is saved where the OS has no secret store), certificates shown by fingerprint,
+transfers as `download`, `upload` and `remoteDelete` jobs in a lane per connection, and nothing that connects
+without a command (a restored tab says "Not connected"). **Compare by content** takes any number of marked files
+as one job with a result list, and the diff marks the change inside a line. The security review of the remote path
+is in the stage document with no open blocking finding. Measured: a tree node with 1,000 subfolders expands in
+10 ms; a remote folder of 10,000 entries shows its first rows in 20 ms at 78 bytes an entry; a gigabyte downloads
+at 1.3 to 4.5 times `curl`'s speed and uploads at 1.0 to 1.2 times; a server that stops answering leaves the other
+panel at 7 ms a frame and is stopped in 2 ms.
+
+Open from C10.5: the owner's confirmation that FTP is on in the first release; the Linux and macOS runs (libsecret
+and Keychain behind `safeStorage`), the race detector and the NVDA pass; the drive menu's places as tree roots, a
+connection's features on screen, pause and resume of a transfer in an E2E scenario; many small files over FTP are
+slower than `curl`.
+
+Before that:
 `16 — Image editor: batch mode` (`docs/viewer/stages/16-editor-batch.md`), started 2026-10-12 right after 15;
 implementation done the same day. ADR-0036 is accepted with amendments. Several selected items open the editor in
 batch mode ("Edit…" in the batch bar, the tile menu, Ctrl/Cmd+E): the edit list is a **recipe**, the picture on the

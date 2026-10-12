@@ -10,6 +10,7 @@ import { TILE_SIZE_ORDER } from "@panelyth/media-ui"
 import { Button, ChoiceGroup, SharedSettingsDialog } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
 import { POLICIES } from "../features/files"
+import { setTreeMode, usePanelsStore, type TreeMode } from "../features/panels"
 import { isToolAction, setHelpOpen, toolAction, type ActionId } from "../features/keymap"
 import {
   MAX_EDITOR_CHARS,
@@ -117,6 +118,33 @@ function EditorField() {
   )
 }
 
+/** The folder tree's place (Ctrl+Shift+F8 cycles through the same three). Part of the layout, not of the settings. */
+function TreeModeRadios() {
+  const mode = usePanelsStore((s) => s.tree)
+  const options: { value: TreeMode; label: string }[] = [
+    { value: "off", label: t("Not shown") },
+    { value: "one", label: t("One, for the active panel") },
+    { value: "two", label: t("One beside each panel") },
+  ]
+  return (
+    <fieldset className="flex flex-col gap-1.5">
+      <legend className="mb-1 text-muted">{t("Folder tree")}</legend>
+      {options.map((o) => (
+        <label key={o.value} className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="tree-mode"
+            checked={mode === o.value}
+            onChange={() => setTreeMode(o.value)}
+            className="accent-[var(--color-accent)]"
+          />
+          {o.label}
+        </label>
+      ))}
+    </fieldset>
+  )
+}
+
 function PanelsSection() {
   const thumbSize = useSettingsStore((s) => s.settings.thumbSize)
   return (
@@ -187,6 +215,16 @@ function PanelsSection() {
           onChange={(value) => updateSettings({ thumbSize: value })}
         />
       </div>
+      <Radios
+        setting="tabBar"
+        label={t("Tab bar")}
+        options={[
+          { value: "always", label: t("Always shown") },
+          { value: "multiple", label: t("Only with several tabs") },
+        ]}
+      />
+      <TreeModeRadios />
+      <Check setting="treeFollowCursor" label={t("The tree opens folders as the cursor moves")} />
       <fieldset className="flex flex-col gap-1.5">
         <legend className="mb-1 text-muted">{t("Around the panels")}</legend>
         <Check setting="showToolbar" label={t("Toolbar")} />

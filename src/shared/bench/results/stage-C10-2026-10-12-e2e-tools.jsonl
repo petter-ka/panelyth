@@ -2,3 +2,12 @@
 {"at":"2026-10-12T00:01:21.650Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":29,"frames":285,"p95FrameMs":18,"maxFrameGapMs":19,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":70168,"ensureCalls":1,"pageCalls":13}
 {"at":"2026-10-12T00:02:02.816Z","test":"viewer-scroll-100k-after-move","frames":285,"p95FrameMs":18,"maxFrameGapMs":22,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":70168,"ensureCalls":1}
 {"at":"2026-10-12T00:02:12.382Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":22,"frames":285,"p95FrameMs":18,"maxFrameGapMs":19,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":70168,"ensureCalls":1,"pageCalls":13}
+{"at":"2026-10-12T06:52:02.487Z","test":"viewer-scroll-100k-after-move","frames":722,"p95FrameMs":7,"maxFrameGapMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":177068,"ensureCalls":1}
+{"at":"2026-10-12T06:52:15.334Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":15,"frames":722,"p95FrameMs":7,"maxFrameGapMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":177068,"ensureCalls":1,"pageCalls":32}
+{"at":"2026-10-12T06:52:15.388Z","test":"command-line-start","runs":35,"medianMs":0.5,"p95Ms":0.8,"maxMs":0.9}
+{"at":"2026-10-12T08:30:02.178Z","test":"viewer-scroll-100k-after-move","frames":722,"p95FrameMs":7,"maxFrameGapMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":177068,"ensureCalls":1}
+{"at":"2026-10-12T08:30:13.953Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":26,"frames":719,"p95FrameMs":7,"maxFrameGapMs":21,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":175868,"ensureCalls":1,"pageCalls":32}
+{"at":"2026-10-12T08:30:14.027Z","test":"command-line-start","runs":35,"medianMs":0.6,"p95Ms":1,"maxMs":1.2}
+{"at":"2026-10-12T08:44:23.742Z","test":"viewer-scroll-100k-after-move","frames":722,"p95FrameMs":7,"maxFrameGapMs":9,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":177068,"ensureCalls":1}
+{"at":"2026-10-12T08:44:34.509Z","test":"thumbs-scroll-100k","perRow":7,"switchToTilesMs":29,"frames":719,"p95FrameMs":7,"maxFrameGapMs":14,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":77,"scrolledPx":175868,"ensureCalls":1,"pageCalls":32}
+{"at":"2026-10-12T08:44:34.559Z","test":"command-line-start","runs":35,"medianMs":0.7,"p95Ms":1,"maxMs":1.1}

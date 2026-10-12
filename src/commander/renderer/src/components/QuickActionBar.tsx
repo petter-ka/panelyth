@@ -16,6 +16,7 @@ export const ACTION_ICONS: Partial<Record<ActionId, CommanderActionIconName>> = 
   "view.branch": "branch",
   "compare.dirs": "compare",
   "compare.sync": "sync",
+  "compare.content": "compare",
   "view.quick": "preview",
   "view.refresh": "refresh",
   "hotlist.open": "star",

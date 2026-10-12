@@ -167,7 +167,8 @@ describe("tabs", () => {
     // Ctrl+W closes the visible tab; its session closes once the other shows.
     await key("left", { key: "w", ctrlKey: true })
     await waitFor(() => expect(path("left")).toHaveTextContent(HOME.path))
-    expect(screen.queryByTestId("tabs-left")).toBeNull()
+    // The tab bar stays, with its one tab and the "+" button (Stage C10.5).
+    expect(screen.getByTestId("tabs-left").querySelectorAll("[role=tab]")).toHaveLength(1)
     expect(fake.api.query.close).toHaveBeenCalledWith(picsQuery)
     // The last tab never closes.
     await key("left", { key: "w", ctrlKey: true })
@@ -459,11 +460,12 @@ describe("drives", () => {
     expect(drive().querySelector("[data-spinner]")).toBeNull()
     expect(drive()).not.toHaveAttribute("aria-busy")
 
-    // Enter on a folder that answers late: the loader replaces its icon.
+    // Enter on a folder that answers late: the loader replaces its icon. (The
+    // right panel is on C: the drive opens at its folder.)
     await act(async () =>
       fireEvent.click(within(screen.getByTestId("drives-left")).getByRole("button", { name: "C" })),
     )
-    await waitFor(() => expect(path("left")).toHaveTextContent(ROOT.path))
+    await waitFor(() => expect(path("left")).toHaveTextContent(HOME.path))
     const openEntry = fake.api.dir.openEntry.getMockImplementation()!
     fake.api.dir.openEntry.mockImplementationOnce(
       (params: { entryId: number }) =>
@@ -479,6 +481,49 @@ describe("drives", () => {
     expect(cursorRow("left")!.querySelector("[data-glyph=folder]")).toBeNull()
     await act(async () => answer())
     await waitFor(() => expect(grid("left").querySelector("[data-spinner]")).toBeNull())
+  })
+
+  it("a drive the other panel is on opens at that panel's folder; any other at its root", async () => {
+    const fake = await start()
+    await waitFor(() => expect(screen.getByTestId("drives-left")).toHaveTextContent("D"))
+    const drive = (side: "left" | "right", name: string) =>
+      within(screen.getByTestId(`drives-${side}`)).getByRole("button", { name })
+    const click = (el: HTMLElement) => act(async () => fireEvent.click(el))
+    // Left on D:, right in C:\work.
+    await click(drive("left", "D"))
+    await waitFor(() => expect(path("left")).toHaveTextContent(DROOT.path))
+    await act(async () => {
+      await openPath("right", WORK.path)
+    })
+    expect(path("right")).toHaveTextContent(WORK.path)
+
+    // C in the left panel: the right panel is on C, so its folder opens, not the root.
+    await click(drive("left", "C"))
+    await waitFor(() => expect(path("left")).toHaveTextContent(WORK.path))
+    expect(usePanelsStore.getState().active).toBe("left")
+    expect(fake.api.dir.open).toHaveBeenLastCalledWith(expect.objectContaining({ path: WORK.path }))
+    // The right panel did not move.
+    expect(path("right")).toHaveTextContent(WORK.path)
+    // Already there: the same button goes on to the root.
+    await click(drive("left", "C"))
+    await waitFor(() => expect(path("left")).toHaveTextContent(ROOT.path))
+
+    // D in the right panel: the left panel is on C, so D opens at its root.
+    await click(drive("right", "D"))
+    await waitFor(() => expect(path("right")).toHaveTextContent(DROOT.path))
+    // And the drive menu follows the same rule: C from the right panel's menu → the left panel's folder.
+    await act(async () => {
+      await openPath("left", WORK.path)
+    })
+    await key("right", { key: "F2", altKey: true })
+    await act(async () => {
+      fireEvent.keyDown(screen.getByTestId("drive-menu-right"), { key: "c" })
+    })
+    await waitFor(() => expect(path("right")).toHaveTextContent(WORK.path))
+    // A place of the menu is always that folder.
+    await key("right", { key: "F2", altKey: true })
+    await click(within(screen.getByTestId("drive-menu-right")).getByText("Home"))
+    await waitFor(() => expect(path("right")).toHaveTextContent(HOME.path))
   })
 
   it("follows volumes.changed", async () => {

@@ -43,6 +43,12 @@ import type {
   CompareShow,
   CompareStartResult,
   CompareView,
+  ConnectionsResult,
+  RemoteConnectParams,
+  RemoteConnectResult,
+  RemoteOpenResult,
+  SavedConnection,
+  SecureStoreResult,
   DiffAction,
   TextDiffOpenResult,
   TextDiffPageResult,
@@ -355,6 +361,39 @@ export interface CommanderApi {
     tools(): Promise<RpcEnvelope<ArchiveToolsResult>>
   }
   /**
+   * Connections to FTP and FTPS servers (Stage C10.5, ADR-0037). A folder of
+   * a connection lists through query.open with remoteId; transfers and
+   * deletes are files.start jobs. A password is write-only: it is given to
+   * save or connect, and no call returns one.
+   */
+  remote: {
+    /** The saved connections, without secrets. */
+    connections(): Promise<RpcEnvelope<ConnectionsResult>>
+    /** `password` is encrypted by main before it is stored; `forget` drops the stored one. */
+    save(
+      connection: SavedConnection,
+      password?: string,
+      forget?: boolean,
+    ): Promise<RpcEnvelope<SavedConnection>>
+    remove(connectionId: number): Promise<RpcEnvelope<OkResult>>
+    /** Remembers the certificate the user accepted ("" forgets it). */
+    trust(connectionId: number, fingerprint: string): Promise<RpcEnvelope<OkResult>>
+    connect(params: RemoteConnectParams): Promise<RpcEnvelope<RemoteConnectResult>>
+    /** Stops the connect, or the listing, named by its attempt. */
+    cancel(attempt: number): Promise<RpcEnvelope<OkResult>>
+    disconnect(remoteId: number): Promise<RpcEnvelope<OkResult>>
+    /** Lists a folder from the server: by its path, or by its entry id. */
+    open(
+      remoteId: number,
+      folder: string | number,
+      attempt?: number,
+    ): Promise<RpcEnvelope<RemoteOpenResult>>
+    mkdir(remoteDirId: number, name: string): Promise<RpcEnvelope<OkResult>>
+    rename(entryId: number, name: string): Promise<RpcEnvelope<OkResult>>
+    /** Whether this computer can keep passwords in a secret store. */
+    secureStore(): Promise<RpcEnvelope<SecureStoreResult>>
+  }
+  /**
    * Compare and synchronize directories (Stage C08): the rows of a compare
    * are a query session; sync, checksum and compare-by-content jobs are
    * files.start jobs.
@@ -414,6 +453,8 @@ export interface CommanderApi {
   }
   fs: {
     volumes(): Promise<RpcEnvelope<VolumesResult>>
+    /** Stage C10.5: the folder tree; immediate subfolders only, hidden ones on request. */
+    listDirs(path: string, showHidden: boolean): Promise<RpcEnvelope<ListDirsResult>>
     /** Stage C04: F7 and the delete dialog. */
     mkdir(parentDirId: number, path: string): Promise<RpcEnvelope<FsMkdirResult>>
     canTrash(dirId: number): Promise<RpcEnvelope<FsCanTrashResult>>

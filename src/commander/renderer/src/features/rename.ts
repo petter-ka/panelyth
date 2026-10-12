@@ -9,7 +9,7 @@ import type {
 import { create } from "zustand"
 import { bridge, isBridgeAvailable, PanelythError } from "../bridge"
 import { describeOperand } from "./compare"
-import { inArchive, notice, operand, READ_ONLY } from "./files"
+import { inArchive, notice, operand, READ_ONLY, refusedOnConnection } from "./files"
 import { marksDescriptor, markNone } from "./marks"
 import type { Side } from "./panels"
 import { ACTIVE, showDetails, useQueueStore } from "./queue"
@@ -180,6 +180,7 @@ function previewError(error: unknown, reason?: string): string {
 
 /** Ctrl+M: opens the tool for the marks, or the cursor entry. */
 export function openMultiRename(side: Side): void {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t(READ_ONLY))
     return

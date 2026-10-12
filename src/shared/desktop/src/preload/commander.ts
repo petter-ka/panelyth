@@ -12,6 +12,7 @@ import {
   type RendererMethod,
   type RenamePlan,
   type RpcEnvelope,
+  type SavedConnection,
   type SelectionDescriptor,
 } from "@panelyth/contracts"
 
@@ -25,6 +26,23 @@ const copySelection = (s: SelectionDescriptor): SelectionDescriptor => ({
 })
 
 type SourceJobParams = Extract<CommanderJobParams, { source: unknown }>
+
+const copyConnection = (c: SavedConnection): SavedConnection => ({
+  id: c.id,
+  name: c.name,
+  group: c.group,
+  host: c.host,
+  port: c.port,
+  tls: c.tls,
+  user: c.user,
+  startPath: c.startPath,
+  localPath: c.localPath,
+  active: c.active,
+  encoding: c.encoding,
+  transfers: c.transfers,
+  fingerprint: c.fingerprint,
+  hasPassword: c.hasPassword,
+})
 
 const copyPlan = (p: RenamePlan): RenamePlan => ({
   nameMask: p.nameMask,
@@ -41,7 +59,10 @@ const copyPlan = (p: RenamePlan): RenamePlan => ({
 
 /** Only the known fields of each job kind cross the bridge. */
 function jobParams(
-  p: Exclude<SourceJobParams, { kind: "hashCreate" | "multiRename" | "setAttributes" }>,
+  p: Exclude<
+    SourceJobParams,
+    { kind: "hashCreate" | "multiRename" | "setAttributes" | "compareFiles" }
+  >,
 ): CommanderJobParams {
   const source = { selection: copySelection(p.source.selection) }
   switch (p.kind) {
@@ -77,6 +98,23 @@ function jobParams(
         level: p.level,
         ...(p.deleteOriginals !== undefined && { deleteOriginals: p.deleteOriginals }),
       }
+    // Stage C10.5: between a connection and this computer.
+    case "download":
+      return {
+        kind: p.kind,
+        source,
+        destinationDirId: p.destinationDirId,
+        conflict: p.conflict,
+        ...(p.move !== undefined && { move: p.move }),
+      }
+    case "upload":
+      return {
+        kind: p.kind,
+        source,
+        remoteDirId: p.remoteDirId,
+        conflict: p.conflict,
+        ...(p.move !== undefined && { move: p.move }),
+      }
   }
   return { kind: p.kind, source }
 }
@@ -92,6 +130,14 @@ function startParams(p: CommanderJobParams): CommanderJobParams {
         ...(p.deletePermanently !== undefined && { deletePermanently: p.deletePermanently }),
       }
     case "compareFiles":
+      // Stage C10.5: several files against the other panel's folder.
+      if ("source" in p) {
+        return {
+          kind: p.kind,
+          source: { selection: copySelection(p.source.selection) },
+          destinationDirId: p.destinationDirId,
+        }
+      }
       return { kind: p.kind, leftId: p.leftId, rightId: p.rightId }
     // Stage C09: a multi-rename carries its plan; an undo carries nothing.
     case "multiRename":
@@ -145,6 +191,7 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "index.progress",
   "volumes.changed",
   "bookmarks.changed",
+  "connections.changed",
   // Stage C06: find files.
   "find.progress",
   // Stage C08: directory compares.
@@ -226,6 +273,48 @@ const api: CommanderApi = {
       invoke("archive.check", { selection: copySelection(selection), destinationDirId }),
     tools: () => invoke("archive.tools", {}),
   },
+  // Stage C10.5 (ADR-0037). Copied field by field; a password goes to main
+  // and never comes back.
+  remote: {
+    connections: () => invoke("remote.connections", {}),
+    save: (connection, password, forget) =>
+      invoke("remote.saveConnection", {
+        connection: copyConnection(connection),
+        ...(password !== undefined && { password }),
+        ...(forget === true && { forget: true }),
+      }),
+    remove: (connectionId) => invoke("remote.removeConnection", { connectionId }),
+    trust: (connectionId, fingerprint) => invoke("remote.trust", { connectionId, fingerprint }),
+    connect: (p) =>
+      invoke("remote.connect", {
+        ...("connectionId" in p
+          ? { connectionId: p.connectionId }
+          : {
+              quick: {
+                host: p.quick.host,
+                port: p.quick.port,
+                tls: p.quick.tls,
+                user: p.quick.user,
+                active: p.quick.active,
+                encoding: p.quick.encoding,
+                transfers: p.quick.transfers,
+              },
+            }),
+        attempt: p.attempt,
+        ...(p.password !== undefined && { password: p.password }),
+        ...(p.accept !== undefined && { accept: p.accept }),
+      }),
+    cancel: (attempt) => invoke("remote.cancel", { attempt }),
+    disconnect: (remoteId) => invoke("remote.disconnect", { remoteId }),
+    open: (remoteId, folder, attempt) =>
+      invoke("remote.open", {
+        ...(typeof folder === "number" ? { remoteId, dirId: folder } : { remoteId, path: folder }),
+        ...(attempt !== undefined && { attempt }),
+      }),
+    mkdir: (remoteDirId, name) => invoke("remote.mkdir", { remoteDirId, name }),
+    rename: (entryId, name) => invoke("remote.rename", { entryId, name }),
+    secureStore: () => invoke("remote.secureStore", {}),
+  },
   compare: {
     // Copied field by field: only known fields cross the bridge.
     dirs: (p) =>
@@ -287,6 +376,8 @@ const api: CommanderApi = {
         ...(d.findId !== undefined && { findId: d.findId }),
         ...(d.archiveId !== undefined && { archiveId: d.archiveId }),
         ...(d.archiveDirId !== undefined && { archiveDirId: d.archiveDirId }),
+        ...(d.remoteId !== undefined && { remoteId: d.remoteId }),
+        ...(d.remoteDirId !== undefined && { remoteDirId: d.remoteDirId }),
       }),
     page: ({ queryId, offset, limit, thumbProfile }) =>
       invoke("query.page", { queryId, offset, limit, thumbProfile }),
@@ -307,6 +398,7 @@ const api: CommanderApi = {
   },
   fs: {
     volumes: () => invoke("fs.volumes", {}),
+    listDirs: (path, showHidden) => invoke("fs.listDirs", { path, showHidden }),
     mkdir: (parentDirId, path) => invoke("fs.mkdir", { parentDirId, path }),
     canTrash: (dirId) => invoke("fs.canTrash", { dirId }),
     mkfile: (parentDirId, name) => invoke("fs.mkfile", { parentDirId, name }),

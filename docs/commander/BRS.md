@@ -78,16 +78,21 @@ an explicit command.
   keys move between matches; Esc ends the search.
 - Quick filter (Ctrl+S) shows only matching entries until cleared (Stage C06).
 
-### CFR-08 — Tabs (C03)
+### CFR-08 — Tabs (C03, C10.5)
 
 - Folder tabs per panel: Ctrl+T new tab, Ctrl+W close, Ctrl+Tab / Ctrl+Shift+Tab cycle; tabs can be reordered and
   locked. Tabs and their locations persist.
+- Stage C10.5: the tab bar is always shown and has a "+" button; a tab can be renamed, duplicated and reopened after
+  closing (Ctrl+Shift+T). A panel's tabs can be saved as a named **tab set** and opened again later, replacing the
+  current tabs or adding to them.
 
 ### CFR-09 — Drives and places (C03)
 
 - A drive bar per panel and a drive menu (Alt+F1 left, Alt+F2 right) with labels, free and total space, and removable
   and network markers. Home and common user folders are listed too.
 - A disconnected or empty drive shows a clear state and never blocks the other panel.
+- Choosing a drive the other panel is on opens that panel's folder; any other drive opens at its root (owner request
+  2026-10-12).
 
 ### CFR-10 — Hotlist and history (C03)
 
@@ -163,6 +168,9 @@ an explicit command.
 - Synchronize directories compares two trees by name, size, date (with tolerance) and optionally content, shows the
   differences with a direction for each, and applies them as jobs.
 - Compare files by content: identical or not for any file, and a side-by-side text diff for text files.
+- Stage C10.5: several marked files are compared at once, each with the file of the same name in the other panel,
+  with a result list (identical, different, missing) from which a pair's diff opens; one file marked in each panel
+  compares those two; the diff marks what changed inside a line.
 
 ### CFR-21 — Checksums (C08)
 
@@ -220,6 +228,33 @@ archive unreadable, operation failed per item, queue busy, and listing in progre
   can show. Coming back, the active panel opens the viewer's folder with the cursor on its selected tile.
 - Rules, options and budgets: `docs/shared/APP-SWITCHING.md`.
 
+### CFR-30 — Folder tree (C10.5)
+
+- A folder tree beside the panels (Ctrl+Shift+F8): off, one tree that follows the active panel, or one per panel.
+  It lists drives and places, loads a folder's subfolders only when it is expanded, and never materializes the whole
+  filesystem.
+- The tree follows the panel's folder, and Enter or a click in the tree opens a folder in the panel. It is fully
+  operable from the keyboard and is a drop target for copy and move.
+- The tree never delays a panel's listing or its cursor.
+- As built (Stage C10.5): the roots are the drives; the places of the drive menu are not roots yet.
+
+### CFR-31 — FTP connections (C10.5, ADR-0037)
+
+- Connect to FTP and FTPS servers and browse them in a panel like a folder: cursor, marks, sorting, quick search,
+  tabs and history.
+- Copy and move between a server and a local folder as background jobs with progress, pause, cancel, conflict
+  handling and resume; create folders, rename and delete on the server.
+- A connection manager (Ctrl+F) saves connections: host, port, encryption, user, start folder and options. Saved
+  passwords are encrypted with the OS's secure store and are never shown again; without a secure store they are
+  asked every time.
+- Encryption is the default. An unencrypted connection is the user's choice per connection and is labelled; an
+  encrypted one never falls back.
+- Nothing connects at startup or without a command. A server that does not answer never stalls the other panel.
+- As built (Stage C10.5): files move between a server and this computer only (no copy from one server to another),
+  a file on a server is shown but never started or edited in place, and commands that need files of this computer
+  (find, synchronize, compare, checksums, pack, multi-rename, attributes, the command line, user commands, the file
+  clipboard, the hotlist) say that they are not available on a connection.
+
 ## 4. Non-functional requirements
 
 ### CNFR-01 — Keyboard first
@@ -246,6 +281,8 @@ Copies run close to the OS's own speed with constant memory, and never block eit
 - Destructive operations confirm; delete goes to the trash by default.
 - Nothing runs without an explicit command; programs need confirmation by default (ADR-0027).
 - Recursive operations never follow links. Archive extraction never writes outside the target.
+- A server is untrusted input: its file names never make a transfer write outside the target, and no stored
+  password is readable in the database, in logs or by a renderer (CFR-31).
 
 ### CNFR-06 — Panel independence
 
@@ -258,7 +295,7 @@ panel and job progress are announced to screen readers.
 
 ## 5. Out of scope for the first release
 
-- FTP, SFTP, WebDAV and cloud storage
+- SFTP, WebDAV and cloud storage (FTP and FTPS came into scope with CFR-31, owner request 2026-10-12)
 - plugins (Total Commander WCX/WFX/WLX compatibility)
 - a built-in text editor
 - a terminal emulator
@@ -271,7 +308,7 @@ panel and job progress are announced to screen readers.
 
 | Shared with the viewer (platform) | Commander only |
 |---|---|
-| sidecar, index, query sessions, selection descriptors, jobs, watcher, preview cache, decoders | `all` index scope, archive sources, find, compare, checksums, rename engine extensions |
+| sidecar, index, query sessions, selection descriptors, jobs, watcher, preview cache, decoders, the folder tree (from Stage C10.5) | `all` index scope, archive sources, find, compare, checksums, rename engine extensions, remote connections |
 | Electron shell and window, IPC, protocols, security model | the commander capability profile: open any file, programs, command line |
 | the app switch and shared state: folder, focus, selection, bookmarks, recent, appearance, clipboard (FR-22) | the commander's own layout, panels, tabs, views and sorts |
 | design system, keymap, theme, settings, properties dialog | dual panels, lists, queue panel, lister, function-key bar |

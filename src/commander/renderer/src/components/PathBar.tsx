@@ -5,6 +5,8 @@ import {
   goRoot,
   goUp,
   openPath,
+  openRemoteDir,
+  remoteUrl,
   setFilter,
   toPanelError,
   useListingStore,
@@ -38,6 +40,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
   const branch = useListingStore((s) => s[side].branch)
   const find = useListingStore((s) => s[side].find)
   const archive = useListingStore((s) => s[side].archive)
+  const remote = useListingStore((s) => s[side].remote)
   const filter = useListingStore((s) => s[side].filter)
   const [editing, setEditing] = useState(false)
   const [filtering, setFiltering] = useState(false)
@@ -50,7 +53,8 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
   const input = useRef<HTMLInputElement>(null)
 
   const edit = (): void => {
-    setValue(path)
+    // On a connection the field holds the folder on the server.
+    setValue(remote ? remote.path : path)
     setError(null)
     setEditing(true)
     queueMicrotask(() => input.current?.select())
@@ -83,9 +87,16 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
 
   const submit = async (): Promise<void> => {
     const target = value.trim()
-    if (target === "" || target === path) return stop()
+    if (target === "" || target === (remote ? remote.path : path)) return stop()
     try {
-      await openPath(side, target, { inline: true })
+      // On a connection: "/pub/photos" is a folder on the server, also when
+      // pasted as the address the bar shows. Anything else is a folder of
+      // this computer, and leaves the connection.
+      const url = remote ? remoteUrl({ ...remote, path: "" }) : null
+      const onServer = url !== null && target.startsWith(url) ? target.slice(url.length) : target
+      if (remote && onServer.startsWith("/")) {
+        await openRemoteDir(side, remote, onServer, { inline: true })
+      } else await openPath(side, target, { inline: true })
       stop()
     } catch (e) {
       setError(toPanelError(e).message)
@@ -131,6 +142,39 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               </button>
             </Tooltip>
           )}
+          {remote && (
+            <Tooltip
+              content={
+                remote.encrypted
+                  ? t("Encrypted connection (TLS)")
+                  : t("Not encrypted: the password and the files can be read on the way.")
+              }
+            >
+              <span
+                data-testid={`remote-${side}`}
+                data-encrypted={remote.encrypted}
+                className={`mr-1 h-6 max-w-[40%] shrink-0 truncate rounded px-1.5 leading-6 ${remote.encrypted ? "bg-accent/15 text-accent" : "bg-danger/15 text-danger"}`}
+              >
+                {remote.encrypted ? t("FTPS") : t("Not encrypted")}
+              </span>
+            </Tooltip>
+          )}
+          {remote !== null && remote.rejected > 0 && (
+            <Tooltip
+              content={t(
+                "Entries whose names can't be used safely on this computer are not listed.",
+              )}
+            >
+              <span
+                data-testid={`rejected-${side}`}
+                className="mr-1 h-6 shrink-0 rounded bg-raised px-1.5 leading-6 text-muted"
+              >
+                {t("{count, plural, one {# name left out} other {# names left out}}", {
+                  count: remote.rejected,
+                })}
+              </span>
+            </Tooltip>
+          )}
           <Tooltip content={t("Edit the path (Alt+D)")}>
             <button
               type="button"
@@ -140,7 +184,11 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               aria-busy={loading}
               className={`h-6 min-w-0 flex-1 truncate rounded px-1.5 text-left font-mono font-normal hover:bg-raised ${active ? "text-text" : "text-muted"}`}
             >
-              {archive ? archivePath(path, archive) : path || t("No folder open")}
+              {remote
+                ? remoteUrl(remote)
+                : archive
+                  ? archivePath(path, archive)
+                  : path || t("No folder open")}
             </button>
           </Tooltip>
           {filtering ? (

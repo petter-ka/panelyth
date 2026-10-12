@@ -601,6 +601,7 @@ describe("the toolbar and the bars", () => {
       "Branch view (all files below)",
       "Compare directories",
       "Synchronize directories",
+      "Compare by content",
       "Quick view",
       "Refresh",
       "Directory hotlist",

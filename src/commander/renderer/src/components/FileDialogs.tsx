@@ -41,8 +41,12 @@ export function CopyDialog() {
 
 function CopyForm({ c }: { c: CopyDialogState }) {
   const [busy, setBusy] = useState(false)
-  const move = c.kind === "move"
-  const verb = move ? t("Move") : t("Copy")
+  // Between a connection and this computer (Stage C10.5): a download or an upload.
+  const download = c.kind === "download"
+  const upload = c.kind === "upload"
+  const transfer = download || upload
+  const move = c.kind === "move" || (transfer && c.move)
+  const verb = move ? t("Move") : download ? t("Download") : upload ? t("Upload") : t("Copy")
   // F5 in an archive panel copies entries out (an extract job, Stage C07).
   const extract = c.kind === "extract"
   const here = c.name !== null
@@ -65,9 +69,23 @@ function CopyForm({ c }: { c: CopyDialogState }) {
                 what: c.what,
                 amount: amount(c.bytes),
               })
-            : move
-              ? t("Move {what}{amount}", { what: c.what, amount: amount(c.bytes) })
-              : t("Copy {what}{amount}", { what: c.what, amount: amount(c.bytes) })
+            : download
+              ? move
+                ? t("Move {what}{amount} from the server", {
+                    what: c.what,
+                    amount: amount(c.bytes),
+                  })
+                : t("Download {what}{amount}", { what: c.what, amount: amount(c.bytes) })
+              : upload
+                ? move
+                  ? t("Move {what}{amount} to the server", {
+                      what: c.what,
+                      amount: amount(c.bytes),
+                    })
+                  : t("Upload {what}{amount}", { what: c.what, amount: amount(c.bytes) })
+                : move
+                  ? t("Move {what}{amount}", { what: c.what, amount: amount(c.bytes) })
+                  : t("Copy {what}{amount}", { what: c.what, amount: amount(c.bytes) })
       }
       contentClassName="w-[min(34rem,calc(100vw-2rem))]"
     >
@@ -104,13 +122,15 @@ function CopyForm({ c }: { c: CopyDialogState }) {
               className={field}
               value={c.destination}
               spellCheck={false}
+              // An upload goes to the folder the other panel shows on the server.
+              readOnly={upload}
               onChange={(e) => updateCopy({ destination: e.target.value })}
               autoFocus
             />
           </label>
         )}
         <div className="flex gap-3">
-          {!here && !extract && (
+          {!here && !extract && !transfer && (
             <label className="flex flex-1 flex-col gap-1">
               <span className="text-muted">{t("Only files matching")}</span>
               <input
@@ -152,6 +172,12 @@ function CopyForm({ c }: { c: CopyDialogState }) {
             </label>
             <ArchiveWarnings warnings={c.warnings} />
           </>
+        ) : transfer ? (
+          move && (
+            <p role="note" className="text-muted">
+              {t("Each file is removed from where it was once its copy is complete.")}
+            </p>
+          )
         ) : (
           <label className="flex items-center gap-2">
             <input
@@ -169,7 +195,7 @@ function CopyForm({ c }: { c: CopyDialogState }) {
         )}
         <div className="flex justify-end gap-2">
           <Button onClick={closeCopy}>{t("Cancel")}</Button>
-          {!here && !extract && (
+          {!here && !extract && !transfer && (
             <Button
               disabled={busy}
               onClick={() => void submit(false)}
@@ -196,9 +222,11 @@ export function DeleteDialog() {
   const r = useFilesStore((s) => s.remove)
   if (!r) return null
   const noTrash = !r.permanent && r.trash === false
-  const title = r.permanent
-    ? t("Delete {what} permanently?", { what: r.what })
-    : t("Move {what} to the trash?", { what: r.what })
+  const title = r.remote
+    ? t("Delete {what} on the server?", { what: r.what })
+    : r.permanent
+      ? t("Delete {what} permanently?", { what: r.what })
+      : t("Move {what} to the trash?", { what: r.what })
   return (
     <DialogWindow
       open
@@ -207,11 +235,13 @@ export function DeleteDialog() {
       }}
       title={title}
       description={
-        noTrash
-          ? t("This drive has no trash. The items can only be deleted permanently.")
-          : r.permanent
-            ? t("This can't be undone.")
-            : t("You can restore them from the trash.")
+        r.remote
+          ? t("A server has no trash. This can't be undone.")
+          : noTrash
+            ? t("This drive has no trash. The items can only be deleted permanently.")
+            : r.permanent
+              ? t("This can't be undone.")
+              : t("You can restore them from the trash.")
       }
     >
       <form

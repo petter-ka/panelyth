@@ -1,6 +1,6 @@
 # Stage C11 — Commander Release
 
-Status: **Planned**. Track: commander. Depends on: C10, P04, P05, P06.
+Status: **Planned**. Track: commander. Depends on: C10, C10.5, P04, P05, P06.
 
 ## Objective
 

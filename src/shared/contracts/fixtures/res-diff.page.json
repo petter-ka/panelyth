@@ -15,7 +15,13 @@
         "left": "two",
         "op": "changed",
         "r": 2,
-        "right": "2"
+        "right": "2",
+        "spans": [
+          0,
+          3,
+          0,
+          1
+        ]
       },
       {
         "l": 3,

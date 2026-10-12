@@ -31,7 +31,8 @@ Only one stage is active at a time. Default order:
 | 12 | C07 — Archives | commander | implementation done (2026-10-07): ADR-0030 accepted; archives as session sources |
 | 13 | C08 — Compare, synchronize, checksums | commander | implementation done (2026-10-11): compares as session sources; sync and checksum jobs |
 | 14 | C09 — Multi-rename, attributes, properties | commander | implementation done (2026-10-11): one rename engine, a previewed multi-rename with an undo, attribute jobs |
-| 15 | C10 — Command line, tools, customization | commander | active (implementation done 2026-10-11): ADR-0027 accepted in full; the command line, user commands, toolbar, Thumbnails view, settings |
+| 15 | C10 — Command line, tools, customization | commander | implementation done (2026-10-11): ADR-0027 accepted in full; the command line, user commands, toolbar, Thumbnails view, settings |
+| 15a | C10.5 — Tab sets, folder tree, FTP connections, compare selected files | commander | active (implementation done 2026-10-12, owner request): ADR-0037 accepted with amendments; tab sets, the folder tree on shared code, FTP and FTPS as a session source with saved connections, compare for several files. P04 covers FTP and the tree on all three OSes |
 | 16 | P04 — Cross-platform hardening | platform | both apps |
 | 17 | P05 — Performance hardening | platform | both apps |
 | 18 | P06 — Release engineering | platform | packages both app views with the commander enabled |
@@ -193,12 +194,22 @@ Multi-rename (Ctrl+M) with Total Commander's masks, search and replace, case and
 that applies it, as one job with one level of undo; attributes or permissions and dates for the marked entries,
 optionally below folders; folder sizes written in batches; properties (Alt+Enter) on rows shared with the viewer.
 
-### C10 — Command line, tools and customization (active; implementation done 2026-10-11)
+### C10 — Command line, tools and customization (implementation done 2026-10-11)
 
 A command line that runs a typed line through the OS shell in the active panel's folder, on Enter only, with a
 history and `cd`; user commands with placeholders, quoted by main and started from a customizable toolbar, a key or
 the menu of files; a Thumbnails view on the tile parts shared with the viewer; settings in five sections. The
 security review of `shell.run` and user commands is recorded with no open findings (ADR-0027 accepted in full).
+
+### C10.5 — Tab sets, folder tree, FTP connections, compare selected files (active; implementation done 2026-10-12)
+
+The tab bar always shown with a "+" button, rename, duplicate and reopen, and named tab sets that can be saved and
+opened again; a folder tree beside the panels (one that follows the active panel, or one per panel) on the viewer's
+tree moved to shared code; FTP and FTPS servers as panel locations with a connection manager, saved connections,
+passwords encrypted by the OS store, and transfers as queue jobs (ADR-0037, accepted with amendments); Compare by
+content for any number of marked files with a result list, and changes marked inside a line. The security review of
+the remote path is recorded with no open blocking finding. Whether FTP is on in the first release is the owner's to
+confirm before C11.
 
 ### C11 — Commander release
 

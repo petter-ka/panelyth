@@ -11,6 +11,7 @@ import {
 import { createPageStore, type PageStore } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
+import { refusedOnConnection } from "./files"
 import { goToEntry, isExpired, showFindResults, useListingStore } from "./listing"
 import type { Side } from "./panels"
 import { t } from "@panelyth/i18n"
@@ -234,6 +235,8 @@ function saveHistory(spec: FindStartParams): void {
 export function openFind(side: Side): void {
   const s = useFindStore.getState()
   if (s.dialog) return
+  // Find searches this computer's index; a server has none (ADR-0037).
+  if (refusedOnConnection(side)) return
   const path = useListingStore.getState()[side].path
   useFindStore.setState({
     dialog: { side },

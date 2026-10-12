@@ -5,6 +5,7 @@ import { runPanelAction, useUiStore } from "../features/commands"
 import { toolAction, useKeymapStore, type ActionId } from "../features/keymap"
 import { useToolsStore } from "../features/tools"
 import { enter, pageStoreOf, parentRows, useListingStore } from "../features/listing"
+import { compareLabel } from "../features/compare"
 import { countOf, marksOf } from "../features/marks"
 import type { Side } from "../features/panels"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
@@ -112,7 +113,8 @@ export function RowMenu({ side }: { side: Side }) {
     const chord = chords[item.action]?.[0]
     entries.push({
       id: item.action,
-      label: t(item.label),
+      // Compare by content says what it will compare (Stage C10.5).
+      label: item.action === "compare.content" ? compareLabel(side) : t(item.label),
       detail: chord ? formatChord(chord) : undefined,
       onSelect: () => runPanelAction(side, item.action),
     })

@@ -7,6 +7,7 @@ import type {
   JobSnapshot,
   PreviewItem,
   QuerySnapshot,
+  SavedConnection,
   SidecarStatus,
   Volume,
 } from "./rpc"
@@ -99,6 +100,8 @@ export interface EventMap {
   "volumes.changed": { volumes: Volume[] }
   /** The shared bookmarks (the hotlist) changed in either app: the whole list (Stage C03). */
   "bookmarks.changed": { bookmarks: Bookmark[] }
+  /** The saved connections changed (Stage C10.5, commander): the whole list, without secrets. */
+  "connections.changed": { connections: SavedConnection[] }
   /** A search's progress (Stage C06, commander); results arrive through query.invalidated. */
   "find.progress": FindProgress
   /** A directory compare's progress (Stage C08, commander); rows arrive through query.invalidated. */
@@ -123,6 +126,7 @@ export const EVENT_CHANNELS = [
   "settings.changed",
   "volumes.changed",
   "bookmarks.changed",
+  "connections.changed",
   "find.progress",
   "compare.progress",
   "mediaWindow.step",
@@ -139,6 +143,7 @@ export const SIDECAR_EVENT_CHANNELS = [
   "job.conflict",
   "volumes.changed",
   "bookmarks.changed",
+  "connections.changed",
   "find.progress",
   "compare.progress",
 ] as const satisfies readonly EventChannel[]

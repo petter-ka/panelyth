@@ -139,6 +139,51 @@ type Row struct {
 	Left, Right string
 	// Cut: a line was longer than MaxLineBytes.
 	Cut bool
+	// Spans marks what differs inside a changed row (Stage C10.5): the part
+	// of Left and of Right between their common start and their common end,
+	// as [left from, left to, right from, right to] in UTF-16 units (the
+	// renderer's string positions). Nil for rows that are not changed.
+	Spans []int
+}
+
+// spans returns where two lines differ once their common start and end are
+// taken away. The cuts fall between characters, never inside one.
+func spans(l, r string) []int {
+	// The common start, in bytes.
+	p := 0
+	for p < len(l) && p < len(r) {
+		a, an := utf8.DecodeRuneInString(l[p:])
+		b, bn := utf8.DecodeRuneInString(r[p:])
+		if a != b || an != bn {
+			break
+		}
+		p += an
+	}
+	// The common end, never reaching into the common start.
+	le, re := len(l), len(r)
+	for le > p && re > p {
+		a, an := utf8.DecodeLastRuneInString(l[p:le])
+		b, bn := utf8.DecodeLastRuneInString(r[p:re])
+		if a != b || an != bn {
+			break
+		}
+		le -= an
+		re -= bn
+	}
+	start := utf16Len(l[:p])
+	return []int{start, start + utf16Len(l[p:le]), start, start + utf16Len(r[p:re])}
+}
+
+// utf16Len is the length of s in UTF-16 units.
+func utf16Len(s string) int {
+	n := 0
+	for _, c := range s {
+		n++
+		if c >= 0x10000 {
+			n++
+		}
+	}
+	return n
 }
 
 // Page returns rows [offset, offset+limit).
@@ -197,6 +242,9 @@ func (d *Diff) Page(offset, limit int) ([]Row, error) {
 			row.Right = rt[ri].s
 			row.Cut = row.Cut || rt[ri].cut
 			ri++
+		}
+		if row.Op == OpChanged {
+			row.Spans = spans(row.Left, row.Right)
 		}
 	}
 	return rows, nil

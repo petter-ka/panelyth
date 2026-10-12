@@ -69,7 +69,13 @@ describe("commander shell (Stage C00)", () => {
       await vi.advanceTimersByTimeAsync(500)
     })
     expect(api.library.setSetting).toHaveBeenCalledTimes(1)
-    expect(api.library.setSetting).toHaveBeenCalledWith(LAYOUT_KEY, { v: 1, split: 35 })
+    // The folder tree's mode and width are part of the layout since Stage C10.5.
+    expect(api.library.setSetting).toHaveBeenCalledWith(LAYOUT_KEY, {
+      v: 1,
+      split: 35,
+      tree: "off",
+      treeWidth: 220,
+    })
   })
 
   it("applies a stored split and ignores invalid ones", async () => {

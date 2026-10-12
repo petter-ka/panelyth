@@ -70,6 +70,19 @@ const VERBS: Partial<Record<JobSnapshot["kind"], [string, string]>> = {
     msg("Changing attributes of {count, plural, one {# item} other {# items}}"),
     msg("Changed attributes of {count, plural, one {# item} other {# items}}"),
   ],
+  // Stage C10.5: between a connection and this computer.
+  download: [
+    msg("Downloading {count, plural, one {# item} other {# items}}"),
+    msg("Downloaded {count, plural, one {# item} other {# items}}"),
+  ],
+  upload: [
+    msg("Uploading {count, plural, one {# item} other {# items}}"),
+    msg("Uploaded {count, plural, one {# item} other {# items}}"),
+  ],
+  remoteDelete: [
+    msg("Deleting {count, plural, one {# item} other {# items}} on the server"),
+    msg("Deleted {count, plural, one {# item} other {# items}} on the server"),
+  ],
 }
 
 /** "Copying 1,204 items to Backup" / "Copied 1,204 items to Backup". */

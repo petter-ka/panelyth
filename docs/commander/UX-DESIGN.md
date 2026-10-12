@@ -42,7 +42,10 @@ for. People coming from Total Commander find their keys where they expect them.
 - **Active panel:** a 2 px `accent` line on top of its header, and the cursor bar drawn in full. The inactive panel's
   cursor is a 1 px muted outline, so the user always sees where Tab will land.
 - **Drive and tab bar:** drive buttons with the current one pressed, free space, and folder tabs. Tabs show the folder
-  name and a lock glyph when locked.
+  name and a lock glyph when locked. A drive button (and a drive in the drive menu) opens the drive at the **other
+  panel's folder** when the other panel is on that drive, as in Total Commander: one click puts both panels in the
+  same place. Any other drive opens at its root, and so does the same button when the panel already shows that
+  folder. A place of the drive menu (Home, Documents) always opens that folder.
 - **Path bar:** the full path and the active mask (`*.*`, or the quick filter). Click it or press Alt+D (as in Explorer) to edit;
   Enter navigates; Esc cancels. A branch view or fed search results show an accent "Branch view" or "Search results: …"
   chip before the path (click or Backspace returns to the folder); the quick filter (Ctrl+S) is edited in a field
@@ -84,6 +87,48 @@ As built: Ctrl+Shift+F1. Fixed-size tiles flow left to right, as many a row as t
 outline around the tile (accent in the active panel); a marked tile has the accent frame and its name in the accent
 color with "•". ←/→ move a tile, ↑/↓ a row. Pictures and videos show their thumbnail, other files their type icon,
 folders the folder symbol. Tile size S, M or L in Settings → Panels, or Ctrl+wheel.
+
+### Tab bar, folder tree and connections (Stage C10.5)
+
+Details and keys: `docs/commander/stages/C10.5-tabs-tree-ftp-compare.md`.
+
+- **Tab bar:** always shown (Settings → Panels can hide it while a panel has one tab), with a "+" button after the
+  last tab and × on the active tab (on hover on the others). A double-click renames a tab. The tab menu has Rename,
+  Duplicate, Lock, Close, Close others, Close tabs to the right, Reopen closed tab, Save tabs… and Tab sets… (one
+  dialog to open a set in place of the tabs or after them, and to rename and remove sets).
+- **Folder tree:** a pane left of the panels that follows the active panel, or one left of each panel
+  (Ctrl+Shift+F8 cycles off, one, two; Shift+Tab moves into it). Rows have the panel's row height, an expand arrow
+  and the name; the panel's folder is highlighted, and the tree's own cursor is the panel cursor's outline. The
+  tree sits on `chrome`, like the bars, and is dimmed while its panel is in an archive, on search results or on a
+  connection.
+- **Connections (Ctrl+F):** a dialog with the list of saved connections (groups as sections; Enter connects, F4
+  edits, Delete removes after a question) and buttons Quick connect…, New…, Edit…, Duplicate, Remove and Connect
+  (primary). New and Edit open the connection's form in the same place: name, group, server, port, encryption,
+  user, password (a field that is never filled in: "A password is stored" is its placeholder), "Save the password",
+  the folder on the server, a folder of this computer for the other panel, and the advanced options. Where the
+  computer has no secret store the form says so in place of the checkbox. **Quick connect (Ctrl+N)** is the
+  server part of that form with Connect, and "Save this connection…".
+- **Questions of a connect** are dialogs of their own, one at a time: "Connecting to …" with Cancel; the password
+  (it says when the server refused the last one); a certificate that can't be verified, with who it was issued to
+  and its SHA-256 fingerprint in pairs of digits, and the buttons Cancel (focused), Trust this time and Always
+  trust this certificate. A certificate that is not the one accepted before is said in the title and in the
+  warning color.
+- **A connected panel** shows `ftp://user@host/path` in the path bar after a marker: "FTPS" in the accent color,
+  or "Not encrypted" in the warning color, each with a tooltip. Entries whose names were left out are counted next
+  to it. The drive bar has an "FTP" button (pressed while connected), the connection's name where the drive's
+  would be, and Disconnect (Ctrl+Shift+F). The tab is called by the connection.
+- **Waiting and lost connections:** a listing the server takes long over shows "Waiting for the server…" with Stop
+  at the panel's lower edge after 0.4 s (Esc stops too); the panel keeps what it showed. A tab whose connection is
+  not open (after a restart, or once it closed) shows "Not connected", the address, **Connect** and "Show the
+  folder of this computer" in place of the rows.
+- **Transfers:** F5 and F6 open the copy dialog as "Download …" or "Upload …" (or "Move … from / to the server");
+  an upload's destination is the folder the server's panel shows and is not edited. F8 on a server always asks:
+  "Delete … on the server? A server has no trash."
+- **Not on a connection:** the commands that need files of this computer say "This is not available on a
+  connection. Copy the files to this computer first." in the status bar and open nothing.
+- **Compare several files:** the result list uses the synchronize table's row style: name, the two sizes and dates,
+  and a word for the result (different, missing), never color alone. Shift+N and Shift+P in the diff step to the
+  next and previous differing pair.
 
 ## Function-key bar
 
@@ -261,6 +306,9 @@ entry is remappable.
 | Ctrl+K, Alt+F8 | Focus the command line, command history | C10 |
 | Ctrl+Enter / Ctrl+Shift+Enter | Add the cursor entry's name / full path to the command line | C10 |
 | Enter / Shift+Enter (in the command line) | Run the line / run it in a console window (fixed keys) | C10 |
+| Ctrl+Shift+T | Reopen the closed tab | C10.5 |
+| Ctrl+Shift+F8 / Shift+Tab | Folder tree: off / one / one per panel; go to the tree | C10.5 |
+| Ctrl+F / Ctrl+N / Ctrl+Shift+F | Connections / quick connect / disconnect | C10.5 |
 | F1, Ctrl+/ | Keyboard shortcuts (shared dialog) | C02 |
 | Ctrl+Shift+M | Switch to the viewer (shared `shell` scope) | C00 |
 | Alt+F4 | Exit | C00 |

@@ -134,6 +134,34 @@ Three job kinds joined the queue; `dirSize` changed how it writes.
   1,000, and 1.0 ms of index writes instead of 11.6 ms.
 - All three rename and attribute jobs run in the lane of their volume; main lets only the commander start them.
 
+## As built (Stage C10.5): transfers to and from a server, and comparing several files
+
+Three job kinds joined the queue for connections (ADR-0037; `internal/jobs/remote.go`). Main lets only the commander
+start them, and Go refuses entries of a connection in every other job.
+
+- **The lane** of all three is the connection (`remote:<id>`), not a volume: two jobs on one server run one after
+  another, jobs on two servers and jobs on local disks run side by side. Inside a job, files move over the
+  connection's transfer sockets, 1–4 as the connection says (default 2); that is the bound a server sees.
+- **`download`** takes a selection of a remote session and a local folder by its id. Folders are walked on the
+  server (each listed once, at most 64 deep). A file is written through a partial file and renamed into place, with
+  the server's date. A transfer that is cut off is retried once, from where it stopped when the server offers REST.
+  A name is checked again where it is written, so nothing lands outside the target.
+- **`upload`** takes local entries and a folder of a connection by its id. It writes each file under its final name
+  (FTP has no portable rename-over) and then compares the size the server reports with what was sent; a cut-off
+  upload is retried once, resuming where the server allows it. Links and special files are not uploaded.
+- **`move`** (F6) is an option of both: a source is removed only after its copy is whole (for an upload, after the
+  size check; for a folder, after everything in it went).
+- **Conflicts** use the queue's policies and the same question as local copies, decided by size and date (a server
+  gives no checksum): ask, overwrite, skip, overwrite older, rename new, rename existing.
+- **`remoteDelete`** removes the selected entries on the server, deepest first. There is no trash on a server, so
+  it is always permanent, and the dialog says so.
+- All three pause between chunks and items, cancel (a cancelled download removes its partial file), report bytes
+  with speed and ETA, and record per-item failures with the server's own words. After a job the folders it changed
+  are read again, so the panels showing them follow.
+- **`compareFiles` over a selection** (the same stage): next to its two-file form it takes a selection and a folder,
+  and compares each selected file with the file of that name there, as one job. A pair that differs is an item
+  error (`DIFFERENT`), a missing partner `NOT_FOUND`; folders in the selection are left out and counted.
+
 ## Why
 
 - Lanes give parallelism across disks without thrashing a single disk.

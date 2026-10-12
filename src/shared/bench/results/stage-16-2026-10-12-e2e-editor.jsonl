@@ -5,3 +5,5 @@
 {"at":"2026-10-12T02:17:38.941Z","test":"batch-cancel","cancelMs":127,"finishedBeforeCancel":16}
 {"at":"2026-10-12T02:25:53.599Z","test":"batch-200","pictures":200,"jobMs":1161,"picturesPerSec":172.3,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":18}
 {"at":"2026-10-12T02:25:55.411Z","test":"batch-cancel","cancelMs":127,"finishedBeforeCancel":16}
+{"at":"2026-10-12T08:31:06.009Z","test":"batch-200","pictures":200,"jobMs":834,"picturesPerSec":239.8,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":7}
+{"at":"2026-10-12T08:31:07.564Z","test":"batch-cancel","cancelMs":111,"finishedBeforeCancel":16}

@@ -239,6 +239,13 @@ export async function runCommandLine(console = false): Promise<void> {
         set({ message: t("Open a folder in the panel first.") })
         return
       }
+      // A command runs in a folder of this computer, never "on" a server.
+      if (p.remote) {
+        set({
+          message: t("Commands run in a folder of this computer. Leave the connection first."),
+        })
+        return
+      }
       await bridge.shellRun(line, p.dirId, console)
     }
     if (line !== "") remember(line)

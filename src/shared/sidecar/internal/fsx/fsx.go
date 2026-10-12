@@ -64,8 +64,11 @@ type ListOptions struct {
 	// (default 512); the rest report HasChildren = true.
 	ProbeBudget int
 	// ProbeReads bounds the entries one probe reads (default 256).
-	ProbeReads     int
-	ProbeWorkers   int // default 8
+	ProbeReads   int
+	ProbeWorkers int // default 8
+	// ShowHidden lists hidden and system folders too (the commander's tree
+	// with hidden files shown, Stage C10.5). Links are skipped either way.
+	ShowHidden     bool
 	readDirChunk   int
 	probeReadChunk int
 }
@@ -88,7 +91,8 @@ func (o *ListOptions) defaults() {
 }
 
 // ListDirs returns the visible immediate subfolders of dir in natural order.
-// Hidden folders and symlinks are skipped (same rules as the scanner).
+// Hidden folders and symlinks are skipped (same rules as the scanner);
+// ShowHidden lists the hidden ones too.
 // truncated reports that MaxEntries cut the listing.
 func ListDirs(ctx context.Context, dir string, opts ListOptions) (children []DirChild, truncated bool, err error) {
 	opts.defaults()
@@ -103,7 +107,7 @@ func ListDirs(ctx context.Context, dir string, opts ListOptions) (children []Dir
 		}
 		ents, rerr := f.ReadDir(opts.readDirChunk)
 		for _, e := range ents {
-			if !e.IsDir() || e.Type()&fs.ModeSymlink != 0 || IsHidden(e) {
+			if !e.IsDir() || e.Type()&fs.ModeSymlink != 0 || (!opts.ShowHidden && IsHidden(e)) {
 				continue
 			}
 			if len(children) == opts.MaxEntries {
@@ -167,7 +171,7 @@ func hasSubdir(dir string, opts ListOptions) bool {
 	for read := 0; read < opts.ProbeReads; {
 		ents, err := f.ReadDir(opts.probeReadChunk)
 		for _, e := range ents {
-			if e.IsDir() && e.Type()&fs.ModeSymlink == 0 && !IsHidden(e) {
+			if e.IsDir() && e.Type()&fs.ModeSymlink == 0 && (opts.ShowHidden || !IsHidden(e)) {
 				return true
 			}
 		}

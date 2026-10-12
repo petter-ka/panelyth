@@ -1,6 +1,7 @@
 import type { Bookmark, RecentFolder } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
+import { refusedOnConnection } from "./files"
 import { openPath, useListingStore } from "./listing"
 import { setActivePanel, type Side } from "./panels"
 
@@ -75,6 +76,8 @@ export function openLocation(side: Side, path: string): Promise<void> {
 /** "Add the current folder": appended to the shared list (no group). */
 export async function addCurrentFolder(side: Side, group = ""): Promise<Bookmark | null> {
   closeMenus()
+  // The hotlist holds folders of this computer; servers are saved as connections.
+  if (refusedOnConnection(side)) return null
   const { path } = useListingStore.getState()[side]
   if (!path) return null
   const b = await bridge.addBookmark(path, "", group)

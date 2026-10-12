@@ -45,6 +45,8 @@ func validate(s Spec) error {
 		return validateArchive(s)
 	case KindSync, KindHashCreate, KindHashVerify, KindCompareFiles:
 		return validateCompare(s)
+	case KindDownload, KindUpload, KindRemoteDelete:
+		return validateRemote(s)
 	case KindTrash, KindDelete, KindFavorite, KindDirSize:
 	case KindRename, KindMultiRename, KindUndoRename:
 		return validateRename(s)
@@ -163,6 +165,12 @@ func (m *Manager) execute(j *job) (State, string) {
 		err = m.hashVerify(j)
 	case KindCompareFiles:
 		err = m.compareFiles(j)
+	case KindDownload:
+		msg, err = m.download(j, a)
+	case KindUpload:
+		msg, err = m.upload(j, a)
+	case KindRemoteDelete:
+		err = m.remoteDelete(j)
 	case KindEditSave:
 		msg, err = m.editSave(j, a)
 	case KindEdit:

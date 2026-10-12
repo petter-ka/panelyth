@@ -162,6 +162,49 @@ export const ACTIONS = [
     label: msg("Close other tabs"),
     defaults: [],
   },
+  // Stage C10.5: the tab bar's other commands and the saved tab sets.
+  {
+    id: "tab.reopen",
+    scope: "panels",
+    group: msg("Tabs"),
+    label: msg("Reopen closed tab"),
+    defaults: ["Mod+Shift+t"],
+  },
+  {
+    id: "tab.rename",
+    scope: "panels",
+    group: msg("Tabs"),
+    label: msg("Rename tab"),
+    defaults: [],
+  },
+  {
+    id: "tab.duplicate",
+    scope: "panels",
+    group: msg("Tabs"),
+    label: msg("Duplicate tab"),
+    defaults: [],
+  },
+  {
+    id: "tab.closeRight",
+    scope: "panels",
+    group: msg("Tabs"),
+    label: msg("Close tabs to the right"),
+    defaults: [],
+  },
+  {
+    id: "tabs.save",
+    scope: "panels",
+    group: msg("Tabs"),
+    label: msg("Save tabs"),
+    defaults: [],
+  },
+  {
+    id: "tabs.sets",
+    scope: "panels",
+    group: msg("Tabs"),
+    label: msg("Tab sets"),
+    defaults: [],
+  },
   { id: "view.brief", scope: "panels", group: "View", label: "Brief view", defaults: ["Mod+F1"] },
   { id: "view.full", scope: "panels", group: "View", label: "Full view", defaults: ["Mod+F2"] },
   {
@@ -500,6 +543,43 @@ export const ACTIONS = [
     group: msg("View"),
     label: msg("Show or hide the function-key bar"),
     defaults: [],
+  },
+  // Stage C10.5: the folder tree beside the panels.
+  {
+    id: "tree.toggle",
+    scope: "shell",
+    group: msg("View"),
+    label: msg("Folder tree: off, one, one per panel"),
+    defaults: ["Mod+Shift+F8"],
+  },
+  {
+    id: "tree.focus",
+    scope: "shell",
+    group: msg("Navigation"),
+    label: msg("Go to the folder tree"),
+    defaults: ["Shift+Tab"],
+  },
+  // Stage C10.5: connections to FTP servers (ADR-0037), Total Commander's keys.
+  {
+    id: "remote.connections",
+    scope: "panels",
+    group: msg("Connections"),
+    label: msg("Connections"),
+    defaults: ["Mod+f"],
+  },
+  {
+    id: "remote.quick",
+    scope: "panels",
+    group: msg("Connections"),
+    label: msg("Quick connect"),
+    defaults: ["Mod+n"],
+  },
+  {
+    id: "remote.disconnect",
+    scope: "panels",
+    group: msg("Connections"),
+    label: msg("Disconnect"),
+    defaults: ["Mod+Shift+f"],
   },
   // Lister (Stage C05): act in the full-window viewer.
   { id: "lister.close", scope: "lister", group: "Lister", label: "Close", defaults: ["Escape"] },

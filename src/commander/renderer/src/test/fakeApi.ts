@@ -23,6 +23,9 @@ import {
   type RenamePlan,
   type RenamePreviewRow,
   type RecentFolder,
+  type RemoteConnectParams,
+  type RemoteFailureReason,
+  type SavedConnection,
   type SelectionDescriptor,
   type SharedContext,
   type Volume,
@@ -95,8 +98,42 @@ export interface FakeArchive {
   error?: { code: ErrorCode; reason: string; message: string }
 }
 
+/**
+ * Stage C10.5: an FTP server the fake "dials" (ADR-0037): its folders by
+ * path, and how a connect to it goes. Entries of a folder that are folders
+ * themselves are entered by their ids, as in a panel.
+ */
+export interface FakeServer {
+  host: string
+  /** Default 21. */
+  port?: number
+  /** The password it wants; without it any is accepted (and "anonymous"). */
+  password?: string
+  /** Whether it offers TLS (default true). */
+  tls?: boolean
+  /** A certificate no authority vouches for: connecting needs it accepted. */
+  fingerprint?: string
+  subject?: string
+  folders: Record<string, ContentItem[]>
+  /** Entries left out of a folder's listing, by path. */
+  rejected?: Record<string, number>
+  /** A connect waits for this (a slow server). */
+  delay?: Promise<void>
+  /** It accepts the login, then never answers a listing. */
+  stall?: boolean
+  /** A connect fails with this reason. */
+  fail?: RemoteFailureReason
+}
+
 export interface FakeOptions {
   folders: FakeFolder[]
+  /** Stage C10.5: servers, saved connections, and what the secret store holds. */
+  servers?: FakeServer[]
+  connections?: SavedConnection[]
+  /** Passwords "in the secret store", by connection id. */
+  passwords?: Record<number, string>
+  /** Whether this computer can keep passwords (default true). */
+  secureStore?: boolean
   archives?: FakeArchive[]
   /** archive.check's warnings. */
   archiveWarnings?: ("space" | "ratio")[]
@@ -109,6 +146,14 @@ export interface FakeOptions {
   fail?: Record<string, { code: ErrorCode; message: string; details?: unknown }>
   /** Ids carried by the initial context. */
   carried?: number[]
+  /**
+   * Stage C10.5: fs.listDirs answers these subfolder names for a path. A
+   * path without an entry lists the fake folders right below it. Names that
+   * start with a dot are hidden folders.
+   */
+  dirs?: Record<string, string[]>
+  /** fs.listDirs waits for this (a slow drive under the tree). */
+  dirsDelay?: Promise<void>
   bookmarks?: Bookmark[]
   recent?: RecentFolder[]
   /** fs.volumes waits for this (a slow network drive). */
@@ -396,7 +441,10 @@ export function installFakeCommander(options: FakeOptions) {
     const key = d.sort[0] ?? { field: "name", direction: "asc" }
     const hidden = ENTRY_ATTRS.hidden | ENTRY_ATTRS.system
     let rows: ContentItem[]
-    if (d.archiveId !== undefined) {
+    if (d.remoteId !== undefined) {
+      const dir = remoteDirs.get(d.remoteDirId ?? 0)
+      rows = (dir ? (opens.get(dir.remoteId)?.server.folders[dir.path] ?? []) : []).slice()
+    } else if (d.archiveId !== undefined) {
       const a = (options.archives ?? []).find((x) => x.archiveId === d.archiveId)!
       rows = (d.archiveDirId ? (a.dirs?.[d.archiveDirId] ?? []) : a.root).slice()
     } else if (d.findId !== undefined) {
@@ -425,6 +473,69 @@ export function installFakeCommander(options: FakeOptions) {
   }
   let nextScan = 0
   const listeners = new Map<EventChannel, Set<(p: never) => void>>()
+  // Stage C10.5: saved connections, the "secret store", and the open connections.
+  let connections: SavedConnection[] = (options.connections ?? []).map((c) => ({ ...c }))
+  let nextConnection = Math.max(0, ...connections.map((c) => c.id))
+  const passwords = new Map<number, string>(
+    Object.entries(options.passwords ?? {}).map(([id, p]) => [Number(id), p]),
+  )
+  const opens = new Map<number, { server: FakeServer }>()
+  let nextRemote = 0
+  /** Listed folders of open connections, by their ids. */
+  const remoteDirs = new Map<number, { remoteId: number; path: string }>()
+  // Above the ids tests give to the entries of their servers.
+  let nextRemoteDir = 7 * 2 ** 50 + 900_000
+  let nextRemoteEntry = 7 * 2 ** 50 + 950_000
+  const cancelledAttempts = new Set<number>()
+  /** Listings a server never answers, by attempt: resolved when cancelled. */
+  const stalled = new Map<number, () => void>()
+  const connectionsChanged = (): void =>
+    listeners
+      .get("connections.changed")
+      ?.forEach((l) => (l as (p: EventMap["connections.changed"]) => void)({ connections }))
+  const joinRemote = (dir: string, name: string): string =>
+    dir === "/" ? `/${name}` : `${dir}/${name}`
+  /** A listed folder's id: as in Go, the id of its entry in its parent's listing. */
+  const remoteDirId = (remoteId: number, path: string): number => {
+    for (const [id, d] of remoteDirs) if (d.remoteId === remoteId && d.path === path) return id
+    const cut = path.lastIndexOf("/")
+    const parent = cut <= 0 ? "/" : path.slice(0, cut)
+    const entry =
+      path === "/"
+        ? undefined
+        : opens
+            .get(remoteId)
+            ?.server.folders[parent]?.find(
+              (e) => e.kind === "dir" && e.name === path.slice(cut + 1),
+            )
+    const id = entry?.id ?? ++nextRemoteDir
+    remoteDirs.set(id, { remoteId, path })
+    return id
+  }
+  /** The folder a folder entry of a connection stands for. */
+  const remotePathOf = (remoteId: number, entryId: number): string | null => {
+    const known = remoteDirs.get(entryId)
+    if (known?.remoteId === remoteId) return known.path
+    const server = opens.get(remoteId)?.server
+    for (const [path, entries] of Object.entries(server?.folders ?? {})) {
+      const e = entries.find((x) => x.id === entryId && x.kind === "dir")
+      if (e) return joinRemote(path, e.name)
+    }
+    return null
+  }
+  /** The open connection and folder an entry of a server is listed in. */
+  const remoteEntry = (
+    entryId: number,
+  ): { server: FakeServer; path: string; entry: ContentItem } | null => {
+    for (const { server } of opens.values()) {
+      for (const [path, entries] of Object.entries(server.folders)) {
+        const entry = entries.find((x) => x.id === entryId)
+        if (entry) return { server, path, entry }
+      }
+    }
+    return null
+  }
+  const closedError = () => err("NOT_FOUND", "The connection is closed.", { reason: "closed" })
   /** Stage C08: directory compares: all their rows, the filter, and the session that lists them. */
   interface FakeCompare {
     params: CompareDirsParams
@@ -483,6 +594,23 @@ export function installFakeCommander(options: FakeOptions) {
   }
   let nextDiff = 0
   const diffs = new Map<number, TextDiffRow[]>()
+  /** Sessions over folders of connections (one folder, or all) show their listing again. */
+  const relistRemote = (dirId?: number): void => {
+    for (const [queryId, d] of descriptors) {
+      if (d.remoteId === undefined || !sessions.has(queryId)) continue
+      if (dirId !== undefined && d.remoteDirId !== dirId) continue
+      const version = (versions.get(queryId) ?? 1) + 1
+      sessions.set(queryId, rowsOf(d))
+      versions.set(queryId, version)
+      listeners.get("query.invalidated")?.forEach((l) =>
+        (l as (p: EventMap["query.invalidated"]) => void)({
+          queryId,
+          version,
+          total: sessions.get(queryId)!.length,
+        }),
+      )
+    }
+  }
 
   const opened = (f: FakeFolder) =>
     ok({
@@ -779,6 +907,7 @@ export function installFakeCommander(options: FakeOptions) {
         if (d.findId !== undefined && !finds.has(d.findId))
           return err("NOT_FOUND", "the search results are no longer available")
         if (!byId.get(d.dirId)) return err("NOT_FOUND", "folder is not indexed")
+        if (d.remoteId !== undefined && !opens.has(d.remoteId)) return closedError()
         const rows = rowsOf(d)
         sessions.set(++nextQuery, rows)
         descriptors.set(nextQuery, d)
@@ -889,6 +1018,30 @@ export function installFakeCommander(options: FakeOptions) {
         await options.volumesDelay
         return ok({ volumes: options.volumes ?? [] })
       }),
+      // Stage C10.5: one level of subfolders for the folder tree.
+      listDirs: vi.fn(async (path: string, showHidden: boolean) => {
+        await options.dirsDelay
+        const failure = options.fail?.[path]
+        if (failure) return err(failure.code, failure.message, failure.details)
+        const sep = path.includes("\\") ? "\\" : "/"
+        const join = (name: string): string => (path.endsWith(sep) ? path : path + sep) + name
+        const below = (p: string): string[] =>
+          options.dirs?.[p] ??
+          options.folders
+            .filter((f) => f.crumbs.at(-2)?.path === p)
+            .map((f) => f.crumbs.at(-1)!.name)
+        const shown = (names: string[]): string[] =>
+          names.filter((name) => showHidden || !name.startsWith("."))
+        return ok({
+          path,
+          dirs: shown(below(path)).map((name) => ({
+            name,
+            path: join(name),
+            hasChildren: shown(below(join(name))).length > 0,
+          })),
+          truncated: false,
+        })
+      }),
       // A new folder: added to the parent's listing (as Go's index would be).
       mkdir: vi.fn(async (parentDirId: number, path: string) => {
         const f = byId.get(parentDirId)
@@ -936,7 +1089,11 @@ export function installFakeCommander(options: FakeOptions) {
           return ok(snap)
         }
         if (p.kind === "compareFiles") {
-          const snap = job({ kind: "compareFiles", total: 1, state: "running" })
+          // Two files by id, or (Stage C10.5) a selection against a folder.
+          const total = "source" in p ? resolve(p.source.selection).length : 1
+          if ("source" in p && !byId.has(p.destinationDirId))
+            return err("NOT_FOUND", "the folder is not in the index")
+          const snap = job({ kind: "compareFiles", total, state: "running" })
           jobs.push(snap)
           return ok(snap)
         }
@@ -976,8 +1133,37 @@ export function installFakeCommander(options: FakeOptions) {
             if (p.modifiedMs !== undefined) e.modifiedMs = p.modifiedMs
           }
         }
+        // Stage C10.5: between a connection and this computer.
+        if (p.kind === "upload") {
+          const dir = remoteDirs.get(p.remoteDirId)
+          if (!dir || !opens.has(dir.remoteId)) return closedError()
+          const snap = job({
+            kind: "upload",
+            total: resolve(p.source.selection).length,
+            destination: dir.path,
+          })
+          jobs.push(snap)
+          return ok(snap)
+        }
+        if (p.kind === "remoteDelete") {
+          const gone = resolve(p.source.selection)
+          for (const e of gone) {
+            const at = remoteEntry(e.id)
+            if (at)
+              at.server.folders[at.path] = at.server.folders[at.path]!.filter((x) => x.id !== e.id)
+          }
+          const snap = job({ kind: "remoteDelete", total: gone.length })
+          jobs.push(snap)
+          relistRemote()
+          return ok(snap)
+        }
         const total = resolve(p.source.selection).length
         const snap = job({ kind: p.kind, total })
+        if (p.kind === "download") {
+          const dest = byId.get(p.destinationDirId)
+          if (!dest) return err("NOT_FOUND", "the folder is not in the index")
+          snap.destination = dest.crumbs.at(-1)?.name ?? ""
+        }
         if (p.kind === "copy" || p.kind === "move" || p.kind === "extract" || p.kind === "pack") {
           const dest = byId.get(p.destinationDirId)
           if (!dest) return err("NOT_FOUND", "the folder is not in the index")
@@ -1079,6 +1265,155 @@ export function installFakeCommander(options: FakeOptions) {
           .sort((a, b) => a - b)
         return ok({ queryId, version: 1, ranges: rangesOf(hits), include: [], exclude: [] })
       }),
+    },
+    // Stage C10.5 (ADR-0037): what main and the sidecar do for connections.
+    remote: {
+      connections: vi.fn(async () => ok({ connections })),
+      save: vi.fn(async (connection: SavedConnection, password?: string, forget?: boolean) => {
+        if (password !== undefined && options.secureStore === false)
+          return err("PERMISSION_DENIED", "no secure store", { reason: "noSecureStore" })
+        const name = connection.name.trim()
+        if (
+          connections.some(
+            (c) => c.id !== connection.id && c.name.toLowerCase() === name.toLowerCase(),
+          )
+        )
+          return err("INVALID_ARGUMENT", "duplicate", { reason: "duplicate" })
+        const id = connection.id || ++nextConnection
+        if (password !== undefined) passwords.set(id, password)
+        else if (forget) passwords.delete(id)
+        const saved = { ...connection, id, name, hasPassword: passwords.has(id) }
+        connections = [...connections.filter((c) => c.id !== id), saved]
+        connectionsChanged()
+        return ok({ ...saved })
+      }),
+      remove: vi.fn(async (connectionId: number) => {
+        connections = connections.filter((c) => c.id !== connectionId)
+        passwords.delete(connectionId)
+        connectionsChanged()
+        return ok({ ok: true })
+      }),
+      trust: vi.fn(async (connectionId: number, fingerprint: string) => {
+        connections = connections.map((c) => (c.id === connectionId ? { ...c, fingerprint } : c))
+        connectionsChanged()
+        return ok({ ok: true })
+      }),
+      connect: vi.fn(async (p: RemoteConnectParams) => {
+        const saved = "connectionId" in p ? connections.find((c) => c.id === p.connectionId) : null
+        if ("connectionId" in p && !saved) return err("NOT_FOUND", "no such connection")
+        const target = saved ?? ("quick" in p ? p.quick : null)!
+        const server = (options.servers ?? []).find(
+          (s) => s.host === target.host && (s.port ?? 21) === target.port,
+        )
+        if (!server)
+          return err("NOT_FOUND", "The server's name could not be found.", { reason: "host" })
+        await server.delay
+        if (cancelledAttempts.delete(p.attempt)) return err("CANCELLED", "cancelled")
+        if (server.fail) return err("INVALID_PATH", server.fail, { reason: server.fail })
+        const encrypted = target.tls !== "none"
+        if (encrypted && server.tls === false)
+          return err("PERMISSION_DENIED", "The server does not offer encryption (TLS).", {
+            reason: "tlsRequired",
+          })
+        if (encrypted && server.fingerprint) {
+          const pinned = saved?.fingerprint ?? ""
+          if ((p.accept ?? pinned) !== server.fingerprint)
+            return err("PERMISSION_DENIED", "The server's certificate could not be verified.", {
+              reason: "certificate",
+              fingerprint: server.fingerprint,
+              subject: server.subject ?? "",
+              changed: pinned !== "" && pinned !== server.fingerprint,
+            })
+        }
+        const password = p.password ?? (saved ? (passwords.get(saved.id) ?? "") : "")
+        if (server.password !== undefined && password !== server.password)
+          return err("PERMISSION_DENIED", "The server refused the user name or the password.", {
+            reason: "auth",
+          })
+        opens.set(++nextRemote, { server })
+        return ok({
+          remoteId: nextRemote,
+          host: target.host,
+          port: target.port,
+          user: target.user,
+          encrypted,
+          features: { mlsd: true, resume: true, utf8: true },
+          startPath: saved?.startPath || "/",
+          localPath: saved?.localPath ?? "",
+        })
+      }),
+      cancel: vi.fn(async (attempt: number) => {
+        const listing = stalled.get(attempt)
+        if (listing) {
+          stalled.delete(attempt)
+          listing()
+        } else cancelledAttempts.add(attempt)
+        return ok({ ok: true })
+      }),
+      disconnect: vi.fn(async (remoteId: number) => {
+        if (!opens.delete(remoteId)) return closedError()
+        // Its sessions go with it.
+        for (const [queryId, d] of descriptors)
+          if (d.remoteId === remoteId) sessions.delete(queryId)
+        return ok({ ok: true })
+      }),
+      open: vi.fn(async (remoteId: number, folder: string | number, attempt?: number) => {
+        const open = opens.get(remoteId)
+        if (!open) return closedError()
+        // A server that stops answering: until the listing is cancelled.
+        if (open.server.stall) {
+          await new Promise<void>((resolve) => stalled.set(attempt ?? 0, resolve))
+          return err("CANCELLED", "cancelled")
+        }
+        const path = typeof folder === "string" ? folder : remotePathOf(remoteId, folder)
+        if (path === null || !open.server.folders[path])
+          return err("NOT_FOUND", "There is no such file or folder on the server.", {
+            reason: "notFound",
+          })
+        const crumbs: Crumb[] = [{ name: "/", path: "/" }]
+        let at = ""
+        for (const part of path.split("/").filter(Boolean)) {
+          at += `/${part}`
+          crumbs.push({ name: part, path: at })
+        }
+        const id = remoteDirId(remoteId, path)
+        relistRemote(id)
+        return ok({
+          remoteDirId: id,
+          path,
+          name: crumbs.at(-1)!.name,
+          crumbs,
+          rejected: open.server.rejected?.[path] ?? 0,
+        })
+      }),
+      mkdir: vi.fn(async (dirId: number, name: string) => {
+        const dir = remoteDirs.get(dirId)
+        const server = dir && opens.get(dir.remoteId)?.server
+        if (!dir || !server) return closedError()
+        if (name === "" || /[/\\]/.test(name))
+          return err("INVALID_ARGUMENT", "This name can't be used on a server.")
+        if (server.folders[dir.path]!.some((e) => e.name === name))
+          return err("INVALID_ARGUMENT", "550 File exists", { reason: "refused" })
+        server.folders[dir.path]!.push(item(++nextRemoteEntry, name, { kind: "dir" }))
+        server.folders[joinRemote(dir.path, name)] = []
+        relistRemote(dirId)
+        return ok({ ok: true })
+      }),
+      rename: vi.fn(async (entryId: number, name: string) => {
+        const at = remoteEntry(entryId)
+        if (!at) return closedError()
+        if (name === "" || /[/\\]/.test(name))
+          return err("INVALID_ARGUMENT", "This name can't be used on a server.")
+        // A renamed entry is a new entry of the listing, as in Go.
+        const renamed = { ...at.entry, id: ++nextRemoteEntry }
+        setName(renamed, name)
+        at.server.folders[at.path] = at.server.folders[at.path]!.map((e) =>
+          e.id === entryId ? renamed : e,
+        )
+        relistRemote()
+        return ok({ ok: true })
+      }),
+      secureStore: vi.fn(async () => ok({ available: options.secureStore !== false })),
     },
     onEvent: vi.fn(<C extends EventChannel>(channel: C, listener: (p: EventMap[C]) => void) => {
       let set = listeners.get(channel)
@@ -1401,6 +1736,15 @@ export function installFakeCommander(options: FakeOptions) {
     /** The search sessions still open (the dialog's and fed panels'). */
     openSessions: (): number[] => [...sessions.keys()],
     bookmarks: (): Bookmark[] => bookmarks,
+    /** Stage C10.5: the saved connections, the "secret store" and the open connections. */
+    connections: (): SavedConnection[] => connections,
+    storedPassword: (connectionId: number): string | undefined => passwords.get(connectionId),
+    openConnections: (): number[] => [...opens.keys()],
+    /** The server went away: every command on the connection now says it is closed. */
+    dropConnection(remoteId: number) {
+      opens.delete(remoteId)
+      for (const [queryId, d] of descriptors) if (d.remoteId === remoteId) sessions.delete(queryId)
+    },
     /** Stage C05: shell actions main would have performed. */
     shell,
     /** Stage C10: commands main would have run. */

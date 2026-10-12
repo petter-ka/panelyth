@@ -44,8 +44,15 @@ import {
   MAX_FOLDER_COVERS,
   MAX_LABEL,
   MAX_RATING,
+  MAX_REMOTE_TRANSFERS,
   PREVIEW_PROFILES,
+  REMOTE_TLS,
   type ClipState,
+  type ConnectionSecretResult,
+  type ConnectionsResult,
+  type RemoteConnectResult,
+  type RemoteOpenResult,
+  type SavedConnection,
   type EntryRenameResult,
   type FsCanTrashResult,
   type FsMkdirResult,
@@ -169,6 +176,31 @@ const isBookmark = (v: unknown): v is Bookmark =>
 const isRecent = (v: unknown): v is RecentFolder =>
   isRec(v) && isStr(v.path) && isInt(v.lastOpenedAt)
 const isOk = (v: unknown): v is OkResult => isRec(v) && isBool(v.ok)
+const remoteTls: ReadonlySet<unknown> = new Set(REMOTE_TLS)
+/** A saved connection as Go sends it: no secret, only whether one is stored. */
+const isSavedConnection = (v: unknown): v is SavedConnection =>
+  isRec(v) &&
+  isCount(v.id) &&
+  isStr(v.name) &&
+  isStr(v.group) &&
+  isStr(v.host) &&
+  isInt(v.port) &&
+  v.port >= 1 &&
+  v.port <= 65535 &&
+  remoteTls.has(v.tls) &&
+  isStr(v.user) &&
+  isStr(v.startPath) &&
+  isStr(v.localPath) &&
+  isBool(v.active) &&
+  isStr(v.encoding) &&
+  isInt(v.transfers) &&
+  v.transfers >= 1 &&
+  v.transfers <= MAX_REMOTE_TRANSFERS &&
+  isStr(v.fingerprint) &&
+  isBool(v.hasPassword) &&
+  // Nothing that could be a secret rides along.
+  !("secret" in v) &&
+  !("password" in v)
 const isTag = (v: unknown): v is Tag => isRec(v) && isInt(v.id) && isStr(v.name) && isCount(v.count)
 const isJobItemError = (v: unknown): v is JobItemError =>
   isRec(v) && isStr(v.name) && isStr(v.code) && jobItemCodes.has(v.code) && isStr(v.message)
@@ -391,6 +423,12 @@ const isTextDiffFile = (v: unknown): boolean =>
   isCount(v.lines) &&
   textEncodings.has(v.encoding)
 const textDiffOps: ReadonlySet<unknown> = new Set(["equal", "changed", "removed", "added"])
+/** [left from, left to, right from, right to] of a changed row. */
+const isDiffSpans = (v: unknown): boolean => {
+  if (!Array.isArray(v) || v.length !== 4 || !v.every(isCount)) return false
+  const [leftFrom, leftTo, rightFrom, rightTo] = v as [number, number, number, number]
+  return leftFrom <= leftTo && rightFrom <= rightTo
+}
 const isTextDiffRow = (v: unknown): v is TextDiffRow =>
   isRec(v) &&
   textDiffOps.has(v.op) &&
@@ -398,7 +436,8 @@ const isTextDiffRow = (v: unknown): v is TextDiffRow =>
   isCount(v.r) &&
   isStr(v.left) &&
   (v.right === undefined || isStr(v.right)) &&
-  (v.cut === undefined || isBool(v.cut))
+  (v.cut === undefined || isBool(v.cut)) &&
+  (v.spans === undefined || isDiffSpans(v.spans))
 
 const renameStatuses: ReadonlySet<unknown> = new Set(RENAME_STATUSES)
 const isRenamePreviewRow = (v: unknown): v is RenamePreviewRow =>
@@ -628,6 +667,41 @@ export const sidecarResultGuards: ResultGuards = {
     arrayOf(v.rows, isRenamePreviewRow),
   "rename.undoInfo": (v): v is RenameUndoInfo =>
     isRec(v) && isCount(v.count) && isStr(v.dir) && isCount(v.finishedMs),
+  "remote.connections": (v): v is ConnectionsResult =>
+    isRec(v) &&
+    Array.isArray(v.connections) &&
+    v.connections.length <= 200 &&
+    v.connections.every(isSavedConnection),
+  "remote.storeConnection": isSavedConnection,
+  "remote.removeConnection": isOk,
+  "remote.secret": (v): v is ConnectionSecretResult => isRec(v) && isStr(v.secret),
+  "remote.trust": isOk,
+  "remote.dial": (v): v is RemoteConnectResult =>
+    isRec(v) &&
+    isInt(v.remoteId) &&
+    v.remoteId > 0 &&
+    isStr(v.host) &&
+    isInt(v.port) &&
+    isStr(v.user) &&
+    isBool(v.encrypted) &&
+    isRec(v.features) &&
+    isBool(v.features.mlsd) &&
+    isBool(v.features.resume) &&
+    isBool(v.features.utf8) &&
+    isStr(v.startPath) &&
+    isStr(v.localPath),
+  "remote.cancel": isOk,
+  "remote.disconnect": isOk,
+  "remote.open": (v): v is RemoteOpenResult =>
+    isRec(v) &&
+    isInt(v.remoteDirId) &&
+    v.remoteDirId > 0 &&
+    isStr(v.path) &&
+    isStr(v.name) &&
+    arrayOf(v.crumbs, isCrumb) &&
+    isCount(v.rejected),
+  "remote.mkdir": isOk,
+  "remote.rename": isOk,
   "query.open": isQuerySnapshot,
   "query.page": (v): v is QueryPageResult =>
     isRec(v) &&
@@ -914,6 +988,11 @@ export const eventGuards: EventGuards = {
     Array.isArray(v.bookmarks) &&
     v.bookmarks.length <= 500 &&
     v.bookmarks.every(isBookmark),
+  "connections.changed": (v): v is EventMap["connections.changed"] =>
+    isRec(v) &&
+    Array.isArray(v.connections) &&
+    v.connections.length <= 200 &&
+    v.connections.every(isSavedConnection),
   "find.progress": isFindProgress,
   "compare.progress": isCompareProgress,
   "mediaWindow.step": (v): v is EventMap["mediaWindow.step"] =>

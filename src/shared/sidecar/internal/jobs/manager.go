@@ -114,6 +114,9 @@ type Spec struct {
 	Edit *EditSpec
 	// Batch is the recipe run of an edit job (Stage 16).
 	Batch *BatchSpec
+	// Remote is the server side of a download, an upload or a remoteDelete
+	// (Stage C10.5).
+	Remote *RemoteSpec
 	// created are the files an undoEdit job removes, undoOf the edit job
 	// that wrote them (set by UndoEdit).
 	created []Created

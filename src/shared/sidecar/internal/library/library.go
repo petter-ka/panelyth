@@ -91,6 +91,29 @@ var migrations = []string{
 		created_at INTEGER NOT NULL,
 		updated_at INTEGER NOT NULL
 	);`,
+	// 6: saved connections of the commander (Stage C10.5, ADR-0037). secret
+	// is a password as Electron main encrypted it with the system's secret
+	// store: never clear text, NULL when the password is asked every time.
+	`CREATE TABLE connections (
+		id          INTEGER PRIMARY KEY,
+		name        TEXT NOT NULL,
+		name_fold   TEXT NOT NULL UNIQUE,
+		group_name  TEXT NOT NULL DEFAULT '',
+		group_fold  TEXT NOT NULL DEFAULT '',
+		host        TEXT NOT NULL,
+		port        INTEGER NOT NULL,
+		tls         TEXT NOT NULL,
+		user        TEXT NOT NULL DEFAULT '',
+		start_path  TEXT NOT NULL DEFAULT '',
+		local_path  TEXT NOT NULL DEFAULT '',
+		active      INTEGER NOT NULL DEFAULT 0,
+		encoding    TEXT NOT NULL DEFAULT '',
+		transfers   INTEGER NOT NULL DEFAULT 2,
+		fingerprint TEXT NOT NULL DEFAULT '',
+		secret      BLOB,
+		created_at  INTEGER NOT NULL,
+		updated_at  INTEGER NOT NULL
+	);`,
 }
 
 // Limits keep user-controlled data bounded.

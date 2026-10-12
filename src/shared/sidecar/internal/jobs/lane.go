@@ -17,6 +17,10 @@ func laneOf(spec Spec, store *index.Store) string {
 	case KindSync:
 		lane, _ := syncLane(spec)
 		return lane
+	case KindDownload, KindUpload, KindRemoteDelete:
+		// A lane per connection (ADR-0037): a server never waits for a disk's queue.
+		lane, _ := remoteLane(spec)
+		return lane
 	case KindUndoRename:
 		lane, _ := renameLane(spec)
 		return lane

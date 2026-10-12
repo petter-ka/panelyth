@@ -5,6 +5,7 @@ import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panel
 import { bridge, isBridgeAvailable } from "../bridge"
 import { editInViewer, switchToViewer as switchWithContext } from "../features/carry"
 import { resetSplit, setActivePanel, setSplit, usePanelsStore, type Side } from "../features/panels"
+import { TreePane } from "./TreePane"
 import { runShellAction, useUiStore } from "../features/commands"
 import {
   actionFor,
@@ -28,6 +29,7 @@ import { useArchivesStore } from "../features/archives"
 import { FindDialog } from "./FindDialog"
 import { SyncDialog } from "./SyncDialog"
 import { DiffDialog } from "./DiffDialog"
+import { CompareManyDialog } from "./CompareManyDialog"
 import { ChecksumDialog } from "./ChecksumDialog"
 import { useCompareStore } from "../features/compare"
 import { MultiRenameDialog } from "./MultiRenameDialog"
@@ -45,6 +47,10 @@ import { HotlistDialog } from "./HotlistDialog"
 import { MaskDialog } from "./MaskDialog"
 import { Panel, type PanelHandle } from "./Panel"
 import { SettingsDialog } from "./SettingsDialog"
+import { TabSetDialogs } from "./TabSetDialogs"
+import { RemoteDialogs } from "./ConnectionsDialog"
+import { useTabRenameStore } from "../features/tabs"
+import { useTabSetsStore } from "../features/tabsets"
 import { StatusBar } from "./StatusBar"
 import { MediaViewerOverlay } from "@panelyth/media-ui"
 import { closeMediaViewer, stepMediaViewer } from "../features/viewers"
@@ -73,12 +79,14 @@ export function AppShell() {
   const showToolbar = useSettingsStore((s) => s.settings.showToolbar)
   const showCommandLine = useSettingsStore((s) => s.settings.showCommandLine)
   const showFunctionKeys = useSettingsStore((s) => s.settings.showFunctionKeys)
+  const tree = usePanelsStore((s) => s.tree)
   const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
 
   // The active panel's list holds keyboard focus (unless a menu just took it:
   // Alt+F1 / Alt+F2 change the active panel and open the drive menu at once).
+  // The folder tree keeps them too: a click in a panel's tree makes that panel active.
   useEffect(() => {
-    if (document.activeElement?.closest("[role=menu]")) return
+    if (document.activeElement?.closest("[role=menu], [role=tree]")) return
     lists.current[active]?.focus()
   }, [active])
 
@@ -154,7 +162,11 @@ export function AppShell() {
     })
     // Stage C08: synchronize, compare by content, create checksums.
     const offCompare = useCompareStore.subscribe((s, prev) => {
-      if ((prev.sync ?? prev.diff ?? prev.hash) && !(s.sync ?? s.diff ?? s.hash)) focusActive()
+      if (
+        (prev.sync ?? prev.diff ?? prev.hash ?? prev.many) &&
+        !(s.sync ?? s.diff ?? s.hash ?? s.many)
+      )
+        focusActive()
     })
     // Stage C09: multi-rename, attributes, properties.
     const offRename = useRenameStore.subscribe((s, prev) => {
@@ -163,7 +175,16 @@ export function AppShell() {
     const offAttributes = useAttributesStore.subscribe((s, prev) => {
       if ((prev.dialog ?? prev.properties) && !(s.dialog ?? s.properties)) focusActive()
     })
+    // Stage C10.5: a tab's name edited in the tab bar, the tab set dialogs.
+    const offTabRename = useTabRenameStore.subscribe((s, prev) => {
+      if (prev.tabId !== null && s.tabId === null) focusActive()
+    })
+    const offTabSets = useTabSetsStore.subscribe((s, prev) => {
+      if (prev.dialog && !s.dialog) focusActive()
+    })
     return () => {
+      offTabRename()
+      offTabSets()
       offRename()
       offAttributes()
       offCompare()
@@ -205,48 +226,53 @@ export function AppShell() {
         />
         <div className="flex min-h-0 min-w-0 flex-col">
           {showToolbar && <QuickActionBar />}
-          <Group
-            key={layoutToken}
-            id="panels"
-            orientation="horizontal"
-            defaultLayout={{ left: split, right: 100 - split }}
-            onLayoutChanged={(layout, meta) => {
-              const left = layout.left
-              if (meta.isUserInteraction && typeof left === "number") setSplit(left)
-            }}
-            className="min-h-0 flex-1"
-          >
-            <ResizablePanel id="left" minSize="10%">
-              <PanelSlot side="left" quick={quick === "left"}>
-                <Panel
-                  side="left"
-                  active={active === "left"}
-                  onActivate={() => setActivePanel("left")}
-                  ref={(el) => {
-                    lists.current.left = el
-                  }}
+          <div className="flex min-h-0 flex-1">
+            {/* One tree for the active panel (Stage C10.5); a tree per panel sits in its slot. */}
+            {tree === "one" && <TreePane id="one" />}
+            <div className="min-h-0 min-w-0 flex-1">
+              <Group
+                key={layoutToken}
+                id="panels"
+                orientation="horizontal"
+                defaultLayout={{ left: split, right: 100 - split }}
+                onLayoutChanged={(layout, meta) => {
+                  const left = layout.left
+                  if (meta.isUserInteraction && typeof left === "number") setSplit(left)
+                }}
+              >
+                <ResizablePanel id="left" minSize="10%">
+                  <PanelSlot side="left" quick={quick === "left"} tree={tree === "two"}>
+                    <Panel
+                      side="left"
+                      active={active === "left"}
+                      onActivate={() => setActivePanel("left")}
+                      ref={(el) => {
+                        lists.current.left = el
+                      }}
+                    />
+                  </PanelSlot>
+                </ResizablePanel>
+                <Separator
+                  id="panels-separator"
+                  aria-label={t("Resize panels")}
+                  className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
+                  onDoubleClick={resetSplit}
                 />
-              </PanelSlot>
-            </ResizablePanel>
-            <Separator
-              id="panels-separator"
-              aria-label={t("Resize panels")}
-              className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
-              onDoubleClick={resetSplit}
-            />
-            <ResizablePanel id="right" minSize="10%">
-              <PanelSlot side="right" quick={quick === "right"}>
-                <Panel
-                  side="right"
-                  active={active === "right"}
-                  onActivate={() => setActivePanel("right")}
-                  ref={(el) => {
-                    lists.current.right = el
-                  }}
-                />
-              </PanelSlot>
-            </ResizablePanel>
-          </Group>
+                <ResizablePanel id="right" minSize="10%">
+                  <PanelSlot side="right" quick={quick === "right"} tree={tree === "two"}>
+                    <Panel
+                      side="right"
+                      active={active === "right"}
+                      onActivate={() => setActivePanel("right")}
+                      ref={(el) => {
+                        lists.current.right = el
+                      }}
+                    />
+                  </PanelSlot>
+                </ResizablePanel>
+              </Group>
+            </div>
+          </div>
           <QueuePanel />
           {showCommandLine && <CommandLine />}
           {showFunctionKeys && <FunctionKeyBar />}
@@ -263,11 +289,14 @@ export function AppShell() {
         <ConflictDialog />
         <JobDetailsDialog />
         <SettingsDialog />
+        <TabSetDialogs />
+        <RemoteDialogs />
         <ProgramDialog />
         <NewFileDialog />
         <FindDialog />
         <SyncDialog />
         <DiffDialog />
+        <CompareManyDialog />
         <ChecksumDialog />
         <MultiRenameDialog />
         <AttributesDialog />
@@ -296,17 +325,31 @@ export function AppShell() {
  * A panel, or quick view in its place (Stage C05). The panel stays mounted
  * underneath (its listing, scroll and cursor are kept) but inert.
  */
-function PanelSlot({ side, quick, children }: { side: Side; quick: boolean; children: ReactNode }) {
+function PanelSlot({
+  side,
+  quick,
+  tree,
+  children,
+}: {
+  side: Side
+  quick: boolean
+  /** A folder tree of its own beside the panel (Stage C10.5). */
+  tree: boolean
+  children: ReactNode
+}) {
   return (
-    <div className="relative h-full" data-slot={side}>
-      <div className={quick ? "invisible h-full" : "h-full"} inert={quick}>
-        {children}
-      </div>
-      {quick && (
-        <div className="absolute inset-0">
-          <QuickView />
+    <div className="flex h-full" data-slot={side}>
+      {tree && <TreePane id={side} />}
+      <div className="relative h-full min-w-0 flex-1">
+        <div className={quick ? "invisible h-full" : "h-full"} inert={quick}>
+          {children}
         </div>
-      )}
+        {quick && (
+          <div className="absolute inset-0">
+            <QuickView />
+          </div>
+        )}
+      </div>
     </div>
   )
 }

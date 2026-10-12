@@ -130,6 +130,12 @@ test.describe("drives, tabs, hotlist, history and session (Stage C03)", () => {
       await expect(menu).toBeVisible()
       const drive = root.slice(0, 3) // "C:\" on Windows
       if (process.platform === "win32") {
+        // The left panel is on that drive: the drive opens at the left panel's folder,
+        // and once more, from there, at its root.
+        await c.keyboard.press(drive[0]!.toLowerCase())
+        await expect(path(c, "right")).toHaveText(alpha)
+        await c.keyboard.press("Alt+F2")
+        await expect(menu).toBeVisible()
         await c.keyboard.press(drive[0]!.toLowerCase())
         await expect(path(c, "right")).toHaveText(drive)
       } else {

@@ -63,7 +63,7 @@ export const VIEW_MODES: readonly ViewMode[] = ["full", "brief", "thumbs"]
 export const readView = (v: unknown): ViewMode =>
   VIEW_MODES.includes(v as ViewMode) ? (v as ViewMode) : "full"
 
-export type PanelErrorKind = "notFound" | "denied" | "notReady" | "network" | "other"
+export type PanelErrorKind = "notFound" | "denied" | "notReady" | "network" | "remote" | "other"
 
 export interface PanelError {
   kind: PanelErrorKind
@@ -92,6 +92,51 @@ export interface ArchiveLocation {
   dirs: { id: number; name: string }[]
   /** Entries with unsafe names that are not listed (zip-slip). */
   rejected: number
+}
+
+/**
+ * A folder of a connection shown in a panel (Stage C10.5, ADR-0037). Like an
+ * archive, it is a location over the panel's folder: `dirId` and `path` of
+ * the panel stay the last local folder, and leaving the connection shows it
+ * again. Rows come from the folder's listing in Go.
+ */
+export interface RemoteLocation {
+  remoteId: number
+  /** The saved connection it was opened from; null for a quick connect. */
+  connectionId: number | null
+  /** What the drive bar calls it: the connection's name, or user@host. */
+  label: string
+  host: string
+  port: number
+  user: string
+  /** The connection uses TLS; without it the path bar says "Not encrypted". */
+  encrypted: boolean
+  /** The folder's id from remote.open, its path on the server and its ancestors. */
+  dirId: number
+  path: string
+  crumbs: Crumb[]
+  /** Entries the listing left out because their names cannot be listed. */
+  rejected: number
+}
+
+/** What stays the same while a panel moves between the folders of a connection. */
+export type RemoteBase = Omit<RemoteLocation, "dirId" | "path" | "crumbs" | "rejected">
+
+/**
+ * A tab that was on a connection which is not open: after a restart, or once
+ * the connection closed. Nothing connects on its own: the panel says "Not
+ * connected" and offers Connect.
+ */
+export interface DisconnectedLocation extends Omit<RemoteBase, "remoteId"> {
+  /** Where the tab was on the server. */
+  path: string
+}
+
+/** "ftp://alice@example.org/pub/photos" for the path bar and for destinations. */
+export function remoteUrl(r: Pick<RemoteLocation, "host" | "port" | "user" | "path">): string {
+  const host = r.host.includes(":") ? `[${r.host}]` : r.host
+  const port = r.port === 21 ? "" : `:${r.port}`
+  return `ftp://${r.user ? `${r.user}@` : ""}${host}${port}${r.path}`
 }
 
 export interface PanelState {
@@ -133,6 +178,11 @@ export interface PanelState {
   find: FindLocation | null
   /** Stage C07: inside an archive. */
   archive: ArchiveLocation | null
+  /** Stage C10.5: on a connection, or a tab whose connection is not open. */
+  remote: RemoteLocation | null
+  disconnected: DisconnectedLocation | null
+  /** The panel waits for a server to list a folder (it can be stopped). */
+  remoteBusy: boolean
   /** The quick filter (Ctrl+S): a name mask on the files; "" = none. Cleared by a folder change. */
   filter: string
 }
@@ -164,6 +214,9 @@ const emptyPanel = (): PanelState => ({
   branch: false,
   find: null,
   archive: null,
+  remote: null,
+  disconnected: null,
+  remoteBusy: false,
   filter: "",
 })
 
@@ -216,7 +269,9 @@ bindExpired()
  * shows a branch view, search results or an archive (".." goes back).
  */
 export const parentRows = (p: PanelState): number =>
-  p.crumbs.length > 1 || p.branch || p.find !== null || p.archive !== null ? 1 : 0
+  p.crumbs.length > 1 || p.branch || p.find !== null || p.archive !== null || p.remote !== null
+    ? 1
+    : 0
 
 /** A branch view or search results: rows come from many folders. */
 export const spansFolders = (p: PanelState): boolean => p.branch || p.find !== null
@@ -239,7 +294,7 @@ const failed: Record<Side, (() => Promise<void>) | null> = { left: null, right: 
 
 type DescriptorState = Pick<
   PanelState,
-  "sort" | "showHidden" | "branch" | "find" | "filter" | "archive"
+  "sort" | "showHidden" | "branch" | "find" | "filter" | "archive" | "remote"
 >
 
 function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
@@ -261,12 +316,62 @@ function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
       archiveId: p.archive.archiveId,
       archiveDirId: p.archive.dirs.at(-1)?.id ?? 0,
     }),
+    ...(p.remote && { remoteId: p.remote.remoteId, remoteDirId: p.remote.dirId }),
   }
 }
+
+/** Why a command on a connection failed, in the user's language (details.reason, ADR-0037). */
+export function remoteMessage(reason: unknown, fallback: string): string {
+  switch (reason) {
+    case "closed":
+      return t("The connection is closed.")
+    case "timeout":
+      return t("The server did not answer in time.")
+    case "unreachable":
+      return t("The server could not be reached.")
+    case "host":
+      return t("The server's name could not be found.")
+    case "auth":
+      return t("The server refused the user name or the password.")
+    case "tlsRequired":
+      return t("The server does not offer encryption (TLS).")
+    case "certificate":
+      return t("The server's certificate could not be verified.")
+    case "notFound":
+      return t("There is no such file or folder on the server.")
+    case "name":
+      return t("This name can't be used on a server.")
+    case "tooLarge":
+      return t("The connection has listed too many entries. Connect again to go on.")
+    case "unsupported":
+      return t("The server does not support this.")
+    case "refused":
+      // The server's own words.
+      return t("The server said: {message}", { message: fallback })
+  }
+  return fallback
+}
+
+const REMOTE_REASONS: ReadonlySet<unknown> = new Set([
+  "closed",
+  "timeout",
+  "unreachable",
+  "host",
+  "auth",
+  "tlsRequired",
+  "certificate",
+  "refused",
+  "tooLarge",
+  "unsupported",
+  "notFound",
+  "name",
+])
 
 export function toPanelError(error: unknown): PanelError {
   if (!(error instanceof PanelythError)) return { kind: "other", message: String(error) }
   const reason = (error.details as { reason?: unknown } | undefined)?.reason
+  if (REMOTE_REASONS.has(reason))
+    return { kind: "remote", message: remoteMessage(reason, error.message) }
   switch (true) {
     case error.code === "NOT_FOUND":
       return { kind: "notFound", message: t("This folder doesn't exist anymore.") }
@@ -311,6 +416,8 @@ async function navigate(
   options: NavigateOptions = {},
   target: string | number | null = null,
 ): Promise<void> {
+  // Leaving for a folder of this computer: a listing of a server is not waited for.
+  stopRemoteListing(side)
   const seq = ++seqs[side]
   patch(side, { loading: true, loadingTarget: target })
   try {
@@ -320,7 +427,14 @@ async function navigate(
     // The quick filter stays while the panel shows the same folder.
     const filter = getPanel(side).dirId === dir.dirId ? getPanel(side).filter : ""
     const snapshot = await bridge.openQuery(
-      descriptor(dir.dirId, { ...getPanel(side), branch, find: null, archive: null, filter }),
+      descriptor(dir.dirId, {
+        ...getPanel(side),
+        branch,
+        find: null,
+        archive: null,
+        remote: null,
+        filter,
+      }),
     )
     if (seq !== seqs[side]) {
       void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
@@ -353,6 +467,7 @@ async function navigate(
     stores[side].reset(snapshot)
     sessionChanged(side, { kind: "reset" })
     pendingFocus[side] = null
+    pendingName[side] = null
     const p = getPanel(side)
     patch(side, {
       dirId: dir.dirId,
@@ -369,9 +484,13 @@ async function navigate(
       branch,
       find: null,
       archive: null,
+      remote: null,
+      disconnected: null,
       filter,
       ...recordHistory(p, dir.path, options.historyIndex),
     })
+    // A connection this panel just left closes when nothing else shows it.
+    if (before.remote) releaseRemote(before.remote.remoteId)
     schedulePersist()
     if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
   } catch (error) {
@@ -418,6 +537,12 @@ export const goToEntry = (side: Side, entryId: number): Promise<void> =>
  */
 export function goUp(side: Side): Promise<void> {
   const p = getPanel(side)
+  if (p.remote) {
+    // Up on the server; from its root, back to the folder of this computer.
+    const parent = p.remote.crumbs.at(-2)
+    if (!parent) return openPath(side, p.path)
+    return openRemoteDir(side, p.remote, parent.path, { focusId: p.remote.dirId })
+  }
   if (p.archive) {
     const left = p.archive.dirs.at(-1)
     if (!left) return openPath(side, p.path, { focusId: p.archive.entryId })
@@ -432,7 +557,7 @@ export function goUp(side: Side): Promise<void> {
 /** Ctrl+B: the folder's subtree as one flat list of files, or back to the folder. */
 export function toggleBranch(side: Side): Promise<void> {
   const p = getPanel(side)
-  if (p.dirId === null || p.find || p.archive) return Promise.resolve()
+  if (p.dirId === null || p.find || p.archive || p.remote) return Promise.resolve()
   return openPath(side, p.path, { branch: !p.branch, focusId: cursorEntryId(side) })
 }
 
@@ -454,7 +579,7 @@ export async function showFindResults(side: Side, find: FindLocation): Promise<v
   if (p.dirId === null) return
   const seq = ++seqs[side]
   const snapshot = await bridge.openQuery(
-    descriptor(p.dirId, { ...p, branch: false, find, archive: null, filter: "" }),
+    descriptor(p.dirId, { ...p, branch: false, find, archive: null, remote: null, filter: "" }),
   )
   if (seq !== seqs[side]) {
     void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
@@ -472,6 +597,8 @@ export async function showFindResults(side: Side, find: FindLocation): Promise<v
     branch: false,
     find,
     archive: null,
+    remote: null,
+    disconnected: null,
     filter: "",
     error: null,
     loading: false,
@@ -480,6 +607,7 @@ export async function showFindResults(side: Side, find: FindLocation): Promise<v
     cursor: 0,
     revealToken: getPanel(side).revealToken + 1,
   })
+  if (p.remote) releaseRemote(p.remote.remoteId)
   if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
 }
 
@@ -560,7 +688,7 @@ async function showArchive(side: Side, archive: ArchiveLocation, focusId?: numbe
   const seq = ++seqs[side]
   try {
     const snapshot = await bridge.openQuery(
-      descriptor(p.dirId, { ...p, branch: false, find: null, archive, filter: "" }),
+      descriptor(p.dirId, { ...p, branch: false, find: null, archive, remote: null, filter: "" }),
     )
     let cursor = 0
     if (focusId !== undefined) {
@@ -615,6 +743,10 @@ export function jumpHistory(side: Side, index: number): Promise<void> {
 
 /** Ctrl+\: the root of the panel's drive or file system. */
 export function goRoot(side: Side): Promise<void> {
+  const remote = getPanel(side).remote
+  if (remote) {
+    return remote.path === "/" ? Promise.resolve() : openRemoteDir(side, remote, "/")
+  }
   const root = getPanel(side).crumbs[0]
   return root && getPanel(side).crumbs.length > 1 ? openPath(side, root.path) : Promise.resolve()
 }
@@ -626,6 +758,8 @@ export function goRoot(side: Side): Promise<void> {
  */
 export function openIn(target: Side, from: Side): Promise<void> {
   const p = getPanel(from)
+  // A folder of a connection opens in its own panel only.
+  if (p.remote) return Promise.resolve()
   // Inside an archive: the folder holding it.
   if (p.archive && p.dirId !== null) {
     return target === from ? Promise.resolve() : openFolderEntry(target, p.dirId)
@@ -646,6 +780,9 @@ export function openIn(target: Side, from: Side): Promise<void> {
  * history (marks follow in marks.ts). In-flight navigations are dropped.
  */
 export function swapPanels(): void {
+  // A listing a server has not answered yet belongs to the side that asked: it is not carried across.
+  stopRemoteListing("left")
+  stopRemoteListing("right")
   seqs.left++
   seqs.right++
   ;[stores.left, stores.right] = [stores.right, stores.left]
@@ -674,6 +811,7 @@ export function enter(side: Side): Promise<void> {
   const index = p.cursor - parentRows(p)
   if (index < 0) return goUp(side)
   const item = stores[side].getItem(index)
+  if (item?.kind === "dir" && p.remote) return openRemoteDir(side, p.remote, item.id)
   if (item?.kind === "dir" && p.archive) {
     return showArchive(side, {
       ...p.archive,
@@ -681,7 +819,7 @@ export function enter(side: Side): Promise<void> {
     })
   }
   if (item?.kind === "dir") return openFolderEntry(side, item.id)
-  if (item && !p.archive && isArchiveName(item.name)) return enterArchive(side, item)
+  if (item && !p.archive && !p.remote && isArchiveName(item.name)) return enterArchive(side, item)
   if (item && fileOpener) return fileOpener(side, item)
   return Promise.resolve()
 }
@@ -691,7 +829,7 @@ export function enterArchiveAtCursor(side: Side): Promise<void> {
   const p = getPanel(side)
   const index = p.cursor - parentRows(p)
   const item = index >= 0 ? stores[side].getItem(index) : undefined
-  if (!item || item.kind === "dir" || p.archive) return Promise.resolve()
+  if (!item || item.kind === "dir" || p.archive || p.remote) return Promise.resolve()
   return enterArchive(side, item)
 }
 
@@ -699,6 +837,19 @@ export function enterArchiveAtCursor(side: Side): Promise<void> {
 export async function refresh(side: Side): Promise<void> {
   const p = getPanel(side)
   if (!p.path) return
+  // A folder of a connection is read from the server again; its session
+  // shows the new listing when Go has it (query.invalidated).
+  if (p.remote) {
+    const remote = p.remote
+    if (p.error || !p.query) return openRemoteDir(side, remote, remote.path)
+    try {
+      await bridge.remoteOpen(remote.remoteId, remote.path)
+    } catch (error) {
+      if (getPanel(side).remote?.remoteId === remote.remoteId)
+        remoteFailed(side, remote, error, () => refresh(side))
+    }
+    return
+  }
   if (p.error || !p.query) return openPath(side, p.path, { branch: p.branch })
   // Search results follow file changes on their own; an archive is read once.
   if (p.find || p.archive) return
@@ -747,7 +898,8 @@ async function reopenQuery(side: Side): Promise<void> {
   } catch (error) {
     if (seq !== seqs[side]) return
     // The results of a search that was forgotten, or a closed archive: the folder again.
-    if ((p.find || p.archive) && isExpired(error))
+    if (p.remote) remoteFailed(side, p.remote, error, () => reopenQuery(side))
+    else if ((p.find || p.archive) && isExpired(error))
       void openPath(side, p.path, p.archive ? { focusId: p.archive.entryId } : undefined)
     else patch(side, { error: toPanelError(error) })
   }
@@ -769,6 +921,7 @@ interface ParkedSession {
   branch: boolean
   find: FindLocation | null
   archive: ArchiveLocation | null
+  remote: RemoteLocation | null
   filter: string
   timer: ReturnType<typeof setTimeout>
 }
@@ -790,6 +943,7 @@ export function dropParked(tabId: number): void {
   // Still on screen behind a failed navigation: the next navigation closes it.
   if (SIDES.some((side) => getPanel(side).query?.queryId === s.query.queryId)) return
   void bridge.closeQuery(s.query.queryId).catch(() => undefined)
+  if (s.remote) releaseRemote(s.remote.remoteId)
 }
 
 /** A tab is being left: its session stays open for TAB_GRACE_MS. */
@@ -806,6 +960,7 @@ export function parkSession(side: Side, tabId: number): void {
     branch: p.branch,
     find: p.find,
     archive: p.archive,
+    remote: p.remote,
     filter: p.filter,
     timer: setTimeout(() => dropParked(tabId), TAB_GRACE_MS),
   })
@@ -813,6 +968,7 @@ export function parkSession(side: Side, tabId: number): void {
 
 /** Drops in-flight navigations of a panel (a tab switch supersedes them). */
 export function cancelNavigation(side: Side): void {
+  stopRemoteListing(side)
   seqs[side]++
   failed[side] = null
 }
@@ -848,6 +1004,8 @@ export function adoptSession(side: Side, tabId: number, focusId: number | null):
     branch: s.branch,
     find: s.find,
     archive: s.archive,
+    remote: s.remote,
+    disconnected: null,
     filter: s.filter,
     cursor: 0,
     revealToken: p.revealToken + 1,
@@ -864,9 +1022,242 @@ export function adoptSession(side: Side, tabId: number, focusId: number | null):
         })
       }
     }
-    if (seq === seqs[side]) await refresh(side)
+    // A local folder is listed again in the background; a server is asked
+    // nothing just because a tab is shown again (Ctrl+R reads it again).
+    if (seq === seqs[side] && !s.remote) await refresh(side)
   })()
   return true
+}
+
+// Connections (Stage C10.5, ADR-0037) ---------------------------------------------------
+
+interface RemoteOpenOptions {
+  /** Put the cursor on this entry (the folder just left). */
+  focusId?: number
+  /** Throw instead of showing the error state (the path bar shows it inline). */
+  inline?: boolean
+}
+
+// Connects and listings that can be cancelled share one numbering (remote.cancel).
+let lastAttempt = 0
+export const nextRemoteAttempt = (): number => ++lastAttempt
+
+/** The listing of a server each panel waits for, by its attempt. */
+const pendingRemote: Record<Side, number | null> = { left: null, right: null }
+
+/**
+ * Stops the listing a panel waits for (Stop, Esc, or the panel moved on): a
+ * server that does not answer would hold it for the command timeout.
+ */
+export function stopRemoteListing(side: Side): boolean {
+  const attempt = pendingRemote[side]
+  if (attempt === null) return false
+  pendingRemote[side] = null
+  seqs[side]++
+  patch(side, { loading: false, loadingTarget: null, remoteBusy: false })
+  void bridge.remoteCancel(attempt).catch(() => undefined)
+  return true
+}
+
+/** Other places that still show a connection (tabs.ts: tabs that are not visible). */
+let remoteHolders: (() => Iterable<number>) | null = null
+export function setRemoteHolders(holders: (() => Iterable<number>) | null): void {
+  remoteHolders = holders
+}
+
+/**
+ * A panel, a parked session or a tab stopped showing a connection: when
+ * nothing shows it any more, it is closed. Connections are not kept open
+ * behind the user's back.
+ */
+export function releaseRemote(remoteId: number): void {
+  const shown =
+    SIDES.some((side) => getPanel(side).remote?.remoteId === remoteId) ||
+    [...parked.values()].some((s) => s.remote?.remoteId === remoteId) ||
+    [...(remoteHolders?.() ?? [])].includes(remoteId)
+  if (!shown && isBridgeAvailable()) void bridge.remoteDisconnect(remoteId).catch(() => undefined)
+}
+
+const reasonOf = (error: unknown): unknown =>
+  error instanceof PanelythError
+    ? (error.details as { reason?: unknown } | undefined)?.reason
+    : undefined
+
+/**
+ * A command on a connection failed in a panel. A connection that is closed
+ * becomes "Not connected" there (with Connect); anything else is the error
+ * state with Retry.
+ */
+function remoteFailed(
+  side: Side,
+  remote: RemoteBase & { path: string },
+  error: unknown,
+  again: () => Promise<void>,
+): void {
+  if (reasonOf(error) !== "closed" && !isExpired(error)) {
+    failed[side] = again
+    patch(side, { loading: false, error: toPanelError(error) })
+    return
+  }
+  const p = getPanel(side)
+  // Rows of the closed connection go; a folder of this computer shown behind stays.
+  if (p.remote) {
+    if (p.query && !isParked(p.query.queryId))
+      void bridge.closeQuery(p.query.queryId).catch(() => undefined)
+    stores[side].reset(null)
+    patch(side, { remote: null, query: null, cursor: 0 })
+    sessionChanged(side, { kind: "reset" })
+  }
+  patch(side, {
+    loading: false,
+    error: null,
+    disconnected: {
+      connectionId: remote.connectionId,
+      label: remote.label,
+      host: remote.host,
+      port: remote.port,
+      user: remote.user,
+      encrypted: remote.encrypted,
+      path: remote.path,
+    },
+  })
+  schedulePersist()
+}
+
+/**
+ * Shows a folder of a connection in a panel: the server lists it once
+ * (remote.open), then a session over that listing is the panel's rows, as
+ * for any folder. `folder` is a path on the server or a folder's entry id.
+ */
+export async function openRemoteDir(
+  side: Side,
+  base: RemoteBase,
+  folder: string | number,
+  options: RemoteOpenOptions = {},
+): Promise<void> {
+  const p = getPanel(side)
+  if (p.dirId === null) return
+  // A listing this one replaces is not left waiting on the server.
+  stopRemoteListing(side)
+  const seq = ++seqs[side]
+  const attempt = nextRemoteAttempt()
+  pendingRemote[side] = attempt
+  // No loadingTarget: it names a drive being opened, and "/" is one elsewhere.
+  patch(side, { loading: true, loadingTarget: null, remoteBusy: true })
+  const done = (): void => {
+    if (pendingRemote[side] !== attempt) return
+    pendingRemote[side] = null
+    patch(side, { remoteBusy: false })
+  }
+  const remote: RemoteBase = {
+    remoteId: base.remoteId,
+    connectionId: base.connectionId,
+    label: base.label,
+    host: base.host,
+    port: base.port,
+    user: base.user,
+    encrypted: base.encrypted,
+  }
+  try {
+    const dir = await bridge.remoteOpen(remote.remoteId, folder, attempt).finally(done)
+    if (seq !== seqs[side]) return
+    const location: RemoteLocation = {
+      ...remote,
+      dirId: dir.remoteDirId,
+      path: dir.path,
+      crumbs: dir.crumbs,
+      rejected: dir.rejected,
+    }
+    const now = getPanel(side)
+    const snapshot = await bridge.openQuery(
+      descriptor(p.dirId, {
+        ...now,
+        branch: false,
+        find: null,
+        archive: null,
+        remote: location,
+        filter: "",
+      }),
+    )
+    let cursor = 0
+    if (options.focusId !== undefined) {
+      const at = await bridge.indexOf(snapshot.queryId, options.focusId).catch(() => null)
+      if (at && at.index >= 0) cursor = at.index + 1
+    }
+    if (seq !== seqs[side]) {
+      void bridge.closeQuery(snapshot.queryId).catch(() => undefined)
+      return
+    }
+    const before = getPanel(side)
+    const previous = before.query
+    if (previous && previous.queryId !== snapshot.queryId && !isParked(previous.queryId)) {
+      void bridge.closeQuery(previous.queryId).catch(() => undefined)
+    }
+    stores[side].reset(snapshot)
+    sessionChanged(side, { kind: "reset" })
+    pendingFocus[side] = null
+    pendingName[side] = null
+    patch(side, {
+      query: snapshot,
+      branch: false,
+      find: null,
+      archive: null,
+      remote: location,
+      disconnected: null,
+      filter: "",
+      error: null,
+      loading: false,
+      scanId: 0,
+      progress: null,
+      cursor,
+      revealToken: before.revealToken + 1,
+    })
+    // Another connection was showing here: it closes when nothing else shows it.
+    if (before.remote && before.remote.remoteId !== remote.remoteId)
+      releaseRemote(before.remote.remoteId)
+    schedulePersist()
+    if (side === usePanelsStore.getState().active) listeners.forEach((l) => l(side))
+  } catch (error) {
+    if (seq !== seqs[side]) return
+    patch(side, { loading: false })
+    if (options.inline) throw error
+    const shown = getPanel(side).remote
+    const path =
+      typeof folder === "string" ? folder : shown?.remoteId === remote.remoteId ? shown.path : "/"
+    remoteFailed(side, { ...remote, path }, error, () => openRemoteDir(side, base, folder, options))
+  }
+}
+
+/** The panel shows that its tab's connection is not open (tabs.ts, session.ts). */
+export function showDisconnected(side: Side, disconnected: DisconnectedLocation | null): void {
+  patch(side, { disconnected })
+}
+
+/**
+ * "Show the folder" on "Not connected": the tab stops being a tab of the
+ * connection and shows the folder of this computer it had behind it.
+ */
+export function leaveDisconnected(side: Side): Promise<void> {
+  const p = getPanel(side)
+  if (!p.disconnected) return Promise.resolve()
+  patch(side, { disconnected: null })
+  schedulePersist()
+  return p.query ? Promise.resolve() : openPath(side, p.path)
+}
+
+/**
+ * A connection was closed (Disconnect, or the server is gone): panels that
+ * show it go back to their folder of this computer, and parked sessions over
+ * it are dropped.
+ */
+export function remoteClosed(remoteId: number): void {
+  for (const [tabId, s] of [...parked]) {
+    if (s.remote?.remoteId === remoteId) dropParked(tabId)
+  }
+  for (const side of SIDES) {
+    const p = getPanel(side)
+    if (p.remote?.remoteId === remoteId) void openPath(side, p.path)
+  }
 }
 
 let folderChangeHook: ((side: Side) => void) | null = null
@@ -984,6 +1375,38 @@ export async function focusEntry(side: Side, entryId: number): Promise<void> {
   patch(side, { cursor: at.index + parentRows(p), revealToken: p.revealToken + 1 })
 }
 
+// A connection's new folder or renamed entry has no id until the server
+// listed it: the cursor goes to it by its name (Stage C10.5).
+const pendingName: Record<Side, string | null> = { left: null, right: null }
+
+/**
+ * Puts the cursor on the entry with this name now if the session lists it,
+ * else when the next invalidation brings it in.
+ */
+export async function focusName(side: Side, name: string): Promise<void> {
+  // "*" and "?" are wildcards to query.locate.
+  if (/[*?]/.test(name)) return
+  pendingName[side] = name
+  await placeOnName(side)
+}
+
+/** True once the cursor is on the awaited name. */
+async function placeOnName(side: Side): Promise<boolean> {
+  const name = pendingName[side]
+  const query = getPanel(side).query
+  if (name === null || !query) return false
+  const still = (): boolean =>
+    pendingName[side] === name && getPanel(side).query?.queryId === query.queryId
+  const at = await bridge.locate(query.queryId, name, 0, "forward").catch(() => null)
+  if (!at || at.index < 0 || !still()) return false
+  const item = await stores[side].ensureIndex(at.index).catch(() => undefined)
+  if (item?.name !== name || !still()) return false
+  pendingName[side] = null
+  const p = getPanel(side)
+  patch(side, { cursor: at.index + parentRows(p), revealToken: p.revealToken + 1 })
+  return true
+}
+
 async function applyInvalidation(side: Side, snapshot: QuerySnapshot): Promise<void> {
   const p = getPanel(side)
   if (p.query?.queryId !== snapshot.queryId || snapshot.version <= p.query.version) return
@@ -1000,6 +1423,12 @@ async function applyInvalidation(side: Side, snapshot: QuerySnapshot): Promise<v
     from,
     to: snapshot.version,
   })
+  // An entry awaited by its name (a server's new folder): this listing has it, or it never comes.
+  if (pendingName[side] !== null) {
+    const placed = await placeOnName(side)
+    pendingName[side] = null
+    if (placed) return
+  }
   if (focusId === null) {
     moveCursor(side, getPanel(side).cursor)
     return
@@ -1158,6 +1587,10 @@ export function resetListing(): void {
   folderChangeHook = null
   if (persistTimer) clearTimeout(persistTimer)
   persistTimer = null
+  remoteHolders = null
+  lastAttempt = 0
+  pendingRemote.left = pendingRemote.right = null
+  pendingName.left = pendingName.right = null
   for (const side of SIDES) stores[side].reset(null)
   useListingStore.setState({ left: emptyPanel(), right: emptyPanel() })
 }

@@ -1,0 +1,25 @@
+{
+  "ch": "connections.changed",
+  "p": {
+    "connections": [
+      {
+        "active": false,
+        "encoding": "",
+        "fingerprint": "abababababababababababababababababababababababababababababababab",
+        "group": "Work",
+        "hasPassword": true,
+        "host": "ftp.example.org",
+        "id": 1,
+        "localPath": "",
+        "name": "Example",
+        "port": 21,
+        "startPath": "/pub",
+        "tls": "explicit",
+        "transfers": 2,
+        "user": "alice"
+      }
+    ]
+  },
+  "seq": 1,
+  "t": "evt"
+}

@@ -1,9 +1,9 @@
 import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
-import { notice, READ_ONLY } from "./files"
+import { notice, READ_ONLY, refusedOnConnection } from "./files"
 import { openDocumentWindow } from "./documents"
-import { openMediaViewer } from "./viewers"
+import { openLister, openMediaViewer } from "./viewers"
 import {
   focusEntry,
   pageStoreOf,
@@ -53,6 +53,13 @@ export function cursorItem(side: Side): ContentItem | null {
 /** Enter on a file. */
 export async function openWithApp(item: ContentItem, side?: Side): Promise<void> {
   const settings = useSettingsStore.getState().settings
+  // A file on a server is only ever shown, in the viewer or the lister, from
+  // a temporary copy: nothing a server sends is started (ADR-0037).
+  if (side && useListingStore.getState()[side].remote) {
+    if ((item.kind === "image" || item.kind === "video") && openMediaViewer(item, side)) return
+    openLister(side)
+    return
+  }
   if (
     settings.mediaOpen === "viewer" &&
     (item.kind === "image" || item.kind === "video") &&
@@ -98,6 +105,7 @@ export const cancelProgram = (): void => set({ program: null })
 export async function editCursor(side: Side): Promise<void> {
   const item = cursorItem(side)
   if (!item || item.kind === "dir") return
+  if (refusedOnConnection(side)) return
   if (useListingStore.getState()[side].archive) {
     notice(t("Files inside an archive can't be edited. Copy them out with F5 first."))
     return
@@ -112,6 +120,7 @@ export async function editCursor(side: Side): Promise<void> {
 /** Shift+F4. */
 export function openNewFile(side: Side): void {
   const p = useListingStore.getState()[side]
+  if (refusedOnConnection(side)) return
   if (p.archive) notice(t(READ_ONLY))
   else if (p.dirId !== null) set({ newFile: { side, error: null } })
 }

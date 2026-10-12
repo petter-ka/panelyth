@@ -119,7 +119,9 @@ export const ThumbsView = forwardRef<FullViewHandle, ThumbsViewProps>(function T
   useScrollMemory(
     box,
     side,
-    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive && !panel.remote
+      ? panel.dirId
+      : null,
     "top",
   )
   useEffect(() => virtualizer.measure(), [virtualizer, height])

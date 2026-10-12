@@ -17,7 +17,11 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Quick filter | Ctrl+S | C06 | ✓ |
 | Back / forward / history list | Alt+Left / Alt+Right / Alt+Down | C02, C03 | ✓ |
 | Folder tabs | Ctrl+T, Ctrl+W, Ctrl+Tab | C03 | ✓ |
-| Drive bar and drive menu with free space | Alt+F1, Alt+F2 | C03 | ✓ |
+| Tab bar with "+", rename, duplicate, reopen closed tab | — (Panelyth: Ctrl+Shift+T reopens) | C10.5 | ✓ |
+| Saved tab sets (TC: save and load tabs to a file) | — | C10.5 | ✓ (named sets in `library.db`, no files) |
+| Separate folder tree, one or one per panel | Ctrl+Shift+F8 | C10.5 | ✓ |
+| Tree dialog; tree inside a panel | Alt+F10; Ctrl+F8 | — | later |
+| Drive bar and drive menu with free space; a drive the other panel is on opens at that panel's folder | Alt+F1, Alt+F2 | C03 | ✓ |
 | Directory hotlist (shared with the viewer's bookmarks) | Ctrl+D | C03 | ✓ |
 | Copy / move to the other panel | F5 / F6 | P03, C04 | ✓ |
 | Copy in place, rename in place | Shift+F5, Shift+F6 | C04 | ✓ |
@@ -40,6 +44,7 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Compare directories | Shift+F2 | C08 | ✓ |
 | Synchronize directories | — | C08 | ✓ |
 | Compare files by content (text diff) | — | C08 | ✓ |
+| Compare several marked files; one marked file per panel; changes inside a line | — | C10.5 | ✓ |
 | Checksums create / verify | — | C08 | ✓ |
 | Multi-rename tool, undo last | Ctrl+M | C09 | ✓ |
 | Change attributes and timestamps | — | C09 | ✓ |
@@ -48,7 +53,8 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Function-key bar | — | C00 | ✓ |
 | Toolbar, user commands, external tools | — | C10 | ✓ |
 | Custom shortcuts | — | C02 (shared keymap) | ✓ |
-| FTP / SFTP / cloud | Ctrl+F | — | later (plugins) |
+| FTP / FTPS: connect, browse, transfer, saved connections | Ctrl+F, Ctrl+N, Ctrl+Shift+F | C10.5 | ✓ (ADR-0037; no server-to-server copy, no editing in place, no find or sync on a server) |
+| SFTP / WebDAV / cloud | — | — | later |
 | Plugin compatibility (WCX/WFX/WLX) | — | — | out of scope |
 | Edit archives in place | — | — | later |
 | OS file clipboard interop | Ctrl+C / Ctrl+V with Explorer | — | later, when portable |

@@ -11,7 +11,8 @@ covers what is specific to the commander.
 ```text
 src/shared/desktop                the shell: preload/commander and the commander capability profile in main
 src/commander/renderer     React app (src/shared/ui, src/shared/renderer-core, src/shared/media-ui)
-src/shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare, rename
+src/shared/sidecar          the shared sidecar: all-entries scope, jobs v2, find, archives, compare, rename,
+                            internal/remote (FTP and FTPS connections, Stage C10.5)
 ```
 
 ## Renderer composition
@@ -49,6 +50,7 @@ type Location =
   | { kind: "archive"; archiveId: number; inner: string }   // ADR-0030
   | { kind: "find"; findId: number }                        // Stage C06
   | { kind: "branch"; dirId: number; path: string }         // Stage C06
+  | { kind: "remote"; remoteId: number; path: string }      // Stage C10.5, ADR-0037
 
 interface Tab {
   id: number
@@ -207,6 +209,7 @@ Alt+Enter         → props.get(entryId) (attributes, permissions, link target) 
 | C08 | `compare.dirs` (a diff session with `ContentItem.diff` rows), `compare.cancel`, `compare.close`, `compare.show`, `compare.setAction`, `compare.plan`, `compare.marks` (Shift+F2); `diff.open`, `diff.page`, `diff.close` (the text diff); job kinds `sync`, `hashCreate`, `hashVerify`, `compareFiles`; the `compare.progress` event |
 | C09 | `rename.preview` (paged), `rename.undoInfo`; job kinds `multiRename`, `undoRename`, `setAttributes`; `props.get` gains `attrs`, `permissions` and `linkTarget`; `dirSize` writes in batches |
 | C10 | `shell.run` and `shell.runTool` (main-local; folders and names resolve in Go through `entry.path` and `selection.paths`); user commands in `commander.tools`; `query.page` with a thumbnail profile and `preview.ensure` lanes `cmd-tiles-left` / `cmd-tiles-right` for the Thumbnails view |
+| C10.5 | `fs.listDirs` with `showHidden` (the folder tree); `remote.connections`, `remote.saveConnection`, `remote.removeConnection`, `remote.trust`, `remote.connect`, `remote.cancel`, `remote.disconnect`, `remote.open`, `remote.mkdir`, `remote.rename`, `remote.secureStore` and the `connections.changed` event (ADR-0037; main-only towards the sidecar: `remote.storeConnection`, `remote.secret`, `remote.dial`); `query.open { remoteId, remoteDirId }` (the fourth session source); job kinds `download`, `upload`, `remoteDelete`; `compareFiles` over a selection; `diff.page` rows with `spans` |
 
 Every method is batch-oriented, cancellable where it runs long, and validated in main (ADR-0012, ADR-0027).
 
@@ -223,13 +226,39 @@ table (with groups), and recent locations are shared with the viewer. Theme and 
 `commander.tools` `{ v: 1, commands: [{ id, title, command, params, dir, icon, menu, console }] }` (read by main when
 a user command runs), `commander.toolbar` `{ v: 1, items }` (action ids, `tool:<id>`, `|` for a divider),
 `commander.commandHistory` `{ v: 1, items }` (50 lines), a tab's `view` may be `thumbs`, and `commander.settings`
-gains the three bars, the tile size, the default conflict policy and verify, and the two confirmations.
+gains the three bars, the tile size, the default conflict policy and verify, and the two confirmations. As of Stage
+C10.5: `commander.panels` is `v: 3` (a tab gains `title` and, for a tab on a connection, `remote { connectionId,
+label, host, port, user, encrypted, path }`: where it was, never a password, and nothing that connects by itself);
+`commander.tabSets` `{ v: 1, sets: [{ id, name, panels: [{ tabs, active }] }] }` (one panel's tabs, or the left and
+the right panel's; at most 50 sets); `commander.layout` `{ v: 1, split, tree: "off" | "one" | "two", treeWidth }`;
+`commander.settings` gains `tabBar` and `treeFollowCursor`. Saved connections are rows of the `connections` table
+of `library.db`, with the password as ciphertext made by Electron main (ADR-0037).
+
+## Tab sets, the folder tree and connections (Stage C10.5)
+
+- **Tabs** (`features/tabs.ts`, `features/tabsets.ts`): the tab bar is always there (a setting hides it for one
+  tab) with a "+" button; a tab can be renamed, duplicated and, once closed, brought back (the last 10 per panel,
+  in memory). A tab set is a named list of tab records; opening one opens a session for the tab that becomes
+  visible only.
+- **The folder tree** (`features/tree.ts`, `components/TreePane.tsx`) is the viewer's tree store, moved to
+  `src/shared/renderer-core` as a factory (`createTreeStore`) with the twisty in `src/shared/ui`; the viewer's
+  sidebar uses the same code. One tree left of the panels follows the active panel, or each panel has its own. A
+  node lists one level of subfolders when expanded (`fs.listDirs`, with the panel's hidden-files setting); rows are
+  virtualized; the tree follows the panel after the panel's rows are painted.
+- **Connections** (`features/remote.ts`, `components/ConnectionsDialog.tsx`; Go `internal/remote`, `internal/app/
+  remote.go`; main `src/shared/desktop/src/main/remote.ts`): a connected server is a location over the panel's
+  folder, like an archive. `remote.open` lists a folder on the server, a session pages it, and F5, F6, F7, F2 and
+  F8 are routed to the server's jobs and calls. A password is typed in the renderer, encrypted or used by main for
+  one call, and never returns; the renderer keeps it in no store. Nothing connects without a command: a restored
+  tab says "Not connected". A listing that hangs is cancelled by Stop, Esc or the panel moving on. What needs files
+  of this computer refuses with one message (`refusedOnConnection`).
 
 ## Switching to the viewer
 
 - On switch, the commander publishes its context: the active panel's folder (or, for archive, find and branch
   locations, the folder containing the cursor entry), the cursor entry and the marks (`context.publish`). A compare
-  is a dialog over the panels, not a panel location (Stage C08).
+  is a dialog over the panels, not a panel location (Stage C08). On a connection it publishes the folder of this
+  computer behind it, without an entry or marks: no connection and no entry of one carries over (Stage C10.5).
 - When shown, it reads the viewer's context (`context.get`): the active panel opens that folder if needed, puts the
   cursor on the focused entry, and turns the carried selection into marks (`selection.fromContext`).
 - While hidden it does no work: no paging, no watching; on show it re-lists its visible panels.

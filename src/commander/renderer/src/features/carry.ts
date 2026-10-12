@@ -40,8 +40,14 @@ const isFromViewer = (ctx: SharedContext): boolean =>
  */
 export async function publishContext(onSwitch: boolean): Promise<void> {
   const side = usePanelsStore.getState().active
-  const { dirId, archive } = useListingStore.getState()[side]
+  const { dirId, archive, remote } = useListingStore.getState()[side]
   if (dirId === null) return
+  // On a connection: the folder of this computer behind it. Entries on a
+  // server are not files the viewer can show, and no connection carries over.
+  if (remote) {
+    await bridge.publishContext(dirId, null, onSwitch ? null : undefined)
+    return
+  }
   // Inside an archive: its folder, with the archive file as the focus
   // (entries in archives are not files the viewer can show).
   if (archive) {

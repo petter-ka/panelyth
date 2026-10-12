@@ -9,7 +9,7 @@ import {
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
 import { describeOperand } from "./compare"
-import { inArchive, notice, operand, READ_ONLY } from "./files"
+import { inArchive, notice, operand, READ_ONLY, refusedOnConnection } from "./files"
 import { IS_WINDOWS } from "./format"
 import { pageStoreOf, parentRows, useListingStore } from "./listing"
 import { countOf, marksDescriptor, marksOf, markNone } from "./marks"
@@ -91,6 +91,7 @@ function cursorId(side: Side): number | null {
 
 /** Change attributes: for the marks, or the cursor entry (whose current state is shown). */
 export function openAttributes(side: Side): void {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t(READ_ONLY))
     return

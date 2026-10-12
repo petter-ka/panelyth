@@ -13,6 +13,9 @@ const messages: Messages = {
   "5 levels": "5 уровней",
   "7-Zip isn't installed, so {name} opens with its default app.":
     "7-Zip не установлен, поэтому {name} открывается в приложении по умолчанию.",
+  "A connection that is not saved. Nothing is kept once it is closed.":
+    "Подключение, которое не сохраняется. После закрытия ничего не остаётся.",
+  "A connection with this name already exists.": "Подключение с таким именем уже существует.",
   "A drive here has no trash, so nothing can be replaced safely. Choose another destination or policy.":
     "На одном из дисков нет корзины, поэтому ничего нельзя безопасно заменить. Выберите другое место назначения или правило.",
   "A drive in this selection has no trash, so the originals can't be replaced safely.":
@@ -25,6 +28,8 @@ const messages: Messages = {
     "Больший холст добавляет место вокруг изображения; меньший обрезает его.",
   "A look adds ordinary steps you can change in the edit stack.":
     "Стиль добавляет обычные шаги, которые можно изменить в стеке правок.",
+  "A panel has no folder open yet.": "В одной из панелей ещё не открыта папка.",
+  "A password is stored": "Пароль сохранён",
   "A picture from another session": "Изображение из другого сеанса",
   "A picture that is already smaller stays as it is.":
     "Изображение, которое уже меньше, остаётся без изменений.",
@@ -32,12 +37,25 @@ const messages: Messages = {
   "A recipe is the list of steps with its output settings. Using one replaces the current steps; Undo brings them back.":
     "Рецепт — это список шагов с настройками вывода. Применение рецепта заменяет текущие шаги; «Отменить» возвращает их.",
   "A recipe with the same name is replaced.": "Рецепт с таким же именем будет заменён.",
+  "A server has no trash. This can't be undone.":
+    "На сервере нет корзины. Это действие нельзя отменить.",
+  "A set of one panel opens in the left panel; a set of both panels opens in both.":
+    "Набор одной панели открывается в левой панели; набор обеих панелей — в обеих.",
+  "A set of one panel opens in the right panel; a set of both panels opens in both.":
+    "Набор одной панели открывается в правой панели; набор обеих панелей — в обеих.",
+  "A tab set keeps each tab's folder, name, sort, view and lock. Open it again from the tab menu.":
+    "Набор вкладок хранит папку, имя, сортировку, вид и закрепление каждой вкладки. Откройте его снова из меню вкладки.",
+  "A tab set with this name exists and will be replaced.":
+    "Набор вкладок с таким именем уже есть и будет заменён.",
   "A texture…": "Текстура…",
   "A to Z": "От А до Я",
   "ALL UPPERCASE": "ВСЕ ПРОПИСНЫЕ",
+  "Accepted certificate (SHA-256):": "Принятый сертификат (SHA-256):",
   Accessed: "Последний доступ",
   Across: "По горизонтали",
   Action: "Спорт",
+  "Active mode (the server connects back; only where passive mode fails)":
+    "Активный режим (сервер подключается сам; только если пассивный режим не работает)",
   "Actual size": "Реальный размер",
   "Actual size (1)": "Реальный размер (1)",
   Add: "Добавить",
@@ -57,6 +75,9 @@ const messages: Messages = {
   "Add the shape": "Добавить фигуру",
   "Add the text": "Добавить текст",
   "Add to favorites": "Добавить в избранное",
+  "Add to the directory hotlist": "Добавить в список избранных папок",
+  "Add to the tabs": "Добавить к вкладкам",
+  "Added to the directory hotlist.": "Добавлено в список избранных папок.",
   "Adding {count, plural, one {# file} other {# files}} to favorites":
     "{count, plural, one {Добавление # файла} few {Добавление # файлов} many {Добавление # файлов} other {Добавление # файла}} в избранное",
   "Adds a Levels step fitted to this picture; adjust it there.":
@@ -74,12 +95,16 @@ const messages: Messages = {
   "Also removes a color cast": "Также убирает цветовой оттенок",
   Altitude: "Высота над уровнем моря",
   Always: "Всегда",
+  "Always shown": "Показывать всегда",
+  "Always trust this certificate": "Всегда доверять этому сертификату",
   Amount: "Степень",
   "An empty date stays as it is.": "Пустая дата остаётся без изменений.",
   "An existing file of that name opens as it is.":
     "Существующий файл с таким именем открывается как есть.",
   Angle: "Угол",
   "Another hotlist entry has this folder.": "Другая запись избранного уже содержит эту папку.",
+  "Another tab set has this name, or it is empty.":
+    "Такое имя уже у другого набора вкладок, либо имя пустое.",
   Any: "Любой",
   "Any angle": "Произвольный угол",
   "Any rating": "Любой рейтинг",
@@ -133,6 +158,7 @@ const messages: Messages = {
   Back: "Назад",
   "Back to folder": "Назад к папке",
   "Back to the folder (Backspace)": "Назад к папке (Backspace)",
+  "Back to the list": "Назад к списку",
   "Backend ready": "Фоновая служба готова",
   "Backend restarting": "Фоновая служба перезапускается",
   "Backend starting": "Фоновая служба запускается",
@@ -158,6 +184,7 @@ const messages: Messages = {
   Bold: "Полужирный",
   Bookmarks: "Закладки",
   Border: "Рамка",
+  "Both panels' ({tabs})": "Обеих панелей ({tabs})",
   Bottom: "Снизу",
   "Bottom edge": "Нижний край",
   "Bottom left": "Снизу слева",
@@ -271,6 +298,7 @@ const messages: Messages = {
   "Close other tabs": "Закрыть остальные вкладки",
   "Close quick view (Ctrl+Q)": "Закрыть быстрый просмотр (Ctrl+Q)",
   "Close tab": "Закрыть вкладку",
+  "Close tabs to the right": "Закрыть вкладки справа",
   "Close the editor": "Закрыть редактор",
   "Close without running?": "Закрыть без запуска?",
   "Close {name}": "Закрыть «{name}»",
@@ -291,15 +319,19 @@ const messages: Messages = {
   "Command history": "История команд",
   "Command line": "Командная строка",
   "Commander settings": "Настройки Commander",
+  "Commands run in a folder of this computer. Leave the connection first.":
+    "Команды выполняются в папке этого компьютера. Сначала выйдите из подключения.",
   "Commands run only while Commander is shown.":
     "Команды выполняются, только пока показан Commander.",
   Compare: "Сравнить",
+  "Compare 2 files": "Сравнить 2 файла",
   "Compare again": "Сравнить снова",
   "Compare by content": "Сравнить по содержимому",
   "Compare contents": "Сравнивать содержимое",
   "Compare dates (Shift+F2, Synchronize directories)":
     "Сравнение дат (Shift+F2, Синхронизировать папки)",
   "Compare directories": "Сравнить папки",
+  "Compare {count} files with the other panel": "Сравнить файлы ({count}) с другой панелью",
   "Compared two files by content": "Два файла сравнены по содержимому",
   "Compared {entries} entries in {seconds} s.": "Сравнено записей: {entries} за {seconds} с.",
   "Compared: {left} marked on the left, {right} on the right.":
@@ -309,6 +341,7 @@ const messages: Messages = {
   "Comparing: {entries} entries in {folders} folders":
     "Сравнение: записей: {entries}, папок: {folders}",
   "Comparing…": "Сравнение…",
+  "Comparing… {done} of {total}": "Сравнение… {done} из {total}",
   "Comparing… {percent} %": "Сравнение… {percent} %",
   Compression: "Сжатие",
   "Configure…": "Настроить…",
@@ -316,6 +349,11 @@ const messages: Messages = {
   "Confirm on Escape exit": "Подтверждать выход по Esc",
   "Confirmation and reminders": "Подтверждения и напоминания",
   Confirmations: "Подтверждения",
+  Connect: "Подключиться",
+  "Connecting to {name}…": "Подключение к {name}…",
+  Connections: "Подключения",
+  "Connections to FTP servers (Ctrl+F)": "Подключения к FTP-серверам (Ctrl+F)",
+  "Connections…": "Подключения…",
   Console: "Консоль",
   Contains: "Содержит",
   Content: "Содержимое",
@@ -332,12 +370,15 @@ const messages: Messages = {
   "Copy here under a new name": "Копировать сюда под новым именем",
   "Copy name": "Копировать имя",
   "Copy names as text": "Копировать имена как текст",
+  "Copy of {name}": "Копия {name}",
   "Copy or cut and paste {count, plural, one {# item} other {# items}} into “{folder}”?":
     "{count, plural, one {Скопировать или вырезать и вставить # элемент} few {Скопировать или вырезать и вставить # элемента} many {Скопировать или вырезать и вставить # элементов} other {Скопировать или вырезать и вставить # элемента}} в «{folder}»?",
   "Copy or move items?": "Копировать или переместить элементы?",
   "Copy path": "Копировать путь",
   "Copy paths": "Копировать пути",
   "Copy picture": "Копировать изображение",
+  "Copy the files out of the archive first, then to the server.":
+    "Сначала скопируйте файлы из архива, затем на сервер.",
   "Copy the files out of the archive to compare them.":
     "Скопируйте файлы из архива, чтобы сравнить их.",
   "Copy the files out of the archive to create checksums for them.":
@@ -436,12 +477,17 @@ const messages: Messages = {
   "Delete {count, plural, one {# entry} other {# entries}} on the right: {path}":
     "Удалить {count, plural, one {# запись} few {# записи} many {# записей} other {# записи}} справа: {path}",
   "Delete {name}": "Удалить: {name}",
+  "Delete {what} on the server?": "Удалить {what} на сервере?",
   "Delete {what} permanently?": "Удалить «{what}» навсегда?",
   "Deleted {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Удалён # элемент} few {Удалено # элемента} many {Удалено # элементов} other {Удалено # элемента}}",
+  "Deleted {count, plural, one {# item} other {# items}} on the server":
+    "{count, plural, one {Удалён # элемент на сервере} few {Удалено # элемента на сервере} many {Удалено # элементов на сервере} other {Удалено # элемента на сервере}}",
   "Deleting permanently always asks.": "Перед удалением навсегда вопрос задаётся всегда.",
   "Deleting {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Удаление # элемента} few {Удаление # элементов} many {Удаление # элементов} other {Удаление # элемента}}",
+  "Deleting {count, plural, one {# item} other {# items}} on the server":
+    "{count, plural, one {Удаление # элемента на сервере} few {Удаление # элементов на сервере} many {Удаление # элементов на сервере} other {Удаление # элемента на сервере}}",
   Depth: "Глубина",
   Desaturate: "Обесцветить",
   Description: "Описание",
@@ -451,12 +497,15 @@ const messages: Messages = {
   Details: "Подробности",
   "Did not fire": "Не сработала",
   Differences: "Различия",
+  Different: "Различается",
   "Different, no direction": "Различаются, без направления",
   Digitized: "Оцифровано",
   Digits: "Цифры",
   Dimensions: "Размеры",
   "Direction of the selected rows": "Направление выбранных строк",
   "Directory hotlist": "Список избранных папок",
+  Disconnect: "Отключиться",
+  "Disconnect (Ctrl+Shift+F)": "Отключиться (Ctrl+Shift+F)",
   Dismiss: "Скрыть",
   "Dismiss the message": "Закрыть сообщение",
   "Distance from the edge": "Отступ от края",
@@ -469,6 +518,12 @@ const messages: Messages = {
   "Double-click": "Двойной щелчок",
   "Double-click edge": "Двойной щелчок по границе",
   Down: "По вертикали",
+  Download: "Скачать",
+  "Download {what}{amount}": "Скачать {what}{amount}",
+  "Downloaded {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {Скачан # элемент} few {Скачано # элемента} many {Скачано # элементов} other {Скачано # элемента}}",
+  "Downloading {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {Скачивание # элемента} few {Скачивание # элементов} many {Скачивание # элементов} other {Скачивание # элемента}}",
   Downloads: "Загрузки",
   "Drag on the picture to paint a copy of what is at the source. Each stroke is one edit.":
     "Ведите по изображению, чтобы нарисовать копию того, что находится в источнике. Каждый мазок — отдельная правка.",
@@ -497,10 +552,14 @@ const messages: Messages = {
   "Drives, left panel": "Диски, левая панель",
   "Drives, right panel": "Диски, правая панель",
   "Drop shadow": "Тень",
+  Duplicate: "Дублировать",
+  "Duplicate tab": "Дублировать вкладку",
   Duration: "Длительность",
   "Each JPEG save loses a little quality; PNG does not.":
     "Каждое сохранение в JPEG немного снижает качество; PNG — нет.",
   "Each channel": "Каждый канал",
+  "Each file is removed from where it was once its copy is complete.":
+    "Каждый файл удаляется с прежнего места, когда его копия готова полностью.",
   "Each original goes to the trash first, so you can get it back.":
     "Каждый оригинал сначала попадает в корзину, так что его можно вернуть.",
   "Each original goes to the trash first, so you can get it back. The edited picture then takes its name.":
@@ -508,6 +567,7 @@ const messages: Messages = {
   "Each pixel keeps its own brightness.": "Каждый пиксель сохраняет свою яркость.",
   Edge: "Край",
   Edit: "Правка",
+  "Edit connection": "Изменить подключение",
   "Edit picture": "Редактировать изображение",
   "Edit pictures…": "Редактировать изображения…",
   "Edit the path": "Изменить путь",
@@ -534,18 +594,26 @@ const messages: Messages = {
   Ellipse: "Эллипс",
   "Email, 1024 px": "Эл. почта, 1024 px",
   Encoding: "Кодировка",
+  "Encoding of names": "Кодировка имён",
+  "Encoding of names (empty: UTF-8)": "Кодировка имён (пусто: UTF-8)",
+  "Encrypted connection (TLS)": "Зашифрованное подключение (TLS)",
+  Encryption: "Шифрование",
   "Enter a date between 1980 and 9999.": "Введите дату между 1980 и 9999 годом.",
   "Enter a destination folder.": "Укажите папку назначения.",
   "Enter a folder to search in.": "Укажите папку для поиска.",
   "Enter a full folder path.": "Укажите полный путь к папке.",
   "Enter a name for the archive.": "Укажите имя архива.",
   "Enter a name for the checksum file.": "Введите имя файла контрольных сумм.",
+  "Enter a name for the tab set.": "Введите имя набора вкладок.",
   "Enter runs the line · Shift+Enter runs it in a console window":
     "Enter выполняет строку · Shift+Enter — в окне консоли",
   "Enter sizes as numbers.": "Введите размеры числами.",
   "Enter the command to run.": "Введите команду для запуска.",
+  "Enter the server's name or address.": "Введите имя или адрес сервера.",
   "Enter the two folders to compare.": "Укажите две папки для сравнения.",
   "Enter valid dates.": "Введите корректные даты.",
+  "Entries whose names can't be used safely on this computer are not listed.":
+    "Элементы, имена которых нельзя безопасно использовать на этом компьютере, не показываются.",
   Entry: "Элемент",
   "Entry commands": "Команды элемента",
   Equal: "Одинаковые",
@@ -575,6 +643,10 @@ const messages: Messages = {
   "Eyedropper; arrow keys move it, Enter takes the color, Esc cancels":
     "Пипетка; стрелки перемещают её, Enter берёт цвет, Esc отменяет",
   Eyedroppers: "Пипетки",
+  "FTP, not encrypted": "FTP, без шифрования",
+  FTPS: "FTPS",
+  "FTPS, explicit TLS (recommended)": "FTPS, явный TLS (рекомендуется)",
+  "FTPS, implicit TLS": "FTPS, неявный TLS",
   Faded: "Выцветший",
   Failed: "Ошибка",
   Fast: "Быстро",
@@ -591,10 +663,13 @@ const messages: Messages = {
   "File names": "Имена файлов",
   "File types": "Типы файлов",
   Files: "Файлы",
+  "Files can't be copied from one server to another. Copy them to this computer first.":
+    "Файлы нельзя копировать с одного сервера на другой. Сначала скопируйте их на этот компьютер.",
   "Files can't be copied into an archive. Pack them with Alt+F5.":
     "Файлы нельзя копировать в архив. Упакуйте их клавишами Alt+F5.",
   "Files inside an archive can't be edited. Copy them out with F5 first.":
     "Файлы внутри архива нельзя редактировать. Сначала скопируйте их наружу клавишей F5.",
+  "Files that are not identical": "Файлы, которые не идентичны",
   "Files with all of": "Файлы со всеми тегами",
   Fill: "Заливка",
   "Fill and crop": "Заполнить и обрезать",
@@ -616,6 +691,7 @@ const messages: Messages = {
   "Finds clean texture nearby by itself": "Сам находит чистую текстуру рядом",
   "Finds pairs of red pupils that are level. Each one becomes an edit you can remove.":
     "Находит пары красных зрачков на одном уровне. Каждый становится правкой, которую можно убрать.",
+  "Fingerprint (SHA-256):": "Отпечаток (SHA-256):",
   Fired: "Сработала",
   "First Letter Of Each Word": "Каждое Слово С Прописной",
   "First image": "Первое изображение",
@@ -644,18 +720,29 @@ const messages: Messages = {
   "Folder history": "История папок",
   "Folder name": "Имя папки",
   "Folder not found": "Папка не найдена",
+  "Folder on the server": "Папка на сервере",
+  "Folder on the server (empty: /)": "Папка на сервере (пусто: /)",
+  "Folder on this computer": "Папка на этом компьютере",
+  "Folder on this computer for the other panel": "Папка на этом компьютере для другой панели",
   "Folder path": "Путь к папке",
   "Folder properties": "Свойства папки",
   "Folder sizes are not included.": "Размеры папок не учитываются.",
+  "Folder tree": "Дерево папок",
+  "Folder tree, left panel": "Дерево папок, левая панель",
+  "Folder tree, right panel": "Дерево папок, правая панель",
+  "Folder tree: off, one, one per panel": "Дерево папок: нет, одно, по одному на панель",
   "Folder with an arrow": "Папка со стрелкой",
   "Folder. Press Enter to open it.": "Папка. Нажмите Enter, чтобы открыть.",
   Folders: "Папки",
   "Folders always show their name. A hidden name still appears when you point at the tile.":
     "Папки всегда показывают имя. Скрытое имя всё равно появляется при наведении на плитку.",
   "Folders can't be edited": "Папки нельзя редактировать",
+  "Folders of the tab set": "Папки набора вкладок",
   Font: "Шрифт",
   "Font and spacing": "Шрифт и интервалы",
   "Font and spacing size": "Размер шрифта и интервалов",
+  Forget: "Забыть",
+  "Forget the stored password": "Забыть сохранённый пароль",
   Format: "Формат",
   Forward: "Вперёд",
   "Frame color": "Цвет рамки",
@@ -681,12 +768,14 @@ const messages: Messages = {
   "Go to the command line": "Перейти в командную строку",
   "Go to the command line (quick search starts with Alt)":
     "Идут в командную строку (быстрый поиск запускается с Alt)",
+  "Go to the folder tree": "Перейти к дереву папок",
   Golden: "Золотое сечение",
   Gray: "Серый",
   "Gray levels": "Уровни серого",
   Grayscale: "Оттенки серого",
   Green: "Зелёный",
   Group: "Группа",
+  "Group (optional)": "Группа (необязательно)",
   "Grow the picture to keep everything": "Увеличить изображение, чтобы сохранить всё",
   Guides: "Направляющие",
   Hardness: "Жёсткость",
@@ -724,6 +813,7 @@ const messages: Messages = {
   "ISO (2026-10-06 14:05)": "ISO (2026-10-06 14:05)",
   Icon: "Значок",
   "Icon library": "Библиотека значков",
+  "Identical: {same} · Not identical: {other}": "Идентичны: {same} · Не идентичны: {other}",
   "If the name exists": "Если имя уже существует",
   "Ignore a one-hour difference (daylight saving time)":
     "Игнорировать разницу в один час (летнее время)",
@@ -753,6 +843,7 @@ const messages: Messages = {
   "Invalid name": "Недопустимое имя",
   Invert: "Инвертировать",
   "Invert marks": "Инвертировать отметки",
+  "Issued to:": "Выдан для:",
   Italic: "Курсив",
   "Items that failed": "Элементы с ошибками",
   "JPEG has no transparency: transparent areas become white.":
@@ -810,6 +901,7 @@ const messages: Messages = {
   "Left size": "Размер слева",
   "Left to right only (the right side becomes a copy of the left)":
     "Только слева направо (правая сторона становится копией левой)",
+  "Left: {left} · Right: {right}": "Слева: {left} · Справа: {right}",
   Length: "Длина",
   Lens: "Объектив",
   "Lens maker": "Производитель объектива",
@@ -857,8 +949,6 @@ const messages: Messages = {
   "Mark by mask…": "Отметить по маске…",
   "Mark files": "Отметить файлы",
   "Mark files with the same extension": "Отметить файлы с тем же расширением",
-  "Mark two files to compare them, or none to compare with the other panel.":
-    "Отметьте два файла, чтобы сравнить их, или ни одного, чтобы сравнить с другой панелью.",
   "Marked files stay selected, up to 10,000; files the viewer doesn't show are left out.":
     "Отмеченные файлы остаются выбранными (до 10 000); файлы, которые Viewer не показывает, пропускаются.",
   Marking: "Отметка",
@@ -878,6 +968,7 @@ const messages: Messages = {
   Method: "Метод",
   Midtones: "Средние тона",
   "Minimum rating": "Минимальный рейтинг",
+  Missing: "Отсутствует",
   Model: "Модель",
   Modified: "Изменён",
   "Modified from": "Изменён с",
@@ -907,6 +998,8 @@ const messages: Messages = {
   "Move {name} later": "Переместить позже: {name}",
   "Move {what} to the trash?": "Переместить «{what}» в корзину?",
   "Move {what}{amount}": "Переместить: {what}{amount}",
+  "Move {what}{amount} from the server": "Переместить {what}{amount} с сервера",
+  "Move {what}{amount} to the server": "Переместить {what}{amount} на сервер",
   "Moved {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Перемещён # элемент} few {Перемещено # элемента} many {Перемещено # элементов} other {Перемещено # элемента}}",
   "Moved {count, plural, one {# item} other {# items}} to the trash":
@@ -949,6 +1042,7 @@ const messages: Messages = {
   New: "Новый",
   "New area": "Новая область",
   "New command": "Новая команда",
+  "New connection": "Новое подключение",
   "New folder": "Новая папка",
   "New name": "Новое имя",
   "New or existing tag": "Новый или существующий тег",
@@ -956,8 +1050,10 @@ const messages: Messages = {
   "New tab": "Новая вкладка",
   "New text file": "Новый текстовый файл",
   "Newest first": "Сначала новые",
+  "New…": "Создать…",
   Next: "Далее",
   "Next difference": "Следующее различие",
+  "Next file": "Следующий файл",
   "Next image": "Следующее изображение",
   "Next match (Enter)": "Следующее совпадение (Enter)",
   "Next media": "Следующий файл",
@@ -966,6 +1062,10 @@ const messages: Messages = {
   "Next to the originals": "Рядом с оригиналами",
   "Night mode (invert pages)": "Ночной режим (инвертировать страницы)",
   No: "Нет",
+  "No authority this computer trusts signed it, or it is for another name. Compare the fingerprint with one you got from the server's owner before you trust it.":
+    "Его не подписал ни один центр, которому доверяет этот компьютер, или он выдан для другого имени. Прежде чем доверять, сравните отпечаток с тем, который вы получили от владельца сервера.",
+  "No connections saved yet. Add one with New, or use Quick connect.":
+    "Сохранённых подключений пока нет. Добавьте его кнопкой «Создать» или используйте быстрое подключение.",
   "No edits yet. Pick a tool to begin.": "Правок пока нет. Выберите инструмент, чтобы начать.",
   "No file under the cursor": "Под курсором нет файла",
   "No files below this folder": "Ниже этой папки нет файлов",
@@ -982,10 +1082,13 @@ const messages: Messages = {
   "No picture chosen": "Изображение не выбрано",
   "No rating": "Без рейтинга",
   "No red eyes found.": "Красные глаза не найдены.",
+  "No rows with the chosen results.": "Нет строк с выбранными результатами.",
   "No source yet.": "Источник ещё не выбран.",
   "No steps yet. Pick a tool to build the recipe, or use one under Recipes.":
     "Шагов пока нет. Выберите инструмент, чтобы составить рецепт, или возьмите готовый в «Рецептах».",
   "No subfolders": "Нет вложенных папок",
+  "No tab sets yet. Save the tabs from the tab menu.":
+    "Наборов вкладок пока нет. Сохраните вкладки из меню вкладки.",
   "No tags yet": "Тегов пока нет",
   "No tool matches": "Подходящих инструментов нет",
   None: "Нет",
@@ -993,10 +1096,16 @@ const messages: Messages = {
     "Среди выбранных элементов нет изображений, которые можно редактировать.",
   Normal: "Обычное",
   "Not available": "Недоступно",
+  "Not connected": "Нет подключения",
+  "Not encrypted": "Без шифрования",
+  "Not encrypted: the password and the files can be read on the way.":
+    "Без шифрования: пароль и файлы можно прочитать по пути.",
   "Not found": "Не найдено",
   "Not listed yet": "Ещё не показано",
   "Not rated": "Без оценки",
+  "Not read": "Не прочитан",
   "Not set": "Не задано",
+  "Not shown": "Не показывать",
   Note: "Примечание",
   Nothing: "Ничего",
   "Nothing drawn yet.": "Пока ничего не нарисовано.",
@@ -1014,10 +1123,12 @@ const messages: Messages = {
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "После сохранения скрытое нельзя восстановить из сохранённого файла. Оригинал остаётся как есть, если вы его не замените.",
   "One beside each file ({example})": "По одному рядом с каждым файлом ({example})",
+  "One beside each panel": "По одному рядом с каждой панелью",
   "One list for all of them": "Один список для всех",
   "One of the folders could not be read.": "Не удалось прочитать одну из папок.",
   "One picture at a time: this tool needs a place in the picture.":
     "По одному изображению: этому инструменту нужно место на изображении.",
+  "One, for the active panel": "Одно, для активной панели",
   "Only files can be compared by content.": "По содержимому можно сравнивать только файлы.",
   "Only files matching": "Только файлы, соответствующие",
   "Only the first 20,000 folders are shown": "Показаны только первые 20 000 папок",
@@ -1025,14 +1136,18 @@ const messages: Messages = {
   "Only the rows the table shows are synchronized. An entry that changed since the comparison is left alone and reported.":
     "Синхронизируются только строки, показанные в таблице. Запись, изменившаяся после сравнения, не затрагивается, и о ней сообщается.",
   "Only these folders": "Только эти папки",
+  "Only with several tabs": "Только при нескольких вкладках",
   Opacity: "Непрозрачность",
   Open: "Открыть",
   "Open PDFs and text files with": "Открывать PDF и текстовые файлы в",
+  "Open a folder in the other panel to compare the marked files with it.":
+    "Откройте папку в другой панели, чтобы сравнить с ней отмеченные файлы.",
   "Open a folder in the panel first.": "Сначала откройте папку в панели.",
   "Open a folder to start browsing images and videos.":
     "Откройте папку, чтобы просматривать изображения и видео.",
   "Open folder…": "Открыть папку…",
   "Open images and videos with": "Открывать изображения и видео в",
+  "Open in a new tab": "Открыть в новой вкладке",
   "Open in the editor": "Открыть в редакторе",
   "Open in the left panel": "Открыть в левой панели",
   "Open in the right panel": "Открыть в правой панели",
@@ -1095,6 +1210,10 @@ const messages: Messages = {
   "Parent folder": "Родительская папка",
   "Part of the name": "Часть имени",
   Partial: "Частичный",
+  Password: "Пароль",
+  "Password (anonymous)": "Пароль (анонимно)",
+  "Password for {name}": "Пароль для {name}",
+  "Password of {user}": "Пароль пользователя {user}",
   Paste: "Вставить",
   "Paste and overwrite conflicts...": "Вставить с заменой при конфликтах...",
   "Paste {count, plural, one {# item} other {# items}}":
@@ -1140,6 +1259,7 @@ const messages: Messages = {
   "Point {n} of {count}: input {x}, output {y}": "Точка {n} из {count}: вход {x}, выход {y}",
   "Points to": "Указывает на",
   Polygon: "Многоугольник",
+  Port: "Порт",
   Portrait: "Портрет",
   "Position of the watermark": "Положение водяного знака",
   Preset: "Заготовка",
@@ -1176,6 +1296,8 @@ const messages: Messages = {
   "Quarter turns": "Повороты на четверть",
   Queue: "Очередь",
   "Quick access": "Быстрый доступ",
+  "Quick connect": "Быстрое подключение",
+  "Quick connect…": "Быстрое подключение…",
   "Quick filter": "Быстрый фильтр",
   "Quick filter (Ctrl+S); click to clear": "Быстрый фильтр (Ctrl+S); щёлкните, чтобы очистить",
   "Quick search": "Быстрый поиск",
@@ -1190,6 +1312,7 @@ const messages: Messages = {
   Read: "Чтение",
   "Read-only": "Только чтение",
   "Reading the names…": "Чтение имён…",
+  "Reading the results…": "Чтение результатов…",
   "Reading…": "Чтение…",
   Recent: "Недавние",
   Recipe: "Рецепт",
@@ -1225,6 +1348,7 @@ const messages: Messages = {
   "Remove {button} from the toolbar": "Убрать «{button}» с панели инструментов",
   "Remove {command}": "Удалить «{command}»",
   "Remove {name}": "Удалить: {name}",
+  "Remove “{name}” and its stored password?": "Удалить «{name}» вместе с сохранённым паролем?",
   "Removing {count, plural, one {# edited picture} other {# edited pictures}}":
     "{count, plural, one {Удаление # отредактированного изображения} few {Удаление # отредактированных изображений} many {Удаление # отредактированных изображений} other {Удаление # отредактированного изображения}}",
   "Removing {count, plural, one {# file} other {# files}} from favorites":
@@ -1235,6 +1359,8 @@ const messages: Messages = {
   "Rename existing": "Переименовать существующий",
   "Rename items": "Переименовать элементы",
   "Rename new": "Переименовать новый",
+  "Rename tab": "Переименовать вкладку",
+  "Rename tab…": "Переименовать вкладку…",
   "Rename {count}": "Переименовать: {count}",
   "Renamed {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Переименован # элемент} few {Переименовано # элемента} many {Переименовано # элементов} other {Переименовано # элемента}}",
@@ -1248,6 +1374,7 @@ const messages: Messages = {
   "Renaming {what}; progress is in the queue (Ctrl+J).":
     "Идёт переименование: {what}; ход выполнения — в очереди (Ctrl+J).",
   Rendering: "Обработка",
+  "Reopen closed tab": "Открыть закрытую вкладку",
   Repeat: "Повтор",
   "Repeat and blend": "Повтор и наложение",
   "Repeat over the picture": "Повторять по изображению",
@@ -1281,6 +1408,7 @@ const messages: Messages = {
   "Resize left column": "Изменить размер левого столбца",
   "Resize panels": "Изменить размер панелей",
   "Resize preview column": "Изменить размер столбца просмотра",
+  "Resize {name}": "Изменить размер: {name}",
   Resolution: "Разрешение",
   "Resolution (0 keeps the picture's)": "Разрешение (0 — как у изображения)",
   Results: "Результаты",
@@ -1322,6 +1450,7 @@ const messages: Messages = {
   Saturation: "Насыщенность",
   Save: "Сохранить",
   "Save a copy": "Сохранить копию",
+  "Save and connect": "Сохранить и подключиться",
   "Save as PNG or GIF to keep the palette; other formats store full color.":
     "Сохраните в PNG или GIF, чтобы сохранить палитру; другие форматы хранят полный цвет.",
   "Save as PNG to keep the transparent part.": "Сохраните в PNG, чтобы сохранить прозрачную часть.",
@@ -1331,11 +1460,18 @@ const messages: Messages = {
     "Формат сохранения изменён на PNG: он хранит уменьшенный набор цветов как палитру.",
   "Save options": "Параметры сохранения",
   "Save options… ({format})": "Параметры сохранения… ({format})",
+  "Save tabs": "Сохранить вкладки",
+  "Save tabs…": "Сохранить вкладки…",
   "Save the current recipe as": "Сохранить текущий рецепт как",
+  "Save the password (encrypted by this computer's secret store)":
+    "Сохранить пароль (его шифрует хранилище секретов этого компьютера)",
+  "Save this connection…": "Сохранить это подключение…",
   "Save your changes?": "Сохранить изменения?",
   "Saved as {format}, the picture is stored with this palette.":
     "При сохранении в {format} изображение хранится с этой палитрой.",
   "Saved as {name}": "Сохранено как {name}",
+  "Saved connections": "Сохранённые подключения",
+  "Saved connections…": "Сохранённые подключения…",
   "Saved size": "Размер после сохранения",
   "Saving an edited picture": "Сохранение отредактированного изображения",
   "Saving {name}…": "Сохранение {name}…",
@@ -1372,6 +1508,7 @@ const messages: Messages = {
   "Sends the edited pictures to the trash. The originals are not touched.":
     "Отправляет отредактированные изображения в корзину. Оригиналы не затрагиваются.",
   Sepia: "Сепия",
+  Server: "Сервер",
   Set: "Задан",
   "Set DPI": "Задать DPI",
   Settings: "Настройки",
@@ -1418,6 +1555,7 @@ const messages: Messages = {
   "Show the copy dialog when files are dropped":
     "Показывать окно копирования при перетаскивании файлов",
   "Show the first one": "Показать первое",
+  "Show the folder of this computer": "Показать папку этого компьютера",
   "Show the original while held": "Показывать оригинал, пока удерживается",
   "Show the palette": "Показать палитру",
   "Show the panel": "Показать панель",
@@ -1515,7 +1653,15 @@ const messages: Messages = {
   "TIFF keeps the color profile and the resolution, not the camera data.":
     "TIFF сохраняет цветовой профиль и разрешение, но не данные камеры.",
   Tab: "Вкладка",
+  "Tab bar": "Панель вкладок",
+  "Tab name": "Имя вкладки",
+  "Tab set “{name}” saved.": "Набор вкладок «{name}» сохранён.",
+  "Tab set “{name}” saved; {count, plural, one {# tab} other {# tabs}} without a folder left out.":
+    "Набор вкладок «{name}» сохранён; пропущено без папки: {count, plural, one {# вкладка} few {# вкладки} many {# вкладок} other {# вкладки}}.",
+  "Tab sets": "Наборы вкладок",
+  "Tab sets…": "Наборы вкладок…",
   Tabs: "Вкладки",
+  "Tabs to save": "Какие вкладки сохранить",
   "Tag {count, plural, one {# file} other {# files}} (folders are skipped)":
     "{count, plural, one {Добавить тег # файлу} few {Добавить тег # файлам} many {Добавить тег # файлам} other {Добавить тег # файла}} (папки пропускаются)",
   "Tagging {count, plural, one {# file} other {# files}} “{tag}”":
@@ -1553,6 +1699,8 @@ const messages: Messages = {
     "Не удалось запустить фоновую службу. Перезапустите Panelyth; подробности есть в журнале.",
   "The brush is measured in pixels of the full picture.":
     "Кисть измеряется в пикселях полного изображения.",
+  "The certificate of {name} can't be verified": "Сертификат {name} не удаётся проверить",
+  "The certificate of {name} has changed": "Сертификат {name} изменился",
   "The changes to this picture have not been saved.": "Изменения этого изображения не сохранены.",
   "The checksum job failed.": "Задание с контрольными суммами не выполнено.",
   "The clipboard is empty.": "Буфер обмена пуст.",
@@ -1564,6 +1712,10 @@ const messages: Messages = {
   "The comparison is no longer available. Compare again.":
     "Сравнение больше недоступно. Сравните ещё раз.",
   "The comparison was cancelled.": "Сравнение отменено.",
+  "The comparison was stopped.": "Сравнение остановлено.",
+  "The connection has listed too many entries. Connect again to go on.":
+    "В этом подключении показано слишком много элементов. Подключитесь снова, чтобы продолжить.",
+  "The connection is closed.": "Подключение закрыто.",
   "The cursor or the selected tile lands on the same file.":
     "Курсор или выбранная плитка оказывается на том же файле.",
   "The date range is empty.": "Диапазон дат пуст.",
@@ -1599,10 +1751,12 @@ const messages: Messages = {
   "The folder": "Папка",
   "The folder changed. Select the items again.": "Папка изменилась. Выберите элементы заново.",
   "The folder changed. Select the pictures again.": "Папка изменилась. Выберите изображения снова.",
+  "The folder on the server starts with “/”.": "Папка на сервере начинается с «/».",
   "The frame covers the edge instead of growing the picture.":
     "Рамка закрывает край, а не увеличивает изображение.",
   "The full path of a program, or empty.": "Полный путь к программе или пусто.",
   "The home folder is not known.": "Домашняя папка неизвестна.",
+  "The left panel's ({tabs})": "Левой панели ({tabs})",
   "The mask can't be used: {reason}": "Маску нельзя использовать: {reason}",
   "The minimum size is larger than the maximum.": "Минимальный размер больше максимального.",
   "The name template can't be used as a file name.":
@@ -1618,12 +1772,15 @@ const messages: Messages = {
   "The other app opens the folder you are in.":
     "Другое приложение открывает папку, в которой вы находитесь.",
   "The panel's folder": "Папка панели",
+  "The panels no longer show both files. Compare again.":
+    "В панелях больше нет обоих файлов. Сравните снова.",
   "The picture can't be read.": "Изображение не удаётся прочитать.",
   "The picture could not be saved.": "Не удалось сохранить изображение.",
   "The picture could not be searched for red eyes.":
     "Не удалось выполнить поиск красных глаз на изображении.",
   "The picture has changed since the last count.": "Изображение изменилось с последнего подсчёта.",
   "The picture no longer exists.": "Изображение больше не существует.",
+  "The port is a number from 1 to 65535.": "Порт — это число от 1 до 65535.",
   "The radius is in pixels of the full picture; the preview shows it at its own scale.":
     "Радиус задан в пикселях полного изображения; предпросмотр показывает его в своём масштабе.",
   "The recipe has not been run and is not saved. Save it under Recipes to use it again.":
@@ -1631,15 +1788,29 @@ const messages: Messages = {
   "The recipe is shown on samples of the selection. It runs on every picture.":
     "Рецепт показан на образцах из выделения. Он применяется к каждому изображению.",
   "The resolution is 1 to 10,000 dpi.": "Разрешение — от 1 до 10 000 dpi.",
+  "The right panel's ({tabs})": "Правой панели ({tabs})",
   "The search results are no longer available.": "Результаты поиска больше недоступны.",
   "The selection": "Выделение",
   "The selection is too large to carry over": "Выделение слишком велико для переноса",
+  "The server can't be reached": "Сервер недоступен",
+  "The server could not be reached.": "Не удалось связаться с сервером.",
+  "The server did not answer in time.": "Сервер не ответил вовремя.",
+  "The server does not offer encryption (TLS).": "Сервер не предлагает шифрование (TLS).",
+  "The server does not support this.": "Сервер это не поддерживает.",
+  "The server refused the user name or the password.":
+    "Сервер отклонил имя пользователя или пароль.",
+  "The server said: {message}": "Сервер ответил: {message}",
+  "The server's certificate could not be verified.": "Не удалось проверить сертификат сервера.",
+  "The server's name could not be found.": "Имя сервера не найдено.",
   "The source is set; it moves with the brush.": "Источник задан; он движется вместе с кистью.",
+  "The stored password can't be read on this computer. Type it to connect.":
+    "Сохранённый пароль не удаётся прочитать на этом компьютере. Введите его, чтобы подключиться.",
   "The system's text editor": "Системный текстовый редактор",
   "The table changed since you confirmed. Check it and confirm again.":
     "Таблица изменилась после подтверждения. Проверьте её и подтвердите ещё раз.",
   "The text can't be written in this encoding": "Текст нельзя записать в этой кодировке",
   "The text is too long.": "Текст слишком длинный.",
+  "The tree opens folders as the cursor moves": "Дерево открывает папки при движении курсора",
   "The two panels have the same files.": "В обеих панелях одни и те же файлы.",
   "The working folder of {command} was not found.": "Рабочая папка команды «{command}» не найдена.",
   Theme: "Тема",
@@ -1649,6 +1820,10 @@ const messages: Messages = {
   "There is no file to compare with in the other panel.":
     "В другой панели нет файла для сравнения.",
   "There is no multi-rename to undo.": "Нет группового переименования для отмены.",
+  "There is no room for another tab set. Remove one first.":
+    "Для ещё одного набора вкладок нет места. Сначала удалите один.",
+  "There is no such file or folder on the server.": "На сервере нет такого файла или папки.",
+  "There was no file to compare.": "Не было файлов для сравнения.",
   "These are not text files; their bytes are compared.":
     "Это не текстовые файлы; сравниваются их байты.",
   "These files are too large for a text comparison; their bytes are compared.":
@@ -1658,9 +1833,15 @@ const messages: Messages = {
   "This and every later conflict of this job": "Этот и все последующие конфликты этой задачи",
   "This batch can no longer be undone.": "Этот пакет уже нельзя отменить.",
   "This can't be undone.": "Это действие нельзя отменить.",
+  "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
+    "Будет закрыто: {count, plural, one {# закреплённая вкладка} few {# закреплённые вкладки} many {# закреплённых вкладок} other {# закреплённой вкладки}}. Нажмите «Открыть» ещё раз, чтобы продолжить.",
   "This command can't be saved. Remove line breaks and try again.":
     "Эту команду нельзя сохранить. Удалите переносы строк и попробуйте снова.",
   "This command no longer exists.": "Этой команды больше нет.",
+  "This computer has no secure store for passwords, so the password was not saved.":
+    "На этом компьютере нет защищённого хранилища паролей, поэтому пароль не сохранён.",
+  "This computer has no secure store for passwords. Passwords are not saved; you are asked each time.":
+    "На этом компьютере нет защищённого хранилища паролей. Пароли не сохраняются; их нужно вводить каждый раз.",
   "This drive has no trash, so the original can't be replaced. Save a copy instead.":
     "На этом диске нет корзины, поэтому оригинал нельзя заменить. Сохраните копию.",
   "This drive has no trash. The items can only be deleted permanently.":
@@ -1678,6 +1859,8 @@ const messages: Messages = {
     "В этой папке есть файл с именем программы команды «{command}». Укажите в команде полный путь.",
   "This folder has no supported images, videos or subfolders.":
     "В этой папке нет поддерживаемых изображений, видео и вложенных папок.",
+  "This folder is already in the directory hotlist.":
+    "Эта папка уже есть в списке избранных папок.",
   "This folder is empty": "Эта папка пуста",
   "This folder no longer exists.": "Эта папка больше не существует.",
   "This format can't be written.": "Этот формат нельзя записать.",
@@ -1685,7 +1868,12 @@ const messages: Messages = {
     "Этот формат не поддерживается встроенным проигрывателем.",
   "This image can't be displayed": "Это изображение нельзя показать",
   "This is not a valid PDF file.": "Это не корректный файл PDF.",
+  "This is not available on a connection. Copy the files to this computer first.":
+    "Это недоступно в подключении. Сначала скопируйте файлы на этот компьютер.",
+  "This is not the certificate you accepted for this connection. Someone may be listening in, or the server got a new certificate. Go on only if you know why it changed.":
+    "Это не тот сертификат, который вы приняли для этого подключения. Возможно, кто-то перехватывает соединение, или сервер получил новый сертификат. Продолжайте, только если знаете, почему он изменился.",
   "This kind of picture can't be edited.": "Изображения такого типа нельзя редактировать.",
+  "This name can't be used on a server.": "Это имя нельзя использовать на сервере.",
   "This panel has no folder for a checksum list.":
     "У этой панели нет папки для списка контрольных сумм.",
   "This picture": "Это изображение",
@@ -1733,7 +1921,10 @@ const messages: Messages = {
   "Top right": "Сверху справа",
   "Top right corner": "Правый верхний угол",
   "Total size": "Общий размер",
+  "Transfers at once": "Одновременных передач",
+  "Transfers at once: 1 to {max}.": "Одновременных передач: от 1 до {max}.",
   Transparent: "Прозрачный",
+  "Trust this time": "Доверять в этот раз",
   "Try again": "Повторить",
   "Two arrows": "Две стрелки",
   "Two pages": "Две страницы",
@@ -1773,10 +1964,18 @@ const messages: Messages = {
   "Updating drives…": "Обновление списка дисков…",
   "Updating favorites {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Обновление избранного для # элемента} few {Обновление избранного для # элементов} many {Обновление избранного для # элементов} other {Обновление избранного для # элемента}}",
+  Upload: "Загрузить",
+  "Upload {what}{amount}": "Загрузить {what}{amount}",
+  "Uploaded {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {Загружен # элемент} few {Загружено # элемента} many {Загружено # элементов} other {Загружено # элемента}}",
+  "Uploading {count, plural, one {# item} other {# items}}":
+    "{count, plural, one {Загрузка # элемента} few {Загрузка # элементов} many {Загрузка # элементов} other {Загрузка # элемента}}",
   Use: "Применить",
   "Use / to create folders inside each other, e.g. 2026/Trip/Raw.":
     "Используйте /, чтобы создавать вложенные папки, например 2026/Поездка/Raw.",
   "Use {name}": "Применить: {name}",
+  "User name": "Имя пользователя",
+  "User name (empty: anonymous)": "Имя пользователя (пусто: анонимно)",
   "Verified {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Проверен # элемент} few {Проверено # элемента} many {Проверено # элементов} other {Проверено # элемента}}",
   "Verify after copying (compare checksums)":
@@ -1802,6 +2001,7 @@ const messages: Messages = {
   Volume: "Громкость",
   Waiting: "Ожидает",
   "Waiting for an answer": "Ожидает ответа",
+  "Waiting for the server…": "Ожидание сервера…",
   Warm: "Тёплый",
   Watermark: "Водяной знак",
   "Watermark, bottom right": "Водяной знак, справа внизу",
@@ -1952,6 +2152,8 @@ const messages: Messages = {
     "{count, plural, one {Проверен # файл} few {Проверено # файла} many {Проверено # файлов} other {Проверено # файла}}: все совпадают.",
   "{count, plural, one {# file} other {# files}}, {size}":
     "{count, plural, one {# файл} few {# файла} many {# файлов} other {# файла}}, {size}",
+  "{count, plural, one {# folder or link left out} other {# folders or links left out}}":
+    "{count, plural, one {пропущена # папка или ссылка} few {пропущено # папки или ссылки} many {пропущено # папок или ссылок} other {пропущено # папки или ссылки}}",
   "{count, plural, one {# folder} other {# folders}}":
     "{count, plural, one {# папка} few {# папки} many {# папок} other {# папки}}",
   "{count, plural, one {# folder} other {# folders}} couldn't be read":
@@ -1988,6 +2190,8 @@ const messages: Messages = {
     "{count, plural, one {# имя недопустимо} few {# имени недопустимы} many {# имён недопустимо} other {# имени недопустимо}}",
   "{count, plural, one {# name is} other {# names are}} not free":
     "{count, plural, one {# имя занято} few {# имени заняты} many {# имён занято} other {# имени занято}}",
+  "{count, plural, one {# name left out} other {# names left out}}":
+    "{count, plural, one {Пропущено # имя} few {Пропущено # имени} many {Пропущено # имён} other {Пропущено # имени}}",
   "{count, plural, one {# name} other {# names}} copied":
     "{count, plural, one {Скопировано # имя} few {Скопировано # имени} many {Скопировано # имён} other {Скопировано # имени}}",
   "{count, plural, one {# newer file is} other {# newer files are}} replaced by an older one.":
@@ -2010,8 +2214,12 @@ const messages: Messages = {
     "{count, plural, one {# звезда} few {# звезды} many {# звёзд} other {# звезды}}",
   "{count, plural, one {# step} other {# steps}}":
     "{count, plural, one {# шаг} few {# шага} many {# шагов} other {# шага}}",
+  "{count, plural, one {# tab} other {# tabs}}":
+    "{count, plural, one {# вкладка} few {# вкладки} many {# вкладок} other {# вкладки}}",
   "{count, plural, one {# video} other {# videos}}":
     "{count, plural, one {# видео} few {# видео} many {# видео} other {# видео}}",
+  "{count, plural, one {The file is identical.} other {All # files are identical.}}":
+    "{count, plural, one {Файл идентичен.} few {Все # файла идентичны.} many {Все # файлов идентичны.} other {Все # файла идентичны.}}",
   "{count} differences (the first {shown} can be stepped through)":
     "Различий: {count} (по первым {shown} можно переходить)",
   "{count} failed": "{count} с ошибкой",
@@ -2021,6 +2229,8 @@ const messages: Messages = {
   "{count} items selected": "Выбрано элементов: {count}",
   "{count} links were not compared.": "Ссылок не сравнено: {count}.",
   "{count} marked": "Отмечено: {count}",
+  "{count} marked files, each with the file of its name in {folder}":
+    "Отмеченные файлы ({count}), каждый с одноимённым файлом в {folder}",
   "{count} selected": "Выбрано: {count}",
   "{count} skipped": "Пропущено: {count}",
   "{current} of {total}": "{current} из {total}",
@@ -2074,6 +2284,7 @@ const messages: Messages = {
   "“{name}” already exists": "«{name}» уже существует",
   "“{path}” doesn't exist. Check the folder.": "«{path}» не существует. Проверьте папку.",
   "… ({count} more characters)": "… (ещё {count} симв.)",
+  "… more folders than the tree lists": "… папок больше, чем показывает дерево",
   "↑↓ next · Esc": "↑↓ далее · Esc",
   "✓ sets it, an empty box clears it, – leaves it as it is.":
     "✓ устанавливает, пустой флажок снимает, – оставляет как есть.",

@@ -14,6 +14,9 @@ import { loadCommandHistory } from "./features/cmdline"
 import { loadTools } from "./features/tools"
 import { startThumbs } from "./features/thumbs"
 import { loadSettings } from "./features/settings"
+import { loadTabSets } from "./features/tabsets"
+import { startTree } from "./features/tree"
+import { startRemote } from "./features/remote"
 import { startMarks } from "./features/marks"
 import { startSizeJobs } from "./features/sizes"
 import { loadLayout } from "./features/panels"
@@ -56,9 +59,15 @@ if (isBridgeAvailable()) {
     .catch(() => undefined)
   void loadCommandHistory().catch(() => undefined)
   void loadSettings().catch(() => undefined)
+  // Saved tab sets (C10.5).
+  void loadTabSets().catch(() => undefined)
   // Drives, the hotlist (shared bookmarks) and recent locations (C03).
   startDrives()
   startHotlist()
+  // The folder tree follows the panels and the drives (C10.5); it lists nothing until shown.
+  startTree()
+  // Saved connections (C10.5): read when first shown; nothing connects at startup.
+  startRemote()
   // The shared operation queue (Stage C04).
   startQueue()
   // Marks, folder sizes, panel listings, events and the shared context (C01, C02).

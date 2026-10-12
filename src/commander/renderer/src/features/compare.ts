@@ -6,6 +6,7 @@ import type {
   ContentItem,
   DiffAction,
   HashAlgorithm,
+  JobItemError,
   JobSnapshot,
   QuerySnapshot,
   SelectionDescriptor,
@@ -26,9 +27,9 @@ import {
 } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable, PanelythError } from "../bridge"
-import { inArchive, notice, operand } from "./files"
+import { inArchive, notice, operand, refusedOnConnection } from "./files"
 import { isExpired, pageStoreOf, parentRows, useListingStore } from "./listing"
-import { applyMarks, marksDescriptor, marksOf, markNone } from "./marks"
+import { applyMarks, countOf as countMarks, marksDescriptor, marksOf, markNone } from "./marks"
 import { otherSide, type Side } from "./panels"
 import { showDetails, useQueueStore } from "./queue"
 import { updateSettings, useSettingsStore } from "./settings"
@@ -157,6 +158,41 @@ export interface DiffDialogState {
   error: string | null
 }
 
+/** What a file compared with the other panel's turned out to be, when not identical. */
+export type ManyResult = "different" | "missing" | "unreadable"
+export const MANY_RESULTS: readonly ManyResult[] = ["different", "missing", "unreadable"]
+
+export interface ManyRow {
+  name: string
+  result: ManyResult
+  /** Go's explanation: the sizes, or where the first difference is. */
+  message: string
+}
+
+/**
+ * Compare by content for several marked files (Stage C10.5): each against
+ * the file of its name in the other panel's folder, as one compareFiles
+ * job. The rows are the files that are not identical (manyRows).
+ */
+export interface CompareManyState {
+  /** The panel whose marked files are compared. */
+  side: Side
+  /** How many entries were marked. */
+  count: number
+  /** The other panel's folder. */
+  folder: string
+  job: JobSnapshot | null
+  /** The job ended and its rows are being read, or are read. */
+  loading: boolean
+  /** Files per result, once the rows are read. */
+  counts: Record<ManyResult, number>
+  /** The results the list shows. */
+  show: readonly ManyResult[]
+  /** The list's cursor (an index among the shown rows). */
+  cursor: number
+  error: string | null
+}
+
 export interface HashDialogState {
   side: Side
   source: SelectionDescriptor
@@ -176,9 +212,15 @@ interface CompareState {
   sync: SyncDialogState | null
   diff: DiffDialogState | null
   hash: HashDialogState | null
+  many: CompareManyState | null
 }
 
-export const useCompareStore = create<CompareState>(() => ({ sync: null, diff: null, hash: null }))
+export const useCompareStore = create<CompareState>(() => ({
+  sync: null,
+  diff: null,
+  hash: null,
+  many: null,
+}))
 
 const set = useCompareStore.setState
 const get = useCompareStore.getState
@@ -214,6 +256,7 @@ export const isCompared = (s: Pick<SyncDialogState, "run" | "progress">): boolea
 export function openSync(): void {
   if (get().sync) return
   for (const side of ["left", "right"] as const) {
+    if (refusedOnConnection(side)) return
     if (inArchive(side)) {
       notice(t("Archives can't be synchronized. Leave the archive first."))
       return
@@ -653,12 +696,30 @@ async function sameNamed(side: Side, name: string): Promise<ContentItem | null> 
 }
 
 /**
- * Compare by content: two marked files of the active panel; otherwise the
- * cursor file against the file of the same name in the other panel, or
- * against the other panel's cursor file.
+ * What Compare by content will do for a panel, in words for its menu entry
+ * (Stage C10.5): "Compare 2 files", "Compare 14 files with the other panel",
+ * or the plain name when it depends on the cursor.
+ */
+export function compareLabel(side: Side): string {
+  const mine = countMarks(marksOf(side))
+  const theirs = countMarks(marksOf(otherSide(side)))
+  if (mine > 2)
+    return t("Compare {count} files with the other panel", { count: mine.toLocaleString() })
+  if (mine === 2 || (mine === 1 && theirs === 1)) return t("Compare 2 files")
+  return t("Compare by content")
+}
+
+/**
+ * Compare by content. Two marked files of the active panel are compared
+ * with each other, and so are one marked file of each panel (Total
+ * Commander's rule). More than two marked files are each compared with the
+ * file of that name in the other panel (compareMany). Otherwise the cursor
+ * file (or the one marked file) is compared with the file of the same name
+ * in the other panel, or with the other panel's cursor file.
  */
 export async function openCompareFiles(side: Side): Promise<void> {
-  if (get().diff) return
+  if (get().diff || get().many) return
+  if (refusedOnConnection(side) || refusedOnConnection(otherSide(side))) return
   if (inArchive(side) || inArchive(otherSide(side))) {
     notice(t("Copy the files out of the archive to compare them."))
     return
@@ -667,10 +728,14 @@ export async function openCompareFiles(side: Side): Promise<void> {
     let pair: [ContentItem, ContentItem] | null = null
     if (marksDescriptor(side)) {
       const marked = await markedItems(side, 2)
-      if (marked?.length === 2) pair = [marked[0]!, marked[1]!]
-      else if (!marked || marked.length > 1) {
-        notice(t("Mark two files to compare them, or none to compare with the other panel."))
-        return
+      if (!marked) return await compareMany(side)
+      if (marked.length === 2) pair = [marked[0]!, marked[1]!]
+      else if (marked.length === 1 && marksDescriptor(otherSide(side))) {
+        // One marked file in each panel: those two, the left panel's on the left.
+        const theirs = await markedItems(otherSide(side), 1)
+        if (theirs?.length === 1) {
+          pair = side === "left" ? [marked[0]!, theirs[0]!] : [theirs[0]!, marked[0]!]
+        }
       }
     }
     if (!pair) {
@@ -700,7 +765,179 @@ export async function openCompareFiles(side: Side): Promise<void> {
   }
 }
 
-type Watched = "diff" | "hashCreate" | "hashVerify"
+// Several files against the other panel (Stage C10.5) -------------------------------
+
+const NO_COUNTS: Record<ManyResult, number> = { different: 0, missing: 0, unreadable: 0 }
+const MANY_PAGE = 500
+
+/**
+ * The files that are not identical, as the job lists them. Kept outside
+ * React state (at most the 10,000 items a job keeps); the dialog shows a
+ * virtualized window of the rows its filter lets through.
+ */
+let manyAll: ManyRow[] = []
+let manyShown: ManyRow[] = []
+
+export const manyRows = {
+  count: (): number => manyShown.length,
+  get: (index: number): ManyRow | undefined => manyShown[index],
+}
+
+const resultOf = (code: JobItemError["code"]): ManyResult =>
+  code === "DIFFERENT" ? "different" : code === "NOT_FOUND" ? "missing" : "unreadable"
+
+const patchMany = (change: Partial<CompareManyState>): void => {
+  const m = get().many
+  if (m) set({ many: { ...m, ...change } })
+}
+
+function filterMany(show: readonly ManyResult[]): void {
+  manyShown =
+    show.length === MANY_RESULTS.length ? manyAll : manyAll.filter((r) => show.includes(r.result))
+}
+
+/** More than two marked files: each against the file of its name in the other panel's folder. */
+async function compareMany(side: Side): Promise<void> {
+  const source = marksDescriptor(side)
+  const other = panel(otherSide(side))
+  if (!source) return
+  if (other.dirId === null || other.find !== null) {
+    notice(t("Open a folder in the other panel to compare the marked files with it."))
+    return
+  }
+  manyAll = []
+  manyShown = []
+  set({
+    many: {
+      side,
+      count: countMarks(marksOf(side)),
+      folder: other.path,
+      job: null,
+      loading: false,
+      counts: NO_COUNTS,
+      show: MANY_RESULTS,
+      cursor: 0,
+      error: null,
+    },
+  })
+  try {
+    const job = await bridge.startJob({
+      kind: "compareFiles",
+      source: { selection: source },
+      destinationDirId: other.dirId,
+    })
+    if (get().many?.job === null && get().many?.side === side) {
+      patchMany({ job })
+      watch(job.jobId, "many")
+    } else void bridge.cancelJob(job.jobId).catch(() => undefined)
+  } catch (error) {
+    patchMany({ error: errorText(error) })
+  }
+}
+
+/** The job ended: its items are read, a page at a time, one request in flight. */
+async function loadManyRows(jobId: number): Promise<void> {
+  const rows: ManyRow[] = []
+  try {
+    for (let offset = 0; ; offset += MANY_PAGE) {
+      const page = await bridge.jobErrors(jobId, offset, MANY_PAGE)
+      if (get().many?.job?.jobId !== jobId) return
+      for (const e of page.errors)
+        rows.push({ name: e.name, result: resultOf(e.code), message: e.message })
+      if (page.errors.length < MANY_PAGE || rows.length >= page.total) break
+    }
+  } catch (error) {
+    if (get().many?.job?.jobId === jobId) patchMany({ loading: false, error: errorText(error) })
+    return
+  }
+  const counts = { ...NO_COUNTS }
+  for (const r of rows) counts[r.result]++
+  manyAll = rows
+  filterMany(get().many!.show)
+  patchMany({ loading: false, counts, cursor: 0 })
+}
+
+async function manyJobProgress(job: JobSnapshot): Promise<void> {
+  const m = get().many
+  if (!m || m.job?.jobId !== job.jobId) return
+  patchMany({ job })
+  if (ACTIVE.has(job.state)) return
+  watched.delete(job.jobId)
+  if (job.failed === 0) return
+  patchMany({ loading: true })
+  await loadManyRows(job.jobId)
+}
+
+/** A filter button: that result's rows show or hide. */
+export function toggleManyShow(result: ManyResult): void {
+  const m = get().many
+  if (!m) return
+  const show = m.show.includes(result)
+    ? m.show.filter((r) => r !== result)
+    : MANY_RESULTS.filter((r) => r === result || m.show.includes(r))
+  filterMany(show)
+  patchMany({ show, cursor: 0 })
+}
+
+export function moveManyCursor(index: number): void {
+  const last = manyShown.length - 1
+  if (last >= 0) patchMany({ cursor: Math.max(0, Math.min(last, index)) })
+}
+
+export function closeCompareMany(): void {
+  const m = get().many
+  if (!m) return
+  set({ many: null })
+  manyAll = []
+  manyShown = []
+  if (m.job && ACTIVE.has(m.job.state)) void bridge.cancelJob(m.job.jobId).catch(() => undefined)
+}
+
+/**
+ * Enter on a row of the list: that pair side by side. The two files are
+ * found by name in the panels, so the panels must still show the folders
+ * that were compared. `step` opens the next (or previous) file that differs
+ * from the list's cursor instead.
+ */
+export async function openManyDiff(step: -1 | 0 | 1 = 0): Promise<void> {
+  const m = get().many
+  if (!m) return
+  let at = m.cursor
+  if (step !== 0) {
+    do at += step
+    while (manyShown[at] !== undefined && manyShown[at]!.result !== "different")
+  }
+  const row = manyShown[at]
+  if (!row || row.result !== "different") return
+  if (at !== m.cursor) patchMany({ cursor: at })
+  try {
+    const mine = await sameNamed(m.side, row.name)
+    const theirs = await sameNamed(otherSide(m.side), row.name)
+    if (!mine || !theirs) {
+      notice(t("The panels no longer show both files. Compare again."))
+      return
+    }
+    const [l, r] = m.side === "left" ? [mine, theirs] : [theirs, mine]
+    // Stepping from an open pair: that one is let go first.
+    const open = get().diff
+    if (open) releaseDiff(open)
+    await openDiff({ id: l.id, name: l.name }, { id: r.id, name: r.name })
+  } catch (error) {
+    notice(errorText(error))
+  }
+}
+
+/** Whether the list has a differing file after (or before) its cursor. */
+export function hasManyDiff(step: -1 | 1): boolean {
+  const m = get().many
+  if (!m) return false
+  for (let at = m.cursor + step; manyShown[at] !== undefined; at += step) {
+    if (manyShown[at]!.result === "different") return true
+  }
+  return false
+}
+
+type Watched = "diff" | "hashCreate" | "hashVerify" | "many"
 
 /** Jobs of the open diff dialog and of checksum commands, by what they are for. */
 const watched = new Map<number, Watched>()
@@ -717,6 +954,10 @@ function onWatchedJob(job: JobSnapshot): void {
   if (!kind) return
   if (kind === "diff") {
     void diffJobProgress(job)
+    return
+  }
+  if (kind === "many") {
+    void manyJobProgress(job)
     return
   }
   if (ACTIVE.has(job.state)) return
@@ -757,13 +998,18 @@ async function openDiff(left: DiffSide, right: DiffSide): Promise<void> {
   }
 }
 
+/** Lets go of what a diff holds in Go: its rows, or the job that compares its bytes. */
+function releaseDiff(d: DiffDialogState): void {
+  if (d.info?.diffId) void bridge.diffClose(d.info.diffId).catch(() => undefined)
+  if (d.job && ACTIVE.has(d.job.state)) void bridge.cancelJob(d.job.jobId).catch(() => undefined)
+}
+
 export function closeDiff(): void {
   const d = get().diff
   if (!d) return
   set({ diff: null })
   diffRows.reset(0)
-  if (d.info?.diffId) void bridge.diffClose(d.info.diffId).catch(() => undefined)
-  if (d.job && ACTIVE.has(d.job.state)) void bridge.cancelJob(d.job.jobId).catch(() => undefined)
+  releaseDiff(d)
 }
 
 const ACTIVE = new Set(["queued", "running", "paused", "asking"])
@@ -810,6 +1056,7 @@ export const describeOperand = describe
 
 /** Create checksums: one file beside each file, or one list in the panel's folder. */
 export function openHashCreate(side: Side): void {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t("Copy the files out of the archive to create checksums for them."))
     return
@@ -887,6 +1134,7 @@ export async function startHashCreate(): Promise<boolean> {
 
 /** Verify checksums: the marked .sha256, .sha1, .md5 and .sfv files, or the one under the cursor. */
 export async function verifyChecksums(side: Side): Promise<void> {
+  if (refusedOnConnection(side)) return
   if (inArchive(side)) {
     notice(t("Copy the files out of the archive to verify them."))
     return
@@ -999,5 +1247,7 @@ export function resetCompare(): void {
   watched.clear()
   syncRows.reset(null)
   diffRows.reset(0)
-  set({ sync: null, diff: null, hash: null })
+  manyAll = []
+  manyShown = []
+  set({ sync: null, diff: null, hash: null, many: null })
 }

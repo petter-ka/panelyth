@@ -11,6 +11,7 @@ import (
 	"panelyth/sidecar/internal/imaging"
 	"panelyth/sidecar/internal/index"
 	"panelyth/sidecar/internal/media"
+	"panelyth/sidecar/internal/remote"
 	"panelyth/sidecar/internal/rpc"
 	"panelyth/sidecar/internal/video"
 )
@@ -73,6 +74,9 @@ func (s *indexService) registerMedia(srv *rpc.Server) {
 // (any kind; a link counts when its target is a file) and returns what main
 // needs to serve it read-only. Folders are refused.
 func (s *indexService) fileResolve(ctx context.Context, p mediaResolveParams) (fileResolveResult, error) {
+	if remote.IsID(p.EntryID) {
+		return s.remoteFileResolve(ctx, p.EntryID)
+	}
 	if archive.IsID(p.EntryID) {
 		return s.archiveFileResolve(ctx, p.EntryID)
 	}
@@ -107,9 +111,9 @@ func (s *indexService) fileResolve(ctx context.Context, p mediaResolveParams) (f
 // still exists, and returns what Electron main needs to serve it.
 func (s *indexService) mediaResolve(ctx context.Context, reg *imaging.Registry, p mediaResolveParams) (mediaResolveResult, error) {
 	var src index.Source
-	if archive.IsID(p.EntryID) {
-		// An image or video inside an archive: its temporary extraction.
-		f, err := s.archiveFileResolve(ctx, p.EntryID)
+	if archive.IsID(p.EntryID) || remote.IsID(p.EntryID) {
+		// An image or video inside an archive or on a server: its temporary copy.
+		f, err := s.fileResolve(ctx, p)
 		if err != nil {
 			return mediaResolveResult{}, err
 		}

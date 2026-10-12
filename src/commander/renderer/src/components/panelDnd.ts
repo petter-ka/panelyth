@@ -1,5 +1,12 @@
 import type { DragEvent } from "react"
-import { DRAG_TYPE, dragSource, dragStart, dropOn, type CopyTarget } from "../features/files"
+import {
+  DRAG_TYPE,
+  dragSource,
+  dragStart,
+  dropOn,
+  panelTarget,
+  type CopyTarget,
+} from "../features/files"
 import { isMarked } from "@panelyth/renderer-core"
 import { moveCursor, pageStoreOf, parentRows, useListingStore } from "../features/listing"
 import { markNone, marksDescriptor, marksOf } from "../features/marks"
@@ -36,7 +43,7 @@ export function panelDnd(side: Side) {
     ...dropTarget(side, () => {
       const p = useListingStore.getState()[side]
       // An archive panel takes no drops (archives are read-only, ADR-0030).
-      return p.dirId === null || p.archive ? null : { path: p.path, dirId: p.dirId }
+      return p.archive ? null : panelTarget(side)
     }),
   }
 }
@@ -59,6 +66,8 @@ export function dropTarget(side: Side, target: () => CopyTarget | null) {
       // Dropping a panel's items on its own folder does nothing (copy here is Shift+F5).
       const own = useListingStore.getState()[from]
       if (from === side && t.dirId !== null && t.dirId === own.dirId) return
+      if (from === side && t.remoteDirId !== undefined && t.remoteDirId === own.remote?.dirId)
+        return
       dropOn(from, t, e.shiftKey)
     },
   }

@@ -91,6 +91,10 @@ type (
 		ModifiedMs *int64          `json:"modifiedMs"`
 		AccessedMs *int64          `json:"accessedMs"`
 		Recursive  bool            `json:"recursive"`
+		// Stage C10.5. upload: the folder on the server (remoteDirId).
+		// download and upload: move removes each source once its copy is whole.
+		RemoteDirID int64 `json:"remoteDirId"`
+		Move        bool  `json:"move"`
 	}
 	jobIDParams struct {
 		JobID int64 `json:"jobId"`
@@ -291,7 +295,12 @@ func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Sn
 		}
 		return s.startJob(spec)
 	case jobs.KindCompareFiles:
-		if err := s.compareJob(ctx, p, &spec); err != nil {
+		// Two entries by id, or (Stage C10.5) a selection against a folder.
+		build := s.compareJob
+		if p.LeftID == 0 && p.RightID == 0 {
+			build = s.compareWithFolderJob
+		}
+		if err := build(ctx, p, &spec); err != nil {
 			return jobs.Snapshot{}, err
 		}
 		return s.startJob(spec)
@@ -304,6 +313,14 @@ func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Sn
 		return jobs.Snapshot{}, err
 	}
 	spec.IDs = ids
+	// Stage C10.5: entries of a connection go into download and remoteDelete
+	// only; an upload takes its folder on the server.
+	if err := s.remoteJob(ctx, p, &spec, ids); err != nil {
+		return jobs.Snapshot{}, err
+	}
+	if spec.Remote != nil {
+		return s.startJob(spec)
+	}
 	if err := s.archiveJob(p, &spec, ids); err != nil {
 		return jobs.Snapshot{}, err
 	}
@@ -352,6 +369,9 @@ func (s *indexService) clipSet(_ context.Context, p clipSetParams) (clipState, e
 	ids, err := s.resolveSelection(p.Selection)
 	if err != nil {
 		return clipState{}, err
+	}
+	if remoteOnly(ids) {
+		return clipState{}, rpc.NewError(rpc.CodeInvalidArgument, "entries on a server are copied with F5")
 	}
 	if archiveOnly(ids) {
 		return clipState{}, rpc.NewError(rpc.CodeInvalidArgument, "entries inside an archive are copied out with F5")

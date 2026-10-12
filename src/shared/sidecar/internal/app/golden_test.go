@@ -10,11 +10,15 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
 	"panelyth/sidecar/internal/fixture"
 	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/remote"
+	"panelyth/sidecar/internal/remote/ftptest"
 	"panelyth/sidecar/internal/rpc"
 )
 
@@ -718,6 +722,39 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-recipe.save.json"] = call(215, byID(215, "recipe.save", map[string]any{"id": 0, "name": "Half size", "recipe": recipe}))
 	golden["res-recipe.list.json"] = call(216, byID(216, "recipe.list", map[string]any{}))
 	golden["res-recipe.delete.json"] = call(217, byID(217, "recipe.delete", map[string]any{"id": 1}))
+	// Stage C10.5 (ADR-0037): a connection saved with its password as
+	// ciphertext, a loopback FTP server browsed, and the list's change event.
+	ftpRoot := t.TempDir()
+	if err := os.WriteFile(filepath.Join(ftpRoot, "readme.txt"), []byte("hello"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ftp, err := ftptest.Start(ftptest.Options{Root: ftpRoot})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer ftp.Close()
+	saved := library.Connection{Name: "Example", Group: "Work", Host: "ftp.example.org", Port: 21, TLS: "explicit",
+		User: "alice", StartPath: "/pub", Transfers: 2}
+	golden["res-remote.storeConnection.json"] = call(220, byID(220, "remote.storeConnection", map[string]any{"connection": saved, "secret": "AAEC"}))
+	golden["res-remote.connections.json"] = call(221, byID(221, "remote.connections", map[string]any{}))
+	golden["res-remote.secret.json"] = call(222, byID(222, "remote.secret", map[string]any{"connectionId": 1}))
+	golden["res-remote.trust.json"] = call(223, byID(223, "remote.trust", map[string]any{"connectionId": 1, "fingerprint": strings.Repeat("ab", 32)}))
+	dial := call(224, byID(224, "remote.dial", map[string]any{"password": "", "attempt": 1,
+		"quick": map[string]any{"host": ftp.Host, "port": ftp.Port, "tls": "none", "user": "", "active": false, "encoding": "", "transfers": 2}})).(map[string]any)
+	// The test server's port is the system's choice.
+	dial["r"].(map[string]any)["port"] = float64(21)
+	golden["res-remote.dial.json"] = dial
+	remoteID := int64(dial["r"].(map[string]any)["remoteId"].(float64))
+	golden["res-remote.open.json"] = call(225, byID(225, "remote.open", map[string]any{"remoteId": remoteID, "path": "/"}))
+	remoteDir := golden["res-remote.open.json"].(map[string]any)["r"].(map[string]any)["remoteDirId"]
+	golden["res-remote.mkdir.json"] = call(226, byID(226, "remote.mkdir", map[string]any{"remoteDirId": remoteDir, "name": "new folder"}))
+	// readme.txt is the first entry the connection listed (the root is entry 0).
+	golden["res-remote.rename.json"] = call(227, byID(227, "remote.rename", map[string]any{"entryId": remote.EntryID(remoteID, 1), "name": "read me.txt"}))
+	golden["res-remote.cancel.json"] = call(228, byID(228, "remote.cancel", map[string]any{"attempt": 99}))
+	golden["res-remote.disconnect.json"] = call(229, byID(229, "remote.disconnect", map[string]any{"remoteId": remoteID}))
+	golden["res-remote.removeConnection.json"] = call(230, byID(230, "remote.removeConnection", map[string]any{"connectionId": 1}))
+	saved.ID, saved.HasPassword, saved.Fingerprint = 1, true, strings.Repeat("ab", 32)
+	golden["evt-connections.changed.json"] = eventFrame(t, evConnectionsChanged, connectionsEvent{Connections: []library.Connection{saved}})
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)

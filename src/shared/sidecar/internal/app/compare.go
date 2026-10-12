@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"slices"
 	"strconv"
 	"sync"
 	"time"
@@ -137,6 +138,9 @@ type (
 		Left  string `json:"left"`
 		Right string `json:"right,omitempty"`
 		Cut   bool   `json:"cut,omitempty"`
+		// Spans: what differs inside a changed row, as [left from, left to,
+		// right from, right to] in UTF-16 units (Stage C10.5).
+		Spans []int `json:"spans,omitempty"`
 	}
 	textDiffPageResult struct {
 		Offset int           `json:"offset"`
@@ -333,6 +337,25 @@ func (s *indexService) compareJob(ctx context.Context, p jobStartParams, spec *j
 		}
 		spec.IDs = []int64{p.LeftID, p.RightID}
 	}
+	return nil
+}
+
+// compareWithFolderJob is the other form of a compareFiles job (Stage
+// C10.5): the selected files, each against the file of its name in the
+// folder destinationDirId.
+func (s *indexService) compareWithFolderJob(ctx context.Context, p jobStartParams, spec *jobs.Spec) error {
+	ids, err := s.resolveSelection(p.Source.Selection)
+	if err != nil {
+		return err
+	}
+	if slices.ContainsFunc(ids, archive.IsID) {
+		return rpc.NewError(rpc.CodeInvalidArgument, "copy entries out of the archive to compare them")
+	}
+	dest, err := s.dirPath(ctx, p.DestinationDirID)
+	if err != nil {
+		return err
+	}
+	spec.IDs, spec.Destination = ids, dest
 	return nil
 }
 
@@ -547,7 +570,7 @@ func (s *indexService) textDiffPage(_ context.Context, p textDiffPageParams) (te
 	}
 	out := textDiffPageResult{Offset: min(p.Offset, d.Info().Rows), Rows: make([]textDiffRow, len(rows))}
 	for i, r := range rows {
-		out.Rows[i] = textDiffRow{Op: r.Op.String(), L: r.L, R: r.R, Left: r.Left, Right: r.Right, Cut: r.Cut}
+		out.Rows[i] = textDiffRow{Op: r.Op.String(), L: r.L, R: r.R, Left: r.Left, Right: r.Right, Cut: r.Cut, Spans: r.Spans}
 	}
 	return out, nil
 }

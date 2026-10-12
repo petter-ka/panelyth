@@ -7,6 +7,7 @@ import {
   dialog,
   ClipboardItem,
   ipcMain,
+  safeStorage,
   session,
   shell,
   webContents,
@@ -61,6 +62,7 @@ import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
 import { stat } from "node:fs/promises"
 import { join } from "node:path"
 import { perfMark } from "./perf"
+import { electronSecretStore, noSecretStore, remoteHandlers } from "./remote"
 
 // Recorded once all main-process modules (including electron) are loaded.
 perfMark("main-loaded")
@@ -434,6 +436,14 @@ async function boot(): Promise<void> {
       })
       return { ok: true }
     },
+    // Commander only (the allowlist): connections whose passwords pass through main (ADR-0037).
+    ...remoteHandlers(
+      (method, params) => sc.call(method, params as never),
+      // Tests force a computer without a secret store (no password is saved there).
+      process.env.PANELYTH_TEST_NO_SECRET_STORE === "1"
+        ? noSecretStore
+        : electronSecretStore(safeStorage),
+    ),
     "sidecar.getStatus": () => sc.getStatus(),
     "dialog.openFolder": async (event) => {
       // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.

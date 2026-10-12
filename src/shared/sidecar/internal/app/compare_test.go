@@ -449,4 +449,44 @@ func TestChecksumAndCompareJobsOverRPC(t *testing.T) {
 	if s := waitJob(t, svc, job.JobID); s.Done != 1 || s.Failed != 0 {
 		t.Errorf("identical files: %+v", s)
 	}
+
+	// Stage C10.5: the selected files, each against the file of its name in
+	// another folder (a.txt is the same there, b.txt differs, c.txt is missing).
+	other := filepath.Join(filepath.Dir(root), "other")
+	if err := os.MkdirAll(other, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, name := range []string{"a.txt", "b.txt"} {
+		data, _ := os.ReadFile(filepath.Join(root, name))
+		if name == "b.txt" {
+			data = append(data, '!')
+		}
+		if err := os.WriteFile(filepath.Join(other, name), data, 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	otherID, _ := openListed(t, svc, other)
+	_, items = openListed(t, svc, root)
+	snap, _ = svc.queryOpen(ctx, queryOpenParams{DirID: dirID, Scope: "all", Sort: []sortKeyWire{{Field: "name", Direction: "asc"}}})
+	three := jobSourceWire{Selection: selectionWire{QueryID: snap.QueryID, Version: snap.Version,
+		Include: []int64{items["a.txt"].ID, items["b.txt"].ID, items["c.txt"].ID}}}
+	job, err = svc.jobsStart(ctx, jobStartParams{Kind: "compareFiles", Source: three, DestinationDirID: otherID})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s := waitJob(t, svc, job.JobID); s.Total != 3 || s.Done != 1 || s.Failed != 2 {
+		t.Errorf("against a folder: %+v", s)
+	}
+	errs, _, _ = svc.jobs.Errors(job.JobID, 0, 10)
+	codes := map[string]string{}
+	for _, e := range errs {
+		codes[e.Name] = e.Code
+	}
+	if codes["b.txt"] != jobs.CodeDifferent || codes["c.txt"] != "NOT_FOUND" {
+		t.Errorf("against a folder: %v", errs)
+	}
+	// Without a folder to compare with, nothing starts.
+	if _, err := svc.jobsStart(ctx, jobStartParams{Kind: "compareFiles", Source: three}); err == nil {
+		t.Error("a comparison without a folder started")
+	}
 }

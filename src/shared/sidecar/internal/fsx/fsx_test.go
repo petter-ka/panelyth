@@ -46,6 +46,32 @@ func TestListDirsNaturalOrderAndProbe(t *testing.T) {
 	}
 }
 
+// Stage C10.5: the commander's tree lists hidden folders when its panel
+// shows hidden files.
+func TestListDirsShowHidden(t *testing.T) {
+	root := t.TempDir()
+	mkdirs(t, root, "plain", ".hidden/x", "parent/.only-hidden")
+	names := func(o ListOptions) map[string]bool {
+		t.Helper()
+		got, _, err := ListDirs(context.Background(), root, o)
+		if err != nil {
+			t.Fatal(err)
+		}
+		out := map[string]bool{}
+		for _, c := range got {
+			out[c.Name] = c.HasChildren
+		}
+		return out
+	}
+	if got := names(ListOptions{}); len(got) != 2 || got["parent"] {
+		t.Errorf("hidden folders listed or counted: %v", got)
+	}
+	got := names(ListOptions{ShowHidden: true})
+	if len(got) != 3 || !got[".hidden"] || !got["parent"] || got["plain"] {
+		t.Errorf("with hidden folders: %v", got)
+	}
+}
+
 func TestListDirsBounds(t *testing.T) {
 	root := t.TempDir()
 	for i := range 30 {

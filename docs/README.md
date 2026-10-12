@@ -87,7 +87,7 @@ docs/
     PERFORMANCE.md             commander budgets
     TESTING.md                 commander e2e scenarios, fixtures, safety tests
     decisions/                 commander ADRs
-    stages/                    commander stages C00…C11
+    stages/                    commander stages C00…C11 (C10.5 between C10 and C11)
 ```
 
 Rules for placing a document: shared platform behavior goes to `docs/shared/`; anything only one app has goes to that
@@ -151,6 +151,7 @@ Claude Code should read these files in this order:
 | 0034 | Localization: eight languages, English text as the key | shared | Accepted (owner request) |
 | 0035 | Image editor engine: sessions, proxy rendering, save semantics | viewer | Accepted with amendments (Stage 12, 2026-10-12; notes from Stages 13 to 15) |
 | 0036 | Batch image editing: recipes, edit jobs, output rules | viewer | Accepted with amendments (Stage 16) |
+| 0037 | Remote locations: FTP connections as folders | commander | Accepted with amendments (Stage C10.5) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

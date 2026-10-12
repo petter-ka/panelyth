@@ -464,3 +464,62 @@ func TestCompareFilesJob(t *testing.T) {
 		t.Errorf("a missing file: %+v %v", s, e.errors(s.JobID))
 	}
 }
+
+// Stage C10.5: several files, each against the file of its name in the
+// other panel's folder.
+func TestCompareFilesWithFolderJob(t *testing.T) {
+	e := newEnv(t)
+	left, right := filepath.Join(e.root, "left"), filepath.Join(e.root, "right")
+	data := strings.Repeat("0123456789abcdef", 10_000)
+	write := func(dir, name, text string) {
+		t.Helper()
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(text), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	write(left, "same.bin", data)
+	write(right, "same.bin", data)
+	write(left, "bytes.bin", data)
+	write(right, "bytes.bin", data[:5000]+"X"+data[5001:])
+	write(left, "size.bin", data)
+	write(right, "size.bin", data[:10])
+	write(left, "only-left.bin", data)
+	write(left, "is-folder.bin", data)
+	_ = os.Mkdir(filepath.Join(right, "is-folder.bin"), 0o755)
+	_ = os.Mkdir(filepath.Join(left, "sub"), 0o755)
+	dir := e.index(left)
+
+	s := e.run(Spec{Kind: KindCompareFiles, Destination: right,
+		IDs: e.allIDs(dir, "same.bin", "bytes.bin", "size.bin", "only-left.bin", "is-folder.bin", "sub")})
+	errs := e.errors(s.JobID)
+	if s.State != StateCompleted || s.Total != 6 || s.Done != 1 || s.Failed != 4 || s.Skipped != 1 {
+		t.Fatalf("counts: %+v %v", s, errs)
+	}
+	got := map[string]string{}
+	for _, it := range errs {
+		got[it.Name] = it.Code
+	}
+	want := map[string]string{"bytes.bin": CodeDifferent, "size.bin": CodeDifferent,
+		"only-left.bin": fileops.CodeNotFound, "is-folder.bin": fileops.CodeNotFound}
+	for name, code := range want {
+		if got[name] != code {
+			t.Errorf("%s: %q, want %q (%v)", name, got[name], code, errs)
+		}
+	}
+	// Both panels on one folder: every file is the same as itself, nothing is read.
+	s = e.run(Spec{Kind: KindCompareFiles, IDs: e.allIDs(dir, "same.bin", "bytes.bin"), Destination: left})
+	if s.Done != 2 || s.Failed != 0 || s.BytesDone != 0 {
+		t.Errorf("the same folder: %+v", s)
+	}
+	// A folder that is gone: every file is missing there, the job still ends.
+	s = e.run(Spec{Kind: KindCompareFiles, IDs: e.allIDs(dir, "same.bin"), Destination: filepath.Join(e.root, "gone")})
+	if s.State != StateCompleted || s.Failed != 1 || e.errors(s.JobID)[0].Code != fileops.CodeNotFound {
+		t.Errorf("a missing folder: %+v", s)
+	}
+	if _, err := e.m.Start(Spec{Kind: KindCompareFiles, Destination: right}); !errors.Is(err, ErrInvalid) {
+		t.Errorf("nothing to compare: %v", err)
+	}
+}

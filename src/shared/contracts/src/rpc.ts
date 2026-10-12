@@ -242,6 +242,15 @@ export interface QueryDescriptor {
   archiveId?: number
   /** The archive folder's entry id; 0 or omitted = the archive's root. */
   archiveDirId?: number
+  /**
+   * A listed folder of a connection (Stage C10.5, commander, ADR-0037): its
+   * entries come from the folder's listing in Go, and a session over it
+   * costs no network. Needs the all scope and no recursion. `dirId` is then
+   * the panel's last local folder.
+   */
+  remoteId?: number
+  /** The folder's id from remote.open. */
+  remoteDirId?: number
 }
 
 export const MAX_SEARCH_CHARS = 256
@@ -709,6 +718,11 @@ export interface VolumesResult {
 
 export interface ListDirsParams {
   path: string
+  /**
+   * Hidden and system folders too (the commander's tree when its panel
+   * shows hidden files, Stage C10.5). Main refuses it from the viewer.
+   */
+  showHidden?: boolean
 }
 
 export interface DirChild {
@@ -855,6 +869,10 @@ export type JobKind =
   | "multiRename"
   | "undoRename"
   | "setAttributes"
+  /** Stage C10.5: between a connection and this computer, and deletes on the server. */
+  | "download"
+  | "upload"
+  | "remoteDelete"
   /** Stage 12: an edited picture being written; started by edit.save, never by jobs.start. */
   | "editSave"
   /** Stage 16: a recipe run over a selection (batch.start), and its undo (batch.undo). */
@@ -881,6 +899,9 @@ export const JOB_KINDS = [
   "multiRename",
   "undoRename",
   "setAttributes",
+  "download",
+  "upload",
+  "remoteDelete",
   "editSave",
   "edit",
   "undoEdit",
@@ -1022,6 +1043,7 @@ export type CommanderJobParams =
   | ArchiveJobParams
   | CompareJobParams
   | RenameJobParams
+  | RemoteJobParams
 
 export const MAX_RENAME_PATTERN_CHARS = 255
 export const MAX_RENAME_START = 1_000_000_000
@@ -1548,7 +1570,11 @@ export const HASH_ALGORITHMS = [
  * reported as CHANGED and left alone). hashCreate: one checksum file beside
  * each file, or one list in a folder. hashVerify: the selected .sha256,
  * .sha1, .md5 and .sfv files; every listed file is an item. compareFiles:
- * two files byte by byte; done = identical, a DIFFERENT item otherwise.
+ * two files byte by byte; done = identical, a DIFFERENT item otherwise. Its
+ * other form (Stage C10.5) takes a selection and a folder: each selected
+ * file is compared with the file of its name in that folder (done =
+ * identical, DIFFERENT, or NOT_FOUND when the folder has no such file;
+ * folders in the selection are skipped).
  */
 export type CompareJobParams =
   | {
@@ -1571,6 +1597,7 @@ export type CompareJobParams =
     }
   | { kind: "hashVerify"; source: JobSource }
   | { kind: "compareFiles"; leftId: number; rightId: number }
+  | { kind: "compareFiles"; source: JobSource; destinationDirId: number }
 
 /** A text diff takes files up to this size; larger ones are compared by content only. */
 export const MAX_TEXT_DIFF_BYTES = 50 * 1024 * 1024
@@ -1630,6 +1657,12 @@ export interface TextDiffRow {
   right?: string
   /** A line was longer than 4 KiB and is cut. */
   cut?: boolean
+  /**
+   * A changed row only (Stage C10.5): what differs inside the line once the
+   * common start and end are taken away, as [left from, left to, right from,
+   * right to] in string positions of `left` and `right`.
+   */
+  spans?: [number, number, number, number]
 }
 
 export interface TextDiffPageResult {
@@ -1884,6 +1917,230 @@ export function readSwitchSettings(value: unknown): SharedSwitchSettings {
 export const MAX_SETTING_KEY_CHARS = 128
 export const MAX_SETTING_JSON_CHARS = 64 * 1024
 
+// Remote connections: FTP and FTPS (Stage C10.5, commander, ADR-0037) ---------
+
+/** How a connection is encrypted; "none" is plain FTP and only ever the user's choice. */
+export type RemoteTls = "explicit" | "implicit" | "none"
+export const REMOTE_TLS = ["explicit", "implicit", "none"] as const satisfies readonly RemoteTls[]
+
+export const MAX_CONNECTION_NAME_CHARS = 128
+export const MAX_REMOTE_HOST_CHARS = 253
+export const MAX_REMOTE_PATH_CHARS = 4096
+/** A password is at most this many UTF-8 bytes, on one line. */
+export const MAX_REMOTE_PASSWORD_BYTES = 1024
+export const MAX_REMOTE_TRANSFERS = 4
+export const MAX_REMOTE_NAME_CHARS = 1024
+export const MAX_REMOTE_ENCODING_CHARS = 32
+/** A certificate fingerprint: SHA-256, 64 hex digits. */
+export const FINGERPRINT_HEX_CHARS = 64
+
+/**
+ * A saved connection. It never carries a password: `hasPassword` says
+ * whether one is stored (as ciphertext made by Electron main).
+ */
+export interface SavedConnection {
+  /** 0 for a connection that is not saved yet. */
+  id: number
+  name: string
+  group: string
+  host: string
+  port: number
+  tls: RemoteTls
+  /** "" = anonymous. */
+  user: string
+  /** The folder on the server to open first; "" = "/". */
+  startPath: string
+  /** A folder for the other panel; "" = leave it. */
+  localPath: string
+  /** The server connects back for data (active mode) instead of passive mode. */
+  active: boolean
+  /** Names' encoding: "" = UTF-8, else a code page's name ("windows-1252"). */
+  encoding: string
+  /** Transfers that may run at once, 1..MAX_REMOTE_TRANSFERS. */
+  transfers: number
+  /** The certificate the user accepted for this connection, or "". */
+  fingerprint: string
+  hasPassword: boolean
+}
+
+export interface ConnectionsResult {
+  connections: SavedConnection[]
+}
+
+/**
+ * remote.saveConnection as a renderer sends it. `password` is write-only:
+ * main encrypts it with the system's secret store before anything is
+ * stored, and no method returns it. Without it the stored password stays;
+ * `forget` drops the stored one.
+ */
+export interface SaveConnectionParams {
+  connection: SavedConnection
+  password?: string
+  forget?: boolean
+}
+
+/** Main → sidecar: the connection with its password as ciphertext (base64). */
+export interface StoreConnectionParams {
+  connection: SavedConnection
+  secret?: string
+  forget?: boolean
+}
+
+export interface ConnectionIdParams {
+  connectionId: number
+}
+
+/** Main only: a stored password's ciphertext (base64), "" when none is stored. */
+export interface ConnectionSecretResult {
+  secret: string
+}
+
+export interface RemoteTrustParams {
+  connectionId: number
+  /** "" forgets the accepted certificate. */
+  fingerprint: string
+}
+
+/** A connection that is not saved (quick connect). */
+export interface RemoteQuick {
+  host: string
+  port: number
+  tls: RemoteTls
+  user: string
+  active: boolean
+  encoding: string
+  transfers: number
+}
+
+/**
+ * remote.connect as a renderer sends it: a saved connection or a typed one.
+ * `password` is one typed for this connect; a saved connection's stored
+ * password is put in by main. `accept` trusts a certificate with that
+ * fingerprint for this connect. `attempt` names the connect for remote.cancel
+ * (attempts of connects and of remote.open share one numbering).
+ */
+export type RemoteConnectParams = ({ connectionId: number } | { quick: RemoteQuick }) & {
+  password?: string
+  accept?: string
+  attempt: number
+}
+
+/** Main → sidecar: the same connect with the clear password in place. */
+export interface RemoteDialParams {
+  connectionId?: number
+  quick?: RemoteQuick
+  password: string
+  accept?: string
+  attempt: number
+}
+
+export interface RemoteFeatures {
+  mlsd: boolean
+  /** A transfer that is cut off can go on where it stopped. */
+  resume: boolean
+  utf8: boolean
+}
+
+export interface RemoteConnectResult {
+  remoteId: number
+  host: string
+  port: number
+  user: string
+  /** The control and data connections use TLS. */
+  encrypted: boolean
+  features: RemoteFeatures
+  /** Where the connection's panel opens first. */
+  startPath: string
+  /** The folder a saved connection names for the other panel, or "". */
+  localPath: string
+}
+
+/**
+ * Why a connect or a command on a connection failed (`details.reason`).
+ * "certificate" comes with `details.fingerprint`, `subject` and `changed`;
+ * "refused" carries the server's own words as the message.
+ */
+export type RemoteFailureReason =
+  | "auth"
+  | "needsPassword"
+  | "host"
+  | "timeout"
+  | "unreachable"
+  | "tlsRequired"
+  | "certificate"
+  | "refused"
+  | "closed"
+  | "notFound"
+  | "name"
+  | "tooLarge"
+  | "unsupported"
+  | "noSecureStore"
+
+export interface RemoteAttemptParams {
+  attempt: number
+}
+
+export interface RemoteIdParams {
+  remoteId: number
+}
+
+/**
+ * A folder by its path on the server, or by its entry id. `attempt` names
+ * the listing for remote.cancel (a server that stops answering).
+ */
+export type RemoteOpenParams = (
+  { remoteId: number; path: string } | { remoteId: number; dirId: number }
+) & { attempt?: number }
+
+export interface RemoteOpenResult {
+  remoteDirId: number
+  path: string
+  name: string
+  /** The folder's ancestors, the server's root first. */
+  crumbs: Crumb[]
+  /** Entries left out because their names cannot be listed. */
+  rejected: number
+}
+
+export interface RemoteMkdirParams {
+  remoteDirId: number
+  name: string
+}
+
+export interface RemoteRenameParams {
+  entryId: number
+  name: string
+}
+
+/** Whether the system offers a secret store, so passwords can be saved. */
+export interface SecureStoreResult {
+  available: boolean
+}
+
+/**
+ * Jobs between a connection and this computer (Stage C10.5). download: the
+ * selected entries of a remote session into a local folder. upload: the
+ * selected local entries into a folder of a connection. remoteDelete: the
+ * selected entries on the server, for good (a server has no trash). `move`
+ * removes each source once its copy is whole.
+ */
+export type RemoteJobParams =
+  | {
+      kind: "download"
+      source: JobSource
+      destinationDirId: number
+      conflict: ConflictPolicy
+      move?: boolean
+    }
+  | {
+      kind: "upload"
+      source: JobSource
+      remoteDirId: number
+      conflict: ConflictPolicy
+      move?: boolean
+    }
+  | { kind: "remoteDelete"; source: JobSource }
+
 /** Methods implemented by the Go sidecar. */
 export interface SidecarMethodMap {
   "system.ping": { params: EmptyParams; result: PingResult }
@@ -1916,6 +2173,24 @@ export interface SidecarMethodMap {
   /** Stage C09: a multi-rename's names, paged; multiRename and undoRename jobs apply and undo. */
   "rename.preview": { params: RenamePreviewParams; result: RenamePreviewResult }
   "rename.undoInfo": { params: EmptyParams; result: RenameUndoInfo }
+  /** Stage C10.5 (ADR-0037): saved connections, without their secrets. */
+  "remote.connections": { params: EmptyParams; result: ConnectionsResult }
+  /** Main only: stores a connection; a password arrives as ciphertext. */
+  "remote.storeConnection": { params: StoreConnectionParams; result: SavedConnection }
+  "remote.removeConnection": { params: ConnectionIdParams; result: OkResult }
+  /** Main only: the ciphertext main decrypts for one connect. */
+  "remote.secret": { params: ConnectionIdParams; result: ConnectionSecretResult }
+  /** Remembers the certificate the user accepted for a saved connection. */
+  "remote.trust": { params: RemoteTrustParams; result: OkResult }
+  /** Main only: connects and logs in, with the clear password of this one call. */
+  "remote.dial": { params: RemoteDialParams; result: RemoteConnectResult }
+  /** Stops a connect that is under way. */
+  "remote.cancel": { params: RemoteAttemptParams; result: OkResult }
+  "remote.disconnect": { params: RemoteIdParams; result: OkResult }
+  /** Lists a folder from the server (the remote counterpart of dir.open). */
+  "remote.open": { params: RemoteOpenParams; result: RemoteOpenResult }
+  "remote.mkdir": { params: RemoteMkdirParams; result: OkResult }
+  "remote.rename": { params: RemoteRenameParams; result: OkResult }
   "query.open": { params: QueryDescriptor; result: QuerySnapshot }
   "query.page": { params: QueryPageParams; result: QueryPageResult }
   "query.close": { params: QueryCloseParams; result: QueryCloseResult }
@@ -1957,7 +2232,7 @@ export interface SidecarMethodMap {
   "library.reorderBookmarks": { params: ReorderBookmarksParams; result: OkResult }
   /** Archive, compare, multi-rename and attribute jobs are the commander's (main checks the caller's profile). */
   "jobs.start": {
-    params: JobStartParams | ArchiveJobParams | CompareJobParams | RenameJobParams
+    params: JobStartParams | ArchiveJobParams | CompareJobParams | RenameJobParams | RemoteJobParams
     result: JobSnapshot
   }
   "jobs.cancel": { params: JobIdParams; result: JobCancelResult }
@@ -2110,6 +2385,15 @@ export interface MainMethodMap {
   "batch.plan": { params: BatchParams; result: BatchPlanResult }
   /** Viewer: starts the batch as a job. */
   "batch.start": { params: BatchParams; result: JobSnapshot }
+  /**
+   * Commander (Stage C10.5): saves a connection. A password is encrypted here
+   * with the system's secret store; without one, it is refused (noSecureStore).
+   */
+  "remote.saveConnection": { params: SaveConnectionParams; result: SavedConnection }
+  /** Commander: connects; a saved connection's stored password is decrypted here for this call. */
+  "remote.connect": { params: RemoteConnectParams; result: RemoteConnectResult }
+  /** Commander: whether passwords can be saved on this computer. */
+  "remote.secureStore": { params: EmptyParams; result: SecureStoreResult }
 }
 
 export type MethodMap = SidecarMethodMap & MainMethodMap
@@ -2234,6 +2518,19 @@ export const COMMANDER_ONLY_METHODS = [
   "rename.undoInfo",
   "shell.run",
   "shell.runTool",
+  // Stage C10.5: connections (ADR-0037). remote.storeConnection, remote.dial
+  // and remote.secret are main's alone and are not listed.
+  "remote.connections",
+  "remote.saveConnection",
+  "remote.removeConnection",
+  "remote.trust",
+  "remote.connect",
+  "remote.cancel",
+  "remote.disconnect",
+  "remote.open",
+  "remote.mkdir",
+  "remote.rename",
+  "remote.secureStore",
 ] as const
 
 /** Every method some renderer may invoke. Main rejects everything else. */
@@ -2257,6 +2554,8 @@ export const COMMANDER_METHODS = [
   "sidecar.getStatus",
   "library.get",
   "library.setSetting",
+  // Stage C10.5: the folder tree lists one level of subfolders at a time.
+  "fs.listDirs",
   // Stage C01: listing (all-entries scope), free space, home, the shared context.
   "dir.open",
   "dir.openEntry",
@@ -2338,6 +2637,19 @@ export const COMMANDER_METHODS = [
   // Stage C10: the command line and user commands (main runs them; ADR-0027).
   "shell.run",
   "shell.runTool",
+  // Stage C10.5: connections to FTP servers (ADR-0037). Passwords pass
+  // through main (saveConnection, connect); transfers go through jobs.start.
+  "remote.connections",
+  "remote.saveConnection",
+  "remote.removeConnection",
+  "remote.trust",
+  "remote.connect",
+  "remote.cancel",
+  "remote.disconnect",
+  "remote.open",
+  "remote.mkdir",
+  "remote.rename",
+  "remote.secureStore",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */
@@ -2376,4 +2688,7 @@ export const MAIN_METHODS = [
   "batch.pickFolder",
   "batch.plan",
   "batch.start",
+  "remote.saveConnection",
+  "remote.connect",
+  "remote.secureStore",
 ] as const satisfies readonly (keyof MainMethodMap)[]

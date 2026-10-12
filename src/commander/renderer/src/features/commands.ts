@@ -31,7 +31,8 @@ import {
   marksOf,
 } from "./marks"
 import { isMarked } from "@panelyth/renderer-core"
-import { toggleActivePanel, usePanelsStore, type Side } from "./panels"
+import { cycleTreeMode, toggleActivePanel, usePanelsStore, type Side } from "./panels"
+import { focusTree } from "./tree"
 import { editCursor, openNewFile } from "./open"
 import { focusPanel, openLister, toggleQuickView, useViewersStore } from "./viewers"
 import { closeQuickSearch } from "./quicksearch"
@@ -45,11 +46,13 @@ import {
   openCopyHere,
   openDelete,
   openMkdir,
+  refusedOnConnection,
   startRename,
 } from "./files"
 import { toggleQueue } from "./queue"
 import { openPack, openUnpack, testArchives } from "./archives"
 import { openFind } from "./find"
+import { disconnect, openConnections, openQuickConnect } from "./remote"
 import {
   comparePanels,
   openCompareFiles,
@@ -61,7 +64,19 @@ import { openMultiRename, undoMultiRename } from "./rename"
 import { openAttributes, openProperties } from "./attributes"
 import { openHistoryMenu, openHotlist } from "./hotlist"
 import { setSettingsOpen, updateSettings, useSettingsStore } from "./settings"
-import { closeOtherTabs, closeTab, cycleTab, newTab, swapTabs, toggleLock } from "./tabs"
+import {
+  closeOtherTabs,
+  closeTab,
+  closeTabsToRight,
+  cycleTab,
+  duplicateTab,
+  newTab,
+  reopenTab,
+  startTabRename,
+  swapTabs,
+  toggleLock,
+} from "./tabs"
+import { openSaveTabs, openTabSets } from "./tabsets"
 
 // Runs the commander's remappable actions (keymap.ts) on the active panel.
 
@@ -120,7 +135,8 @@ async function markAndSize(side: Side): Promise<void> {
   const item = index >= 0 ? await pageStoreOf(side).ensureIndex(index) : undefined
   await toggleCursor(side, false)
   // Folders inside an archive come with their size from the listing.
-  if (item?.kind === "dir" && !p.archive && isMarked(marksOf(side), index, item.id)) {
+  // On a connection a folder's size would mean listing its whole subtree.
+  if (item?.kind === "dir" && !p.archive && !p.remote && isMarked(marksOf(side), index, item.id)) {
     const d = cursorDescriptor(side)
     if (d) await calculateSizes(side, d).catch(() => undefined)
   }
@@ -192,6 +208,28 @@ export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
       break
     case "tab.closeOthers":
       closeOtherTabs(side)
+      break
+    case "tab.reopen":
+      closeQuickSearch()
+      void reopenTab(side)
+      break
+    case "tab.rename":
+      closeQuickSearch()
+      startTabRename(side)
+      break
+    case "tab.duplicate":
+      duplicateTab(side)
+      break
+    case "tab.closeRight":
+      void closeTabsToRight(side)
+      break
+    case "tabs.save":
+      closeQuickSearch()
+      openSaveTabs(side)
+      break
+    case "tabs.sets":
+      closeQuickSearch()
+      openTabSets(side)
       break
     case "files.copy":
       closeQuickSearch()
@@ -278,8 +316,20 @@ export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
       closeQuickSearch()
       openFind(side)
       break
+    case "remote.connections":
+      closeQuickSearch()
+      openConnections(side)
+      break
+    case "remote.quick":
+      closeQuickSearch()
+      openQuickConnect(side)
+      break
+    case "remote.disconnect":
+      void disconnect(side)
+      break
     case "view.branch":
-      void toggleBranch(side)
+      // A branch view would list a server's whole subtree (ADR-0037).
+      if (!refusedOnConnection(side)) void toggleBranch(side)
       break
     case "archive.enter":
       closeQuickSearch()
@@ -378,6 +428,7 @@ export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
     case "size.all": {
       // Every row; Go skips the files.
       const q = panel(side).query
+      if (refusedOnConnection(side)) break
       if (q && q.total > 0 && !panel(side).archive) {
         void calculateSizes(side, {
           queryId: q.queryId,
@@ -444,6 +495,13 @@ export function runShellAction(id: ActionId): void {
       break
     case "view.functionKeys":
       updateSettings({ showFunctionKeys: !useSettingsStore.getState().settings.showFunctionKeys })
+      break
+    case "tree.toggle":
+      cycleTreeMode()
+      break
+    case "tree.focus":
+      closeQuickSearch()
+      focusTree(usePanelsStore.getState().active)
       break
   }
 }

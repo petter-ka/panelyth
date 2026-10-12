@@ -246,7 +246,9 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   useScrollMemory(
     body,
     side,
-    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive ? panel.dirId : null,
+    panel.dirId !== null && !panel.branch && !panel.find && !panel.archive && !panel.remote
+      ? panel.dirId
+      : null,
     "top",
   )
   useEffect(() => virtualizer.measure(), [rowHeight, virtualizer])
