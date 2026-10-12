@@ -16,6 +16,7 @@ const GITHUB = `https://github.com/${REPO}`
 const RELEASES = `${GITHUB}/releases`
 const LATEST = `${RELEASES}/latest`
 const INSTALL_GUIDE = `${GITHUB}/blob/main/docs/INSTALL.md`
+const LICENSE = `${GITHUB}/blob/main/LICENSE`
 
 /** The window's content size the screenshots were taken at. */
 const FRAME = { width: 2160, height: 1350 }
@@ -189,14 +190,14 @@ const shots = [
   },
 ]
 
-/** The hero's slides: the viewer and the commander in turn. */
+/** The hero's slides: the commander and the viewer in turn. */
 const heroSlides = [
+  shotFiles,
   shotTiles,
   shotCommander,
   shotPhoto,
-  shotFiles,
-  shotEditor,
   shotFindResults,
+  shotEditor,
 ].map((src) => shots.find((shot) => shot.src === src))
 /** How long the hero shows one slide. */
 const SLIDE_MS = 5000
@@ -557,9 +558,9 @@ function App() {
             </h1>
             <div className="hero-intro">
               <p>
-                A photo and video browser and a keyboard-first, two-panel file manager, sharing one
-                window. Quick with very large folders, calm to look at, and entirely on your own
-                computer.
+                An open-source photo and video browser and a keyboard-first, two-panel file manager,
+                sharing one window. Quick with very large folders, calm to look at, and entirely on
+                your own computer.
               </p>
               <div className="hero-actions">
                 <a className="button button-primary" href="#download">
@@ -574,7 +575,7 @@ function App() {
               <span>WINDOWS</span>
               <i /> <span>macOS</span>
               <i /> <span>LINUX</span>
-              <b>LOCAL FIRST · NO ACCOUNT</b>
+              <b>OPEN SOURCE · LOCAL FIRST · NO ACCOUNT</b>
             </div>
           </div>
           <HeroSlideshow />
@@ -770,7 +771,8 @@ function App() {
                 Panelyth needs no account and no network to browse, preview, play or manage your
                 files. Thumbnails live in your system&apos;s cache folder, never beside your
                 pictures, and can be deleted at any time; settings, bookmarks and tags are kept
-                across updates.
+                across updates. It is open source under the MIT License, so you can read the code,
+                build it yourself and change it.
               </p>
               <div className="about-links">
                 <a href={GITHUB}>
@@ -781,6 +783,9 @@ function App() {
                 </a>
                 <a href={`${GITHUB}/issues`}>
                   Issues and ideas <Arrow diagonal />
+                </a>
+                <a href={LICENSE}>
+                  MIT License <Arrow diagonal />
                 </a>
               </div>
             </div>
@@ -824,7 +829,7 @@ function App() {
         <a className="footer-top footer-top-plain" href="#top">
           BACK TO TOP <span>↑</span>
         </a>
-        <span className="footer-copy">© 2026 PANELYTH</span>
+        <span className="footer-copy">© 2026 PANELYTH · OPEN SOURCE, MIT</span>
       </footer>
     </div>
   )

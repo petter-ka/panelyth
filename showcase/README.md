@@ -26,7 +26,7 @@ so the built page works at a domain's root and under a project path such as GitH
 ## Screenshots
 
 Everything in `src/media/` is taken from the real app, running on a generated demo library. The hero is a slideshow
-of six of the screenshots, the viewer and the commander in turn (`heroSlides` in `src/main.jsx`); it changes every
+of six of the screenshots, the commander and the viewer in turn (`heroSlides` in `src/main.jsx`); it changes every
 five seconds, waits while the pointer or the focus is on it, and does not start by itself for people who asked their
 system for less motion. To make the pictures again after the app's look changed:
 

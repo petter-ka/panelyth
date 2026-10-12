@@ -1,7 +1,8 @@
 # Panelyth
 
-**A keyboard-first, two-panel file manager with a photo and video viewer beside it, in one desktop app for Windows,
-macOS and Linux.** It is built for very large folders, runs entirely on your own computer, and needs no account.
+**An open-source, keyboard-first, two-panel file manager with a photo and video viewer beside it, in one desktop app
+for Windows, macOS and Linux.** It is built for very large folders, runs entirely on your own computer, and needs no
+account.
 
 ![Panelyth Commander with two folders of files in the Full view, five files marked in the left panel](../showcase/src/media/commander-files.webp)
 
@@ -84,6 +85,8 @@ state and [`docs/ROADMAP.md`](ROADMAP.md) the order of what comes next.
   operations.
 - **Local only.** No web backend and no cloud service; the preview cache lives in the system's cache folder, never
   beside your pictures.
+- **Open source.** Panelyth's code is public under the MIT License ([`LICENSE`](../LICENSE)): read it, build it
+  yourself, change it.
 
 Performance is a requirement here, with budgets that are measured and recorded
 ([`docs/shared/PERFORMANCE.md`](shared/PERFORMANCE.md)). The rest of this page is for people working on the code.
@@ -118,6 +121,7 @@ Logs: Electron `app.getPath("logs")/panelyth.log` (main process and sidecar stde
 
 ```text
 CLAUDE.md                      working rules for Claude Code (stays in the repository root)
+LICENSE                        the MIT License of Panelyth's own code
 docs/
   README.md                    this file: overview, map, reading order, ADR index
   ROADMAP.md                   phases of every track and the order across tracks
@@ -231,3 +235,8 @@ Do not optimize by intuition. Add instrumentation, reproduce the bottleneck, mea
 
 The target is not merely fast startup. The target is apps that still feel fluid in directories containing tens or
 hundreds of thousands of files.
+
+## License
+
+Panelyth is open source under the [MIT License](../LICENSE). The libraries and tools it includes keep their own
+licenses; the app lists them under Help → Third-Party Licenses.
