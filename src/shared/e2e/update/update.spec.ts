@@ -1,5 +1,13 @@
 import { execFileSync, spawnSync } from "node:child_process"
-import { createReadStream, existsSync, mkdtempSync, readdirSync, rmSync, statSync } from "node:fs"
+import {
+  createReadStream,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  realpathSync,
+  rmSync,
+  statSync,
+} from "node:fs"
 import { createServer, type Server } from "node:http"
 import { tmpdir } from "node:os"
 import { join, normalize } from "node:path"
@@ -88,12 +96,24 @@ const installedElsewhere = (): boolean =>
     { encoding: "utf8" },
   ).stdout.includes("DisplayName")
 
-/** Processes started from the install folder (the app after the update restarted it). */
-function runningFrom(dir: string): number[] {
-  const script = `Get-CimInstance Win32_Process -Filter "Name='Panelyth.exe'" | Where-Object { $_.ExecutablePath -like '${dir}*' } | ForEach-Object { $_.ProcessId }`
+/** Every running Panelyth.exe, with the path Windows reports for it. */
+function running(): { pid: number; path: string }[] {
+  const script = `Get-CimInstance Win32_Process -Filter "Name='Panelyth.exe'" | ForEach-Object { "$($_.ProcessId)|$($_.ExecutablePath)" }`
   const result = spawnSync("powershell", ["-NoProfile", "-Command", script], { encoding: "utf8" })
-  return result.stdout.split(/\s+/).filter(Boolean).map(Number)
+  return result.stdout
+    .split(/\r?\n/)
+    .filter((line) => line.includes("|"))
+    .map((line) => ({
+      pid: Number(line.slice(0, line.indexOf("|"))),
+      path: line.slice(line.indexOf("|") + 1).trim(),
+    }))
 }
+
+/** Processes started from the install folder (the app after the update restarted it). */
+const runningFrom = (dir: string): number[] =>
+  running()
+    .filter((p) => p.path.toLowerCase().startsWith(dir.toLowerCase()))
+    .map((p) => p.pid)
 
 const until = async (what: string, done: () => boolean, ms: number): Promise<void> => {
   const deadline = Date.now() + ms
@@ -114,7 +134,10 @@ test("install, update from inside the app, uninstall", async () => {
   expect(existsSync(installer)).toBe(true)
   expect(existsSync(join(out(TO), `Panelyth-${TO}-win-x64.exe`))).toBe(true)
 
-  const scratch = mkdtempSync(join(tmpdir(), "panelyth-update-"))
+  // The temp folder by its long name. A runner's TEMP is an 8.3 path (C:\Users\RUNNER~1\…);
+  // the installer starts the updated app through its Start Menu shortcut, which holds the
+  // long path, and that is the path the process then reports (runningFrom).
+  const scratch = mkdtempSync(join(realpathSync.native(tmpdir()), "panelyth-update-"))
   const installDir = join(scratch, "app")
   const exe = join(installDir, "Panelyth.exe")
   const uninstaller = join(installDir, "Uninstall Panelyth.exe")
@@ -159,7 +182,16 @@ test("install, update from inside the app, uninstall", async () => {
     const closed = new Promise<void>((resolve) => app.once("close", () => resolve()))
     await page.getByTestId("update-install").click()
     await closed
-    await until("the updated app to start", () => runningFrom(installDir).length > 0, 3 * 60_000)
+    await until(
+      "the updated app to start",
+      () => runningFrom(installDir).length > 0,
+      3 * 60_000,
+    ).catch((error: Error) => {
+      // What is running instead says whether the installer started nothing or something else.
+      throw new Error(
+        `${error.message} from ${installDir}; running Panelyth.exe: ${JSON.stringify(running())}`,
+      )
+    })
     // Closed as a user closes it (the window is asked to close), so it shuts down in
     // order; forced only if it does not.
     for (const pid of runningFrom(installDir)) spawnSync("taskkill", ["/PID", String(pid)])

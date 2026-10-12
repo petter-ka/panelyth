@@ -185,6 +185,10 @@ Smaller:
 - Notes of a version are cut at 8,000 characters; the release page has the rest.
 - `pnpm test:update` starts the updated app once with the account's normal profile (the installer starts it, outside
   the test's environment); the test closes it.
+- `pnpm test:update` on the release runner (2026-10-12): it timed out waiting for the updated app. The runner's TEMP
+  is an 8.3 path (`C:\Users\RUNNER~1\…`), the installer starts the app through its Start Menu shortcut, and the
+  process then reports the long path, which the test did not match. The test now installs under the long name of
+  the temp folder and names the running `Panelyth.exe` processes when it times out. Not yet run on the runner again.
 
 ## Exit checklist
 
