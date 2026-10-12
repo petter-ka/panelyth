@@ -1,51 +1,92 @@
-# Panelyth — Product Family
+# Panelyth
 
-Fast, local-first desktop apps for Windows, macOS and Linux, built on one platform and hosted by one shell
-(ADR-0025, ADR-0031):
-
-- **Panelyth** — the photo and video viewer: a tile view that stays fluid in folders with hundreds of thousands of
-  images, a persistent preview cache, a focused viewer and local video playback.
-- **Panelyth Commander** (working title, planned) — a keyboard-first, dual-panel file manager in the style of Total
-  Commander: two folders side by side, background file operations, find, archives, compare and multi-rename.
-
-The two apps live in one window. A left rail switches between them, and the other app opens
-where you are: same folder, same file, same selection. Bookmarks, recent folders, appearance and the file clipboard
-are shared (`docs/shared/APP-SWITCHING.md`).
-
-## Screenshots
-
-The viewer: a folder as tiles, with the folder tree and the preview of the selected picture beside it.
+**A photo and video viewer and a keyboard-first, two-panel file manager, in one desktop app for Windows, macOS and
+Linux.** It is built for very large folders, runs entirely on your own computer, and needs no account.
 
 ![The Panelyth viewer showing a folder of photographs as tiles, with the folder tree and a preview on the left](../showcase/src/media/viewer-tiles.webp)
 
-The commander: two panels, here the Full view with marked files on the left and the Thumbnails view on the right.
+## Why
 
-![Panelyth Commander with two file panels and the function-key bar](../showcase/src/media/commander-panels.webp)
+Two-panel file managers are still one of the quickest ways to work with files, and Total Commander has set the
+standard for them for more than thirty years. Panelyth began with respect for that way of working and a wish to have
+it in an interface made for today's screens and folder sizes, next to a media browser good enough to be an app of its
+own.
+
+So Panelyth is two apps in one window:
+
+- the **Viewer** for looking at photos and videos;
+- the **Commander** for managing files with the keys many hands already know.
+
+A rail on the left, or Ctrl+Shift+M, switches between them. The other app opens in the folder you are in, and what
+you selected comes with you. Bookmarks, recent folders and appearance are shared.
+
+## The Viewer
+
+- **Tiles for very large folders.** Small, medium or large tiles that reflow with the window. Only what is on screen
+  is drawn, so a folder of 100,000 pictures scrolls like a folder of a hundred.
+- **A closer look.** Zoom and pan a picture, play local video, and step through the folder with the arrow keys or the
+  wheel. Thumbnails are cached, so a second visit to a folder is immediate.
+- **Search, sort and filter**, with favorites, ratings and tags, and bookmarks and recent folders beside the folder
+  tree.
+- **An image editor.** Crop and straighten, adjust light and color with levels and curves, add borders and
+  watermarks, retouch. A set of steps can be saved as a recipe and run over a whole folder.
 
 <p>
-  <img src="../showcase/src/media/viewer-photo.webp" width="49%" alt="A single photograph opened in the media window" />
-  <img src="../showcase/src/media/viewer-editor.webp" width="49%" alt="The image editor with the Lighting tool open beside a photograph" />
+  <img src="../showcase/src/media/viewer-photo.webp" width="32%" alt="A single photograph opened in the media window" />
+  <img src="../showcase/src/media/viewer-editor.webp" width="32%" alt="The image editor with the Lighting tool open beside a photograph" />
+  <img src="../showcase/src/media/viewer-light.webp" width="32%" alt="The viewer in the light theme with large tiles" />
 </p>
+
+## The Commander
+
+![Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar](../showcase/src/media/commander-panels.webp)
+
+- **Two panels, three views.** Full with sortable columns, Brief, and Thumbnails; tabs in each panel.
+- **The Total Commander keyboard.** Tab between the panels, F5 to copy, F6 to move, Insert to mark. Every shortcut can
+  be remapped.
+- **A queue for the heavy work.** Copy, move and delete run in the background with progress, pause and a dialog for
+  conflicts, while both panels stay usable.
+- **Find, compare, synchronize.** Find files by name, content, size, date or attributes; compare and synchronize two
+  folders; compare files line by line; create and verify checksums.
+- **Archives and servers as folders.** Enter zip and tar archives like folders, pack and unpack, and connect to FTP
+  and FTPS servers.
+- **And the rest of the toolbox:** a multi-rename tool with undo, a quick view of the file under the cursor, a lister
+  for text, hex, pictures and video, and a command line.
+
+![Panelyth Commander with two folders of files in the Full view, five files marked in the left panel](../showcase/src/media/commander-files.webp)
+
 <p>
-  <img src="../showcase/src/media/commander-quick-view.webp" width="49%" alt="The commander's quick view showing the picture under the cursor in the right panel" />
-  <img src="../showcase/src/media/viewer-light.webp" width="49%" alt="The viewer in the light theme with large tiles" />
+  <img src="../showcase/src/media/commander-find.webp" width="32%" alt="The Find files dialog on its Advanced tab, with a minimum size and a date range filled in" />
+  <img src="../showcase/src/media/commander-find-results.webp" width="32%" alt="The Find files dialog listing 32 results with their folders and sizes" />
+  <img src="../showcase/src/media/commander-quick-view.webp" width="32%" alt="The commander's quick view showing the picture under the cursor in the right panel" />
 </p>
 
-One picture in the media window and the image editor; the commander's quick view and the viewer in the light theme.
+The screenshots are taken from the app itself, on a library of generated pictures;
+[`showcase/README.md`](../showcase/README.md) says how to take them again.
 
-The screenshots are taken from the app itself, on a library of generated pictures, and are shared with the product
-page; `showcase/README.md` says how to take them again.
+## Download and status
 
-Both apps share the platform:
+Panelyth is in active development and the first public release is being prepared. Installers for Windows, macOS and
+Linux will be published on the [releases page](https://github.com/petter-ka/panelyth/releases), each with a checksum,
+and the app updates itself from Settings → About. [`docs/INSTALL.md`](INSTALL.md) covers installing, updating,
+where the app keeps its files and how to remove it.
 
-- Go sidecar for filesystem indexing, metadata, thumbnail generation, cache and file operations
-- React renderer inside Electron
-- Electron main process only for desktop lifecycle, secure IPC and native integrations
-- persistent preview cache on the user's OS cache drive
-- large-directory support through virtualization and index-backed paging
-- keyboard-first navigation
-- cross-platform packaging
-- performance treated as a first-class product requirement
+Where the work stands: both apps and the release pipeline are built and tested on Windows; the runs on macOS and
+Linux and the signed builds are still open. [`docs/DEVELOPMENT-STAGES.md`](DEVELOPMENT-STAGES.md) has the current
+state and [`docs/ROADMAP.md`](ROADMAP.md) the order of what comes next.
+
+## How it is built
+
+- **React and TypeScript** for both interfaces, virtualized so that the number of mounted tiles and rows follows the
+  window, not the folder.
+- **Electron** as one shell with one window; each app is a view of its own with only the permissions it needs.
+- **A Go sidecar** for everything heavy: the folder index (SQLite), thumbnails and previews, the cache and file
+  operations.
+- **Local only.** No web backend and no cloud service; the preview cache lives in the system's cache folder, never
+  beside your pictures.
+
+Performance is a requirement here, with budgets that are measured and recorded
+([`docs/shared/PERFORMANCE.md`](shared/PERFORMANCE.md)). The rest of this page is for people working on the code.
 
 ## Development
 

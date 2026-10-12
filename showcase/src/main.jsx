@@ -1,9 +1,9 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
 import "./styles.css"
-import heroMp4 from "./media/hero.mp4"
-import heroPoster from "./media/hero-poster.jpg"
-import heroWebm from "./media/hero.webm"
+import shotFiles from "./media/commander-files.webp"
+import shotFindResults from "./media/commander-find-results.webp"
+import shotFind from "./media/commander-find.webp"
 import shotCommander from "./media/commander-panels.webp"
 import shotQuickView from "./media/commander-quick-view.webp"
 import shotEditor from "./media/viewer-editor.webp"
@@ -17,14 +17,14 @@ const RELEASES = `${GITHUB}/releases`
 const LATEST = `${RELEASES}/latest`
 const INSTALL_GUIDE = `${GITHUB}/blob/main/docs/INSTALL.md`
 
-/** The window's content size the screenshots and the video were taken at. */
+/** The window's content size the screenshots were taken at. */
 const FRAME = { width: 2160, height: 1350 }
 
-const Arrow = ({ diagonal = false, down = false }) => (
+const Arrow = ({ diagonal = false, down = false, back = false }) => (
   <svg
     aria-hidden="true"
     viewBox="0 0 20 20"
-    className={`arrow${diagonal ? " arrow-diagonal" : ""}${down ? " arrow-down" : ""}`}
+    className={`arrow${diagonal ? " arrow-diagonal" : ""}${down ? " arrow-down" : ""}${back ? " arrow-back" : ""}`}
   >
     <path d={diagonal ? "M5 15 15 5M6 5h9v9" : "M3.5 10h12M10 4.5l5.5 5.5-5.5 5.5"} />
   </svg>
@@ -153,8 +153,15 @@ const shots = [
     src: shotCommander,
     label: "COMMANDER / PANELS",
     title: "Two folders, side by side.",
-    alt: "Panelyth Commander with two file panels in the Full view and the function-key bar",
+    alt: "Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar",
     wide: true,
+  },
+  {
+    src: shotFiles,
+    label: "COMMANDER / TWO PANELS",
+    title: "Files on the left, files on the right, marks in between.",
+    alt: "Panelyth Commander with two folders of files in the Full view, five files marked in the left panel",
+    span: true,
   },
   {
     src: shotQuickView,
@@ -163,12 +170,36 @@ const shots = [
     alt: "Panelyth Commander showing a quick view of a picture in the right panel",
   },
   {
+    src: shotFind,
+    label: "COMMANDER / FIND FILES",
+    title: "Search by size, date and attributes.",
+    alt: "The Find files dialog of Panelyth Commander on its Advanced tab, with a minimum size and a date range filled in",
+  },
+  {
+    src: shotFindResults,
+    label: "COMMANDER / SEARCH RESULTS",
+    title: "Go to a result, or feed them all to a panel.",
+    alt: "The Find files dialog listing 32 results with their folders and sizes",
+  },
+  {
     src: shotLight,
     label: "VIEWER / LIGHT THEME",
     title: "Large tiles, in the light theme.",
     alt: "The Panelyth viewer in the light theme, showing a folder of photographs as large tiles",
   },
 ]
+
+/** The hero's slides: the viewer and the commander in turn. */
+const heroSlides = [
+  shotTiles,
+  shotCommander,
+  shotPhoto,
+  shotFiles,
+  shotEditor,
+  shotFindResults,
+].map((src) => shots.find((shot) => shot.src === src))
+/** How long the hero shows one slide. */
+const SLIDE_MS = 5000
 
 /** The two wide shots head the app sections; the gallery shows the rest. */
 const gallery = shots.filter((shot) => !shot.wide)
@@ -261,54 +292,93 @@ function AppWindow({ title, children }) {
   )
 }
 
-function HeroVideo() {
-  const video = useRef(null)
+function HeroSlideshow() {
+  const [index, setIndex] = useState(0)
   const [playing, setPlaying] = useState(true)
+  // The slides wait while the pointer or the keyboard focus is on them.
+  const [held, setHeld] = useState(false)
+  const count = heroSlides.length
+  const slide = heroSlides[index]
 
   useEffect(() => {
-    // People who asked for less motion get the still frame and a play button.
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      video.current?.pause()
-      setPlaying(false)
-    }
+    // People who asked for less motion change the slides themselves.
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) setPlaying(false)
   }, [])
 
-  const toggle = () => {
-    const el = video.current
-    if (!el) return
-    if (el.paused) void el.play()
-    else el.pause()
-  }
+  useEffect(() => {
+    if (!playing || held) return undefined
+    const timer = setTimeout(() => setIndex((i) => (i + 1) % count), SLIDE_MS)
+    return () => clearTimeout(timer)
+  }, [index, playing, held, count])
+
+  const step = (by) => setIndex((i) => (i + by + count) % count)
 
   return (
-    <div className="hero-visual">
-      <AppWindow title="Panelyth">
-        <video
-          ref={video}
-          className="hero-video"
-          width={FRAME.width}
-          height={FRAME.height}
-          poster={heroPoster}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          onPlay={() => setPlaying(true)}
-          onPause={() => setPlaying(false)}
-          aria-label="A recording of Panelyth: browsing a folder of photographs in the viewer, opening a picture, then switching to the two-panel commander in the same window"
-        >
-          <source src={heroWebm} type="video/webm" />
-          <source src={heroMp4} type="video/mp4" />
-        </video>
+    <section
+      className="hero-visual"
+      aria-roledescription="carousel"
+      aria-label="Screenshots of the Panelyth viewer and commander"
+      onMouseEnter={() => setHeld(true)}
+      onMouseLeave={() => setHeld(false)}
+      onFocus={() => setHeld(true)}
+      onBlur={() => setHeld(false)}
+    >
+      <AppWindow title={`Panelyth — ${slide.label.startsWith("VIEWER") ? "Viewer" : "Commander"}`}>
+        <div className="hero-slides" aria-live={playing ? "off" : "polite"}>
+          {heroSlides.map((shot, i) => (
+            <img
+              key={shot.label}
+              className={i === index ? "hero-slide is-current" : "hero-slide"}
+              src={shot.src}
+              alt={i === index ? shot.alt : ""}
+              aria-hidden={i !== index}
+              width={FRAME.width}
+              height={FRAME.height}
+              loading={i === 0 ? "eager" : "lazy"}
+              decoding="async"
+            />
+          ))}
+        </div>
       </AppWindow>
       <div className="visual-caption">
-        <span>Recorded in the app, on a demo library</span>
-        <button type="button" onClick={toggle}>
-          {playing ? "Pause" : "Play"}
-        </button>
+        <span className="slide-caption">
+          <b>{slide.label}</b> {slide.title}
+        </span>
+        <div className="slide-controls">
+          <button
+            type="button"
+            className="slide-step"
+            aria-label="Previous slide"
+            onClick={() => step(-1)}
+          >
+            <Arrow back />
+          </button>
+          <div className="slide-dots">
+            {heroSlides.map((shot, i) => (
+              <button
+                key={shot.label}
+                type="button"
+                className={i === index ? "slide-dot is-current" : "slide-dot"}
+                aria-label={`Slide ${i + 1} of ${count}: ${shot.title}`}
+                aria-current={i === index}
+                onClick={() => setIndex(i)}
+              />
+            ))}
+          </div>
+          <button
+            type="button"
+            className="slide-step"
+            aria-label="Next slide"
+            onClick={() => step(1)}
+          >
+            <Arrow />
+          </button>
+          <button type="button" className="slide-toggle" onClick={() => setPlaying(!playing)}>
+            {playing ? "Pause" : "Play"}
+          </button>
+        </div>
       </div>
-    </div>
+    </section>
   )
 }
 
@@ -507,7 +577,7 @@ function App() {
               <b>LOCAL FIRST · NO ACCOUNT</b>
             </div>
           </div>
-          <HeroVideo />
+          <HeroSlideshow />
         </section>
 
         <section className="why-section" id="why">
@@ -668,7 +738,10 @@ function App() {
           </div>
           <div className="shot-grid">
             {gallery.map((shot) => (
-              <figure className="shot-card" key={shot.label}>
+              <figure
+                className={shot.span ? "shot-card shot-card-wide" : "shot-card"}
+                key={shot.label}
+              >
                 <Screenshot shot={shot} />
                 <figcaption>
                   <span>{shot.label}</span>

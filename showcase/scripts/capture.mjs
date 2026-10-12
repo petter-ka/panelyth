@@ -67,7 +67,13 @@ async function treeAtDemoHome(viewer) {
   })
 }
 
+/** `--only=a,b` keeps every other picture as it is (the steps still run: each one sets up the next). */
+const only = process.argv
+  .filter((arg) => arg.startsWith("--only="))
+  .flatMap((arg) => arg.slice(7).split(","))
+
 async function still(page, name, pointer = { x: VIEW.width - 6, y: VIEW.height / 2 }) {
+  if (only.length > 0 && !only.includes(name)) return
   // Park the pointer where it raises no tooltip and no hover state.
   await page.mouse.move(pointer.x, pointer.y)
   await sleep(700)
@@ -171,6 +177,34 @@ async function stills(demo) {
     await commander.keyboard.press("Control+Q")
     await sleep(1800)
     await still(commander, "commander-quick-view", { x: VIEW.width / 2, y: 26 })
+    await commander.keyboard.press("Control+Q")
+
+    // Two folders of files side by side, both in the Full view.
+    await goTo(commander, "right", at("Pictures", "Sahara"))
+    await commander.getByTestId("grid-right").focus()
+    await commander.keyboard.press("Control+F2")
+    await goTo(commander, "left", at("Pictures", "Iceland"))
+    await row(commander, "left", "IMG_2212").click()
+    for (let i = 0; i < 5; i++) await commander.keyboard.press("Insert")
+    for (let i = 0; i < 2; i++) await commander.keyboard.press("ArrowDown")
+    await sleep(600)
+    await still(commander, "commander-files", { x: VIEW.width / 2, y: 26 })
+
+    // Find files: the criteria of the Advanced tab, then the results.
+    await goTo(commander, "left", at("Pictures"))
+    await commander.getByTestId("grid-left").focus()
+    await commander.keyboard.press("Alt+F7")
+    const find = commander.getByTestId("find-dialog")
+    await find.getByLabel("Search for").fill("*.jpg;*.mp4")
+    await find.getByRole("tab", { name: "Advanced" }).click()
+    await find.getByLabel("Size at least").fill("400")
+    await find.getByLabel("Modified from").fill("2026-06-01")
+    await find.getByLabel("Modified until").fill("2026-09-30")
+    await still(commander, "commander-find", { x: VIEW.width / 2, y: 26 })
+    await find.getByRole("button", { name: "Start search" }).click()
+    await commander.getByTestId("find-status").filter({ hasText: "Done" }).waitFor()
+    await sleep(600)
+    await still(commander, "commander-find-results", { x: VIEW.width / 2, y: 26 })
   } finally {
     await app.close().catch(() => {})
   }
@@ -516,7 +550,7 @@ async function video(demo) {
   }
 }
 
-const jobs = process.argv.slice(2)
+const jobs = process.argv.slice(2).filter((arg) => !arg.startsWith("--"))
 const wanted = (job) => jobs.length === 0 || jobs.includes(job)
 mkdirSync(media, { recursive: true })
 mkdirSync(work, { recursive: true })
