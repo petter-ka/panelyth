@@ -1,7 +1,9 @@
 # Panelyth
 
-**A photo and video viewer and a keyboard-first, two-panel file manager, in one desktop app for Windows, macOS and
-Linux.** It is built for very large folders, runs entirely on your own computer, and needs no account.
+**A keyboard-first, two-panel file manager with a photo and video viewer beside it, in one desktop app for Windows,
+macOS and Linux.** It is built for very large folders, runs entirely on your own computer, and needs no account.
+
+![Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar](../showcase/src/media/commander-panels.webp)
 
 ![The Panelyth viewer showing a folder of photographs as tiles, with the folder tree and a preview on the left](../showcase/src/media/viewer-tiles.webp)
 
@@ -14,32 +16,13 @@ own.
 
 So Panelyth is two apps in one window:
 
-- the **Viewer** for looking at photos and videos;
-- the **Commander** for managing files with the keys many hands already know.
+- the **Commander** for managing files with the keys many hands already know;
+- the **Viewer** for looking at photos and videos.
 
 A rail on the left, or Ctrl+Shift+M, switches between them. The other app opens in the folder you are in, and what
 you selected comes with you. Bookmarks, recent folders and appearance are shared.
 
-## The Viewer
-
-- **Tiles for very large folders.** Small, medium or large tiles that reflow with the window. Only what is on screen
-  is drawn, so a folder of 100,000 pictures scrolls like a folder of a hundred.
-- **A closer look.** Zoom and pan a picture, play local video, and step through the folder with the arrow keys or the
-  wheel. Thumbnails are cached, so a second visit to a folder is immediate.
-- **Search, sort and filter**, with favorites, ratings and tags, and bookmarks and recent folders beside the folder
-  tree.
-- **An image editor.** Crop and straighten, adjust light and color with levels and curves, add borders and
-  watermarks, retouch. A set of steps can be saved as a recipe and run over a whole folder.
-
-<p>
-  <img src="../showcase/src/media/viewer-photo.webp" width="32%" alt="A single photograph opened in the media window" />
-  <img src="../showcase/src/media/viewer-editor.webp" width="32%" alt="The image editor with the Lighting tool open beside a photograph" />
-  <img src="../showcase/src/media/viewer-light.webp" width="32%" alt="The viewer in the light theme with large tiles" />
-</p>
-
 ## The Commander
-
-![Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar](../showcase/src/media/commander-panels.webp)
 
 - **Two panels, three views.** Full with sortable columns, Brief, and Thumbnails; tabs in each panel.
 - **The Total Commander keyboard.** Tab between the panels, F5 to copy, F6 to move, Insert to mark. Every shortcut can
@@ -61,6 +44,23 @@ you selected comes with you. Bookmarks, recent folders and appearance are shared
   <img src="../showcase/src/media/commander-quick-view.webp" width="32%" alt="The commander's quick view showing the picture under the cursor in the right panel" />
 </p>
 
+## The Viewer
+
+- **Tiles for very large folders.** Small, medium or large tiles that reflow with the window. Only what is on screen
+  is drawn, so a folder of 100,000 pictures scrolls like a folder of a hundred.
+- **A closer look.** Zoom and pan a picture, play local video, and step through the folder with the arrow keys or the
+  wheel. Thumbnails are cached, so a second visit to a folder is immediate.
+- **Search, sort and filter**, with favorites, ratings and tags, and bookmarks and recent folders beside the folder
+  tree.
+- **An image editor.** Crop and straighten, adjust light and color with levels and curves, add borders and
+  watermarks, retouch. A set of steps can be saved as a recipe and run over a whole folder.
+
+<p>
+  <img src="../showcase/src/media/viewer-photo.webp" width="32%" alt="A single photograph opened in the media window" />
+  <img src="../showcase/src/media/viewer-editor.webp" width="32%" alt="The image editor with the Lighting tool open beside a photograph" />
+  <img src="../showcase/src/media/viewer-light.webp" width="32%" alt="The viewer in the light theme with large tiles" />
+</p>
+
 The screenshots are taken from the app itself, on a library of generated pictures;
 [`showcase/README.md`](../showcase/README.md) says how to take them again.
 
@@ -77,7 +77,7 @@ state and [`docs/ROADMAP.md`](ROADMAP.md) the order of what comes next.
 
 ## How it is built
 
-- **React and TypeScript** for both interfaces, virtualized so that the number of mounted tiles and rows follows the
+- **React and TypeScript** for both interfaces, virtualized so that the number of mounted rows and tiles follows the
   window, not the folder.
 - **Electron** as one shell with one window; each app is a view of its own with only the permissions it needs.
 - **A Go sidecar** for everything heavy: the folder index (SQLite), thumbnails and previews, the cache and file
