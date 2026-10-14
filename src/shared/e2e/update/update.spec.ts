@@ -12,7 +12,7 @@ import { createServer, type Server } from "node:http"
 import { tmpdir } from "node:os"
 import { join, normalize } from "node:path"
 import { _electron, expect, test } from "@playwright/test"
-import { desktopDir, repoRoot, waitForReady } from "../launch"
+import { desktopDir, openSettingsWindow, repoRoot, waitForReady } from "../launch"
 
 // Stage P06 (ADR-0038): the product is installed, updates itself from inside
 // the app and is removed, with the real installer and the real update
@@ -164,23 +164,24 @@ test("install, update from inside the app, uninstall", async () => {
     await waitForReady(page)
     expect(await app.evaluate(({ app: a }) => a.getVersion())).toBe(FROM)
 
-    // Settings → About: this is an installed, updating build.
-    await page.getByTestId("app-settings").click()
-    await page.getByRole("tab", { name: "About" }).click()
-    await expect(page.getByTestId("about-version")).toHaveText(`Version ${FROM}`)
-    const status = page.getByTestId("update-status")
+    // Settings → About, in the settings window (ADR-0039): this is an installed, updating build.
+    const settings = await openSettingsWindow(app, page)
+    await settings.getByRole("tab", { name: "About" }).click()
+    await expect(settings.getByTestId("about-version")).toHaveText(`Version ${FROM}`)
+    const status = settings.getByTestId("update-status")
     // Asked for by hand, or already found by the automatic check 15 s after start.
-    const check = page.getByTestId("update-check")
+    const check = settings.getByTestId("update-check")
     if (await check.isVisible()) await check.click()
     await expect(status).toHaveText(`Version ${TO} is available.`, { timeout: 60_000 })
-    await expect(page.getByTestId("update-notes")).toContainText(NOTES)
+    await expect(settings.getByTestId("update-notes")).toContainText(NOTES)
 
-    await page.getByTestId("update-download").click()
+    await settings.getByTestId("update-download").click()
     await expect(status).toHaveAttribute("data-phase", "ready", { timeout: 5 * 60_000 })
 
-    // Restart to update: the app quits, the installer replaces it and starts the new version.
+    // Restart to update: the app quits (the settings window with it), the installer
+    // replaces it and starts the new version.
     const closed = new Promise<void>((resolve) => app.once("close", () => resolve()))
-    await page.getByTestId("update-install").click()
+    await settings.getByTestId("update-install").click()
     await closed
     await until(
       "the updated app to start",
