@@ -1,9 +1,9 @@
 import { useRef, useState } from "react"
 import { formatChord } from "@panelyth/renderer-core"
-import { Tooltip } from "@panelyth/ui"
+import { CloseIcon, Tooltip } from "@panelyth/ui"
 import { useKeymapStore } from "../features/keymap"
 import { useListingStore } from "../features/listing"
-import { setActivePanel, type Side } from "../features/panels"
+import { setActivePanel, usePanelsStore, type Side } from "../features/panels"
 import { useSettingsStore } from "../features/settings"
 import {
   activateTab,
@@ -37,8 +37,35 @@ import { t } from "@panelyth/i18n"
  * setting hides it while a panel has one tab) and ends with a "+" button;
  * a double-click renames a tab.
  */
+/** A small closed padlock, drawn like the chrome icons (it replaced an emoji). */
+const LockGlyph = () => (
+  <svg
+    width="10"
+    height="10"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.6"
+    strokeLinecap="round"
+    aria-hidden="true"
+  >
+    <rect x="3" y="7" width="10" height="7" rx="1.5" />
+    <path d="M5.5 7V5a2.5 2.5 0 0 1 5 0v2" />
+  </svg>
+)
+
+// Tabs as soft pills: the selected one raised with a hairline ring, the
+// others plain until hovered. In the active panel the selected tab carries a
+// short glowing accent underline, like the panel's light line.
+const tabPill =
+  "group/tab relative flex h-6 max-w-40 min-w-0 shrink-0 cursor-default items-center gap-1.5 rounded-md px-2.5 font-medium"
+const selectedPill =
+  "bg-raised text-text shadow-[0_1px_2px_rgb(0_0_0/0.18)] ring-1 ring-border ring-inset"
+const idlePill = "text-muted hover:bg-raised/60 hover:text-text"
+
 export function TabBar({ side }: { side: Side }) {
   const tabs = useTabsStore((s) => s[side].tabs)
+  const panelActive = usePanelsStore((s) => s.active === side)
   const active = useTabsStore((s) => s[side].active)
   const liveName = useListingStore((s) => s[side].name)
   // A tab on a connection is called by the connection (Stage C10.5).
@@ -55,12 +82,13 @@ export function TabBar({ side }: { side: Side }) {
   return (
     <div
       data-testid={`tabs-${side}`}
-      className="relative flex h-7 shrink-0 items-end gap-px border-b border-border bg-chrome px-1 text-2xs"
+      className="relative flex h-8 shrink-0 items-center gap-1 border-b border-border bg-chrome px-1.5 text-2xs"
     >
       <div
         role="tablist"
         aria-label={side === "left" ? t("Left panel tabs") : t("Right panel tabs")}
-        className="flex min-w-0 items-end gap-px overflow-x-auto"
+        // Many tabs scroll sideways (wheel, keys) without a scrollbar, like a browser's tab strip.
+        className="flex min-w-0 items-center gap-1 overflow-x-auto overflow-y-hidden [scrollbar-width:none]"
       >
         {tabs.map((tab, index) => {
           const selected = index === active
@@ -104,11 +132,17 @@ export function TabBar({ side }: { side: Side }) {
                   e.preventDefault()
                   setMenu(index)
                 }}
-                className={`group/tab flex h-6 max-w-40 min-w-0 shrink-0 cursor-default items-center gap-1 rounded-t border border-b-0 px-2 font-medium ${selected ? "border-border bg-canvas text-text" : "border-transparent text-muted hover:bg-raised hover:text-text"}`}
+                className={`${tabPill} ${selected ? selectedPill : idlePill}`}
               >
+                {selected && panelActive && (
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-x-2.5 bottom-0 h-0.5 rounded-full bg-accent shadow-[0_0_6px_color-mix(in_srgb,var(--accent)_60%,transparent)]"
+                  />
+                )}
                 {tab.locked && (
-                  <span aria-label={t("Locked")} className="text-muted">
-                    🔒︎
+                  <span role="img" aria-label={t("Locked")} className="flex text-muted">
+                    <LockGlyph />
                   </span>
                 )}
                 {renaming === tab.id ? (
@@ -134,9 +168,9 @@ export function TabBar({ side }: { side: Side }) {
                       e.stopPropagation()
                       void closeTab(side, index)
                     }}
-                    className={`ml-0.5 size-4 place-items-center rounded text-muted hover:bg-raised hover:text-text ${selected ? "grid" : "hidden group-hover/tab:grid"}`}
+                    className={`-mr-1 size-4 place-items-center rounded-full text-muted hover:bg-border hover:text-text ${selected ? "grid" : "hidden group-hover/tab:grid"}`}
                   >
-                    ×
+                    <CloseIcon size={10} />
                   </button>
                 )}
               </div>
@@ -153,16 +187,27 @@ export function TabBar({ side }: { side: Side }) {
           disabled={full}
           onMouseDown={() => setActivePanel(side)}
           onClick={() => newTab(side)}
-          className="mb-0.5 grid size-5 shrink-0 place-items-center rounded text-sm leading-none text-muted hover:bg-raised hover:text-text disabled:opacity-40"
+          className="grid size-6 shrink-0 place-items-center rounded-md text-muted hover:bg-raised hover:text-text disabled:opacity-40"
         >
-          +
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.6"
+            strokeLinecap="round"
+            aria-hidden="true"
+          >
+            <path d="M8 3v10M3 8h10" />
+          </svg>
         </button>
       </Tooltip>
       {menu !== null && tabs[menu] && (
         <PopupMenu
           label={t("Tab")}
           testId={`tab-menu-${side}`}
-          className="top-7 left-2"
+          className="top-8 left-2"
           onClose={() => setMenu(null)}
           entries={[
             {

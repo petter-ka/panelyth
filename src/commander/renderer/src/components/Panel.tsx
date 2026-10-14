@@ -186,8 +186,17 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
       data-active={active}
       onMouseDown={onActivate}
       onKeyDown={onKeyDown}
-      className={`flex h-full min-w-0 flex-col border-t-2 ${active ? "border-accent" : "border-transparent"}`}
+      className={`relative flex h-full min-w-0 flex-col ${active ? "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]" : ""}`}
     >
+      {active && (
+        // The active panel: a light line along the top that fades out at both
+        // ends, a soft glow falling from it and a hairline frame. Overlays
+        // only, so switching panels moves nothing.
+        <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 z-20">
+          <span className="block h-0.5 bg-linear-to-r from-transparent via-accent to-transparent" />
+          <span className="block h-8 bg-linear-to-b from-[color-mix(in_srgb,var(--accent)_13%,transparent)] to-transparent" />
+        </span>
+      )}
       <DriveBar side={side} />
       <TabBar side={side} />
       <PathBar ref={pathBar} side={side} active={active} onDone={() => list.current?.focus()} />
