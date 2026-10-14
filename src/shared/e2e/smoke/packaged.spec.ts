@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { _electron, expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../fixtures"
-import { desktopDir, isAlive, waitForExit, waitForReady } from "../launch"
+import { desktopDir, isAlive, openSettingsWindow, waitForExit, waitForReady } from "../launch"
 
 // Stage P04: the packaged product launches, opens a folder, previews an
 // image, switches to the commander and back, lists, copies a file and quits
@@ -101,11 +101,15 @@ test("packaged: one version, our menu, the update feed, notices and media tools"
       expect(existsSync(feed), "the package has no update feed (app-update.yml)").toBe(true)
     }
 
-    // Settings → About, through the UI.
-    await page.getByTestId("app-settings").click()
-    await page.getByRole("tab", { name: "About" }).click()
-    await expect(page.getByTestId("about-version")).toHaveText(`Version ${version}`)
-    await expect(page.getByTestId("about-details")).toContainText(`Sidecar ${version}`)
+    // Settings → About, through the UI: Settings is a window of its own (ADR-0039),
+    // so this also proves the package carries its page.
+    const settings = await openSettingsWindow(app, page)
+    await settings.getByRole("tab", { name: "About" }).click()
+    await expect(settings.getByTestId("about-version")).toHaveText(`Version ${version}`)
+    await expect(settings.getByTestId("about-details")).toContainText(`Sidecar ${version}`)
+    // Esc closes the window on keydown: there is no page left for a keyup.
+    await settings.keyboard.down("Escape")
+    await expect.poll(() => app.windows().includes(settings)).toBe(false)
 
     // The licence notices are in the package and name what it holds.
     const notices = readFileSync(join(resources, "THIRD-PARTY-NOTICES.txt"), "utf8")
