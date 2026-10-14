@@ -799,6 +799,8 @@ const messages: Messages = {
   "Hide the inside of the shape instead.": "Nascondi invece l'interno della forma.",
   "Hide the panel": "Nascondi il pannello",
   "Hide {column}": "Nascondi {column}",
+  "Hide the picture header": "Nascondi l'intestazione dell'immagine",
+  "Hide the video controls": "Nascondi i controlli del video",
   "High quality": "Alta qualità",
   "Highest first": "Prima le più alte",
   Highlights: "Luci",
@@ -1136,6 +1138,8 @@ const messages: Messages = {
   "Oil painting": "Pittura a olio",
   "Old name": "Vecchio nome",
   "Oldest first": "Prima i più vecchi",
+  "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
+    "Su un'immagine, l'intestazione e il puntatore si nascondono dopo 3 secondi senza muovere il mouse.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Una volta salvato, ciò che è oscurato non può essere recuperato dal file salvato. L'originale resta com'è, a meno che non lo sostituisca.",
   "One beside each file ({example})": "Uno accanto a ogni file ({example})",
@@ -1563,7 +1567,6 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Mostra tutte le operazioni (Ctrl+J)",
   "Show columns (drag to reorder)": "Mostra colonne (trascina per riordinare)",
   "Show file names under tiles": "Mostra i nomi dei file sotto i riquadri",
-  "Show hidden and system files": "Mostra file nascosti e di sistema",
   "Show hidden files": "Mostra file nascosti",
   "Show in file manager": "Mostra nel gestore file",
   "Show in folder": "Mostra nella cartella",
@@ -1575,6 +1578,7 @@ const messages: Messages = {
   "Show or hide the function-key bar": "Mostra o nascondi la barra dei tasti funzione",
   "Show or hide the toolbar": "Mostra o nascondi la barra degli strumenti",
   "Show parent folders": "Mostra cartelle superiori",
+  "Show system files too": "Mostra anche i file di sistema",
   "Show the Adjust tools": "Mostra gli strumenti di regolazione",
   "Show the Color tools": "Mostra gli strumenti colore",
   "Show the Detail tools": "Mostra gli strumenti di dettaglio",
@@ -2069,6 +2073,8 @@ const messages: Messages = {
   "When a name is taken": "Quando un nome è già usato",
   "When switching apps, carry over": "Quando cambi app, porta con te",
   "Where the results go": "Dove vanno i risultati",
+  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "Durante la riproduzione di un video, le barre e il puntatore si nascondono dopo 3 secondi senza muovere il mouse.",
   White: "Bianco",
   "White balance": "Bilanciamento del bianco",
   "White point": "Punto di bianco",

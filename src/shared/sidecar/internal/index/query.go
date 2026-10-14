@@ -101,6 +101,9 @@ const (
 // hiddenBits are the attrs that hide an entry (fsx.AttrHidden|AttrSystem).
 const hiddenBits = 1 | 2
 
+// systemBit is fsx.AttrSystem: kept out by HideSystem.
+const systemBit = 2
+
 // Descriptor selects and orders entries for a query session (ADR-0017).
 type Descriptor struct {
 	DirID     int64
@@ -109,6 +112,10 @@ type Descriptor struct {
 	Scope Scope
 	// ShowHidden includes hidden and system entries (ScopeAll only).
 	ShowHidden bool
+	// HideSystem keeps system entries out even with ShowHidden: hidden ones
+	// (dot-names, the hidden attribute) are listed, system ones are not. An
+	// entry with both attributes is a system entry.
+	HideSystem bool
 	// NameMask filters files (not folders) by wildcard patterns ("*" and
 	// "?"), separated by ";" or spaces; patterns after "|" exclude. Case
 	// folded. Empty means all files.
@@ -252,6 +259,8 @@ func scope(d Descriptor, dirKey string, withFilters bool, hidden []hiddenRange) 
 		args = append(args, d.DirID)
 	}
 	switch {
+	case d.Scope == ScopeAll && d.ShowHidden && d.HideSystem:
+		where = append(where, fmt.Sprintf("(attrs & %d) = 0", systemBit))
 	case d.Scope == ScopeAll && d.ShowHidden:
 	case d.Scope == ScopeAll:
 		where = append(where, fmt.Sprintf("(attrs & %d) = 0", hiddenBits))

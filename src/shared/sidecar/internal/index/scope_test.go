@@ -79,6 +79,12 @@ func TestScopeAllAndShowHidden(t *testing.T) {
 	if len(got) != 11 || got[0] != ".git" || got[1] != "Albums" {
 		t.Fatalf("show hidden: folders first, all 11 entries: %q", got)
 	}
+	// Hidden ones shown, system ones not: the commander's default.
+	got = names(t, s, Descriptor{DirID: root.ID, Scope: ScopeAll, ShowHidden: true, HideSystem: true, Sort: byName}, root.Key)
+	if len(got) != 10 || !slices.Contains(got, ".git") || !slices.Contains(got, ".secret.jpg") ||
+		slices.Contains(got, "pagefile.sys") {
+		t.Fatalf("hidden without system: %q", got)
+	}
 	f, err := s.Facets(ctx, Descriptor{DirID: root.ID, Scope: ScopeAll}, root.Key)
 	if err != nil {
 		t.Fatal(err)

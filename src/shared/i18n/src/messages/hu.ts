@@ -800,6 +800,8 @@ const messages: Messages = {
   "Hide the inside of the shape instead.": "Inkább az alakzat belsejét rejti el.",
   "Hide the panel": "Panel elrejtése",
   "Hide {column}": "{column} elrejtése",
+  "Hide the picture header": "A kép fejlécének elrejtése",
+  "Hide the video controls": "Videóvezérlők elrejtése",
   "High quality": "Jó minőség",
   "Highest first": "Legmagasabb elöl",
   Highlights: "Csúcsfények",
@@ -1136,6 +1138,8 @@ const messages: Messages = {
   "Oil painting": "Olajfestmény",
   "Old name": "Régi név",
   "Oldest first": "Legrégebbi elöl",
+  "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
+    "Képnél a fejléc és az egérmutató eltűnik, ha 3 másodpercig nem mozdul az egér.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Mentés után a kitakart rész nem hozható vissza a mentett fájlból. Az eredeti változatlan marad, hacsak nem cseréli le.",
   "One beside each file ({example})": "Egy-egy minden fájl mellé ({example})",
@@ -1561,7 +1565,6 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Az összes művelet megjelenítése (Ctrl+J)",
   "Show columns (drag to reorder)": "Oszlopok megjelenítése (húzással átrendezhető)",
   "Show file names under tiles": "Fájlnevek megjelenítése a csempék alatt",
-  "Show hidden and system files": "Rejtett és rendszerfájlok megjelenítése",
   "Show hidden files": "Rejtett fájlok megjelenítése",
   "Show in file manager": "Megjelenítés a fájlkezelőben",
   "Show in folder": "Megjelenítés a mappában",
@@ -1573,6 +1576,7 @@ const messages: Messages = {
   "Show or hide the function-key bar": "Funkcióbillentyű-sáv megjelenítése vagy elrejtése",
   "Show or hide the toolbar": "Eszköztár megjelenítése vagy elrejtése",
   "Show parent folders": "Szülőmappák megjelenítése",
+  "Show system files too": "A rendszerfájlok megjelenítése is",
   "Show the Adjust tools": "A beállítóeszközök megjelenítése",
   "Show the Color tools": "A színeszközök megjelenítése",
   "Show the Detail tools": "A részleteszközök megjelenítése",
@@ -2060,6 +2064,8 @@ const messages: Messages = {
   "When a name is taken": "Ha a név foglalt",
   "When switching apps, carry over": "Alkalmazásváltáskor átvitele",
   "Where the results go": "Hová kerülnek az eredmények",
+  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "Videó lejátszása közben a sávok és az egérmutató eltűnnek, ha 3 másodpercig nem mozdul az egér.",
   White: "Fehér",
   "White balance": "Fehéregyensúly",
   "White point": "Fehérpont",

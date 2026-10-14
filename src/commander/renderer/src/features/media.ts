@@ -27,6 +27,8 @@ export function configureCommanderMedia(): void {
     settings: {
       read: async (key) => (await bridge.libraryNow()).settings[key],
       write: (key, value) => bridge.setSetting(key, value),
+      onChanged: (listener) =>
+        bridge.on("settings.changed", ({ key, value }) => listener(key, value)),
     },
   })
 }

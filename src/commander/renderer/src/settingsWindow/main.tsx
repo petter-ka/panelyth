@@ -1,9 +1,11 @@
 import { initLocale, LocaleBoundary } from "@panelyth/i18n"
+import { startVideoPrefsPersistence } from "@panelyth/media-ui"
 import { aboutPortOf } from "@panelyth/renderer-core"
 import { initInterfaceSize, initTheme, startSettingsWindowPage } from "@panelyth/ui"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { aboutApi, bridge } from "../bridge"
+import { configureCommanderMedia } from "../features/media"
 import { loadLayout } from "../features/panels"
 import { loadSettings } from "../features/settings"
 import { startSidecarMonitoring } from "../features/sidecar"
@@ -23,6 +25,9 @@ startSidecarMonitoring()
 void loadSettings().catch(() => undefined)
 void loadTools().catch(() => undefined)
 void loadLayout().catch(() => undefined)
+// Appearance → Video player edits the player preferences, through the media port.
+configureCommanderMedia()
+startVideoPrefsPersistence()
 const save = (key: string, value: unknown): void =>
   void bridge.setSetting(key, value).catch(() => undefined)
 startSettingsWindowPage({

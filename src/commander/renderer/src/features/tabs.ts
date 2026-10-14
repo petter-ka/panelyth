@@ -12,6 +12,7 @@ import {
   parkSession,
   patch,
   releaseRemote,
+  relistForSystemFiles,
   schedulePersist,
   setHidden,
   setRemoteHolders,
@@ -213,7 +214,7 @@ export function tabsDisconnected(remoteId: number): void {
 }
 
 /**
- * Settings → Show hidden and system files: every panel and tab follows at
+ * Settings → Show hidden files: every panel and tab follows at
  * once (Ctrl+H still switches one panel). A tab not shown drops its parked
  * session, which was opened the other way.
  */
@@ -228,6 +229,16 @@ export function showHiddenEverywhere(showHidden: boolean): void {
     setHidden(side, showHidden)
   }
   schedulePersist()
+}
+
+/** Settings → Show system files: every panel and tab lists with the new rule. */
+export function systemFilesChanged(): void {
+  relistForSystemFiles((side) => {
+    const t = get(side)
+    t.tabs.forEach((tab, i) => {
+      if (i !== t.active) dropParked(tab.id)
+    })
+  })
 }
 
 /** Shows a tab in its panel: its parked session if still open, else its folder again. */

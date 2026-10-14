@@ -1,6 +1,7 @@
 import { SettingsWindowPage, TooltipProvider } from "@panelyth/ui"
 import { bridge, canSwitchApps } from "../bridge"
 import { ViewerSettings } from "../components/SettingsDialog"
+import { FullScreenSettings } from "../features/media/mediaUi"
 import { useLibraryStore } from "../features/library/libraryStore"
 
 /** Closes the window; with "shortcuts" the viewer opens its shortcuts dialog behind it. */
@@ -17,6 +18,7 @@ export function SettingsWindowApp() {
         showGeneral={canSwitchApps()}
         settingsReady={settingsReady}
         appSettings={<ViewerSettings />}
+        fullScreenSettings={<FullScreenSettings />}
         onOpenShortcuts={() => close("shortcuts")}
         onClose={() => close()}
       />

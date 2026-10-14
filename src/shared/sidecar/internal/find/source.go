@@ -158,7 +158,8 @@ func (s *Source) IDs(ctx context.Context, d index.Descriptor) ([]int64, error) {
 	keep := make([]int, 0, len(list))
 	for i := range list {
 		r := &list[i]
-		if !d.ShowHidden && r.attrs&(1|2) != 0 && d.Scope == index.ScopeAll {
+		if d.Scope == index.ScopeAll &&
+			((!d.ShowHidden && r.attrs&(1|2) != 0) || (d.HideSystem && r.attrs&2 != 0)) {
 			continue
 		}
 		if d.NameMask != "" && r.kind != media.KindDir && !index.MatchMask(mask, r.fold) {

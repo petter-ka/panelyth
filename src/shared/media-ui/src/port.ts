@@ -32,6 +32,8 @@ export interface MediaPort {
   settings?: {
     read(key: string): Promise<unknown>
     write(key: string, value: unknown): Promise<void>
+    /** A setting another window wrote (the settings window's, ADR-0039). Absent: re-read on focus only. */
+    onChanged?(listener: (key: string, value: unknown) => void): () => void
   }
 }
 

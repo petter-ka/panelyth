@@ -235,6 +235,8 @@ type (
 		// Entry scope (Stage P02, ADR-0026); the viewer sends none of these.
 		Scope      string `json:"scope"`
 		ShowHidden bool   `json:"showHidden"`
+		// HideSystem keeps system entries out while hidden ones are shown.
+		HideSystem bool   `json:"hideSystem"`
 		NameMask   string `json:"nameMask"`
 		// FindID opens a session over a search's results (Stage C06); the
 		// folder fields do not apply then.
@@ -408,7 +410,8 @@ func (s *indexService) dirOpen(ctx context.Context, p dirOpenParams) (dirOpenRes
 }
 
 func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.Snapshot, error) {
-	d := index.Descriptor{DirID: p.DirID, Recursive: p.Recursive, Scope: index.Scope(p.Scope), ShowHidden: p.ShowHidden}
+	d := index.Descriptor{DirID: p.DirID, Recursive: p.Recursive, Scope: index.Scope(p.Scope),
+		ShowHidden: p.ShowHidden, HideSystem: p.HideSystem}
 	if p.App != "" && !validApp(p.App) {
 		return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "app must be viewer or commander")
 	}

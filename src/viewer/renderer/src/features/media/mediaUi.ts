@@ -15,6 +15,8 @@ configureMedia({
   settings: {
     read: async (key) => (await bridge.library()).settings[key],
     write: (key, value) => bridge.setSetting(key, value),
+    onChanged: (listener) =>
+      bridge.on("settings.changed", ({ key, value }) => listener(key, value)),
   },
 })
 

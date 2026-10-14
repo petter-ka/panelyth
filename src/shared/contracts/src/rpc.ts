@@ -246,6 +246,11 @@ export interface QueryDescriptor {
   /** Include hidden and system entries; `all` scope only. */
   showHidden?: boolean
   /**
+   * With showHidden: keep system entries out (the hidden ones, dot-names
+   * and the hidden attribute, are listed). An entry that is both is a system one.
+   */
+  hideSystem?: boolean
+  /**
    * Wildcard masks for files ("*", "?"), separated by ";" or spaces; masks
    * after "|" exclude. Folders always pass. "" or omitted = all files.
    */
@@ -806,6 +811,8 @@ export interface ListDirsParams {
    * shows hidden files, Stage C10.5). Main refuses it from the viewer.
    */
   showHidden?: boolean
+  /** With showHidden: keep system folders out. */
+  hideSystem?: boolean
 }
 
 export interface DirChild {

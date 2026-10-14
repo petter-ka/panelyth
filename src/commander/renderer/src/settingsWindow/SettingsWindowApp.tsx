@@ -1,3 +1,4 @@
+import { FullScreenSettings } from "@panelyth/media-ui"
 import { SettingsWindowPage, TooltipProvider } from "@panelyth/ui"
 import { bridge } from "../bridge"
 import { CommanderSettings } from "../components/SettingsDialog"
@@ -9,7 +10,7 @@ const close = (then?: "shortcuts"): void =>
 
 /**
  * The commander's settings window (ADR-0039): the dialog's tabs, filling a
- * native window. "Show hidden and system files" is applied to the panels by
+ * native window. "Show hidden files" and "system files too" are applied to the panels by
  * the commander's view when the change arrives, not here.
  */
 export function SettingsWindowApp() {
@@ -21,6 +22,7 @@ export function SettingsWindowApp() {
         showGeneral
         settingsReady={settingsReady}
         appSettings={<CommanderSettings />}
+        fullScreenSettings={<FullScreenSettings />}
         onOpenShortcuts={() => close("shortcuts")}
         onClose={() => close()}
       />

@@ -495,7 +495,11 @@ export interface CommanderApi {
   fs: {
     volumes(): Promise<RpcEnvelope<VolumesResult>>
     /** Stage C10.5: the folder tree; immediate subfolders only, hidden ones on request. */
-    listDirs(path: string, showHidden: boolean): Promise<RpcEnvelope<ListDirsResult>>
+    listDirs(
+      path: string,
+      showHidden: boolean,
+      hideSystem?: boolean,
+    ): Promise<RpcEnvelope<ListDirsResult>>
     /** Stage C04: F7 and the delete dialog. */
     mkdir(parentDirId: number, path: string): Promise<RpcEnvelope<FsMkdirResult>>
     canTrash(dirId: number): Promise<RpcEnvelope<FsCanTrashResult>>

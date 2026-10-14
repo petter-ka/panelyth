@@ -70,7 +70,9 @@ type ListOptions struct {
 	ProbeWorkers int // default 8
 	// ShowHidden lists hidden and system folders too (the commander's tree
 	// with hidden files shown, Stage C10.5). Links are skipped either way.
-	ShowHidden     bool
+	ShowHidden bool
+	// HideSystem keeps system folders out even with ShowHidden.
+	HideSystem     bool
 	readDirChunk   int
 	probeReadChunk int
 }
@@ -92,6 +94,13 @@ func (o *ListOptions) defaults() {
 	o.probeReadChunk = 64
 }
 
+// skips reports whether a folder is left out: a hidden one without ShowHidden,
+// a system one without ShowHidden or with HideSystem.
+func (o ListOptions) skips(e fs.DirEntry) bool {
+	hidden, system := HiddenKind(e)
+	return (!o.ShowHidden && (hidden || system)) || (o.HideSystem && system)
+}
+
 // ListDirs returns the visible immediate subfolders of dir in natural order.
 // Hidden folders and symlinks are skipped (same rules as the scanner);
 // ShowHidden lists the hidden ones too.
@@ -109,7 +118,7 @@ func ListDirs(ctx context.Context, dir string, opts ListOptions) (children []Dir
 		}
 		ents, rerr := f.ReadDir(opts.readDirChunk)
 		for _, e := range ents {
-			if !e.IsDir() || e.Type()&fs.ModeSymlink != 0 || (!opts.ShowHidden && IsHidden(e)) {
+			if !e.IsDir() || e.Type()&fs.ModeSymlink != 0 || opts.skips(e) {
 				continue
 			}
 			if len(children) == opts.MaxEntries {
@@ -173,7 +182,7 @@ func hasSubdir(dir string, opts ListOptions) bool {
 	for read := 0; read < opts.ProbeReads; {
 		ents, err := f.ReadDir(opts.probeReadChunk)
 		for _, e := range ents {
-			if e.IsDir() && e.Type()&fs.ModeSymlink == 0 && (opts.ShowHidden || !IsHidden(e)) {
+			if e.IsDir() && e.Type()&fs.ModeSymlink == 0 && !opts.skips(e) {
 				return true
 			}
 		}

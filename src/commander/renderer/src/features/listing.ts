@@ -14,6 +14,7 @@ import { createPageStore, type PageStore } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError, isBridgeAvailable } from "../bridge"
 import { usePanelsStore, type Side } from "./panels"
+import { useSettingsStore } from "./settings"
 import { thumbsOf } from "./thumbs"
 import { t } from "@panelyth/i18n"
 
@@ -310,6 +311,8 @@ function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
     tags: [],
     scope: "all",
     showHidden: p.showHidden,
+    // Hidden entries without the system ones unless Settings shows them too.
+    ...(p.showHidden && !useSettingsStore.getState().settings.showSystem && { hideSystem: true }),
     ...(p.filter !== "" && { nameMask: p.filter }),
     ...(p.find && { findId: p.find.findId }),
     ...(p.archive && {
@@ -1297,6 +1300,18 @@ export function setSort(side: Side, sort: SortKey): void {
   patch(side, { sort })
   schedulePersist()
   void reopenQuery(side)
+}
+
+/**
+ * Settings → Show system files changed: both panels list again (a new
+ * session each, no rescan); the other tabs' parked sessions are dropped, so
+ * they list again when shown.
+ */
+export function relistForSystemFiles(dropTab: (side: Side) => void): void {
+  for (const side of SIDES) {
+    dropTab(side)
+    if (getPanel(side).showHidden) void reopenQuery(side)
+  }
 }
 
 /** Ctrl+H: hidden and system entries on or off (a new session; no rescan). */

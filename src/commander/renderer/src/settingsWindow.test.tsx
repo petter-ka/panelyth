@@ -21,6 +21,8 @@ const HOME: Crumb = { name: "home", path: "C:\\home" }
 const home = () =>
   folder(10, HOME.path, [ROOT, HOME], 2, 3, [
     item(10_000_100, "secret", { attrs: ENTRY_ATTRS.hidden }),
+    // Hidden and system, as Windows marks its own files: a system file.
+    item(10_000_101, "pagefile", { attrs: ENTRY_ATTRS.hidden | ENTRY_ATTRS.system }),
   ])
 
 let stops: (() => void)[] = []
@@ -64,6 +66,20 @@ describe("the settings window (ADR-0039)", () => {
     // The default fake has no native windows.
     await act(async () => openSettings())
     await waitFor(() => expect(useSettingsStore.getState().open).toBe(true))
+  })
+
+  it("shows hidden files by default and system files only when asked for", async () => {
+    const fake = await start()
+    await within(grid()).findByText("secret")
+    expect(within(grid()).queryByText("pagefile")).toBeNull()
+    expect(fake.lastDescriptor()).toMatchObject({ showHidden: true, hideSystem: true })
+
+    await act(async () =>
+      fake.emit("settings.changed", { key: SETTINGS_KEY, value: { v: 3, showSystem: true } }),
+    )
+    await within(grid()).findByText("pagefile")
+    expect(fake.lastDescriptor()).toMatchObject({ showHidden: true })
+    expect(fake.lastDescriptor().hideSystem).toBeUndefined()
   })
 
   it("applies what the window stored: hidden entries in every panel and tab, tools, the tree", async () => {

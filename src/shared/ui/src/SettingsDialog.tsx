@@ -222,6 +222,8 @@ interface SettingsContentProps {
   showGeneral: boolean
   settingsReady: boolean
   appSettings: ReactNode
+  /** Settings → Appearance → Full screen (from the media package, which this one cannot import). */
+  fullScreenSettings?: ReactNode
   /** The Shortcuts tab's button: Settings goes away and the app's shortcuts dialog opens. */
   onOpenShortcuts(): void
 }
@@ -297,6 +299,7 @@ function SettingsTabs({
   showGeneral,
   settingsReady,
   appSettings,
+  fullScreenSettings,
   onOpenShortcuts,
   panelClassName,
 }: SettingsContentProps & { panelClassName: string }) {
@@ -365,7 +368,17 @@ function SettingsTabs({
       >
         {tab === "general" && showGeneral && <GeneralSettings settingsReady={settingsReady} />}
         {tab === currentApp && appSettings}
-        {tab === "appearance" && <AppearanceSettings />}
+        {tab === "appearance" && (
+          <>
+            <AppearanceSettings />
+            {fullScreenSettings && (
+              <section className="mt-4 space-y-1 border-t border-border pt-3">
+                <h3 className="text-xs font-medium">{t("Full screen")}</h3>
+                {fullScreenSettings}
+              </section>
+            )}
+          </>
+        )}
         {tab === "shortcuts" && (
           <section className="space-y-3 text-xs">
             <p className="text-muted">

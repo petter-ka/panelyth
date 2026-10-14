@@ -2,6 +2,8 @@ import type { ContentItem, Thumb } from "@panelyth/contracts"
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ImageViewer, type ImageViewerController } from "./ImageViewer"
 import { VideoPlayer } from "./VideoPlayer"
+import { useIdle } from "./useIdle"
+import { useVideoPrefs } from "./video"
 import { requestFit, requestMedia } from "./viewerImages"
 import { t } from "@panelyth/i18n"
 import { wheelNavigationStep } from "./wheelNavigation"
@@ -51,6 +53,15 @@ export function MediaViewerOverlay({
   const [zoom, setZoom] = useState({ value: 1, fit: true })
   const onZoomChange = useCallback((value: number, fit: boolean) => setZoom({ value, fit }), [])
   const isImage = item.kind === "image"
+  const isVideo = item.kind === "video"
+  // A playing video with the mouse at rest: the header goes with the player's controls.
+  const [chromeHidden, setChromeHidden] = useState(false)
+  // A picture with the mouse at rest: the header (and the cursor) hide on their own.
+  // Settings → Appearance → Full screen can keep either shown.
+  const autoHideImage = useVideoPrefs((s) => s.autoHideImage)
+  const overHeader = useRef(false)
+  const imageIdle = useIdle(isImage && autoHideImage, overHeader)
+  const headerHidden = isVideo ? chromeHidden : imageIdle
   const main = useRef<HTMLElement>(null)
   const wheelRef = useRef({ wheelMode, onStep })
   useEffect(() => {
@@ -121,11 +132,17 @@ export function MediaViewerOverlay({
       aria-label={t("Media viewer: {name}", { name: item.name })}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-[100] flex flex-col bg-canvas text-text outline-none"
+      className={`fixed inset-0 z-[100] flex flex-col bg-canvas text-text outline-none ${isImage && imageIdle ? "cursor-none" : ""}`}
       data-testid="media-viewer"
       data-entry-id={item.id}
     >
-      <header className="flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3">
+      <header
+        data-hidden={headerHidden || undefined}
+        onPointerEnter={() => (overHeader.current = true)}
+        onPointerLeave={() => (overHeader.current = false)}
+        // It floats over the picture or video, so neither changes size when it hides.
+        className={`absolute inset-x-0 top-0 z-20 flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome/80 px-3 backdrop-blur-md transition-opacity duration-200 motion-reduce:transition-none ${headerHidden ? "pointer-events-none opacity-0" : "opacity-100"}`}
+      >
         <button
           type="button"
           className="grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text disabled:opacity-40"
@@ -232,6 +249,8 @@ export function MediaViewerOverlay({
             appFullscreen
             onExitFullscreen={onClose}
             lane={lane}
+            onIdleChange={setChromeHidden}
+            chromeHover={overHeader}
             {...(onDoubleClick && { onDoubleClick })}
           />
         ) : null}

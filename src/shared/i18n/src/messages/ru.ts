@@ -799,6 +799,8 @@ const messages: Messages = {
   "Hide the inside of the shape instead.": "Скрыть вместо этого внутреннюю часть фигуры.",
   "Hide the panel": "Скрыть панель",
   "Hide {column}": "Скрыть «{column}»",
+  "Hide the picture header": "Скрывать заголовок изображения",
+  "Hide the video controls": "Скрывать элементы управления видео",
   "High quality": "Высокое качество",
   "Highest first": "Сначала высокие",
   Highlights: "Света",
@@ -1135,6 +1137,8 @@ const messages: Messages = {
   "Oil painting": "Масляная живопись",
   "Old name": "Старое имя",
   "Oldest first": "Сначала старые",
+  "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
+    "На изображении заголовок и указатель скрываются, если мышь не двигается 3 секунды.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "После сохранения скрытое нельзя восстановить из сохранённого файла. Оригинал остаётся как есть, если вы его не замените.",
   "One beside each file ({example})": "По одному рядом с каждым файлом ({example})",
@@ -1557,7 +1561,6 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Показать все операции (Ctrl+J)",
   "Show columns (drag to reorder)": "Показать столбцы (перетащите, чтобы изменить порядок)",
   "Show file names under tiles": "Показывать имена файлов под плитками",
-  "Show hidden and system files": "Показывать скрытые и системные файлы",
   "Show hidden files": "Показывать скрытые файлы",
   "Show in file manager": "Показать в диспетчере файлов",
   "Show in folder": "Показать в папке",
@@ -1569,6 +1572,7 @@ const messages: Messages = {
   "Show or hide the function-key bar": "Показать или скрыть панель функциональных клавиш",
   "Show or hide the toolbar": "Показать или скрыть панель инструментов",
   "Show parent folders": "Показать родительские папки",
+  "Show system files too": "Показывать и системные файлы",
   "Show the Adjust tools": "Показать инструменты коррекции",
   "Show the Color tools": "Показать инструменты цвета",
   "Show the Detail tools": "Показать инструменты детализации",
@@ -2055,6 +2059,8 @@ const messages: Messages = {
   "When a name is taken": "Если имя занято",
   "When switching apps, carry over": "При переключении приложений переносить",
   "Where the results go": "Куда сохраняются результаты",
+  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "Во время воспроизведения видео панели и указатель скрываются, если мышь не двигается 3 секунды.",
   White: "Белый",
   "White balance": "Баланс белого",
   "White point": "Точка белого",

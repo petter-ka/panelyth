@@ -387,6 +387,7 @@ const api: CommanderApi = {
         tags: [...d.tags],
         ...(d.scope !== undefined && { scope: d.scope }),
         ...(d.showHidden !== undefined && { showHidden: d.showHidden }),
+        ...(d.hideSystem !== undefined && { hideSystem: d.hideSystem }),
         ...(d.nameMask !== undefined && { nameMask: d.nameMask }),
         ...(d.findId !== undefined && { findId: d.findId }),
         ...(d.archiveId !== undefined && { archiveId: d.archiveId }),
@@ -413,7 +414,8 @@ const api: CommanderApi = {
   },
   fs: {
     volumes: () => invoke("fs.volumes", {}),
-    listDirs: (path, showHidden) => invoke("fs.listDirs", { path, showHidden }),
+    listDirs: (path, showHidden, hideSystem) =>
+      invoke("fs.listDirs", { path, showHidden, ...(hideSystem !== undefined && { hideSystem }) }),
     mkdir: (parentDirId, path) => invoke("fs.mkdir", { parentDirId, path }),
     canTrash: (dirId) => invoke("fs.canTrash", { dirId }),
     mkfile: (parentDirId, name) => invoke("fs.mkfile", { parentDirId, name }),

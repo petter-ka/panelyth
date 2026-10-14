@@ -5,6 +5,7 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { aboutApi, bridge } from "../bridge"
 import { startEditorSettingsPersistence } from "../features/editor/editorSettings"
+import { startVideoPrefsPersistence } from "../features/media/mediaUi"
 import { startLibraryMonitoring } from "../features/library/libraryStore"
 import { startViewerSettingsPersistence } from "../features/settings/settingsStore"
 import { startSidecarMonitoring } from "../features/system/sidecarStore"
@@ -24,6 +25,8 @@ startSidecarMonitoring()
 startLibraryMonitoring()
 startViewerSettingsPersistence()
 startEditorSettingsPersistence()
+// Appearance → Video player edits the player preferences (the media port is set up on import).
+startVideoPrefsPersistence()
 const save = (key: string, value: unknown): void =>
   void bridge.setSetting(key, value).catch(() => undefined)
 startSettingsWindowPage({

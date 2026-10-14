@@ -8,19 +8,25 @@ import (
 	"syscall"
 )
 
-// IsHidden skips dot-names and entries with the hidden or system attribute.
-// On Windows DirEntry.Info is served from the directory read, so this costs
-// no extra syscall.
-func IsHidden(e fs.DirEntry) bool {
-	if strings.HasPrefix(e.Name(), ".") {
-		return true
-	}
+// HiddenKind reports whether an entry is hidden (a dot-name or the hidden
+// attribute) and whether it is a system entry (the system attribute). On
+// Windows DirEntry.Info is served from the directory read, so this costs no
+// extra syscall.
+func HiddenKind(e fs.DirEntry) (hidden, system bool) {
+	hidden = strings.HasPrefix(e.Name(), ".")
 	info, err := e.Info()
 	if err != nil {
-		return false
+		return hidden, false
 	}
 	if a, ok := info.Sys().(*syscall.Win32FileAttributeData); ok {
-		return a.FileAttributes&(syscall.FILE_ATTRIBUTE_HIDDEN|syscall.FILE_ATTRIBUTE_SYSTEM) != 0
+		hidden = hidden || a.FileAttributes&syscall.FILE_ATTRIBUTE_HIDDEN != 0
+		system = a.FileAttributes&syscall.FILE_ATTRIBUTE_SYSTEM != 0
 	}
-	return false
+	return hidden, system
+}
+
+// IsHidden reports whether an entry is hidden or a system entry.
+func IsHidden(e fs.DirEntry) bool {
+	hidden, system := HiddenKind(e)
+	return hidden || system
 }

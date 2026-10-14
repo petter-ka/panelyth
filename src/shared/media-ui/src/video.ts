@@ -88,9 +88,19 @@ export interface VideoPrefs {
   muted: boolean
   /** Repeat the video when it ends. */
   loop: boolean
+  /** Full screen: a video's controls hide while the mouse rests (on unless turned off in Settings). */
+  autoHide: boolean
+  /** Full screen: a picture's header hides while the mouse rests (on unless turned off). */
+  autoHideImage: boolean
 }
 
-export const useVideoPrefs = create<VideoPrefs>(() => ({ volume: 1, muted: false, loop: false }))
+export const useVideoPrefs = create<VideoPrefs>(() => ({
+  volume: 1,
+  muted: false,
+  loop: false,
+  autoHide: true,
+  autoHideImage: true,
+}))
 
 export function setVolume(volume: number): void {
   const v = Math.min(1, Math.max(0, volume))
@@ -103,6 +113,14 @@ export function setMuted(muted: boolean): void {
 
 export function setLoop(loop: boolean): void {
   useVideoPrefs.setState({ loop })
+}
+
+export function setAutoHide(autoHide: boolean): void {
+  useVideoPrefs.setState({ autoHide })
+}
+
+export function setAutoHideImage(autoHideImage: boolean): void {
+  useVideoPrefs.setState({ autoHideImage })
 }
 
 export const SEEK_STEP_S = 5

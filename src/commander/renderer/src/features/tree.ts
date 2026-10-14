@@ -5,6 +5,7 @@ import { useDrivesStore } from "./drives"
 import { notice } from "./files"
 import { openPath, toPanelError, useListingStore } from "./listing"
 import { setActivePanel, usePanelsStore, type Side, type TreeMode } from "./panels"
+import { useSettingsStore } from "./settings"
 import { newTab } from "./tabs"
 import { t } from "@panelyth/i18n"
 
@@ -29,7 +30,8 @@ const panel = (id: TreeId) => useListingStore.getState()[treeSide(id)]
 const make = (id: TreeId): TreeStore =>
   createTreeStore({
     // The tree shows hidden folders when its panel shows hidden files.
-    listDirs: (path) => bridge.listDirs(path, panel(id).showHidden),
+    listDirs: (path) =>
+      bridge.listDirs(path, panel(id).showHidden, !useSettingsStore.getState().settings.showSystem),
     describeError: (error) => toPanelError(error).message,
   })
 
@@ -158,6 +160,11 @@ export function startTree(): () => void {
     if (s.volumes === prev.volumes) return
     for (const id of visibleTrees(usePanelsStore.getState().tree)) trees[id].setRoots(s.volumes)
   })
+  // Settings → Show system files: the trees list their folders again.
+  const offSystem = useSettingsStore.subscribe((s, prev) => {
+    if (s.settings.showSystem === prev.settings.showSystem) return
+    for (const id of visibleTrees(usePanelsStore.getState().tree)) void trees[id].refreshAll()
+  })
   const offListing = useListingStore.subscribe((s, prev) => {
     for (const id of visibleTrees(usePanelsStore.getState().tree)) {
       const side = treeSide(id)
@@ -177,6 +184,7 @@ export function startTree(): () => void {
     offPanels()
     offDrives()
     offListing()
+    offSystem()
     offVisibility()
   }
 }

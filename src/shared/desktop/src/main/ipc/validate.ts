@@ -947,6 +947,7 @@ export const validators: Record<RendererMethod, Validator> = {
     const optional = [
       "scope",
       "showHidden",
+      "hideSystem",
       "nameMask",
       "findId",
       "archiveId",
@@ -959,6 +960,8 @@ export const validators: Record<RendererMethod, Validator> = {
     if (p.scope !== undefined && !scopes.has(p.scope)) return "invalid scope"
     if (p.showHidden !== undefined && (typeof p.showHidden !== "boolean" || p.scope !== "all"))
       return "showHidden needs the all scope"
+    if (p.hideSystem !== undefined && (typeof p.hideSystem !== "boolean" || p.scope !== "all"))
+      return "hideSystem needs the all scope"
     if (
       p.nameMask !== undefined &&
       (typeof p.nameMask !== "string" || p.nameMask.length > MAX_NAME_MASK_CHARS)
@@ -1088,8 +1091,10 @@ export const validators: Record<RendererMethod, Validator> = {
   "props.get": entryParams,
   "fs.volumes": empty,
   "fs.listDirs": (p) => {
-    if (!shapeWithOptional(p, ["path"], ["showHidden"])) return "expected { path, showHidden? }"
+    if (!shapeWithOptional(p, ["path"], ["showHidden", "hideSystem"]))
+      return "expected { path, showHidden?, hideSystem? }"
     if (p.showHidden !== undefined && typeof p.showHidden !== "boolean") return "invalid showHidden"
+    if (p.hideSystem !== undefined && typeof p.hideSystem !== "boolean") return "invalid hideSystem"
     return pathProblem(p.path)
   },
   "library.get": empty,

@@ -1,4 +1,5 @@
 import { ChoiceGroup, SharedSettingsDialog, SwitchRow, Tooltip } from "@panelyth/ui"
+import { FullScreenSettings } from "../features/media/mediaUi"
 import { bridge, canSwitchApps } from "../bridge"
 import { useLibraryStore } from "../features/library/libraryStore"
 import { openShortcutHelp } from "../features/shortcuts/shortcutStore"
@@ -228,6 +229,7 @@ export function SettingsDialog() {
       showGeneral={canSwitchApps()}
       settingsReady={settingsReady}
       appSettings={<ViewerSettings />}
+      fullScreenSettings={<FullScreenSettings />}
       onOpenShortcuts={openShortcutHelp}
     />
   )

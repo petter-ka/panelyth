@@ -329,12 +329,12 @@ describe("the folder tree", () => {
     const fake = await start("one", { dirs: { "C:\\": ["home", "work", ".secret"] } })
     await followed("one", "home")
     await waitFor(() => expect(node("one", ".secret")).toBeInTheDocument())
-    expect(fake.api.fs.listDirs).toHaveBeenLastCalledWith("C:\\", true)
+    expect(fake.api.fs.listDirs).toHaveBeenLastCalledWith("C:\\", true, true)
     await panelKey("left", { key: "h", ctrlKey: true })
     await waitFor(() =>
       expect(within(pane("one")).queryByRole("treeitem", { name: ".secret" })).toBeNull(),
     )
-    expect(fake.api.fs.listDirs).toHaveBeenLastCalledWith("C:\\", false)
+    expect(fake.api.fs.listDirs).toHaveBeenLastCalledWith("C:\\", false, true)
   })
 
   it("mounts a bounded number of rows for a folder with a thousand subfolders", async () => {
@@ -403,7 +403,7 @@ describe("the folder tree", () => {
     const listed = fake.api.fs.listDirs.mock.calls.length
     await menu("System (C:)", "Refresh")
     await waitFor(() => expect(fake.api.fs.listDirs.mock.calls.length).toBe(listed + 1))
-    expect(fake.api.fs.listDirs).toHaveBeenLastCalledWith("C:\\", true)
+    expect(fake.api.fs.listDirs).toHaveBeenLastCalledWith("C:\\", true, true)
   })
 
   it("takes dropped panel items on a node: the copy dialog for that folder", async () => {

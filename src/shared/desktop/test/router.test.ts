@@ -890,12 +890,19 @@ describe("invoke router", () => {
   it("lets the commander's tree list a folder's subfolders, hidden ones too; the viewer's never", async () => {
     const { handler, sidecar, commander, ok: viewer } = setup()
     const path = process.platform === "win32" ? "C:\\data" : "/data"
-    for (const params of [{ path }, { path, showHidden: true }, { path, showHidden: false }]) {
+    for (const params of [
+      { path },
+      { path, showHidden: true },
+      { path, showHidden: false },
+      // Hidden folders without the system ones (the default).
+      { path, showHidden: true, hideSystem: true },
+    ]) {
       await expect(handler(commander, "fs.listDirs", params)).resolves.toMatchObject({ ok: true })
       expect(sidecar.call).toHaveBeenLastCalledWith("fs.listDirs", params)
     }
     for (const params of [
       { path, showHidden: "yes" },
+      { path, showHidden: true, hideSystem: 1 },
       { path, showHidden: true, depth: 2 },
       { path: "relative", showHidden: true },
       { showHidden: true },
@@ -910,6 +917,11 @@ describe("invoke router", () => {
     vi.mocked(sidecar.call).mockClear()
     await expect(handler(viewer, "fs.listDirs", { path, showHidden: true })).resolves.toMatchObject(
       { ok: false },
+    )
+    await expect(handler(viewer, "fs.listDirs", { path, hideSystem: true })).resolves.toMatchObject(
+      {
+        ok: false,
+      },
     )
     expect(sidecar.call).not.toHaveBeenCalled()
   })

@@ -2,10 +2,12 @@ import type { Thumb } from "@panelyth/contracts"
 import {
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type KeyboardEvent,
   type ReactNode,
+  type RefObject,
 } from "react"
 import {
   formatTime,
@@ -32,6 +34,7 @@ import {
   VolumeIcon,
 } from "./icons"
 import { mediaPort } from "./port"
+import { useIdle } from "./useIdle"
 import { flushResume, readResume, recordResume, usablePoint, type ResumePoint } from "./resume"
 import { t } from "@panelyth/i18n"
 
@@ -55,6 +58,10 @@ interface VideoPlayerProps {
   onDoubleClick?: () => void
   /** Preview lane for Try again (the viewer's preview pane by default). */
   lane?: FitLane
+  /** Full screen: the controls hid after the mouse rested (the media window hides its header too). */
+  onIdleChange?: (idle: boolean) => void
+  /** True while the pointer is on the media window's header: nothing hides then. */
+  chromeHover?: RefObject<boolean>
 }
 
 const control =
@@ -79,9 +86,11 @@ export function VideoPlayer({
   onExitFullscreen,
   onDoubleClick,
   lane = "pane",
+  onIdleChange,
+  chromeHover,
 }: VideoPlayerProps) {
   const { fit, media } = useViewerImage(entryId)
-  const { volume, muted, loop } = useVideoPrefs()
+  const { volume, muted, loop, autoHide } = useVideoPrefs()
   const rootRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const [playing, setPlaying] = useState(false)
@@ -204,6 +213,24 @@ export function VideoPlayer({
     return () => document.removeEventListener("fullscreenchange", onChange)
   }, [])
 
+  // Full screen, while playing: the controls (and the media window's header)
+  // hide when the mouse rests; moving it, a click or a key brings them back.
+  // Not while the pointer is on the controls, never while paused, and not at
+  // all when Settings says to keep them.
+  const immersive = fullscreen || appFullscreen
+  const overControls = useRef(false)
+  const hold = useMemo<RefObject<boolean>>(
+    () => ({
+      get current() {
+        return overControls.current || (chromeHover?.current ?? false)
+      },
+    }),
+    [chromeHover],
+  )
+  // Settings → Appearance → Full screen can keep them shown.
+  const hidden = useIdle(immersive && playing && autoHide, hold)
+  useEffect(() => onIdleChange?.(hidden), [hidden, onIdleChange])
+
   const toggle = (): void => {
     const v = videoRef.current
     if (!v || problem) return
@@ -281,7 +308,8 @@ export function VideoPlayer({
       data-testid="video-player"
       data-state={state}
       data-problem={problem ?? undefined}
-      className="flex h-full w-full flex-col bg-canvas outline-none @container"
+      data-controls={hidden ? "hidden" : "shown"}
+      className={`relative flex h-full w-full flex-col bg-canvas outline-none @container ${hidden ? "cursor-none" : ""}`}
     >
       <div
         className="relative min-h-0 flex-1 bg-canvas"
@@ -385,7 +413,15 @@ export function VideoPlayer({
       <div
         role="toolbar"
         aria-label={t("Playback controls")}
-        className="flex h-10 shrink-0 items-center gap-1 border-t border-border bg-chrome px-1.5"
+        onPointerEnter={() => (overControls.current = true)}
+        onPointerLeave={() => (overControls.current = false)}
+        // Full screen: over the picture, translucent, and gone while the mouse rests,
+        // so the video keeps its size when they hide.
+        className={`flex h-10 shrink-0 items-center gap-1 border-t border-border px-1.5 ${
+          immersive
+            ? `absolute inset-x-0 bottom-0 z-10 bg-chrome/80 backdrop-blur-md transition-opacity duration-200 motion-reduce:transition-none ${hidden ? "pointer-events-none opacity-0" : "opacity-100"}`
+            : "bg-chrome"
+        }`}
       >
         <span
           className={unavailable ? "inline-flex" : "contents"}

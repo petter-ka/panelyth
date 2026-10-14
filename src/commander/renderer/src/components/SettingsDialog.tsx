@@ -6,11 +6,11 @@ import {
   type ToolIcon,
   type UserCommand,
 } from "@panelyth/contracts"
-import { TILE_SIZE_ORDER } from "@panelyth/media-ui"
+import { TILE_SIZE_ORDER, FullScreenSettings } from "@panelyth/media-ui"
 import { Button, ChoiceGroup, SharedSettingsDialog, fieldClass } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
 import { POLICIES } from "../features/files"
-import { showHiddenEverywhere } from "../features/tabs"
+import { showHiddenEverywhere, systemFilesChanged } from "../features/tabs"
 import { setTreeMode, usePanelsStore, type TreeMode } from "../features/panels"
 import { isToolAction, setHelpOpen, toolAction, type ActionId } from "../features/keymap"
 import {
@@ -72,18 +72,23 @@ function Check({
   setting: name,
   label,
   onChange,
+  disabled = false,
+  className = "",
 }: {
   setting: BooleanSetting
   label: string
   /** Applies the new value beyond the stored settings. */
   onChange?: (checked: boolean) => void
+  disabled?: boolean
+  className?: string
 }) {
   const checked = useSettingsStore((s) => s.settings[name])
   return (
-    <label className="flex items-center gap-2">
+    <label className={`flex items-center gap-2 ${disabled ? "text-muted" : ""} ${className}`}>
       <input
         type="checkbox"
         checked={checked}
+        disabled={disabled}
         onChange={(e) => {
           updateSettings({ [name]: e.target.checked } as Partial<PanelSettings>)
           onChange?.(e.target.checked)
@@ -158,7 +163,14 @@ function TreeModeRadios() {
  * panel itself; in the settings window the app view does it when the change
  * arrives (ADR-0039).
  */
-function PanelsSection({ onShowHidden }: { onShowHidden?: (show: boolean) => void }) {
+function PanelsSection({
+  onShowHidden,
+  onShowSystem,
+}: {
+  onShowHidden?: (show: boolean) => void
+  onShowSystem?: () => void
+}) {
+  const showHidden = useSettingsStore((s) => s.settings.showHidden)
   const thumbSize = useSettingsStore((s) => s.settings.thumbSize)
   return (
     <Section>
@@ -178,11 +190,21 @@ function PanelsSection({ onShowHidden }: { onShowHidden?: (show: boolean) => voi
           { value: "iso", label: t("ISO (2026-10-06 14:05)") },
         ]}
       />
-      <Check
-        setting="showHidden"
-        label={t("Show hidden and system files")}
-        {...(onShowHidden && { onChange: onShowHidden })}
-      />
+      <div className="flex flex-col gap-1.5">
+        <Check
+          setting="showHidden"
+          label={t("Show hidden files")}
+          {...(onShowHidden && { onChange: onShowHidden })}
+        />
+        {/* System files are hidden ones too (Windows marks its own both ways): under hidden files. */}
+        <Check
+          setting="showSystem"
+          label={t("Show system files too")}
+          disabled={!showHidden}
+          className="pl-6"
+          {...(onShowSystem && { onChange: onShowSystem })}
+        />
+      </div>
       <Radios
         setting="letters"
         label={t("Typed letters")}
@@ -604,24 +626,41 @@ type SectionId = "panels" | "operations" | "confirmations" | "tools" | "toolbar"
  * Confirmations, Editor and tools, and the Toolbar. Keys and Appearance are
  * the tabs of the dialog shared with the viewer.
  */
-export function CommanderSettings({ onShowHidden }: { onShowHidden?: (show: boolean) => void }) {
+export function CommanderSettings({
+  onShowHidden,
+  onShowSystem,
+}: {
+  onShowHidden?: (show: boolean) => void
+  /** The in-page dialog relists the panels itself; the settings window's app view does it on the relay. */
+  onShowSystem?: () => void
+}) {
   const [section, setSection] = useState<SectionId>("panels")
   return (
     <div className="flex flex-col gap-4">
-      <ChoiceGroup<SectionId>
-        label={t("Commander settings")}
-        value={section}
-        disabled={false}
-        options={[
-          { value: "panels", label: t("Panels") },
-          { value: "operations", label: t("Operations") },
-          { value: "confirmations", label: t("Confirmations") },
-          { value: "tools", label: t("Editor and tools") },
-          { value: "toolbar", label: t("Toolbar") },
-        ]}
-        onChange={setSection}
-      />
-      {section === "panels" && <PanelsSection {...(onShowHidden && { onShowHidden })} />}
+      {/* The sections stay at the top while the tab scrolls, like the tabs above them:
+          the bar covers the panel's padding (-m/p-4) so nothing shows around it, and
+          sticks at -1rem because the panel's padding is where "top" is measured from. */}
+      <div className="sticky -top-4 z-10 -mx-4 -mt-4 border-b border-border bg-chrome px-4 pt-4 pb-3">
+        <ChoiceGroup<SectionId>
+          label={t("Commander settings")}
+          value={section}
+          disabled={false}
+          options={[
+            { value: "panels", label: t("Panels") },
+            { value: "operations", label: t("Operations") },
+            { value: "confirmations", label: t("Confirmations") },
+            { value: "tools", label: t("Editor and tools") },
+            { value: "toolbar", label: t("Toolbar") },
+          ]}
+          onChange={setSection}
+        />
+      </div>
+      {section === "panels" && (
+        <PanelsSection
+          {...(onShowHidden && { onShowHidden })}
+          {...(onShowSystem && { onShowSystem })}
+        />
+      )}
       {section === "operations" && <OperationsSection />}
       {section === "confirmations" && <ConfirmationsSection />}
       {section === "tools" && <ToolsSection />}
@@ -642,7 +681,10 @@ export function SettingsDialog() {
       onClose={() => setSettingsOpen(false)}
       showGeneral
       settingsReady={settingsReady}
-      appSettings={<CommanderSettings onShowHidden={showHiddenEverywhere} />}
+      appSettings={
+        <CommanderSettings onShowHidden={showHiddenEverywhere} onShowSystem={systemFilesChanged} />
+      }
+      fullScreenSettings={<FullScreenSettings />}
       onOpenShortcuts={() => setHelpOpen(true)}
     />
   )

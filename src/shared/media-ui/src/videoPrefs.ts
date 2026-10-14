@@ -1,7 +1,7 @@
 import { mediaPort } from "./port"
 import { useVideoPrefs, type VideoPrefs } from "./video"
 
-// Volume, mute and repeat persist in library.db (setting "player") through the
+// Volume, mute, repeat and the full-screen auto-hide persist in library.db (setting "player") through the
 // app's media port, so they are the same in the viewer, the commander and the
 // media window: mute one video and the next stays muted until it is unmuted.
 // Saves are debounced (the volume slider changes the value on every pointer
@@ -11,7 +11,7 @@ import { useVideoPrefs, type VideoPrefs } from "./video"
 const PLAYER_KEY = "player"
 const SAVE_DELAY_MS = 500
 
-/** The stored setting, or null when it is missing or malformed. `loop` is new: absent = off. */
+/** The stored setting, or null when it is missing or malformed. Newer fields: `loop` absent = off, the auto-hides absent = on. */
 export function parsePlayerPrefs(value: unknown): VideoPrefs | null {
   if (typeof value !== "object" || value === null) return null
   const v = value as Record<string, unknown>
@@ -22,6 +22,8 @@ export function parsePlayerPrefs(value: unknown): VideoPrefs | null {
     volume: Math.min(1, Math.max(0, v.volume)),
     muted: v.muted,
     loop: v.loop === true,
+    autoHide: v.autoHide !== false,
+    autoHideImage: v.autoHideImage !== false,
   }
 }
 
@@ -35,8 +37,10 @@ export function startVideoPrefsPersistence(): () => void {
 
   const save = (): void => {
     timer = null
-    const { volume, muted, loop } = useVideoPrefs.getState()
-    void settings.write(PLAYER_KEY, { volume, muted, loop }).catch(() => undefined)
+    const { volume, muted, loop, autoHide, autoHideImage } = useVideoPrefs.getState()
+    void settings
+      .write(PLAYER_KEY, { volume, muted, loop, autoHide, autoHideImage })
+      .catch(() => undefined)
   }
   const flush = (): void => {
     if (!timer) return
@@ -59,8 +63,25 @@ export function startVideoPrefsPersistence(): () => void {
   }
 
   load()
+  // Settings → Video player, changed in the settings window: applied at once.
+  const offChanged =
+    settings.onChanged?.((key, value) => {
+      if (key !== PLAYER_KEY || timer) return
+      const stored = parsePlayerPrefs(value)
+      if (!stored) return
+      applying = true
+      useVideoPrefs.setState(stored)
+      applying = false
+    }) ?? (() => undefined)
   const unsubscribe = useVideoPrefs.subscribe((s, prev) => {
-    if (applying || (s.volume === prev.volume && s.muted === prev.muted && s.loop === prev.loop))
+    if (
+      applying ||
+      (s.volume === prev.volume &&
+        s.muted === prev.muted &&
+        s.loop === prev.loop &&
+        s.autoHide === prev.autoHide &&
+        s.autoHideImage === prev.autoHideImage)
+    )
       return
     if (timer) clearTimeout(timer)
     timer = setTimeout(save, SAVE_DELAY_MS)
@@ -73,5 +94,6 @@ export function startVideoPrefsPersistence(): () => void {
     window.removeEventListener("pagehide", flush)
     flush()
     unsubscribe()
+    offChanged()
   }
 }

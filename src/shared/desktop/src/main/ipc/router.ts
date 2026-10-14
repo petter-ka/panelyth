@@ -226,7 +226,11 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
     return "commander settings are the commander's"
   }
   // Stage C10.5: hidden folders are the commander's to list (ADR-0026).
-  if (app === "viewer" && method === "fs.listDirs" && p.showHidden !== undefined) {
+  if (
+    app === "viewer" &&
+    method === "fs.listDirs" &&
+    (p.showHidden !== undefined || p.hideSystem !== undefined)
+  ) {
     return "the viewer's tree lists visible folders only"
   }
   if (app === "viewer" && method === "jobs.start" && COMMANDER_ONLY_JOB_KINDS.has(p.kind)) {

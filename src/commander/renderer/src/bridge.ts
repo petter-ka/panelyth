@@ -231,8 +231,8 @@ export const bridge = {
   secureStore: async (): Promise<boolean> =>
     (await unwrap(() => api().remote.secureStore())).available,
   /** Stage C10.5: the folder tree; one level of subfolders. */
-  listDirs: (path: string, showHidden: boolean): Promise<ListDirsResult> =>
-    unwrap(() => api().fs.listDirs(path, showHidden)),
+  listDirs: (path: string, showHidden: boolean, hideSystem?: boolean): Promise<ListDirsResult> =>
+    unwrap(() => api().fs.listDirs(path, showHidden, hideSystem)),
   places: async (): Promise<Place[]> => (await unwrap(() => api().places.list())).places,
   homePath: async (): Promise<string | null> => {
     const { places } = await unwrap(() => api().places.list())

@@ -460,6 +460,7 @@ export function installFakeCommander(options: FakeOptions) {
     rows = rows.filter(
       (e) =>
         (d.showHidden || ((e.attrs ?? 0) & hidden) === 0) &&
+        !(d.hideSystem && ((e.attrs ?? 0) & ENTRY_ATTRS.system) !== 0) &&
         (!d.nameMask || e.kind === "dir" || maskMatch(d.nameMask, e.name)),
     )
     // Search results without sort keys stay in found order.

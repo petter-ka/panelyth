@@ -171,7 +171,7 @@ async function hideHiddenEntries(app: ElectronApplication, c: Page): Promise<voi
   if (hiddenOff.has(app) || (await shellState(app)).active !== "commander") return
   hiddenOff.add(app)
   const settings = await openSettingsWindow(app, c)
-  const box = settings.getByRole("checkbox", { name: "Show hidden and system files" })
+  const box = settings.getByRole("checkbox", { name: "Show hidden files" })
   if (await box.isChecked()) await box.uncheck()
   // Esc closes the window on keydown: there is no page left for a keyup.
   await settings.keyboard.down("Escape")

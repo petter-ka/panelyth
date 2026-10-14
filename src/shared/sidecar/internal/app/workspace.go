@@ -58,8 +58,10 @@ type (
 	fsListDirsParams struct {
 		Path string `json:"path"`
 		// ShowHidden lists hidden and system folders too (the commander's
-		// tree, Stage C10.5); the viewer never sends it.
+		// tree, Stage C10.5); the viewer never sends it. HideSystem keeps
+		// the system ones out.
 		ShowHidden bool `json:"showHidden"`
+		HideSystem bool `json:"hideSystem"`
 	}
 	fsListDirsResult struct {
 		Path      string         `json:"path"`
@@ -336,7 +338,7 @@ func (s *indexService) fsListDirs(ctx context.Context, p fsListDirsParams) (fsLi
 	if err != nil {
 		return fsListDirsResult{}, rpc.NewError(rpc.CodeInvalidPath, "folder path must be absolute")
 	}
-	dirs, truncated, err := fsx.ListDirs(ctx, clean, fsx.ListOptions{ShowHidden: p.ShowHidden})
+	dirs, truncated, err := fsx.ListDirs(ctx, clean, fsx.ListOptions{ShowHidden: p.ShowHidden, HideSystem: p.HideSystem})
 	if err != nil {
 		if ctx.Err() != nil {
 			return fsListDirsResult{}, ctx.Err()

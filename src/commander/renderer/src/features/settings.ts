@@ -37,8 +37,13 @@ export type CompareTolerance = 0 | 2000
 export interface PanelSettings {
   sizeFormat: SizeFormat
   dateFormat: DateFormat
-  /** Hidden and system entries (dot-names too) shown in the panels; Ctrl+H switches one panel. */
+  /** Hidden entries (dot-names, the hidden attribute) shown in the panels; Ctrl+H switches one panel. */
   showHidden: boolean
+  /**
+   * System entries too, with the hidden ones (off by default; an entry that is
+   * hidden and system is a system one, as Windows marks its own files).
+   */
+  showSystem: boolean
   letters: LettersMode
   mediaOpen: MediaOpen
   documentOpen: DocumentOpen
@@ -77,6 +82,7 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   sizeFormat: "units",
   dateFormat: "locale",
   showHidden: true,
+  showSystem: false,
   letters: "quickSearch",
   mediaOpen: "viewer",
   documentOpen: "window",
@@ -111,6 +117,7 @@ export function readSettings(value: unknown): PanelSettings {
     sizeFormat: v.sizeFormat === "bytes" && !oldDefaultUsesBytes ? "bytes" : "units",
     dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
     showHidden: hiddenChosen ? v.showHidden !== false : true,
+    showSystem: v.showSystem === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
     mediaOpen: v.mediaOpen === "system" ? "system" : "viewer",
     documentOpen: v.documentOpen === "system" ? "system" : "window",

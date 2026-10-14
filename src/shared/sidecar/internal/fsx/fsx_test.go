@@ -70,6 +70,10 @@ func TestListDirsShowHidden(t *testing.T) {
 	if len(got) != 3 || !got[".hidden"] || !got["parent"] || got["plain"] {
 		t.Errorf("with hidden folders: %v", got)
 	}
+	// A dot-folder is hidden, not system: HideSystem keeps it.
+	if got := names(ListOptions{ShowHidden: true, HideSystem: true}); len(got) != 3 || !got[".hidden"] {
+		t.Errorf("hidden without system: %v", got)
+	}
 }
 
 func TestListDirsBounds(t *testing.T) {
