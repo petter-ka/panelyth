@@ -1,0 +1,3 @@
+{"at":"2026-10-14T08:37:22.196Z","test":"posters","source":"1080p H.264, 8 s","visiblePosters":26,"coldAllPostersMs":1038,"warmAllPostersMs":143}
+{"at":"2026-10-14T08:37:24.628Z","test":"playback","source":"1080p H.264 + AAC","selectToMetadataMs":381,"seekMs":193,"longTasksOver50":0}
+{"at":"2026-10-14T08:37:27.278Z","test":"dblclick-media-window","dblclickToPlayingMs":309}

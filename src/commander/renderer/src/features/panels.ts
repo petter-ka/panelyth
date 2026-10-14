@@ -78,6 +78,13 @@ export function setTreeMode(tree: TreeMode): void {
   saveLayout()
 }
 
+/** The settings window changed the folder tree mode (ADR-0039); the split stays as it is here. */
+export function applyLayoutSetting(value: unknown): void {
+  const { tree } = readLayout(value)
+  if (tree !== undefined && tree !== usePanelsStore.getState().tree)
+    usePanelsStore.setState({ tree })
+}
+
 /** Ctrl+Shift+F8: no tree, one tree, a tree per panel. */
 export function cycleTreeMode(): void {
   const at = TREE_MODES.indexOf(usePanelsStore.getState().tree)

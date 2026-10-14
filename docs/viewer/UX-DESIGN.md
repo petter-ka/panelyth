@@ -166,7 +166,7 @@ opened from inside the app, a double-click closes it, as before.)
 
 ## Settings (Stage 08.5)
 
-The status bar opens a tabbed settings dialog with Viewer, Appearance and Shortcuts sections. Viewer preferences use
+The app rail's Settings button opens the tabbed settings in a native window of their own (ADR-0039): a child of the main window that blocks it until closed and can be moved, with General, Viewer, Appearance, Shortcuts and About tabs; changes apply to the viewer at once. Viewer preferences use
 switch controls for on/off choices and segmented controls for startup folder and mouse-wheel behavior. The startup
 folder can be the last used folder, a chosen folder, or the platform Home place. Escape closes the focused image viewer
 or leaves video fullscreen; outside those contexts it asks to close the app when confirmation is enabled. Appearance

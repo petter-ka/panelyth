@@ -10,7 +10,7 @@ import { installFakeBridge, makeItems } from "../../test/fakeBridge"
 import { mockViewport } from "../../test/viewport"
 import { openFolder, resetFolderStore, startFolderMonitoring } from "../folder/folderStore"
 import { startSidecarMonitoring, useSidecarStore } from "../system/sidecarStore"
-import { selectAll } from "../tiles/selectionStore"
+import { selectAll, useSelectionStore } from "../tiles/selectionStore"
 import { resetJobsStore, startJobMonitoring } from "./jobsStore"
 import { applyPattern, parsePattern } from "./pattern"
 
@@ -270,5 +270,27 @@ describe("user metadata", () => {
       favorite: true,
       source: { selection: { ranges: [[2, 3]], include: [4] } },
     })
+  })
+
+  it("the batch bar inverts and clears the selection", async () => {
+    await setup()
+    await userEvent.click(tile("IMG_2.jpg"))
+    fireEvent.mouseDown(tile("IMG_3.jpg"), { ctrlKey: true })
+    const bar = await screen.findByTestId("batch-bar")
+    // Six entries, two selected: the other four.
+    fireEvent.click(within(bar).getByRole("button", { name: "Invert" }))
+    expect(bar).toHaveTextContent("4 selected")
+    expect(tile("IMG_2.jpg")).toHaveAttribute("aria-selected", "false")
+    expect(tile("IMG_4.jpg")).toHaveAttribute("aria-selected", "true")
+    // Ranges for the gaps; the Ctrl+clicked tile becomes one exclusion. No list of ids.
+    const { ranges, include, exclude } = useSelectionStore.getState()
+    expect(ranges).toEqual([
+      [0, 2],
+      [3, 6],
+    ])
+    expect([include.size, exclude.size]).toEqual([0, 1])
+    fireEvent.click(within(bar).getByRole("button", { name: "Clear selection" }))
+    expect(screen.queryByTestId("batch-bar")).not.toBeInTheDocument()
+    expect(tile("IMG_4.jpg")).toHaveAttribute("aria-selected", "false")
   })
 })

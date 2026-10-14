@@ -4,11 +4,16 @@ import { useEffect, useState } from "react"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { formatBytes, formatCount } from "../features/format"
 import { stopListing, useListingStore } from "../features/listing"
-import { marksDescriptor, useMarksStore } from "../features/marks"
+import { invertMarks, marksDescriptor, markNone, useMarksStore } from "../features/marks"
 import type { Side } from "../features/panels"
 import { isRunning, stopSizes, useSizeJobs } from "../features/sizes"
 import { usePanelVolume } from "./DriveBar"
+import { CloseIcon, Tooltip } from "@panelyth/ui"
 import { t } from "@panelyth/i18n"
+
+/** A control in the status line: the mouse never takes the keys from the panel. */
+const lineButton = "h-5 min-h-[20px] rounded px-1.5 text-text hover:bg-raised"
+const keepFocus = (e: { preventDefault(): void }): void => e.preventDefault()
 
 /** Marked sizes are asked of Go at most this often while marks change. */
 const INFO_DELAY_MS = 150
@@ -78,20 +83,46 @@ export function StatusLine({ side }: { side: Side }) {
             type="button"
             tabIndex={-1}
             onClick={() => stopListing(side)}
-            className="h-5 min-h-[20px] rounded px-1.5 text-text hover:bg-raised"
+            className={lineButton}
           >
             {t("Stop")}
           </button>
         </>
       ) : marked > 0 ? (
-        <span data-testid={`marked-${side}`}>
-          {t("{marked} of {total} marked", {
-            marked: formatCount(marked),
-            total: formatCount(total),
-          })}
-          {shown?.marked &&
-            ` · ${t("{current} of {total}", { current: formatBytes(shown.marked.bytes), total: formatBytes(shown.all) })}`}
-        </span>
+        <>
+          <span data-testid={`marked-${side}`}>
+            {t("{marked} of {total} marked", {
+              marked: formatCount(marked),
+              total: formatCount(total),
+            })}
+            {shown?.marked &&
+              ` · ${t("{current} of {total}", { current: formatBytes(shown.marked.bytes), total: formatBytes(shown.all) })}`}
+          </span>
+          {/* The same as Num* and Ctrl+Num- (one range per gap, no list of ids). */}
+          <Tooltip content={t("Invert marks")}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onMouseDown={keepFocus}
+              onClick={() => invertMarks(side)}
+              className={lineButton}
+            >
+              {t("Invert")}
+            </button>
+          </Tooltip>
+          <Tooltip content={t("Unmark all")}>
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-label={t("Unmark all")}
+              onMouseDown={keepFocus}
+              onClick={() => markNone(side)}
+              className={`${lineButton} grid w-5 place-items-center px-0`}
+            >
+              <CloseIcon size={12} />
+            </button>
+          </Tooltip>
+        </>
       ) : (
         <span>
           {t("{count, plural, one {# entry} other {# entries}}", { count: total })}
@@ -105,7 +136,7 @@ export function StatusLine({ side }: { side: Side }) {
             type="button"
             tabIndex={-1}
             onClick={() => stopSizes(side)}
-            className="h-5 min-h-[20px] rounded px-1.5 text-text hover:bg-raised"
+            className={lineButton}
           >
             {t("Stop")}
           </button>

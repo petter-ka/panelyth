@@ -23,6 +23,9 @@ const DOT: Record<SidecarState, string> = {
   failed: "bg-danger",
 }
 
+/** Backend state and the theme are hidden for now; the bar shows only for a notice. */
+const STATUS_BAR_VISIBLE = false
+
 export function StatusBar() {
   const state = useSidecarStore((s) => s.status?.state ?? "starting")
   const theme = useThemeStore((s) => s.preference)
@@ -31,8 +34,16 @@ export function StatusBar() {
   const notice = useCarryNotice((s) => s.message)
   const filesNotice = useFilesStore((s) => s.notice)
   return (
-    <footer className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted">
-      <span className="flex items-center gap-1.5" data-testid="sidecar-status" data-state={state}>
+    <footer
+      hidden={!STATUS_BAR_VISIBLE && !notice && !filesNotice}
+      className="flex h-7 shrink-0 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted"
+    >
+      <span
+        hidden={!STATUS_BAR_VISIBLE}
+        className="flex items-center gap-1.5"
+        data-testid="sidecar-status"
+        data-state={state}
+      >
         <span aria-hidden="true" className={`size-1.5 rounded-full ${DOT[state]}`} />
         {t(LABEL[state])}
       </span>
@@ -50,6 +61,7 @@ export function StatusBar() {
       <Tooltip content={t("Change theme (shared with the viewer)")}>
         <button
           type="button"
+          hidden={!STATUS_BAR_VISIBLE}
           onClick={cycle}
           className="h-6 rounded px-1.5 font-normal hover:bg-raised hover:text-text"
           data-testid="theme-toggle"

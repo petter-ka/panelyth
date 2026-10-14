@@ -12,6 +12,13 @@ export default defineConfig({
     emptyOutDir: true,
     target: "chrome130",
     sourcemap: true,
+    // settings.html is the settings window's page (ADR-0039).
+    rollupOptions: {
+      input: {
+        main: "index.html",
+        settings: "settings.html",
+      },
+    },
   },
   server: {
     port: 5173,

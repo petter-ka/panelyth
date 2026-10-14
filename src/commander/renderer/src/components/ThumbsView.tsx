@@ -413,7 +413,6 @@ const ThumbTile = memo(function ThumbTile({ side, store, thumbs, index, entry, s
           <RenameField onDone={() => focusGrid(side)} />
         ) : shown ? (
           <span className="truncate">
-            {marked && <span aria-hidden="true">• </span>}
             {prefix && <span className="text-muted">{prefix}</span>}
             {shown.name}
           </span>

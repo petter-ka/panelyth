@@ -1,0 +1,2 @@
+{"at":"2026-10-14T08:36:55.854Z","test":"editor","firstFrameMs":21,"readyMs":291,"quarterTurnMs":29,"dragMs":1267,"dragPaints":43,"dragPaintGapP95Ms":37,"dragSettleMs":15,"longTasksOver50":0,"maxLongTaskMs":0,"saveMs":117}
+{"at":"2026-10-14T08:36:58.756Z","test":"editor-24mp","firstFrameMs":22,"readyMs":449,"dragPaints":62,"dragPaintGapP95Ms":33,"dragSettleMs":39,"finalFrame":"1630x642","longTasksOver50":0,"maxLongTaskMs":0}

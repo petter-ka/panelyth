@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useId, useState } from "react"
 import { createRoot } from "react-dom/client"
 import "./styles.css"
 import shotFiles from "./media/commander-files.webp"
@@ -31,12 +31,42 @@ const Arrow = ({ diagonal = false, down = false, back = false }) => (
   </svg>
 )
 
+/** The app icon (src/shared/desktop/build/icon.svg), cropped to its dark tile. */
 function BrandMark() {
+  // The mark shows twice (header and footer): each copy needs its own gradient ids.
+  const id = useId()
   return (
-    <svg className="brand-mark" viewBox="0 0 96 96" aria-hidden="true">
-      <rect width="24" height="96" rx="10" fill="#c9e878" />
-      <rect x="32" width="64" height="56" rx="10" fill="#c9e878" />
-      <rect x="32" y="64" width="64" height="32" rx="10" fill="#557f2f" />
+    <svg className="brand-mark" viewBox="100 100 824 824" aria-hidden="true">
+      <defs>
+        <linearGradient
+          id={`${id}lime`}
+          x1="128"
+          y1="128"
+          x2="896"
+          y2="896"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#cfec80" />
+          <stop offset="1" stopColor="#9bcb3f" />
+        </linearGradient>
+        <linearGradient
+          id={`${id}tile`}
+          x1="512"
+          y1="100"
+          x2="512"
+          y2="924"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor="#343b31" />
+          <stop offset="1" stopColor="#14170f" />
+        </linearGradient>
+      </defs>
+      <rect x="100" y="100" width="824" height="824" rx="184" fill={`url(#${id}tile)`} />
+      <g transform="translate(128 128) scale(0.75)">
+        <rect x="128" y="128" width="192" height="768" rx="80" fill={`url(#${id}lime)`} />
+        <rect x="384" y="128" width="512" height="448" rx="80" fill={`url(#${id}lime)`} />
+        <rect x="384" y="640" width="512" height="256" rx="80" fill="#6a9a38" />
+      </g>
     </svg>
   )
 }

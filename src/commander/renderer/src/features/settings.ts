@@ -1,6 +1,7 @@
 import { CONFLICT_POLICIES, type ConflictPolicy } from "@panelyth/contracts"
 import { TILE_SIZE_ORDER, type TileSize } from "@panelyth/media-ui"
 import { createSettingsStore } from "@panelyth/renderer-core"
+import { openSettingsWindowOr } from "@panelyth/ui"
 import { bridge, isBridgeAvailable } from "../bridge"
 
 // The commander's own settings (Stage C03, Settings → Panels), under
@@ -8,6 +9,8 @@ import { bridge, isBridgeAvailable } from "../bridge"
 // size are shared with the viewer and live under shared.*.
 
 export const SETTINGS_KEY = "commander.settings"
+/** v3: hidden entries shown by default (older stored values are not a choice). */
+export const SETTINGS_VERSION = 3
 export const MAX_EDITOR_CHARS = 1024
 
 /** Size column: readable units by default, or exact bytes with separators. */
@@ -34,7 +37,7 @@ export type CompareTolerance = 0 | 2000
 export interface PanelSettings {
   sizeFormat: SizeFormat
   dateFormat: DateFormat
-  /** Hidden and system entries shown in panels that have no stored state yet. */
+  /** Hidden and system entries (dot-names too) shown in the panels; Ctrl+H switches one panel. */
   showHidden: boolean
   letters: LettersMode
   mediaOpen: MediaOpen
@@ -73,7 +76,7 @@ export interface PanelSettings {
 export const DEFAULT_SETTINGS: PanelSettings = {
   sizeFormat: "units",
   dateFormat: "locale",
-  showHidden: false,
+  showHidden: true,
   letters: "quickSearch",
   mediaOpen: "viewer",
   documentOpen: "window",
@@ -102,10 +105,12 @@ const tileSizes: ReadonlySet<unknown> = new Set(TILE_SIZE_ORDER)
 export function readSettings(value: unknown): PanelSettings {
   const v = (value ?? {}) as Partial<Record<keyof PanelSettings, unknown>> & { v?: unknown }
   const oldDefaultUsesBytes = v.v === 1
+  // Before v3 hidden entries were off by default, and every save stored that.
+  const hiddenChosen = v.v === SETTINGS_VERSION
   return {
     sizeFormat: v.sizeFormat === "bytes" && !oldDefaultUsesBytes ? "bytes" : "units",
     dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
-    showHidden: v.showHidden === true,
+    showHidden: hiddenChosen ? v.showHidden !== false : true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
     mediaOpen: v.mediaOpen === "system" ? "system" : "viewer",
     documentOpen: v.documentOpen === "system" ? "system" : "window",
@@ -134,13 +139,37 @@ const store = createSettingsStore<PanelSettings>({
   read: readSettings,
   save(settings) {
     if (isBridgeAvailable())
-      void bridge.setSetting(SETTINGS_KEY, { v: 2, ...settings }).catch(() => undefined)
+      void bridge
+        .setSetting(SETTINGS_KEY, { v: SETTINGS_VERSION, ...settings })
+        .catch(() => undefined)
   },
 })
 
 export const useSettingsStore = store.useStore
 export const updateSettings = store.update
 export const setSettingsOpen = store.setOpen
+/** A stored value applied without saving it again (the settings window's, ADR-0039). */
+export const applyStoredSettings = store.load
+
+/**
+ * Settings opens in its native window (ADR-0039), on a tab the native menu
+ * asked for; the in-page dialog when the window cannot open.
+ */
+export function openSettings(): void {
+  const openDialog = (): void => store.setOpen(true)
+  if (!isBridgeAvailable()) return openDialog()
+  openSettingsWindowOr(bridge.openSettingsWindow, openDialog, () =>
+    windowClosed.forEach((listener) => listener()),
+  )
+}
+
+const windowClosed = new Set<() => void>()
+
+/** The settings window closed; AppShell gives the active panel the keys again, as after the dialog. */
+export function onSettingsWindowClosed(listener: () => void): () => void {
+  windowClosed.add(listener)
+  return () => windowClosed.delete(listener)
+}
 /** Tests. */
 export const resetSettings = store.reset
 

@@ -73,6 +73,10 @@
   font-size: 18px;
 }
 
+:root[data-interface-size="xlarge"] {
+  font-size: 20px;
+}
+
 :root.dark {
   color-scheme: dark;
   --canvas: #1b1b1b;
@@ -189,6 +193,20 @@
 }
 
 /*
+ * Scrollbars follow the theme: the thumb is the theme's muted color over a
+ * transparent track, so each theme (and any new one) gets its own tint. At
+ * rest it stays quiet (about 2:1 against its surface); hovered or dragged it
+ * reaches at least 3:1 in every theme. Not the accent: that marks focus and
+ * selection only. px, not rem: list layouts measure the space they leave.
+ */
+:root {
+  --scrollbar-size: 12px;
+  --scrollbar-thumb: color-mix(in srgb, var(--muted) 45%, transparent);
+  --scrollbar-thumb-hover: color-mix(in srgb, var(--muted) 75%, transparent);
+  --scrollbar-thumb-active: color-mix(in srgb, var(--muted) 90%, transparent);
+}
+
+/*
  * Motion (ADR-0014, docs/shared/DESIGN-SYSTEM.md "Motion and effects"): only responses
  * to user actions on portalled chrome (menus, dialogs), never on tiles or
  * the scrolling surface. Enter only; closing is instant.
@@ -275,6 +293,43 @@
 
   .tabular-nums {
     font-family: var(--font-mono);
+  }
+
+  /*
+   * Electron is Chromium only. scrollbar-color or scrollbar-width on an element
+   * would switch these styles off for it, so neither is used.
+   */
+  ::-webkit-scrollbar {
+    width: var(--scrollbar-size);
+    height: var(--scrollbar-size);
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-button {
+    display: none;
+  }
+
+  /* A rounded thumb inset by a transparent border, so it reads thinner than its hit area. */
+  ::-webkit-scrollbar-thumb {
+    min-width: 32px;
+    min-height: 32px;
+    border: 3px solid transparent;
+    border-radius: var(--scrollbar-size);
+    background-color: var(--scrollbar-thumb);
+    background-clip: padding-box;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-thumb-hover);
+  }
+
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--scrollbar-thumb-active);
   }
 
   :focus-visible {

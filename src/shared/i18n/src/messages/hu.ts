@@ -277,6 +277,8 @@ const messages: Messages = {
   Clear: "Törlés",
   "Clear finished": "Befejezettek törlése",
   "Clear search": "Keresés törlése",
+  "Clear selection": "Kijelölés megszüntetése",
+  "Clear selection (Esc)": "Kijelölés megszüntetése (Esc)",
   "Clearing the label of {count, plural, one {# file} other {# files}}":
     "{count, plural, one {# fájl címkéjének törlése} other {# fájl címkéjének törlése}}",
   "Clearing the rating of {count, plural, one {# file} other {# files}}":
@@ -460,6 +462,7 @@ const messages: Messages = {
   Dark: "Sötét",
   "Dark brown": "Sötétbarna",
   "Dark purple": "Sötétlila",
+  "Dark themes": "Sötét témák",
   Darken: "Sötétítés",
   Date: "Dátum",
   "Date created": "Létrehozás dátuma",
@@ -644,6 +647,7 @@ const messages: Messages = {
   Extension: "Kiterjesztés",
   "Extension mask": "Kiterjesztésmaszk",
   "Extensions stay the same.": "A kiterjesztések változatlanok maradnak.",
+  "Extra large": "Nagyon nagy",
   "Extracting {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elem kicsomagolása} other {# elem kicsomagolása}}",
   Eye: "Szem",
@@ -918,6 +922,7 @@ const messages: Messages = {
   "Light brown": "Világosbarna",
   "Light from": "Fény iránya",
   "Light height": "Fény magassága",
+  "Light themes": "Világos témák",
   Lighten: "Világosítás",
   Lighting: "Megvilágítás",
   Line: "Vonal",
@@ -984,6 +989,7 @@ const messages: Messages = {
   "Modified until": "Módosítva eddig",
   "Modified {date}": "Módosítva: {date}",
   "More contrast": "Nagyobb kontraszt",
+  "More filters": "További szűrők",
   "More ways to save": "További mentési módok",
   Mosaic: "Mozaik",
   "Most common colors": "Leggyakoribb színek",
@@ -1523,6 +1529,8 @@ const messages: Messages = {
   "Select an image or video to preview it here.":
     "Válasszon ki egy képet vagy videót, és itt megjelenik az előnézete.",
   "Select everything": "Teljes kép kijelölése",
+  "Select what is not selected, and the other way round":
+    "A nem kijelöltek kijelölése, és fordítva",
   Selected: "Kijelölve",
   "Selected folder path": "A kijelölt mappa elérési útja",
   "Selection actions": "Kijelölési műveletek",
@@ -1553,8 +1561,7 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Az összes művelet megjelenítése (Ctrl+J)",
   "Show columns (drag to reorder)": "Oszlopok megjelenítése (húzással átrendezhető)",
   "Show file names under tiles": "Fájlnevek megjelenítése a csempék alatt",
-  "Show hidden and system files in new panels":
-    "Rejtett és rendszerfájlok megjelenítése az új paneleken",
+  "Show hidden and system files": "Rejtett és rendszerfájlok megjelenítése",
   "Show hidden files": "Rejtett fájlok megjelenítése",
   "Show in file manager": "Megjelenítés a fájlkezelőben",
   "Show in folder": "Megjelenítés a mappában",
@@ -2078,6 +2085,7 @@ const messages: Messages = {
   "Wrap long lines": "Hosszú sorok tördelése",
   Write: "Írás",
   "Wrong password. Try again.": "Hibás jelszó. Próbálja újra.",
+  XL: "XL",
   Year: "Év",
   Yellow: "Sárga",
   Yes: "Igen",

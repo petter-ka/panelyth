@@ -1,5 +1,12 @@
 import { expect, test, type ElectronApplication } from "@playwright/test"
-import { commanderEnv, commanderPage, launchApp, shellState, waitForReady } from "../launch"
+import {
+  commanderEnv,
+  commanderPage,
+  launchApp,
+  settingsWindow,
+  shellState,
+  waitForReady,
+} from "../launch"
 
 // Stage P06 (ADR-0038): Settings → About, updates and the native menu. An
 // unpackaged build has no update feed, so main runs a scripted engine
@@ -108,25 +115,27 @@ test.describe("About, updates and the native menu (Stage P06)", () => {
       await waitForReady(page)
       await expect(page.getByTestId("app-settings")).not.toHaveAttribute("data-update", "waiting")
 
+      // Settings opens in a window of its own, on the About tab (ADR-0039).
       await choose(app, "about")
-      const about = page.getByTestId("settings-about")
+      const settings = await settingsWindow(app, "viewer")
+      const about = settings.getByTestId("settings-about")
       await expect(about).toBeVisible()
-      await expect(page.getByRole("tab", { name: "About" })).toHaveAttribute(
+      await expect(settings.getByRole("tab", { name: "About" })).toHaveAttribute(
         "aria-selected",
         "true",
       )
       const version = await app.evaluate(({ app: a }) => a.getVersion())
-      await expect(page.getByTestId("about-version")).toHaveText(`Version ${version}`)
-      await expect(page.getByTestId("about-details")).toContainText("Electron")
+      await expect(settings.getByTestId("about-version")).toHaveText(`Version ${version}`)
+      await expect(settings.getByTestId("about-details")).toContainText("Electron")
       // The sidecar is built with the product's version (one product version).
-      await expect(page.getByTestId("about-details")).toContainText(`Sidecar ${version}`)
+      await expect(settings.getByTestId("about-details")).toContainText(`Sidecar ${version}`)
 
-      const status = page.getByTestId("update-status")
+      const status = settings.getByTestId("update-status")
       await expect(status).toHaveAttribute("data-phase", "idle")
-      await page.getByTestId("update-check").click()
+      await settings.getByTestId("update-check").click()
       await expect(status).toHaveText("Version 9.9.9 is available.")
       // The feed's HTML arrives as text.
-      const notes = page.getByTestId("update-notes")
+      const notes = settings.getByTestId("update-notes")
       await expect(notes).toContainText("What changed")
       await expect(notes).toContainText("• Faster folders")
       await expect(notes).toContainText("• Fixes & polish")
@@ -135,28 +144,34 @@ test.describe("About, updates and the native menu (Stage P06)", () => {
 
       // Nothing is downloaded until asked.
       expect((await shellLog(app)).some((e) => e.action === "update.install")).toBe(false)
-      await page.getByTestId("update-download").click()
+      await settings.getByTestId("update-download").click()
       await expect(status).toHaveAttribute("data-phase", "ready")
       await expect(status).toContainText("Version 9.9.9 is ready")
       await expect.poll(() => menuLabel(app, "update")).toBe("Restart to Update…")
 
-      await page.getByTestId("update-install").click()
+      await settings.getByTestId("update-install").click()
       await expect
         .poll(async () => (await shellLog(app)).filter((e) => e.action === "update.install"))
         .toEqual([{ action: "update.install", value: "9.9.9" }])
 
       // The rail marks the waiting version, in the other app too.
-      await page.keyboard.press("Escape")
+      // Esc closes the window on keydown: there is no page left for a keyup.
+      await settings.keyboard.down("Escape")
+      await expect.poll(() => app.windows().includes(settings)).toBe(false)
       await expect(page.getByTestId("app-settings")).toHaveAttribute("data-update", "waiting")
       await page.getByTestId("app-switch").click()
       const commander = await commanderPage(app)
       await expect(commander.getByTestId("app-settings")).toHaveAttribute("data-update", "waiting")
 
-      // The menu's update item goes to the app on screen.
+      // The menu's update item goes to the app on screen: the commander's settings window.
       await choose(app, "update")
-      await expect(commander.getByTestId("settings-about")).toBeVisible()
-      await expect(commander.getByTestId("update-status")).toHaveAttribute("data-phase", "ready")
-      await expect(page.getByTestId("settings-about")).toHaveCount(0)
+      const commanderSettings = await settingsWindow(app, "commander")
+      await expect(commanderSettings.getByTestId("settings-about")).toBeVisible()
+      await expect(commanderSettings.getByTestId("update-status")).toHaveAttribute(
+        "data-phase",
+        "ready",
+      )
+      expect(app.windows().filter((p) => p.url().includes("/settings.html"))).toHaveLength(1)
     } finally {
       await app.close()
     }
@@ -167,10 +182,11 @@ test.describe("About, updates and the native menu (Stage P06)", () => {
     try {
       await waitForReady(page)
       await choose(app, "update")
-      const status = page.getByTestId("update-status")
+      const settings = await settingsWindow(app, "viewer")
+      const status = settings.getByTestId("update-status")
       await expect(status).toHaveText("Panelyth is up to date.")
 
-      const auto = page.getByRole("switch", { name: "Check automatically" })
+      const auto = settings.getByRole("switch", { name: "Check automatically" })
       await expect(auto).toHaveAttribute("aria-checked", "true")
       await auto.click()
       await expect(auto).toHaveAttribute("aria-checked", "false")
@@ -190,8 +206,8 @@ test.describe("About, updates and the native menu (Stage P06)", () => {
       expect(stored).toEqual({ v: 1, auto: false })
 
       // Settings → Appearance → Language reaches the native menu.
-      await page.getByRole("tab", { name: "Appearance" }).click()
-      await page.getByRole("combobox", { name: "Interface language" }).selectOption("hu")
+      await settings.getByRole("tab", { name: "Appearance" }).click()
+      await settings.getByRole("combobox", { name: "Interface language" }).selectOption("hu")
       await expect.poll(async () => (await menu(app)).labels.at(-1)).toBe("Súgó")
       expect(await menuLabel(app, "about")).toBe("A Panelyth névjegye")
     } finally {
@@ -207,10 +223,11 @@ test.describe("About, updates and the native menu (Stage P06)", () => {
       // Without the commander there is no app switch in View.
       expect((await menu(app)).ids).not.toContain("app-commander")
       await choose(app, "about")
-      await expect(page.getByTestId("update-status")).toHaveText(
+      const settings = await settingsWindow(app, "viewer")
+      await expect(settings.getByTestId("update-status")).toHaveText(
         "This build does not update itself.",
       )
-      await expect(page.getByTestId("update-check")).toHaveCount(0)
+      await expect(settings.getByTestId("update-check")).toHaveCount(0)
       // A renderer cannot start a check or an install either.
       const state = await page.evaluate(async () => {
         await window.panelyth!.update.check()

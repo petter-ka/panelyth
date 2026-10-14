@@ -10,7 +10,7 @@ import {
   type SaveTarget,
 } from "@panelyth/contracts"
 import { create } from "zustand"
-import { bridge } from "../../bridge"
+import { bridge, isBridgeAvailable } from "../../bridge"
 import { useLibraryStore } from "../library/libraryStore"
 
 export const EDITOR_SETTINGS_KEY = "viewer.editor"
@@ -78,14 +78,24 @@ export const useEditorSettings = create<State>((set, get) => ({
   },
 }))
 
-/** Applies saved settings after each successful library load. */
+/** Applies saved settings after each successful library load, and the settings window's at once (ADR-0039). */
 export function startEditorSettingsPersistence(): () => void {
   const load = (settings: Record<string, unknown>): void =>
     useEditorSettings.setState({ settings: parseEditorSettings(settings[EDITOR_SETTINGS_KEY]) })
   if (useLibraryStore.getState().loaded) load(useLibraryStore.getState().settings)
-  return useLibraryStore.subscribe((s, prev) => {
+  const offLibrary = useLibraryStore.subscribe((s, prev) => {
     if (s.loaded && (!prev.loaded || s.settings !== prev.settings)) load(s.settings)
   })
+  const offWindow = isBridgeAvailable()
+    ? bridge.on("settings.changed", ({ key, value }) => {
+        if (key === EDITOR_SETTINGS_KEY)
+          useEditorSettings.setState({ settings: parseEditorSettings(value) })
+      })
+    : () => undefined
+  return () => {
+    offLibrary()
+    offWindow()
+  }
 }
 
 /** The CSS color of a surround. */

@@ -23,6 +23,25 @@ export const THEME_OPTIONS: readonly { value: ThemePreference; label: string }[]
   { value: "light-brown", label: msg("Light brown") },
 ]
 
+/** The theme choices of Settings → Appearance, by group; "system" is a checkbox above them. */
+export const THEME_GROUPS: readonly {
+  label: string
+  themes: readonly { value: ThemePreference; label: string }[]
+}[] = [
+  {
+    label: msg("Dark themes"),
+    themes: THEME_OPTIONS.filter((o) =>
+      (["dark", "dark-purple", "dark-brown"] as ThemePreference[]).includes(o.value),
+    ),
+  },
+  {
+    label: msg("Light themes"),
+    themes: THEME_OPTIONS.filter((o) =>
+      (["light", "beige", "light-brown"] as ThemePreference[]).includes(o.value),
+    ),
+  },
+]
+
 /** Dark is the designed default: media reads best on a dark neutral surround. */
 export const DEFAULT_THEME: ThemePreference = "dark"
 const ORDER: readonly ThemePreference[] = ["dark", "light", "system"]
@@ -37,12 +56,13 @@ export const ICON_SET_OPTIONS: readonly { value: IconSet; label: string }[] = [
 
 export const DEFAULT_ICON_SET: IconSet = "default"
 
-export type InterfaceSize = "small" | "medium" | "large"
+export type InterfaceSize = "small" | "medium" | "large" | "xlarge"
 
 export const INTERFACE_SIZE_SCALE: Record<InterfaceSize, number> = {
   small: 0.875,
   medium: 1,
   large: 1.125,
+  xlarge: 1.25,
 }
 
 const DEFAULT_INTERFACE_SIZE: InterfaceSize = "medium"
@@ -65,7 +85,7 @@ const ICON_SET_KEY = "panelyth.iconSet"
 
 const isTheme = (v: unknown): v is ThemePreference => THEME_OPTIONS.some((o) => o.value === v)
 const isInterfaceSize = (v: unknown): v is InterfaceSize =>
-  v === "small" || v === "medium" || v === "large"
+  typeof v === "string" && v in INTERFACE_SIZE_SCALE
 
 const isIconSet = (v: unknown): v is IconSet => ICON_SET_OPTIONS.some((o) => o.value === v)
 
@@ -88,6 +108,9 @@ function writeLocal(key: string, value: string): void {
 
 const systemDark = (): boolean =>
   window.matchMedia?.("(prefers-color-scheme: dark)").matches ?? false
+
+/** Leaving "system": the plain theme the system shows now, so nothing changes on screen. */
+export const themeOfSystem = (): ThemePreference => (systemDark() ? "dark" : "light")
 
 function applyTheme(preference: ThemePreference): void {
   const systemTheme = preference === "system" ? systemDark() : null

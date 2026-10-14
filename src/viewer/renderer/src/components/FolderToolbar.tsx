@@ -1,6 +1,14 @@
-import type { Crumb, EntryKind, SortDirection, SortField, Tag } from "@panelyth/contracts"
+import type { Crumb, SortDirection, SortField, Tag } from "@panelyth/contracts"
 import { Tooltip } from "@panelyth/ui"
-import { useEffect, useRef, useState, type ComponentType, type ReactNode } from "react"
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ComponentType,
+  type ReactNode,
+  type RefObject,
+} from "react"
 import { SEARCH_INPUT_ID } from "../app/shortcuts"
 import { bridge } from "../bridge"
 import {
@@ -55,6 +63,7 @@ import {
   DropdownRadioItem,
   DropdownRoot,
   DropdownSeparator,
+  DropdownSub,
   DropdownTrigger,
 } from "./ui/menu"
 import { msg, t } from "@panelyth/i18n"
@@ -291,180 +300,344 @@ function NavBar() {
   )
 }
 
-const KIND_CHIPS: { kind: EntryKind; label: string; facet: "folders" | "images" | "videos" }[] = [
+type KindChip = "dir" | "image" | "video"
+
+const KIND_CHIPS: { kind: KindChip; label: string; facet: "folders" | "images" | "videos" }[] = [
   { kind: "dir", label: "Folders", facet: "folders" },
   { kind: "image", label: "Images", facet: "images" },
   { kind: "video", label: "Videos", facet: "videos" },
 ]
 
+type ChipId = KindChip | "exts" | "favorite" | "rating" | "tags" | "clear"
+
+const chip = (on: boolean) =>
+  `flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`
+
+const NO_CHIPS: ReadonlySet<ChipId> = new Set()
+
+const sameChips = (a: ReadonlySet<ChipId>, b: ReadonlySet<ChipId>): boolean =>
+  a.size === b.size && [...a].every((id) => b.has(id))
+
+/**
+ * Which chips wrapped to a second line of the row: the row is one chip high
+ * and hides what wraps, so a chip that starts below its height did not fit.
+ * (Not "below the first chip": a shorter chip, Clear, sits lower on the line.)
+ */
+function useOverflowedChips(row: RefObject<HTMLDivElement | null>): ReadonlySet<ChipId> {
+  const [hidden, setHidden] = useState<ReadonlySet<ChipId>>(NO_CHIPS)
+  useLayoutEffect(() => {
+    const el = row.current
+    if (!el || typeof ResizeObserver === "undefined") return
+    const measure = (): void => {
+      const chips = [...el.querySelectorAll<HTMLElement>(":scope > [data-chip]")]
+      // No layout (a hidden window, tests): nothing measured, nothing hidden.
+      const line = el.clientHeight
+      const next = new Set(
+        chips.filter((c) => line > 0 && c.offsetTop >= line).map((c) => c.dataset.chip as ChipId),
+      )
+      setHidden((prev) => (sameChips(prev, next) ? prev : next))
+    }
+    measure()
+    // The row's width and each chip's (a count or a chosen file type changes it).
+    const observer = new ResizeObserver(measure)
+    observer.observe(el)
+    for (const child of el.children) observer.observe(child)
+    return () => observer.disconnect()
+  })
+  return hidden
+}
+
+/**
+ * The filter chips (Stage 08.6, ADR-0021). Chips that do not fit the window
+ * go, from the right, into a "…" menu that holds the same choices; it is
+ * highlighted while a filter in it is on.
+ */
 function Filters({ disabled }: { disabled: boolean }) {
   const kinds = useFolderStore((s) => s.kinds)
   const exts = useFolderStore((s) => s.exts)
   const facets = useFolderStore((s) => s.facets)
   const recursive = useFolderStore((s) => s.recursive)
+  const favorite = useFolderStore((s) => s.favorite)
+  const minRating = useFolderStore((s) => s.minRating)
+  const tags = useFolderStore((s) => s.tags)
   const filtered = useFolderStore(hasFilters)
+  const [known, setKnown] = useState<Tag[] | null>(null)
+  const loadTags = (open: boolean): void => {
+    if (open) bridge.tags().then(setKnown, () => setKnown([]))
+  }
+  const row = useRef<HTMLDivElement>(null)
+  const hidden = useOverflowedChips(row)
+  const kindChips = KIND_CHIPS.filter((c) => !(recursive && c.kind === "dir"))
+  const on: Record<ChipId, boolean> = {
+    dir: kinds.includes("dir"),
+    image: kinds.includes("image"),
+    video: kinds.includes("video"),
+    exts: exts.length > 0,
+    favorite,
+    rating: minRating > 0,
+    tags: tags.length > 0,
+    clear: false,
+  }
+  const slot = (id: ChipId, children: ReactNode) => (
+    <span
+      key={id}
+      data-chip={id}
+      aria-hidden={hidden.has(id) || undefined}
+      inert={hidden.has(id) || undefined}
+      className={`flex shrink-0 ${hidden.has(id) ? "invisible" : ""}`}
+    >
+      {children}
+    </span>
+  )
   return (
-    <div role="group" aria-label={t("Filters")} className="flex min-w-0 items-center gap-1">
-      {KIND_CHIPS.filter((c) => !(recursive && c.kind === "dir")).map((c) => {
-        const on = kinds.includes(c.kind)
-        const count = facets?.[c.facet]
-        return (
-          <button
-            key={c.kind}
-            type="button"
-            aria-pressed={on}
-            disabled={disabled}
-            onClick={() => toggleKind(c.kind)}
-            className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`}
-          >
-            {c.label}
-            {count !== undefined && (
-              <span className={`tabular-nums ${on ? "" : "text-muted"}`}>{formatCount(count)}</span>
-            )}
-          </button>
-        )
-      })}
-      <DropdownRoot>
-        <DropdownTrigger
-          disabled={disabled || !facets || facets.exts.length === 0}
-          className={`flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${exts.length > 0 ? "border-accent bg-accent text-accent-foreground" : "border-border enabled:hover:border-muted"}`}
-        >
-          <FilterIcon size={12} />
-          {exts.length > 0 ? exts.map((e) => e.toUpperCase()).join(", ") : t("File types")}
-          <ChevronDownIcon size={12} />
-        </DropdownTrigger>
-        <DropdownContent>
-          <DropdownLabel>{t("Show only")}</DropdownLabel>
-          {facets?.exts.map((e) => (
-            <DropdownCheckboxItem
-              key={e.ext}
-              checked={exts.includes(e.ext)}
-              onSelect={(ev) => ev.preventDefault()}
-              onCheckedChange={(checked) =>
-                setExts(checked ? [...exts, e.ext] : exts.filter((x) => x !== e.ext))
-              }
+    <div role="group" aria-label={t("Filters")} className="flex min-w-0 flex-1 items-center gap-1">
+      <div
+        ref={row}
+        className="relative flex h-6 min-w-0 shrink flex-wrap items-center gap-x-1 gap-y-2 overflow-hidden"
+      >
+        {kindChips.map((c) =>
+          slot(
+            c.kind,
+            <button
+              type="button"
+              aria-pressed={on[c.kind]}
+              disabled={disabled}
+              onClick={() => toggleKind(c.kind)}
+              className={chip(on[c.kind])}
             >
-              {e.ext.toUpperCase()}
-              <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
-                {formatCount(e.count)}
-              </span>
-            </DropdownCheckboxItem>
-          ))}
-          {exts.length > 0 && (
-            <>
-              <DropdownSeparator />
-              <DropdownItem onSelect={() => setExts([])}>{t("All file types")}</DropdownItem>
-            </>
+              {c.label}
+              {facets?.[c.facet] !== undefined && (
+                <span className={`tabular-nums ${on[c.kind] ? "" : "text-muted"}`}>
+                  {formatCount(facets[c.facet])}
+                </span>
+              )}
+            </button>,
+          ),
+        )}
+        {slot(
+          "exts",
+          <DropdownRoot>
+            <DropdownTrigger
+              disabled={disabled || !facets || facets.exts.length === 0}
+              className={chip(on.exts)}
+            >
+              <FilterIcon size={12} />
+              {exts.length > 0 ? exts.map((e) => e.toUpperCase()).join(", ") : t("File types")}
+              <ChevronDownIcon size={12} />
+            </DropdownTrigger>
+            <DropdownContent>
+              <ExtItems />
+            </DropdownContent>
+          </DropdownRoot>,
+        )}
+        {slot(
+          "favorite",
+          <button
+            type="button"
+            aria-pressed={favorite}
+            disabled={disabled}
+            onClick={() => setFavoriteFilter(!favorite)}
+            className={chip(favorite)}
+          >
+            <HeartIcon size={12} />
+            {t("Favorites")}
+          </button>,
+        )}
+        {slot(
+          "rating",
+          <DropdownRoot>
+            <DropdownTrigger
+              disabled={disabled}
+              className={chip(on.rating)}
+              aria-label={t("Rating")}
+            >
+              {minRating > 0 ? `★${minRating}+` : t("Rating")}
+              <ChevronDownIcon size={12} />
+            </DropdownTrigger>
+            <DropdownContent>
+              <RatingItems />
+            </DropdownContent>
+          </DropdownRoot>,
+        )}
+        {slot(
+          "tags",
+          <DropdownRoot onOpenChange={loadTags}>
+            <DropdownTrigger disabled={disabled} className={chip(on.tags)} aria-label={t("Tags")}>
+              <TagIcon size={12} />
+              {tags.length > 0 ? tags.join(", ") : t("Tags")}
+              <ChevronDownIcon size={12} />
+            </DropdownTrigger>
+            <DropdownContent>
+              <TagItems known={known} />
+            </DropdownContent>
+          </DropdownRoot>,
+        )}
+        {filtered &&
+          slot(
+            "clear",
+            <button
+              type="button"
+              className="shrink-0 rounded px-1.5 text-2xs text-muted hover:text-text"
+              onClick={clearFilters}
+            >
+              {t("Clear")}
+            </button>,
           )}
-        </DropdownContent>
-      </DropdownRoot>
-      <UserFilters disabled={disabled} />
-      {filtered && (
-        <button
-          type="button"
-          className="shrink-0 rounded px-1.5 text-2xs text-muted hover:text-text"
-          onClick={clearFilters}
-        >
-          {t("Clear")}
-        </button>
+      </div>
+      {hidden.size > 0 && (
+        <DropdownRoot onOpenChange={loadTags}>
+          <Tooltip content={t("More filters")}>
+            <DropdownTrigger
+              disabled={disabled}
+              aria-label={t("More filters")}
+              data-testid="more-filters"
+              className={chip([...hidden].some((id) => on[id]))}
+            >
+              …
+            </DropdownTrigger>
+          </Tooltip>
+          <DropdownContent>
+            {kindChips
+              .filter((c) => hidden.has(c.kind))
+              .map((c) => (
+                <DropdownCheckboxItem
+                  key={c.kind}
+                  checked={on[c.kind]}
+                  onSelect={(ev) => ev.preventDefault()}
+                  onCheckedChange={() => toggleKind(c.kind)}
+                >
+                  {c.label}
+                  {facets?.[c.facet] !== undefined && (
+                    <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
+                      {formatCount(facets[c.facet])}
+                    </span>
+                  )}
+                </DropdownCheckboxItem>
+              ))}
+            {hidden.has("exts") && facets && facets.exts.length > 0 && (
+              <DropdownSub label={t("File types")}>
+                <ExtItems />
+              </DropdownSub>
+            )}
+            {hidden.has("favorite") && (
+              <DropdownCheckboxItem
+                checked={favorite}
+                onSelect={(ev) => ev.preventDefault()}
+                onCheckedChange={(checked) => setFavoriteFilter(checked === true)}
+              >
+                {t("Favorites")}
+              </DropdownCheckboxItem>
+            )}
+            {hidden.has("rating") && (
+              <DropdownSub label={t("Rating")}>
+                <RatingItems />
+              </DropdownSub>
+            )}
+            {hidden.has("tags") && (
+              <DropdownSub label={t("Tags")}>
+                <TagItems known={known} />
+              </DropdownSub>
+            )}
+            {hidden.has("clear") && (
+              <>
+                <DropdownSeparator />
+                <DropdownItem onSelect={clearFilters}>{t("Clear")}</DropdownItem>
+              </>
+            )}
+          </DropdownContent>
+        </DropdownRoot>
       )}
     </div>
   )
 }
 
-const chip = (on: boolean) =>
-  `flex h-6 shrink-0 items-center gap-1 rounded-full border px-2.5 text-2xs disabled:opacity-50 ${on ? "border-accent bg-accent text-accent-foreground" : "border-border text-text enabled:hover:border-muted"}`
-
-/** Favorites, minimum rating and tags (library.db, ADR-0021). */
-function UserFilters({ disabled }: { disabled: boolean }) {
-  const favorite = useFolderStore((s) => s.favorite)
-  const minRating = useFolderStore((s) => s.minRating)
-  const tags = useFolderStore((s) => s.tags)
-  const [known, setKnown] = useState<Tag[] | null>(null)
+/** File types: the chip's menu and the "…" submenu. */
+function ExtItems() {
+  const exts = useFolderStore((s) => s.exts)
+  const facets = useFolderStore((s) => s.facets)
   return (
     <>
-      <button
-        type="button"
-        aria-pressed={favorite}
-        disabled={disabled}
-        onClick={() => setFavoriteFilter(!favorite)}
-        className={chip(favorite)}
-      >
-        <HeartIcon size={12} />
-        {t("Favorites")}
-      </button>
-      <DropdownRoot>
-        <DropdownTrigger
-          disabled={disabled}
-          className={chip(minRating > 0)}
-          aria-label={t("Rating")}
+      <DropdownLabel>{t("Show only")}</DropdownLabel>
+      {facets?.exts.map((e) => (
+        <DropdownCheckboxItem
+          key={e.ext}
+          checked={exts.includes(e.ext)}
+          onSelect={(ev) => ev.preventDefault()}
+          onCheckedChange={(checked) =>
+            setExts(checked ? [...exts, e.ext] : exts.filter((x) => x !== e.ext))
+          }
         >
-          {minRating > 0 ? `★${minRating}+` : t("Rating")}
-          <ChevronDownIcon size={12} />
-        </DropdownTrigger>
-        <DropdownContent>
-          <DropdownRadioGroup
-            aria-label={t("Minimum rating")}
-            value={String(minRating)}
-            onValueChange={(v) => setMinRating(Number(v))}
+          {e.ext.toUpperCase()}
+          <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
+            {formatCount(e.count)}
+          </span>
+        </DropdownCheckboxItem>
+      ))}
+      {exts.length > 0 && (
+        <>
+          <DropdownSeparator />
+          <DropdownItem onSelect={() => setExts([])}>{t("All file types")}</DropdownItem>
+        </>
+      )}
+    </>
+  )
+}
+
+/** Minimum rating: the chip's menu and the "…" submenu. */
+function RatingItems() {
+  const minRating = useFolderStore((s) => s.minRating)
+  return (
+    <DropdownRadioGroup
+      aria-label={t("Minimum rating")}
+      value={String(minRating)}
+      onValueChange={(v) => setMinRating(Number(v))}
+    >
+      <DropdownRadioItem value="0">{t("Any rating")}</DropdownRadioItem>
+      {[1, 2, 3, 4, 5].map((r) => (
+        <DropdownRadioItem key={r} value={String(r)}>
+          {r < 5 ? t("{stars} or more", { stars: "★".repeat(r) }) : "★".repeat(r)}
+        </DropdownRadioItem>
+      ))}
+    </DropdownRadioGroup>
+  )
+}
+
+/** Tags (library.db, ADR-0021): the chip's menu and the "…" submenu; read when opened. */
+function TagItems({ known }: { known: Tag[] | null }) {
+  const tags = useFolderStore((s) => s.tags)
+  return (
+    <>
+      <DropdownLabel>{t("Files with all of")}</DropdownLabel>
+      {known === null && <DropdownLabel>{t("Loading…")}</DropdownLabel>}
+      {known?.length === 0 && <DropdownLabel>{t("No tags yet")}</DropdownLabel>}
+      {known?.map((tag) => {
+        const on = tags.some((x) => x.toLowerCase() === tag.name.toLowerCase())
+        return (
+          <DropdownCheckboxItem
+            key={tag.id}
+            checked={on}
+            onSelect={(ev) => ev.preventDefault()}
+            onCheckedChange={(checked) =>
+              setTagFilter(
+                checked
+                  ? [...tags, tag.name]
+                  : tags.filter((x) => x.toLowerCase() !== tag.name.toLowerCase()),
+              )
+            }
           >
-            <DropdownRadioItem value="0">{t("Any rating")}</DropdownRadioItem>
-            {[1, 2, 3, 4, 5].map((r) => (
-              <DropdownRadioItem key={r} value={String(r)}>
-                {r < 5 ? t("{stars} or more", { stars: "★".repeat(r) }) : "★".repeat(r)}
-              </DropdownRadioItem>
-            ))}
-          </DropdownRadioGroup>
-        </DropdownContent>
-      </DropdownRoot>
-      <DropdownRoot
-        onOpenChange={(open) => {
-          if (open) bridge.tags().then(setKnown, () => setKnown([]))
-        }}
-      >
-        <DropdownTrigger
-          disabled={disabled}
-          className={chip(tags.length > 0)}
-          aria-label={t("Tags")}
-        >
-          <TagIcon size={12} />
-          {tags.length > 0 ? tags.join(", ") : t("Tags")}
-          <ChevronDownIcon size={12} />
-        </DropdownTrigger>
-        <DropdownContent>
-          <DropdownLabel>{t("Files with all of")}</DropdownLabel>
-          {known === null && <DropdownLabel>{t("Loading…")}</DropdownLabel>}
-          {known?.length === 0 && <DropdownLabel>{t("No tags yet")}</DropdownLabel>}
-          {known?.map((tag) => {
-            const on = tags.some((x) => x.toLowerCase() === tag.name.toLowerCase())
-            return (
-              <DropdownCheckboxItem
-                key={tag.id}
-                checked={on}
-                onSelect={(ev) => ev.preventDefault()}
-                onCheckedChange={(checked) =>
-                  setTagFilter(
-                    checked
-                      ? [...tags, tag.name]
-                      : tags.filter((x) => x.toLowerCase() !== tag.name.toLowerCase()),
-                  )
-                }
-              >
-                {tag.name}
-                <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
-                  {formatCount(tag.count)}
-                </span>
-              </DropdownCheckboxItem>
-            )
-          })}
-          {tags.length > 0 && (
-            <>
-              <DropdownSeparator />
-              <DropdownItem onSelect={() => setTagFilter([])}>{t("Any tags")}</DropdownItem>
-            </>
-          )}
-        </DropdownContent>
-      </DropdownRoot>
+            {tag.name}
+            <span className="ml-auto pl-6 text-2xs tabular-nums opacity-70">
+              {formatCount(tag.count)}
+            </span>
+          </DropdownCheckboxItem>
+        )
+      })}
+      {tags.length > 0 && (
+        <>
+          <DropdownSeparator />
+          <DropdownItem onSelect={() => setTagFilter([])}>{t("Any tags")}</DropdownItem>
+        </>
+      )}
     </>
   )
 }
@@ -586,7 +759,6 @@ function ViewBar() {
       className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-chrome px-3"
     >
       <Filters disabled={!folder} />
-      <span className="flex-1" />
       <label className="flex shrink-0 items-center gap-1.5 text-xs text-muted">
         <input
           type="checkbox"

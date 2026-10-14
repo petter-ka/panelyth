@@ -101,7 +101,7 @@ function EditorSettings({ disabled }: { disabled: boolean }) {
   )
 }
 
-function ViewerSettings() {
+export function ViewerSettings() {
   const preferences = useSettingsStore((s) => s.settings)
   const libraryLoaded = useLibraryStore((s) => s.loaded)
 

@@ -22,9 +22,15 @@ import { panelDnd } from "./panelDnd"
 import { RenameField, useRenaming } from "./RenameField"
 import { useRightButton } from "./useRightButton"
 import { useScrollMemory } from "./useScrollMemory"
+import { MarkTab } from "./MarkTab"
 
 /** Fixed column width per interface size; nothing is measured per name (ADR-0028). */
-export const BRIEF_COLUMN: Record<InterfaceSize, number> = { small: 180, medium: 200, large: 240 }
+export const BRIEF_COLUMN: Record<InterfaceSize, number> = {
+  small: 180,
+  medium: 200,
+  large: 240,
+  xlarge: 270,
+}
 /** Whole columns kept mounted on each side of the visible ones. */
 export const BRIEF_OVERSCAN = 1
 
@@ -228,8 +234,8 @@ const BriefItem = memo(function BriefItem({
       className={`${itemClass} ${shown && isMuted(shown) ? "text-muted" : "text-text"}`}
       style={{ left, top, width, height }}
     >
-      <span aria-hidden="true" className="w-2 shrink-0 text-center">
-        {marked ? "•" : ""}
+      <span aria-hidden="true" className="relative w-2 shrink-0 self-stretch">
+        <MarkTab marked={marked} />
       </span>
       {entry < 0 ? (
         <>

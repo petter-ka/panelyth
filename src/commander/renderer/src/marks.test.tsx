@@ -17,6 +17,7 @@ import { useSizeJobs } from "./features/sizes"
 import { folder, installFakeCommander, item, type FakeOptions } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
 import { markCount } from "@panelyth/renderer-core"
+import { SETTINGS_KEY } from "./features/settings"
 
 // Stage C02: keyboard, marks and quick search
 // (docs/commander/stages/C02-keyboard-marks-quick-search.md).
@@ -52,6 +53,9 @@ async function start(options: Partial<FakeOptions> = {}) {
   await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
   return fake
 }
+
+/** Hidden entries off: the tests that count entries. */
+const HIDDEN_OFF = { settings: { [SETTINGS_KEY]: { v: 3, showHidden: false } } }
 
 const grid = (side: "left" | "right") => screen.getByTestId(`grid-${side}`)
 const rows = (side: "left" | "right") => grid(side).querySelectorAll("[data-row]")
@@ -195,7 +199,7 @@ describe("marks (Stage C02)", () => {
   })
 
   it("Space on a folder marks it and calculates its size; the status line shows marked sizes", async () => {
-    const fake = await start()
+    const fake = await start(HIDDEN_OFF)
     await key({ key: "ArrowDown" })
     await key({ key: " " })
     expect(fake.api.jobs.dirSize).toHaveBeenCalledWith(
@@ -212,6 +216,22 @@ describe("marks (Stage C02)", () => {
     // Stop cancels the job.
     fireEvent.click(within(screen.getByTestId("status-left")).getByRole("button", { name: "Stop" }))
     expect(fake.api.jobs.cancel).toHaveBeenCalled()
+  })
+
+  it("the status line inverts and clears the marks, and the panel keeps the keys", async () => {
+    await start(HIDDEN_OFF)
+    await act(async () => fireEvent.mouseDown(row("left", "Photo2"), { ctrlKey: true }))
+    const status = screen.getByTestId("status-left")
+    expect(screen.getByTestId("marked-left")).toHaveTextContent("1 of 7 marked")
+    const invert = within(status).getByRole("button", { name: "Invert" })
+    // A click does not take the focus from the panel.
+    expect(fireEvent.mouseDown(invert)).toBe(false)
+    fireEvent.click(invert)
+    expect(count("left")).toBe(6)
+    expect(markedNames("left")).not.toContain("Photo2")
+    fireEvent.click(within(status).getByRole("button", { name: "Unmark all" }))
+    expect(count("left")).toBe(0)
+    expect(screen.queryByTestId("marked-left")).toBeNull()
   })
 
   it("rebases marks in Go when the listing changes", async () => {
@@ -312,7 +332,7 @@ describe("navigation keys (Stage C02)", () => {
 
 describe("keymap (Stage C02)", () => {
   it("dispatches per scope, can be remapped, and lists every action in F1", async () => {
-    await start()
+    await start(HIDDEN_OFF)
     setBinding("mark.invert", ["Mod+i"])
     await key({ key: "i", ctrlKey: true })
     expect(count("left")).toBe(7) // all entries but ".." and the hidden one

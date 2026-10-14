@@ -1,0 +1,2 @@
+{"at":"2026-10-14T08:28:10.476Z","test":"pause-latency","pauseMs":117,"finalState":"paused"}
+{"at":"2026-10-14T08:29:26.215Z","test":"copy-from-ui","small10k":{"copyMs":4188,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":615,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":111}

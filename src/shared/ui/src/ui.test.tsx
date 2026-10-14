@@ -11,6 +11,8 @@ import {
   initTheme,
   setLanguage,
   Icon,
+  requestSettingsTab,
+  SharedSettingsDialog,
   ShortcutsDialog,
   useIconSetStore,
   useInterfaceSizeStore,
@@ -88,6 +90,68 @@ describe("shared appearance", () => {
     expect(applySharedAppearance(null)).toBe(false)
     expect(applySharedAppearance({ theme: "neon", interfaceSize: 3 })).toBe(false)
     expect(useThemeStore.getState().preference).toBe("dark")
+  })
+})
+
+describe("Settings → Appearance", () => {
+  beforeEach(() => {
+    localStorage.clear()
+    resetLocale()
+    connectSharedAppearance(null)
+    initTheme()
+    initInterfaceSize()
+    requestSettingsTab("appearance")
+    render(
+      <TooltipProvider>
+        <SharedSettingsDialog
+          currentApp="viewer"
+          open
+          onClose={vi.fn()}
+          showGeneral
+          settingsReady
+          appSettings={<div />}
+          onOpenShortcuts={vi.fn()}
+        />
+      </TooltipProvider>,
+    )
+  })
+
+  const chosen = (): string[] =>
+    screen.getAllByRole("button", { pressed: true }).map((b) => b.getAttribute("aria-label") ?? "")
+
+  it("groups the themes as dark and light; System clears the choice", () => {
+    const dark = screen.getByRole("group", { name: "Dark themes" })
+    const light = screen.getByRole("group", { name: "Light themes" })
+    expect(
+      [dark, light].map((g) => [...g.querySelectorAll("button")].map((b) => b.textContent)),
+    ).toEqual([
+      ["Dark", "Dark purple", "Dark brown"],
+      ["Light", "Beige", "Light brown"],
+    ])
+    const system = screen.getByRole("checkbox", { name: "System" })
+    expect(system).not.toBeChecked()
+    expect(chosen()).toContain("Dark")
+
+    fireEvent.click(system)
+    expect(useThemeStore.getState().preference).toBe("system")
+    expect(system).toBeChecked()
+    expect(chosen()).not.toEqual(expect.arrayContaining(["Dark"]))
+    for (const g of [dark, light]) expect(g.querySelector("[aria-pressed=true]")).toBeNull()
+
+    // A theme unticks System; unticking it keeps what the system shows (light in jsdom).
+    fireEvent.click(screen.getByRole("button", { name: "Beige" }))
+    expect(useThemeStore.getState().preference).toBe("beige")
+    expect(system).not.toBeChecked()
+    fireEvent.click(system)
+    fireEvent.click(system)
+    expect(useThemeStore.getState().preference).toBe("light")
+  })
+
+  it("offers an extra large interface size", () => {
+    fireEvent.click(screen.getByRole("button", { name: "Extra large" }))
+    expect(useInterfaceSizeStore.getState().size).toBe("xlarge")
+    expect(document.documentElement.dataset.interfaceSize).toBe("xlarge")
+    expect(applySharedAppearance({ interfaceSize: "xlarge" })).toBe(true)
   })
 })
 

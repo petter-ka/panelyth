@@ -71,7 +71,7 @@ async function mainPage(app: ElectronApplication): Promise<Page> {
   }
   if (!first.url().startsWith("app://commander/index.html")) return first
   for (;;) {
-    const viewer = app.windows().find((p) => p.url().startsWith("app://panelyth/"))
+    const viewer = app.windows().find((p) => p.url().startsWith("app://panelyth/index.html"))
     if (viewer) return viewer
     if (Date.now() > deadline) return first
     await new Promise((r) => setTimeout(r, 25))
@@ -188,7 +188,8 @@ export function shellState(
 export async function commanderPage(app: ElectronApplication, timeoutMs = 10_000): Promise<Page> {
   const deadline = Date.now() + timeoutMs
   for (;;) {
-    const page = app.windows().find((p) => p.url().startsWith("app://commander"))
+    // Not its media or settings window, which share the origin (ADR-0033, ADR-0039).
+    const page = app.windows().find((p) => p.url().startsWith("app://commander/index.html"))
     if (page) return page
     if (Date.now() > deadline) throw new Error("commander view not found")
     await new Promise((r) => setTimeout(r, 25))
@@ -232,5 +233,45 @@ export function removeTemp(path: string): void {
     rmSync(path, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 })
   } catch (error) {
     console.warn(`left ${path}: ${(error as Error).message}`)
+  }
+}
+
+/**
+ * Clicks what opens Settings in `page` and returns the settings window it
+ * opens (ADR-0039): a native window of its own, on the app's origin.
+ */
+export async function openSettingsWindow(
+  app: ElectronApplication,
+  page: Page,
+  timeoutMs = 10_000,
+): Promise<Page> {
+  const opened = app.waitForEvent("window", {
+    predicate: (p) => p.url().includes("/settings.html"),
+    timeout: timeoutMs,
+  })
+  await page.getByTestId("app-settings").click({ timeout: timeoutMs })
+  const settings = await opened
+  await settings.waitForLoadState("domcontentloaded")
+  return settings
+}
+
+/**
+ * The settings window that is open (ADR-0039), of `app` when named (its page
+ * is settings.html on that app's origin); waits until it exists.
+ */
+export async function settingsWindow(
+  app: ElectronApplication,
+  of?: "viewer" | "commander",
+  timeoutMs = 10_000,
+): Promise<Page> {
+  const origin = of === "commander" ? "app://commander/" : of === "viewer" ? "app://panelyth/" : ""
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const page = app
+      .windows()
+      .find((p) => p.url().includes("/settings.html") && p.url().startsWith(origin))
+    if (page) return page
+    if (Date.now() > deadline) throw new Error("settings window not found")
+    await new Promise((r) => setTimeout(r, 25))
   }
 }

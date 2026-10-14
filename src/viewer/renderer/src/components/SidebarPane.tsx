@@ -450,11 +450,18 @@ export function SidebarPane() {
     virtualizer.measure()
   }, [virtualizer, rowHeight, pathHeaderOffset])
 
-  // Scroll the revealed (open) folder into view in the tree.
+  // The open folder is shown in the tree: a folder already in sight stays put
+  // (a click in the tree never moves it); one out of sight, as at start or
+  // when the commander hands a folder over, comes to the middle.
   useEffect(() => {
     if (revealToken === 0 || !activeKey) return
     const index = rows.findIndex((r) => r.type === "tree" && r.key === activeKey)
-    if (index >= 0) virtualizer.scrollToIndex(index, { align: "auto" })
+    const el = scrollRef.current
+    const item = virtualizer.measurementsCache[index]
+    if (index < 0 || !el || !item) return
+    const top = el.scrollTop + pathHeaderOffset
+    const inSight = item.start >= top && item.end <= el.scrollTop + el.clientHeight
+    if (!inSight) virtualizer.scrollToIndex(index, { align: "center" })
     // rows are read at reveal time; only the token triggers.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [revealToken, activeKey, virtualizer])

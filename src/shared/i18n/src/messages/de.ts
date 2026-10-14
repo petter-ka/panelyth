@@ -282,6 +282,8 @@ const messages: Messages = {
   Clear: "Löschen",
   "Clear finished": "Fertige entfernen",
   "Clear search": "Suche löschen",
+  "Clear selection": "Auswahl aufheben",
+  "Clear selection (Esc)": "Auswahl aufheben (Esc)",
   "Clearing the label of {count, plural, one {# file} other {# files}}":
     "{count, plural, one {Farbmarkierung von # Datei wird entfernt} other {Farbmarkierung von # Dateien wird entfernt}}",
   "Clearing the rating of {count, plural, one {# file} other {# files}}":
@@ -465,6 +467,7 @@ const messages: Messages = {
   Dark: "Dunkel",
   "Dark brown": "Dunkelbraun",
   "Dark purple": "Dunkelviolett",
+  "Dark themes": "Dunkle Designs",
   Darken: "Abdunkeln",
   Date: "Datum",
   "Date created": "Erstellungsdatum",
@@ -650,6 +653,7 @@ const messages: Messages = {
   Extension: "Erweiterung",
   "Extension mask": "Maske für die Erweiterung",
   "Extensions stay the same.": "Die Dateiendungen bleiben unverändert.",
+  "Extra large": "Sehr groß",
   "Extracting {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# Element wird extrahiert} other {# Elemente werden extrahiert}}",
   Eye: "Auge",
@@ -924,6 +928,7 @@ const messages: Messages = {
   "Light brown": "Hellbraun",
   "Light from": "Licht aus Richtung",
   "Light height": "Lichthöhe",
+  "Light themes": "Helle Designs",
   Lighten: "Aufhellen",
   Lighting: "Belichtung",
   Line: "Linie",
@@ -990,6 +995,7 @@ const messages: Messages = {
   "Modified until": "Geändert bis",
   "Modified {date}": "Geändert: {date}",
   "More contrast": "Mehr Kontrast",
+  "More filters": "Weitere Filter",
   "More ways to save": "Weitere Speichermöglichkeiten",
   Mosaic: "Mosaik",
   "Most common colors": "Häufigste Farben",
@@ -1535,6 +1541,8 @@ const messages: Messages = {
   "Select an image or video to preview it here.":
     "Wählen Sie ein Bild oder Video, um es hier anzuzeigen.",
   "Select everything": "Alles auswählen",
+  "Select what is not selected, and the other way round":
+    "Nicht Ausgewähltes auswählen und umgekehrt",
   Selected: "Ausgewählt",
   "Selected folder path": "Pfad des ausgewählten Ordners",
   "Selection actions": "Auswahlaktionen",
@@ -1565,8 +1573,7 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Alle Vorgänge anzeigen (Ctrl+J)",
   "Show columns (drag to reorder)": "Spalten anzeigen (zum Umordnen ziehen)",
   "Show file names under tiles": "Dateinamen unter den Kacheln anzeigen",
-  "Show hidden and system files in new panels":
-    "Versteckte und Systemdateien in neuen Bereichen anzeigen",
+  "Show hidden and system files": "Versteckte und Systemdateien anzeigen",
   "Show hidden files": "Versteckte Dateien anzeigen",
   "Show in file manager": "Im Dateimanager anzeigen",
   "Show in folder": "Im Ordner anzeigen",
@@ -2106,6 +2113,7 @@ const messages: Messages = {
   "Wrap long lines": "Lange Zeilen umbrechen",
   Write: "Schreiben",
   "Wrong password. Try again.": "Falsches Passwort. Versuchen Sie es erneut.",
+  XL: "XL",
   Year: "Jahr",
   Yellow: "Gelb",
   Yes: "Ja",

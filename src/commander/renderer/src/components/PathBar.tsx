@@ -2,6 +2,8 @@ import { forwardRef, useImperativeHandle, useRef, useState } from "react"
 import { Tooltip } from "@panelyth/ui"
 import {
   archivePath,
+  canGoRoot,
+  canGoUp,
   goRoot,
   goUp,
   openPath,
@@ -23,6 +25,10 @@ export interface PathBarHandle {
 /** Typing filters live after this pause; Enter applies at once. */
 const FILTER_DELAY_MS = 150
 
+/** ".." and "/": muted, and dimmed with no hover while there is nowhere to go. */
+const pathButton =
+  "ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted enabled:hover:bg-raised enabled:hover:text-text disabled:opacity-35"
+
 interface PathBarProps {
   side: Side
   active: boolean
@@ -42,6 +48,9 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
   const archive = useListingStore((s) => s[side].archive)
   const remote = useListingStore((s) => s[side].remote)
   const filter = useListingStore((s) => s[side].filter)
+  // At the root ".." and "/" have nowhere to go (Backspace and Ctrl+\ do nothing there either).
+  const upAllowed = useListingStore((s) => canGoUp(s[side]))
+  const rootAllowed = useListingStore((s) => canGoRoot(s[side]))
   const [editing, setEditing] = useState(false)
   const [filtering, setFiltering] = useState(false)
   const [filterValue, setFilterValue] = useState("")
@@ -236,9 +245,10 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               type="button"
               tabIndex={-1}
               onClick={() => void goUp(side)}
+              disabled={!upAllowed}
               aria-label={t("Parent folder")}
               data-testid={`up-${side}`}
-              className="ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
+              className={pathButton}
             >
               ..
             </button>
@@ -248,9 +258,10 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               type="button"
               tabIndex={-1}
               onClick={() => void goRoot(side)}
+              disabled={!rootAllowed}
               aria-label={t("Root (Ctrl+\\)")}
               data-testid={`root-${side}`}
-              className="ml-1 h-6 w-7 shrink-0 rounded font-mono font-normal text-muted hover:bg-raised hover:text-text"
+              className={pathButton}
             >
               /
             </button>

@@ -63,7 +63,7 @@ import {
 import { openMultiRename, undoMultiRename } from "./rename"
 import { openAttributes, openProperties } from "./attributes"
 import { openHistoryMenu, openHotlist } from "./hotlist"
-import { setSettingsOpen, updateSettings, useSettingsStore } from "./settings"
+import { openSettings, updateSettings, useSettingsStore } from "./settings"
 import {
   closeOtherTabs,
   closeTab,
@@ -474,7 +474,7 @@ export function runShellAction(id: ActionId): void {
       toggleQuickView(usePanelsStore.getState().active)
       break
     case "app.settings":
-      setSettingsOpen(true)
+      openSettings()
       break
     case "queue.toggle":
       toggleQueue()

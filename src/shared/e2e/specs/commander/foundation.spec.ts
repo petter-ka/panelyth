@@ -96,6 +96,7 @@ test.describe("commander foundation (Stage C00)", () => {
           "remote",
           "rename",
           "selection",
+          "settings",
           "shell",
           "sidecar",
           "system",

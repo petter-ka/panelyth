@@ -18,7 +18,8 @@ import { loadShortcuts, setHelpOpen } from "./features/keymap"
 import { loadCommandHistory } from "./features/cmdline"
 import { loadTools } from "./features/tools"
 import { startThumbs } from "./features/thumbs"
-import { loadSettings, setSettingsOpen } from "./features/settings"
+import { loadSettings, openSettings } from "./features/settings"
+import { startSettingsRelay } from "./features/settingsRelay"
 import { loadTabSets } from "./features/tabsets"
 import { startTree } from "./features/tree"
 import { startRemote } from "./features/remote"
@@ -64,7 +65,7 @@ if (isBridgeAvailable()) {
       (key, value) => void bridge.setSetting(key, value).catch(() => undefined),
     ),
     menuCommandHandler({
-      openSettings: () => setSettingsOpen(true),
+      openSettings,
       openShortcuts: () => setHelpOpen(true),
     }),
   )
@@ -75,6 +76,8 @@ if (isBridgeAvailable()) {
     .catch(() => undefined)
   void loadCommandHistory().catch(() => undefined)
   void loadSettings().catch(() => undefined)
+  // What the settings window changes applies here at once (ADR-0039).
+  startSettingsRelay()
   // Saved tab sets (C10.5).
   void loadTabSets().catch(() => undefined)
   // Drives, the hotlist (shared bookmarks) and recent locations (C03).

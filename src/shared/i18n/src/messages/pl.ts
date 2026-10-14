@@ -276,6 +276,8 @@ const messages: Messages = {
   Clear: "Wyczyść",
   "Clear finished": "Wyczyść zakończone",
   "Clear search": "Wyczyść wyszukiwanie",
+  "Clear selection": "Wyczyść zaznaczenie",
+  "Clear selection (Esc)": "Wyczyść zaznaczenie (Esc)",
   "Clearing the label of {count, plural, one {# file} other {# files}}":
     "{count, plural, one {Usuwanie etykiety z # pliku} few {Usuwanie etykiety z # plików} many {Usuwanie etykiety z # plików} other {Usuwanie etykiety z # pliku}}",
   "Clearing the rating of {count, plural, one {# file} other {# files}}":
@@ -458,6 +460,7 @@ const messages: Messages = {
   Dark: "Ciemny",
   "Dark brown": "Ciemnobrązowy",
   "Dark purple": "Ciemnofioletowy",
+  "Dark themes": "Ciemne motywy",
   Darken: "Przyciemnij",
   Date: "Data",
   "Date created": "Data utworzenia",
@@ -642,6 +645,7 @@ const messages: Messages = {
   Extension: "Rozszerzenie",
   "Extension mask": "Maska rozszerzenia",
   "Extensions stay the same.": "Rozszerzenia pozostają bez zmian.",
+  "Extra large": "Bardzo duży",
   "Extracting {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Wypakowywanie # elementu} few {Wypakowywanie # elementów} many {Wypakowywanie # elementów} other {Wypakowywanie # elementu}}",
   Eye: "Oko",
@@ -916,6 +920,7 @@ const messages: Messages = {
   "Light brown": "Jasnobrązowy",
   "Light from": "Światło z kierunku",
   "Light height": "Wysokość światła",
+  "Light themes": "Jasne motywy",
   Lighten: "Rozjaśnij",
   Lighting: "Oświetlenie",
   Line: "Linia",
@@ -982,6 +987,7 @@ const messages: Messages = {
   "Modified until": "Zmodyfikowano do",
   "Modified {date}": "Zmodyfikowano: {date}",
   "More contrast": "Większy kontrast",
+  "More filters": "Więcej filtrów",
   "More ways to save": "Więcej sposobów zapisu",
   Mosaic: "Mozaika",
   "Most common colors": "Najczęstsze kolory",
@@ -1520,6 +1526,8 @@ const messages: Messages = {
   "Select an image or video to preview it here.":
     "Wybierz obraz lub film, aby zobaczyć tutaj podgląd.",
   "Select everything": "Zaznacz wszystko",
+  "Select what is not selected, and the other way round":
+    "Zaznacz to, co nie jest zaznaczone, i odwrotnie",
   Selected: "Zaznaczono",
   "Selected folder path": "Ścieżka wybranego folderu",
   "Selection actions": "Akcje na zaznaczeniu",
@@ -1550,8 +1558,7 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Pokaż wszystkie operacje (Ctrl+J)",
   "Show columns (drag to reorder)": "Pokaż kolumny (przeciągnij, aby zmienić kolejność)",
   "Show file names under tiles": "Pokaż nazwy plików pod kafelkami",
-  "Show hidden and system files in new panels":
-    "Pokazuj pliki ukryte i systemowe w nowych panelach",
+  "Show hidden and system files": "Pokazuj pliki ukryte i systemowe",
   "Show hidden files": "Pokaż ukryte pliki",
   "Show in file manager": "Pokaż w menedżerze plików",
   "Show in folder": "Pokaż w folderze",
@@ -2073,6 +2080,7 @@ const messages: Messages = {
   "Wrap long lines": "Zawijaj długie wiersze",
   Write: "Zapis",
   "Wrong password. Try again.": "Nieprawidłowe hasło. Spróbuj ponownie.",
+  XL: "XL",
   Year: "Rok",
   Yellow: "Żółty",
   Yes: "Tak",

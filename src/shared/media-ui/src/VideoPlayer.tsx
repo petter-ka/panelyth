@@ -269,6 +269,8 @@ export function VideoPlayer({
           ? "paused"
           : "ready"
   const unavailable = !url || !!problem
+  // Full screen works on the poster of a video that can't play, and leaving it always works.
+  const noFullscreen = !url && !problem && !fullscreen && !appFullscreen
 
   return (
     <div
@@ -284,7 +286,8 @@ export function VideoPlayer({
       <div
         className="relative min-h-0 flex-1 bg-canvas"
         onDoubleClick={(e) => {
-          if (!url || problem) return
+          // A video that can't play still answers like the others, as a still picture.
+          if (!url && !problem && !onDoubleClick) return
           if (e.target instanceof Element && e.target.closest("button, input, [role=slider]"))
             return
           if (onDoubleClick) onDoubleClick()
@@ -450,7 +453,7 @@ export function VideoPlayer({
           testId="video-volume"
         />
         <span
-          className={unavailable ? "inline-flex" : "contents"}
+          className={noFullscreen ? "inline-flex" : "contents"}
           data-tooltip-content={
             fullscreen || appFullscreen ? t("Exit full screen (F)") : t("Full screen (F)")
           }
@@ -459,8 +462,8 @@ export function VideoPlayer({
             type="button"
             className={control}
             onClick={toggleFullscreen}
-            disabled={unavailable}
-            style={unavailable ? { pointerEvents: "none" } : undefined}
+            disabled={noFullscreen}
+            style={noFullscreen ? { pointerEvents: "none" } : undefined}
             aria-label={fullscreen || appFullscreen ? t("Exit full screen") : t("Full screen")}
           >
             {fullscreen || appFullscreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}

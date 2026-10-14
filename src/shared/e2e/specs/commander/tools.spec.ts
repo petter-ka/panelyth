@@ -10,7 +10,7 @@ import { tmpdir } from "node:os"
 import { join, sep } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { expectWithinBudget, removeTemp, repoRoot, shellState } from "../../launch"
+import { expectWithinBudget, removeTemp, repoRoot, settingsWindow, shellState } from "../../launch"
 import { commanderOf, cursorTo, goTo, launch, type Side } from "./helpers"
 
 // Stage C10: the command line, user commands, the toolbar, settings and the
@@ -363,9 +363,9 @@ test.describe("user commands, toolbar and settings (Stage C10)", () => {
       await goTo(c, "right", other)
       await c.getByTestId("panel-left").click()
 
-      // Settings → Editor and tools: a command with every placeholder.
+      // Settings → Editor and tools: a command with every placeholder (the settings window, ADR-0039).
       await c.keyboard.press("Control+,")
-      const dialog = c.getByRole("dialog")
+      const dialog = await settingsWindow(app, "commander")
       await dialog.getByRole("button", { name: "Editor and tools" }).click()
       await dialog.getByRole("button", { name: "Add a command…" }).click()
       const form = dialog.getByTestId("tool-form")
@@ -379,8 +379,9 @@ test.describe("user commands, toolbar and settings (Stage C10)", () => {
       await dialog.getByRole("button", { name: "Panels" }).click()
       await dialog.getByRole("checkbox", { name: "Function-key bar" }).uncheck()
       await dialog.getByLabel("Go to the command line (quick search starts with Alt)").check()
-      await c.keyboard.press("Escape")
-      await expect(dialog).toHaveCount(0)
+      // Esc closes the window on keydown: there is no page left for a keyup.
+      await dialog.keyboard.down("Escape")
+      await expect.poll(() => app.windows().includes(dialog)).toBe(false)
       await expect(c.getByTestId("function-keys")).toHaveCount(0)
       expect(await runs(app)).toEqual([])
 

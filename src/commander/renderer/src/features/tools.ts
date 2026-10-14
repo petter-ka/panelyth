@@ -95,6 +95,15 @@ export function setToolbar(items: readonly ToolbarItem[]): void {
 
 export const resetToolbar = (): void => setToolbar(DEFAULT_TOOLBAR)
 
+/** A value the settings window stored (ADR-0039): the commands or the toolbar, taken as they are. */
+export function applyToolsSetting(key: string, value: unknown): void {
+  if (key === COMMANDER_TOOLS_KEY) {
+    const commands = readUserCommands(value)
+    set({ commands })
+    setToolActions(commands)
+  } else if (key === TOOLBAR_KEY) set({ toolbar: readToolbar(value, get().commands) })
+}
+
 /** A new command as the editor starts with it. */
 export function newCommand(): UserCommand {
   return {

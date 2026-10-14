@@ -10,6 +10,7 @@ import { TILE_SIZE_ORDER } from "@panelyth/media-ui"
 import { Button, ChoiceGroup, SharedSettingsDialog, fieldClass } from "@panelyth/ui"
 import { useState, type ReactNode } from "react"
 import { POLICIES } from "../features/files"
+import { showHiddenEverywhere } from "../features/tabs"
 import { setTreeMode, usePanelsStore, type TreeMode } from "../features/panels"
 import { isToolAction, setHelpOpen, toolAction, type ActionId } from "../features/keymap"
 import {
@@ -67,14 +68,26 @@ function Radios<K extends keyof PanelSettings>({ setting: name, label, options }
   )
 }
 
-function Check({ setting: name, label }: { setting: BooleanSetting; label: string }) {
+function Check({
+  setting: name,
+  label,
+  onChange,
+}: {
+  setting: BooleanSetting
+  label: string
+  /** Applies the new value beyond the stored settings. */
+  onChange?: (checked: boolean) => void
+}) {
   const checked = useSettingsStore((s) => s.settings[name])
   return (
     <label className="flex items-center gap-2">
       <input
         type="checkbox"
         checked={checked}
-        onChange={(e) => updateSettings({ [name]: e.target.checked } as Partial<PanelSettings>)}
+        onChange={(e) => {
+          updateSettings({ [name]: e.target.checked } as Partial<PanelSettings>)
+          onChange?.(e.target.checked)
+        }}
       />
       {label}
     </label>
@@ -140,7 +153,12 @@ function TreeModeRadios() {
   )
 }
 
-function PanelsSection() {
+/**
+ * `onShowHidden`: the in-page dialog shows or hides hidden entries in every
+ * panel itself; in the settings window the app view does it when the change
+ * arrives (ADR-0039).
+ */
+function PanelsSection({ onShowHidden }: { onShowHidden?: (show: boolean) => void }) {
   const thumbSize = useSettingsStore((s) => s.settings.thumbSize)
   return (
     <Section>
@@ -160,7 +178,11 @@ function PanelsSection() {
           { value: "iso", label: t("ISO (2026-10-06 14:05)") },
         ]}
       />
-      <Check setting="showHidden" label={t("Show hidden and system files in new panels")} />
+      <Check
+        setting="showHidden"
+        label={t("Show hidden and system files")}
+        {...(onShowHidden && { onChange: onShowHidden })}
+      />
       <Radios
         setting="letters"
         label={t("Typed letters")}
@@ -582,7 +604,7 @@ type SectionId = "panels" | "operations" | "confirmations" | "tools" | "toolbar"
  * Confirmations, Editor and tools, and the Toolbar. Keys and Appearance are
  * the tabs of the dialog shared with the viewer.
  */
-function CommanderSettings() {
+export function CommanderSettings({ onShowHidden }: { onShowHidden?: (show: boolean) => void }) {
   const [section, setSection] = useState<SectionId>("panels")
   return (
     <div className="flex flex-col gap-4">
@@ -599,7 +621,7 @@ function CommanderSettings() {
         ]}
         onChange={setSection}
       />
-      {section === "panels" && <PanelsSection />}
+      {section === "panels" && <PanelsSection {...(onShowHidden && { onShowHidden })} />}
       {section === "operations" && <OperationsSection />}
       {section === "confirmations" && <ConfirmationsSection />}
       {section === "tools" && <ToolsSection />}
@@ -620,7 +642,7 @@ export function SettingsDialog() {
       onClose={() => setSettingsOpen(false)}
       showGeneral
       settingsReady={settingsReady}
-      appSettings={<CommanderSettings />}
+      appSettings={<CommanderSettings onShowHidden={showHiddenEverywhere} />}
       onOpenShortcuts={() => setHelpOpen(true)}
     />
   )

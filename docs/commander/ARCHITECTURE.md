@@ -219,7 +219,8 @@ The shared `library.db` (ADR-0016, ADR-0031): the commander's own settings under
 with tabs, `columns`, `confirmations`, `editor`, `shortcuts`, per-panel history). As of Stage C03:
 `commander.panels` `{ v: 2, active, left/right: { tabs: [{ path, name, sort, showHidden, view, locked, history,
 historyIndex, cursorId }], active, columns } }` (v1 from C01–C02 is still read) and `commander.settings`
-(Settings: size and date format, hidden files in new panels, where letters go; from C05 `mediaOpen` (viewer or system),
+(Settings: size and date format, hidden files (on by default since settings v3; a change applies to every panel and
+tab, Ctrl+H switches one panel), where letters go; from C05 `mediaOpen` (viewer or system),
 `runPrograms` (ask, always, never) and `editor`, which main reads for F4); the hotlist is the shared bookmarks
 table (with groups), and recent locations are shared with the viewer. Theme and interface size come from
 `shared.appearance`. Settings are written debounced and flushed on exit, as in the viewer. As of Stage C10:

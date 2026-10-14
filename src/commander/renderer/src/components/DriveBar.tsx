@@ -49,6 +49,22 @@ const driveTitle = (v: Volume): string =>
 
 const NO_CRUMBS: readonly never[] = []
 
+/** A small globe for the FTP button: drawn here, since the icon libraries have no server icon in use. */
+const GlobeGlyph = () => (
+  <svg
+    width="11"
+    height="11"
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    aria-hidden="true"
+  >
+    <circle cx="8" cy="8" r="6.25" />
+    <path d="M1.75 8h12.5M8 1.75c-2.2 2.6-2.2 9.9 0 12.5M8 1.75c2.2 2.6 2.2 9.9 0 12.5" />
+  </svg>
+)
+
 /** The volume holding the panel's folder (shared by the drive bar and the status line). */
 export function usePanelVolume(side: Side): Volume | null {
   // On a connection the panel is on no drive: its folder of this computer is behind it.
@@ -122,6 +138,8 @@ export function DriveBar({ side }: { side: Side }) {
           </Tooltip>
         )
       })}
+      {/* Servers are not drives: set apart by a divider, outlined, with a globe. */}
+      <span aria-hidden="true" className="mx-1.5 h-4 w-px shrink-0 bg-border" />
       <Tooltip content={t("Connections to FTP servers (Ctrl+F)")}>
         <button
           type="button"
@@ -129,8 +147,9 @@ export function DriveBar({ side }: { side: Side }) {
           aria-pressed={remote !== null}
           data-testid={`connections-${side}`}
           onClick={() => openConnections(side)}
-          className={`ml-1 h-5 shrink-0 rounded px-1.5 font-medium ${remote ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"}`}
+          className={`flex h-5 shrink-0 items-center gap-1 rounded-md border px-1.5 font-medium ${remote ? "border-accent/60 bg-raised text-text" : "border-border text-muted hover:border-muted hover:bg-raised hover:text-text"}`}
         >
+          <GlobeGlyph />
           FTP
         </button>
       </Tooltip>

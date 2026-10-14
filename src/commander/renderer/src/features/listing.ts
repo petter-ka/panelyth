@@ -201,7 +201,7 @@ const emptyPanel = (): PanelState => ({
   error: null,
   query: null,
   sort: DEFAULT_SORT,
-  showHidden: false,
+  showHidden: true,
   view: "full",
   cursor: 0,
   columns: { ...DEFAULT_COLUMNS },
@@ -535,6 +535,12 @@ export const goToEntry = (side: Side, entryId: number): Promise<void> =>
  * Backspace, Ctrl+PgUp, Enter on "..": the cursor lands on the folder just
  * left. In a branch view or search results it shows the folder again.
  */
+/** Whether goUp moves: off a server or out of an archive, results or a branch, or to a parent folder. */
+export const canGoUp = (p: PanelState): boolean =>
+  p.remote !== null ||
+  p.archive !== null ||
+  (p.dirId !== null && (spansFolders(p) || p.crumbs.length > 1))
+
 export function goUp(side: Side): Promise<void> {
   const p = getPanel(side)
   if (p.remote) {
@@ -742,6 +748,10 @@ export function jumpHistory(side: Side, index: number): Promise<void> {
 }
 
 /** Ctrl+\: the root of the panel's drive or file system. */
+/** Whether goRoot moves: not already at the drive's (or the server's) root. */
+export const canGoRoot = (p: PanelState): boolean =>
+  p.remote ? p.remote.path !== "/" : p.crumbs.length > 1
+
 export function goRoot(side: Side): Promise<void> {
   const remote = getPanel(side).remote
   if (remote) {
@@ -1291,7 +1301,13 @@ export function setSort(side: Side, sort: SortKey): void {
 
 /** Ctrl+H: hidden and system entries on or off (a new session; no rescan). */
 export function toggleHidden(side: Side): void {
-  patch(side, { showHidden: !getPanel(side).showHidden })
+  setHidden(side, !getPanel(side).showHidden)
+}
+
+/** Hidden and system entries (dot-names too) on or off in one panel. */
+export function setHidden(side: Side, showHidden: boolean): void {
+  if (getPanel(side).showHidden === showHidden) return
+  patch(side, { showHidden })
   schedulePersist()
   void reopenQuery(side)
 }

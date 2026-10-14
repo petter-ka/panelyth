@@ -3,7 +3,13 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, type ElectronApplication, type Page } from "@playwright/test"
-import { commanderPage, launchApp, waitForReady } from "../../launch"
+import {
+  commanderPage,
+  launchApp,
+  openSettingsWindow,
+  shellState,
+  waitForReady,
+} from "../../launch"
 
 // Helpers of the commander e2e specs (Stages C01, C02).
 
@@ -149,7 +155,27 @@ export async function commanderOf(app: ElectronApplication): Promise<Page> {
   await expect(c.getByTestId("sidecar-status")).toHaveAttribute("data-state", "ready", {
     timeout: process.env.CI ? 45_000 : 15_000,
   })
+  await hideHiddenEntries(app, c)
   return c
+}
+
+const hiddenOff = new WeakSet<ElectronApplication>()
+
+/**
+ * The commander specs count entries of folders and fixtures that hold hidden
+ * files (and the fixtures' own marker files); they were written for panels
+ * without them. The commander shows them by default, so each run turns them
+ * off once, as a user does: Settings → Panels, in the settings window (ADR-0039).
+ */
+async function hideHiddenEntries(app: ElectronApplication, c: Page): Promise<void> {
+  if (hiddenOff.has(app) || (await shellState(app)).active !== "commander") return
+  hiddenOff.add(app)
+  const settings = await openSettingsWindow(app, c)
+  const box = settings.getByRole("checkbox", { name: "Show hidden and system files" })
+  if (await box.isChecked()) await box.uncheck()
+  // Esc closes the window on keydown: there is no page left for a keyup.
+  await settings.keyboard.down("Escape")
+  await expect.poll(() => app.windows().includes(settings)).toBe(false)
 }
 
 /** Opens a folder that may be empty (goTo waits for entry rows). */

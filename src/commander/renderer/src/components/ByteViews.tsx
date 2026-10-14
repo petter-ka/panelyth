@@ -114,7 +114,7 @@ function ByteScrollbar({ fraction, onJump, label }: ScrollbarProps) {
       aria-valuemax={100}
       aria-valuenow={percent}
       data-testid="byte-scrollbar"
-      className="relative w-3 shrink-0 cursor-default border-l border-border bg-chrome"
+      className="group/scrollbar relative w-3 shrink-0 cursor-default border-l border-border bg-chrome"
       onPointerDown={(e) => {
         e.preventDefault()
         e.currentTarget.setPointerCapture(e.pointerId)
@@ -125,7 +125,8 @@ function ByteScrollbar({ fraction, onJump, label }: ScrollbarProps) {
       }}
     >
       <div
-        className="absolute inset-x-0.5 h-8 rounded-sm bg-border"
+        // The theme's scrollbar colors (src/shared/ui/src/styles.css), like every native scrollbar.
+        className="absolute inset-x-0.5 h-8 rounded-full bg-(--scrollbar-thumb) group-hover/scrollbar:bg-(--scrollbar-thumb-hover)"
         style={{ top: `calc(${fraction} * (100% - 2rem))` }}
       />
     </div>

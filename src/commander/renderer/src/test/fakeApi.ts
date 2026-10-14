@@ -636,6 +636,11 @@ export function installFakeCommander(options: FakeOptions) {
       exit: vi.fn(async () => ok({ ok: true })),
       switch: vi.fn(async () => ok({ ok: true })),
     },
+    // jsdom has no native windows: Settings falls back to the dialog unless a test says otherwise.
+    settings: {
+      openWindow: vi.fn(async () => ok({ ok: false })),
+      closeWindow: vi.fn(async () => ok({ ok: true })),
+    },
     system: { ping: vi.fn(), info: vi.fn() },
     sidecar: { getStatus: vi.fn(async () => ok({ state: "ready" })) },
     library: {

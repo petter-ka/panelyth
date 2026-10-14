@@ -9,7 +9,8 @@ import { LOCALES, LOCALE_NAMES, t, type Locale, useLocaleStore } from "@panelyth
 import {
   ICON_SET_OPTIONS,
   setLanguage,
-  THEME_OPTIONS,
+  THEME_GROUPS,
+  themeOfSystem,
   useIconSetStore,
   useInterfaceSizeStore,
   useThemeStore,
@@ -138,17 +139,35 @@ function AppearanceSettings() {
     <div className="space-y-4" aria-label={t("Appearance")}>
       <section className="space-y-2">
         <h3 className="text-xs font-medium">{t("Theme")}</h3>
-        <ChoiceGroup
-          label={t("Color theme")}
-          value={preference}
-          disabled={false}
-          options={THEME_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
-          onChange={setPreference}
-          layout="grid"
-        />
-        <p className="text-2xs text-muted">
-          {t("System follows your operating system's light or dark setting.")}
-        </p>
+        <div role="group" aria-label={t("Color theme")} className="space-y-3">
+          <div>
+            <label className="flex items-center gap-2 text-xs">
+              <input
+                type="checkbox"
+                checked={preference === "system"}
+                // Unticked: the theme the system shows now, so the screen does not change.
+                onChange={(e) => setPreference(e.target.checked ? "system" : themeOfSystem())}
+              />
+              {t("System")}
+            </label>
+            <p className="pt-1 pl-5 text-2xs text-muted">
+              {t("System follows your operating system's light or dark setting.")}
+            </p>
+          </div>
+          {/* While System is ticked no theme of either group is chosen. */}
+          {THEME_GROUPS.map((group) => (
+            <div key={group.label} className="space-y-1.5">
+              <h4 className="text-2xs font-medium text-muted">{t(group.label)}</h4>
+              <ChoiceGroup
+                label={t(group.label)}
+                value={preference}
+                disabled={false}
+                options={group.themes.map((o) => ({ ...o, label: t(o.label) }))}
+                onChange={setPreference}
+              />
+            </div>
+          ))}
+        </div>
       </section>
       <section className="space-y-2 border-t border-border pt-3">
         <h3 className="text-xs font-medium">{t("Font and spacing")}</h3>
@@ -160,6 +179,7 @@ function AppearanceSettings() {
             { value: "small", label: t("S"), title: t("Small") },
             { value: "medium", label: t("M"), title: t("Medium") },
             { value: "large", label: t("L"), title: t("Large") },
+            { value: "xlarge", label: t("XL"), title: t("Extra large") },
           ]}
           onChange={setInterfaceSize}
         />
@@ -197,34 +217,89 @@ function AppearanceSettings() {
   )
 }
 
-interface SharedSettingsDialogProps {
+interface SettingsContentProps {
   currentApp: AppId
-  open: boolean
-  onClose(): void
   showGeneral: boolean
   settingsReady: boolean
   appSettings: ReactNode
+  /** The Shortcuts tab's button: Settings goes away and the app's shortcuts dialog opens. */
   onOpenShortcuts(): void
 }
 
+interface SharedSettingsDialogProps extends SettingsContentProps {
+  open: boolean
+  onClose(): void
+}
+
+/**
+ * The in-page Settings dialog: used when the settings window cannot open
+ * (ADR-0039), as in component tests.
+ */
 export function SharedSettingsDialog(props: SharedSettingsDialogProps) {
-  const { open } = props
+  const { open, onClose, onOpenShortcuts, ...content } = props
   // A tab asked for from the native menu lasts for one opening of the dialog.
   useEffect(() => {
     if (!open) requestSettingsTab(null)
   }, [open])
-  return <SharedSettingsDialogContent key={`${props.currentApp}:${props.open}`} {...props} />
+  return (
+    <DialogWindow
+      open={open}
+      onOpenChange={(next) => !next && onClose()}
+      title={t("Settings")}
+      contentClassName="w-[min(38rem,calc(100vw-2rem))]"
+    >
+      <div className="-mx-4 -mt-4">
+        <SettingsTabs
+          key={`${props.currentApp}:${open}`}
+          {...content}
+          onOpenShortcuts={() => {
+            onClose()
+            onOpenShortcuts()
+          }}
+          panelClassName="max-h-[65vh]"
+        />
+      </div>
+    </DialogWindow>
+  )
 }
 
-function SharedSettingsDialogContent({
-  currentApp,
-  open,
+/**
+ * Settings as the page of its native window (ADR-0039): the same tabs filling
+ * the window. Esc closes it, as it closed the dialog.
+ */
+export function SettingsWindowPage({
   onClose,
+  ...content
+}: SettingsContentProps & { onClose(): void }) {
+  useEffect(() => {
+    document.title = t("Settings")
+  })
+  // Esc closes the window wherever the focus is, as it closed the dialog;
+  // a menu or field that handles Esc itself keeps it.
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent): void => {
+      if (e.key !== "Escape" || e.defaultPrevented) return
+      e.preventDefault()
+      onClose()
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [onClose])
+  return (
+    <div className="flex h-full min-h-0 flex-col bg-chrome text-text" data-testid="settings-window">
+      <SettingsTabs {...content} panelClassName="min-h-0 flex-1" />
+    </div>
+  )
+}
+
+function SettingsTabs({
+  currentApp,
   showGeneral,
   settingsReady,
   appSettings,
   onOpenShortcuts,
-}: SharedSettingsDialogProps) {
+  panelClassName,
+}: SettingsContentProps & { panelClassName: string }) {
   // The tab the user chose, unless the native menu asked for another one since.
   const request = useSettingsTabRequest()
   const [chosen, setChosen] = useState<{ tab: SettingsTab; seq: number } | null>(null)
@@ -258,80 +333,67 @@ function SharedSettingsDialogContent({
   }
 
   return (
-    <DialogWindow
-      open={open}
-      onOpenChange={(next) => !next && onClose()}
-      title={t("Settings")}
-      contentClassName="w-[min(38rem,calc(100vw-2rem))]"
-    >
-      <div className="-mx-4 -mt-4">
-        <div
-          role="tablist"
-          aria-label={t("Settings sections")}
-          onKeyDown={selectAdjacentTab}
-          className="flex gap-1 border-b border-border px-3 py-2"
-        >
-          {tabs.map((item) => (
-            <button
-              key={item.id}
-              id={`settings-tab-${item.id}`}
-              type="button"
-              role="tab"
-              aria-selected={tab === item.id}
-              aria-controls="settings-tabpanel"
-              tabIndex={tab === item.id ? 0 : -1}
-              onClick={() => setTab(item.id)}
-              className={tabButton}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-        <div
-          id="settings-tabpanel"
-          role="tabpanel"
-          aria-labelledby={`settings-tab-${tab}`}
-          tabIndex={0}
-          className="max-h-[65vh] overflow-y-auto p-4 outline-none"
-        >
-          {tab === "general" && showGeneral && <GeneralSettings settingsReady={settingsReady} />}
-          {tab === currentApp && appSettings}
-          {tab === "appearance" && <AppearanceSettings />}
-          {tab === "shortcuts" && (
-            <section className="space-y-3 text-xs">
-              <p className="text-muted">
-                {t(
-                  "Review and customize the keys used for navigation, file actions, and the viewer.",
-                )}
-              </p>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  onClose()
-                  onOpenShortcuts()
-                }}
-              >
-                {t("Open keyboard shortcuts")}
-              </Button>
-            </section>
-          )}
-          {tab === "about" && (
-            <AboutPanel
-              autoSwitch={
-                <SwitchRow
-                  label={t("Check automatically")}
-                  description={t(
-                    "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.",
-                  )}
-                  checked={autoUpdate}
-                  disabled={!settingsReady}
-                  onChange={setAutoUpdateCheck}
-                />
-              }
-            />
-          )}
-        </div>
+    <>
+      <div
+        role="tablist"
+        aria-label={t("Settings sections")}
+        onKeyDown={selectAdjacentTab}
+        className="flex gap-1 border-b border-border px-3 py-2"
+      >
+        {tabs.map((item) => (
+          <button
+            key={item.id}
+            id={`settings-tab-${item.id}`}
+            type="button"
+            role="tab"
+            aria-selected={tab === item.id}
+            aria-controls="settings-tabpanel"
+            tabIndex={tab === item.id ? 0 : -1}
+            onClick={() => setTab(item.id)}
+            className={tabButton}
+          >
+            {item.label}
+          </button>
+        ))}
       </div>
-    </DialogWindow>
+      <div
+        id="settings-tabpanel"
+        role="tabpanel"
+        aria-labelledby={`settings-tab-${tab}`}
+        tabIndex={0}
+        className={`${panelClassName} overflow-y-auto p-4 outline-none`}
+      >
+        {tab === "general" && showGeneral && <GeneralSettings settingsReady={settingsReady} />}
+        {tab === currentApp && appSettings}
+        {tab === "appearance" && <AppearanceSettings />}
+        {tab === "shortcuts" && (
+          <section className="space-y-3 text-xs">
+            <p className="text-muted">
+              {t(
+                "Review and customize the keys used for navigation, file actions, and the viewer.",
+              )}
+            </p>
+            <Button variant="primary" onClick={onOpenShortcuts}>
+              {t("Open keyboard shortcuts")}
+            </Button>
+          </section>
+        )}
+        {tab === "about" && (
+          <AboutPanel
+            autoSwitch={
+              <SwitchRow
+                label={t("Check automatically")}
+                description={t(
+                  "Looks for a newer version at start and every few hours. Nothing is downloaded until you ask.",
+                )}
+                checked={autoUpdate}
+                disabled={!settingsReady}
+                onChange={setAutoUpdateCheck}
+              />
+            }
+          />
+        )}
+      </div>
+    </>
   )
 }

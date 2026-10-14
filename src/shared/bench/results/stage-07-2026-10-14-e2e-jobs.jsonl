@@ -1,0 +1,2 @@
+{"at":"2026-10-14T08:37:16.982Z","test":"favorite-90k","jobMs":1370,"progressEvents":6,"progressSpanMs":1306,"jobsStartCalls":1,"longTaskMaxMs":0,"longTasksOver50":0}
+{"at":"2026-10-14T08:37:19.680Z","test":"file-ops","items":13,"consistent":true}

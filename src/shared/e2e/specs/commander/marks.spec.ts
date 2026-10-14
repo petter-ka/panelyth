@@ -3,7 +3,7 @@ import { appendFileSync, rmSync } from "node:fs"
 import { basename, join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { expectWithinBudget, repoRoot, shellState } from "../../launch"
+import { expectWithinBudget, openSettingsWindow, repoRoot, shellState } from "../../launch"
 import { commanderOf, cursorTo, goTo, launch, mixedFolder } from "./helpers"
 
 // Stage C02: keyboard, marks and quick search, and the shared context part 2
@@ -24,7 +24,7 @@ function writeResult(result: object): void {
 }
 
 const grid = (c: Page) => c.getByTestId("grid-left")
-/** Names of the marked rows (their first cell; the • gutter is not a cell). */
+/** Names of the marked rows (their first cell; the gutter with the mark tab is not a cell). */
 const marked = (c: Page) =>
   grid(c)
     .locator("[data-marked=true]")
@@ -236,11 +236,13 @@ test.describe("switching with marks (Stage C02)", () => {
       })
       writeResult({ test: "carry-selection", entries: 9900, commanderToViewerMs: Date.now() - t0 })
 
-      // Settings → General: carrying the folder off.
-      await page.getByRole("button", { name: "Settings" }).click()
-      await page.getByRole("tab", { name: "General" }).click()
-      await page.getByRole("switch", { name: "The folder" }).click()
-      await page.keyboard.press("Escape")
+      // Settings → General: carrying the folder off (in the settings window, ADR-0039).
+      const settings = await openSettingsWindow(app, page)
+      await settings.getByRole("tab", { name: "General" }).click()
+      await settings.getByRole("switch", { name: "The folder" }).click()
+      // Esc closes the window on keydown: there is no page left for a keyup.
+      await settings.keyboard.down("Escape")
+      await expect.poll(() => app.windows().includes(settings)).toBe(false)
       await page.getByTestId("app-switch").click()
       await expect.poll(() => shellState(app)).toMatchObject({ active: "commander" })
       await goTo(c, "left", root)

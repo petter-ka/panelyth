@@ -276,6 +276,8 @@ const messages: Messages = {
   Clear: "Очистить",
   "Clear finished": "Очистить завершённые",
   "Clear search": "Очистить поиск",
+  "Clear selection": "Снять выделение",
+  "Clear selection (Esc)": "Снять выделение (Esc)",
   "Clearing the label of {count, plural, one {# file} other {# files}}":
     "{count, plural, one {Удаление метки у # файла} few {Удаление метки у # файлов} many {Удаление метки у # файлов} other {Удаление метки у # файла}}",
   "Clearing the rating of {count, plural, one {# file} other {# files}}":
@@ -458,6 +460,7 @@ const messages: Messages = {
   Dark: "Тёмная",
   "Dark brown": "Тёмно-коричневая",
   "Dark purple": "Тёмно-фиолетовая",
+  "Dark themes": "Тёмные темы",
   Darken: "Затемнить",
   Date: "Дата",
   "Date created": "Дата создания",
@@ -643,6 +646,7 @@ const messages: Messages = {
   Extension: "Расширение",
   "Extension mask": "Маска расширения",
   "Extensions stay the same.": "Расширения остаются прежними.",
+  "Extra large": "Очень крупный",
   "Extracting {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Извлечение # элемента} few {Извлечение # элементов} many {Извлечение # элементов} other {Извлечение # элемента}}",
   Eye: "Глаз",
@@ -917,6 +921,7 @@ const messages: Messages = {
   "Light brown": "Светло-коричневая",
   "Light from": "Свет со стороны",
   "Light height": "Высота света",
+  "Light themes": "Светлые темы",
   Lighten: "Осветлить",
   Lighting: "Свет",
   Line: "Линия",
@@ -983,6 +988,7 @@ const messages: Messages = {
   "Modified until": "Изменён по",
   "Modified {date}": "Изменён: {date}",
   "More contrast": "Больше контраста",
+  "More filters": "Другие фильтры",
   "More ways to save": "Другие способы сохранения",
   Mosaic: "Мозаика",
   "Most common colors": "Самые частые цвета",
@@ -1520,6 +1526,7 @@ const messages: Messages = {
   "Select an image or video to preview it here.":
     "Выберите изображение или видео, чтобы увидеть его здесь.",
   "Select everything": "Выделить всё",
+  "Select what is not selected, and the other way round": "Выделить невыделенное, и наоборот",
   Selected: "Выбрано",
   "Selected folder path": "Путь к выбранной папке",
   "Selection actions": "Действия с выбранным",
@@ -1550,8 +1557,7 @@ const messages: Messages = {
   "Show all operations (Ctrl+J)": "Показать все операции (Ctrl+J)",
   "Show columns (drag to reorder)": "Показать столбцы (перетащите, чтобы изменить порядок)",
   "Show file names under tiles": "Показывать имена файлов под плитками",
-  "Show hidden and system files in new panels":
-    "Показывать скрытые и системные файлы в новых панелях",
+  "Show hidden and system files": "Показывать скрытые и системные файлы",
   "Show hidden files": "Показывать скрытые файлы",
   "Show in file manager": "Показать в диспетчере файлов",
   "Show in folder": "Показать в папке",
@@ -2074,6 +2080,7 @@ const messages: Messages = {
   "Wrap long lines": "Переносить длинные строки",
   Write: "Запись",
   "Wrong password. Try again.": "Неверный пароль. Повторите попытку.",
+  XL: "XL",
   Year: "Год",
   Yellow: "Жёлтый",
   Yes: "Да",

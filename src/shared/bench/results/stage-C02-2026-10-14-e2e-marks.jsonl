@@ -1,0 +1,2 @@
+{"at":"2026-10-14T08:31:44.890Z","test":"carry-selection","entries":9900,"commanderToViewerMs":27}
+{"at":"2026-10-14T08:32:41.873Z","test":"c02-benchmarks","held":{"keys":434,"p95FrameMs":7,"maxFrameGapMs":9,"longTasks":0,"cursorRow":434},"quickSearch":{"samples":13,"all":[7,7,9,10,10,11,11,11,12,12,12,13,17],"p50Ms":11,"p95Ms":17,"maxMs":17},"markAllMs":10,"invertMs":7,"invertBackMs":8,"folderSizes":{"ms":97,"folders":6,"files":51800,"filesPerSecond":534021}}

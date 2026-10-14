@@ -1,0 +1,1 @@
+{"at":"2026-10-14T08:36:00.271Z","bench":"open-with","launchToPictureMs":[337,324,351],"launchToAppReadyMs":[312,339,282],"bestPictureMs":324,"bestAppReadyMs":282,"note":"wall time from the launch call; the app-ready number has no folder open and no picture decoded"}

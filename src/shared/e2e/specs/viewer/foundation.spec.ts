@@ -73,6 +73,7 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         "query",
         "recipes",
         "selection",
+        "settings",
         "shell",
         "sidecar",
         "system",

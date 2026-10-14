@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AppSwitcher, GlyphSprite, Tooltip, TooltipProvider } from "@panelyth/ui"
+import { AppSwitcher, GlyphSprite, SeparatorReadout, Tooltip, TooltipProvider } from "@panelyth/ui"
 import { Group, Panel, Separator, type PanelImperativeHandle } from "react-resizable-panels"
 import { bridge, canSwitchApps } from "../bridge"
 import { ContentPane } from "../components/ContentPane"
@@ -66,6 +66,10 @@ export function AppShell() {
   const previewRight = usePaneStore((s) => s.previewPlace === "right")
   const sidebar = useRef<PanelImperativeHandle>(null)
   const preview = useRef<PanelImperativeHandle>(null)
+  // The borders, for the size readout shown while one is hovered or dragged.
+  const treeBorder = useRef<HTMLDivElement>(null)
+  const sidebarBorder = useRef<HTMLDivElement>(null)
+  const previewBorder = useRef<HTMLDivElement>(null)
   const [confirmExit, setConfirmExit] = useState(false)
   const [treeSize, setTreeSize] = useState(panes?.tree ?? 62)
   const [previewCollapsed, setPreviewCollapsed] = useState(panes?.preview === 0)
@@ -191,9 +195,11 @@ export function AppShell() {
                   </Panel>
                   <Separator
                     id="tree-preview-separator"
+                    elementRef={treeBorder}
                     aria-label={t("Resize folder tree and preview")}
                     className={stackedSeparator}
                   />
+                  <SeparatorReadout separator={treeBorder} />
                   <Panel
                     id="preview"
                     panelRef={preview}
@@ -239,9 +245,11 @@ export function AppShell() {
           </Panel>
           <Separator
             id="sidebar-separator"
+            elementRef={sidebarBorder}
             aria-label={t("Resize left column")}
             className={separator}
           />
+          <SeparatorReadout separator={sidebarBorder} />
           <Panel id="content" minSize={360}>
             <ContentPane />
           </Panel>
@@ -249,9 +257,11 @@ export function AppShell() {
             <>
               <Separator
                 id="preview-separator"
+                elementRef={previewBorder}
                 aria-label={t("Resize preview column")}
                 className={separator}
               />
+              <SeparatorReadout separator={previewBorder} />
               <Panel
                 id="preview"
                 panelRef={preview}

@@ -81,13 +81,21 @@ import { RenameField, useRenaming } from "./RenameField"
 import { useRightButton } from "./useRightButton"
 import { useScrollMemory } from "./useScrollMemory"
 import { msg, t } from "@panelyth/i18n"
+import { MarkTab } from "./MarkTab"
 
 /** Fixed row height per interface size, so no row is ever measured (ADR-0028). */
-export const ROW_HEIGHT: Record<InterfaceSize, number> = { small: 20, medium: 22, large: 26 }
+export const ROW_HEIGHT: Record<InterfaceSize, number> = {
+  small: 20,
+  medium: 22,
+  large: 26,
+  xlarge: 30,
+}
 export const OVERSCAN = 12
 
+// In px, not rem: the width and offset math uses them at every interface size.
 const HEADER_HEIGHT = 24
 const GUTTER_WIDTH = 10
+const gutterStyle: CSSProperties = { width: GUTTER_WIDTH }
 const COLUMN_IDS: readonly ColumnId[] = ["name", "ext", "size", "date", "attr"]
 const COLUMN_LABEL: Record<ColumnId, string> = {
   name: msg("Name"),
@@ -622,10 +630,14 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
         >
           <div
             role="row"
-            className="sticky top-0 z-10 flex h-6 select-none border-b border-border bg-chrome text-muted"
-            style={{ width: fullWidth }}
+            className="sticky top-0 z-10 flex select-none border-b border-border bg-chrome text-muted"
+            style={{ width: fullWidth, height: HEADER_HEIGHT }}
           >
-            <div aria-hidden="true" className="sticky left-0 z-10 w-2.5 shrink-0 bg-chrome" />
+            <div
+              aria-hidden="true"
+              className="sticky left-0 z-10 shrink-0 bg-chrome"
+              style={gutterStyle}
+            />
             {renderColumns.map((renderColumn) => {
               const id = renderColumn.id
               const column = table.getColumn(id)
@@ -765,7 +777,7 @@ const ParentRow = memo(function ParentRow({ side, index, top, height, width, col
       className={rowClass}
       style={{ top, height, width, minWidth: width }}
     >
-      <span aria-hidden="true" className="sticky left-0 z-[3] w-2.5 shrink-0" />
+      <span aria-hidden="true" className="sticky left-0 z-[3] shrink-0" style={gutterStyle} />
       {columns.map((column) => (
         <span
           key={column.id}
@@ -819,8 +831,12 @@ const EntryRow = memo(function EntryRow({
       className={`${rowClass} ${item && isMuted(item) ? "text-muted" : "text-text"}`}
       style={{ top, height, width, minWidth: width }}
     >
-      <span aria-hidden="true" className="sticky left-0 z-[3] w-2.5 shrink-0 text-center">
-        {marked ? "•" : ""}
+      <span
+        aria-hidden="true"
+        className="sticky left-0 z-[3] shrink-0 self-stretch"
+        style={gutterStyle}
+      >
+        <MarkTab marked={marked} />
       </span>
       {item ? (
         <Cells item={item} marked={marked} columns={columns} renaming={renaming} side={side} />

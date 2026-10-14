@@ -87,9 +87,54 @@ describe("caption sizes", () => {
     const value = new RegExp(`--text-${name}: max\\(([\\d.]+)rem, (\\d+)px\\)`).exec(css)
     expect(value, `--text-${name}`).not.toBeNull()
     const [rem, floor] = [Number(value![1]), Number(value![2])]
-    expect(roots.length).toBe(3)
+    expect(roots).toEqual([14, 16, 18, 20]) // S, M, L, XL
     expect(floor).toBeGreaterThanOrEqual(10)
-    // The floor is only a floor: the medium and large sizes keep the size in rem.
+    // The floor is only a floor: the larger sizes keep the size in rem.
     expect(rem * Math.max(...roots)).toBeGreaterThan(floor)
+  })
+})
+
+describe("scrollbars", () => {
+  // Every theme, the tinted ones too: the thumb is mixed from the theme's own muted color.
+  const all = {
+    ...themes,
+    ...Object.fromEntries(
+      ["dark-purple", "dark-brown", "beige", "light-brown"].map((name) => [
+        name,
+        {
+          ...themes[name.startsWith("dark") ? "dark" : "light"],
+          ...block(`:root[data-theme="${name}"]`),
+        },
+      ]),
+    ),
+  }
+  const share = (name: string): number =>
+    Number(
+      new RegExp(
+        `--scrollbar-${name}: color-mix\\(in srgb, var\\(--muted\\) (\\d+)%, transparent\\)`,
+      ).exec(css)![1],
+    ) / 100
+  const over = (fg: string, bg: string, p: number): string =>
+    `#${[1, 3, 5]
+      .map((i) => {
+        const [f, b] = [fg, bg].map((hex) => parseInt(hex.slice(i, i + 2), 16))
+        return Math.round(f! * p + b! * (1 - p))
+          .toString(16)
+          .padStart(2, "0")
+      })
+      .join("")}`
+
+  it("take the theme's colors and leave the accent to focus and selection", () => {
+    expect(css).not.toMatch(/--scrollbar-[\w-]+:[^;]*(#|accent)/)
+    expect(css).not.toMatch(/scrollbar-(color|width):/)
+  })
+
+  it.each(Object.entries(all))("stay quiet at rest and reach 3:1 when hovered (%s)", (_name, t) => {
+    for (const surface of ["canvas", "chrome"] as const) {
+      const rest = contrast(over(t.muted!, t[surface]!, share("thumb")), t[surface]!)
+      const hover = contrast(over(t.muted!, t[surface]!, share("thumb-hover")), t[surface]!)
+      expect(rest, `rest on ${surface}`).toBeGreaterThanOrEqual(1.8)
+      expect(hover, `hover on ${surface}`).toBeGreaterThanOrEqual(3)
+    }
   })
 })

@@ -5,6 +5,7 @@ import { bridge, isBridgeAvailable, PanelythError, resetBridgeCache } from "./br
 import {
   DEFAULT_SETTINGS,
   loadSettings,
+  readSettings,
   resetSettings,
   SETTINGS_KEY,
   setSettingsOpen,
@@ -101,10 +102,10 @@ describe("commander sidecar store", () => {
 
 describe("commander settings store", () => {
   it("loads commander.settings and saves a change whole, with its version", async () => {
-    const { api } = installApi({ [SETTINGS_KEY]: { v: 2, showHidden: true, tabBar: "multiple" } })
+    const { api } = installApi({ [SETTINGS_KEY]: { v: 3, showHidden: false, tabBar: "multiple" } })
     await loadSettings()
     expect(useSettingsStore.getState().settings).toMatchObject({
-      showHidden: true,
+      showHidden: false,
       tabBar: "multiple",
       confirmTrash: true,
     })
@@ -114,11 +115,18 @@ describe("commander settings store", () => {
     expect(useSettingsStore.getState().settings.confirmTrash).toBe(false)
     expect(api.library.setSetting).toHaveBeenCalledExactlyOnceWith(SETTINGS_KEY, {
       ...DEFAULT_SETTINGS,
-      v: 2,
-      showHidden: true,
+      v: 3,
+      showHidden: false,
       tabBar: "multiple",
       confirmTrash: false,
     })
+  })
+
+  it("shows hidden entries unless v3 settings turned them off", () => {
+    expect(readSettings({ v: 2, showHidden: false }).showHidden).toBe(true)
+    expect(readSettings(undefined).showHidden).toBe(true)
+    expect(readSettings({ v: 3, showHidden: false }).showHidden).toBe(false)
+    expect(readSettings({ v: 3 }).showHidden).toBe(true)
   })
 
   it("changes in memory without a bridge, and opens its dialog", () => {

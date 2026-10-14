@@ -1,0 +1,2 @@
+{"at":"2026-10-14T08:36:14.783Z","test":"batch-200","pictures":200,"jobMs":852,"picturesPerSec":234.7,"longTaskMaxMs":0,"longTasksOver50":0,"frameGapP95Ms":7}
+{"at":"2026-10-14T08:36:16.461Z","test":"batch-cancel","cancelMs":104,"finishedBeforeCancel":15}

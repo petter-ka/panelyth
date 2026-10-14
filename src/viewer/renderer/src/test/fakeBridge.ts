@@ -195,6 +195,11 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
 
   const api = {
     app: { exit: vi.fn(async () => ok({ ok: true })) },
+    // jsdom has no native windows: Settings falls back to the dialog unless a test says otherwise.
+    settings: {
+      openWindow: vi.fn(async () => ok({ ok: false })),
+      closeWindow: vi.fn(async () => ok({ ok: true })),
+    },
     system: {
       ping: vi.fn(async () => ok({ pong: true as const, serverTimeNs: 1 })),
       info: vi.fn(async () =>

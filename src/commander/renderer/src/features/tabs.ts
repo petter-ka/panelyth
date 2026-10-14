@@ -13,6 +13,7 @@ import {
   patch,
   releaseRemote,
   schedulePersist,
+  setHidden,
   setRemoteHolders,
   showDisconnected,
   useListingStore,
@@ -84,7 +85,7 @@ export function blankTab(over: Partial<Tab> = {}): Tab {
     path: "",
     name: "",
     sort: DEFAULT_SORT,
-    showHidden: false,
+    showHidden: true,
     view: "full",
     locked: false,
     title: "",
@@ -207,6 +208,24 @@ export function tabsDisconnected(remoteId: number): void {
       setSide(side, { ...t, tabs: t.tabs.map((tab) => ({ ...tab, remote: gone(tab.remote) })) })
     }
     for (const c of closed[side]) c.tab.remote = gone(c.tab.remote)
+  }
+  schedulePersist()
+}
+
+/**
+ * Settings → Show hidden and system files: every panel and tab follows at
+ * once (Ctrl+H still switches one panel). A tab not shown drops its parked
+ * session, which was opened the other way.
+ */
+export function showHiddenEverywhere(showHidden: boolean): void {
+  for (const side of ["left", "right"] as const) {
+    const t = get(side)
+    t.tabs.forEach((tab, i) => {
+      if (i !== t.active && tab.showHidden !== showHidden) dropParked(tab.id)
+    })
+    setSide(side, { ...t, tabs: t.tabs.map((tab) => ({ ...tab, showHidden })) })
+    for (const c of closed[side]) c.tab.showHidden = showHidden
+    setHidden(side, showHidden)
   }
   schedulePersist()
 }

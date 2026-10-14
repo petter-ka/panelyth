@@ -8,9 +8,23 @@ import {
   trashSelection,
 } from "../../features/jobs/jobsStore"
 import { useShortcutHint } from "../../features/shortcuts/shortcutStore"
-import { selectionCount, useSelectionStore } from "../../features/tiles/selectionStore"
+import { useFolderStore } from "../../features/folder/folderStore"
+import {
+  clearSelection,
+  invertSelection,
+  selectionCount,
+  useSelectionStore,
+} from "../../features/tiles/selectionStore"
 import { formatCount } from "../../lib/format"
-import { CopyIcon, HeartIcon, MoveIcon, PencilIcon, TagIcon, TrashIcon } from "../ui/icons"
+import {
+  CloseIcon,
+  CopyIcon,
+  HeartIcon,
+  MoveIcon,
+  PencilIcon,
+  TagIcon,
+  TrashIcon,
+} from "../ui/icons"
 import { t } from "@panelyth/i18n"
 
 function Action(props: { label: string; title?: string; onClick(): void; children: ReactNode }) {
@@ -29,13 +43,14 @@ function Action(props: { label: string; title?: string; onClick(): void; childre
 }
 
 /**
- * "12 selected  Copy  Move  Delete  Tag  Favorite" (UX-DESIGN "Batch bar").
+ * "12 selected  Invert  ×  |  Copy  Move  Delete  Tag  Favorite" (UX-DESIGN "Batch bar").
  * Shown for two or more selected items; it floats over the canvas so
  * selecting never reflows the tile view. More actions are in the context
  * menu.
  */
 export function BatchBar() {
   const count = useSelectionStore(selectionCount)
+  const total = useFolderStore((s) => s.query?.total ?? 0)
   const trashKey = useShortcutHint("item.trash")
   const editKey = useShortcutHint("item.edit")
   if (count < 2) return null
@@ -49,6 +64,26 @@ export function BatchBar() {
       <span className="px-2 text-xs font-medium prose-nums">
         {t("{count} selected", { count: formatCount(count) })}
       </span>
+      <Tooltip content={t("Select what is not selected, and the other way round")}>
+        <button
+          type="button"
+          onClick={() => invertSelection(total)}
+          className="h-7 rounded-md px-2 text-xs text-muted hover:bg-raised hover:text-text"
+        >
+          {t("Invert")}
+        </button>
+      </Tooltip>
+      <Tooltip content={t("Clear selection (Esc)")}>
+        <button
+          type="button"
+          aria-label={t("Clear selection")}
+          onClick={clearSelection}
+          className="grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
+        >
+          <CloseIcon size={14} />
+        </button>
+      </Tooltip>
+      <span className="mx-1 h-5 w-px bg-border" aria-hidden="true" />
       <Action
         label={t("Edit…")}
         title={

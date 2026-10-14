@@ -1,6 +1,7 @@
 import type { SelectionDescriptor } from "@panelyth/contracts"
 import {
   inRanges,
+  invert,
   markCount,
   normalize,
   toDescriptor as marksToDescriptor,
@@ -178,6 +179,13 @@ export function selectIndexRanges(
 export function selectAll(total: number): void {
   if (total <= 0) return
   set({ ranges: [[0, total]], include: new Map(), exclude: new Map() })
+}
+
+/** Everything not selected becomes selected and the other way round (one range per gap, no id lists). */
+export function invertSelection(total: number): void {
+  if (total <= 0) return
+  const next = invert(get(), total)
+  set({ ...next, selectedId: null, base: next })
 }
 
 /** Esc: nothing selected, focus stays. */

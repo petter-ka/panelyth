@@ -9,7 +9,9 @@ import { applyContext, resetCarry, startPanels } from "./features/carry"
 import { formatAttrs } from "./features/format"
 import { DEFAULT_COLUMNS, pageStoreOf, resetListing, useListingStore } from "./features/listing"
 import { usePanelsStore } from "./features/panels"
+import { showHiddenEverywhere, useTabsStore } from "./features/tabs"
 import { PANELS_KEY, readStoredPanels } from "./features/session"
+import { SETTINGS_KEY } from "./features/settings"
 import { folder, installFakeCommander, item, type FakeOptions } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
 
@@ -52,6 +54,9 @@ async function start(options: Partial<FakeOptions> = {}) {
   return fake
 }
 
+/** Hidden entries off: the tests that count rows. */
+const HIDDEN_OFF = { settings: { [SETTINGS_KEY]: { v: 3, showHidden: false } } }
+
 const grid = (side: "left" | "right") => screen.getByTestId(`grid-${side}`)
 const rows = (side: "left" | "right") => grid(side).querySelectorAll("[data-row]")
 const cursorRow = (side: "left" | "right") =>
@@ -85,16 +90,17 @@ describe("listing (Stage C01)", () => {
       recursive: false,
       lane: "left",
     })
-    expect(fake.lastDescriptor()).toMatchObject({ scope: "all", showHidden: false })
+    // Hidden and system entries (dot-names too) are listed by default.
+    expect(fake.lastDescriptor()).toMatchObject({ scope: "all", showHidden: true })
     await waitFor(() => expect(within(grid("left")).getByText("dir000001")).toBeInTheDocument())
     const first = rows("left")[0] as HTMLElement
     expect(first).toHaveTextContent("..")
     expect(first).toHaveAttribute("data-cursor", "true")
-    // Folders first and <DIR>; files split into name and extension; the hidden file is not listed.
+    // Folders first and <DIR>; files split into name and extension.
     expect(rows("left")[1]).toHaveTextContent("dir000000")
     expect(rows("left")[1]).toHaveTextContent("<DIR>")
     expect(within(grid("left")).getByText("file000000")).toBeInTheDocument()
-    expect(within(grid("left")).queryByText("secret")).not.toBeInTheDocument()
+    expect(within(grid("left")).getByText("secret")).toBeInTheDocument()
     expect(screen.getByTestId("path-left")).toHaveTextContent(HOME.path)
   })
 
@@ -107,7 +113,16 @@ describe("listing (Stage C01)", () => {
     await waitFor(() =>
       expect((rows("left")[1] as HTMLElement).style.height).toBe(`${ROW_HEIGHT.large}px`),
     )
-    expect(ROW_HEIGHT).toEqual({ small: 20, medium: 22, large: 26 })
+    expect(ROW_HEIGHT).toEqual({ small: 20, medium: 22, large: 26, xlarge: 30 })
+    // The gutter and the header are in px: at L a rem size outgrew the width
+    // math and gave every panel a horizontal scrollbar.
+    const header = grid("left").querySelector<HTMLElement>("[role=row]:not([data-row])")!
+    expect(header.style.height).toBe("24px")
+    expect((header.firstElementChild as HTMLElement).style.width).toBe("10px")
+    expect(((rows("left")[1] as HTMLElement).firstElementChild as HTMLElement).style.width).toBe(
+      "10px",
+    )
+    expect(grid("left").querySelector('[class~="w-2.5"], [class~="h-6"]')).toBeNull()
   })
 
   it("mounts and pages only the visible window of a 100k folder", async () => {
@@ -173,7 +188,7 @@ describe("listing (Stage C01)", () => {
   })
 
   it("moves one cursor with arrows, PgUp/PgDn and Home/End", async () => {
-    await start()
+    await start(HIDDEN_OFF)
     await waitFor(() => expect(rows("left").length).toBeGreaterThan(5))
     await key("left", { key: "ArrowDown" })
     await key("left", { key: "ArrowDown" })
@@ -233,8 +248,12 @@ describe("listing (Stage C01)", () => {
 
   it("Ctrl+H shows hidden and system entries without a rescan", async () => {
     const fake = await start()
-    await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
+    const shown = await within(grid("left")).findByText("secret")
+    expect(shown.closest("[role=row]")).toHaveClass("text-muted")
     const opens = fake.api.dir.open.mock.calls.length
+    await key("left", { key: "h", ctrlKey: true })
+    expect(fake.lastDescriptor()).toMatchObject({ scope: "all", showHidden: false })
+    await waitFor(() => expect(within(grid("left")).queryByText("secret")).toBeNull())
     await key("left", { key: "h", ctrlKey: true })
     expect(fake.lastDescriptor()).toMatchObject({ scope: "all", showHidden: true })
     expect(fake.api.dir.open.mock.calls.length).toBe(opens)
@@ -289,8 +308,55 @@ describe("listing (Stage C01)", () => {
     )
   })
 
-  it("shows the status line: count, listing progress with Stop, free space", async () => {
+  it("tabs stored while hidden entries were off by default show them after the update", async () => {
+    const fake = await start({
+      settings: {
+        [SETTINGS_KEY]: { v: 2, showHidden: false },
+        [PANELS_KEY]: {
+          v: 3,
+          active: "left",
+          left: { tabs: [{ path: HOME.path, showHidden: false }] },
+          right: { tabs: [{ path: PICS.path, showHidden: false }] },
+        },
+      },
+    })
+    await within(grid("left")).findByText("secret")
+    expect(useListingStore.getState().right.showHidden).toBe(true)
+    // Once: the settings are stored as v3, where an explicit off stays off.
+    await waitFor(() =>
+      expect(fake.settings[SETTINGS_KEY]).toMatchObject({ v: 3, showHidden: true }),
+    )
+  })
+
+  it("the setting switches hidden entries in every panel and tab", async () => {
     const fake = await start()
+    await within(grid("left")).findByText("secret")
+    const opens = fake.api.dir.open.mock.calls.length
+    act(() => showHiddenEverywhere(false))
+    await waitFor(() => expect(within(grid("left")).queryByText("secret")).toBeNull())
+    const { left, right } = useListingStore.getState()
+    expect([left.showHidden, right.showHidden]).toEqual([false, false])
+    expect(useTabsStore.getState().left.tabs.every((t) => !t.showHidden)).toBe(true)
+    expect(fake.api.dir.open.mock.calls.length).toBe(opens)
+    act(() => showHiddenEverywhere(true))
+    await within(grid("left")).findByText("secret")
+  })
+
+  it('disables ".." and "/" at the drive root, where they have nowhere to go', async () => {
+    await start({ folders: [home(), pics(), folder(1, ROOT.path, [ROOT], 1, 0)] })
+    await waitFor(() => expect(screen.getByTestId("path-left")).toHaveTextContent(HOME.path))
+    expect(screen.getByTestId("up-left")).toBeEnabled()
+    expect(screen.getByTestId("root-left")).toBeEnabled()
+    await act(async () => fireEvent.click(screen.getByTestId("root-left")))
+    await waitFor(() => expect(screen.getByTestId("path-left")).toHaveTextContent(ROOT.path))
+    expect(screen.getByTestId("up-left")).toBeDisabled()
+    expect(screen.getByTestId("root-left")).toBeDisabled()
+    // The server button is apart from the drives, and named by its text.
+    expect(screen.getByTestId("connections-left")).toHaveAccessibleName("FTP")
+  })
+
+  it("shows the status line: count, listing progress with Stop, free space", async () => {
+    const fake = await start(HIDDEN_OFF)
     await waitFor(() => expect(screen.getByTestId("status-left")).toHaveTextContent("5 entries"))
     await waitFor(() =>
       expect(screen.getByTestId("free-left")).toHaveTextContent("2.0 GB free of 8.0 GB"),

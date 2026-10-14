@@ -137,6 +137,58 @@ describe("sidebar", () => {
     expect(bridge.api.fs.listDirs.mock.calls.map((c) => c[0])).toEqual(["/", "/photos"])
   })
 
+  it("centers a revealed folder that is out of sight, and leaves one in sight alone", async () => {
+    const bridge = await setup()
+    const scrolls: { el: Element; top: number }[] = []
+    // jsdom does not scroll: scrollTo moves scrollTop and reports it, as a browser does.
+    Object.defineProperty(HTMLElement.prototype, "scrollTo", {
+      configurable: true,
+      value: function (this: HTMLElement, options: ScrollToOptions) {
+        const top = options.top ?? 0
+        scrolls.push({ el: this, top })
+        Object.defineProperty(this, "scrollTop", { configurable: true, value: top })
+        this.dispatchEvent(new Event("scroll"))
+      },
+    })
+    vi.spyOn(Element.prototype, "clientHeight", "get").mockReturnValue(900)
+    // TanStack never scrolls past scrollHeight − clientHeight; jsdom's scrollHeight is 0.
+    vi.spyOn(Element.prototype, "scrollHeight", "get").mockReturnValue(100_000)
+    const list = screen.getByTestId("sidebar-list")
+    const listScrolls = () => scrolls.filter((s) => s.el === list).map((s) => s.top)
+    const rowStart = async (name: string) =>
+      Number(
+        /translateY\(([\d.]+)px\)/.exec(
+          (await treeNode(name)).closest<HTMLElement>("[role=presentation]")!.style.transform,
+        )![1],
+      )
+    try {
+      // Near the top of the list: in sight, so the list does not move.
+      await act(() => openFolder("/photos"))
+      await waitFor(async () =>
+        expect(await treeNode("photos")).toHaveAttribute("aria-selected", "true"),
+      )
+      expect(listScrolls()).toEqual([])
+
+      // Below sixty siblings, as when the commander hands a folder over: to the middle.
+      const many = Array.from({ length: 60 }, (_, i) => `a${String(i).padStart(2, "0")}`)
+      bridge.backend.dirs.set("/", [...many, "photos"])
+      bridge.backend.dirs.set("/photos", ["Trip", "Family"])
+      resetTree()
+      await act(() => openFolder("/photos/Trip"))
+      await waitFor(() => expect(listScrolls().length).toBeGreaterThan(0))
+      await waitFor(async () =>
+        expect(await treeNode("Trip")).toHaveAttribute("aria-selected", "true"),
+      )
+      const start = await rowStart("Trip")
+      // Row middle (rows are 26 px at the medium size) at the middle of the 900 px list,
+      // give or take the 32 px path header that sticks over its top.
+      const middle = listScrolls().at(-1)! + 450
+      expect(Math.abs(middle - (start + 13))).toBeLessThanOrEqual(32)
+    } finally {
+      delete (HTMLElement.prototype as { scrollTo?: unknown }).scrollTo
+    }
+  })
+
   it("adds a bookmark from the tree's context menu", async () => {
     const bridge = await setup()
     await act(() => openFolder("/photos/Trip"))

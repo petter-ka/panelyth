@@ -36,7 +36,9 @@ Implemented in `src/viewer/renderer/src/styles/index.css`. Components use token 
 1. **Neutral originals, optional color.** The original Light and Dark themes keep a neutral gray surround
    (the ISO 3664 idea behind darkroom and Lightroom-style interfaces), because a tinted background shifts how
    colors in the photo are perceived. Optional Dark purple, Dark brown, Beige and Light brown themes add a
-   restrained tint for people who prefer warmer or more colorful chrome.
+   restrained tint for people who prefer warmer or more colorful chrome. Settings → Appearance lists them in a
+   Dark themes group (Dark, Dark purple, Dark brown) and a Light themes group (Light, Beige, Light brown) under a
+   System checkbox; while System is ticked no theme of either group is chosen, and choosing one unticks it.
 2. **Chrome frames, canvas holds content.** Navigation and controls (sidebars, toolbars, pane and panel headers,
    status bars, the commander's function-key bar) sit on *chrome*. The content (the viewer's tiles and preview, the
    commander's file lists, quick view and lister) sits on the darker *canvas*, so the content carries the contrast and
@@ -179,9 +181,10 @@ The image editor's controls live in `src/viewer/renderer/src/components/editor/c
 
 ## Interface size
 
-Appearance settings offer S / M / L font and spacing sizes. The size scales text, padding and margins across the UI,
-while content geometry stays fixed (viewer: thumbnail dimensions; commander: row height per size is fixed for the
-virtualizer). Theme and interface size are shared by both apps (`shared.appearance` in `library.db`, ADR-0031); each
+Appearance settings offer S / M / L / XL font and spacing sizes (a 14 / 16 / 18 / 20 px root). The size scales text,
+padding and margins across the UI, while content geometry stays fixed (viewer: thumbnail dimensions; commander: row
+height per size is fixed for the virtualizer). Geometry that layout math depends on (the commander table's header
+height and row gutter) is set in px, never in rem, so it cannot drift from the math at another size. Theme and interface size are shared by both apps (`shared.appearance` in `library.db`, ADR-0031); each
 app view keeps a local mirror so the value applies before the first render, and a change in one app reaches the
 other at once.
 

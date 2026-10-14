@@ -64,6 +64,7 @@ import type {
   PingResult,
   SidecarStatus,
   SystemInfo,
+  SettingsTab,
 } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
 import { createBridgeCore, PanelythError, unwrap } from "@panelyth/renderer-core"
@@ -115,6 +116,13 @@ export const bridge = {
   queryPage: (params: QueryPageParams): Promise<QueryPageResult> =>
     unwrap(() => api().query.page(params)),
   openMedia: (entryId: number): Promise<MediaOpenResult> => unwrap(() => api().media.open(entryId)),
+  /** Settings in a native window (ADR-0039); false when it could not open. */
+  openSettingsWindow: async (tab?: SettingsTab): Promise<boolean> =>
+    (await unwrap(() => api().settings.openWindow(tab))).ok,
+  /** From the settings window: it closes; "shortcuts" has the viewer open its shortcuts dialog. */
+  closeSettingsWindow: async (then?: "shortcuts"): Promise<void> => {
+    await unwrap(() => api().settings.closeWindow(then))
+  },
   /** An image or video in a frameless full-screen window of its own (ADR-0033). */
   openMediaWindow: async (entryId: number, key: number, lang?: string): Promise<void> => {
     await unwrap(() => api().media.openWindow(entryId, key, undefined, lang))

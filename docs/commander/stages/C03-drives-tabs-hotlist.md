@@ -103,7 +103,10 @@ Deviations from the scope above:
   for, not only while a panel is visible; no OS volume events are used yet (Stage P04 may add them). Media inserted
   into an existing card-reader letter shows on the next menu open, not by event.
 - History is per tab (the panel and tab model of `docs/commander/ARCHITECTURE.md`), persisted with the tab.
-- "Hidden files in new panels" applies to panels without stored state; a new tab copies the current tab.
+- "Hidden files in new panels" applies to panels without stored state; a new tab copies the current tab. Amended
+  later: hidden and system entries (dot-names too) are shown by default (`commander.settings` v3; older stored values
+  and tabs move to on once), and the setting, now "Show hidden and system files", applies to every open panel and
+  tab; Ctrl+H still switches one panel.
 - Clicking a drive opens its root (Total Commander remembers the last folder per drive; not built).
 - The Brief view keeps whole columns mounted: (visible columns + 1 overscan column) × rows per column, so more cells
   than the Full view's rows; it stays bounded by the panel's size.

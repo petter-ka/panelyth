@@ -122,6 +122,26 @@ export function DropdownItem({
   )
 }
 
+/** A submenu of a dropdown (the viewer's "…" filters, for example). */
+export function DropdownSub({ label: text, children }: { label: ReactNode; children: ReactNode }) {
+  return (
+    <DropdownMenu.Sub>
+      <DropdownMenu.SubTrigger className={item}>
+        {text}
+        {/* The gap is the wrapper's: padding on the icon would shrink its drawing. */}
+        <span className="ml-auto flex pl-4">
+          <ChevronRightIcon size={12} />
+        </span>
+      </DropdownMenu.SubTrigger>
+      <DropdownMenu.Portal>
+        <DropdownMenu.SubContent className={content} sideOffset={4}>
+          {children}
+        </DropdownMenu.SubContent>
+      </DropdownMenu.Portal>
+    </DropdownMenu.Sub>
+  )
+}
+
 export function DropdownSeparator() {
   return <DropdownMenu.Separator className={separator} />
 }

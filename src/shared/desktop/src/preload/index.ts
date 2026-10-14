@@ -90,6 +90,10 @@ const api: PanelythApi = {
     about: () => invoke("app.about", {}),
     openTarget: (target) => invoke("app.openTarget", { target }),
   },
+  settings: {
+    openWindow: (tab) => invoke("settings.openWindow", tab ? { tab } : {}),
+    closeWindow: (then) => invoke("settings.closeWindow", then ? { then } : {}),
+  },
   update: {
     get: () => invoke("update.get", {}),
     check: () => invoke("update.check", {}),

@@ -1,5 +1,6 @@
 import { createSettingsStore } from "@panelyth/renderer-core"
-import { bridge } from "../../bridge"
+import { openSettingsWindowOr } from "@panelyth/ui"
+import { bridge, isBridgeAvailable } from "../../bridge"
 import { useLibraryStore } from "../library/libraryStore"
 
 export const VIEWER_SETTINGS_KEY = "viewer"
@@ -74,7 +75,22 @@ const store = createSettingsStore<ViewerPreferences>({
 })
 
 export const useSettingsStore = store.useStore
-export const openSettings = (): void => store.setOpen(true)
+
+/**
+ * Settings opens in its native window (ADR-0039), on a tab the native menu
+ * asked for; the in-page dialog when the window cannot open.
+ */
+export function openSettings(): void {
+  const openDialog = (): void => store.setOpen(true)
+  if (!isBridgeAvailable()) return openDialog()
+  openSettingsWindowOr(bridge.openSettingsWindow, openDialog, () => {
+    // The keys go back to the tiles, unless something else took the focus meanwhile.
+    const at = document.activeElement
+    if (at === document.body || at?.closest('[data-testid="app-settings"]')) {
+      document.querySelector<HTMLElement>('[data-testid="tile-view"]')?.focus()
+    }
+  })
+}
 export const closeSettings = (): void => store.setOpen(false)
 
 export function setPreference<K extends keyof Omit<ViewerPreferences, "v">>(
@@ -84,12 +100,24 @@ export function setPreference<K extends keyof Omit<ViewerPreferences, "v">>(
   store.update({ [key]: value } as Partial<ViewerPreferences>)
 }
 
-/** Applies saved settings after each successful library load (including restarts). */
+/**
+ * Applies saved settings after each successful library load (including
+ * restarts), and a change made in the settings window at once (ADR-0039).
+ */
 export function startViewerSettingsPersistence(): () => void {
   const load = (settings: Record<string, unknown>): void =>
     store.load(settings[VIEWER_SETTINGS_KEY])
   if (useLibraryStore.getState().loaded) load(useLibraryStore.getState().settings)
-  return useLibraryStore.subscribe((s, prev) => {
+  const offLibrary = useLibraryStore.subscribe((s, prev) => {
     if (s.loaded && (!prev.loaded || s.settings !== prev.settings)) load(s.settings)
   })
+  const offWindow = isBridgeAvailable()
+    ? bridge.on("settings.changed", ({ key, value }) => {
+        if (key === VIEWER_SETTINGS_KEY) store.load(value)
+      })
+    : () => undefined
+  return () => {
+    offLibrary()
+    offWindow()
+  }
 }

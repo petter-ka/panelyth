@@ -24,6 +24,7 @@ import {
 import { handleThumbProtocol } from "./thumbProtocol"
 import { DocumentWindows } from "./documentWindow"
 import { MediaWindows } from "./mediaWindow"
+import { SettingsWindow, type SettingsPage } from "./settingsWindow"
 import { fileArgument, OpenWithSession } from "./openWith"
 import {
   broadcast,
@@ -129,6 +130,7 @@ let appShell: AppShell | null = null
 let mainWindow: BrowserWindow | null = null
 let documentWindows: DocumentWindows | null = null
 let mediaWindows: MediaWindows | null = null
+let settingsWindow: SettingsWindow | null = null
 let logger: Logger = consoleLogger
 let shutdownState: "running" | "stopping" | "done" = "running"
 
@@ -165,6 +167,25 @@ const documentsOrigin = (): string => {
 const commanderOrigin = (): string => {
   const devUrl = commanderDevUrl()
   return (devUrl && originOf(devUrl)) || COMMANDER_ORIGIN
+}
+
+/** An app's settings page (ADR-0039): its own origin, preload and renderer arguments. */
+function settingsPageOf(app: AppId): SettingsPage {
+  if (app === "commander") {
+    return {
+      url: new URL("settings.html", `${commanderDevUrl() ?? COMMANDER_ORIGIN}/`).toString(),
+      origin: commanderOrigin(),
+      preload: commanderPreloadPath(),
+      args: [],
+    }
+  }
+  const devUrl = rendererDevUrl()
+  return {
+    url: new URL("settings.html", `${devUrl ?? APP_ORIGIN}/`).toString(),
+    origin: trustedOrigin(devUrl),
+    preload: preloadPath(),
+    args: commanderEnabled ? [COMMANDER_ENABLED_ARG] : [],
+  }
 }
 
 /**
@@ -432,6 +453,10 @@ async function boot(): Promise<void> {
     },
     () => mainWindow,
   )
+  settingsWindow = new SettingsWindow(
+    { devTools: !app.isPackaged, platform: process.platform },
+    () => mainWindow,
+  )
 
   const sc = new SidecarProcess({
     binaryPath: sidecarBinaryPath(),
@@ -694,6 +719,20 @@ async function boot(): Promise<void> {
     }),
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),
+    // Both apps: Settings in a native window that blocks the shell window (ADR-0039).
+    "settings.openWindow": (event, { tab }, caller) => {
+      if (!settingsWindow) return { ok: false }
+      settingsWindow.open(event.sender, settingsPageOf(caller), tab)
+      return { ok: true }
+    },
+    "settings.closeWindow": (event, { then }) => {
+      const opener = settingsWindow?.openerOf(event.sender) ?? null
+      if (!settingsWindow?.closeFrom(event.sender)) return { ok: false }
+      // The shortcuts dialog edits the app view's live keymap: it opens there.
+      if (then === "shortcuts" && opener)
+        broadcast([opener], "menu.command", { command: "shortcuts" })
+      return { ok: true }
+    },
     // Both apps: an image or video in a frameless full-screen window (ADR-0033).
     "media.openWindow": async (event, { entryId, key, theme, lang }) => {
       const r = await sc.call("media.resolve", { entryId })
@@ -779,6 +818,12 @@ async function boot(): Promise<void> {
     onSharedSetting: (key, value) => {
       broadcast(webContents.getAllWebContents(), "settings.changed", { key, value })
       applySharedSetting(key, value)
+    },
+    // An app's own setting written in its settings window reaches its app view (ADR-0039).
+    onSettingWritten: (sender, key, value) => {
+      if (key.startsWith("shared.")) return
+      const opener = settingsWindow?.openerOf(sender)
+      if (opener) broadcast([opener], "settings.changed", { key, value })
     },
   })
 

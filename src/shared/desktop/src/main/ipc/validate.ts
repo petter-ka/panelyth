@@ -27,6 +27,7 @@ import {
   MAX_SETTING_JSON_CHARS,
   MAX_SETTING_KEY_CHARS,
   PREVIEW_PROFILES,
+  SETTINGS_TABS,
   SORT_FIELDS,
   QUERY_SCOPES,
   MAX_NAME_MASK_CHARS,
@@ -757,6 +758,15 @@ export const validators: Record<RendererMethod, Validator> = {
   "system.info": empty,
   "sidecar.getStatus": empty,
   "dialog.openFolder": empty,
+  "settings.openWindow": (p) =>
+    shapeWithOptional(p, [], ["tab"]) &&
+    (p.tab === undefined || (SETTINGS_TABS as readonly unknown[]).includes(p.tab))
+      ? null
+      : "expected { tab? }",
+  "settings.closeWindow": (p) =>
+    shapeWithOptional(p, [], ["then"]) && (p.then === undefined || p.then === "shortcuts")
+      ? null
+      : 'expected { then?: "shortcuts" }',
   "system.echo": (p) => {
     if (!shape(p, ["payload"]) || typeof p.payload !== "string")
       return "expected { payload: string }"

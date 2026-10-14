@@ -11,6 +11,7 @@ import { resetListing, useListingStore } from "./features/listing"
 import { usePanelsStore } from "./features/panels"
 import { folder, installFakeCommander, item } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
+import { SETTINGS_KEY } from "./features/settings"
 
 // Stage C06: find files, branch view and quick filter
 // (docs/commander/stages/C06-find-and-branch-view.md).
@@ -29,8 +30,14 @@ const pics = () => folder(10_000_000, PICS.path, [ROOT, HOME, PICS], 0, 4)
 
 let stops: (() => void)[] = []
 
+/** Hidden entries off: the results are counted without the hidden file. */
 async function start() {
-  const fake = installFakeCommander({ folders: [home(), pics()], home: HOME.path, volumes: [] })
+  const fake = installFakeCommander({
+    folders: [home(), pics()],
+    home: HOME.path,
+    volumes: [],
+    settings: { [SETTINGS_KEY]: { v: 3, showHidden: false } },
+  })
   render(<AppShell />)
   await act(async () => {
     stops = [await startPanels(), startFind()]

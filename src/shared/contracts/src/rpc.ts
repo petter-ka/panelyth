@@ -698,6 +698,36 @@ export interface MediaWindowOpenParams extends DocumentOpenParams {
   key: number
 }
 
+/** The tabs of Settings (ADR-0039); each app's own tab is shown in that app's window only. */
+export const SETTINGS_TABS = [
+  "general",
+  "viewer",
+  "commander",
+  "appearance",
+  "shortcuts",
+  "about",
+] as const
+export type SettingsTab = (typeof SETTINGS_TABS)[number]
+
+/**
+ * settings.openWindow (both apps, ADR-0039): Settings in a native window, a
+ * child of the shell window that blocks it until closed. The page runs on the
+ * calling app's origin and profile. `tab` is shown first; asking again while
+ * the window is open focuses it.
+ */
+export interface SettingsWindowOpenParams {
+  tab?: SettingsTab
+}
+
+/**
+ * settings.closeWindow (both apps, ADR-0039): the settings window closes
+ * itself; `then: "shortcuts"` has its app view open the keyboard shortcuts
+ * (a menu.command event). Only the settings window may call it.
+ */
+export interface SettingsWindowCloseParams {
+  then?: "shortcuts"
+}
+
 /** media.windowStep (the media window): 0 = the first item, -1 / 1 = previous / next. */
 export interface MediaWindowStepParams {
   direction: -1 | 0 | 1
@@ -2404,6 +2434,10 @@ export interface MainMethodMap {
   "media.open": { params: MediaOpenParams; result: MediaOpenResult }
   /** Both apps (ADR-0033): an image or video in a frameless full-screen window. */
   "media.openWindow": { params: MediaWindowOpenParams; result: OkResult }
+  /** Both apps (ADR-0039): Settings in a native window that blocks the shell window. */
+  "settings.openWindow": { params: SettingsWindowOpenParams; result: OkResult }
+  /** The settings window closes itself, optionally handing the shortcuts to its app view. */
+  "settings.closeWindow": { params: SettingsWindowCloseParams; result: OkResult }
   /** The media window (commander profile): the next, previous or first item, asked of the opener. */
   "media.windowStep": { params: MediaWindowStepParams; result: MediaWindowStepResult }
   /** The opener's answer to a mediaWindow.step event (both apps). */
@@ -2508,6 +2542,8 @@ export const VIEWER_METHODS = [
   "folder.covers",
   "media.open",
   "media.openWindow",
+  "settings.openWindow",
+  "settings.closeWindow",
   "media.windowAnswer",
   "query.facets",
   "selection.info",
@@ -2690,6 +2726,8 @@ export const COMMANDER_METHODS = [
   // bytes through tokens), open with the default app, the editor, new files.
   "media.open",
   "media.openWindow",
+  "settings.openWindow",
+  "settings.closeWindow",
   "media.windowStep",
   "media.windowAnswer",
   "media.windowReveal",
@@ -2763,6 +2801,8 @@ export const MAIN_METHODS = [
   "dialog.openFolder",
   "media.open",
   "media.openWindow",
+  "settings.openWindow",
+  "settings.closeWindow",
   "media.windowStep",
   "media.windowAnswer",
   "media.windowReveal",

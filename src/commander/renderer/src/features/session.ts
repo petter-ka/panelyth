@@ -23,7 +23,7 @@ import {
   type ViewMode,
 } from "./listing"
 import { usePanelsStore, type Side } from "./panels"
-import { readSettings, SETTINGS_KEY } from "./settings"
+import { readSettings, SETTINGS_KEY, SETTINGS_VERSION } from "./settings"
 import {
   captureActive,
   installTabHooks,
@@ -237,7 +237,16 @@ export async function restorePanels(
   installSession()
   const { settings } = await bridge.library()
   const stored = readStoredPanels(settings[PANELS_KEY])
-  const showHidden = readSettings(settings[SETTINGS_KEY]).showHidden
+  const storedSettings = settings[SETTINGS_KEY]
+  const { showHidden } = readSettings(storedSettings)
+  // Settings older than v3: tabs kept the old "hidden off" default, so they
+  // all start with the setting once; the settings are stored as v3 then.
+  const migrate = (storedSettings as { v?: unknown } | undefined)?.v !== SETTINGS_VERSION
+  if (migrate) {
+    void bridge
+      .setSetting(SETTINGS_KEY, { v: SETTINGS_VERSION, ...readSettings(storedSettings) })
+      .catch(() => undefined)
+  }
   usePanelsStore.setState({ active: stored.active })
   let home: Promise<string | null> | null = null
   await Promise.all(
@@ -246,8 +255,10 @@ export async function restorePanels(
       // context) wins over the stored session.
       if (hasNavigated(side)) return
       const saved = stored[side]
-      if (saved) setTabs(side, saved.tabs.map(restoredTab), saved.active)
-      else setTabs(side, [], 0)
+      if (saved) {
+        const tabs = migrate ? saved.tabs.map((tab) => ({ ...tab, showHidden })) : saved.tabs
+        setTabs(side, tabs.map(restoredTab), saved.active)
+      } else setTabs(side, [], 0)
       const tab = saved?.tabs[saved.active]
       patch(side, {
         columns: saved?.columns ?? useListingStore.getState()[side].columns,
@@ -256,7 +267,7 @@ export async function restorePanels(
           saved?.columnVisibility ?? useListingStore.getState()[side].columnVisibility,
         columnPinning: saved?.columnPinning ?? useListingStore.getState()[side].columnPinning,
         sort: tab?.sort ?? useListingStore.getState()[side].sort,
-        showHidden: tab ? tab.showHidden : showHidden,
+        showHidden: tab && !migrate ? tab.showHidden : showHidden,
         view: tab?.view ?? "full",
         history: tab?.history ?? [],
         historyIndex: tab?.historyIndex ?? -1,

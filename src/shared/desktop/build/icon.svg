@@ -4,10 +4,26 @@
       <stop stop-color="#cfec80" />
       <stop offset="1" stop-color="#9bcb3f" />
     </linearGradient>
+    <!-- A dark, faintly green tile: the lime panels stay visible on light docks and desktops. -->
+    <linearGradient id="tile" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#343b31" />
+      <stop offset="1" stop-color="#14170f" />
+    </linearGradient>
+    <linearGradient id="edge" x1="512" y1="100" x2="512" y2="924" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffffff" stop-opacity="0.16" />
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0.04" />
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0" />
+    </linearGradient>
   </defs>
 
-  <!-- Three panels on a 16-unit grid (1 unit = 64): the gaps land on whole pixels at 16, 32, 48 and 64 px. -->
-  <rect x="128" y="128" width="192" height="768" rx="80" fill="url(#lime)" />
-  <rect x="384" y="128" width="512" height="448" rx="80" fill="url(#lime)" />
-  <rect x="384" y="640" width="512" height="256" rx="80" fill="#557f2f" />
+  <!-- The macOS icon grid: an 824 px tile with a 100 px margin, corner radius 184. -->
+  <rect x="100" y="100" width="824" height="824" rx="184" fill="url(#tile)" />
+  <rect x="102" y="102" width="820" height="820" rx="182" fill="none" stroke="url(#edge)" stroke-width="4" />
+
+  <!-- Three panels on a 16-unit grid (1 unit = 48 here), scaled into the tile. -->
+  <g transform="translate(128 128) scale(0.75)">
+    <rect x="128" y="128" width="192" height="768" rx="80" fill="url(#lime)" />
+    <rect x="384" y="128" width="512" height="448" rx="80" fill="url(#lime)" />
+    <rect x="384" y="640" width="512" height="256" rx="80" fill="#6a9a38" />
+  </g>
 </svg>

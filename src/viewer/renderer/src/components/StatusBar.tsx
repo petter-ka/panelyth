@@ -34,6 +34,9 @@ const barButton = "h-6 rounded px-1.5 font-normal hover:bg-raised hover:text-tex
 
 const SIZE_DELAY_MS = 150
 
+/** The bar is hidden for now; it stays mounted so its state and tests keep working. */
+const STATUS_BAR_VISIBLE = false
+
 /**
  * "12 selected, 48.2 MB". The count is exact locally (descriptor math); the
  * size comes from Go, debounced so dragging a selection does not flood IPC.
@@ -81,7 +84,10 @@ export function StatusBar() {
   const shortcutHint = useShortcutHint("help.shortcuts")
 
   return (
-    <footer className="flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted">
+    <footer
+      hidden={!STATUS_BAR_VISIBLE}
+      className="flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted"
+    >
       <span
         role="status"
         aria-live="polite"

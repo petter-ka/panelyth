@@ -51,6 +51,8 @@ export interface RouterOptions {
   devMethods: boolean
   /** Called after a successful library.setSetting of a shared.* key, so the other app can apply it. */
   onSharedSetting?: (key: string, value: unknown) => void
+  /** Called after every successful library.setSetting, with its sender (the settings window relays its writes; ADR-0039). */
+  onSettingWritten?: (sender: WebContents, key: string, value: unknown) => void
   /** The visible app; only it may publish the shared context (ADR-0031). Absent = any app. */
   activeApp?: () => AppId
 }
@@ -127,6 +129,7 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
       if (method === "library.setSetting") {
         const { key, value } = params as { key: string; value: unknown }
         if (key.startsWith("shared.")) options.onSharedSetting?.(key, value)
+        options.onSettingWritten?.(event.sender, key, value)
       }
       return { ok: true, r }
     } catch (error) {
@@ -185,6 +188,14 @@ const COMMANDER_ONLY_JOB_KINDS: ReadonlySet<unknown> = new Set([
 
 function profileProblem(app: AppId, method: string, params: unknown): string | null {
   const p = params as Record<string, unknown>
+  // Each app's settings window shows that app's own tab only (ADR-0039).
+  if (
+    method === "settings.openWindow" &&
+    (p.tab === "viewer" || p.tab === "commander") &&
+    p.tab !== app
+  ) {
+    return "the other app's settings are the other app's"
+  }
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
   // Stage 12: only the commander hands a picture over, and only to the viewer's editor.
   if (

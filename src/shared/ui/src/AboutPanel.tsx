@@ -1,4 +1,9 @@
-import type { AppTarget, MenuCommand, UpdateState } from "@panelyth/contracts"
+import type {
+  AppTarget,
+  MenuCommand,
+  SettingsTab as ContractSettingsTab,
+  UpdateState,
+} from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
 import {
   checkForUpdates,
@@ -12,8 +17,8 @@ import { useEffect, type ReactNode } from "react"
 import { create } from "zustand"
 import { Button } from "./button"
 
-/** The tabs of the settings dialog; "about" can be asked for from the native menu. */
-export type SettingsTab = "general" | "viewer" | "commander" | "appearance" | "shortcuts" | "about"
+/** The tabs of Settings (`@panelyth/contracts`); "about" can be asked for from the native menu. */
+export type SettingsTab = ContractSettingsTab
 
 /**
  * A tab asked for from outside the dialog (the native menu's About and

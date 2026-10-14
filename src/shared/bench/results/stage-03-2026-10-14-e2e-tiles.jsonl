@@ -1,0 +1,5 @@
+{"at":"2026-10-14T08:37:45.207Z","test":"responsive","seen":[{"window":1280,"width":1051,"perRow":5},{"window":1920,"width":1667,"perRow":8},{"window":2560,"width":2307,"perRow":11}]}
+{"at":"2026-10-14T08:37:54.093Z","test":"scroll-100k","size":"medium","windowWidth":1920,"contentWidth":1667,"perRow":8,"frames":720,"maxFrameGapMs":21,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":177044,"ensureCalls":1,"pageCalls":25}
+{"at":"2026-10-14T08:38:02.721Z","test":"scroll-100k","size":"small","windowWidth":2560,"contentWidth":2307,"perRow":17,"frames":720,"maxFrameGapMs":14,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":204,"scrolledPx":176268,"ensureCalls":1,"pageCalls":78}
+{"at":"2026-10-14T08:38:09.362Z","test":"scroll-10k","frames":433,"maxFrameGapMs":7,"p95FrameMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedTiles":80,"scrolledPx":88440}
+{"at":"2026-10-14T08:38:10.484Z","test":"first-thumb","tilesMountedMs":103,"firstReadyMs":182,"mountToReadyMs":80}

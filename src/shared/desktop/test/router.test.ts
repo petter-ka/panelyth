@@ -79,6 +79,8 @@ const mainHandlers = (): MainHandlers => ({
   "shell.runTool": vi.fn(async () => ({ ok: true })),
   "document.open": vi.fn(async () => ({ ok: true })),
   "media.openWindow": vi.fn(async () => ({ ok: true })),
+  "settings.openWindow": vi.fn(() => ({ ok: true })),
+  "settings.closeWindow": vi.fn(() => ({ ok: true })),
   "media.windowStep": vi.fn(async () => ({ item: null })),
   "media.windowAnswer": vi.fn(async () => ({ ok: true })),
   "media.windowReveal": vi.fn(async () => ({ ok: true })),
@@ -134,12 +136,14 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
   }
   const main = mainHandlers()
   const onSharedSetting = vi.fn()
+  const onSettingWritten = vi.fn()
   const handler = createInvokeHandler({
     sidecar,
     main,
     origins: { viewer: ORIGIN, commander: COMMANDER },
     devMethods,
     onSharedSetting,
+    onSettingWritten,
     ...(activeApp && { activeApp }),
   })
   return {
@@ -147,6 +151,7 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
     main,
     handler,
     onSharedSetting,
+    onSettingWritten,
     ok: eventFrom(`${ORIGIN}/index.html`),
     commander: eventFrom(`${COMMANDER}/index.html`),
   }
@@ -1363,6 +1368,53 @@ describe("invoke router", () => {
     expect(onSharedSetting).not.toHaveBeenCalled()
     await handler(ok, "library.setSetting", { key: "shared.appearance", value: { theme: "light" } })
     expect(onSharedSetting).toHaveBeenCalledWith("shared.appearance", { theme: "light" })
+  })
+
+  it("reports every written setting with its sender, for the settings window's relay (ADR-0039)", async () => {
+    const { handler, ok, onSettingWritten } = setup()
+    await handler(ok, "library.setSetting", { key: "viewer", value: { v: 1 } })
+    expect(onSettingWritten).toHaveBeenCalledWith(ok.sender, "viewer", { v: 1 })
+  })
+
+  it("opens each app's settings window on its own tabs only (ADR-0039)", async () => {
+    const { handler, main, ok, commander } = setup()
+    for (const [event, app, tab] of [
+      [ok, "viewer", "viewer"],
+      [ok, "viewer", "about"],
+      [commander, "commander", "commander"],
+      [commander, "commander", undefined],
+    ] as const) {
+      const p = tab ? { tab } : {}
+      await expect(
+        handler(event, "settings.openWindow", p),
+        `${app} ${tab}`,
+      ).resolves.toMatchObject({
+        ok: true,
+      })
+      expect(main["settings.openWindow"]).toHaveBeenLastCalledWith(event, p, app)
+    }
+    await expect(handler(ok, "settings.openWindow", { tab: "commander" })).resolves.toMatchObject({
+      ok: false,
+      e: { code: "PERMISSION_DENIED" },
+    })
+    await expect(
+      handler(commander, "settings.openWindow", { tab: "viewer" }),
+    ).resolves.toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    for (const bad of [{ tab: "panels" }, { tab: 1 }, { extra: true }]) {
+      await expect(handler(ok, "settings.openWindow", bad)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    await expect(handler(ok, "settings.closeWindow", { then: "shortcuts" })).resolves.toMatchObject(
+      {
+        ok: true,
+      },
+    )
+    await expect(handler(ok, "settings.closeWindow", { then: "about" })).resolves.toMatchObject({
+      ok: false,
+      e: { code: "INVALID_ARGUMENT" },
+    })
   })
 
   it("forwards allowed sidecar methods", async () => {

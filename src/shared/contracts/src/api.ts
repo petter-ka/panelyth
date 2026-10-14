@@ -116,6 +116,7 @@ import type {
   SharedContext,
   ShellRunParams,
   ShellRunToolParams,
+  SettingsTab,
   SidecarStatus,
   SystemInfo,
   AppId,
@@ -147,6 +148,12 @@ export interface PanelythApi {
     about(): Promise<RpcEnvelope<AboutInfo>>
     /** Opens the log folder, the licence notices or a page of the project. */
     openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
+  }
+  /** Settings in a native window (ADR-0039). */
+  settings: {
+    openWindow(tab?: SettingsTab): Promise<RpcEnvelope<OkResult>>
+    /** From the settings window only. */
+    closeWindow(then?: "shortcuts"): Promise<RpcEnvelope<OkResult>>
   }
   /** Updates (ADR-0038): main checks, downloads and installs; the state arrives as update.state events. */
   update: {
@@ -340,6 +347,12 @@ export interface CommanderApi {
     about(): Promise<RpcEnvelope<AboutInfo>>
     /** Opens the log folder, the licence notices or a page of the project. */
     openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
+  }
+  /** Settings in a native window (ADR-0039). */
+  settings: {
+    openWindow(tab?: SettingsTab): Promise<RpcEnvelope<OkResult>>
+    /** From the settings window only. */
+    closeWindow(then?: "shortcuts"): Promise<RpcEnvelope<OkResult>>
   }
   /** Updates (ADR-0038): main checks, downloads and installs; the state arrives as update.state events. */
   update: {

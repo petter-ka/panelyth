@@ -1,8 +1,8 @@
 import { mkdtempSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
-import { commanderEnv, launchApp, waitForReady } from "../../launch"
+import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
+import { commanderEnv, launchApp, openSettingsWindow, waitForReady } from "../../launch"
 
 // The theme is chosen in Settings → Appearance (shared by both apps since
 // Stage C00). A fresh profile is dark; "System" follows the system's setting.
@@ -15,14 +15,18 @@ const theme = (page: Page): Promise<string | undefined> =>
 const isDark = (page: Page): Promise<boolean> =>
   page.evaluate(() => document.documentElement.classList.contains("dark"))
 
-async function chooseTheme(page: Page, name: string): Promise<void> {
+/** Settings opens in a window of its own (ADR-0039); the choice applies to the app at once. */
+async function chooseTheme(app: ElectronApplication, page: Page, name: string): Promise<void> {
   const step = { timeout: 5_000 }
-  await page.getByTestId("app-settings").click(step)
-  await page.getByRole("tab", { name: "Appearance" }).click(step)
-  await page
-    .getByRole("group", { name: "Color theme" })
-    .getByRole("button", { name, exact: true })
-    .click(step)
+  const settings = await openSettingsWindow(app, page)
+  await settings.getByRole("tab", { name: "Appearance" }).click(step)
+  const group = settings.getByRole("group", { name: "Color theme" })
+  // System is a checkbox above the dark and light groups.
+  if (name === "System") await group.getByRole("checkbox", { name }).check(step)
+  else await group.getByRole("button", { name, exact: true }).click(step)
+  // Esc closes the window on keydown: there is no page left for a keyup.
+  await settings.keyboard.down("Escape")
+  await expect.poll(() => app.windows().some((p) => p === settings)).toBe(false)
 }
 
 test("a fresh profile opens in the dark theme; System follows the system's setting", async () => {
@@ -32,7 +36,7 @@ test("a fresh profile opens in the dark theme; System follows the system's setti
     await page.emulateMedia({ colorScheme: "light" })
     await expect.poll(() => theme(page)).toBe("dark")
     expect(await isDark(page)).toBe(true)
-    await chooseTheme(page, "System")
+    await chooseTheme(app, page, "System")
     await expect.poll(() => theme(page)).toBe("light")
     expect(await isDark(page)).toBe(false)
     await page.emulateMedia({ colorScheme: "dark" })
@@ -50,7 +54,7 @@ test("the chosen theme persists across restarts, whatever the system says", asyn
   try {
     await waitForReady(first.page)
     await first.page.emulateMedia({ colorScheme: "dark" })
-    await chooseTheme(first.page, "Light")
+    await chooseTheme(first.app, first.page, "Light")
     await expect.poll(() => theme(first.page)).toBe("light")
     expect(await isDark(first.page)).toBe(false)
   } finally {

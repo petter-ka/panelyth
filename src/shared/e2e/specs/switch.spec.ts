@@ -176,7 +176,8 @@ test.describe("app switch (ADR-0031)", () => {
       await page.getByRole("button", { name: "Switch to Commander" }).click()
       const commander = await commanderPage(app)
       await expect(commander.getByTestId("theme-toggle")).toHaveText("Theme: Dark")
-      await commander.getByTestId("theme-toggle").click()
+      // The status bar is hidden for now; its theme button still works.
+      await commander.getByTestId("theme-toggle").dispatchEvent("click")
       await expect(commander.getByTestId("theme-toggle")).toHaveText("Theme: Light")
       await expect
         .poll(() => page.evaluate(() => document.documentElement.dataset.theme))

@@ -1,5 +1,11 @@
 import { chordAllowedWhileTyping, eventChord } from "@panelyth/renderer-core"
-import { AppSwitcher, GlyphSprite, ShortcutsDialog, TooltipProvider } from "@panelyth/ui"
+import {
+  AppSwitcher,
+  GlyphSprite,
+  SeparatorReadout,
+  ShortcutsDialog,
+  TooltipProvider,
+} from "@panelyth/ui"
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
@@ -17,7 +23,7 @@ import {
 } from "../features/keymap"
 import { useDrivesStore } from "../features/drives"
 import { useHotlistStore } from "../features/hotlist"
-import { setSettingsOpen, useSettingsStore } from "../features/settings"
+import { onSettingsWindowClosed, openSettings, useSettingsStore } from "../features/settings"
 import { useFilesStore } from "../features/files"
 import { useFindStore } from "../features/find"
 import { useOpenStore } from "../features/open"
@@ -81,6 +87,8 @@ export function AppShell() {
   const showFunctionKeys = useSettingsStore((s) => s.settings.showFunctionKeys)
   const tree = usePanelsStore((s) => s.tree)
   const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
+  /** The border between the panels, for the size readout while it is hovered or dragged. */
+  const splitBorder = useRef<HTMLDivElement>(null)
 
   // The active panel's list holds keyboard focus (unless a menu just took it:
   // Alt+F1 / Alt+F2 change the active panel and open the drive menu at once).
@@ -136,6 +144,7 @@ export function AppShell() {
     const offSettings = useSettingsStore.subscribe((s, prev) => {
       if (prev.open && !s.open) focusActive()
     })
+    const offSettingsWindow = onSettingsWindowClosed(focusActive)
     // The file-operation dialogs (Stage C04).
     const offFiles = useFilesStore.subscribe((s, prev) => {
       const was = prev.copy ?? prev.remove ?? prev.mkdir
@@ -195,6 +204,7 @@ export function AppShell() {
       offDrives()
       offHotlist()
       offSettings()
+      offSettingsWindow()
       offFiles()
       offQueue()
       offViewers()
@@ -222,7 +232,7 @@ export function AppShell() {
           current="commander"
           shortcut={SWITCH_SHORTCUT}
           onSwitch={switchToViewer}
-          onSettings={() => setSettingsOpen(true)}
+          onSettings={openSettings}
         />
         <div className="flex min-h-0 min-w-0 flex-col">
           {showToolbar && <QuickActionBar />}
@@ -254,10 +264,12 @@ export function AppShell() {
                 </ResizablePanel>
                 <Separator
                   id="panels-separator"
+                  elementRef={splitBorder}
                   aria-label={t("Resize panels")}
                   className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
                   onDoubleClick={resetSplit}
                 />
+                <SeparatorReadout separator={splitBorder} />
                 <ResizablePanel id="right" minSize="10%">
                   <PanelSlot side="right" quick={quick === "right"} tree={tree === "two"}>
                     <Panel
