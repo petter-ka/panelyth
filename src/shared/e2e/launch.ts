@@ -238,19 +238,17 @@ export function removeTemp(path: string): void {
 
 /**
  * Clicks what opens Settings in `page` and returns the settings window it
- * opens (ADR-0039): a native window of its own, on the app's origin.
+ * opens (ADR-0039): a native window of its own, on the app's origin. The
+ * windows are polled: Playwright reports a new window once, and it may still
+ * be about:blank then (it is on Linux), before settings.html is loaded.
  */
 export async function openSettingsWindow(
   app: ElectronApplication,
   page: Page,
   timeoutMs = 10_000,
 ): Promise<Page> {
-  const opened = app.waitForEvent("window", {
-    predicate: (p) => p.url().includes("/settings.html"),
-    timeout: timeoutMs,
-  })
   await page.getByTestId("app-settings").click({ timeout: timeoutMs })
-  const settings = await opened
+  const settings = await settingsWindow(app, undefined, timeoutMs)
   await settings.waitForLoadState("domcontentloaded")
   return settings
 }
@@ -271,7 +269,10 @@ export async function settingsWindow(
       .windows()
       .find((p) => p.url().includes("/settings.html") && p.url().startsWith(origin))
     if (page) return page
-    if (Date.now() > deadline) throw new Error("settings window not found")
+    if (Date.now() > deadline) {
+      const urls = app.windows().map((p) => p.url())
+      throw new Error(`settings window not found; the windows: ${urls.join(", ")}`)
+    }
     await new Promise((r) => setTimeout(r, 25))
   }
 }
