@@ -34,7 +34,9 @@ test("Settings is a movable child window that blocks the app; changes apply at o
       .poll(() => windowShape(app))
       .toEqual({
         hasParent: true,
-        parentEnabled: false,
+        // Windows and Linux: a native modal window. macOS: the shell stays enabled (Electron
+        // would dim it with a sheet) and the settings window keeps the focus instead.
+        parentEnabled: process.platform === "darwin",
         movable: true,
         minimizable: false,
         title: "Settings",

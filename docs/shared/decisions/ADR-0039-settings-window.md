@@ -25,8 +25,10 @@ written by the settings window reaches its app view).
   (`parent`), 640 × 640 px (resizable, at least 520 × 480), not minimizable, not full-screenable. There is one at a
   time; asking again focuses it.
 - **It blocks the shell window.** On Windows and Linux it is `modal`. On macOS a modal window is a sheet fixed to
-  the parent's title bar, which cannot be moved, so there it is an ordinary child window and main disables the shell
-  window (`setEnabled(false)`) until it closes. Both apps sit in the shell window, so neither takes input meanwhile.
+  the parent's title bar, which cannot be moved, and disabling the parent is no better: Electron does it by covering
+  the window with a half-transparent sheet, which looks frozen (amended 2026-10-15 after the first macOS build). So on
+  macOS it is an ordinary child window that takes the focus back whenever the shell window gets it; a click on an
+  inactive macOS window only activates it, so neither app takes input meanwhile.
 - **Its page is `settings.html` on the opening app's origin, with that app's preload**, so it runs on that app's
   profile (ADR-0027) and shares its origin's storage: the stored theme, interface size and language apply before
   the first paint, as in the app. Main takes the origin and preload from the calling web contents, never from a

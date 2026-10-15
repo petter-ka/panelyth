@@ -32,6 +32,7 @@ vi.mock("electron", () => ({
       this.url = url
     })
     isDestroyed = () => this.closed
+    isVisible = () => true
     isMinimized = () => false
     restore = vi.fn()
     close() {
@@ -52,10 +53,14 @@ const PAGE = {
 }
 
 function shell() {
+  const listeners = new Map<string, () => void>()
   return {
+    listeners,
     isDestroyed: () => false,
     setEnabled: vi.fn(),
     focus: vi.fn(),
+    on: vi.fn((event: string, handler: () => void) => listeners.set(event, handler)),
+    removeListener: vi.fn((event: string) => listeners.delete(event)),
   }
 }
 
@@ -95,7 +100,7 @@ describe("the settings window (ADR-0039)", () => {
     expect(parent.setEnabled).not.toHaveBeenCalled()
   })
 
-  it("on macOS is a movable child window and disables the shell until it closes", () => {
+  it("on macOS is a movable child window that keeps the focus, without dimming the shell", () => {
     const parent = shell()
     const windows = new SettingsWindow(
       { devTools: false, platform: "darwin" },
@@ -103,9 +108,15 @@ describe("the settings window (ADR-0039)", () => {
     )
     windows.open(opener, PAGE)
     expect(created[0]!.options).toMatchObject({ parent, modal: false })
-    expect(parent.setEnabled).toHaveBeenLastCalledWith(false)
-    created[0]!.close()
-    expect(parent.setEnabled).toHaveBeenLastCalledWith(true)
+    // Electron disables a macOS window with a half-transparent sheet: never here.
+    expect(parent.setEnabled).not.toHaveBeenCalled()
+    // The shell window activated (a click on it): the settings window takes the focus back.
+    const settings = created[0]!
+    settings.focus.mockClear()
+    parent.listeners.get("focus")?.()
+    expect(settings.focus).toHaveBeenCalled()
+    settings.close()
+    expect(parent.listeners.has("focus")).toBe(false)
     expect(parent.focus).toHaveBeenCalled()
   })
 

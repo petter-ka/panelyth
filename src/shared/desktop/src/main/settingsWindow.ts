@@ -57,7 +57,11 @@ export class SettingsWindow {
     const parent = this.parent()
     const shell = parent && !parent.isDestroyed() ? parent : null
     // macOS shows a modal window as a sheet fixed to the parent's title bar; the
-    // owner wants it movable, so there main disables the parent instead.
+    // owner wants it movable. Disabling the parent there is no better: Electron
+    // does it by covering the window with a half-transparent sheet, which looks
+    // frozen. So on macOS the settings window is an ordinary child window that
+    // takes the focus back whenever the shell window would get it: a click on an
+    // inactive window only activates it, so the app behind takes no input.
     const sheetless = this.options.platform === "darwin"
     const win = new BrowserWindow({
       width: 640,
@@ -78,7 +82,10 @@ export class SettingsWindow {
     this.opener = opener
     win.setMenuBarVisibility(false)
     hardenWebContents(win.webContents, page.origin)
-    if (shell && sheetless) shell.setEnabled(false)
+    const keepFocus = (): void => {
+      if (!win.isDestroyed() && win.isVisible()) win.focus()
+    }
+    if (shell && sheetless) shell.on("focus", keepFocus)
     win.once("ready-to-show", () => {
       win.show()
       win.focus()
@@ -89,7 +96,7 @@ export class SettingsWindow {
         this.opener = null
       }
       if (shell && !shell.isDestroyed()) {
-        if (sheetless) shell.setEnabled(true)
+        if (sheetless) shell.removeListener("focus", keepFocus)
         shell.focus()
       }
     })
