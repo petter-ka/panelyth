@@ -13,7 +13,7 @@ import {
   askDropTransfer,
   beginSelectionDrag,
   canAcceptSelectionDrop,
-  SELECTION_DRAG_TYPE,
+  takeSelectionDrop,
 } from "../../features/jobs/jobsStore"
 import {
   focusAndSelect,
@@ -171,7 +171,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
       }}
       onDrop={(e) => {
         if (!isFolderDropTarget || !item || item.kind !== "dir") return
-        const payload = e.dataTransfer.getData(SELECTION_DRAG_TYPE)
+        const payload = takeSelectionDrop(e.dataTransfer)
         if (!payload) return
         e.preventDefault()
         e.stopPropagation()
@@ -212,7 +212,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
         draggable={draggable}
         data-tile-drag-handle={draggable ? "" : undefined}
         onDragStart={(e) => {
-          if (!beginSelectionDrag(e.dataTransfer)) e.preventDefault()
+          beginSelectionDrag(e)
         }}
         className={`mt-1 truncate rounded-[3px] px-1 text-center leading-5 ${nameSize} ${selected && named ? "bg-raised text-text" : "text-text"} ${draggable ? "cursor-grab active:cursor-grabbing" : ""}`}
       >

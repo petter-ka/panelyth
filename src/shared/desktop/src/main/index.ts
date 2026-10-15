@@ -24,6 +24,7 @@ import {
 import { handleThumbProtocol } from "./thumbProtocol"
 import { DocumentWindows } from "./documentWindow"
 import { MediaWindows } from "./mediaWindow"
+import { startFileDrag } from "./dragOut"
 import { SettingsWindow, type SettingsPage } from "./settingsWindow"
 import { fileArgument, OpenWithSession } from "./openWith"
 import {
@@ -513,6 +514,11 @@ async function boot(): Promise<void> {
       if (!recordShell) return shell.openPath(path)
       shellLog.push({ action: "open", value: path })
       return Promise.resolve("")
+    },
+    startDrag: (sender, files) => {
+      if (!recordShell) return startFileDrag(sender, files)
+      shellLog.push({ action: "drag", value: files.join("|") })
+      return Promise.resolve()
     },
     showItemInFolder: (path) => {
       if (recordShell) shellLog.push({ action: "reveal", value: path })

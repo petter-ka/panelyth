@@ -102,6 +102,7 @@ const mainHandlers = (): MainHandlers => ({
   "clipboard.copyPaths": vi.fn(async () => ({ count: 1, truncated: false })),
   "clipboard.copyText": vi.fn(async () => ({ ok: true })),
   "clipboard.copyImage": vi.fn(async () => ({ width: 1, height: 1 })),
+  "drag.start": vi.fn(async () => ({ count: 1, truncated: false })),
   "edit.render": vi.fn(async (_e, p: { rev: number }) => ({
     rev: p.rev,
     frame: { url: `panelyth-media://m/${"e".repeat(32)}`, width: 4, height: 3 },
@@ -1471,6 +1472,7 @@ describe("invoke router", () => {
       ["shell.revealPath", { path: process.platform === "win32" ? "C:\\x" : "/x" }],
       ["clipboard.copyPaths", { selection: sel }],
       ["clipboard.copyImage", { entryId: 7 }],
+      ["drag.start", { selection: sel }],
       ["clipboard.copyText", { text: "C:\\x" }],
     ] as const) {
       expect(await handler(ok, m, p), m).toMatchObject({ ok: true })
@@ -1788,6 +1790,8 @@ describe("invoke router", () => {
       ["clipboard.copyText", { text: "x".repeat(64 * 1024 + 1) }],
       ["clipboard.copyImage", { entryId: 0 }],
       ["clipboard.copyImage", { entryId: 1.5 }],
+      ["drag.start", { selection: { ...sel, queryId: 0 } }],
+      ["drag.start", { selection: sel, paths: ["/etc/passwd"] }],
       ["jobs.start", { kind: "explode", source: { selection: sel } }],
       ["jobs.start", { kind: "trash", ids: [1, 2, 3] }],
       ["jobs.start", { kind: "trash", source: { selection: sel }, destination: "/x" }],

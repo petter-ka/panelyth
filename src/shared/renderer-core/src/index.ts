@@ -85,3 +85,4 @@ export {
   type AboutPort,
   type AboutState,
 } from "./aboutStore"
+export { beginOwnDrag, endOwnDrag, ownDrag } from "./ownDrag"

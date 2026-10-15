@@ -14,7 +14,7 @@ import { bridge } from "../bridge"
 import {
   askDropTransfer,
   canAcceptSelectionDrop,
-  SELECTION_DRAG_TYPE,
+  takeSelectionDrop,
 } from "../features/jobs/jobsStore"
 import { openFolder, useFolderStore } from "../features/folder/folderStore"
 import { INTERFACE_SIZE_SCALE, useInterfaceSizeStore } from "../features/theme/interfaceSizeStore"
@@ -325,7 +325,7 @@ const RowView = memo(function RowView({
       }}
       onDrop={(e) => {
         if (!path) return
-        const payload = e.dataTransfer.getData(SELECTION_DRAG_TYPE)
+        const payload = takeSelectionDrop(e.dataTransfer)
         if (!payload) return
         e.preventDefault()
         e.stopPropagation()

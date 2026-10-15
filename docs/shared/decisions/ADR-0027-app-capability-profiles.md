@@ -12,6 +12,10 @@ get `app.about`, `app.openTarget` and `update.get` / `check` / `download` / `ins
 and take no path, URL or version: `app.openTarget` takes one of five names that main maps to its own folders and
 the project's pages.
 
+Amended 2026-10-15 (ADR-0040): both profiles get `drag.start { selection }`. Main resolves the selection's paths
+through Go and starts the OS's drag of those files from the calling web contents; no path comes from or goes to
+the renderer.
+
 Amended 2026-10-12 (Stage 15, ADR-0035): `edit.eyes` (red pupils found in the picture of an edit session) joins the
 viewer's profile; the commander's has none of the editor's methods.
 

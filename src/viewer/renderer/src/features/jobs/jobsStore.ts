@@ -6,6 +6,7 @@ import type {
   SelectionDescriptor,
 } from "@panelyth/contracts"
 import { isSelectionDescriptor } from "@panelyth/contracts"
+import { beginOwnDrag, endOwnDrag, ownDrag } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError, isBridgeAvailable } from "../../bridge"
 import { formatCount } from "../../lib/format"
@@ -181,19 +182,38 @@ export function currentSelection(): { selection: SelectionDescriptor; count: num
   return { selection: toDescriptor(sel, query.queryId, query.version), count }
 }
 
-export const SELECTION_DRAG_TYPE = "application/x-panelyth-selection"
+const TOO_MANY_TO_DRAG = msg("Too many items to drag at once (at most 10,000).")
 
-/** Adds the current selection descriptor to an internal tile drag. */
-export function beginSelectionDrag(dataTransfer: DataTransfer): boolean {
+/**
+ * A tile drag: the OS's drag of the selection's files (ADR-0040), so other
+ * apps take them, and a folder of this view takes them back as a copy. The
+ * page's own drag never starts.
+ */
+export function beginSelectionDrag(e: { preventDefault(): void }): void {
+  e.preventDefault()
   const cur = currentSelection()
-  if (!cur) return false
-  dataTransfer.setData(SELECTION_DRAG_TYPE, JSON.stringify(cur.selection))
-  dataTransfer.effectAllowed = "copyMove"
-  return true
+  if (!cur) return
+  beginOwnDrag(JSON.stringify(cur.selection))
+  void bridge.dragStart(cur.selection).then(
+    ({ truncated }) => {
+      if (!truncated) return
+      endOwnDrag()
+      set({ error: t(TOO_MANY_TO_DRAG) })
+    },
+    () => endOwnDrag(),
+  )
 }
 
+/** This view's tile drag is over a folder (files from other apps are not taken). */
 export function canAcceptSelectionDrop(dataTransfer: DataTransfer): boolean {
-  return Array.from(dataTransfer.types).includes(SELECTION_DRAG_TYPE)
+  return ownDrag(dataTransfer) !== null
+}
+
+/** The dropped tile drag's selection (for askDropTransfer), or null; the drag is over. */
+export function takeSelectionDrop(dataTransfer: DataTransfer): string | null {
+  const payload = ownDrag<string>(dataTransfer)
+  if (payload !== null) endOwnDrag()
+  return payload
 }
 
 /** Opens the copy/move confirmation for a validated internal drag payload. */

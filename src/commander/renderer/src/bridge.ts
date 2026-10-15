@@ -17,6 +17,7 @@ import type {
   ConflictDecision,
   ConflictPolicy,
   CopyPathsResult,
+  DragStartResult,
   DiffAction,
   FsMkdirResult,
   FsMkfileResult,
@@ -297,6 +298,9 @@ export const bridge = {
     unwrap(() => api().clip.paste(destinationDirId, conflict)),
   copyPaths: (selection: SelectionDescriptor, namesOnly = false): Promise<CopyPathsResult> =>
     unwrap(() => api().clipboard.copyPaths(selection, namesOnly)),
+  /** Files to other apps (ADR-0040): main starts the OS's drag of the selection. */
+  dragStart: (selection: SelectionDescriptor): Promise<DragStartResult> =>
+    unwrap(() => api().drag.start(selection)),
   copyText: async (text: string): Promise<void> => {
     await unwrap(() => api().clipboard.copyText(text))
   },

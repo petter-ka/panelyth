@@ -226,6 +226,7 @@ Claude Code should read these files in this order:
 | 0037 | Remote locations: FTP connections as folders | commander | Accepted with amendments (Stage C10.5) |
 | 0038 | Updates, the native menu and the release pipeline | shared | Accepted (Stage P06) |
 | 0039 | Settings in a native window that blocks the main window | shared | Accepted (owner request) |
+| 0040 | Dragging files to other apps (the OS drag, paths resolved in main) | shared | Accepted (owner request) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

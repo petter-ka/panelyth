@@ -223,6 +223,9 @@ const api: PanelythApi = {
     copyText: (text) => invoke("clipboard.copyText", { text }),
     copyImage: (entryId) => invoke("clipboard.copyImage", { entryId }),
   },
+  drag: {
+    start: (sel) => invoke("drag.start", { selection: selection(sel) }),
+  },
   // The image editor (Stage 12). An edit list is plain JSON from the editor's
   // store; main checks its structure and Go its meaning.
   edit: {

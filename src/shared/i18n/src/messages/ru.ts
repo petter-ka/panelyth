@@ -1947,6 +1947,8 @@ const messages: Messages = {
   "Tone curve; click to add a point, drag or use the arrow keys to move it":
     "Тоновая кривая; щелчок добавляет точку, перетаскивание или стрелки перемещают её",
   "Too many entries are marked for {command}.": "Отмечено слишком много элементов для «{command}».",
+  "Too many items to drag at once (at most 10,000).":
+    "Слишком много элементов для перетаскивания (не более 10 000).",
   "Too many operations are waiting. Try again in a moment.":
     "Слишком много операций в ожидании. Повторите попытку через минуту.",
   "Tool groups": "Группы инструментов",

@@ -169,6 +169,27 @@ describe("clipboard and delete", () => {
   })
 })
 
+describe("dragging tiles", () => {
+  it("drags the selection as files (to other apps too); a folder tile takes it as a copy or move", async () => {
+    const bridge = await setup()
+    await userEvent.click(tile("IMG_2.jpg"))
+    const start = { preventDefault: vi.fn() }
+    await act(async () => {
+      fireEvent.dragStart(screen.getByText("IMG_2.jpg"), { dataTransfer: start })
+    })
+    // The OS drags the files (main resolves their paths); the page's own drag never starts.
+    expect(bridge.api.drag.start).toHaveBeenCalledTimes(1)
+    expect(bridge.api.drag.start.mock.calls[0]![0]).toMatchObject({ queryId: expect.any(Number) })
+    // What the page sees of the OS's drag of files: files, no data of ours.
+    const files = { types: ["Files"], getData: () => "", dropEffect: "" }
+    await act(async () => {
+      fireEvent.dragOver(tile("folder 1"), { dataTransfer: files })
+      fireEvent.drop(tile("folder 1"), { dataTransfer: files })
+    })
+    expect(await screen.findByRole("dialog", { name: "Copy or move items?" })).toBeInTheDocument()
+  })
+})
+
 describe("progress panel", () => {
   it("follows job.progress, cancels and shows failed items", async () => {
     const bridge = await setup()

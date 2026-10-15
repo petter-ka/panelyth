@@ -1962,6 +1962,8 @@ const messages: Messages = {
   "Tone curve; click to add a point, drag or use the arrow keys to move it":
     "Curva dei toni; fai clic per aggiungere un punto, trascina o usa le frecce per spostarlo",
   "Too many entries are marked for {command}.": "Sono selezionate troppe voci per {command}.",
+  "Too many items to drag at once (at most 10,000).":
+    "Troppi elementi da trascinare insieme (al massimo 10.000).",
   "Too many operations are waiting. Try again in a moment.":
     "Troppe operazioni in attesa. Riprova tra un momento.",
   "Tool groups": "Gruppi di strumenti",

@@ -8,6 +8,7 @@ import { readFile, rm, stat } from "node:fs/promises"
 import { EOL } from "node:os"
 import { basename, isAbsolute } from "node:path"
 import type { Place, PlaceId, SidecarMethodMap } from "@panelyth/contracts"
+import type { WebContents } from "electron"
 import type { MainHandlers } from "./ipc/router"
 import { RpcError } from "./sidecar/RpcClient"
 
@@ -25,6 +26,7 @@ type WorkspaceMethod =
   | "clipboard.copyPaths"
   | "clipboard.copyText"
   | "clipboard.copyImage"
+  | "drag.start"
 
 export interface WorkspaceDeps {
   call<M extends "entry.path" | "selection.paths" | "clipboard.image" | "library.get">(
@@ -38,6 +40,8 @@ export interface WorkspaceDeps {
   writeClipboard(text: string): void
   /** Puts a PNG on the OS clipboard as a picture. */
   writeClipboardImage(png: Buffer): Promise<void>
+  /** The OS's drag of these files from `sender` (ADR-0040), while its pointer is still down. */
+  startDrag(sender: WebContents, files: readonly string[]): Promise<void>
   /** Starts a program detached (the F4 editor); never through a shell. */
   launch(file: string, args: readonly string[]): Promise<void>
   platform: NodeJS.Platform
@@ -154,6 +158,14 @@ export function workspaceHandlers(deps: WorkspaceDeps): Pick<MainHandlers, Works
       const { paths, truncated } = await deps.call("selection.paths", { selection, limit: 0 })
       const lines = namesOnly ? paths.map((p) => basename(p)) : paths
       if (lines.length > 0) deps.writeClipboard(lines.join(EOL))
+      return { count: paths.length, truncated }
+    },
+    // Files to other apps (ADR-0040): the paths go from Go to the OS, never
+    // through the renderer. A part of a selection would surprise the drop
+    // target, so more than selection.paths gives drags nothing.
+    "drag.start": async (event, { selection }) => {
+      const { paths, truncated } = await deps.call("selection.paths", { selection, limit: 0 })
+      if (paths.length > 0 && !truncated) await deps.startDrag(event.sender, paths)
       return { count: paths.length, truncated }
     },
     "clipboard.copyText": (_event, { text }) => {

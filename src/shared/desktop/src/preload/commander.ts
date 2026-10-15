@@ -494,6 +494,9 @@ const api: CommanderApi = {
       }),
     copyText: (text) => invoke("clipboard.copyText", { text }),
   },
+  drag: {
+    start: (selection) => invoke("drag.start", { selection: copySelection(selection) }),
+  },
   places: {
     list: () => invoke("places.list", {}),
   },

@@ -1193,6 +1193,8 @@ export const validators: Record<RendererMethod, Validator> = {
     return selectionProblem(p.selection)
   },
   "clipboard.copyImage": entryParams,
+  "drag.start": (p) =>
+    shape(p, ["selection"]) ? selectionProblem(p.selection) : "expected { selection }",
   "clipboard.copyText": (p) =>
     shape(p, ["text"]) && typeof p.text === "string" && p.text.length <= MAX_COPY_TEXT_CHARS
       ? null

@@ -424,9 +424,10 @@ describe("the folder tree", () => {
     await act(async () => {
       fireEvent.dragStart(row, { dataTransfer })
     })
+    const files = { types: ["Files"], getData: () => "", dropEffect: "" }
     await act(async () => {
-      fireEvent.dragOver(node("one", "work"), { dataTransfer })
-      fireEvent.drop(node("one", "work"), { dataTransfer })
+      fireEvent.dragOver(node("one", "work"), { dataTransfer: files })
+      fireEvent.drop(node("one", "work"), { dataTransfer: files })
     })
     expect(useFilesStore.getState().copy).toMatchObject({ kind: "copy", destination: WORK.path })
   })

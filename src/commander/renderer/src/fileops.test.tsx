@@ -191,8 +191,8 @@ describe("copy and move", () => {
     })
   })
 
-  it("drags a row to the other panel: the copy dialog with that folder", async () => {
-    await start()
+  it("drags a row as files (to other apps too) and to the other panel: the copy dialog with that folder", async () => {
+    const fake = await start()
     await cursorTo(3)
     const data = new Map<string, string>()
     const dataTransfer = {
@@ -208,10 +208,14 @@ describe("copy and move", () => {
     await act(async () => {
       fireEvent.dragStart(row, { dataTransfer })
     })
+    // The OS drags the file (main resolves its path); the page's own drag ends.
+    expect(fake.api.drag.start).toHaveBeenCalledTimes(1)
+    expect(data.size).toBe(0)
+    const files = { types: ["Files"], getData: () => "", dropEffect: "" }
     const body = grid("right").children[0]!
     await act(async () => {
-      fireEvent.dragOver(body, { dataTransfer })
-      fireEvent.drop(body, { dataTransfer })
+      fireEvent.dragOver(body, { dataTransfer: files })
+      fireEvent.drop(body, { dataTransfer: files })
     })
     // (jsdom drop events carry no modifier keys; Shift+drop = move is in the e2e spec.)
     const c = useFilesStore.getState().copy!
@@ -221,6 +225,12 @@ describe("copy and move", () => {
       destinationDirId: 20,
       what: "file000001.txt",
     })
+    // Files from another app are not taken (only this app's own drag).
+    act(() => useFilesStore.setState({ copy: null }))
+    await act(async () => {
+      fireEvent.drop(body, { dataTransfer: files })
+    })
+    expect(useFilesStore.getState().copy).toBeNull()
   })
 })
 

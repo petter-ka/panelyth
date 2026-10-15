@@ -59,7 +59,8 @@ written by the settings window reaches its app view).
   the window never edits a stale copy of the app's state.
 - Each app ships a second small page (the commander a third, beside `media.html`). The page loads only the
   settings code and its stores.
-- End-to-end specs reach Settings through Playwright's `window` event instead of the app page
+- End-to-end specs reach Settings by polling the app's windows for `settings.html` (Playwright reports a new
+  window once, possibly before its page has loaded) instead of the app page
   (`openSettingsWindow`, `settingsWindow` in `src/shared/e2e/launch.ts`). Esc closes the window on keydown, so a
   spec sends the keydown alone.
 - The commander specs count entries of folders with hidden files; since hidden entries are shown by default, their

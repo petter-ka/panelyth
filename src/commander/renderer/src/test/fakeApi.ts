@@ -1234,6 +1234,11 @@ export function installFakeCommander(options: FakeOptions) {
       ),
       copyText: vi.fn(async () => ok({ ok: true })),
     },
+    drag: {
+      start: vi.fn(async (sel: SelectionDescriptor) =>
+        ok({ count: resolve(sel).length, truncated: false }),
+      ),
+    },
     places: {
       list: vi.fn(async () =>
         ok({

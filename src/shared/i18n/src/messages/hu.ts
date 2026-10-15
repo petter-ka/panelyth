@@ -1952,6 +1952,8 @@ const messages: Messages = {
   "Tone curve; click to add a point, drag or use the arrow keys to move it":
     "Tónusgörbe; kattintással pont adható hozzá, húzással vagy a nyilakkal mozgatható",
   "Too many entries are marked for {command}.": "Túl sok elem van jelölve ehhez: {command}.",
+  "Too many items to drag at once (at most 10,000).":
+    "Egyszerre túl sok elemet húzna (legfeljebb 10 000 lehet).",
   "Too many operations are waiting. Try again in a moment.":
     "Túl sok művelet vár. Próbálja újra egy pillanat múlva.",
   "Tool groups": "Eszközcsoportok",

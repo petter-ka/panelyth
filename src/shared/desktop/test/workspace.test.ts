@@ -37,6 +37,7 @@ function setup(overrides: Partial<WorkspaceDeps> = {}) {
     writeClipboard: vi.fn(),
     writeClipboardImage: vi.fn(async () => undefined),
     launch: vi.fn(async () => undefined),
+    startDrag: vi.fn(async () => undefined),
     platform: "linux",
     ...overrides,
   }
@@ -121,6 +122,29 @@ describe("workspace handlers", () => {
     expect(deps.writeClipboard).toHaveBeenCalledWith(
       `${join(dir, "a.jpg")}${EOL}${join(dir, "b.jpg")}`,
     )
+  })
+
+  it("drags the selection's files from the calling view, never a part of them", async () => {
+    const sender = {} as IpcMainInvokeEvent["sender"]
+    const from = { sender } as IpcMainInvokeEvent
+    const whole = setup({
+      call: (async () => ({
+        paths: ["/p/a.jpg", "/p/b"],
+        truncated: false,
+      })) as unknown as WorkspaceDeps["call"],
+    })
+    await expect(whole.h["drag.start"](from, { selection: sel }, "commander")).resolves.toEqual({
+      count: 2,
+      truncated: false,
+    })
+    expect(whole.deps.startDrag).toHaveBeenCalledWith(sender, ["/p/a.jpg", "/p/b"])
+    // More than selection.paths gives: no drag at all.
+    const { h, deps } = setup()
+    await expect(h["drag.start"](from, { selection: sel }, "viewer")).resolves.toEqual({
+      count: 2,
+      truncated: true,
+    })
+    expect(deps.startDrag).not.toHaveBeenCalled()
   })
 
   it("does not clear the clipboard for an empty selection", async () => {

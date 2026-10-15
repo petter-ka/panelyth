@@ -333,6 +333,8 @@ Commander): Settings → Panels → Typed letters → "Go to the command line"; 
   for the cursor entry.
 - Double-click opens.
 - Drag from one panel to the other copies (Shift moves); dropping on a tab or a drive button targets that folder.
+  The same drag carries the files to other apps (ADR-0040); entries of an archive or a connection drag only inside
+  the app.
 
 ## States and messages
 

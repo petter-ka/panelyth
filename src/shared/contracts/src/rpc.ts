@@ -906,6 +906,17 @@ export interface CopyPathsParams {
   namesOnly?: boolean
 }
 
+/** drag.start (ADR-0040): the files of a selection go out as the OS's drag. */
+export interface DragStartParams {
+  selection: SelectionDescriptor
+}
+
+/** No drag starts when the selection has more than selection.paths gives (`truncated`). */
+export interface DragStartResult {
+  count: number
+  truncated: boolean
+}
+
 export interface CopyPathsResult {
   count: number
   truncated: boolean
@@ -2481,6 +2492,8 @@ export interface MainMethodMap {
   "clipboard.copyText": { params: CopyTextParams; result: OkResult }
   /** Puts an indexed image on the OS clipboard as a picture (decoded in Go). */
   "clipboard.copyImage": { params: EntryParams; result: CopyImageResult }
+  /** Both apps (ADR-0040): drags the selection's files to other apps (paths resolved in Go). */
+  "drag.start": { params: DragStartParams; result: DragStartResult }
   /** Viewer (Stage 12): a frame of the edit session as a one-shot token URL. */
   "edit.render": { params: EditRenderParams; result: EditRenderResult }
   /** Viewer: starts a save; "save as" opens the native dialog here, so no path comes from a renderer. */
@@ -2575,6 +2588,7 @@ export const VIEWER_METHODS = [
   "clipboard.copyPaths",
   "clipboard.copyText",
   "clipboard.copyImage",
+  "drag.start",
   "jobs.start",
   "jobs.cancel",
   "jobs.errors",
@@ -2726,6 +2740,7 @@ export const COMMANDER_METHODS = [
   "fs.canTrash",
   "clipboard.copyPaths",
   "clipboard.copyText",
+  "drag.start",
   // Stage C03: the directory hotlist (the shared bookmarks).
   "library.addBookmark",
   "library.removeBookmark",
@@ -2827,6 +2842,7 @@ export const MAIN_METHODS = [
   "clipboard.copyPaths",
   "clipboard.copyText",
   "clipboard.copyImage",
+  "drag.start",
   "edit.render",
   "edit.save",
   "edit.reveal",

@@ -211,6 +211,7 @@ an explicit command.
 ### CFR-27 — Drag and drop and clipboard (C04)
 
 - Drag and drop between the panels, onto tabs and onto drive buttons.
+- Files of this computer drag out to other apps too (a chat, a mail draft, the desktop; ADR-0040).
 - Ctrl+C / Ctrl+X / Ctrl+V use the platform's internal file clipboard (ADR-0021) across panels, tabs and the two
   apps: copy in the viewer, paste in the commander (ADR-0031). Copy names
   and full paths as text. OS file-clipboard interop is out of scope until it is portable.

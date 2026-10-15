@@ -452,6 +452,11 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
       copyText: vi.fn(async () => ok({ ok: true })),
       copyImage: vi.fn(async () => ok({ width: 4000, height: 3000 })),
     },
+    drag: {
+      start: vi.fn(async (sel: { ranges: [number, number][] }) =>
+        ok({ count: sel.ranges.reduce((n, [a, b]) => n + b - a, 0), truncated: false }),
+      ),
+    },
     edit: {
       open: vi.fn(async (_entryId: number) => ok(backend.edit.session)),
       // The frame is the output at the working scale: the size follows the

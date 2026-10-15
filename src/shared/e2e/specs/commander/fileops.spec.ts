@@ -398,3 +398,40 @@ test.describe("file operations (Stage C04)", () => {
     }
   })
 })
+
+test.describe("dragging files to other apps (ADR-0040)", () => {
+  test("a row's drag hands the OS the marked files' paths, resolved in main", async () => {
+    const src = mkdtempSync(join(tmpdir(), "panelyth-drag-"))
+    for (const name of ["a.txt", "b.txt", "c.txt"]) writeFileSync(join(src, name), name)
+    const { app } = await launch("commander")
+    try {
+      const c = await commanderOf(app)
+      await goTo(c, "left", src)
+      await cursorTo(c, "left", "a")
+      await grid(c, "left").focus()
+      // Mark a and b (Insert marks and moves down).
+      await c.keyboard.press("Insert")
+      await c.keyboard.press("Insert")
+      const row = grid(c, "left").locator("[data-row]", { hasText: "a" }).first()
+      const dataTransfer = await c.evaluateHandle(() => new DataTransfer())
+      await row.dispatchEvent("dragstart", { dataTransfer })
+      const drags = async () =>
+        (
+          await app.evaluate(
+            () =>
+              (globalThis as unknown as { __panelythShellLog: { action: string; value: string }[] })
+                .__panelythShellLog,
+          )
+        ).filter((e) => e.action === "drag")
+      await expect.poll(async () => (await drags()).length).toBe(1)
+      expect((await drags())[0]!.value.split("|").sort()).toEqual(
+        [join(src, "a.txt"), join(src, "b.txt")].sort(),
+      )
+      // The page's own drag carried nothing: only the OS's drag has the files.
+      expect(await dataTransfer.evaluate((d) => d.types.length)).toBe(0)
+    } finally {
+      await app.close()
+      rmSync(src, { recursive: true, force: true })
+    }
+  })
+})

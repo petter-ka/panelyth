@@ -1,5 +1,5 @@
 import type { ArchiveWarning, ConflictPolicy, SelectionDescriptor } from "@panelyth/contracts"
-import { isMarked } from "@panelyth/renderer-core"
+import { beginOwnDrag, endOwnDrag, isMarked, ownDrag } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
 import {
@@ -659,20 +659,49 @@ export async function copyAsText(side: Side, namesOnly: boolean): Promise<void> 
 
 // Drag and drop -----------------------------------------------------------------------------
 
-/** The data type of a panel drag (marks or the cursor entry of a side). */
+/** The data type of a panel drag out of an archive or a connection (marks or the cursor entry of a side). */
 export const DRAG_TYPE = "application/x-panelyth-panel"
 
+const TOO_MANY_TO_DRAG = msg("Too many items to drag at once (at most 10,000).")
+
+/**
+ * Starts a drag of the panel's marks (or its cursor entry); false when there
+ * is nothing to drag. Files of this computer go out as the OS's drag
+ * (ADR-0040), so other apps take them and the panels still do; entries of an
+ * archive or a connection have no file to give, so they drag inside the app.
+ */
 export function dragStart(side: Side, e: DragEvent): boolean {
-  if (!operand(side) || !e.dataTransfer) return false
-  e.dataTransfer.setData(DRAG_TYPE, side)
-  e.dataTransfer.effectAllowed = "copyMove"
+  const selection = operand(side)
+  if (!selection || !e.dataTransfer) return false
+  if (inArchive(side) || inRemote(side)) {
+    e.dataTransfer.setData(DRAG_TYPE, side)
+    e.dataTransfer.effectAllowed = "copyMove"
+    return true
+  }
+  e.preventDefault()
+  beginOwnDrag(side)
+  void bridge.dragStart(selection).then(
+    ({ truncated }) => {
+      if (!truncated) return
+      endOwnDrag()
+      notice(t(TOO_MANY_TO_DRAG))
+    },
+    () => endOwnDrag(),
+  )
   return true
 }
 
+/** The panel a drag over this view comes from, or null for anything else. */
 export function dragSource(e: DragEvent): Side | null {
+  const own = ownDrag<Side>(e.dataTransfer)
+  if (own) return own
   const v = e.dataTransfer?.getData(DRAG_TYPE)
   return v === "left" || v === "right" ? v : null
 }
+
+/** A panel's drag is over this view (getData is empty until the drop, the types are not). */
+export const isPanelDrag = (data: DataTransfer | null): boolean =>
+  !!data && (data.types.includes(DRAG_TYPE) || ownDrag(data) !== null)
 
 /** A drop on a panel, a tab or a drive: the copy dialog (Shift: move). */
 export function dropOn(from: Side, target: CopyTarget, shift: boolean): void {

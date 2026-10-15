@@ -80,6 +80,7 @@ import type {
   Bookmark,
   CopyImageResult,
   CopyPathsResult,
+  DragStartResult,
   LibraryState,
   ListDirsResult,
   OkResult,
@@ -266,6 +267,10 @@ export interface PanelythApi {
     copyPaths(selection: SelectionDescriptor): Promise<RpcEnvelope<CopyPathsResult>>
     copyText(text: string): Promise<RpcEnvelope<OkResult>>
     copyImage(entryId: number): Promise<RpcEnvelope<CopyImageResult>>
+  }
+  /** Files to other apps (ADR-0040): the OS's drag of the selection. */
+  drag: {
+    start(selection: SelectionDescriptor): Promise<RpcEnvelope<DragStartResult>>
   }
   /**
    * The image editor (Stage 12, ADR-0035): a session per window, frames as
@@ -582,6 +587,10 @@ export interface CommanderApi {
       namesOnly?: boolean,
     ): Promise<RpcEnvelope<CopyPathsResult>>
     copyText(text: string): Promise<RpcEnvelope<OkResult>>
+  }
+  /** Files to other apps (ADR-0040): the OS's drag of the selection. */
+  drag: {
+    start(selection: SelectionDescriptor): Promise<RpcEnvelope<DragStartResult>>
   }
   context: {
     publish(

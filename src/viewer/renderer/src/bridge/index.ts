@@ -18,6 +18,7 @@ import type {
   Bookmark,
   CopyImageResult,
   CopyPathsResult,
+  DragStartResult,
   LibraryState,
   ListDirsResult,
   Place,
@@ -195,6 +196,9 @@ export const bridge = {
   },
   copyPaths: (selection: SelectionDescriptor): Promise<CopyPathsResult> =>
     unwrap(() => api().clipboard.copyPaths(selection)),
+  /** Files to other apps (ADR-0040): main starts the OS's drag of the selection. */
+  dragStart: (selection: SelectionDescriptor): Promise<DragStartResult> =>
+    unwrap(() => api().drag.start(selection)),
   copyText: async (text: string): Promise<void> => {
     await unwrap(() => api().clipboard.copyText(text))
   },

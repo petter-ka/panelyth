@@ -50,6 +50,7 @@ test.describe("commander foundation (Stage C00)", () => {
           fs: Object.keys(api.fs ?? {}).sort(),
           clip: Object.keys(api.clip ?? {}).sort(),
           clipboard: Object.keys(api.clipboard ?? {}).sort(),
+          drag: Object.keys(api.drag ?? {}).sort(),
           media: Object.keys(api.media ?? {}).sort(),
           preview: Object.keys(api.preview ?? {}).sort(),
           props: Object.keys(api.props ?? {}).sort(),
@@ -81,6 +82,7 @@ test.describe("commander foundation (Stage C00)", () => {
           "diff",
           "dir",
           "document",
+          "drag",
           "file",
           "files",
           "find",
@@ -118,6 +120,7 @@ test.describe("commander foundation (Stage C00)", () => {
         fs: ["canTrash", "listDirs", "mkdir", "mkfile", "volumes"],
         clip: ["get", "paste", "set"],
         clipboard: ["copyPaths", "copyText"],
+        drag: ["start"],
         // windowReveal: the media window of a file opened from the OS asks for the viewer.
         media: ["open", "openWindow", "windowAnswer", "windowReveal", "windowStep"],
         preview: ["ensure"],

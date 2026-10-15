@@ -234,7 +234,8 @@ Stage 08.6: Shift+click and Shift+arrows select from the anchor (the last clicke
 was selected when the anchor was set. Earlier Ctrl/Cmd+click picks stay selected, and moving the Shift end only changes
 that range. After a plain click, nothing else is selected, so Shift behaves as usual. Ctrl/Cmd+Shift adds the range to
 everything currently selected, including earlier Shift ranges. Pressing on a tile inside a
-multi-selection keeps the selection so it can be dragged; releasing without a drag selects only that tile.
+multi-selection keeps the selection so it can be dragged; releasing without a drag selects only that tile. A drag
+carries the selected files onto a folder tile or the folder tree (copy or move) and into other apps (ADR-0040).
 
 ## Context menus
 
