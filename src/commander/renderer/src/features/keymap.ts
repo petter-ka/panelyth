@@ -251,6 +251,8 @@ export const ACTIONS = [
     group: msg("Files"),
     label: msg("Delete (to the trash)"),
     defaults: ["F8", "Delete"],
+    // A Mac keyboard's delete key is Backspace (parent folder here): Finder's ⌘⌫.
+    macDefaults: ["Mod+Backspace"],
   },
   {
     id: "files.delete",
@@ -258,6 +260,8 @@ export const ACTIONS = [
     group: msg("Files"),
     label: msg("Delete permanently"),
     defaults: ["Shift+F8", "Shift+Delete"],
+    // ⇧⌘⌫ as in the viewer, and Finder's ⌥⌘⌫.
+    macDefaults: ["Mod+Shift+Backspace", "Mod+Alt+Backspace"],
   },
   {
     id: "clip.copy",

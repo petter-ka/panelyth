@@ -1,4 +1,4 @@
-import type { Crumb, Place, Volume } from "@panelyth/contracts"
+import type { Crumb, JobKind, JobSnapshot, Place, Volume } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import { openPath, useListingStore } from "./listing"
@@ -8,7 +8,9 @@ import { otherSide, setActivePanel, type Side } from "./panels"
 // (Alt+F1 / Alt+F2) read one small store. Go reads each volume's space with
 // a timeout, so a dead network share answers "not ready" instead of
 // stalling; the menu opens at once with the last list and refreshes behind.
-// Drives that come and go arrive as volumes.changed.
+// Drives that come and go arrive as volumes.changed. Free space is read
+// again when a job that writes or deletes files ends (and every few seconds
+// while it runs), and when a folder the panels list changes.
 
 interface DrivesState {
   volumes: Volume[]
@@ -127,15 +129,80 @@ export function openPlace(side: Side, path: string): Promise<void> {
   return openPath(side, path)
 }
 
-/** Follows volumes.changed; the first list is read now. */
+/** Jobs that change the free space of a drive of this computer. */
+const WRITES: ReadonlySet<JobKind> = new Set<JobKind>([
+  "copy",
+  "move",
+  "trash",
+  "delete",
+  "extract",
+  "pack",
+  "sync",
+  "hashCreate",
+  "download",
+  "editSave",
+  "edit",
+  "undoEdit",
+])
+const FINISHED: ReadonlySet<string> = new Set(["completed", "cancelled", "failed"])
+
+/** At most one space read per this while a job runs or folders keep changing. */
+export const SPACE_THROTTLE_MS = 3_000
+
+let spaceTimer: ReturnType<typeof setTimeout> | null = null
+let spaceAt = 0
+
+/** Reads the volumes again after the one in flight (which may predate the change). */
+function rereadVolumes(): void {
+  spaceAt = Date.now()
+  void (inflight ?? Promise.resolve()).then(refreshVolumes)
+}
+
+/** Space may have changed: read it now or at the end of the throttle window. */
+export function spaceChanged(now = false): void {
+  if (now) {
+    if (spaceTimer) clearTimeout(spaceTimer)
+    spaceTimer = null
+    return rereadVolumes()
+  }
+  if (spaceTimer) return
+  spaceTimer = setTimeout(
+    () => {
+      spaceTimer = null
+      rereadVolumes()
+    },
+    Math.max(0, spaceAt + SPACE_THROTTLE_MS - Date.now()),
+  )
+}
+
+function onJob(job: JobSnapshot): void {
+  if (!WRITES.has(job.kind)) return
+  if (FINISHED.has(job.state)) spaceChanged(true)
+  else if (job.state === "running") spaceChanged()
+}
+
+/** Follows volumes.changed, the writing jobs and changed listings; the first list is read now. */
 export function startDrives(): () => void {
   if (!isBridgeAvailable()) return () => undefined
   void refreshVolumes()
-  return bridge.on("volumes.changed", ({ volumes }) => set({ volumes, at: Date.now() }))
+  const offs = [
+    bridge.on("volumes.changed", ({ volumes }) => set({ volumes, at: Date.now() })),
+    bridge.on("job.progress", onJob),
+    // A file made, deleted or grown in a listed folder, by this app or another.
+    bridge.on("query.invalidated", () => spaceChanged()),
+  ]
+  return () => {
+    offs.forEach((off) => off())
+    if (spaceTimer) clearTimeout(spaceTimer)
+    spaceTimer = null
+  }
 }
 
 /** Tests. */
 export function resetDrives(): void {
   inflight = null
+  if (spaceTimer) clearTimeout(spaceTimer)
+  spaceTimer = null
+  spaceAt = 0
   set({ volumes: [], places: [], at: 0, loading: false, menu: null })
 }

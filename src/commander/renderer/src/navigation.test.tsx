@@ -7,7 +7,7 @@ import { AppShell } from "./components/AppShell"
 import { BRIEF_COLUMN, BRIEF_OVERSCAN } from "./components/BriefView"
 import { ROW_HEIGHT } from "./components/FullView"
 import { resetCarry, startPanels } from "./features/carry"
-import { resetDrives, startDrives } from "./features/drives"
+import { resetDrives, SPACE_THROTTLE_MS, startDrives } from "./features/drives"
 import { formatDate, formatSize } from "./features/format"
 import { resetHotlist, startHotlist } from "./features/hotlist"
 import { resetKeymap } from "./features/keymap"
@@ -402,6 +402,42 @@ describe("drives", () => {
     })
     await waitFor(() => expect(path("left")).toHaveTextContent(DROOT.path))
     expect(screen.queryByTestId("drive-menu-left")).toBeNull()
+  })
+
+  it("reads free space again when a delete ends and when a listed folder changes", async () => {
+    const fake = await start()
+    const free = () => screen.getByTestId("free-left")
+    await waitFor(() => expect(free()).toHaveTextContent("2.0 GB free of 8.0 GB"))
+    const withFree = (gb: number) =>
+      fake.api.fs.volumes.mockImplementation(async () => ({
+        ok: true as const,
+        r: { volumes: [{ ...VOLUMES[0]!, freeBytes: gb * 1024 ** 3 }, ...VOLUMES.slice(1)] },
+      }))
+    withFree(3)
+    // Running: nothing yet (a read per few seconds at most); ended: read at once.
+    const j = fake.job({ kind: "delete", state: "completed", total: 2 })
+    await act(async () => fake.emit("job.progress", j))
+    await waitFor(() => expect(free()).toHaveTextContent("3.0 GB free of 8.0 GB"))
+    // Jobs that write nothing don't read it.
+    const calls = fake.api.fs.volumes.mock.calls.length
+    await act(async () => fake.emit("job.progress", { ...j, jobId: j.jobId + 1, kind: "rating" }))
+    expect(fake.api.fs.volumes.mock.calls.length).toBe(calls)
+
+    // Another program fills the folder: its listing changes, the space follows.
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    try {
+      withFree(1)
+      const query = useListingStore.getState().left.query!
+      await act(async () =>
+        fake.emit("query.invalidated", { ...query, version: query.version + 1 }),
+      )
+      await act(async () => {
+        vi.advanceTimersByTime(SPACE_THROTTLE_MS)
+      })
+      await waitFor(() => expect(free()).toHaveTextContent("1.0 GB free of 8.0 GB"))
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it("Alt+F2 opens the right panel's menu; a drive that isn't ready shows its state there", async () => {

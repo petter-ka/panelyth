@@ -97,7 +97,8 @@ Enter on a folder
   an id → position map of the session and a name query on the folder, so the cost depends on the matches, not on the
   folder size.
 - **Status line:** the session `total`, `selection.info` for the marked count and size (debounced, as in the viewer's
-  status bar), and free space from the volumes API.
+  status bar), and free space from the volumes API. The space is read again at once when a job that writes or
+  deletes files ends, and at most once per 3 s while one runs or a listed folder changes (`query.invalidated`).
 - **Folder sizes:** a cancellable size job per folder (Space) or for all folders in the panel; results go to
   `dir_size_bytes` and invalidate the session.
 
