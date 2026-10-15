@@ -589,12 +589,135 @@ describe("user commands", () => {
 })
 
 describe("the toolbar and the bars", () => {
+  it("in edit mode its buttons move instead of running: drag, or right-click to move or remove", async () => {
+    await start()
+    const ids = () => useToolsStore.getState().toolbar
+    const button = (name: string) => within(toolbar()).getByRole("button", { name })
+    const edit = screen.getByTestId("toolbar-edit")
+    await act(async () => void fireEvent.click(edit))
+    expect(edit).toHaveAttribute("aria-pressed", "true")
+    expect(toolbar()).toHaveAttribute("data-editing", "true")
+
+    // A click does nothing now (Find files would open its dialog).
+    await act(async () => void fireEvent.click(button("Find files")))
+    expect(screen.queryByTestId("find-dialog")).toBeNull()
+
+    // Right-click: move right, then remove.
+    expect(ids().slice(0, 2)).toEqual(["find.open", "view.filter"])
+    fireEvent.contextMenu(button("Find files"), { clientX: 10, clientY: 10 })
+    await act(async () =>
+      fireEvent.click(
+        within(screen.getByTestId("toolbar-item-menu")).getByRole("menuitem", {
+          name: "Move right",
+        }),
+      ),
+    )
+    expect(ids().slice(0, 2)).toEqual(["view.filter", "find.open"])
+    fireEvent.contextMenu(button("Find files"), { clientX: 10, clientY: 10 })
+    await act(async () =>
+      fireEvent.click(
+        within(screen.getByTestId("toolbar-item-menu")).getByRole("menuitem", {
+          name: "Remove from the toolbar",
+        }),
+      ),
+    )
+    expect(ids()).not.toContain("find.open")
+
+    // Drag: Refresh before Quick filter (the first).
+    const from = ids().indexOf("view.refresh")
+    const data = { setData: vi.fn(), effectAllowed: "" }
+    fireEvent.dragStart(button("Refresh"), { dataTransfer: data })
+    const target = button("Quick filter")
+    target.getBoundingClientRect = () => ({ left: 0, width: 32 }) as DOMRect
+    fireEvent.dragOver(target, { clientX: 2, dataTransfer: data })
+    await act(async () => void fireEvent.drop(target, { clientX: 2, dataTransfer: data }))
+    expect(from).toBeGreaterThan(0)
+    expect(ids()[0]).toBe("view.refresh")
+
+    // Esc leaves edit mode; a click runs again.
+    await act(async () => void fireEvent.keyDown(window, { key: "Escape" }))
+    expect(edit).toHaveAttribute("aria-pressed", "false")
+    expect(within(toolbar()).queryByRole("button", { name: "Add to the toolbar" })).toBeNull()
+  })
+
+  it("the + menu has a search field: typing filters, Enter adds the first match", async () => {
+    await start()
+    await act(async () => void fireEvent.click(screen.getByTestId("toolbar-edit")))
+    await act(async () =>
+      fireEvent.click(within(toolbar()).getByRole("button", { name: "Add to the toolbar" })),
+    )
+    const menu = screen.getByTestId("toolbar-add-menu")
+    const field = within(menu).getByRole("searchbox", { name: "Search actions" })
+    expect(field).toHaveFocus()
+    await act(async () => void fireEvent.change(field, { target: { value: "SWAP" } }))
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((m) => m.textContent),
+    ).toEqual(["Swap panels", "Customize toolbar…"])
+    // Space types (it does not pick the entry).
+    fireEvent.keyDown(field, { key: " " })
+    expect(useToolsStore.getState().toolbar).not.toContain("panels.swap")
+    await act(async () => void fireEvent.keyDown(field, { key: "Enter" }))
+    expect(useToolsStore.getState().toolbar.at(-1)).toBe("panels.swap")
+    await act(async () => void fireEvent.change(field, { target: { value: "zzzz" } }))
+    expect(within(menu).getByText("No matches")).toBeInTheDocument()
+    await act(async () => void fireEvent.keyDown(field, { key: "Escape" }))
+    expect(screen.queryByTestId("toolbar-add-menu")).toBeNull()
+  })
+
+  it("adds buttons from its + menu at once, and opens Settings at Toolbar", async () => {
+    const fake = await start()
+    // The "+" is part of edit mode.
+    expect(within(toolbar()).queryByRole("button", { name: "Add to the toolbar" })).toBeNull()
+    await act(async () => void fireEvent.click(screen.getByTestId("toolbar-edit")))
+    const plus = within(toolbar()).getByRole("button", { name: "Add to the toolbar" })
+    await act(async () => void fireEvent.click(plus))
+    const menu = screen.getByTestId("toolbar-add-menu")
+    // What is not on the toolbar yet: Find files is, the Thumbnails view is not.
+    expect(within(menu).queryByRole("menuitem", { name: /Find files/ })).toBeNull()
+    await act(async () =>
+      fireEvent.click(within(menu).getByRole("menuitem", { name: /Thumbnails view/ })),
+    )
+    expect(useToolsStore.getState().toolbar.at(-1)).toBe("view.thumbs")
+    expect(within(toolbar()).getByRole("button", { name: "Thumbnails view" })).toBeInTheDocument()
+    // The menu stays open for more, without what was just added.
+    const still = screen.getByTestId("toolbar-add-menu")
+    expect(within(still).queryByRole("menuitem", { name: /Thumbnails view/ })).toBeNull()
+    await waitFor(() =>
+      expect((fake.settings[TOOLBAR_KEY] as { items: string[] }).items.at(-1)).toBe("view.thumbs"),
+    )
+    // A divider at the end stays, and the next button comes after it; a second one is not offered.
+    await act(async () => fireEvent.click(within(still).getByRole("menuitem", { name: "Divider" })))
+    expect(useToolsStore.getState().toolbar.at(-1)).toBe("|")
+    expect(within(toolbar()).getAllByRole("separator").length).toBeGreaterThan(0)
+    expect(
+      within(screen.getByTestId("toolbar-add-menu")).getByRole("menuitem", { name: "Divider" }),
+    ).toHaveAttribute("aria-disabled", "true")
+    await act(async () =>
+      fireEvent.click(
+        within(screen.getByTestId("toolbar-add-menu")).getByRole("menuitem", {
+          name: /Swap panels/,
+        }),
+      ),
+    )
+    expect(useToolsStore.getState().toolbar.slice(-3)).toEqual(["view.thumbs", "|", "panels.swap"])
+
+    fake.api.settings.openWindow.mockResolvedValueOnce({ ok: true, r: { ok: true } })
+    await act(async () =>
+      fireEvent.click(within(still).getByRole("menuitem", { name: "Customize toolbar…" })),
+    )
+    expect(fake.api.settings.openWindow).toHaveBeenLastCalledWith("commander", "toolbar")
+  })
+
   it("shows the default buttons until it is changed, and stores the change", async () => {
     const fake = await start()
+    // The toolbar's own edit switch is not one of its buttons.
     const names = () =>
       within(toolbar())
         .getAllByRole("button", { hidden: true })
         .map((b) => b.getAttribute("aria-label"))
+        .filter((name) => name !== "Edit the toolbar" && name !== "Add to the toolbar")
     expect(names()).toEqual([
       "Find files",
       "Quick filter",
@@ -673,7 +796,8 @@ describe("the toolbar and the bars", () => {
         { v: 1, items: ["|", "find.open", "|", "|", "tool:ed1", "tool:x", 7, "find.open", "|"] },
         commands,
       ),
-    ).toEqual(["find.open", "|", "tool:ed1"])
+      // Leading and doubled dividers go; one at the end stays (the "+" adds after it).
+    ).toEqual(["find.open", "|", "tool:ed1", "|"])
     // Lister actions are not toolbar buttons.
     expect(readToolbar({ v: 1, items: ["lister.close"] }, commands)).toEqual([])
   })

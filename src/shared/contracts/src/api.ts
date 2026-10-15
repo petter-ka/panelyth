@@ -151,7 +151,7 @@ export interface PanelythApi {
   }
   /** Settings in a native window (ADR-0039). */
   settings: {
-    openWindow(tab?: SettingsTab): Promise<RpcEnvelope<OkResult>>
+    openWindow(tab?: SettingsTab, section?: string): Promise<RpcEnvelope<OkResult>>
     /** From the settings window only. */
     closeWindow(then?: "shortcuts"): Promise<RpcEnvelope<OkResult>>
   }
@@ -350,7 +350,7 @@ export interface CommanderApi {
   }
   /** Settings in a native window (ADR-0039). */
   settings: {
-    openWindow(tab?: SettingsTab): Promise<RpcEnvelope<OkResult>>
+    openWindow(tab?: SettingsTab, section?: string): Promise<RpcEnvelope<OkResult>>
     /** From the settings window only. */
     closeWindow(then?: "shortcuts"): Promise<RpcEnvelope<OkResult>>
   }

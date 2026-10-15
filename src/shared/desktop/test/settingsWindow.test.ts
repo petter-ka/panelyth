@@ -71,6 +71,9 @@ describe("the settings window (ADR-0039)", () => {
       "app://panelyth/settings.html#tab=about",
     )
     expect(settingsWindowUrl("app://panelyth/settings.html")).toBe("app://panelyth/settings.html")
+    expect(settingsWindowUrl("app://commander/settings.html", "commander", "toolbar")).toBe(
+      "app://commander/settings.html#tab=commander&section=toolbar",
+    )
   })
 
   it("is a modal child of the shell on Windows and Linux, with the opener's page and preload", () => {

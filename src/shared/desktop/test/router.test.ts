@@ -1412,7 +1412,19 @@ describe("invoke router", () => {
     await expect(
       handler(commander, "settings.openWindow", { tab: "viewer" }),
     ).resolves.toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
-    for (const bad of [{ tab: "panels" }, { tab: 1 }, { extra: true }]) {
+    // A section of the app's tab (the toolbar's "Customize toolbar…").
+    const section = { tab: "commander", section: "toolbar" }
+    await expect(handler(commander, "settings.openWindow", section)).resolves.toMatchObject({
+      ok: true,
+    })
+    expect(main["settings.openWindow"]).toHaveBeenLastCalledWith(commander, section, "commander")
+    for (const bad of [
+      { tab: "panels" },
+      { tab: 1 },
+      { extra: true },
+      { section: "Tool bar" },
+      { section: "../x" },
+    ]) {
       await expect(handler(ok, "settings.openWindow", bad)).resolves.toMatchObject({
         ok: false,
         e: { code: "INVALID_ARGUMENT" },

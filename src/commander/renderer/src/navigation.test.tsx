@@ -689,6 +689,23 @@ describe("Settings → Panels", () => {
     expect(formatSize(item(1, "a.bin", { sizeBytes: 1536 }), "units")).toBe("1.5 KB")
     expect(formatSize(item(1, "a.bin", { sizeBytes: 1536 }), "bytes")).toMatch(/^1.536$/)
     expect(formatDate(new Date(2026, 9, 6, 14, 5).getTime(), "iso")).toBe("2026-10-06 14:05")
+
+    // The list's Date column follows the setting (it once stayed relative whatever was chosen).
+    const dateCell = () =>
+      screen.getByTestId("grid-left").querySelector<HTMLElement>("[data-id] [data-column=date]")!
+    await waitFor(() => expect(dateCell().textContent).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/))
+    await act(async () => {
+      fireEvent.click(within(dialog).getByLabelText("Relative (yesterday at 14:05)"))
+    })
+    await waitFor(() => expect(dateCell().textContent).not.toMatch(/^\d{4}-\d{2}-\d{2}/))
+    await act(async () => {
+      fireEvent.click(within(dialog).getByLabelText("As the system shows them"))
+    })
+    await waitFor(() =>
+      expect(dateCell().textContent).toBe(
+        dateCell().getAttribute("data-tooltip-content"), // the full date, as the system shows it
+      ),
+    )
   })
 
   it("with Alt+letters, plain letters no longer start quick search", async () => {

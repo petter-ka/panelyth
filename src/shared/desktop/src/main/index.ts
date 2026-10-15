@@ -720,9 +720,9 @@ async function boot(): Promise<void> {
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),
     // Both apps: Settings in a native window that blocks the shell window (ADR-0039).
-    "settings.openWindow": (event, { tab }, caller) => {
+    "settings.openWindow": (event, { tab, section }, caller) => {
       if (!settingsWindow) return { ok: false }
-      settingsWindow.open(event.sender, settingsPageOf(caller), tab)
+      settingsWindow.open(event.sender, settingsPageOf(caller), tab, section)
       return { ok: true }
     },
     "settings.closeWindow": (event, { then }) => {

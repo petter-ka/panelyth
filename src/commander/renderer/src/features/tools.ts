@@ -47,6 +47,39 @@ export const TOOLBAR_ACTIONS: readonly ActionId[] = ACTIONS.filter((a) => a.scop
 )
 const builtIn: ReadonlySet<string> = new Set(TOOLBAR_ACTIONS)
 
+/** What can still go on the toolbar: built-in actions, then the user's commands, none twice. */
+export function toolbarCandidates(
+  items: readonly ToolbarItem[],
+  commands: readonly UserCommand[],
+): string[] {
+  return [
+    ...TOOLBAR_ACTIONS.filter((a) => !items.includes(a)),
+    ...commands.map((c) => toolAction(c.id) as string).filter((a) => !items.includes(a)),
+  ]
+}
+
+/** The toolbar in edit mode: an item dragged (or moved from its menu) to another place. */
+export function moveToolbarItem(from: number, to: number): void {
+  const items = [...get().toolbar]
+  if (from < 0 || from >= items.length || to < 0 || to > items.length) return
+  const [item] = items.splice(from, 1)
+  items.splice(to > from ? to - 1 : to, 0, item!)
+  setToolbar(items)
+}
+
+/** The toolbar in edit mode: an item removed (its menu). */
+export function removeToolbarItem(index: number): void {
+  setToolbar(get().toolbar.filter((_, i) => i !== index))
+}
+
+/** Adds one item at the end (a divider, an action, a command); false when the toolbar is full. */
+export function addToToolbar(item: ToolbarItem): boolean {
+  const items = get().toolbar
+  if (items.length >= MAX_TOOLBAR_ITEMS) return false
+  setToolbar([...items, item])
+  return true
+}
+
 interface ToolsState {
   commands: UserCommand[]
   toolbar: ToolbarItem[]
@@ -60,7 +93,11 @@ export const useToolsStore = create<ToolsState>(() => ({
 const get = useToolsStore.getState
 const set = useToolsStore.setState
 
-/** Validated commander.toolbar: known actions, existing commands, no doubled dividers. */
+/**
+ * Validated commander.toolbar: known actions, existing commands, no doubled
+ * or leading dividers. A divider may end it: the "+" adds there, so the next
+ * button lands after it.
+ */
 export function readToolbar(value: unknown, commands: readonly UserCommand[]): ToolbarItem[] {
   const v = value as { v?: unknown; items?: unknown } | null | undefined
   if (v?.v !== 1 || !Array.isArray(v.items)) return [...DEFAULT_TOOLBAR]
@@ -73,7 +110,6 @@ export function readToolbar(value: unknown, commands: readonly UserCommand[]): T
     } else if ((builtIn.has(item) || ids.has(item)) && !out.includes(item)) out.push(item)
     if (out.length === MAX_TOOLBAR_ITEMS) break
   }
-  while (out.at(-1) === SEPARATOR) out.pop()
   return out
 }
 

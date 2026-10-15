@@ -722,6 +722,8 @@ export type SettingsTab = (typeof SETTINGS_TABS)[number]
  */
 export interface SettingsWindowOpenParams {
   tab?: SettingsTab
+  /** A section of the app's tab to show first ("toolbar": Commander → Toolbar). */
+  section?: string
 }
 
 /**

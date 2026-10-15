@@ -115,7 +115,7 @@ describe("commander settings store", () => {
     expect(useSettingsStore.getState().settings.confirmTrash).toBe(false)
     expect(api.library.setSetting).toHaveBeenCalledExactlyOnceWith(SETTINGS_KEY, {
       ...DEFAULT_SETTINGS,
-      v: 3,
+      v: 4,
       showHidden: false,
       tabBar: "multiple",
       confirmTrash: false,
@@ -127,6 +127,16 @@ describe("commander settings store", () => {
     expect(readSettings(undefined).showHidden).toBe(true)
     expect(readSettings({ v: 3, showHidden: false }).showHidden).toBe(false)
     expect(readSettings({ v: 3 }).showHidden).toBe(true)
+    // v4 keeps a hidden-files choice of v3.
+    expect(readSettings({ v: 4, showHidden: false }).showHidden).toBe(false)
+  })
+
+  it("dates are relative unless chosen; a stored ISO stays, an old stored default does not", () => {
+    expect(readSettings(undefined).dateFormat).toBe("relative")
+    expect(readSettings({ v: 3, dateFormat: "locale" }).dateFormat).toBe("relative")
+    expect(readSettings({ v: 2, dateFormat: "iso" }).dateFormat).toBe("iso")
+    expect(readSettings({ v: 4, dateFormat: "locale" }).dateFormat).toBe("locale")
+    expect(readSettings({ v: 4, dateFormat: "relative" }).dateFormat).toBe("relative")
   })
 
   it("changes in memory without a bridge, and opens its dialog", () => {

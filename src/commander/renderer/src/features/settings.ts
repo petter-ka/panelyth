@@ -1,7 +1,7 @@
 import { CONFLICT_POLICIES, type ConflictPolicy } from "@panelyth/contracts"
 import { TILE_SIZE_ORDER, type TileSize } from "@panelyth/media-ui"
 import { createSettingsStore } from "@panelyth/renderer-core"
-import { openSettingsWindowOr } from "@panelyth/ui"
+import { openSettingsWindowOr, requestSettingsTab } from "@panelyth/ui"
 import { bridge, isBridgeAvailable } from "../bridge"
 
 // The commander's own settings (Stage C03, Settings → Panels), under
@@ -9,14 +9,27 @@ import { bridge, isBridgeAvailable } from "../bridge"
 // size are shared with the viewer and live under shared.*.
 
 export const SETTINGS_KEY = "commander.settings"
-/** v3: hidden entries shown by default (older stored values are not a choice). */
-export const SETTINGS_VERSION = 3
+/**
+ * v3: hidden entries shown by default (older stored values are not a choice).
+ * v4: dates have a relative choice, the default ("locale" stored before was the
+ * default written with every save, not a choice).
+ */
+export const SETTINGS_VERSION = 4
+
+/** The stored settings' version; 0 for none or a malformed one. */
+export const settingsVersion = (value: unknown): number => {
+  const v = (value as { v?: unknown } | null | undefined)?.v
+  return typeof v === "number" && Number.isInteger(v) ? v : 0
+}
 export const MAX_EDITOR_CHARS = 1024
 
 /** Size column: readable units by default, or exact bytes with separators. */
 export type SizeFormat = "bytes" | "units"
-/** Configured date format for Quick View and Commander lists in `configured` mode. */
-export type DateFormat = "locale" | "iso"
+/**
+ * Dates in the lists: relative ("today at 14:05", the default), as the system
+ * shows them, or ISO. Quick View and the dialogs show relative ones as the system does.
+ */
+export type DateFormat = "relative" | "locale" | "iso"
 /** Where typed letters go: quick search, or the command line (quick search then starts with Alt; Stage C10). */
 export type LettersMode = "quickSearch" | "altLetters"
 /** "Run programs with Enter" (ADR-0027, Stage C05): ask first (default), always, never. */
@@ -80,7 +93,7 @@ export interface PanelSettings {
 
 export const DEFAULT_SETTINGS: PanelSettings = {
   sizeFormat: "units",
-  dateFormat: "locale",
+  dateFormat: "relative",
   showHidden: true,
   showSystem: false,
   letters: "quickSearch",
@@ -111,11 +124,19 @@ const tileSizes: ReadonlySet<unknown> = new Set(TILE_SIZE_ORDER)
 export function readSettings(value: unknown): PanelSettings {
   const v = (value ?? {}) as Partial<Record<keyof PanelSettings, unknown>> & { v?: unknown }
   const oldDefaultUsesBytes = v.v === 1
+  const version = settingsVersion(value)
   // Before v3 hidden entries were off by default, and every save stored that.
-  const hiddenChosen = v.v === SETTINGS_VERSION
+  const hiddenChosen = version >= 3
+  // Before v4 "locale" was the default every save stored; ISO was always a choice.
+  const dateChosen = version >= 4
   return {
     sizeFormat: v.sizeFormat === "bytes" && !oldDefaultUsesBytes ? "bytes" : "units",
-    dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
+    dateFormat:
+      v.dateFormat === "iso"
+        ? "iso"
+        : v.dateFormat === "locale" && dateChosen
+          ? "locale"
+          : "relative",
     showHidden: hiddenChosen ? v.showHidden !== false : true,
     showSystem: v.showSystem === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
@@ -162,12 +183,35 @@ export const applyStoredSettings = store.load
  * Settings opens in its native window (ADR-0039), on a tab the native menu
  * asked for; the in-page dialog when the window cannot open.
  */
-export function openSettings(): void {
-  const openDialog = (): void => store.setOpen(true)
+export function openSettings(options: { section?: string } = {}): void {
+  const { section } = options
+  const openDialog = (): void => {
+    // The dialog shows the commander's tab at that section.
+    if (section) {
+      requestSettingsTab("commander")
+      requestedSection = section
+    }
+    store.setOpen(true)
+  }
   if (!isBridgeAvailable()) return openDialog()
-  openSettingsWindowOr(bridge.openSettingsWindow, openDialog, () =>
-    windowClosed.forEach((listener) => listener()),
+  openSettingsWindowOr(
+    (tab) => bridge.openSettingsWindow(section ? "commander" : tab, section),
+    openDialog,
+    () => windowClosed.forEach((listener) => listener()),
   )
+}
+
+/** A section of the commander's tab asked for (the toolbar's "Customize…"); taken once. */
+let requestedSection: string | null = null
+
+export function requestSettingsSection(section: string | null): void {
+  requestedSection = section
+}
+
+export function takeSettingsSection(): string | null {
+  const section = requestedSection
+  requestedSection = null
+  return section
 }
 
 const windowClosed = new Set<() => void>()

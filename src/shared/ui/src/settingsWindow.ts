@@ -8,6 +8,12 @@ import {
 import { requestSettingsTab, useSettingsTabRequest } from "./AboutPanel"
 import { startSharedAppearanceSync, type AppearanceSyncPort } from "./appearance"
 
+/** The section of the app's tab main named in the settings window's URL (`#section=…`). */
+export function settingsSectionOf(hash: string): string | null {
+  const section = new URLSearchParams(hash.replace(/^#/, "")).get("section")
+  return section && /^[a-z]{1,24}$/.test(section) ? section : null
+}
+
 /** The tab main named in the settings window's URL (`#tab=…`), if it is one. */
 export function settingsTabOf(hash: string): SettingsTab | null {
   const tab = new URLSearchParams(hash.replace(/^#/, "")).get("tab")

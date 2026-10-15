@@ -224,7 +224,8 @@ const api: CommanderApi = {
     openTarget: (target) => invoke("app.openTarget", { target }),
   },
   settings: {
-    openWindow: (tab) => invoke("settings.openWindow", tab ? { tab } : {}),
+    openWindow: (tab, section) =>
+      invoke("settings.openWindow", { ...(tab && { tab }), ...(section && { section }) }),
     closeWindow: (then) => invoke("settings.closeWindow", then ? { then } : {}),
   },
   update: {

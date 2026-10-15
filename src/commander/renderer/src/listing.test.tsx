@@ -324,7 +324,7 @@ describe("listing (Stage C01)", () => {
     expect(useListingStore.getState().right.showHidden).toBe(true)
     // Once: the settings are stored as v3, where an explicit off stays off.
     await waitFor(() =>
-      expect(fake.settings[SETTINGS_KEY]).toMatchObject({ v: 3, showHidden: true }),
+      expect(fake.settings[SETTINGS_KEY]).toMatchObject({ v: 4, showHidden: true }),
     )
   })
 

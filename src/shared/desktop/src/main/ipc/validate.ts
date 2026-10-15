@@ -759,10 +759,11 @@ export const validators: Record<RendererMethod, Validator> = {
   "sidecar.getStatus": empty,
   "dialog.openFolder": empty,
   "settings.openWindow": (p) =>
-    shapeWithOptional(p, [], ["tab"]) &&
-    (p.tab === undefined || (SETTINGS_TABS as readonly unknown[]).includes(p.tab))
+    shapeWithOptional(p, [], ["tab", "section"]) &&
+    (p.tab === undefined || (SETTINGS_TABS as readonly unknown[]).includes(p.tab)) &&
+    (p.section === undefined || (typeof p.section === "string" && /^[a-z]{1,24}$/.test(p.section)))
       ? null
-      : "expected { tab? }",
+      : "expected { tab?, section? }",
   "settings.closeWindow": (p) =>
     shapeWithOptional(p, [], ["then"]) && (p.then === undefined || p.then === "shortcuts")
       ? null

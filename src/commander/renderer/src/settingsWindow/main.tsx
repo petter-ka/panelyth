@@ -1,13 +1,18 @@
 import { initLocale, LocaleBoundary } from "@panelyth/i18n"
 import { startVideoPrefsPersistence } from "@panelyth/media-ui"
 import { aboutPortOf } from "@panelyth/renderer-core"
-import { initInterfaceSize, initTheme, startSettingsWindowPage } from "@panelyth/ui"
+import {
+  initInterfaceSize,
+  initTheme,
+  settingsSectionOf,
+  startSettingsWindowPage,
+} from "@panelyth/ui"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { aboutApi, bridge } from "../bridge"
 import { configureCommanderMedia } from "../features/media"
 import { loadLayout } from "../features/panels"
-import { loadSettings } from "../features/settings"
+import { loadSettings, requestSettingsSection } from "../features/settings"
 import { startSidecarMonitoring } from "../features/sidecar"
 import { loadTools } from "../features/tools"
 import { SettingsWindowApp } from "./SettingsWindowApp"
@@ -22,6 +27,8 @@ await initLocale()
 initTheme()
 initInterfaceSize()
 startSidecarMonitoring()
+// The section asked for (the toolbar's "Customize toolbar…"), shown first.
+requestSettingsSection(settingsSectionOf(window.location.hash))
 void loadSettings().catch(() => undefined)
 void loadTools().catch(() => undefined)
 void loadLayout().catch(() => undefined)

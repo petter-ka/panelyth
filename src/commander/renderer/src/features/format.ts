@@ -27,27 +27,20 @@ export function formatSize(item: ContentItem, format: SizeFormat = "units"): str
 const pad = (n: number): string => String(n).padStart(2, "0")
 
 /** Configured date format for Quick View and Commander lists in `configured` mode. */
+/** A full date and time: ISO, or as the system shows it (also for the relative setting). */
 export function formatDate(ms: number, format: DateFormat = "locale"): string {
   if (ms <= 0) return ""
-  if (format === "locale") return dateTime().format(ms)
+  if (format !== "iso") return dateTime().format(ms)
   const d = new Date(ms)
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-/** Switch to `configured` to use the existing locale/ISO date setting in Commander lists. */
-export type ListDateMode = "relative" | "configured"
-export const COMMANDER_LIST_DATE_MODE: ListDateMode = "relative"
-
-/** Commander list dates use relative labels by default; Quick View keeps the configured formatter. */
-export function formatListDate(
-  ms: number,
-  configuredFormat: DateFormat,
-  mode: ListDateMode = COMMANDER_LIST_DATE_MODE,
-): string {
+/** The list's Date column, as Settings → Panels → Dates says ("today at 14:05" by default). */
+export function formatListDate(ms: number, format: DateFormat): string {
   if (ms <= 0) return ""
-  return mode === "relative"
+  return format === "relative"
     ? formatRelative(new Date(ms), new Date(), { locale: DATE_FNS[currentLocale()] })
-    : formatDate(ms, configuredFormat)
+    : formatDate(ms, format)
 }
 
 export function formatCount(n: number): string {

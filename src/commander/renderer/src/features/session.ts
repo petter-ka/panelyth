@@ -23,7 +23,7 @@ import {
   type ViewMode,
 } from "./listing"
 import { usePanelsStore, type Side } from "./panels"
-import { readSettings, SETTINGS_KEY, SETTINGS_VERSION } from "./settings"
+import { readSettings, SETTINGS_KEY, SETTINGS_VERSION, settingsVersion } from "./settings"
 import {
   captureActive,
   installTabHooks,
@@ -240,9 +240,11 @@ export async function restorePanels(
   const storedSettings = settings[SETTINGS_KEY]
   const { showHidden } = readSettings(storedSettings)
   // Settings older than v3: tabs kept the old "hidden off" default, so they
-  // all start with the setting once; the settings are stored as v3 then.
-  const migrate = (storedSettings as { v?: unknown } | undefined)?.v !== SETTINGS_VERSION
-  if (migrate) {
+  // all start with the setting once. Older settings are stored as the current
+  // version then (what they read as), once.
+  const version = settingsVersion(storedSettings)
+  const migrate = version < 3
+  if (version !== SETTINGS_VERSION) {
     void bridge
       .setSetting(SETTINGS_KEY, { v: SETTINGS_VERSION, ...readSettings(storedSettings) })
       .catch(() => undefined)

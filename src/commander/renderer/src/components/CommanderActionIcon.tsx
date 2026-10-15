@@ -1,6 +1,8 @@
 import { Icon, type IconName } from "@panelyth/ui"
+import { GLYPHS, LIBRARY, type GlyphName } from "./actionGlyphs"
 
 type CommanderActionIconName =
+  | GlyphName
   | "view"
   | "preview"
   | "edit"
@@ -23,6 +25,7 @@ type CommanderActionIconName =
   | "keys"
 
 const ICON_NAMES: Record<CommanderActionIconName, IconName> = {
+  ...LIBRARY,
   view: "eye",
   preview: "preview",
   edit: "pencil",
@@ -126,12 +129,11 @@ export function CommanderActionIcon({
           <path d="M13.5 10.5h-10m2.5-2.5-2.5 2.5 2.5 2.5" />
         </>
       )}
+      {/* A wrench: the user's own commands (it was a sun-like gear before). */}
       {name === "tool" && (
-        <>
-          <circle cx="8" cy="8" r="2" />
-          <path d="M8 1.75v1.5M8 12.75v1.5M1.75 8h1.5M12.75 8h1.5M3.6 3.6l1.05 1.05M11.35 11.35l1.05 1.05M12.4 3.6l-1.05 1.05M4.65 11.35 3.6 12.4" />
-        </>
+        <path d="M10.75 2.25a3 3 0 0 0-2.85 3.95L2.6 11.5a1.35 1.35 0 0 0 1.9 1.9l5.3-5.3a3 3 0 0 0 3.95-2.85l-1.65 1.15-1.55-.4-.4-1.55 1.15-1.65a3 3 0 0 0-.55-.05Z" />
       )}
+      {name in GLYPHS && GLYPHS[name as GlyphName]}
       {name === "terminal" && (
         <>
           <rect x="1.75" y="2.75" width="12.5" height="10.5" rx="1.25" />

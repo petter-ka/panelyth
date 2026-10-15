@@ -16,6 +16,7 @@ import { isToolAction, setHelpOpen, toolAction, type ActionId } from "../feature
 import {
   MAX_EDITOR_CHARS,
   setSettingsOpen,
+  takeSettingsSection,
   updateSettings,
   useSettingsStore,
   type PanelSettings,
@@ -30,7 +31,7 @@ import {
   saveCommand,
   SEPARATOR,
   setToolbar,
-  TOOLBAR_ACTIONS,
+  toolbarCandidates,
   useToolsStore,
 } from "../features/tools"
 import { CommanderActionIcon } from "./CommanderActionIcon"
@@ -186,6 +187,7 @@ function PanelsSection({
         setting="dateFormat"
         label={t("Dates")}
         options={[
+          { value: "relative", label: t("Relative (yesterday at 14:05)") },
           { value: "locale", label: t("As the system shows them") },
           { value: "iso", label: t("ISO (2026-10-06 14:05)") },
         ]}
@@ -533,10 +535,7 @@ function ToolbarSection() {
   }
   const label = (item: string): string =>
     item === SEPARATOR ? t("Divider") : (commandOf(item)?.title ?? actionLabel(item))
-  const free = [
-    ...TOOLBAR_ACTIONS.filter((a) => !items.includes(a)),
-    ...commands.map((c) => toolAction(c.id) as string).filter((a) => !items.includes(a)),
-  ]
+  const free = toolbarCandidates(items, commands)
   return (
     <Section>
       <Check setting="showToolbar" label={t("Show the toolbar")} />
@@ -619,7 +618,8 @@ function ToolbarSection() {
   )
 }
 
-type SectionId = "panels" | "operations" | "confirmations" | "tools" | "toolbar"
+const SECTION_IDS = ["panels", "operations", "confirmations", "tools", "toolbar"] as const
+type SectionId = (typeof SECTION_IDS)[number]
 
 /**
  * The commander's own settings (Stage C10): Panels, Operations,
@@ -634,7 +634,11 @@ export function CommanderSettings({
   /** The in-page dialog relists the panels itself; the settings window's app view does it on the relay. */
   onShowSystem?: () => void
 }) {
-  const [section, setSection] = useState<SectionId>("panels")
+  // A section asked for (the toolbar's "Customize toolbar…") is shown first.
+  const [section, setSection] = useState<SectionId>(() => {
+    const asked = takeSettingsSection()
+    return SECTION_IDS.includes(asked as SectionId) ? (asked as SectionId) : "panels"
+  })
   return (
     <div className="flex flex-col gap-4">
       {/* The sections stay at the top while the tab scrolls, like the tabs above them:

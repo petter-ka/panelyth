@@ -61,7 +61,7 @@ describe("the settings window (ADR-0039)", () => {
     const fake = await start()
     fake.api.settings.openWindow.mockResolvedValueOnce({ ok: true, r: { ok: true } })
     await act(async () => openSettings())
-    expect(fake.api.settings.openWindow).toHaveBeenCalledWith(undefined)
+    expect(fake.api.settings.openWindow).toHaveBeenCalledWith(undefined, undefined)
     expect(useSettingsStore.getState().open).toBe(false)
     // The default fake has no native windows.
     await act(async () => openSettings())

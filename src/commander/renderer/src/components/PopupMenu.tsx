@@ -40,6 +40,11 @@ interface PopupMenuProps {
   testId?: string
   /** Extra content under the entries ("Updating…"). */
   footer?: ReactNode
+  /**
+   * A search field at the top (the toolbar's add menu): it takes the keys
+   * when the menu opens; the caller filters the entries by its value.
+   */
+  search?: { value: string; onChange(value: string): void; label: string }
   className?: string
   style?: CSSProperties
 }
@@ -63,13 +68,20 @@ export function PopupMenu({
   footer,
   className,
   style,
+  search,
 }: PopupMenuProps) {
   const list = useRef<HTMLDivElement>(null)
+  const field = useRef<HTMLInputElement>(null)
   const firstSelectable = useMemo(() => {
     const current = entries.findIndex((e) => e.current && selectable(e))
     return current >= 0 ? current : entries.findIndex(selectable)
   }, [entries])
-  const [focus, setFocus] = useState(firstSelectable)
+  // The highlight belongs to the search text it was set for: new text starts
+  // again at the first match (the one Enter picks).
+  const query = search?.value
+  const [focusState, setFocusState] = useState({ index: firstSelectable, query })
+  const focus = focusState.query === query ? focusState.index : -1
+  const setFocus = (index: number): void => setFocusState({ index, query })
   /** The entry a drag is over, and which side of it the drop would land. */
   const [dropAt, setDropAt] = useState<{ id: string; after: boolean } | null>(null)
   const shown = selectable(entries[focus]) ? focus : firstSelectable
@@ -79,7 +91,8 @@ export function PopupMenu({
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null
     const menu = list.current
-    menu?.focus()
+    // With a search field the keys go there; ↑/↓, Enter and Esc still steer the menu.
+    ;(field.current ?? menu)?.focus()
     return () => {
       const now = document.activeElement
       if (before?.isConnected && (now === null || now === document.body || menu?.contains(now))) {
@@ -120,6 +133,9 @@ export function PopupMenu({
   const onKeyDown = (e: KeyboardEvent): void => {
     e.stopPropagation()
     const key = e.key
+    // Typing in the search field: letters, space and Home/End edit the text.
+    const typing = e.target === field.current
+    if (typing && (key === " " || key === "Home" || key === "End")) return
     if (key === "ArrowDown" || key === "ArrowUp") {
       e.preventDefault()
       setFocus(step(shown, key === "ArrowDown" ? 1 : -1))
@@ -132,7 +148,7 @@ export function PopupMenu({
     } else if (key === "Escape" || key === "Tab") {
       e.preventDefault()
       onClose()
-    } else if (key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    } else if (!typing && key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
       const at = entries.findIndex(
         (x) => selectable(x) && x.accessKey?.toLowerCase() === key.toLowerCase(),
       )
@@ -155,6 +171,20 @@ export function PopupMenu({
       style={style}
       className={`absolute z-20 max-h-[min(28rem,80%)] min-w-64 overflow-y-auto rounded-md border border-border bg-raised py-1 text-xs shadow-xl shadow-black/30 outline-none ${className ?? "top-1 left-2"}`}
     >
+      {search && (
+        <div className="sticky -top-1 z-10 -mt-1 border-b border-border bg-raised px-2 pt-2 pb-1.5">
+          <input
+            ref={field}
+            type="search"
+            value={search.value}
+            onChange={(e) => search.onChange(e.target.value)}
+            aria-label={search.label}
+            placeholder={search.label}
+            aria-controls={testId}
+            className="h-7 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none placeholder:text-muted focus:border-accent"
+          />
+        </div>
+      )}
       {entries.map((entry, index) =>
         entry.separator ? (
           <div key={entry.id} role="separator" className="my-1 border-t border-border" />

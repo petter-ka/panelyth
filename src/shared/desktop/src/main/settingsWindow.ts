@@ -24,9 +24,14 @@ export interface SettingsWindowOptions {
   platform: NodeJS.Platform
 }
 
-/** The fragment the page reads: the tab to show first. */
-export const settingsWindowUrl = (base: string, tab?: SettingsTab): string =>
-  tab ? `${base}#tab=${tab}` : base
+/** The fragment the page reads: the tab (and the section of an app's tab) to show first. */
+export function settingsWindowUrl(base: string, tab?: SettingsTab, section?: string): string {
+  const params = new URLSearchParams()
+  if (tab) params.set("tab", tab)
+  if (section) params.set("section", section)
+  const fragment = params.toString()
+  return fragment ? `${base}#${fragment}` : base
+}
 
 export class SettingsWindow {
   private win: BrowserWindow | null = null
@@ -38,7 +43,12 @@ export class SettingsWindow {
   ) {}
 
   /** Opens the window for `opener`'s app, or focuses the one that is open. */
-  open(opener: WebContents, page: SettingsPage, tab?: SettingsTab): BrowserWindow {
+  open(
+    opener: WebContents,
+    page: SettingsPage,
+    tab?: SettingsTab,
+    section?: string,
+  ): BrowserWindow {
     if (this.win && !this.win.isDestroyed()) {
       if (this.win.isMinimized()) this.win.restore()
       this.win.focus()
@@ -83,7 +93,7 @@ export class SettingsWindow {
         shell.focus()
       }
     })
-    void win.loadURL(settingsWindowUrl(page.url, tab))
+    void win.loadURL(settingsWindowUrl(page.url, tab, section))
     return win
   }
 
