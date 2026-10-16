@@ -9,6 +9,10 @@ Amended 2026-10-05: the system applies to both apps (ADR-0025). Its specificatio
 
 Amended 2026-10-06: local Inter and JetBrains Mono fonts replace the system-only typography stack.
 
+Amended 2026-10-16 (ADR-0041): a second design style, liquid glass, beside this one (now called classic). The
+rules below hold for the classic style; the glass style's translucent cards, blurred floating layers, lit edges
+and wallpaper are the measured exception ADR-0041 describes.
+
 ## Context
 
 FR-20 (`docs/shared/REQUIREMENTS.md`, formerly in the BRS) mandates Tailwind CSS and shadcn/ui, and CLAUDE.md

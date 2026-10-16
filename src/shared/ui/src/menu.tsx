@@ -8,7 +8,7 @@ import type { ComponentProps, ReactNode } from "react"
 import { CheckIcon, ChevronRightIcon } from "./icons"
 
 const content =
-  "motion-pop z-50 min-w-48 overflow-hidden rounded-md border border-border bg-raised p-1 text-xs text-text shadow-lg shadow-black/30"
+  "glass-float motion-pop z-50 min-w-48 overflow-hidden rounded-md border border-border bg-raised p-1 text-xs text-text shadow-lg shadow-black/30"
 const item =
   "group relative flex h-7 cursor-default select-none items-center gap-2 rounded-[3px] pr-2 pl-7 outline-none data-[disabled]:text-muted data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
 const separator = "my-1 h-px bg-border"

@@ -14,6 +14,7 @@ import {
 } from "./zoom"
 import { cssTransform, IDENTITY, isIdentity, orientedSize, type ViewTransform } from "./transform"
 import { t } from "@panelyth/i18n"
+import { LoadingIndicator } from "@panelyth/ui"
 import { wheelNavigationStep } from "./wheelNavigation"
 
 export interface ImageViewerController {
@@ -199,6 +200,11 @@ export function ImageViewer({
   const originalShown = media?.status === "ready" && media.originalDecoded && !!media.media.url
   const failed =
     !fitDecoded && !originalShown && (fit?.status === "failed" || media?.status === "failed")
+  // Nothing sharp yet: a loading chip in the middle, or a ring in the corner over the placeholder.
+  // Over an empty canvas it shows at once: stepping quickly remounts this
+  // view, and a delayed chip would never get to show.
+  const loading = !failed && !fitDecoded && !originalShown
+  const placeholderShown = loading && !!placeholder && !!logical
   const failCode =
     fit?.status === "failed" ? fit.code : media?.status === "failed" ? media.code : undefined
 
@@ -282,6 +288,13 @@ export function ImageViewer({
               data-testid="viewer-original-layer"
             />
           )}
+        </div>
+      )}
+      {loading && (
+        <div
+          className={`pointer-events-none absolute ${placeholderShown ? "right-3 bottom-3" : "inset-0 flex items-center justify-center"}`}
+        >
+          <LoadingIndicator compact={placeholderShown} delayed={placeholderShown} />
         </div>
       )}
       {failed && (

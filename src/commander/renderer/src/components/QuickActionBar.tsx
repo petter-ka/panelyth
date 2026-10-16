@@ -238,7 +238,7 @@ export function QuickActionBar() {
     <nav
       aria-label={t("Toolbar")}
       data-editing={editing || undefined}
-      className={`flex h-9 shrink-0 items-center gap-1 border-b border-border px-1.5 ${editing ? "bg-raised/50" : "bg-chrome"}`}
+      className={`glass-region flex h-9 shrink-0 items-center gap-1 border-b border-border px-1.5 ${editing ? "bg-raised/50" : "bg-chrome"}`}
       data-testid="quick-actions"
     >
       {items.map((item, index) => {

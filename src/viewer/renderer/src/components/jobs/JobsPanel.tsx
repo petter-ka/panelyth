@@ -152,7 +152,7 @@ export function JobsPanel() {
     <section
       aria-label={t("Operations")}
       aria-live="polite"
-      className="absolute right-3 bottom-3 z-10 flex max-h-[50%] w-80 flex-col overflow-hidden rounded-lg border border-border bg-chrome shadow-lg shadow-black/30"
+      className="glass-chip absolute right-3 bottom-3 z-10 flex max-h-[50%] w-80 flex-col overflow-hidden rounded-lg border border-border bg-chrome shadow-lg shadow-black/30"
       data-testid="jobs-panel"
     >
       <header className="flex h-8 shrink-0 items-center gap-2 border-b border-border px-3 text-2xs text-muted">

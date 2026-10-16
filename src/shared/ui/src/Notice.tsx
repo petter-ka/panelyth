@@ -18,7 +18,7 @@ export function Notice({ notice }: { notice: NoticeMessage | null }) {
           key={notice.id}
           data-testid="notice"
           data-tone={notice.tone}
-          className={`max-w-full truncate rounded-md border bg-chrome px-3 py-1.5 text-xs shadow-md ${
+          className={`glass-chip relative max-w-full truncate rounded-md border bg-chrome px-3 py-1.5 text-xs shadow-md ${
             notice.tone === "error" ? "border-danger text-danger" : "border-border text-text"
           }`}
         >

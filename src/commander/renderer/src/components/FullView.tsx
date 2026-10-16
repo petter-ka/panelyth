@@ -154,12 +154,15 @@ const COLUMNS = helper.columns([
 const RIGHT = new Set<ColumnId>(["size"])
 const SECONDARY = new Set<ColumnId>(["size", "date", "attr"])
 const MONO = new Set<ColumnId>(["ext", "size", "date", "attr"])
+// Date and time are the longest values in a row: a step smaller, so they read as detail.
+const SMALL = new Set<ColumnId>(["date"])
 
 const cellClass = (id: ColumnId, marked = false): string => {
   const alignment = RIGHT.has(id) ? " text-right" : ""
   const secondary = SECONDARY.has(id) ? (marked ? "text-accent" : "text-muted") : ""
   const mono = MONO.has(id) ? " font-mono tabular-nums" : ""
-  return `shrink-0 truncate px-1.5${alignment}${secondary ? ` ${secondary}` : ""}${mono}`
+  const small = SMALL.has(id) ? " text-2xs" : ""
+  return `shrink-0 truncate px-1.5${alignment}${secondary ? ` ${secondary}` : ""}${mono}${small}`
 }
 
 const columnStyle = (column: RenderColumn, header = false): CSSProperties => ({

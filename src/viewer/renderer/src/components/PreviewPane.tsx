@@ -70,7 +70,7 @@ export function PreviewPane() {
     <aside
       aria-label={t("Preview")}
       data-pane="preview"
-      className="@container flex h-full min-h-0 flex-col overflow-hidden border-t border-border"
+      className="glass-region @container flex h-full min-h-0 flex-col overflow-hidden border-t border-border"
       data-testid="preview-pane"
       data-entry-id={shown?.id}
     >

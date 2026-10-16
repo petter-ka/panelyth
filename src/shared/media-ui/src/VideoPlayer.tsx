@@ -37,6 +37,7 @@ import { mediaPort } from "./port"
 import { useIdle } from "./useIdle"
 import { flushResume, readResume, recordResume, usablePoint, type ResumePoint } from "./resume"
 import { t } from "@panelyth/i18n"
+import { LoadingIndicator } from "@panelyth/ui"
 
 /** While playing, the position is saved about this often. */
 const RESUME_SAVE_EVERY_MS = 15_000
@@ -98,6 +99,9 @@ export function VideoPlayer({
   const [duration, setDuration] = useState<number | null>(null)
   const [started, setStarted] = useState(false)
   const [mediaProblem, setMediaProblem] = useState<VideoProblem | null>(null)
+  // The first frame has arrived; playback is waiting for data.
+  const [frame, setFrame] = useState(false)
+  const [stalled, setStalled] = useState(false)
   const [fullscreen, setFullscreen] = useState(false)
 
   const info = media?.status === "ready" ? media.media : null
@@ -356,6 +360,13 @@ export function VideoPlayer({
               const d = e.currentTarget.duration
               if (Number.isFinite(d)) setDuration(d)
             }}
+            onLoadedData={() => setFrame(true)}
+            onWaiting={() => setStalled(true)}
+            onPlaying={() => {
+              setFrame(true)
+              setStalled(false)
+            }}
+            onCanPlay={() => setStalled(false)}
             onLoadedMetadata={(e) => {
               applyResume()
               // Chromium plays the audio of a file whose video codec it can't
@@ -397,6 +408,13 @@ export function VideoPlayer({
             }}
           />
         )}
+        {/* The file is being prepared, played before its first frame, or waiting for data. */}
+        {!problem && (!url || stalled || (started && !frame)) && (
+          <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center">
+            {/* At once over an empty frame; after a moment over the poster. */}
+            <LoadingIndicator delayed={!!poster} />
+          </div>
+        )}
         {url && !problem && !started && (
           <button
             type="button"
@@ -404,7 +422,7 @@ export function VideoPlayer({
             // Mouse shortcut only: the toolbar's Play is the accessible control.
             tabIndex={-1}
             aria-hidden="true"
-            className="absolute top-1/2 left-1/2 flex size-12 -translate-1/2 items-center justify-center rounded-full border border-border bg-chrome/85 text-text hover:border-muted"
+            className="absolute top-1/2 left-1/2 flex size-12 -translate-1/2 items-center justify-center rounded-full border border-border bg-chrome-solid/85 text-text hover:border-muted"
           >
             <PlayIcon size={22} />
           </button>
@@ -419,7 +437,7 @@ export function VideoPlayer({
         // so the video keeps its size when they hide.
         className={`flex h-10 shrink-0 items-center gap-1 border-t border-border px-1.5 ${
           immersive
-            ? `absolute inset-x-0 bottom-0 z-10 bg-chrome/80 backdrop-blur-md transition-opacity duration-200 motion-reduce:transition-none ${hidden ? "pointer-events-none opacity-0" : "opacity-100"}`
+            ? `absolute inset-x-0 bottom-0 z-10 bg-chrome-solid/80 backdrop-blur-md transition-opacity duration-200 motion-reduce:transition-none ${hidden ? "pointer-events-none opacity-0" : "opacity-100"}`
             : "bg-chrome"
         }`}
       >

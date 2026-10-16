@@ -161,6 +161,34 @@ Where this stands (Stages C01, P01 and P02):
   resizing the window while the commander is shown still makes it request the pages and thumbnails of its new
   range.
 
+## Loading screen
+
+A switch never shows an empty app (owner request, 2026-10-16). Measured before: the first switch to the commander
+showed an empty view for about 200 ms, and an app that opened the folder carried over from the other showed an
+empty list until the new folder's first page arrived (one frame for an indexed folder, seconds for one still being
+scanned). Switching between two apps that are both loaded was already instant: the hidden view keeps painting.
+
+- **Loading screen** (`AppLoadingOverlay` and `whileAppLoads` in `src/shared/ui`): the app's glyph and a
+  "Loading…" or "Opening…" chip over the app's content, beside the rail, which stays usable. It is the chrome, or
+  the wallpaper in the glass style.
+  - The commander's start (its panels and a carried-over folder) shows it at once.
+  - The carry-over on a switch (`applyCommanderContext` in the viewer, `applyContext` in the commander) shows it
+    after 120 ms. In the viewer it shows at once when the folder changes, because opening a folder clears the tiles
+    straight away; the commander keeps the old rows until the new ones arrive.
+  - It stays until the work is done and the new folder's first page is in (a second at most for that), at least
+    200 ms once shown, and never more than 10 s: after that the app's own empty, loading and error states take over.
+- **Boot screen:** a classic script (`src/shared/ui/boot/boot.js`, served from both apps' `publicDir`) applies the
+  stored theme, style and interface size before the first paint, and `index.html` holds a ring in `#root` until
+  React renders. The first frame used to be in the default light colors whatever the theme. `boot.test.ts` checks
+  the script agrees with the appearance stores.
+- **Main** paints the commander's view in the theme's chrome color before its page has loaded (`chromeColorOf` in
+  `shell.ts`, following `shared.appearance`), instead of a fixed dark gray.
+
+Measured after (an e2e probe logging each frame): the first switch to the commander shows the boot screen in the
+user's theme from its first frame (56 ms), then the loading screen until the panels are in (about 300 ms). A switch
+whose carry-over changes the viewer's folder has the loading screen up before the old tiles are cleared. One frame
+of about 5 ms between two listings remains on the commander's start.
+
 ## Persistence: the shared storage
 
 Everything shared lives in the existing `library.db` (`<UserConfigDir>/Panelyth/library.db`, ADR-0016):

@@ -58,7 +58,7 @@ export function RenameField({ onDone }: { onDone(): void }) {
       {r.error && (
         <span
           role="alert"
-          className="absolute top-full left-0 z-10 mt-0.5 rounded border border-border bg-raised px-2 py-1 text-danger shadow"
+          className="glass-chip absolute top-full left-0 z-10 mt-0.5 rounded border border-border bg-raised px-2 py-1 text-danger shadow"
         >
           {r.error}
         </span>

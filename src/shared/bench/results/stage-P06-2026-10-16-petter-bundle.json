@@ -1,0 +1,258 @@
+{
+  "stage": "P06",
+  "benchmark": "bundle-size",
+  "date": "2026-10-16T07:37:33.864Z",
+  "commit": "83b31ba-dirty",
+  "note": "liquid glass style (ADR-0041); baseline in -bundle-2",
+  "renderers": {
+    "viewer": {
+      "jsBytes": 809054,
+      "jsGzipBytes": 251056,
+      "cssBytes": 55850,
+      "cssGzipBytes": 10971,
+      "localeBytes": 928063,
+      "files": [
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 124329,
+          "gzipBytes": 39450
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 126207,
+          "gzipBytes": 38818
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 129120,
+          "gzipBytes": 39485
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 123629,
+          "gzipBytes": 40305
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 125625,
+          "gzipBytes": 38645
+        },
+        {
+          "name": "main.js",
+          "kind": "js",
+          "bytes": 350610,
+          "gzipBytes": 104731
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 126697,
+          "gzipBytes": 40752
+        },
+        {
+          "name": "rolldown-runtime.js",
+          "kind": "js",
+          "bytes": 589,
+          "gzipBytes": 368
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 172456,
+          "gzipBytes": 46468
+        },
+        {
+          "name": "settings.js",
+          "kind": "js",
+          "bytes": 1058,
+          "gzipBytes": 628
+        },
+        {
+          "name": "styles.js",
+          "kind": "js",
+          "bytes": 456797,
+          "gzipBytes": 145329
+        },
+        {
+          "name": "styles.css",
+          "kind": "css",
+          "bytes": 55850,
+          "gzipBytes": 10971
+        }
+      ]
+    },
+    "commander": {
+      "jsBytes": 940867,
+      "jsGzipBytes": 283254,
+      "cssBytes": 61606,
+      "cssGzipBytes": 11730,
+      "localeBytes": 928063,
+      "files": [
+        {
+          "name": "SettingsDialog.js",
+          "kind": "js",
+          "bytes": 242227,
+          "gzipBytes": 70485
+        },
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 124329,
+          "gzipBytes": 39450
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 126207,
+          "gzipBytes": 38818
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 129120,
+          "gzipBytes": 39485
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 123629,
+          "gzipBytes": 40305
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 125625,
+          "gzipBytes": 38645
+        },
+        {
+          "name": "main.js",
+          "kind": "js",
+          "bytes": 316155,
+          "gzipBytes": 88664
+        },
+        {
+          "name": "media.js",
+          "kind": "js",
+          "bytes": 1676,
+          "gzipBytes": 961
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 126697,
+          "gzipBytes": 40752
+        },
+        {
+          "name": "rolldown-runtime.js",
+          "kind": "js",
+          "bytes": 589,
+          "gzipBytes": 368
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 172456,
+          "gzipBytes": 46468
+        },
+        {
+          "name": "settings.js",
+          "kind": "js",
+          "bytes": 1208,
+          "gzipBytes": 688
+        },
+        {
+          "name": "styles.css",
+          "kind": "css",
+          "bytes": 61606,
+          "gzipBytes": 11730
+        },
+        {
+          "name": "styles.js",
+          "kind": "js",
+          "bytes": 379012,
+          "gzipBytes": 122088
+        }
+      ]
+    },
+    "docviewer": {
+      "jsBytes": 764908,
+      "jsGzipBytes": 235465,
+      "cssBytes": 28129,
+      "cssGzipBytes": 6482,
+      "localeBytes": 928063,
+      "files": [
+        {
+          "name": "PdfViewer.js",
+          "kind": "js",
+          "bytes": 500699,
+          "gzipBytes": 151285
+        },
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 124329,
+          "gzipBytes": 39450
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 126207,
+          "gzipBytes": 38818
+        },
+        {
+          "name": "esm.js",
+          "kind": "js",
+          "bytes": 42036,
+          "gzipBytes": 13480
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 129120,
+          "gzipBytes": 39485
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 123629,
+          "gzipBytes": 40305
+        },
+        {
+          "name": "index.js",
+          "kind": "js",
+          "bytes": 222173,
+          "gzipBytes": 70700
+        },
+        {
+          "name": "index.css",
+          "kind": "css",
+          "bytes": 28129,
+          "gzipBytes": 6482
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 125625,
+          "gzipBytes": 38645
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 126697,
+          "gzipBytes": 40752
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 172456,
+          "gzipBytes": 46468
+        }
+      ]
+    }
+  }
+}

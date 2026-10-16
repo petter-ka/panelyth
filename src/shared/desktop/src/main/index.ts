@@ -59,7 +59,7 @@ import {
   originOf,
   trustedOrigin,
 } from "./security"
-import { AppShell, startAppFrom } from "./shell"
+import { AppShell, chromeColorOf, startAppFrom } from "./shell"
 import {
   COMMANDER_ENABLED_ARG,
   documentKindOf,
@@ -388,6 +388,7 @@ async function updateMode(scripted: string | undefined): Promise<UpdateMode> {
 function applySharedSetting(key: string, value: unknown): void {
   if (key === SHARED_UPDATES_KEY) updates?.setAuto(readUpdateSettings(value).auto)
   if (key === "shared.appearance") {
+    appShell?.setBackground(chromeColorOf(value))
     const language = (value as { language?: unknown } | null | undefined)?.language
     menuLanguage = typeof language === "string" ? language : "en"
     refreshMenu()

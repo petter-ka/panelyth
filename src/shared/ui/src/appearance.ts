@@ -2,7 +2,7 @@ import { applyLocale, currentLocale, isLocale, msg, type Locale } from "@panelyt
 import { create } from "zustand"
 
 /**
- * Theme and interface size, shared by both apps (ADR-0031,
+ * Style, theme and interface size, shared by both apps (ADR-0031,
  * docs/shared/DESIGN-SYSTEM.md). Each app view keeps a localStorage mirror so
  * the values apply before the first paint, before the sidecar (and
  * library.db) is reachable. The app connects `save` to the shared library
@@ -46,6 +46,20 @@ export const THEME_GROUPS: readonly {
 export const DEFAULT_THEME: ThemePreference = "dark"
 const ORDER: readonly ThemePreference[] = ["dark", "light", "system"]
 
+/**
+ * The design style (ADR-0041): the classic flat surfaces, or liquid glass.
+ * Independent of the palette: every theme works in both.
+ */
+export type DesignStyle = "glass" | "classic"
+
+export const STYLE_OPTIONS: readonly { value: DesignStyle; label: string }[] = [
+  { value: "classic", label: msg("Classic") },
+  { value: "glass", label: msg("Liquid glass") },
+]
+
+/** A fresh profile opens in the classic style; liquid glass is one click away. */
+export const DEFAULT_STYLE: DesignStyle = "classic"
+
 export type IconSet = "default" | "fluent" | "material"
 
 export const ICON_SET_OPTIONS: readonly { value: IconSet; label: string }[] = [
@@ -71,6 +85,8 @@ const DEFAULT_INTERFACE_SIZE: InterfaceSize = "medium"
 export const SHARED_APPEARANCE_KEY = "shared.appearance"
 
 export interface SharedAppearance {
+  /** The design style; classic until chosen. */
+  style: DesignStyle
   theme: ThemePreference
   interfaceSize: InterfaceSize
   /** The icon library of the chrome icons; the built-in set until chosen. */
@@ -82,12 +98,15 @@ export interface SharedAppearance {
 const THEME_KEY = "panelyth.theme"
 const SIZE_KEY = "panelyth.interfaceSize"
 const ICON_SET_KEY = "panelyth.iconSet"
+const STYLE_KEY = "panelyth.style"
 
 const isTheme = (v: unknown): v is ThemePreference => THEME_OPTIONS.some((o) => o.value === v)
 const isInterfaceSize = (v: unknown): v is InterfaceSize =>
   typeof v === "string" && v in INTERFACE_SIZE_SCALE
 
 const isIconSet = (v: unknown): v is IconSet => ICON_SET_OPTIONS.some((o) => o.value === v)
+
+const isStyle = (v: unknown): v is DesignStyle => STYLE_OPTIONS.some((o) => o.value === v)
 
 function readLocal<T>(key: string, valid: (v: unknown) => v is T, fallback: T): T {
   try {
@@ -125,6 +144,10 @@ function applyTheme(preference: ThemePreference): void {
   root.dataset.theme = theme
 }
 
+function applyStyle(style: DesignStyle): void {
+  document.documentElement.dataset.style = style
+}
+
 function applyInterfaceSize(size: InterfaceSize): void {
   document.documentElement.dataset.interfaceSize = size
 }
@@ -133,6 +156,7 @@ let save: ((value: SharedAppearance) => void) | null = null
 
 function current(): SharedAppearance {
   return {
+    style: useStyleStore.getState().style,
     theme: useThemeStore.getState().preference,
     interfaceSize: useInterfaceSizeStore.getState().size,
     iconSet: useIconSetStore.getState().iconSet,
@@ -163,6 +187,21 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   cycle() {
     const next = ORDER[(ORDER.indexOf(get().preference) + 1) % ORDER.length] ?? DEFAULT_THEME
     get().setPreference(next)
+  },
+}))
+
+interface StyleState {
+  style: DesignStyle
+  setStyle(style: DesignStyle): void
+}
+
+export const useStyleStore = create<StyleState>((set) => ({
+  style: DEFAULT_STYLE,
+  setStyle(style) {
+    writeLocal(STYLE_KEY, style)
+    applyStyle(style)
+    set({ style })
+    save?.(current())
   },
 }))
 
@@ -208,8 +247,11 @@ export function initTheme(): () => void {
   return () => query?.removeEventListener("change", onChange)
 }
 
-/** Apply the stored size before React renders, so layout spacing starts consistently. */
+/** Apply the stored style and size before React renders, so layout spacing starts consistently. */
 export function initInterfaceSize(): void {
+  const style = readLocal(STYLE_KEY, isStyle, DEFAULT_STYLE)
+  useStyleStore.setState({ style })
+  applyStyle(style)
   const size = readLocal(SIZE_KEY, isInterfaceSize, DEFAULT_INTERFACE_SIZE)
   useInterfaceSizeStore.setState({ size })
   applyInterfaceSize(size)
@@ -227,10 +269,16 @@ export function connectSharedAppearance(persist: ((value: SharedAppearance) => v
  */
 export function applySharedAppearance(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false
-  const { theme, interfaceSize, iconSet, language } = value as Partial<
+  const { style, theme, interfaceSize, iconSet, language } = value as Partial<
     Record<keyof SharedAppearance, unknown>
   >
   let applied = false
+  if (isStyle(style)) {
+    writeLocal(STYLE_KEY, style)
+    applyStyle(style)
+    useStyleStore.setState({ style })
+    applied = true
+  }
   if (isTheme(theme)) {
     writeLocal(THEME_KEY, theme)
     applyTheme(theme)

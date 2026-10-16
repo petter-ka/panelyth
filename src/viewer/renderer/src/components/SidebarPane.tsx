@@ -522,7 +522,7 @@ export function SidebarPane() {
     <nav
       aria-label={t("Locations")}
       data-pane="locations"
-      className="flex h-full min-h-0 flex-col bg-chrome"
+      className="glass-region flex h-full min-h-0 flex-col bg-chrome"
     >
       <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4 text-[0.8125rem] font-semibold">
         Panelyth

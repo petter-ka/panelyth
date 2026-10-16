@@ -1,4 +1,4 @@
-import { WebContentsView, type BrowserWindow, type WebContents } from "electron"
+import { nativeTheme, WebContentsView, type BrowserWindow, type WebContents } from "electron"
 import { readSwitchSettings, SHARED_SWITCH_KEY, type AppId } from "@panelyth/contracts"
 import { broadcast } from "./ipc/router"
 import { perfMark } from "./perf"
@@ -21,6 +21,27 @@ export function startAppFrom(settings: Record<string, unknown>): AppId {
   return context?.app === "commander" ? "commander" : "viewer"
 }
 
+/**
+ * The chrome color of each theme (src/shared/ui/src/styles.css): what the
+ * commander view shows before its page has painted, so a first switch shows
+ * the theme's surface rather than a dark one in a light theme.
+ */
+const CHROME: Record<string, string> = {
+  dark: "#242424",
+  light: "#f7f7f7",
+  "dark-purple": "#2a2233",
+  "dark-brown": "#30251e",
+  beige: "#f6f1e7",
+  "light-brown": "#f2e4d0",
+}
+
+/** The view background for a `shared.appearance` value; dark when unknown. */
+export function chromeColorOf(appearance: unknown): string {
+  const theme = (appearance as { theme?: unknown } | null | undefined)?.theme
+  if (theme === "system") return nativeTheme.shouldUseDarkColors ? CHROME.dark! : CHROME.light!
+  return (typeof theme === "string" && CHROME[theme]) || CHROME.dark!
+}
+
 export interface CommanderView {
   url: string
   origin: string
@@ -38,6 +59,7 @@ export class AppShell {
   private commander: WebContentsView | null = null
   private active: AppId = "viewer"
   private switchedByUser = false
+  private background = CHROME.dark!
 
   constructor(
     private readonly window: BrowserWindow,
@@ -88,6 +110,12 @@ export class AppShell {
     return this.window.webContents
   }
 
+  /** The theme changed (main follows `shared.appearance`). */
+  setBackground(color: string): void {
+    this.background = color
+    this.commander?.setBackgroundColor(color)
+  }
+
   webContentsOf(app: AppId): WebContents | null {
     if (app === "viewer") return this.window.webContents
     return this.commander?.webContents ?? null
@@ -123,8 +151,8 @@ export class AppShell {
     const view = new WebContentsView({
       webPreferences: securePreferences(options.preload, options.devTools, []),
     })
-    // The dark chrome token, so a first switch never flashes white.
-    view.setBackgroundColor("#242424")
+    // The theme's chrome, so a first switch never flashes another color.
+    view.setBackgroundColor(this.background)
     hardenWebContents(view.webContents, options.origin)
     // A crashed commander reloads alone; the viewer keeps running (NFR-13).
     view.webContents.on("render-process-gone", () => {

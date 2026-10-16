@@ -1,5 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react"
-import { AppSwitcher, GlyphSprite, SeparatorReadout, Tooltip, TooltipProvider } from "@panelyth/ui"
+import {
+  AppLoadingOverlay,
+  AppSwitcher,
+  GlyphSprite,
+  SeparatorReadout,
+  Tooltip,
+  TooltipProvider,
+} from "@panelyth/ui"
 import { Group, Panel, Separator, type PanelImperativeHandle } from "react-resizable-panels"
 import { bridge, canSwitchApps } from "../bridge"
 import { ContentPane } from "../components/ContentPane"
@@ -26,9 +33,9 @@ import { switchToCommander } from "../features/workspace/appSwitch"
 import { t } from "@panelyth/i18n"
 
 const separator =
-  "relative w-px bg-border outline-none after:absolute after:inset-y-0 after:-left-1 after:w-2 data-[separator=active]:bg-accent data-[separator=hover]:bg-muted focus-visible:bg-accent"
+  "glass-gutter relative w-px bg-border outline-none after:absolute after:inset-y-0 after:-left-1 after:w-2 data-[separator=active]:bg-accent data-[separator=hover]:bg-muted focus-visible:bg-accent"
 const stackedSeparator =
-  "relative h-px bg-border outline-none after:absolute after:-top-1 after:right-0 after:left-0 after:h-2 data-[separator=active]:bg-accent data-[separator=hover]:bg-muted focus-visible:bg-accent"
+  "glass-gutter-y relative h-px bg-border outline-none after:absolute after:-top-1 after:right-0 after:left-0 after:h-2 data-[separator=active]:bg-accent data-[separator=hover]:bg-muted focus-visible:bg-accent"
 
 /** The three-column layout keeps its sizes apart from the two-column one's. */
 const RIGHT = "right:"
@@ -141,7 +148,7 @@ export function AppShell() {
     <TooltipProvider>
       <GlyphSprite />
       <div
-        className={`grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[minmax(0,1fr)_auto]`}
+        className={`glass-shell relative grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[minmax(0,1fr)_auto]`}
       >
         {commanderEnabled && (
           <AppSwitcher
@@ -230,7 +237,7 @@ export function AppShell() {
                         setPreviewCollapsed(true)
                       }
                     }}
-                    className="absolute left-1/2 z-20 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-md border border-border bg-chrome text-muted shadow-sm hover:bg-raised hover:text-text focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+                    className="glass-chip glass-pill absolute left-1/2 z-20 grid size-7 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-md border border-border bg-chrome text-muted shadow-sm hover:bg-raised hover:text-text focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
                     style={{
                       top: treeSize >= 98 ? "calc(100% - 14px)" : `${treeSize}%`,
                     }}
@@ -277,6 +284,8 @@ export function AppShell() {
           )}
         </Group>
         <StatusBar />
+        {/* Over the content while a folder carried over by an app switch opens. */}
+        <AppLoadingOverlay app="viewer" rail={commanderEnabled} />
         <ViewerOverlay />
         <EditorOverlay />
         <Notice />

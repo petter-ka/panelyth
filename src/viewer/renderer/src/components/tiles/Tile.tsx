@@ -66,7 +66,7 @@ function UserBadge({ item }: { item: ContentItem }) {
     <span
       role="img"
       aria-label={label}
-      className="absolute top-1 left-1 flex max-w-full items-center gap-0.5 truncate rounded-sm bg-chrome/85 px-1 text-3xs leading-4 text-text"
+      className="absolute top-1 left-1 flex max-w-full items-center gap-0.5 truncate rounded-sm bg-chrome-solid/85 px-1 text-3xs leading-4 text-text"
       data-testid="user-badge"
     >
       {color && (
@@ -203,7 +203,7 @@ export const Tile = memo(function Tile({ index, size }: TileProps) {
           />
         )}
         {opening && (
-          <span className="absolute inset-0 grid place-items-center rounded-[3px] bg-canvas/60 text-text">
+          <span className="absolute inset-0 grid place-items-center rounded-[3px] bg-canvas-solid/60 text-text">
             <Spinner size={28} />
           </span>
         )}

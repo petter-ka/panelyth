@@ -5,7 +5,12 @@ import {
   startSwitchSettingsSync,
   useSwitchSettings,
 } from "@panelyth/renderer-core"
-import { menuCommandHandler, startSharedAppearanceSync } from "@panelyth/ui"
+import {
+  menuCommandHandler,
+  showAppLoadingNow,
+  startSharedAppearanceSync,
+  whileAppLoads,
+} from "@panelyth/ui"
 import { aboutApi, bridge, canSwitchApps, isBridgeAvailable } from "../../bridge"
 import { openSettings } from "../settings/settingsStore"
 import { openShortcutHelp } from "../shortcuts/shortcutStore"
@@ -97,6 +102,8 @@ export async function applyCommanderContext(): Promise<void> {
     const { carry } = useSwitchSettings.getState()
     const folderChanged = useFolderStore.getState().folder?.dirId !== ctx.dirId
     if (carry.folder && folderChanged) {
+      // Opening clears the tiles at once: the loading screen covers them until the new ones are in.
+      showAppLoadingNow()
       // A folder deleted in between shows the usual "not found" state.
       await openFolderEntry(ctx.dirId)
     }
@@ -145,13 +152,25 @@ export async function selectEntry(entryId: number): Promise<void> {
   }
 }
 
+/** The open folder's first tiles are loaded, or it has none. */
+function firstPageShown(): boolean {
+  const { opening, query } = useFolderStore.getState()
+  return !opening && (!query || query.total === 0 || getItem(0) !== undefined)
+}
+
 /** Follows the switch: publish the folder while visible, apply the commander's context when shown. */
 export function startContextSync(): () => void {
   if (!canSwitchApps()) return () => undefined
   const offVisibility = bridge.on("app.visibility", ({ app, visible: shown }) => {
     if (app !== "viewer") return
     visible = shown
-    if (shown) void applyCommanderContext()
+    // The commander's folder opens behind the loading screen, until its first tiles are in.
+    if (shown) {
+      void whileAppLoads(applyCommanderContext(), {
+        label: t("Opening…"),
+        settled: firstPageShown,
+      }).catch(() => undefined)
+    }
   })
   const offFolder = useFolderStore.subscribe((s, prev) => {
     if (visible && s.folder && s.folder.dirId !== prev.folder?.dirId) {

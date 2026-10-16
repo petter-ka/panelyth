@@ -9,10 +9,12 @@ import { LOCALES, LOCALE_NAMES, t, type Locale, useLocaleStore } from "@panelyth
 import {
   ICON_SET_OPTIONS,
   setLanguage,
+  STYLE_OPTIONS,
   THEME_GROUPS,
   themeOfSystem,
   useIconSetStore,
   useInterfaceSizeStore,
+  useStyleStore,
   useThemeStore,
 } from "./appearance"
 import {
@@ -32,11 +34,11 @@ export { SwitchRow }
 type AppId = "viewer" | "commander"
 
 const tabButton =
-  "h-8 rounded-md px-3 text-xs text-muted hover:bg-raised hover:text-text aria-selected:bg-raised aria-selected:text-text aria-selected:shadow-sm"
+  "glass-pill h-8 rounded-md px-3 text-xs text-muted hover:bg-raised hover:text-text aria-selected:bg-raised aria-selected:text-text aria-selected:shadow-sm"
 // A segmented control: the chosen segment is the filled one (the tile size
 // control in the viewer's toolbar has the same look).
 const choiceButton =
-  "h-7 min-w-0 flex-auto truncate rounded-[5px] border border-transparent px-2 text-xs font-medium text-muted hover:text-text aria-pressed:border-border aria-pressed:bg-raised aria-pressed:font-semibold aria-pressed:text-text aria-pressed:shadow-sm disabled:opacity-50"
+  "glass-pill h-7 min-w-0 flex-auto truncate rounded-[5px] border border-transparent px-2 text-xs font-medium text-muted hover:text-text aria-pressed:border-border aria-pressed:bg-raised aria-pressed:font-semibold aria-pressed:text-text aria-pressed:shadow-sm disabled:opacity-50"
 
 export function ChoiceGroup<T extends string>({
   label,
@@ -57,7 +59,7 @@ export function ChoiceGroup<T extends string>({
     <div
       role="group"
       aria-label={label}
-      className={`${layout === "grid" ? "grid grid-cols-4" : "flex"} gap-0.5 rounded-lg border border-border bg-canvas p-0.5`}
+      className={`${layout === "grid" ? "grid grid-cols-4" : "glass-pill flex"} gap-0.5 rounded-lg border border-border bg-canvas p-0.5`}
     >
       {options.map((option) => (
         <Tooltip key={option.value} content={option.title}>
@@ -128,6 +130,8 @@ function GeneralSettings({ settingsReady }: { settingsReady: boolean }) {
 }
 
 function AppearanceSettings() {
+  const style = useStyleStore((s) => s.style)
+  const setStyle = useStyleStore((s) => s.setStyle)
   const preference = useThemeStore((s) => s.preference)
   const setPreference = useThemeStore((s) => s.setPreference)
   const interfaceSize = useInterfaceSizeStore((s) => s.size)
@@ -138,6 +142,21 @@ function AppearanceSettings() {
   return (
     <div className="space-y-4" aria-label={t("Appearance")}>
       <section className="space-y-2">
+        <h3 className="text-xs font-medium">{t("Style")}</h3>
+        <ChoiceGroup
+          label={t("Design style")}
+          value={style}
+          disabled={false}
+          options={STYLE_OPTIONS.map((o) => ({ ...o, label: t(o.label) }))}
+          onChange={setStyle}
+        />
+        <p className="text-2xs text-muted">
+          {style === "glass"
+            ? t("Translucent panels float over a soft background drawn from the theme's colors.")
+            : t("Flat, neutral panels: the original Panelyth design.")}
+        </p>
+      </section>
+      <section className="space-y-2 border-t border-border pt-3">
         <h3 className="text-xs font-medium">{t("Theme")}</h3>
         <div role="group" aria-label={t("Color theme")} className="space-y-3">
           <div>
@@ -288,7 +307,10 @@ export function SettingsWindowPage({
     return () => window.removeEventListener("keydown", onKey)
   }, [onClose])
   return (
-    <div className="flex h-full min-h-0 flex-col bg-chrome text-text" data-testid="settings-window">
+    <div
+      className="glass-page flex h-full min-h-0 flex-col bg-chrome text-text"
+      data-testid="settings-window"
+    >
       <SettingsTabs {...content} panelClassName="min-h-0 flex-1" />
     </div>
   )

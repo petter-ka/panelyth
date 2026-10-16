@@ -397,7 +397,7 @@ const ThumbTile = memo(function ThumbTile({ side, store, thumbs, index, entry, s
           <span className="size-full rounded-[3px] bg-skeleton" />
         )}
         {opening && (
-          <span className="absolute inset-0 grid place-items-center rounded-[3px] bg-canvas/60 text-text">
+          <span className="absolute inset-0 grid place-items-center rounded-[3px] bg-canvas-solid/60 text-text">
             <Spinner size={28} />
           </span>
         )}

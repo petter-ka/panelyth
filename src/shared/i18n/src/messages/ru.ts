@@ -275,6 +275,7 @@ const messages: Messages = {
   "Choose…": "Выбрать…",
   Circle: "Круг",
   Clear: "Очистить",
+  Classic: "Классический",
   "Clear finished": "Очистить завершённые",
   "Clear search": "Очистить поиск",
   "Clear selection": "Снять выделение",
@@ -504,6 +505,7 @@ const messages: Messages = {
   Destination: "Назначение",
   Detail: "Детали",
   Details: "Подробности",
+  "Design style": "Стиль оформления",
   "Did not fire": "Не сработала",
   Differences: "Различия",
   Different: "Различается",
@@ -658,6 +660,8 @@ const messages: Messages = {
   "Eyedropper; arrow keys move it, Enter takes the color, Esc cancels":
     "Пипетка; стрелки перемещают её, Enter берёт цвет, Esc отменяет",
   Eyedroppers: "Пипетки",
+  "Flat, neutral panels: the original Panelyth design.":
+    "Плоские нейтральные панели: исходный дизайн Panelyth.",
   "FTP, not encrypted": "FTP, без шифрования",
   FTPS: "FTPS",
   "FTPS, explicit TLS (recommended)": "FTPS, явный TLS (рекомендуется)",
@@ -936,6 +940,7 @@ const messages: Messages = {
   "Line strength": "Сила линий",
   "Lines of both files": "Строки обоих файлов",
   Link: "Ссылка",
+  "Liquid glass": "Жидкое стекло",
   "List name": "Имя списка",
   Lister: "Просмотр",
   "Lister: {name}": "Просмотр: {name}",
@@ -1967,6 +1972,8 @@ const messages: Messages = {
   "Transfers at once": "Одновременных передач",
   "Transfers at once: 1 to {max}.": "Одновременных передач: от 1 до {max}.",
   Transparent: "Прозрачный",
+  "Translucent panels float over a soft background drawn from the theme's colors.":
+    "Полупрозрачные панели парят над мягким фоном в цветах темы.",
   "Trust this time": "Доверять в этот раз",
   "Try again": "Повторить",
   "Two arrows": "Две стрелки",

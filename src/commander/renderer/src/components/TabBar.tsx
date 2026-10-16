@@ -58,7 +58,7 @@ const LockGlyph = () => (
 // others plain until hovered. In the active panel the selected tab carries a
 // short glowing accent underline, like the panel's light line.
 const tabPill =
-  "group/tab relative flex h-6 max-w-40 min-w-0 shrink-0 cursor-default items-center gap-1.5 rounded-md px-2.5 font-medium"
+  "glass-pill group/tab relative flex h-6 max-w-40 min-w-0 shrink-0 cursor-default items-center gap-1.5 rounded-md px-2.5 font-medium"
 const selectedPill =
   "bg-raised text-text shadow-[0_1px_2px_rgb(0_0_0/0.18)] ring-1 ring-border ring-inset"
 const idlePill = "text-muted hover:bg-raised/60 hover:text-text"

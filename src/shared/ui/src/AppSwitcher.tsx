@@ -23,7 +23,7 @@ export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwit
     <nav
       aria-label={t("Applications")}
       data-testid="app-switcher"
-      className="row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
+      className="glass-region row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
     >
       {APPS.map((app) => {
         const active = app === current
@@ -47,8 +47,15 @@ export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwit
               aria-keyshortcuts={active ? undefined : shortcut.replace("Ctrl", "Control")}
               data-target={app}
               data-testid={active ? "current-app" : "app-switch"}
-              className={`grid size-9 shrink-0 place-items-center rounded-md ${active ? "bg-raised text-accent" : "text-muted hover:bg-raised hover:text-text"}`}
+              // The current app: the accent glyph and a bar on the rail's edge.
+              className={`relative grid size-9 shrink-0 place-items-center rounded-md ${active ? "text-accent" : "text-muted hover:bg-raised hover:text-text"}`}
             >
+              {active && (
+                <span
+                  aria-hidden="true"
+                  className="absolute top-1.5 bottom-1.5 -left-1 w-[3px] rounded-r-full bg-accent"
+                />
+              )}
               <Glyph size={18} />
             </button>
           </Tooltip>

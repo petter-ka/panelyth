@@ -169,7 +169,7 @@ export function PopupMenu({
       data-testid={testId}
       onKeyDown={onKeyDown}
       style={style}
-      className={`absolute z-20 max-h-[min(28rem,80%)] min-w-64 overflow-y-auto rounded-md border border-border bg-raised py-1 text-xs shadow-xl shadow-black/30 outline-none ${className ?? "top-1 left-2"}`}
+      className={`glass-float absolute z-20 max-h-[min(28rem,80%)] min-w-64 overflow-y-auto rounded-md border border-border bg-raised py-1 text-xs shadow-xl shadow-black/30 outline-none ${className ?? "top-1 left-2"}`}
     >
       {search && (
         <div className="sticky -top-1 z-10 -mt-1 border-b border-border bg-raised px-2 pt-2 pb-1.5">

@@ -165,7 +165,7 @@ export function CommandLine() {
         <p
           id="command-line-message"
           role="alert"
-          className="absolute right-2 bottom-full left-2 z-10 rounded-t border border-b-0 border-border bg-raised px-2 py-1 text-danger shadow"
+          className="glass-chip absolute right-2 bottom-full left-2 z-10 rounded-t border border-b-0 border-border bg-raised px-2 py-1 text-danger shadow"
         >
           {message}
         </p>

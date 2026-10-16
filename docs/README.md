@@ -227,6 +227,7 @@ Claude Code should read these files in this order:
 | 0038 | Updates, the native menu and the release pipeline | shared | Accepted (Stage P06) |
 | 0039 | Settings in a native window that blocks the main window | shared | Accepted (owner request) |
 | 0040 | Dragging files to other apps (the OS drag, paths resolved in main) | shared | Accepted (owner request) |
+| 0041 | Liquid glass style beside the classic one (a shared appearance setting) | shared | Accepted (owner request) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

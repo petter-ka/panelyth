@@ -281,6 +281,7 @@ const messages: Messages = {
   "Choose…": "Wählen…",
   Circle: "Kreis",
   Clear: "Löschen",
+  Classic: "Klassisch",
   "Clear finished": "Fertige entfernen",
   "Clear search": "Suche löschen",
   "Clear selection": "Auswahl aufheben",
@@ -511,6 +512,7 @@ const messages: Messages = {
   Destination: "Ziel",
   Detail: "Details",
   Details: "Details",
+  "Design style": "Darstellungsstil",
   "Did not fire": "Nicht ausgelöst",
   Differences: "Unterschiede",
   Different: "Verschieden",
@@ -665,6 +667,8 @@ const messages: Messages = {
   "Eyedropper; arrow keys move it, Enter takes the color, Esc cancels":
     "Pipette; Pfeiltasten bewegen sie, Eingabe übernimmt die Farbe, Esc bricht ab",
   Eyedroppers: "Pipetten",
+  "Flat, neutral panels: the original Panelyth design.":
+    "Flache, neutrale Bereiche: das ursprüngliche Panelyth-Design.",
   "FTP, not encrypted": "FTP, unverschlüsselt",
   FTPS: "FTPS",
   "FTPS, explicit TLS (recommended)": "FTPS, explizites TLS (empfohlen)",
@@ -943,6 +947,7 @@ const messages: Messages = {
   "Line strength": "Linienstärke",
   "Lines of both files": "Zeilen beider Dateien",
   Link: "Link",
+  "Liquid glass": "Flüssigglas",
   "List name": "Name der Liste",
   Lister: "Anzeige",
   "Lister: {name}": "Anzeige: {name}",
@@ -2001,6 +2006,8 @@ const messages: Messages = {
   "Transfers at once": "Gleichzeitige Übertragungen",
   "Transfers at once: 1 to {max}.": "Gleichzeitige Übertragungen: 1 bis {max}.",
   Transparent: "Transparent",
+  "Translucent panels float over a soft background drawn from the theme's colors.":
+    "Durchscheinende Bereiche schweben über einem weichen Hintergrund in den Farben des Designs.",
   "Trust this time": "Dieses Mal vertrauen",
   "Try again": "Erneut versuchen",
   "Two arrows": "Zwei Pfeile",

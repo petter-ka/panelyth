@@ -7,7 +7,7 @@ import { Tooltip } from "./Tooltip"
 export type ButtonVariant = "primary" | "secondary" | "danger" | "toolbar"
 export type ButtonSize = "md" | "sm" | "icon"
 
-const base = "rounded-md text-xs disabled:opacity-50"
+const base = "glass-pill rounded-md text-xs disabled:opacity-50"
 
 const variants: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-foreground",

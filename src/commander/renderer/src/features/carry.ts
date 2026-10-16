@@ -1,5 +1,6 @@
 import type { SharedContext } from "@panelyth/contracts"
 import { useSwitchSettings } from "@panelyth/renderer-core"
+import { whileAppLoads } from "@panelyth/ui"
 import { create } from "zustand"
 import { bridge, isBridgeAvailable } from "../bridge"
 import {
@@ -119,7 +120,14 @@ export async function editInViewer(entryId: number): Promise<void> {
  */
 export async function startPanels(): Promise<() => void> {
   if (!isBridgeAvailable()) return () => undefined
-  const offEvents = startListingEvents(() => void applyContext())
+  // Shown again: the viewer's folder opens behind the loading screen.
+  const offEvents = startListingEvents(
+    () =>
+      void whileAppLoads(applyContext(), {
+        label: t("Opening…"),
+        settled: () => !useListingStore.getState()[usePanelsStore.getState().active].loading,
+      }).catch(() => undefined),
+  )
   const offFolder = onActiveFolderChanged(() => {
     if (isCommanderVisible()) void publishContext(false).catch(() => undefined)
   })

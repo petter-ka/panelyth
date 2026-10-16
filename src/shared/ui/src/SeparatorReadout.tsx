@@ -84,7 +84,7 @@ export function SeparatorReadout({ separator }: { separator: RefObject<HTMLEleme
     <div
       aria-hidden="true"
       data-testid="separator-readout"
-      className={`pointer-events-none fixed z-[200] flex items-center gap-1.5 rounded-md border border-border bg-raised px-2 py-1 text-2xs font-medium text-text shadow-md prose-nums ${stacked ? "flex-col" : ""}`}
+      className={`glass-chip pointer-events-none fixed z-[200] flex items-center gap-1.5 rounded-md border border-border bg-raised px-2 py-1 text-2xs font-medium text-text shadow-md prose-nums ${stacked ? "flex-col" : ""}`}
       style={{
         left: readout.left,
         top: readout.top,

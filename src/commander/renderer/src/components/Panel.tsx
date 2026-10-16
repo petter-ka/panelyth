@@ -45,7 +45,7 @@ function QuickSearchBox({ side }: { side: Side }) {
       aria-label={t("Quick search")}
       data-testid={`quicksearch-${side}`}
       data-missed={missed}
-      className="absolute bottom-2 left-2 z-10 flex items-center gap-2 rounded border border-accent bg-raised px-2 py-1 text-xs shadow-lg"
+      className="glass-chip absolute bottom-2 left-2 z-10 flex items-center gap-2 rounded border border-accent bg-raised px-2 py-1 text-xs shadow-lg"
     >
       <span className="text-muted">{t("Search:")}</span>
       <span className={missed ? "text-danger" : "text-text"} aria-live="polite">
@@ -79,7 +79,7 @@ function RemoteWaiting({ side }: { side: Side }) {
     <div
       role="status"
       data-testid={`remote-busy-${side}`}
-      className="absolute right-2 bottom-2 z-10 flex items-center gap-2 rounded border border-border bg-raised px-2 py-1 text-xs shadow-lg"
+      className="glass-chip absolute right-2 bottom-2 z-10 flex items-center gap-2 rounded border border-border bg-raised px-2 py-1 text-xs shadow-lg"
     >
       <span className="text-muted">{t("Waiting for the server…")}</span>
       <Tooltip content="Esc">
@@ -186,7 +186,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
       data-active={active}
       onMouseDown={onActivate}
       onKeyDown={onKeyDown}
-      className={`relative flex h-full min-w-0 flex-col ${active ? "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]" : ""}`}
+      className={`glass-region relative flex h-full min-w-0 flex-col ${active ? "shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--accent)_22%,transparent)]" : ""}`}
     >
       {active && (
         // The active panel: a light line along the top that fades out at both
@@ -241,7 +241,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
           <div
             role="status"
             data-testid={`disconnected-${side}`}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-canvas px-6 text-center"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-canvas-solid px-6 text-center"
           >
             <div>
               <p className="text-sm text-text">{t("Not connected")}</p>
@@ -273,7 +273,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
             role="alert"
             data-testid={`error-${side}`}
             data-kind={error.kind}
-            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-canvas px-6 text-center"
+            className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-canvas-solid px-6 text-center"
           >
             <div>
               <p className="text-sm text-text">{t(TITLES[error.kind])}</p>

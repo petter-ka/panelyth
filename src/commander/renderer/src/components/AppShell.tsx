@@ -1,5 +1,6 @@
 import { chordAllowedWhileTyping, eventChord } from "@panelyth/renderer-core"
 import {
+  AppLoadingOverlay,
   AppSwitcher,
   GlyphSprite,
   SeparatorReadout,
@@ -227,14 +228,14 @@ export function AppShell() {
   return (
     <TooltipProvider>
       <GlyphSprite />
-      <div className="grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)]">
+      <div className="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)]">
         <AppSwitcher
           current="commander"
           shortcut={SWITCH_SHORTCUT}
           onSwitch={switchToViewer}
           onSettings={openSettings}
         />
-        <div className="flex min-h-0 min-w-0 flex-col">
+        <div className="glass-stack flex min-h-0 min-w-0 flex-col">
           {showToolbar && <QuickActionBar />}
           <div className="flex min-h-0 flex-1">
             {/* One tree for the active panel (Stage C10.5); a tree per panel sits in its slot. */}
@@ -266,7 +267,7 @@ export function AppShell() {
                   id="panels-separator"
                   elementRef={splitBorder}
                   aria-label={t("Resize panels")}
-                  className="w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
+                  className="glass-gutter w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
                   onDoubleClick={resetSplit}
                 />
                 <SeparatorReadout separator={splitBorder} />
@@ -285,11 +286,19 @@ export function AppShell() {
               </Group>
             </div>
           </div>
-          <QueuePanel />
-          {showCommandLine && <CommandLine />}
-          {showFunctionKeys && <FunctionKeyBar />}
-          <StatusBar />
+          {/* One card for the bars at the bottom in the glass style (ADR-0041); no box of its own otherwise. */}
+          <div
+            className="glass-region glass-dock flex shrink-0 flex-col"
+            data-glass-overflow="visible"
+          >
+            <QueuePanel />
+            {showCommandLine && <CommandLine />}
+            {showFunctionKeys && <FunctionKeyBar />}
+            <StatusBar />
+          </div>
         </div>
+        {/* Over the panels while the commander starts or opens a folder carried over by a switch. */}
+        <AppLoadingOverlay app="commander" />
         <CommanderShortcuts />
         <MaskDialog />
         <HotlistDialog />

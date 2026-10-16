@@ -24,7 +24,40 @@ Prefer:
   libraries. The colored file-type glyphs (`TypeGlyph`) are not part of the choice.
 - restrained motion
 
-Avoid expensive backdrop blur and per-thumbnail animations on the scrolling surface.
+Avoid expensive backdrop blur and per-thumbnail animations on the scrolling surface (in both styles; see "Styles").
+
+## Styles
+
+Two design styles, chosen in Settings → Appearance → Style and shared by both apps (`shared.appearance.style`,
+ADR-0041). They are independent of the theme: every palette below works in both.
+
+- **Classic** (the default for a fresh profile): the flat, neutral design the rest of this document describes.
+  It was the only style before ADR-0041.
+- **Liquid glass**: the regions float as rounded, translucent cards with an
+  8 px gap over a still wallpaper, which is three soft blooms of the palette's accent, blue and purple over its
+  canvas. Edges are lit by a 1 px gradient ring. Menus, popups and dialogs blur what is behind them. Buttons,
+  segmented controls and tabs are capsules, and the gap between two cards is the resize handle.
+
+How the glass style is built (`src/shared/ui/src/styles.css`, `:root[data-style="glass"]`):
+
+| Class | Role |
+|---|---|
+| `glass-shell`, `glass-stack` | app root and stacks: the gap between cards |
+| `glass-region` | a card; inside it `--chrome` is clear and `--canvas`, `--raised` and `--border` are translucent, so components keep their token classes. A sticky header inside a card takes an opaque stand-in. `data-glass-overflow="visible"` lets popups reach past the card's edge |
+| `glass-float`, `glass-sheet` | menus and popups, dialogs: blurred floating layers |
+| `glass-chip` | a layer that stays over the scrolling surface: glass without the blur, denser |
+| `glass-pill` | capsule shape for buttons, segmented controls and tabs |
+| `glass-gutter`, `glass-gutter-y` | resize handles that are the gap between two cards |
+| `glass-page` | a whole window as one card (the settings window) |
+
+- Mark new regions and floating layers with these classes. Over a picture, use `bg-chrome-solid` or
+  `bg-canvas-solid` (opaque on glass, the plain surface in classic), never a translucent surface token.
+- No `backdrop-filter` on cards, chips or anything on the scrolling surface. The wallpaper behind the cards is
+  still and soft, so a blur would change nothing. Only floating layers blur, and in dark palettes the blur dims
+  what is behind (`brightness(0.5)`) so muted text keeps AA over a bright picture.
+- Full-window media overlays (image viewer, editor, media window, lister) keep the solid canvas in both styles.
+- `tokens.test.ts` checks text, muted, accent and danger at 4.5:1 on the composite colors: cards over the
+  wallpaper's strongest colors in every palette, and menus, dialogs and chips over a black and a white picture.
 
 ## Theme and color
 
@@ -109,12 +142,27 @@ the sections of one settings tab.
 
 ### Motion and effects
 
-No transitions or animations on the scrolling surface or on tiles. No `backdrop-filter`, shadows or gradients in
-the chrome. Motion is reserved for responses to user actions (opening a menu, expanding a tree node) and is
+No transitions or animations on the scrolling surface or on tiles. In the classic style, no `backdrop-filter`,
+shadows or gradients in the chrome; the glass style's exceptions are in "Styles" above (ADR-0041). Motion is reserved for responses to user actions (opening a menu, expanding a tree node) and is
 added only with a measured trace (ADR-0014).
 
 Stage 08 motion: menus and dialogs fade and scale in from 98 % over 120 ms (`--motion-fast`, `--motion-ease`) and
-close instantly, and the tree chevron rotates when a node expands. Everything is off under `prefers-reduced-motion`.
+close instantly, and the tree chevron rotates when a node expands. In the glass style they pop from 96 % over
+200 ms with a slight overshoot (`--motion-pop-from`). Everything is off under `prefers-reduced-motion`.
+
+### Loading states
+
+Nothing that is loading is shown as an empty surface (`src/shared/ui/src/AppLoading.tsx`).
+
+- `LoadingIndicator`: a ring and "Loading…" on a small capsule. Over an empty canvas it shows at once (stepping
+  through pictures remounts the view, so a delayed indicator would never get to show). Over something already
+  shown, such as a thumbnail or a video poster, it fades in after 180 ms (`.pending-fade`), so a load that answers
+  at once never flashes it.
+- Image viewer: the capsule in the middle while nothing is decoded, or a ring in the bottom-right corner over the
+  tile thumbnail until the sharp picture is in. Video player: the capsule while the file is prepared, after Play
+  until the first frame, and while playback waits for data. It never shows together with the Play button.
+- The app's loading screen and the boot screen are described in `docs/shared/APP-SWITCHING.md` ("Loading
+  screen").
 
 ### Tooltips
 
@@ -184,7 +232,7 @@ The image editor's controls live in `src/viewer/renderer/src/components/editor/c
 Appearance settings offer S / M / L / XL font and spacing sizes (a 14 / 16 / 18 / 20 px root). The size scales text,
 padding and margins across the UI, while content geometry stays fixed (viewer: thumbnail dimensions; commander: row
 height per size is fixed for the virtualizer). Geometry that layout math depends on (the commander table's header
-height and row gutter) is set in px, never in rem, so it cannot drift from the math at another size. Theme and interface size are shared by both apps (`shared.appearance` in `library.db`, ADR-0031); each
+height and row gutter) is set in px, never in rem, so it cannot drift from the math at another size. Style, theme and interface size are shared by both apps (`shared.appearance` in `library.db`, ADR-0031); each
 app view keeps a local mirror so the value applies before the first render, and a change in one app reaches the
 other at once.
 
@@ -199,8 +247,9 @@ The apps meet in a shared left rail (ADR-0031, `docs/shared/APP-SWITCHING.md`). 
 its placement and behavior consistent in both apps:
 
 - 44 px wide, full height, with Viewer above Commander; each gets an 18 px glyph in a 36 × 36 px button;
-- `chrome` surface with a border; the current app uses `raised` and `accent`, while the other app is muted and uses
-  `raised` on hover; the global 2 px `accent` focus ring applies;
+- `chrome` surface with a border; the current app has an `accent` glyph and a 3 px `accent` bar on the rail's
+  left edge, so it reads at a glance; the other app is
+  muted and uses `raised` on hover; the global 2 px `accent` focus ring applies;
 - the inactive app's tooltip shows "Switch to Commander (Ctrl+Shift+M)" or "Switch to Viewer (Ctrl+Shift+M)" with
   the current keymap chord; its accessible name omits the key and `aria-keyshortcuts` exposes it;
 - the selected app has `aria-current="page"` and is disabled; switching apps has no transition;

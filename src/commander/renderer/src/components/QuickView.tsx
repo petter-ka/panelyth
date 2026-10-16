@@ -152,7 +152,7 @@ export function QuickView() {
       data-testid="quick-view"
       data-entry={item?.id ?? ""}
       data-kind={item?.kind ?? ""}
-      className="flex h-full min-w-0 flex-col border-t-2 border-transparent bg-canvas outline-none"
+      className="glass-region flex h-full min-w-0 flex-col border-t-2 border-transparent bg-canvas outline-none"
     >
       <div className="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2 text-xs">
         <span className="text-muted">{t("Quick view")}</span>

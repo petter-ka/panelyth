@@ -276,6 +276,7 @@ const messages: Messages = {
   "Choose…": "Választás…",
   Circle: "Kör",
   Clear: "Törlés",
+  Classic: "Klasszikus",
   "Clear finished": "Befejezettek törlése",
   "Clear search": "Keresés törlése",
   "Clear selection": "Kijelölés megszüntetése",
@@ -505,6 +506,7 @@ const messages: Messages = {
   Destination: "Cél",
   Detail: "Részletek",
   Details: "Részletek",
+  "Design style": "Megjelenési stílus",
   "Did not fire": "Nem villant",
   Differences: "Különbségek",
   Different: "Eltérő",
@@ -659,6 +661,8 @@ const messages: Messages = {
   "Eyedropper; arrow keys move it, Enter takes the color, Esc cancels":
     "Pipetta; a nyilak mozgatják, az Enter felveszi a színt, az Esc megszakítja",
   Eyedroppers: "Pipetták",
+  "Flat, neutral panels: the original Panelyth design.":
+    "Lapos, semleges panelek: a Panelyth eredeti megjelenése.",
   "FTP, not encrypted": "FTP, titkosítás nélkül",
   FTPS: "FTPS",
   "FTPS, explicit TLS (recommended)": "FTPS, explicit TLS (ajánlott)",
@@ -937,6 +941,7 @@ const messages: Messages = {
   "Line strength": "Vonalerősség",
   "Lines of both files": "Mindkét fájl sorai",
   Link: "Hivatkozás",
+  "Liquid glass": "Folyékony üveg",
   "List name": "A lista neve",
   Lister: "Megjelenítő",
   "Lister: {name}": "Megjelenítő: {name}",
@@ -1972,6 +1977,8 @@ const messages: Messages = {
   "Transfers at once": "Egyidejű átvitelek",
   "Transfers at once: 1 to {max}.": "Egyidejű átvitelek: 1 és {max} között.",
   Transparent: "Átlátszó",
+  "Translucent panels float over a soft background drawn from the theme's colors.":
+    "Áttetsző panelek lebegnek a téma színeiből készült lágy háttér fölött.",
   "Trust this time": "Most megbízom benne",
   "Try again": "Próbálja újra",
   "Two arrows": "Két nyíl",

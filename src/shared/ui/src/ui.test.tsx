@@ -3,6 +3,7 @@ import { act, fireEvent, render, screen } from "@testing-library/react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import {
   AppSwitchButton,
+  AppSwitcher,
   TooltipProvider,
   applySharedAppearance,
   connectSharedAppearance,
@@ -16,6 +17,7 @@ import {
   ShortcutsDialog,
   useIconSetStore,
   useInterfaceSizeStore,
+  useStyleStore,
   useThemeStore,
 } from "./index"
 
@@ -28,6 +30,28 @@ describe("AppSwitchButton", () => {
     expect(button).toHaveAttribute("aria-keyshortcuts", "Control+Shift+M")
     fireEvent.click(button)
     expect(onSwitch).toHaveBeenCalledOnce()
+  })
+})
+
+describe("AppSwitcher", () => {
+  it("marks the current app with the accent and a bar on the rail's edge, not the other", () => {
+    render(
+      <AppSwitcher
+        current="commander"
+        shortcut="Ctrl+Shift+M"
+        onSwitch={vi.fn()}
+        onSettings={vi.fn()}
+      />,
+    )
+    const current = screen.getByTestId("current-app")
+    const other = screen.getByTestId("app-switch")
+    expect(current).toHaveAttribute("aria-current", "page")
+    expect(current).toHaveAttribute("data-target", "commander")
+    expect(current.className).toMatch(/text-accent/)
+    expect(current.querySelector("span.bg-accent")).not.toBeNull()
+    expect(other).not.toHaveAttribute("aria-current")
+    expect(other.className).not.toMatch(/accent/)
+    expect(other.querySelector("span.bg-accent")).toBeNull()
   })
 })
 
@@ -45,6 +69,7 @@ describe("shared appearance", () => {
     connectSharedAppearance(save)
     useThemeStore.getState().setPreference("light")
     expect(save).toHaveBeenLastCalledWith({
+      style: "classic",
       theme: "light",
       interfaceSize: "medium",
       iconSet: "default",
@@ -52,6 +77,7 @@ describe("shared appearance", () => {
     })
     useInterfaceSizeStore.getState().setSize("large")
     expect(save).toHaveBeenLastCalledWith({
+      style: "classic",
       theme: "light",
       interfaceSize: "large",
       iconSet: "default",
@@ -147,6 +173,25 @@ describe("Settings → Appearance", () => {
     expect(useThemeStore.getState().preference).toBe("light")
   })
 
+  it("offers the classic and the liquid glass style, apart from the theme", () => {
+    const style = screen.getByRole("group", { name: "Design style" })
+    expect([...style.querySelectorAll("button")].map((b) => b.textContent)).toEqual([
+      "Classic",
+      "Liquid glass",
+    ])
+    expect(chosen()).toContain("Classic")
+    fireEvent.click(screen.getByRole("button", { name: "Liquid glass" }))
+    expect(useStyleStore.getState().style).toBe("glass")
+    expect(document.documentElement.dataset.style).toBe("glass")
+    expect(
+      screen.getByText(
+        "Translucent panels float over a soft background drawn from the theme's colors.",
+      ),
+    ).toBeVisible()
+    expect(useThemeStore.getState().preference).toBe("dark")
+    expect(chosen()).toEqual(expect.arrayContaining(["Liquid glass", "Dark"]))
+  })
+
   it("offers an extra large interface size", () => {
     fireEvent.click(screen.getByRole("button", { name: "Extra large" }))
     expect(useInterfaceSizeStore.getState().size).toBe("xlarge")
@@ -175,6 +220,37 @@ describe("startSharedAppearanceSync", () => {
       emit: (key: string, value: unknown) => listener?.(key, value),
     }
   }
+
+  it("opens a fresh profile in the classic style, independent of the theme", () => {
+    expect(useStyleStore.getState().style).toBe("classic")
+    expect(document.documentElement.dataset.style).toBe("classic")
+    useThemeStore.getState().setPreference("light")
+    expect(document.documentElement.dataset.style).toBe("classic")
+  })
+
+  it("keeps the chosen style locally, applies it before the first render and shares it", () => {
+    const save = vi.fn()
+    connectSharedAppearance(save)
+    useStyleStore.getState().setStyle("glass")
+    expect(document.documentElement.dataset.style).toBe("glass")
+    expect(save).toHaveBeenLastCalledWith(expect.objectContaining({ style: "glass" }))
+    connectSharedAppearance(null)
+    document.documentElement.dataset.style = ""
+    initInterfaceSize()
+    expect(useStyleStore.getState().style).toBe("glass")
+    expect(document.documentElement.dataset.style).toBe("glass")
+  })
+
+  it("follows the other app's style and ignores an unknown one", () => {
+    expect(applySharedAppearance({ style: "glass" })).toBe(true)
+    expect(document.documentElement.dataset.style).toBe("glass")
+    expect(localStorage.getItem("panelyth.style")).toBe("glass")
+    expect(applySharedAppearance({ style: "aqua" })).toBe(false)
+    expect(useStyleStore.getState().style).toBe("glass")
+    // A value saved before the style existed leaves this app's style alone.
+    expect(applySharedAppearance({ theme: "dark" })).toBe(true)
+    expect(useStyleStore.getState().style).toBe("glass")
+  })
 
   it("applies the shared value on start and follows the other app", async () => {
     const p = port({ "shared.appearance": { theme: "light", interfaceSize: "large" } })
@@ -211,6 +287,7 @@ describe("startSharedAppearanceSync", () => {
     const stop = startSharedAppearanceSync(p)
     await vi.waitFor(() =>
       expect(p.saveSetting).toHaveBeenCalledWith("shared.appearance", {
+        style: "classic",
         theme: "beige",
         interfaceSize: "medium",
         iconSet: "default",
@@ -219,6 +296,7 @@ describe("startSharedAppearanceSync", () => {
     )
     useThemeStore.getState().setPreference("light")
     expect(p.saveSetting).toHaveBeenLastCalledWith("shared.appearance", {
+      style: "classic",
       theme: "light",
       interfaceSize: "medium",
       iconSet: "default",

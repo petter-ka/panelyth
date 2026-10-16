@@ -115,7 +115,7 @@ function FolderThumb({
         ),
       )}
       <span
-        className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome/85 p-0.5 text-text"
+        className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome-solid/85 p-0.5 text-text"
         data-testid="folder-badge"
         aria-hidden="true"
       >
@@ -174,7 +174,7 @@ function MediaThumb({ item, box, visual, thumbs, badge, fallback }: TileThumbPro
       >
         {img}
         <span
-          className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome/85 p-0.5 text-text"
+          className="absolute right-1 bottom-1 flex items-center justify-center rounded-sm bg-chrome-solid/85 p-0.5 text-text"
           data-testid="video-badge"
           aria-hidden="true"
         >

@@ -193,6 +193,312 @@
 }
 
 /*
+ * Solid surfaces, for what must stay opaque on a glass surface: a veil over
+ * a picture, a state that covers a list. In the classic style they are the
+ * surface tokens themselves. Declared on :root, so a glass surface that
+ * redefines --chrome or --canvas inherits these unchanged.
+ */
+:root {
+  --canvas-solid: var(--canvas);
+  --chrome-solid: var(--chrome);
+  --raised-solid: var(--raised);
+}
+
+/*
+ * Liquid glass style (ADR-0041, docs/shared/DESIGN-SYSTEM.md "Styles"):
+ * `data-style="glass"` on <html>, set by the appearance store. Every palette
+ * works in it; the glass is drawn from the palette's own tokens.
+ *
+ * - The window shows a still wallpaper: three soft blooms of the palette's
+ *   colors over its canvas.
+ * - Regions (.glass-region: the app rail, sidebars, the content, panels,
+ *   bars) float on it as rounded cards with a gap between them. Inside a
+ *   card the surface tokens are translucent, so components keep their token
+ *   classes: --chrome is clear, --canvas and --raised let the card through.
+ *   Cards have no backdrop-filter: the wallpaper behind them is already soft
+ *   and never moves, so a blur would cost GPU work and change nothing.
+ * - Floating layers (.glass-float: menus, popups; .glass-sheet: dialogs)
+ *   blur what is behind them. They are transient and never on the
+ *   scrolling surface. A layer that stays over the scrolling surface
+ *   (.glass-chip) is glass without the blur.
+ * - Full-window media overlays keep the solid canvas: pictures are judged
+ *   on it.
+ *
+ * The shares below are read by tokens.test.ts, which checks text contrast
+ * over the wallpaper's strongest colors in every palette.
+ */
+:root[data-style="glass"] {
+  --glass-gap: 8px;
+  --glass-radius: 14px;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.875rem;
+  --radius-xl: 1.25rem;
+  --motion-fast: 200ms;
+  --motion-ease: cubic-bezier(0.3, 1.3, 0.6, 1);
+  --motion-pop-from: 0.96;
+  --glass-bloom-1: color-mix(in srgb, var(--accent) 20%, var(--canvas-solid));
+  --glass-bloom-2: color-mix(in srgb, var(--label-blue) 24%, var(--canvas-solid));
+  --glass-bloom-3: color-mix(in srgb, var(--label-purple) 24%, var(--canvas-solid));
+  --glass-fill: color-mix(in srgb, var(--chrome-solid) 62%, transparent);
+  --glass-content: color-mix(in srgb, var(--canvas-solid) 50%, transparent);
+  --glass-control: color-mix(in srgb, var(--raised-solid) 70%, transparent);
+  --glass-float: color-mix(in srgb, var(--raised-solid) 90%, transparent);
+  --glass-sheet: color-mix(in srgb, var(--chrome-solid) 93%, transparent);
+  /* No blur under a chip, so it is denser: text stays AA over any picture. */
+  --glass-chip: color-mix(in srgb, var(--chrome-solid) 94%, transparent);
+  /* Opaque stand-in for a card over the wallpaper: sticky headers that rows scroll under. */
+  --glass-solid: color-mix(in srgb, var(--chrome-solid) 70%, var(--canvas-solid));
+  --glass-hairline: color-mix(in srgb, var(--text) 11%, transparent);
+  --glass-rim: rgb(255 255 255 / 0.6);
+  --glass-shine: rgb(255 255 255 / 0.85);
+  /* The lit edge of a card: bright where the light comes from (top left), a glint at the far corner. */
+  --glass-edge: linear-gradient(
+    160deg,
+    rgb(255 255 255 / 0.95),
+    rgb(255 255 255 / 0.35) 30%,
+    rgb(0 0 0 / 0.06) 65%,
+    rgb(255 255 255 / 0.7)
+  );
+  --glass-shade: rgb(0 0 0 / 0.05);
+  --glass-drop: 0 1px 2px rgb(0 0 0 / 0.08), 0 14px 44px rgb(0 0 0 / 0.2);
+  --glass-backdrop: blur(28px) saturate(180%);
+  --wallpaper:
+    radial-gradient(70% 80% at 0% 0%, var(--glass-bloom-1), transparent 70%),
+    radial-gradient(60% 70% at 100% 100%, var(--glass-bloom-2), transparent 70%),
+    radial-gradient(50% 60% at 90% 0%, var(--glass-bloom-3), transparent 70%), var(--canvas-solid);
+}
+
+:root[data-style="glass"].dark {
+  --glass-bloom-1: color-mix(in srgb, var(--accent) 34%, var(--canvas-solid));
+  --glass-bloom-2: color-mix(in srgb, var(--label-blue) 40%, var(--canvas-solid));
+  --glass-bloom-3: color-mix(in srgb, var(--label-purple) 36%, var(--canvas-solid));
+  --glass-fill: color-mix(in srgb, var(--chrome-solid) 52%, transparent);
+  --glass-control: color-mix(in srgb, var(--raised-solid) 76%, transparent);
+  --glass-float: color-mix(in srgb, var(--raised-solid) 88%, transparent);
+  --glass-sheet: color-mix(in srgb, var(--chrome-solid) 88%, transparent);
+  --glass-rim: rgb(255 255 255 / 0.1);
+  --glass-shine: rgb(255 255 255 / 0.17);
+  --glass-edge: linear-gradient(
+    160deg,
+    rgb(255 255 255 / 0.34),
+    rgb(255 255 255 / 0.08) 30%,
+    rgb(255 255 255 / 0.02) 65%,
+    rgb(255 255 255 / 0.2)
+  );
+  --glass-shade: rgb(0 0 0 / 0.3);
+  --glass-drop: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 50px rgb(0 0 0 / 0.5);
+  /* Darkens a bright picture behind a dark layer, so muted text keeps AA on it. */
+  --glass-backdrop: blur(28px) saturate(160%) brightness(0.5);
+}
+
+:root[data-style="glass"] body {
+  background: var(--wallpaper);
+}
+
+/* App roots: the cards keep a gap from the window edge and from each other. */
+:root[data-style="glass"] .glass-shell {
+  padding: var(--glass-gap);
+  column-gap: var(--glass-gap);
+}
+
+:root[data-style="glass"] .glass-stack {
+  gap: var(--glass-gap);
+}
+
+/* A card on the wallpaper, and the token scope of everything in it. */
+:root[data-style="glass"] .glass-region,
+:root[data-style="glass"] .glass-page {
+  --chrome: transparent;
+  --canvas: var(--glass-content);
+  --raised: var(--glass-control);
+  --border: var(--glass-hairline);
+}
+
+:root[data-style="glass"] .glass-region {
+  position: relative;
+  overflow: hidden;
+  border-color: transparent;
+  border-radius: var(--glass-radius);
+  background: linear-gradient(to top, var(--glass-shade), transparent 40%), var(--glass-fill);
+}
+
+/*
+ * The lit edge: a 1px ring drawn over the card's content (a mask cuts out
+ * all but the ring), so it never moves the layout. Floating layers are
+ * already positioned; cards are made relative above.
+ */
+:root[data-style="glass"] :is(.glass-region, .glass-float, .glass-sheet, .glass-chip)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  padding: 1px;
+  border-radius: inherit;
+  background: var(--glass-edge);
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+}
+
+:root[data-style="glass"] .glass-region:empty {
+  display: none;
+}
+
+/* A card whose popups reach past its edge (the commander's folder tree). */
+:root[data-style="glass"] .glass-region[data-glass-overflow="visible"] {
+  overflow: visible;
+}
+
+/* A whole window as one card (the settings window): the glass without the frame. */
+:root[data-style="glass"] .glass-page {
+  background: var(--glass-fill);
+}
+
+/* The commander's active panel: an accent rim on the card. */
+:root[data-style="glass"] .glass-region[data-active="true"] {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+/* Bars stacked in one card (the commander's bottom dock): no line above the first. */
+:root[data-style="glass"] .glass-dock > :first-child {
+  border-top-color: transparent;
+}
+
+/* Rows scroll under a sticky header: it takes an opaque stand-in for the card. */
+:root[data-style="glass"] .glass-region .sticky {
+  --chrome: var(--glass-solid);
+  --canvas: var(--canvas-solid);
+  --raised: var(--raised-solid);
+}
+
+/* Floating layers: menus and popups (raised), dialogs (chrome). */
+:root[data-style="glass"] .glass-float,
+:root[data-style="glass"] .glass-sheet,
+:root[data-style="glass"] .glass-chip {
+  --chrome: transparent;
+  --canvas: var(--glass-content);
+  --raised: var(--glass-control);
+  --border: var(--glass-hairline);
+  border-color: var(--glass-rim);
+  background: var(--glass-float);
+  box-shadow:
+    inset 0 1px 0 var(--glass-shine),
+    var(--glass-drop);
+}
+
+:root[data-style="glass"] .glass-float,
+:root[data-style="glass"] .glass-sheet {
+  backdrop-filter: var(--glass-backdrop);
+}
+
+:root[data-style="glass"] .glass-sheet {
+  background: var(--glass-sheet);
+  border-radius: 1.125rem;
+}
+
+:root[data-style="glass"] .glass-float .sticky,
+:root[data-style="glass"] .glass-sheet .sticky {
+  --chrome: var(--chrome-solid);
+  --canvas: var(--canvas-solid);
+  --raised: var(--raised-solid);
+}
+
+/* Menus: concentric corners, the item's radius plus the menu's padding. */
+:root[data-style="glass"] .glass-float {
+  border-radius: 0.75rem;
+}
+
+:root[data-style="glass"] .glass-float [role^="menuitem"],
+:root[data-style="glass"] .glass-float [role="option"] {
+  border-radius: 0.5rem;
+}
+
+/* A layer over the scrolling surface: glass without the blur, denser. */
+:root[data-style="glass"] .glass-chip {
+  background: var(--glass-chip);
+}
+
+/* index.html's boot screen, until React renders: a ring on the app's surface. */
+.boot-screen {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--chrome);
+  color: var(--muted);
+}
+
+:root[data-style="glass"] .boot-screen {
+  background: var(--wallpaper);
+}
+
+/*
+ * The app's loading screen (AppLoading.tsx): over the content, beside the
+ * 44 px app rail. In the glass style, the wallpaper inside the cards' margins,
+ * as if the cards had lifted off.
+ */
+.app-curtain {
+  position: absolute;
+  inset: 0;
+}
+
+.app-curtain[data-rail] {
+  left: 2.75rem;
+}
+
+:root[data-style="glass"] .app-curtain {
+  inset: var(--glass-gap);
+  border-radius: var(--glass-radius);
+  background: var(--wallpaper) fixed;
+}
+
+:root[data-style="glass"] .app-curtain[data-rail] {
+  left: calc(2.75rem + 2 * var(--glass-gap));
+}
+
+/* Buttons, segmented controls and tabs become capsules. */
+:root[data-style="glass"] .glass-pill {
+  border-radius: 9999px;
+}
+
+/*
+ * Resize gutters: the gap between two cards is the handle. A short grip
+ * shows on hover and in the accent while dragging or focused.
+ */
+:root[data-style="glass"] .glass-gutter,
+:root[data-style="glass"] .glass-gutter-y {
+  --glass-grip: transparent;
+  background-color: transparent;
+  background-image: linear-gradient(var(--glass-grip), var(--glass-grip));
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+:root[data-style="glass"] .glass-gutter {
+  width: var(--glass-gap);
+  background-size: 3px 2.25rem;
+}
+
+:root[data-style="glass"] .glass-gutter-y {
+  height: var(--glass-gap);
+  background-size: 2.25rem 3px;
+}
+
+:root[data-style="glass"] .glass-gutter:hover,
+:root[data-style="glass"] .glass-gutter-y:hover,
+:root[data-style="glass"] [data-separator="hover"]:is(.glass-gutter, .glass-gutter-y) {
+  --glass-grip: color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+:root[data-style="glass"] .glass-gutter:focus-visible,
+:root[data-style="glass"] .glass-gutter-y:focus-visible,
+:root[data-style="glass"] [data-separator="active"]:is(.glass-gutter, .glass-gutter-y) {
+  --glass-grip: var(--accent);
+}
+
+/*
  * Scrollbars follow the theme: the thumb is the theme's muted color over a
  * transparent track, so each theme (and any new one) gets its own tint. At
  * rest it stays quiet (about 2:1 against its surface); hovered or dragged it
@@ -229,6 +535,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-canvas-solid: var(--canvas-solid);
+  --color-chrome-solid: var(--chrome-solid);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Consolas, monospace;
   /*
@@ -349,7 +657,7 @@
   @keyframes fv-pop {
     from {
       opacity: 0;
-      transform: scale(0.98);
+      transform: scale(var(--motion-pop-from, 0.98));
     }
   }
 
@@ -360,8 +668,14 @@
   }
 
   /* Spinner.tsx: shown only once an open has taken a moment. */
-  .pending-spinner {
+  .pending-spinner,
+  .pending-fade {
     animation: fv-fade 120ms linear 180ms both;
+  }
+
+  /* A loading chip shown at once (AppLoading.tsx): its ring shows at once too. */
+  .loading-now .pending-spinner {
+    animation: none;
   }
 
   @media (prefers-reduced-motion: no-preference) {

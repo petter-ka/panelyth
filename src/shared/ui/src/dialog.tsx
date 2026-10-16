@@ -45,7 +45,7 @@ export function DialogWindow({
         <Dialog.Overlay className="motion-fade fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content
           {...(onEscapeKeyDown ? { onEscapeKeyDown } : {})}
-          className={`motion-pop fixed top-1/2 left-1/2 z-50 ${contentClassName ?? "w-[min(28rem,calc(100vw-2rem))]"} -translate-x-1/2 -translate-y-1/2 rounded-lg border border-border bg-chrome text-text shadow-xl shadow-black/40 outline-none`}
+          className={`motion-pop fixed top-1/2 left-1/2 z-50 ${contentClassName ?? "w-[min(28rem,calc(100vw-2rem))]"} -translate-x-1/2 -translate-y-1/2 glass-sheet rounded-lg border border-border bg-chrome text-text shadow-xl shadow-black/40 outline-none`}
         >
           <div className="flex h-11 items-center gap-2 border-b border-border pr-2 pl-4">
             <Dialog.Title className="min-w-0 flex-1 truncate text-[0.8125rem] font-semibold">
@@ -53,7 +53,7 @@ export function DialogWindow({
             </Dialog.Title>
             <Dialog.Close
               aria-label={t("Close")}
-              className="grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
+              className="glass-pill grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
             >
               <CloseIcon size={14} />
             </Dialog.Close>

@@ -234,7 +234,8 @@ export function TreePane({ id }: { id: TreeId }) {
         style={{ width }}
         // A panel's own tree makes its panel the active one, as the panel does.
         onMouseDown={() => id !== "one" && setActivePanel(id)}
-        className={`relative flex h-full shrink-0 flex-col bg-chrome text-xs ${dimmed ? "opacity-60" : ""}`}
+        data-glass-overflow="visible"
+        className={`glass-region relative flex h-full shrink-0 flex-col bg-chrome text-xs ${dimmed ? "opacity-60" : ""}`}
       >
         <div
           ref={scroll}
@@ -459,7 +460,7 @@ function TreeDivider({ width, label }: { width: number; label: string }) {
         e.stopPropagation()
         setTreeWidth(width + (e.key === "ArrowRight" ? 16 : -16))
       }}
-      className="w-1 shrink-0 cursor-col-resize bg-border outline-none hover:bg-accent focus-visible:bg-accent"
+      className="glass-gutter w-1 shrink-0 cursor-col-resize bg-border outline-none hover:bg-accent focus-visible:bg-accent"
     />
   )
 }

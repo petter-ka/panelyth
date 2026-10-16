@@ -272,7 +272,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
         <p
           id={`${side}-path-error`}
           role="alert"
-          className="absolute top-full right-2 left-2 z-10 rounded-b border border-t-0 border-border bg-raised px-2 py-1 text-danger shadow"
+          className="glass-chip absolute top-full right-2 left-2 z-10 rounded-b border border-t-0 border-border bg-raised px-2 py-1 text-danger shadow"
         >
           {error}
         </p>

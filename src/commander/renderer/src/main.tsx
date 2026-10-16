@@ -3,8 +3,9 @@ import {
   initTheme,
   menuCommandHandler,
   startSharedAppearanceSync,
+  whileAppLoads,
 } from "@panelyth/ui"
-import { initLocale, LocaleBoundary } from "@panelyth/i18n"
+import { initLocale, LocaleBoundary, t } from "@panelyth/i18n"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { aboutApi, bridge, isBridgeAvailable } from "./bridge"
@@ -92,7 +93,10 @@ if (isBridgeAvailable()) {
   // Marks, folder sizes, panel listings, events and the shared context (C01, C02).
   startMarks()
   startSizeJobs()
-  void startPanels().catch(() => undefined)
+  // The panels' first folders open behind the loading screen (a cold first switch shows it at once).
+  void whileAppLoads(startPanels(), { label: t("Loading…"), immediate: true }).catch(
+    () => undefined,
+  )
   // Quick view and the lister: the shared media components on this bridge (C05).
   startMedia()
   // The Thumbnails view: finished previews reach both panels' tiles (C10).

@@ -86,7 +86,7 @@ export function StatusBar() {
   return (
     <footer
       hidden={!STATUS_BAR_VISIBLE}
-      className="flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted"
+      className="glass-region flex h-7 items-center gap-3 border-t border-border bg-chrome px-3 text-2xs text-muted"
     >
       <span
         role="status"

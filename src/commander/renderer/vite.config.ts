@@ -7,6 +7,8 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   // Served from app://commander/ in production (ADR-0031).
   base: "/",
+  // boot.js, the classic script index.html runs before the first paint.
+  publicDir: "../../shared/ui/boot",
   build: {
     outDir: "dist",
     emptyOutDir: true,

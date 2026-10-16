@@ -138,3 +138,154 @@ describe("scrollbars", () => {
     }
   })
 })
+
+describe("liquid glass style (ADR-0041)", () => {
+  // Text is drawn on translucent surfaces here, so the contrast that counts is
+  // against what shows through: the composite over the wallpaper's strongest
+  // colors for cards, and over a black or white picture for floating layers.
+  const palettes = {
+    ...themes,
+    ...Object.fromEntries(
+      ["dark-purple", "dark-brown", "beige", "light-brown"].map((name) => [
+        name,
+        {
+          ...themes[name.startsWith("dark") ? "dark" : "light"],
+          ...block(`:root[data-theme="${name}"]`),
+        },
+      ]),
+    ),
+  }
+
+  const body = (selector: string): string => {
+    const start = css.indexOf(`${selector} {`)
+    if (start < 0) throw new Error(`missing ${selector}`)
+    return css.slice(start, css.indexOf("}", start))
+  }
+
+  interface Mix {
+    token: string
+    share: number
+    /** The other side of the mix; null is transparent. */
+    with: string | null
+  }
+
+  const mixes = (selector: string): Record<string, Mix> =>
+    Object.fromEntries(
+      [
+        ...body(selector).matchAll(
+          /--(glass-[\w-]+): color-mix\(in srgb, var\(--([\w-]+?)(?:-solid)?\) (\d+)%, (?:transparent|var\(--([\w-]+?)(?:-solid)?\))\)/g,
+        ),
+      ].map((m) => [m[1]!, { token: m[2]!, share: Number(m[3]) / 100, with: m[4] ?? null }]),
+    )
+
+  const brightness = (selector: string): number | undefined => {
+    const m = /--glass-backdrop:[^;]*brightness\(([\d.]+)\)/.exec(body(selector))
+    return m ? Number(m[1]) : undefined
+  }
+
+  const glass = {
+    light: mixes(':root[data-style="glass"]'),
+    dark: mixes(':root[data-style="glass"].dark'),
+  }
+  const backdropBrightness = {
+    light: brightness(':root[data-style="glass"]') ?? 1,
+    dark:
+      brightness(':root[data-style="glass"].dark') ?? brightness(':root[data-style="glass"]') ?? 1,
+  }
+
+  const over = (fg: string, p: number, bg: string): string =>
+    `#${[1, 3, 5]
+      .map((i) => {
+        const [f, b] = [fg, bg].map((hex) => parseInt(hex.slice(i, i + 2), 16))
+        return Math.round(f! * p + b! * (1 - p))
+          .toString(16)
+          .padStart(2, "0")
+      })
+      .join("")}`
+
+  const gray = (v: number): string => `#${Math.round(v).toString(16).padStart(2, "0").repeat(3)}`
+  const readable = ["text", "muted", "accent", "danger"] as const
+
+  it("defines each share it uses, in both schemes", () => {
+    for (const name of [
+      "fill",
+      "content",
+      "control",
+      "float",
+      "sheet",
+      "chip",
+      "solid",
+      "bloom-1",
+    ]) {
+      expect(glass.light[`glass-${name}`], name).toBeDefined()
+    }
+  })
+
+  it.each(Object.entries(palettes))(
+    "text, muted, accent and danger meet AA (4.5:1) on cards over the wallpaper (%s)",
+    (name, t) => {
+      const scheme =
+        name === "light" || name === "beige" || name === "light-brown" ? "light" : "dark"
+      const mix = (key: string): Mix => (glass[scheme][key] ?? glass.light[key])!
+      const color = (m: Mix, under: string): string =>
+        m.with === null ? over(t[m.token]!, m.share, under) : over(t[m.token]!, m.share, t[m.with]!)
+      const wallpaper = [
+        t.canvas!,
+        ...["glass-bloom-1", "glass-bloom-2", "glass-bloom-3"].map((k) => color(mix(k), t.canvas!)),
+      ]
+      for (const w of wallpaper) {
+        const card = color(mix("glass-fill"), w)
+        const surfaces = {
+          card,
+          content: color(mix("glass-content"), card),
+          control: color(mix("glass-control"), card),
+          sticky: color(mix("glass-solid"), card),
+        }
+        for (const [surface, bg] of Object.entries(surfaces)) {
+          for (const fg of readable) {
+            expect(contrast(t[fg]!, bg), `${fg} on ${surface} over ${w}`).toBeGreaterThanOrEqual(
+              4.5,
+            )
+          }
+        }
+      }
+    },
+  )
+
+  it.each(Object.entries(palettes))(
+    "menus, dialogs and chips keep AA over a black or a white picture (%s)",
+    (name, t) => {
+      const scheme =
+        name === "light" || name === "beige" || name === "light-brown" ? "light" : "dark"
+      const mix = (key: string): Mix => (glass[scheme][key] ?? glass.light[key])!
+      const dim = backdropBrightness[scheme]
+      // Menus and dialogs blur (and in dark, dim) what is behind them; chips do not.
+      const layers = [
+        { name: "menu", mix: mix("glass-float"), backdrops: [gray(0), gray(255 * dim)] },
+        { name: "dialog", mix: mix("glass-sheet"), backdrops: [gray(0), gray(255 * dim)] },
+        { name: "chip", mix: mix("glass-chip"), backdrops: [gray(0), gray(255)] },
+      ]
+      for (const layer of layers) {
+        for (const backdrop of layer.backdrops) {
+          const bg = over(t[layer.mix.token]!, layer.mix.share, backdrop)
+          for (const fg of readable) {
+            expect(
+              contrast(t[fg]!, bg),
+              `${fg} on ${layer.name} over ${backdrop}`,
+            ).toBeGreaterThanOrEqual(4.5)
+          }
+        }
+      }
+    },
+  )
+
+  it("keeps blur off the cards: only floating layers filter their backdrop", () => {
+    const rules = [...css.matchAll(/([^{}]+)\{[^}]*backdrop-filter:[^}]*\}/g)].map((m) =>
+      m[1]!.trim(),
+    )
+    expect(rules.length).toBeGreaterThan(0)
+    for (const selector of rules) {
+      expect(selector).not.toMatch(/glass-region|glass-chip|glass-page/)
+    }
+  })
+})

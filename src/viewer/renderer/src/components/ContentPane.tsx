@@ -84,7 +84,7 @@ export function ContentPane() {
     <main
       aria-label={t("Content")}
       data-pane="content"
-      className="flex h-full min-h-0 min-w-0 flex-col"
+      className="glass-region flex h-full min-h-0 min-w-0 flex-col"
     >
       <FolderToolbar />
       <FolderSummary />
