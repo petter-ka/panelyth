@@ -1,3 +1,5 @@
 {"at":"2026-10-16T07:37:51.395Z","test":"switch","firstSwitchMs":175,"laterSwitchMs":[5,5,5,6],"viewerOnlyMb":385,"bothViewsMb":540,"commanderViewMb":155}
 {"at":"2026-10-16T08:48:20.192Z","test":"switch","firstSwitchMs":201,"laterSwitchMs":[8,10,6,5],"viewerOnlyMb":378,"bothViewsMb":542,"commanderViewMb":164}
 {"at":"2026-10-16T08:58:48.417Z","test":"switch","firstSwitchMs":185,"laterSwitchMs":[5,5,4,5],"viewerOnlyMb":378,"bothViewsMb":536,"commanderViewMb":158}
+{"at":"2026-10-16T12:16:32.323Z","test":"switch","firstSwitchMs":187,"laterSwitchMs":[6,6,4,5],"viewerOnlyMb":384,"bothViewsMb":544,"commanderViewMb":160}
+{"at":"2026-10-16T14:03:57.273Z","test":"switch","firstSwitchMs":189,"laterSwitchMs":[5,4,5,5],"viewerOnlyMb":381,"bothViewsMb":540,"commanderViewMb":159}

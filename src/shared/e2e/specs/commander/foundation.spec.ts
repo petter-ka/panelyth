@@ -114,7 +114,7 @@ test.describe("commander foundation (Stage C00)", () => {
           "setSetting",
           "updateBookmark",
         ],
-        query: ["close", "indexOf", "locate", "match", "open", "page"],
+        query: ["close", "facets", "indexOf", "locate", "match", "open", "page"],
         jobs: ["cancel", "dirSize"],
         files: ["errors", "list", "pause", "rename", "resolve", "resume", "start", "startNow"],
         fs: ["canTrash", "listDirs", "mkdir", "mkfile", "volumes"],

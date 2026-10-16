@@ -40,9 +40,28 @@ style; the glass style below is the measured exception.
 - **The wallpaper** behind the cards is three soft radial blooms of the palette's own accent, blue and purple
   over its canvas. It is painted once and never moves.
 - **No blur on cards.** A card sits over the still wallpaper, which is already soft, so a `backdrop-filter`
-  there would cost GPU work on every repaint and change nothing visible. Only menus, popups and dialogs blur,
-  and they are transient. Nothing on the scrolling surface blurs. In dark palettes the blur also dims what is
-  behind (`brightness(0.5)`), so muted text keeps AA over a bright picture.
+  there would cost GPU work on every repaint and change nothing visible. Only menus, popups and dialogs filter
+  their backdrop, and they are transient. Nothing on the scrolling surface does.
+- **Liquid floating layers** (amended 2026-10-16, owner request: "more liquid, transparent modals"). Menus,
+  popups and dialogs are mostly clear: what is behind them is blurred lightly (10 px), rippled by an SVG
+  displacement filter (`#glass-liquid`: fractal noise, scale 26, put into each page by `appearance.ts` when the
+  style applies) and tone-mapped, so text keeps AA whatever is behind:
+  - the fill takes the theme's colors (amended the same day, owner request): a soft diagonal gradient through
+    the palette's accent, purple and blue, the wallpaper's hues, each mixed into the layer's base (raised for
+    menus and popups, chrome for dialogs). Saturation stays low (150 %), so pictures behind add only a hint of
+    color and the theme's tint leads;
+  - dark palettes: the backdrop is squeezed into a band of dark grays (`contrast(0.12) brightness(0.3)`: 34 to
+    43 of 255) under a 40 % fill with 24 % (menus) or 30 % (dialogs) of each hue. A white picture behind stays
+    dark enough for muted text, and over a black one the layer is still about 2 times lighter than the app's
+    cards, so an open menu or dialog reads as raised, never as dimmed (an earlier dark recipe dimmed the
+    backdrop and the layers looked inactive);
+  - light palettes: `contrast(0.15) brightness(2.1)` turns a black picture into near white (228 of 255) under a
+    70 % fill with 12 % of each hue (menus) or 80 % with 8 % (dialogs), with a white gloss across the top (dark
+    palettes have none: it would take contrast from light text);
+  - the dialog's scrim is a light dim (18 % black), so the app reads through the glass;
+  - menus and popups (context menus, drop-downs, the commander's popup menus) are clearer and more liquid than
+    dialogs: a 6 px blur and a stronger ripple (`#glass-liquid-strong`: larger waves, scale 44). They are modal
+    while open, so nothing behind them moves.
 - **The lit edge** of a card or layer is a 1 px gradient ring drawn by an `::after` with a mask, so it never
   changes the layout.
 - **Full-window media overlays keep the solid canvas** (the image viewer, the editor, the media window and the
@@ -61,6 +80,9 @@ style; the glass style below is the measured exception.
   viewer's tile view and the commander's Full view on `flat-10k`, scrolled at 300 px per frame for 2 s and then
   slowly for 1 s, three alternating runs per style. Both styles gave 434 frames, a mean of 6.94 ms per frame, a
   p95 of 7 ms, no frame over 20 ms and no long task.
+- Scrolling inside a liquid dialog (the shortcuts list, 25 px per frame for 2 s, three alternating runs per
+  style, `stage-P06-2026-10-16-petter-glass-dialog-scroll.jsonl`): the same in both styles, 289 frames, a mean of
+  6.94 ms, a p95 of 7 ms, no frame over 20 ms.
 - Bundle (`stage-P06-2026-10-16-petter-bundle.json` against `-bundle-2`, the baseline): CSS +9.0 KB per app
   (+1.3 KB gzip), JS +1.2 to +1.4 KB (the setting and its messages).
 - On Windows, text on a translucent scroller is drawn with grayscale rather than LCD anti-aliasing.

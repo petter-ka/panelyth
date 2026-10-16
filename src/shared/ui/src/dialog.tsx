@@ -42,7 +42,7 @@ export function DialogWindow({
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="motion-fade fixed inset-0 z-40 bg-black/40" />
+        <Dialog.Overlay className="glass-scrim motion-fade fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content
           {...(onEscapeKeyDown ? { onEscapeKeyDown } : {})}
           className={`motion-pop fixed top-1/2 left-1/2 z-50 ${contentClassName ?? "w-[min(28rem,calc(100vw-2rem))]"} -translate-x-1/2 -translate-y-1/2 glass-sheet rounded-lg border border-border bg-chrome text-text shadow-xl shadow-black/40 outline-none`}

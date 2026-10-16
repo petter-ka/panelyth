@@ -66,7 +66,7 @@ const NotEncrypted = () => (
 
 /**
  * Connections (Stage C10.5, CFR-31, ADR-0037): the saved connections
- * (Ctrl+F), a connection's settings, quick connect (Ctrl+N), and the
+ * (Ctrl+Shift+N), a connection's settings, quick connect (Ctrl+N), and the
  * questions a connect asks. A password is typed here, goes to main with the
  * one call that needs it, and is never read back.
  */

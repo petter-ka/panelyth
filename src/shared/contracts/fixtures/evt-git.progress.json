@@ -1,0 +1,17 @@
+{
+  "ch": "git.progress",
+  "p": {
+    "left": 0,
+    "message": "",
+    "op": "stage",
+    "opId": 3,
+    "percent": 0,
+    "phase": "",
+    "reason": "",
+    "repoId": 1,
+    "restored": 0,
+    "state": "completed"
+  },
+  "seq": 1,
+  "t": "evt"
+}

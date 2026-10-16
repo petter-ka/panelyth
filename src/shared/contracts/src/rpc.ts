@@ -1,4 +1,16 @@
 import type {
+  GitBranchesResult,
+  GitCancelResult,
+  GitChangesResult,
+  GitDirParams,
+  GitLogParams,
+  GitLogResult,
+  GitOpIdParams,
+  GitRunParams,
+  GitRunResult,
+  GitStatusResult,
+} from "./git"
+import type {
   BatchParams,
   BatchPickFolderResult,
   BatchPlanResult,
@@ -2273,6 +2285,13 @@ export interface SidecarMethodMap {
   "diff.open": { params: TextDiffOpenParams; result: TextDiffOpenResult }
   "diff.page": { params: TextDiffPageParams; result: TextDiffPageResult }
   "diff.close": { params: TextDiffIdParams; result: OkResult }
+  /** Git in the commander (ADR-0043): a folder's status, runs in the background, branches, the log. */
+  "git.status": { params: GitDirParams; result: GitStatusResult }
+  "git.changes": { params: GitDirParams; result: GitChangesResult }
+  "git.run": { params: GitRunParams; result: GitRunResult }
+  "git.cancel": { params: GitOpIdParams; result: GitCancelResult }
+  "git.branches": { params: GitDirParams; result: GitBranchesResult }
+  "git.log": { params: GitLogParams; result: GitLogResult }
   /** Stage C09: a multi-rename's names, paged; multiRename and undoRename jobs apply and undo. */
   "rename.preview": { params: RenamePreviewParams; result: RenamePreviewResult }
   "rename.undoInfo": { params: EmptyParams; result: RenameUndoInfo }
@@ -2419,10 +2438,57 @@ export interface OpenFolderDialogResult {
   path: string | null
 }
 
-/** The apps hosted by the shell (ADR-0031). */
-export type AppId = "viewer" | "commander"
+/** The apps hosted by the shell (ADR-0031); Panelyth System since ADR-0042. */
+export type AppId = "viewer" | "commander" | "system"
 
-export const APP_IDS = ["viewer", "commander"] as const satisfies readonly AppId[]
+export const APP_IDS = ["viewer", "commander", "system"] as const satisfies readonly AppId[]
+
+/** Panelyth System (ADR-0042): what the computer is, read once by main. */
+export interface SystemHardware {
+  os: {
+    /** "Windows 11 Pro", "macOS 15.1", the Linux distribution's name. */
+    name: string
+    /** The kernel's release ("10.0.26300"). */
+    release: string
+    arch: string
+    platform: string
+  }
+  /** The computer's name. */
+  hostname: string
+  /** Since the computer started. */
+  uptimeMs: number
+  cpu: {
+    model: string
+    /** Logical processors. */
+    threads: number
+    /** The clock the OS reports, MHz; 0 when unknown. */
+    speedMhz: number
+  }
+  memoryBytes: number
+  /** The graphics adapters as Chromium sees them; the active one first. */
+  gpus: SystemGpu[]
+}
+
+export interface SystemGpu {
+  name: string
+  vendor: string
+  /** The driver's version; "" when unknown. */
+  driver: string
+  /** Chromium draws with this one. */
+  active: boolean
+}
+
+/**
+ * A sample of the load (ADR-0042): CPU time per logical processor since the
+ * computer started, and memory. Two samples give the load between them.
+ */
+export interface SystemLoad {
+  /** Epoch ms of the sample. */
+  at: number
+  cores: { busyMs: number; totalMs: number }[]
+  freeMemoryBytes: number
+  totalMemoryBytes: number
+}
 
 export interface AppSwitchParams {
   to: AppId
@@ -2438,6 +2504,10 @@ export interface MainMethodMap {
   "app.switch": { params: AppSwitchParams; result: OkResult }
   /** Both apps (Stage P06): the product's version and what it runs on. */
   "app.about": { params: EmptyParams; result: AboutInfo }
+  /** Panelyth System (ADR-0042): the OS, CPU, memory and graphics adapters. */
+  "system.hardware": { params: EmptyParams; result: SystemHardware }
+  /** Panelyth System: the CPU time per core and the memory now (sampled while it is visible). */
+  "system.load": { params: EmptyParams; result: SystemLoad }
   /** Both apps: opens the log folder, the licence notices or a page of the project; never a renderer's URL. */
   "app.openTarget": { params: AppOpenTargetParams; result: OkResult }
   /** Both apps (ADR-0038): the update state; changes arrive as update.state events. */
@@ -2667,6 +2737,13 @@ export const COMMANDER_ONLY_METHODS = [
   "remote.saveConnection",
   "remote.removeConnection",
   "remote.trust",
+  // Git (ADR-0043).
+  "git.status",
+  "git.changes",
+  "git.run",
+  "git.cancel",
+  "git.branches",
+  "git.log",
   "remote.connect",
   "remote.cancel",
   "remote.disconnect",
@@ -2676,8 +2753,15 @@ export const COMMANDER_ONLY_METHODS = [
   "remote.secureStore",
 ] as const
 
+/** Methods only Panelyth System calls (ADR-0042): main reads the computer. */
+const SYSTEM_ONLY_METHODS = ["system.hardware", "system.load"] as const
+
 /** Every method some renderer may invoke. Main rejects everything else. */
-export const RENDERER_METHODS = [...VIEWER_METHODS, ...COMMANDER_ONLY_METHODS] as const
+export const RENDERER_METHODS = [
+  ...VIEWER_METHODS,
+  ...COMMANDER_ONLY_METHODS,
+  ...SYSTEM_ONLY_METHODS,
+] as const
 
 /** Additionally allowed when dev methods are enabled (never in packaged builds). */
 export const DEV_RENDERER_METHODS = ["system.echo"] as const
@@ -2720,6 +2804,8 @@ export const COMMANDER_METHODS = [
   // Stage C02: marks, quick search, folder sizes (main allows only dirSize jobs until C04).
   "query.locate",
   "query.match",
+  // The path bar's count by type, on request (2026-10-16).
+  "query.facets",
   "selection.info",
   "selection.rebase",
   "selection.fromContext",
@@ -2803,18 +2889,59 @@ export const COMMANDER_METHODS = [
   "remote.mkdir",
   "remote.rename",
   "remote.secureStore",
+  // Git (ADR-0043): status, runs, branches and the log of a panel's repository.
+  "git.status",
+  "git.changes",
+  "git.run",
+  "git.cancel",
+  "git.branches",
+  "git.log",
 ] as const satisfies readonly RendererMethod[]
 
 /** Each app view's allowlist. The viewer keeps the full list it always had, plus the C01 context methods. */
+/**
+ * Panelyth System's allowlist (ADR-0042): the app's basics, the shared
+ * appearance, the volumes, a search over volumes and its results, and handing
+ * a result to the commander. No file operations and nothing that opens or runs
+ * a file.
+ */
+export const SYSTEM_METHODS = [
+  "app.exit",
+  "app.switch",
+  "app.about",
+  "app.openTarget",
+  "update.get",
+  "update.check",
+  "update.download",
+  "update.install",
+  "sidecar.getStatus",
+  "settings.openWindow",
+  "settings.closeWindow",
+  "library.get",
+  "library.setSetting",
+  "system.hardware",
+  "system.load",
+  "fs.volumes",
+  "find.start",
+  "find.cancel",
+  "query.page",
+  "query.close",
+  "dir.openContaining",
+  "context.publish",
+] as const satisfies readonly RendererMethod[]
+
 export const APP_METHODS: Record<AppId, readonly RendererMethod[]> = {
   viewer: VIEWER_METHODS,
   commander: COMMANDER_METHODS,
+  system: SYSTEM_METHODS,
 }
 
 export const MAIN_METHODS = [
   "app.exit",
   "app.switch",
   "app.about",
+  "system.hardware",
+  "system.load",
   "app.openTarget",
   "update.get",
   "update.check",

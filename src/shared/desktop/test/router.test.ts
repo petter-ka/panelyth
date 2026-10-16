@@ -14,6 +14,7 @@ vi.mock("electron", () => ({}))
 
 const ORIGIN = "app://panelyth"
 const COMMANDER = "app://commander"
+const SYSTEM = "app://system"
 const status: SidecarStatus = {
   state: "ready",
   pid: 1,
@@ -61,6 +62,20 @@ const mainHandlers = (): MainHandlers => ({
     copyright: "",
   })),
   "app.openTarget": vi.fn(async () => ({ ok: true })),
+  "system.hardware": vi.fn(async () => ({
+    os: { name: "Windows 11 Pro", release: "10.0.26300", arch: "x64", platform: "win32" },
+    hostname: "pc",
+    uptimeMs: 1000,
+    cpu: { model: "CPU", threads: 8, speedMhz: 3000 },
+    memoryBytes: 16 * 2 ** 30,
+    gpus: [],
+  })),
+  "system.load": vi.fn(() => ({
+    at: 1,
+    cores: [{ busyMs: 1, totalMs: 2 }],
+    freeMemoryBytes: 1,
+    totalMemoryBytes: 2,
+  })),
   "update.get": vi.fn(() => updateState),
   "update.check": vi.fn(() => updateState),
   "update.download": vi.fn(() => updateState),
@@ -130,7 +145,7 @@ const mainHandlers = (): MainHandlers => ({
   "remote.secureStore": vi.fn(() => ({ available: true })),
 })
 
-function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
+function setup(devMethods = false, activeApp?: () => "viewer" | "commander" | "system") {
   const sidecar: SidecarPort = {
     call: vi.fn(async (method: string) => ({ echoed: method })),
     getStatus: vi.fn(() => status),
@@ -141,7 +156,7 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
   const handler = createInvokeHandler({
     sidecar,
     main,
-    origins: { viewer: ORIGIN, commander: COMMANDER },
+    origins: { viewer: ORIGIN, commander: COMMANDER, system: SYSTEM },
     devMethods,
     onSharedSetting,
     onSettingWritten,
@@ -155,8 +170,138 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander") {
     onSettingWritten,
     ok: eventFrom(`${ORIGIN}/index.html`),
     commander: eventFrom(`${COMMANDER}/index.html`),
+    system: eventFrom(`${SYSTEM}/index.html`),
   }
 }
+
+describe("Panelyth System's profile (ADR-0042)", () => {
+  it("reads the computer, the volumes and searches; nothing that changes or runs a file", async () => {
+    const { handler, sidecar, main, system } = setup()
+    expect(await handler(system, "system.hardware", {})).toMatchObject({ ok: true })
+    expect(main["system.hardware"]).toHaveBeenCalled()
+    expect(await handler(system, "system.load", {})).toMatchObject({ ok: true })
+    expect(await handler(system, "fs.volumes", {})).toMatchObject({ ok: true })
+    for (const m of [
+      "jobs.start",
+      "files.start",
+      "shell.open",
+      "shell.run",
+      "file.open",
+      "query.open",
+      "dir.open",
+      "clipboard.copyPaths",
+      "edit.open",
+    ]) {
+      expect(await handler(system, m, {}), m).toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    // The other apps cannot read the computer this way.
+    const { ok, commander } = setup()
+    for (const event of [ok, commander]) {
+      expect(await handler(event, "system.hardware", {})).toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    expect(sidecar.call).toHaveBeenCalledWith("fs.volumes", {})
+  })
+
+  it("writes the shared settings only, and its searches are its own", async () => {
+    const { handler, sidecar, system } = setup()
+    expect(
+      await handler(system, "library.setSetting", { key: "shared.appearance", value: {} }),
+    ).toMatchObject({ ok: true })
+    expect(
+      await handler(system, "library.setSetting", { key: "commander.settings", value: {} }),
+    ).toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    const find = {
+      roots: ["C:\\"],
+      mask: "*a*",
+      depth: -1,
+      hidden: false,
+      text: "",
+      caseSensitive: false,
+      wholeWords: false,
+      encodings: [],
+      skipBinary: true,
+      minSize: null,
+      maxSize: null,
+      modifiedAfter: null,
+      modifiedBefore: null,
+      attrsSet: 0,
+      attrsClear: 0,
+    }
+    expect(await handler(system, "find.start", find)).toMatchObject({ ok: true })
+    // Main names the app: the results session is System's.
+    expect(sidecar.call).toHaveBeenLastCalledWith("find.start", { ...find, app: "system" })
+    expect(
+      await handler(system, "context.publish", { app: "commander", dirId: 1, focusId: null }),
+    ).toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    expect(
+      await handler(system, "context.publish", { app: "system", dirId: 1, focusId: 2 }),
+    ).toMatchObject({ ok: true })
+  })
+})
+
+describe("Git in the commander (ADR-0043)", () => {
+  const selection = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
+
+  it("is the commander's alone", async () => {
+    const { handler, ok, system, commander } = setup()
+    for (const event of [ok, system]) {
+      for (const m of ["git.status", "git.run", "git.branches"]) {
+        expect(await handler(event, m, { dirId: 1 }), m).toMatchObject({
+          ok: false,
+          e: { code: "METHOD_NOT_FOUND" },
+        })
+      }
+    }
+    expect(await handler(commander, "git.status", { dirId: 1 })).toMatchObject({ ok: true })
+  })
+
+  it("reads a large repository's status with a longer timeout", async () => {
+    const { handler, sidecar, commander } = setup()
+    await handler(commander, "git.status", { dirId: 3, force: true })
+    expect(sidecar.call).toHaveBeenLastCalledWith(
+      "git.status",
+      { dirId: 3, force: true },
+      { timeoutMs: 65_000 },
+    )
+    await handler(commander, "git.cancel", { opId: 4 })
+    expect(sidecar.call).toHaveBeenLastCalledWith("git.cancel", { opId: 4 })
+  })
+
+  it("takes files as a selection or change-list rows, never as paths", async () => {
+    const { handler, commander } = setup()
+    const accepted = [
+      { dirId: 1, op: "stage", selection },
+      { dirId: 1, op: "unstage", changesId: 2, items: [0, 3] },
+      { dirId: 1, op: "commit", message: "Fix", amend: false, stageAll: true, push: true },
+      { dirId: 1, op: "pull", mode: "rebase" },
+      { dirId: 1, op: "createBranch", branch: "feature/x" },
+    ]
+    for (const p of accepted) {
+      expect(await handler(commander, "git.run", p), JSON.stringify(p)).toMatchObject({ ok: true })
+    }
+    const refused = [
+      { dirId: 1, op: "stage", paths: ["C:\\secret"] },
+      { dirId: 1, op: "exec", selection },
+      { dirId: 1, op: "unstage", items: [0] },
+      { dirId: 1, op: "pull", mode: "force" },
+      { dirId: 1, op: "switch", branch: "--orphan" },
+      { dirId: 1, op: "commit", message: "x".repeat(16_001) },
+      { dirId: 0, op: "fetch" },
+    ]
+    for (const p of refused) {
+      expect(await handler(commander, "git.run", p), JSON.stringify(p)).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+  })
+})
 
 describe("invoke router", () => {
   it("checks each call against the calling app view's profile (ADR-0027)", async () => {
@@ -1582,7 +1727,11 @@ describe("invoke router", () => {
     const handler = createInvokeHandler({
       sidecar,
       main: mainHandlers(),
-      origins: { viewer: "http://localhost:5173", commander: "http://localhost:5175" },
+      origins: {
+        viewer: "http://localhost:5173",
+        commander: "http://localhost:5175",
+        system: "http://localhost:5176",
+      },
       devMethods: false,
     })
     expect(await handler(eventFrom("http://localhost:5173/"), "system.ping", {})).toMatchObject({

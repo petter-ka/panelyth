@@ -10,7 +10,16 @@ setting for the system default app. Revised by ADR-0031: both apps run in one sh
 app view (web contents), not to a separate app process. Amended (Stage P06, 2026-10-12, ADR-0038): both profiles
 get `app.about`, `app.openTarget` and `update.get` / `check` / `download` / `install`. They are answered in main
 and take no path, URL or version: `app.openTarget` takes one of five names that main maps to its own folders and
-the project's pages.
+the project's pages. Amended by ADR-0042 (2026-10-16): a third profile, `SYSTEM_METHODS`, for Panelyth System
+(`app://system/`): the volumes, a search and its results, a found file's folder and the shared context, and the
+main methods `system.hardware` / `system.load`; it may set only `shared.*` settings and has no file operations.
+Amended by ADR-0043 (2026-10-16): the commander's profile gets `git.status`, `git.changes`, `git.run`, `git.cancel`,
+`git.branches` and `git.log`; files are a selection or rows of a change list, never paths.
+
+Amended 2026-10-16 (owner request): `query.facets` joins the commander's profile, for the path bar's count by
+type. It returns counts of the panel's own session (folders, file kinds, extensions) and no names or paths; Go
+now also counts the rows of a session over a source (find results, an archive, a server), and leaves the session's
+name mask out, as it leaves the kind and extension filters out: the counts are what the filter can choose from.
 
 Amended 2026-10-15 (ADR-0040): both profiles get `drag.start { selection }`. Main resolves the selection's paths
 through Go and starts the OS's drag of those files from the calling web contents; no path comes from or goes to

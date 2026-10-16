@@ -14,7 +14,8 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Cursor vs marks; Insert, Space, Shift+arrows | Insert, Space | C02 | ✓ |
 | Mark by mask, unmark, invert, same extension | Num+, Num−, Num*, Alt+Num+ | C02 | ✓ |
 | Quick search (type-ahead) | letters (TC: Ctrl+Alt+letters) | C02 | ✓ |
-| Quick filter | Ctrl+S | C06 | ✓ |
+| Quick filter (plain text; masks optional) | Ctrl+F, Ctrl+S | C06 | ✓ |
+| Count by type (folders and each extension, counted on request; filter to up to 3 types) | path bar icon | — (owner request, 2026-10-16) | ✓ |
 | Back / forward / history list | Alt+Left / Alt+Right / Alt+Down | C02, C03 | ✓ |
 | Folder tabs | Ctrl+T, Ctrl+W, Ctrl+Tab | C03 | ✓ |
 | Tab bar with "+", rename, duplicate, reopen closed tab | — (Panelyth: Ctrl+Shift+T reopens) | C10.5 | ✓ |
@@ -53,7 +54,8 @@ Total Commander features and where they land. "Platform" means shared work in a 
 | Function-key bar | — | C00 | ✓ |
 | Toolbar, user commands, external tools | — | C10 | ✓ |
 | Custom shortcuts | — | C02 (shared keymap) | ✓ |
-| FTP / FTPS: connect, browse, transfer, saved connections | Ctrl+F, Ctrl+N, Ctrl+Shift+F | C10.5 | ✓ (ADR-0037; no server-to-server copy, no editing in place, no find or sync on a server) |
+| FTP / FTPS: connect, browse, transfer, saved connections | Ctrl+Shift+N, Ctrl+N, Ctrl+Shift+F | C10.5 | ✓ (ADR-0037; no server-to-server copy, no editing in place, no find or sync on a server) |
+| Git: repository badge, status per row, Git bar (branch, ahead/behind, changes), stage, unstage, discard, commit (and push), pull, push, fetch, switch and create branches, history | Ctrl+Shift+G commit, Ctrl+Shift+B branches | — (owner request, ADR-0043) | ✓ (the installed Git; merges with conflicts, rebases and history editing stay in Git tools) |
 | SFTP / WebDAV / cloud | — | — | later |
 | Plugin compatibility (WCX/WFX/WLX) | — | — | out of scope |
 | Edit archives in place | — | — | later |

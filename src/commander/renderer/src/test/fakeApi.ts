@@ -30,6 +30,15 @@ import {
   type SharedContext,
   type Volume,
 } from "@panelyth/contracts"
+import type {
+  GitBranch,
+  GitChange,
+  GitLogEntry,
+  GitMark,
+  GitRepo,
+  GitRunParams,
+  GitStatusResult,
+} from "@panelyth/contracts"
 import { vi } from "vitest"
 import { setRangeFetch } from "../features/bytes"
 
@@ -178,7 +187,56 @@ export interface FakeOptions {
    * not Windows); without it, permissions are null as on Windows.
    */
   permissions?: number
+  /** ADR-0043: Git. Without it Git "is not installed". */
+  git?: FakeGit
 }
+
+/** Git as the sidecar would answer it; tests change it and emit git.progress. */
+export interface FakeGit {
+  /** git.status by folder id; a folder without one is outside any repository. */
+  statuses: Record<number, GitStatusResult>
+  changes?: GitChange[]
+  branches?: GitBranch[]
+  log?: GitLogEntry[]
+}
+
+/** A repository's status for the fake: counts and marks as given. */
+export function gitStatus(
+  repo: Partial<GitRepo> = {},
+  marks: GitMark[] = [],
+  over: Partial<GitStatusResult> = {},
+): GitStatusResult {
+  return {
+    available: true,
+    repo: {
+      repoId: 1,
+      root: "C:\\repo",
+      name: "repo",
+      rel: "",
+      branch: "main",
+      head: "1a2b3c4",
+      unborn: false,
+      upstream: "origin/main",
+      ahead: 0,
+      behind: 0,
+      stashes: 0,
+      operation: "",
+      counts: { staged: 0, changed: 0, untracked: 0, conflicted: 0 },
+      ...repo,
+    },
+    marks,
+    inherited: "",
+    truncated: false,
+    problem: null,
+    ...over,
+  }
+}
+
+export const gitMark = (
+  name: string,
+  state: GitMark["state"],
+  over: Partial<GitMark> = {},
+): GitMark => ({ name, state, staged: false, unstaged: state !== "ignored", below: false, ...over })
 
 /**
  * Stage C09: what Go's rename engine does, as far as the tests need it:
@@ -332,6 +390,7 @@ export function installFakeCommander(options: FakeOptions) {
   let carried: number[] = options.carried ?? []
   let carriedVersion = options.context?.version ?? 0
   let nextJob = 0
+  let nextGitOp = 0
   /** Stage C09: the journal of the last multi-rename (entry, old name, new name). */
   let undo: { dir: string; steps: { entry: ContentItem; old: string; next: string }[] } | null =
     null
@@ -694,6 +753,36 @@ export function installFakeCommander(options: FakeOptions) {
         return f ? opened(f) : err("NOT_FOUND", "not in the index")
       }),
     },
+    git: {
+      status: vi.fn(async (dirId: number) => {
+        if (!options.git)
+          return ok({
+            available: false,
+            repo: null,
+            marks: [],
+            inherited: "" as const,
+            truncated: false,
+            problem: null,
+          })
+        return ok(
+          options.git.statuses[dirId] ?? {
+            available: true,
+            repo: null,
+            marks: [],
+            inherited: "" as const,
+            truncated: false,
+            problem: null,
+          },
+        )
+      }),
+      changes: vi.fn(async () =>
+        ok({ changesId: 7, entries: options.git?.changes ?? [], truncated: false }),
+      ),
+      run: vi.fn(async (_p: GitRunParams) => ok({ opId: ++nextGitOp })),
+      cancel: vi.fn(async () => ok({ cancelled: true })),
+      branches: vi.fn(async () => ok({ branches: options.git?.branches ?? [], truncated: false })),
+      log: vi.fn(async () => ok({ entries: options.git?.log ?? [] })),
+    },
     find: {
       start: vi.fn(async (spec: FindStartParams) => {
         const root = byPath.get(spec.roots[0] ?? "")
@@ -975,6 +1064,41 @@ export function installFakeCommander(options: FakeOptions) {
           version: versions.get(queryId) ?? 1,
           ranges: rangesOf(hits),
           count: hits.length,
+        })
+      }),
+      // As Go counts them: the session's rows without its name mask (what the
+      // quick filter can choose from), folders apart, each extension's files,
+      // the most common first.
+      facets: vi.fn(async (queryId: number) => {
+        const d = descriptors.get(queryId)
+        if (!d || !sessions.has(queryId))
+          return err("NOT_FOUND", "query session expired; reopen it")
+        const { nameMask: _mask, ...unmasked } = d
+        const rows = rowsOf(unmasked)
+        const exts = new Map<string, number>()
+        let folders = 0
+        let images = 0
+        let videos = 0
+        let files = 0
+        for (const r of rows) {
+          if (r.kind === "dir") {
+            folders++
+            continue
+          }
+          if (r.kind === "image") images++
+          else if (r.kind === "video") videos++
+          else files++
+          exts.set(r.ext, (exts.get(r.ext) ?? 0) + 1)
+        }
+        return ok({
+          folders,
+          images,
+          videos,
+          ...(files > 0 && { files }),
+          exts: [...exts]
+            .map(([ext, count]) => ({ ext, count }))
+            .sort((a, b) => b.count - a.count || a.ext.localeCompare(b.ext))
+            .slice(0, 50),
         })
       }),
     },

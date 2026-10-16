@@ -1,0 +1,25 @@
+{
+  "id": 243,
+  "ok": true,
+  "r": {
+    "changesId": 2,
+    "entries": [
+      {
+        "orig": "",
+        "path": "/fixtures/golden",
+        "staged": false,
+        "state": "modified",
+        "unstaged": true
+      },
+      {
+        "orig": "",
+        "path": "/fixtures/golden",
+        "staged": false,
+        "state": "untracked",
+        "unstaged": true
+      }
+    ],
+    "truncated": false
+  },
+  "t": "res"
+}

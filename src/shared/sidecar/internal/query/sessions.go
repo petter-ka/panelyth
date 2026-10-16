@@ -50,6 +50,8 @@ type Owner string
 const (
 	OwnerViewer    Owner = "viewer"
 	OwnerCommander Owner = "commander"
+	// OwnerSystem is Panelyth System's (ADR-0042): its searches.
+	OwnerSystem Owner = "system"
 	// OwnerMain is every other caller: Electron main's own sessions (the
 	// neighbours of a file opened from the OS) and callers that name no app.
 	OwnerMain Owner = ""
@@ -58,13 +60,13 @@ const (
 // Budgets are the sessions each owner may hold (ADR-0026): the viewer's
 // folder and its recent queries; the commander's 2 panels × visible tabs,
 // find results, branch views and compares.
-var Budgets = map[Owner]int{OwnerViewer: 8, OwnerCommander: 24, OwnerMain: 8}
+var Budgets = map[Owner]int{OwnerViewer: 8, OwnerCommander: 24, OwnerSystem: 4, OwnerMain: 8}
 
 // ParseOwner maps the app named by main to an owner; anything else is
 // OwnerMain.
 func ParseOwner(app string) Owner {
 	switch o := Owner(app); o {
-	case OwnerViewer, OwnerCommander:
+	case OwnerViewer, OwnerCommander, OwnerSystem:
 		return o
 	}
 	return OwnerMain
@@ -377,7 +379,16 @@ func (m *Manager) IndexOf(id, entryID int64) (int, int64, error) {
 	return slices.Index(ids, entryID), version, nil
 }
 
-// Facets counts filter choices for the session's folder scope and search.
+// facetChunk is how many of a source session's rows are loaded at a time to
+// count them (an index page's size).
+const facetChunk = 1000
+
+// Facets counts filter choices for the session's folder scope and search:
+// what the filters can choose from, so the name mask (the commander's quick
+// filter, which its count by type sets) is left out as the kind and
+// extension filters are. A session over a source (find results, an archive,
+// a server) counts its own rows, listed again without the mask when it has
+// one.
 func (m *Manager) Facets(ctx context.Context, id int64) (index.Facets, error) {
 	m.mu.Lock()
 	s := m.sessions[id]
@@ -386,12 +397,46 @@ func (m *Manager) Facets(ctx context.Context, id int64) (index.Facets, error) {
 		return index.Facets{}, ErrUnknownSession
 	}
 	s.lastUsed = m.useLocked()
-	desc, key, src := s.desc, s.dirKey, s.src
+	// A refresh replaces ids with a new slice, so this one stays as it is.
+	desc, key, src, ids := s.desc, s.dirKey, s.src, s.ids
 	m.mu.Unlock()
+	masked := desc.NameMask != ""
+	desc.NameMask = ""
 	if src != nil {
-		return index.Facets{Exts: []index.ExtCount{}}, nil
+		if masked {
+			all, err := src.IDs(ctx, desc)
+			if err != nil {
+				return index.Facets{}, err
+			}
+			ids = all
+		}
+		return m.sourceFacets(ctx, src, ids)
 	}
 	return m.store.Facets(ctx, desc, key)
+}
+
+// sourceFacets loads a source session's rows a chunk at a time and counts
+// them; its rows come from the source (an archive, a server) or the index
+// (find results).
+func (m *Manager) sourceFacets(ctx context.Context, src Source, ids []int64) (index.Facets, error) {
+	load := m.store.LoadItems
+	if items, ok := src.(ItemSource); ok {
+		load = items.Items
+	}
+	var c index.FacetCounter
+	for lo := 0; lo < len(ids); lo += facetChunk {
+		if err := ctx.Err(); err != nil {
+			return index.Facets{}, err
+		}
+		rows, err := load(ctx, ids[lo:min(lo+facetChunk, len(ids))])
+		if err != nil {
+			return index.Facets{}, err
+		}
+		for _, r := range rows {
+			c.Add(r.Kind, r.Ext, 1)
+		}
+	}
+	return c.Facets(), nil
 }
 
 // Close drops a session; false if it did not exist.

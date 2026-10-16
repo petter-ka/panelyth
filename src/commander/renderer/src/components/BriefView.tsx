@@ -1,3 +1,5 @@
+import { useGitMark } from "../features/git"
+import { gitNameStyle, GitRowMark } from "./Git"
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
 import { Spinner, TypeGlyph, useInterfaceSizeStore, type InterfaceSize } from "@panelyth/ui"
 import { useVirtualizer } from "@tanstack/react-virtual"
@@ -221,6 +223,7 @@ const BriefItem = memo(function BriefItem({
     (s) => s[side].loading && shown !== undefined && s[side].loadingTarget === shown.id,
   )
   const prefix = shown ? folderPrefix(shown.dirPath, panelPath) : ""
+  const git = useGitMark(side, entry < 0 ? undefined : shown?.name)
   return (
     <div
       role="option"
@@ -254,10 +257,11 @@ const BriefItem = memo(function BriefItem({
           ) : (
             <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} />
           )}
-          <span className="truncate">
+          <span className="truncate" style={gitNameStyle(git, marked)}>
             {prefix && <span className="text-muted">{prefix}</span>}
             {shown.kind === "dir" ? `[${shown.name}]` : shown.name}
           </span>
+          {git && <GitRowMark mark={git} />}
         </>
       ) : (
         <span className="block h-2 w-24 rounded-sm bg-skeleton" />

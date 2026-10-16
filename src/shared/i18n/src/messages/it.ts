@@ -5,6 +5,7 @@ const messages: Messages = {
   "%P this panel's folder · %T the other panel's folder · %N the name under the cursor · %S the marked names · %L a file listing the marked paths. %P%N is the full path under the cursor. Names are quoted for you.":
     "%P la cartella di questo pannello · %T la cartella dell'altro pannello · %N il nome sotto il cursore · %S i nomi selezionati · %L un file con l'elenco dei percorsi selezionati. %P%N è il percorso completo sotto il cursore. I nomi vengono messi tra virgolette automaticamente.",
   "(custom)": "(personalizzato)",
+  "(no commits yet)": "(ancora nessun commit)",
   ", {count} not readable": ", {count} non leggibili",
   "1 level": "1 livello",
   "10 levels": "10 livelli",
@@ -78,6 +79,7 @@ const messages: Messages = {
   "Add to favorites": "Aggiungi ai preferiti",
   "Add to the directory hotlist": "Aggiungi all'elenco cartelle preferite",
   "Add to the tabs": "Aggiungi alle schede",
+  Added: "Aggiunto",
   "Added to the directory hotlist.": "Aggiunta all'elenco cartelle preferite.",
   "Adding {count, plural, one {# file} other {# files}} to favorites":
     "{count, plural, one {Aggiunta di # file} many {Aggiunta di # file} other {Aggiunta di # file}} ai preferiti",
@@ -99,10 +101,14 @@ const messages: Messages = {
   "Always shown": "Sempre visibile",
   "Always trust this certificate": "Considera sempre attendibile questo certificato",
   Amount: "Quantità",
+  "Amend the last commit": "Modifica l'ultimo commit",
   "An empty date stays as it is.": "Una data vuota resta com'è.",
   "An existing file of that name opens as it is.":
     "Un file esistente con quel nome viene aperto così com'è.",
   Angle: "Angolo",
+  "And {count} more": "E altri {count}",
+  "Another Git operation is running in this repository.":
+    "In questo repository è già in corso un'altra operazione Git.",
   "Another hotlist entry has this folder.":
     "Un'altra voce della lista rapida ha già questa cartella.",
   "Another tab set has this name, or it is empty.":
@@ -176,6 +182,7 @@ const messages: Messages = {
   Bicubic: "Bicubico",
   Bilinear: "Bilineare",
   Black: "Nero",
+  Bisecting: "Bisect in corso",
   "Black and white": "Bianco e nero",
   "Black and white, more contrast": "Bianco e nero, più contrasto",
   "Black point": "Punto di nero",
@@ -194,8 +201,12 @@ const messages: Messages = {
   "Bottom right": "In basso a destra",
   "Bottom right corner": "Angolo in basso a destra",
   Box: "Riquadro",
+  "Branch name": "Nome del ramo",
   "Branch view": "Vista ramificata",
   "Branch view (all files below)": "Vista ramificata (tutti i file sottostanti)",
+  "Branch: {branch}": "Ramo: {branch}",
+  Branches: "Rami",
+  "Branches of {name}": "Rami di {name}",
   "Bright parts stand out": "Le parti chiare risaltano",
   Brighten: "Più luminoso",
   Brightness: "Luminosità",
@@ -242,6 +253,10 @@ const messages: Messages = {
     "{count, plural, one {# elemento modificato.} many {# elementi modificati.} other {# elementi modificati.}}",
   "Changed {done} of {total, plural, one {# item} other {# items}}; the rest is listed.":
     "{done} di {total, plural, one {# elemento} many {# elementi} other {# elementi}} modificati; il resto è elencato.",
+  "Changed: {count}": "Modificati: {count}",
+  Changes: "Modifiche",
+  "Changes inside: {state}": "Modifiche all'interno: {state}",
+  "Changes: {count}": "Modifiche: {count}",
   "Change…": "Cambia…",
   "Changing attributes of {count, plural, one {# item} other {# items}}":
     "{count, plural, one {Modifica degli attributi di # elemento} many {Modifica degli attributi di # elementi} other {Modifica degli attributi di # elementi}}",
@@ -258,6 +273,7 @@ const messages: Messages = {
   "Checksums created for {done, plural, one {# file} other {# files}}; {failed} failed. Details are in the queue (Ctrl+J).":
     "Checksum creati per {done, plural, one {# file} many {# file} other {# file}}; {failed} non riusciti. I dettagli sono nella coda (Ctrl+J).",
   "Checksums…": "Checksum…",
+  "Cherry-picking": "Cherry-pick in corso",
   "Choose a command…": "Scegli un comando…",
   "Choose a folder for the results.": "Scegli una cartella per i risultati.",
   "Choose a folder to use at startup": "Scegli una cartella da usare all'avvio",
@@ -265,6 +281,7 @@ const messages: Messages = {
   "Choose another picture…": "Scegli un'altra immagine…",
   "Choose another texture…": "Scegli un'altra trama…",
   "Choose folder": "Scegli cartella",
+  "Choose the files first.": "Scegliere prima i file.",
   "Choose the mask picture…": "Scegli l'immagine della maschera…",
   "Choose the two folders and press Compare.": "Scegli le due cartelle e premi Confronta.",
   "Choose two separate folders: one can't be inside the other.":
@@ -298,6 +315,7 @@ const messages: Messages = {
   "Clipped shadows": "Ombre tagliate",
   Clone: "Clona",
   Close: "Chiudi",
+  "Clock: {speed}": "Frequenza: {speed}",
   "Close (Esc)": "Chiudi (Esc)",
   "Close Panelyth?": "Chiudere Panelyth?",
   "Close app": "Chiudi l'app",
@@ -332,6 +350,17 @@ const messages: Messages = {
   "Commands run only while Commander is shown.":
     "I comandi vengono eseguiti solo mentre Commander è visualizzato.",
   Compare: "Confronta",
+  Commit: "Commit",
+  "Commit (Ctrl+Enter)": "Commit (Ctrl+Invio)",
+  "Commit and push": "Commit e push",
+  "Commit to {branch}": "Commit su {branch}",
+  "Commit, then push (Ctrl+Shift+Enter)": "Commit, poi push (Ctrl+Maiusc+Invio)",
+  "Commits to pull from {upstream}: {count}": "Commit da scaricare da {upstream}: {count}",
+  "Commits to push to {upstream}: {count}": "Commit da inviare a {upstream}: {count}",
+  "Committed: {summary}": "Commit eseguito: {summary}",
+  "Committing…": "Commit in corso…",
+  "Commit…": "Commit…",
+  "Commit… ({key})": "Commit… ({key})",
   "Compare 2 files": "Confronta 2 file",
   "Compare again": "Confronta di nuovo",
   "Compare by content": "Confronta per contenuto",
@@ -358,9 +387,12 @@ const messages: Messages = {
   "Confirmation and reminders": "Conferme e promemoria",
   Confirmations: "Conferme",
   Connect: "Connetti",
+  Conflicted: "In conflitto",
+  "Conflicts: {count}": "Conflitti: {count}",
   "Connecting to {name}…": "Connessione a {name}…",
   Connections: "Connessioni",
-  "Connections to FTP servers (Ctrl+F)": "Connessioni ai server FTP (Ctrl+F)",
+  "Connections to FTP servers": "Connessioni ai server FTP",
+  "Connections to FTP servers ({key})": "Connessioni ai server FTP ({key})",
   "Connections…": "Connessioni…",
   Console: "Console",
   Contains: "Contiene",
@@ -370,9 +402,11 @@ const messages: Messages = {
   Copied: "Copiato",
   "Copied {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elemento copiato} many {# elementi copiati} other {# elementi copiati}}",
+  "Copied: {text}": "Copiato: {text}",
   "Copies texture from where you choose": "Copia la trama dal punto che scegli",
   Copy: "Copia",
   "Copy all": "Copia tutto",
+  "Copy branch name": "Copia il nome del ramo",
   "Copy from": "Copia da",
   "Copy full paths as text": "Copia i percorsi completi come testo",
   "Copy here under a new name": "Copia qui con un nuovo nome",
@@ -385,6 +419,7 @@ const messages: Messages = {
   "Copy path": "Copia percorso",
   "Copy paths": "Copia percorsi",
   "Copy picture": "Copia immagine",
+  "Copy the commit's hash": "Copia l'hash del commit",
   "Copy the files out of the archive first, then to the server.":
     "Copia prima i file fuori dall'archivio, poi sul server.",
   "Copy the files out of the archive to compare them.":
@@ -422,13 +457,18 @@ const messages: Messages = {
   "Couldn't copy the name: {reason}": "Impossibile copiare il nome: {reason}",
   "Couldn't copy the path: {reason}": "Impossibile copiare il percorso: {reason}",
   "Couldn't copy the picture: {reason}": "Impossibile copiare l'immagine: {reason}",
+  "Couldn't count the entries.": "Impossibile contare gli elementi.",
   "Couldn't open the folder": "Impossibile aprire la cartella",
+  "Couldn't read the volumes.": "Impossibile leggere i volumi.",
+  "Couldn't read this computer's details.": "Impossibile leggere i dati di questo computer.",
+  "Count by type": "Conta per tipo",
   "Count colors": "Conta i colori",
   Counter: "Contatore",
   "Counting the pictures…": "Conteggio delle immagini…",
   "Counting…": "Conteggio…",
   Create: "Crea",
   "Create and edit": "Crea e modifica",
+  "Create and switch": "Crea e passa",
   "Create checksums": "Crea checksum",
   "Create checksums for {what}": "Crea checksum per {what}",
   "Create links stored in the archive (only those that stay inside the folder)":
@@ -438,6 +478,7 @@ const messages: Messages = {
   "Create {count, plural, one {# folder} other {# folders}}":
     "Crea {count, plural, one {# cartella} many {# cartelle} other {# cartelle}}",
   Created: "Creato",
+  "Created and switched to {branch}": "{branch} creato e attivato",
   "Created checksums for {count, plural, one {# item} other {# items}}":
     "Checksum creati per {count, plural, one {# elemento} many {# elementi} other {# elementi}}",
   "Creating checksums for {count, plural, one {# item} other {# items}}":
@@ -446,6 +487,7 @@ const messages: Messages = {
   "Creating checksums was cancelled.": "La creazione dei checksum è stata annullata.",
   Creative: "Creativo",
   Crop: "Ritaglia",
+  "Creating the branch…": "Creazione del ramo…",
   "Crop box (pixels)": "Riquadro di ritaglio (pixel)",
   "Crop box; arrow keys move it, Enter applies":
     "Riquadro di ritaglio; le frecce lo spostano, Invio applica",
@@ -489,6 +531,7 @@ const messages: Messages = {
   "Delete {name}": "Elimina {name}",
   "Delete {what} on the server?": "Eliminare {what} sul server?",
   "Delete {what} permanently?": "Eliminare definitivamente {what}?",
+  Deleted: "Eliminato",
   "Deleted {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elemento eliminato} many {# elementi eliminati} other {# elementi eliminati}}",
   "Deleted {count, plural, one {# item} other {# items}} on the server":
@@ -516,6 +559,11 @@ const messages: Messages = {
   "Direction of the selected rows": "Direzione delle righe selezionate",
   "Directory hotlist": "Elenco cartelle preferite",
   Disconnect: "Disconnetti",
+  "Discard changes": "Annulla modifiche",
+  "Discard changes to {what}?": "Annullare le modifiche a {what}?",
+  "Discard changes…": "Annulla modifiche…",
+  "Discarding changes…": "Annullamento delle modifiche…",
+  "Discarding failed": "Annullamento non riuscito",
   "Disconnect (Ctrl+Shift+F)": "Disconnetti (Ctrl+Maiusc+F)",
   Dismiss: "Chiudi",
   "Dismiss the message": "Chiudi il messaggio",
@@ -564,6 +612,7 @@ const messages: Messages = {
   "Drive menu, right panel": "Menu unità, pannello destro",
   "Drive not ready": "Unità non pronta",
   Drives: "Unità",
+  "Driver: {version}": "Driver: {version}",
   "Drives, left panel": "Unità, pannello sinistro",
   "Drives, right panel": "Unità, pannello destro",
   "Drop shadow": "Ombra esterna",
@@ -660,6 +709,11 @@ const messages: Messages = {
   "Eyedropper; arrow keys move it, Enter takes the color, Esc cancels":
     "Contagocce; le frecce lo spostano, Invio prende il colore, Esc annulla",
   Eyedroppers: "Contagocce",
+  Fetch: "Fetch",
+  "Fetch failed": "Fetch non riuscito",
+  "Fetched from the remotes": "Recuperato dai remoti",
+  "Fetching…": "Fetch in corso…",
+  "Find a branch": "Cerca un ramo",
   "Flat, neutral panels: the original Panelyth design.":
     "Pannelli piatti e neutri: il design originale di Panelyth.",
   "FTP, not encrypted": "FTP, non crittografato",
@@ -758,12 +812,14 @@ const messages: Messages = {
   "Folders can't be edited": "Le cartelle non si possono modificare",
   "Folders of the tab set": "Cartelle del set di schede",
   Font: "Carattere",
+  "Folders searched: {count}": "Cartelle esaminate: {count}",
   "Font and spacing": "Carattere e spaziatura",
   "Font and spacing size": "Dimensione di carattere e spaziatura",
   Forget: "Dimentica",
   "Forget the stored password": "Dimentica la password salvata",
   Format: "Formato",
   Forward: "Avanti",
+  "Found: {count}": "Trovati: {count}",
   "Frame color": "Colore della cornice",
   "Frame mask": "Maschera cornice",
   Free: "Libero",
@@ -783,6 +839,13 @@ const messages: Messages = {
   Gear: "Ingranaggio",
   General: "Generale",
   Geometry: "Geometria",
+  Git: "Git",
+  "Git couldn't sign in to the remote. Check your credentials or SSH key.":
+    "Git non è riuscito ad accedere al remoto. Controllare le credenziali o la chiave SSH.",
+  "Git doesn't trust this folder: it belongs to another user.":
+    "Git non si fida di questa cartella: appartiene a un altro utente.",
+  "Git repository {name}": "Repository Git {name}",
+  "Git was not found on this computer.": "Git non è stato trovato su questo computer.",
   "Go to file": "Vai al file",
   "Go to the command line": "Vai alla riga di comando",
   "Go to the command line (quick search starts with Alt)":
@@ -790,6 +853,8 @@ const messages: Messages = {
   "Go to the folder tree": "Vai all'albero delle cartelle",
   Golden: "Aurea",
   Gray: "Grigio",
+  Graphics: "Grafica",
+  "Go to the top folder": "Vai alla cartella principale",
   "Gray levels": "Livelli di grigio",
   Grayscale: "Scala di grigi",
   Green: "Verde",
@@ -818,6 +883,9 @@ const messages: Messages = {
   "Histogram of the picture before Levels": "Istogramma dell'immagine prima dei Livelli",
   "Histogram: mean brightness {mean} of 255; {low} clipped shadows, {high} clipped highlights":
     "Istogramma: luminosità media {mean} su 255; {low} di ombre tagliate, {high} di luci tagliate",
+  History: "Cronologia",
+  "History of {name}": "Cronologia di {name}",
+  "History…": "Cronologia…",
   "Hold Alt and click the picture where to copy from.":
     "Tieni premuto Alt e fai clic sull'immagine nel punto da cui copiare.",
   "Hold Alt and click where to copy from first.":
@@ -840,10 +908,12 @@ const messages: Messages = {
     "Ignora una differenza di un'ora (ora legale)",
   "Ignore dates": "Ignora le date",
   Image: "Immagine",
+  Ignored: "Ignorato",
   "Image editor": "Editor di immagini",
   "Image editor: {name}": "Editor di immagini: {name}",
   "Image viewer: {name}": "Visualizzatore immagini: {name}",
   "In one folder": "In una cartella",
+  "In use": "In uso",
   "In {folder}; an existing list of that name is replaced.":
     "In {folder}; un elenco esistente con quel nome viene sostituito.",
   "Include subfolders": "Includi sottocartelle",
@@ -866,6 +936,8 @@ const messages: Messages = {
   "Invert marks": "Inverti selezione",
   "Issued to:": "Rilasciato a:",
   Italic: "Corsivo",
+  "It starts from {branch} and becomes the current branch.":
+    "Parte da {branch} e diventa il ramo attuale.",
   "Items that failed": "Elementi non riusciti",
   "JPEG has no transparency: transparent areas become white.":
     "JPEG non ha trasparenza: le aree trasparenti diventano bianche.",
@@ -905,6 +977,7 @@ const messages: Messages = {
   "Large tiles": "Riquadri grandi",
   "Larger text (Ctrl++)": "Testo più grande (Ctrl++)",
   "Largest first": "Prima i più grandi",
+  "Last minute": "Ultimo minuto",
   "Last used": "Ultima usata",
   "Last used app": "Ultima app usata",
   "Later edits are hidden while you adjust the crop.":
@@ -946,12 +1019,20 @@ const messages: Messages = {
   "Lister: {name}": "Visualizzatore: {name}",
   "Listing…": "Elenco in corso…",
   "Listing… {count} entries so far": "Elenco in corso… finora {count} voci",
+  Live: "Dal vivo",
+  Load: "Carico",
+  "Load of each logical processor": "Carico di ogni processore logico",
+  "Loading branches…": "Caricamento dei rami…",
   "Loading…": "Caricamento…",
   Location: "Posizione",
   Locations: "Posizioni",
+  "Local changes are in the way. Commit or stash them first.":
+    "Ci sono modifiche locali di mezzo. Eseguirne prima il commit o lo stash.",
+  "Local disk": "Disco locale",
   "Lock tab": "Blocca scheda",
   Locked: "Bloccata",
   "Logarithmic scale": "Scala logaritmica",
+  "Logical processors: {count}": "Processori logici: {count}",
   "Longest first": "Prima i più lunghi",
   Longitude: "Longitudine",
   "Looking…": "Ricerca…",
@@ -992,6 +1073,11 @@ const messages: Messages = {
   Metering: "Misurazione",
   Method: "Metodo",
   Midtones: "Mezzitoni",
+  Memory: "Memoria",
+  "Memory in use": "Memoria in uso",
+  "Memory in use, last minute": "Memoria in uso, ultimo minuto",
+  Merging: "Merge in corso",
+  Message: "Messaggio",
   "Minimum rating": "Valutazione minima",
   Missing: "Mancante",
   Model: "Modello",
@@ -999,6 +1085,7 @@ const messages: Messages = {
   "Modified from": "Modificato dal",
   "Modified until": "Modificato fino al",
   "Modified {date}": "Modificato: {date}",
+  "More Git commands": "Altri comandi Git",
   "More contrast": "Più contrasto",
   "More filters": "Altri filtri",
   "More ways to save": "Altri modi per salvare",
@@ -1054,12 +1141,14 @@ const messages: Messages = {
   "Name copied": "Nome copiato",
   "Name is taken": "Nome già in uso",
   "Name mask": "Maschera del nome",
+  "Name to search for": "Nome da cercare",
   "Names are exchanged": "Nomi scambiati",
   Navigation: "Navigazione",
   "Nearest (pixel art)": "Più vicino (pixel art)",
   "Needs 7-Zip, which was not found": "Richiede 7-Zip, che non è stato trovato",
   "Needs your decision": "Richiede una tua decisione",
   Negative: "Negativo",
+  Network: "Rete",
   "Network location unavailable": "Posizione di rete non disponibile",
   "Neutral gray lets you judge colors the same way in both themes.":
     "Il grigio neutro permette di giudicare i colori allo stesso modo in entrambi i temi.",
@@ -1067,6 +1156,8 @@ const messages: Messages = {
   "Never enlarge": "Non ingrandire mai",
   New: "Nuovo",
   "New area": "Nuova area",
+  "New branch": "Nuovo ramo",
+  "New branch…": "Nuovo ramo…",
   "New command": "Nuovo comando",
   "New connection": "Nuova connessione",
   "New folder": "Nuova cartella",
@@ -1090,16 +1181,23 @@ const messages: Messages = {
   No: "No",
   "No authority this computer trusts signed it, or it is for another name. Compare the fingerprint with one you got from the server's owner before you trust it.":
     "Non è firmato da un'autorità considerata attendibile da questo computer, oppure è per un altro nome. Confronta l'impronta digitale con quella ricevuta dal proprietario del server prima di considerarlo attendibile.",
+  "No branch": "Nessun ramo",
+  "No branch matches": "Nessun ramo corrisponde",
+  "No changes": "Nessuna modifica",
+  "No commits yet": "Ancora nessun commit",
   "No connections saved yet. Add one with New, or use Quick connect.":
     "Nessuna connessione salvata. Aggiungine una con Nuova oppure usa Connessione rapida.",
   "No edits yet. Pick a tool to begin.":
     "Ancora nessuna modifica. Scegli uno strumento per iniziare.",
+  "No extension": "Senza estensione",
   "No file under the cursor": "Nessun file sotto il cursore",
+  "No files": "Nessun file",
   "No files below this folder": "Nessun file sotto questa cartella",
   "No files found": "Nessun file trovato",
   "No files match the quick filter": "Nessun file corrisponde al filtro rapido",
   "No folder open": "Nessuna cartella aperta",
   "No folders yet": "Ancora nessuna cartella",
+  "No graphics adapter was found.": "Nessuna scheda grafica trovata.",
   "No group": "Nessun gruppo",
   "No images or videos here": "Nessuna immagine o video qui",
   "No label": "Nessuna etichetta",
@@ -1132,11 +1230,14 @@ const messages: Messages = {
   "Not listed yet": "Non ancora elencato",
   "Not rated": "Non valutato",
   "Not read": "Non letto",
+  "Not ready": "Non pronto",
   "Not set": "Non impostato",
   "Not shown": "Non mostrato",
   Note: "Nota",
   Nothing: "Niente",
   "Nothing drawn yet.": "Ancora niente di disegnato.",
+  "Nothing is staged: all {count} changes will be staged and committed.":
+    "Nulla è preparato: tutte le modifiche ({count}) verranno preparate e incluse nel commit.",
   "Nothing selected": "Nessuna selezione",
   "Nothing to synchronize in the rows shown.": "Niente da sincronizzare nelle righe mostrate.",
   Now: "Adesso",
@@ -1162,6 +1263,7 @@ const messages: Messages = {
   "Only files can be compared by content.": "Solo i file possono essere confrontati per contenuto.",
   "Only files matching": "Solo file corrispondenti",
   "Only the first 20,000 folders are shown": "Vengono mostrate solo le prime 20.000 cartelle",
+  "Only the first changes are listed.": "Sono elencate solo le prime modifiche.",
   "Only the first {count} rows are listed.": "Sono elencate solo le prime {count} righe.",
   "Only the rows the table shows are synchronized. An entry that changed since the comparison is left alone and reported.":
     "Vengono sincronizzate solo le righe mostrate nella tabella. Una voce cambiata dopo il confronto viene lasciata com'è e segnalata.",
@@ -1196,9 +1298,12 @@ const messages: Messages = {
   Operations: "Operazioni",
   Orange: "Arancione",
   Order: "Ordine",
+  Optical: "Ottico",
   "Ordered 4×4": "Ordinato 4×4",
   "Ordered 8×8": "Ordinato 8×8",
   Original: "Originale",
+  Other: "Altro",
+  "Other types": "Altri tipi",
   Others: "Altri",
   "Otherwise it is stretched over the picture.": "Altrimenti viene estesa sull'immagine.",
   "Otherwise only the number written to the file changes.":
@@ -1263,6 +1368,7 @@ const messages: Messages = {
   Pencil: "Matita",
   "Pencil sketch": "Schizzo a matita",
   Percent: "Percentuale",
+  "Per processor": "Per processore",
   "Percent of the shorter edge": "Percentuale del lato più corto",
   "Permission denied": "Permesso negato",
   Permissions: "Permessi",
@@ -1318,12 +1424,27 @@ const messages: Messages = {
   "Print, 10 × 15 cm at 300 dpi": "Stampa, 10 × 15 cm a 300 dpi",
   "Prints at {w} × {h} cm ({wi} × {hi} in).": "Si stampa a {w} × {h} cm ({wi} × {hi} pollici).",
   Program: "Programma",
+  Processor: "Processore",
+  "Processor load": "Carico del processore",
+  "Processor load, last minute": "Carico del processore, ultimo minuto",
   "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.":
     "Programmi che avvii dalla barra degli strumenti, dal menu dei file o con un tasto (Scorciatoie da tastiera → Strumenti). Un comando viene eseguito solo quando lo avvii.",
   Properties: "Proprietà",
   Punch: "Deciso",
+  "Publish branch": "Pubblica il ramo",
+  Pull: "Pull",
+  "Pull failed": "Pull non riuscito",
+  "Pull with merge": "Pull con merge",
+  "Pull with rebase": "Pull con rebase",
+  "Pulled {branch}": "Pull di {branch} eseguito",
+  "Pulling…": "Pull in corso…",
   "Pupil size": "Dimensione della pupilla",
   Purple: "Viola",
+  Push: "Push",
+  "Push failed": "Push non riuscito",
+  "Push {branch} and set its upstream": "Push di {branch} e impostazione dell'upstream",
+  "Pushed {branch}": "Push di {branch} eseguito",
+  "Pushing…": "Push in corso…",
   "Put the cursor on a .sha256, .sha1, .md5 or .sfv file to verify it.":
     "Posiziona il cursore su un file .sha256, .sha1, .md5 o .sfv per verificarlo.",
   "Put the cursor on a file to compare it.": "Posiziona il cursore su un file per confrontarlo.",
@@ -1335,7 +1456,7 @@ const messages: Messages = {
   "Quick connect": "Connessione rapida",
   "Quick connect…": "Connessione rapida…",
   "Quick filter": "Filtro rapido",
-  "Quick filter (Ctrl+S); click to clear": "Filtro rapido (Ctrl+S); fai clic per cancellarlo",
+  "Quick filter ({key}); click to clear": "Filtro rapido ({key}); fai clic per cancellarlo",
   "Quick search": "Ricerca rapida",
   "Quick view": "Anteprima rapida",
   Radius: "Raggio",
@@ -1347,12 +1468,15 @@ const messages: Messages = {
   Reach: "Estensione",
   Read: "Lettura",
   "Read-only": "Sola lettura",
+  "Reading the changes…": "Lettura delle modifiche…",
+  "Reading the history…": "Lettura della cronologia…",
   "Reading the names…": "Lettura dei nomi…",
   "Reading the results…": "Lettura dei risultati…",
   "Reading…": "Lettura…",
   Recent: "Recenti",
   Recipe: "Ricetta",
   Recipes: "Ricette",
+  Rebasing: "Rebase in corso",
   "Recipes…": "Ricette…",
   "Recorded size": "Dimensione registrata",
   Rectangle: "Rettangolo",
@@ -1368,6 +1492,7 @@ const messages: Messages = {
   "Reduce noise": "Riduci il rumore",
   Refresh: "Aggiorna",
   Region: "Area",
+  "Refresh Git status": "Aggiorna lo stato Git",
   "Region to obscure; arrow keys move it": "Area da oscurare; le frecce la spostano",
   "Regular expression": "Espressione regolare",
   "Relative (yesterday at 14:05)": "Relative (ieri alle 14:05)",
@@ -1376,6 +1501,8 @@ const messages: Messages = {
   Reload: "Ricarica",
   "Remind me to save changes": "Ricordami di salvare le modifiche",
   Remove: "Rimuovi",
+  Removable: "Rimovibile",
+  "Remote branches": "Rami remoti",
   "Remove all": "Rimuovi tutto",
   "Remove bookmark": "Rimuovi segnalibro",
   "Remove from favorites": "Rimuovi dai preferiti",
@@ -1401,6 +1528,7 @@ const messages: Messages = {
   "Rename tab": "Rinomina scheda",
   "Rename tab…": "Rinomina scheda…",
   "Rename {count}": "Rinomina {count}",
+  Renamed: "Rinominato",
   "Renamed {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elemento rinominato} many {# elementi rinominati} other {# elementi rinominati}}",
   "Renamed {count, plural, one {# item} other {# items}}.":
@@ -1456,9 +1584,13 @@ const messages: Messages = {
   "Restart to update": "Riavvia per aggiornare",
   Results: "Risultati",
   Resume: "Riprendi",
+  "Restored: {restored}": "Ripristinati: {restored}",
+  "Restored: {restored}. Untracked files kept: {left}":
+    "Ripristinati: {restored}. File non tracciati mantenuti: {left}",
   "Retouch area; arrow keys move the cross, Enter applies there, Alt+Enter sets the source":
     "Area di ritocco; le frecce spostano la croce, Invio applica lì, Alt+Invio imposta l'origine",
   Retry: "Riprova",
+  Reverting: "Revert in corso",
   "Review and customize the keys used for navigation, file actions, and the viewer.":
     "Rivedi e personalizza i tasti per la navigazione, le azioni sui file e Viewer.",
   Right: "Destra",
@@ -1521,6 +1653,7 @@ const messages: Messages = {
   "Saving {name}…": "Salvataggio di {name}…",
   "Saving…": "Salvataggio…",
   "Screen (lightens)": "Scolora (schiarisce)",
+  Search: "Cerca",
   "Search actions": "Cerca azioni",
   "Search at most {count} folders.": "Cerca al massimo in {count} cartelle.",
   "Search file names": "Cerca nei nomi dei file",
@@ -1532,6 +1665,7 @@ const messages: Messages = {
   "Search results have no folder for a list":
     "I risultati di ricerca non hanno una cartella per un elenco",
   "Search results: {label}": "Risultati della ricerca: {label}",
+  "Search the volumes": "Cerca nei volumi",
   "Search this folder": "Cerca in questa cartella",
   "Search this folder and subfolders": "Cerca in questa cartella e sottocartelle",
   "Search:": "Cerca:",
@@ -1577,10 +1711,14 @@ const messages: Messages = {
   Shortcuts: "Scorciatoie",
   "Shortest first": "Prima i più brevi",
   Show: "Mostra",
+  "Show Git status in the folders of a repository":
+    "Mostra lo stato Git nelle cartelle di un repository",
   "Show all operations (Ctrl+J)": "Mostra tutte le operazioni (Ctrl+J)",
+  "Show all types": "Mostra tutti i tipi",
   "Show columns (drag to reorder)": "Mostra colonne (trascina per riordinare)",
   "Show file names under tiles": "Mostra i nomi dei file sotto i riquadri",
   "Show hidden files": "Mostra file nascosti",
+  "Show in Commander": "Mostra in Commander",
   "Show in file manager": "Mostra nel gestore file",
   "Show in folder": "Mostra nella cartella",
   "Show in the menu of files": "Mostra nel menu dei file",
@@ -1607,7 +1745,9 @@ const messages: Messages = {
   "Show the palette": "Mostra la tavolozza",
   "Show the panel": "Mostra il pannello",
   "Show the toolbar": "Mostra la barra degli strumenti",
+  "Show up to {count} types": "Mostra fino a {count} tipi",
   "Show {count} parent folders": "Mostra {count} cartelle superiori",
+  "Showing the first results only.": "Vengono mostrati solo i primi risultati.",
   "Showing the first {shown} of {total}.": "Vengono mostrati i primi {shown} di {total}.",
   "Showing the first {shown} of {total}. Use the commander's lister (F3 hex view) or an editor (F4) for the rest.":
     "Vengono mostrati i primi {shown} di {total}. Per il resto usa il visualizzatore di Commander (F3, vista esadecimale) o un editor (F4).",
@@ -1647,6 +1787,15 @@ const messages: Messages = {
   Spacing: "Spaziatura",
   Specified: "Specificata",
   Spot: "Spot",
+  Stage: "Prepara",
+  "Stage all": "Prepara tutto",
+  "Stage all and commit": "Prepara tutto e fai il commit",
+  "Stage {path}": "Prepara {path}",
+  Staged: "Preparate",
+  "Staged changes to commit: {count}": "Modifiche preparate per il commit: {count}",
+  "Staged: {count}": "Preparate: {count}",
+  "Staging failed": "Preparazione non riuscita",
+  "Staging…": "Preparazione…",
   "Stamp there": "Timbra lì",
   Star: "Stella",
   Start: "Avvia",
@@ -1665,6 +1814,8 @@ const messages: Messages = {
   "Stopped at the result limit": "Interrotto al limite dei risultati",
   "Stopped. Compare again to see the differences.":
     "Interrotto. Confronta di nuovo per vedere le differenze.",
+  Storage: "Archiviazione",
+  "Storage in use, all volumes": "Spazio in uso, tutti i volumi",
   "Store (no compression)": "Archivia (nessuna compressione)",
   Straight: "Retta",
   Straighten: "Raddrizza",
@@ -1674,15 +1825,21 @@ const messages: Messages = {
     "I tratti restano tratti finché non salvi: la gomma toglie l'inchiostro, mai l'immagine sotto.",
   "Strong black and white": "Bianco e nero intenso",
   Style: "Stile",
+  "Summary on the first line, details below": "Riepilogo nella prima riga, dettagli sotto",
   "Swap channels": "Scambia i canali",
   "Swap panels": "Scambia i pannelli",
+  "Switch branch": "Cambia ramo",
+  "Switch branch…": "Cambia ramo…",
   "Switch to Commander": "Passa a Commander",
   "Switch to Viewer": "Passa a Viewer",
   "Switch to {app}": "Passa a {app}",
   "Switched off": "Disattivato",
   "Switched on": "Attivato",
+  "Switched to {branch}": "Passato a {branch}",
   "Switching apps": "Cambio di app",
   Synchronize: "Sincronizza",
+  "Switching branch…": "Cambio di ramo…",
+  "Switching failed": "Cambio non riuscito",
   "Synchronize directories": "Sincronizza cartelle",
   "Synchronized {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elemento sincronizzato} many {# elementi sincronizzati} other {# elementi sincronizzati}}",
@@ -1744,6 +1901,7 @@ const messages: Messages = {
   "The archive test was cancelled.": "La verifica dell'archivio è stata annullata.",
   "The background service could not be started. Restart Panelyth; details are in the log.":
     "Impossibile avviare il servizio in background. Riavvia Panelyth; i dettagli sono nel registro.",
+  "The branch was not created": "Il ramo non è stato creato",
   "The brush is measured in pixels of the full picture.":
     "Il pennello è misurato in pixel dell'immagine intera.",
   "The certificate of {name} can't be verified": "Impossibile verificare il certificato di {name}",
@@ -1757,6 +1915,7 @@ const messages: Messages = {
   "The command line of {command} gets too long. Use %L for marked files.":
     "La riga di comando di {command} diventa troppo lunga. Usa %L per i file selezionati.",
   "The commander is not enabled": "Commander non è abilitato",
+  "The commit failed": "Il commit non è riuscito",
   "The comparison is no longer available. Compare again.":
     "Il confronto non è più disponibile. Confronta di nuovo.",
   "The comparison was cancelled.": "Il confronto è stato annullato.",
@@ -1796,6 +1955,8 @@ const messages: Messages = {
   "The files are different.": "I file sono diversi.",
   "The files are identical.": "I file sono identici.",
   "The files could not be compared.": "Impossibile confrontare i file.",
+  "The first line is {count} characters; 72 or fewer reads best.":
+    "La prima riga ha {count} caratteri; 72 o meno si legge meglio.",
   "The first {count} are shown.": "Vengono mostrati i primi {count}.",
   "The folder": "La cartella",
   "The folder changed. Select the items again.":
@@ -1807,6 +1968,7 @@ const messages: Messages = {
     "La cornice copre il bordo invece di ingrandire l'immagine.",
   "The full path of a program, or empty.": "Il percorso completo di un programma, oppure vuoto.",
   "The home folder is not known.": "La cartella home non è nota.",
+  "The last commit gets the new message.": "L'ultimo commit riceve il nuovo messaggio.",
   "The left panel's ({tabs})": "Quelle del pannello sinistro ({tabs})",
   "The mask can't be used: {reason}": "La maschera non può essere usata: {reason}",
   "The minimum size is larger than the maximum.": "La dimensione minima è maggiore della massima.",
@@ -1837,8 +1999,12 @@ const messages: Messages = {
     "La ricetta non è stata eseguita e non è salvata. Salvala in Ricette per riutilizzarla.",
   "The recipe is shown on samples of the selection. It runs on every picture.":
     "La ricetta è mostrata su esempi della selezione. Viene applicata a ogni immagine.",
+  "The remote has commits you don't have. Pull first, then push.":
+    "Il remoto ha commit che non hai. Esegui prima il pull, poi il push.",
   "The resolution is 1 to 10,000 dpi.": "La risoluzione va da 1 a 10.000 dpi.",
   "The right panel's ({tabs})": "Quelle del pannello destro ({tabs})",
+  "The search couldn't start.": "Impossibile avviare la ricerca.",
+  "The search failed.": "La ricerca non è riuscita.",
   "The search results are no longer available.":
     "I risultati della ricerca non sono più disponibili.",
   "The selection": "La selezione",
@@ -1873,12 +2039,15 @@ const messages: Messages = {
   "Theme: {theme}": "Tema: {theme}",
   "Then by": "Poi per",
   "Then order": "Ordine secondario",
+  "There are conflicts. Resolve them, stage the files, then commit.":
+    "Ci sono conflitti. Risolverli, preparare i file, poi eseguire il commit.",
   "There is no file to compare with in the other panel.":
     "Nell'altro pannello non c'è un file con cui confrontare.",
   "There is no multi-rename to undo.": "Non c'è nessuna rinomina multipla da annullare.",
   "There is no room for another tab set. Remove one first.":
     "Non c'è spazio per un altro set di schede. Rimuovine prima uno.",
   "There is no such file or folder on the server.": "Il file o la cartella non esiste sul server.",
+  "There is nothing to commit.": "Non c'è nulla da includere nel commit.",
   "There was no file to compare.": "Non c'era alcun file da confrontare.",
   "These are not text files; their bytes are compared.":
     "Non sono file di testo; vengono confrontati i byte.",
@@ -1890,6 +2059,8 @@ const messages: Messages = {
   "This and every later conflict of this job":
     "Questo e ogni conflitto successivo di questa attività",
   "This batch can no longer be undone.": "Questa serie non può più essere annullata.",
+  "This branch has no upstream branch on a remote.":
+    "Questo ramo non ha un ramo upstream su un remoto.",
   "This build does not update itself.": "Questa build non si aggiorna da sola.",
   "This can't be undone.": "Questa operazione non può essere annullata.",
   "This closes {count, plural, one {# locked tab} other {# locked tabs}}. Choose “Open” again to go on.":
@@ -1897,6 +2068,7 @@ const messages: Messages = {
   "This command can't be saved. Remove line breaks and try again.":
     "Questo comando non può essere salvato. Rimuovi le interruzioni di riga e riprova.",
   "This command no longer exists.": "Questo comando non esiste più.",
+  "This computer": "Questo computer",
   "This computer has no secure store for passwords, so the password was not saved.":
     "Questo computer non ha un archivio sicuro per le password, quindi la password non è stata salvata.",
   "This computer has no secure store for passwords. Passwords are not saved; you are asked each time.":
@@ -1921,6 +2093,7 @@ const messages: Messages = {
   "This folder is already in the directory hotlist.":
     "Questa cartella è già nell'elenco cartelle preferite.",
   "This folder is empty": "Questa cartella è vuota",
+  "This folder is not in a Git repository.": "Questa cartella non è in un repository Git.",
   "This folder no longer exists.": "Questa cartella non esiste più.",
   "This format can't be written.": "Questo formato non può essere scritto.",
   "This format isn't supported by the built-in player.":
@@ -1945,6 +2118,7 @@ const messages: Messages = {
     "Questa immagine è troppo grande per essere modificata (il limite è di 100 megapixel).",
   "This recipe was made by a newer version of Panelyth.":
     "Questa ricetta è stata creata con una versione più recente di Panelyth.",
+  "This repository has no remote.": "Questo repository non ha un remoto.",
   "This video can't be opened": "Impossibile aprire questo video",
   "This video can't be played here": "Questo video non può essere riprodotto qui",
   "This video is damaged": "Questo video è danneggiato",
@@ -1984,6 +2158,8 @@ const messages: Messages = {
   "Top right": "In alto a destra",
   "Top right corner": "Angolo in alto a destra",
   "Total size": "Dimensione totale",
+  "Tracked files go back to their last committed state. Untracked files are kept. This can't be undone.":
+    "I file tracciati tornano all'ultimo stato del commit. I file non tracciati vengono mantenuti. L'operazione non è annullabile.",
   "Transfers at once": "Trasferimenti contemporanei",
   "Transfers at once: 1 to {max}.": "Trasferimenti contemporanei: da 1 a {max}.",
   Transparent: "Trasparente",
@@ -1994,7 +2170,10 @@ const messages: Messages = {
   "Two arrows": "Due frecce",
   "Two pages": "Due pagine",
   Type: "Tipo",
+  "Type part of a name. No wildcards needed.":
+    "Digitare parte di un nome. Non servono caratteri jolly.",
   "Type the text in the panel first.": "Scrivi prima il testo nel pannello.",
+  "Type to filter": "Digita per filtrare",
   "Typed letters": "Lettere digitate",
   Uncalibrated: "Non calibrato",
   Unchanged: "Invariato",
@@ -2025,7 +2204,15 @@ const messages: Messages = {
   "Unpack…": "Estrai…",
   "Unpin column": "Rimuovi blocco colonna",
   Up: "Su",
+  Unstage: "Rimuovi dalla preparazione",
+  "Unstage all": "Rimuovi tutto dalla preparazione",
+  "Unstaging failed": "Rimozione dalla preparazione non riuscita",
+  "Unstaging…": "Rimozione dalla preparazione…",
+  Untracked: "Non tracciato",
+  "Untracked: {count}": "Non tracciati: {count}",
+  "Up for {time}": "Acceso da {time}",
   "Up one folder": "Su di una cartella",
+  "Up to date with {upstream}. Click to fetch.": "Allineato a {upstream}. Fare clic per il fetch.",
   "Update available": "Aggiornamento disponibile",
   Updates: "Aggiornamenti",
   "Updating drives…": "Aggiornamento delle unità…",
@@ -2041,6 +2228,7 @@ const messages: Messages = {
   "Use / to create folders inside each other, e.g. 2026/Trip/Raw.":
     "Usa / per creare cartelle una dentro l'altra, ad es. 2026/Viaggio/Raw.",
   "Use {name}": "Usa {name}",
+  Used: "Usato",
   "User name": "Nome utente",
   "User name (empty: anonymous)": "Nome utente (vuoto: anonimo)",
   "Verified {count, plural, one {# item} other {# items}}":
@@ -2070,6 +2258,8 @@ const messages: Messages = {
   Vivid: "Vivido",
   Volume: "Volume",
   Waiting: "In attesa",
+  "Volumes to search": "Volumi in cui cercare",
+  "Volumes: {count}": "Volumi: {count}",
   "Waiting for an answer": "In attesa di una risposta",
   "Waiting for the server…": "In attesa del server…",
   Warm: "Caldo",
@@ -2125,6 +2315,8 @@ const messages: Messages = {
   "You can restore them from the trash.": "Puoi ripristinarli dal cestino.",
   "You don't have permission to open this folder.":
     "Non hai il permesso di aprire questa cartella.",
+  "Your branch and the remote have both moved on. Pull with rebase or merge.":
+    "Il tuo ramo e il remoto sono entrambi avanzati. Esegui il pull con rebase o merge.",
   "Your commands": "I tuoi comandi",
   "Z to A": "Dalla Z alla A",
   Zoom: "Zoom",
@@ -2160,6 +2352,7 @@ const messages: Messages = {
   "draw brush pen eraser line arrow rectangle ellipse text fill":
     "disegna pennello penna gomma linea freccia rettangolo ellisse testo riempi",
   failed: "non riuscito",
+  "feature/my-change": "feature/mia-modifica",
   "flip mirror horizontal vertical": "rifletti specchio orizzontale verticale",
   "frame mask vignette oval circle feather":
     "maschera cornice vignettatura ovale cerchio sfumatura",
@@ -2207,6 +2400,7 @@ const messages: Messages = {
   "with transparency": "con trasparenza",
   "{action} to {destination}": "{action} in {destination}",
   "{app} (current app)": "{app} (app corrente)",
+  "{branch} is up to date": "{branch} è aggiornato",
   "{codec} audio isn't supported by the built-in player.":
     "Il lettore integrato non supporta l'audio {codec}.",
   "{codec} video isn't supported by the built-in player.":
@@ -2217,6 +2411,7 @@ const messages: Messages = {
     "{command} richiede un file: posiziona il cursore su un file o selezionane alcuni.",
   "{command} needs a folder in the other panel.":
     "{command} richiede una cartella nell'altro pannello.",
+  "{commit} (detached)": "{commit} (scollegato)",
   "{copied} (the first 10,000)": "{copied} (i primi 10.000)",
   "{count, plural, one {# archive} other {# archives}} tested: no errors.":
     "{count, plural, one {# archivio verificato} many {# archivi verificati} other {# archivi verificati}}: nessun errore.",
@@ -2298,6 +2493,7 @@ const messages: Messages = {
     "{count, plural, one {# video} many {# video} other {# video}}",
   "{count, plural, one {The file is identical.} other {All # files are identical.}}":
     "{count, plural, one {Il file è identico.} many {Tutti i # file sono identici.} other {Tutti i # file sono identici.}}",
+  "{counts}. Click to commit.": "{counts}. Fare clic per il commit.",
   "{count} differences (the first {shown} can be stepped through)":
     "{count} differenze (si possono scorrere le prime {shown})",
   "{count} failed": "{count} non riusciti",
@@ -2353,11 +2549,15 @@ const messages: Messages = {
   "{size} (Ctrl + scroll to change)": "{size} (Ctrl + scorrimento per cambiare)",
   "{size} ({bytes} bytes)": "{size} ({bytes} byte)",
   "{stars} or more": "{stars} o più",
+  "{state}, partly staged": "{state}, preparato in parte",
+  "{state}, staged": "{state}, preparato",
   "{time} left": "{time} rimanenti",
   "{tool} has a setting that can't be used: {detail}":
     "{tool} ha un'impostazione che non si può usare: {detail}",
   "{tool} works on one picture at a time.": "{tool} funziona su un'immagine alla volta.",
   "{tool}: choose its picture again.": "{tool}: scegli di nuovo la sua immagine.",
+  "{used} of {total} in use, {free} free": "{used} di {total} in uso, {free} liberi",
+  "{volume} in use": "{volume} in uso",
   "{w} × {h} pixels": "{w} × {h} pixel",
   "“{name}” already exists": "«{name}» esiste già",
   "“{path}” doesn't exist. Check the folder.": "“{path}” non esiste. Controlla la cartella.",

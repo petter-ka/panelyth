@@ -8,7 +8,12 @@ import type { ComponentProps, ReactNode } from "react"
 import { CheckIcon, ChevronRightIcon } from "./icons"
 
 const content =
-  "glass-float motion-pop z-50 min-w-48 overflow-hidden rounded-md border border-border bg-raised p-1 text-xs text-text shadow-lg shadow-black/30"
+  "glass-float motion-pop z-50 min-w-48 overflow-y-auto rounded-md border border-border bg-raised p-1 text-xs text-text shadow-lg shadow-black/30"
+// A menu taller than the room around it scrolls instead of running past the
+// window's edge: as high as Radix finds room for, an edge's width from it.
+const contextFit = "max-h-(--radix-context-menu-content-available-height)"
+const dropdownFit = "max-h-(--radix-dropdown-menu-content-available-height)"
+const EDGE = 8
 const item =
   "group relative flex h-7 cursor-default select-none items-center gap-2 rounded-[3px] pr-2 pl-7 outline-none data-[disabled]:text-muted data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground"
 const separator = "my-1 h-px bg-border"
@@ -30,7 +35,7 @@ export function ContextMenuContent({
 }: ComponentProps<typeof ContextMenu.Content>) {
   return (
     <ContextMenu.Portal>
-      <ContextMenu.Content className={content} {...rest}>
+      <ContextMenu.Content className={`${content} ${contextFit}`} collisionPadding={EDGE} {...rest}>
         {children}
       </ContextMenu.Content>
     </ContextMenu.Portal>
@@ -69,7 +74,9 @@ export function ContextMenuSub({ label: text, children }: { label: string; child
         <ChevronRightIcon size={12} className="ml-auto" />
       </ContextMenu.SubTrigger>
       <ContextMenu.Portal>
-        <ContextMenu.SubContent className={content}>{children}</ContextMenu.SubContent>
+        <ContextMenu.SubContent className={`${content} ${contextFit}`} collisionPadding={EDGE}>
+          {children}
+        </ContextMenu.SubContent>
       </ContextMenu.Portal>
     </ContextMenu.Sub>
   )
@@ -102,7 +109,13 @@ export function DropdownContent({
 }: ComponentProps<typeof DropdownMenu.Content>) {
   return (
     <DropdownMenu.Portal>
-      <DropdownMenu.Content className={content} sideOffset={4} align="start" {...rest}>
+      <DropdownMenu.Content
+        className={`${content} ${dropdownFit}`}
+        sideOffset={4}
+        align="start"
+        collisionPadding={EDGE}
+        {...rest}
+      >
         {children}
       </DropdownMenu.Content>
     </DropdownMenu.Portal>
@@ -134,7 +147,11 @@ export function DropdownSub({ label: text, children }: { label: ReactNode; child
         </span>
       </DropdownMenu.SubTrigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.SubContent className={content} sideOffset={4}>
+        <DropdownMenu.SubContent
+          className={`${content} ${dropdownFit}`}
+          sideOffset={4}
+          collisionPadding={EDGE}
+        >
           {children}
         </DropdownMenu.SubContent>
       </DropdownMenu.Portal>

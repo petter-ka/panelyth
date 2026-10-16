@@ -1,3 +1,4 @@
+import type { GitProgress } from "./git"
 import type { EditRequestEvent } from "./edit"
 import type { MenuCommandEvent, UpdateState } from "./update"
 import type {
@@ -106,6 +107,8 @@ export interface EventMap {
   "connections.changed": { connections: SavedConnection[] }
   /** A search's progress (Stage C06, commander); results arrive through query.invalidated. */
   "find.progress": FindProgress
+  /** A Git run's progress and its end (ADR-0043, commander). */
+  "git.progress": GitProgress
   /** A directory compare's progress (Stage C08, commander); rows arrive through query.invalidated. */
   "compare.progress": CompareProgress
   /** From main, to the window that opened a media window: find that window's next item (media.windowAnswer replies). */
@@ -137,6 +140,7 @@ export const EVENT_CHANNELS = [
   "connections.changed",
   "find.progress",
   "compare.progress",
+  "git.progress",
   "mediaWindow.step",
   "edit.request",
   "open.request",
@@ -157,6 +161,7 @@ export const SIDECAR_EVENT_CHANNELS = [
   "connections.changed",
   "find.progress",
   "compare.progress",
+  "git.progress",
 ] as const satisfies readonly EventChannel[]
 
 /** Payload of the single Electron push channel (IPC_EVENT). */

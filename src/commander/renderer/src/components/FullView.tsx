@@ -1,3 +1,5 @@
+import { useGitMark } from "../features/git"
+import { gitNameStyle, GitRowMark } from "./Git"
 import type { ContentItem } from "@panelyth/contracts"
 import { isMarked, usePageItem, type PageStore } from "@panelyth/renderer-core"
 import {
@@ -154,8 +156,9 @@ const COLUMNS = helper.columns([
 const RIGHT = new Set<ColumnId>(["size"])
 const SECONDARY = new Set<ColumnId>(["size", "date", "attr"])
 const MONO = new Set<ColumnId>(["ext", "size", "date", "attr"])
-// Date and time are the longest values in a row: a step smaller, so they read as detail.
-const SMALL = new Set<ColumnId>(["date"])
+// The detail columns (extension, size, date, attributes) are a step smaller than
+// the name, so the name leads the row and the rest reads as detail.
+const SMALL = new Set<ColumnId>(["ext", "size", "date", "attr"])
 
 const cellClass = (id: ColumnId, marked = false): string => {
   const alignment = RIGHT.has(id) ? " text-right" : ""
@@ -872,6 +875,7 @@ function Cells({
   // Enter on this folder or archive is still being answered (a slow drive).
   const opening = useListingStore((s) => s[side].loading && s[side].loadingTarget === item.id)
   const prefix = folderPrefix(item.dirPath, panelPath)
+  const git = useGitMark(side, item.name)
   return (
     <>
       {columns.map((column) => (
@@ -899,11 +903,12 @@ function Cells({
               {renaming ? (
                 <RenameField onDone={() => focusGrid(side)} />
               ) : (
-                <span className="truncate">
+                <span className="truncate" style={gitNameStyle(git, marked)}>
                   {prefix && <span className="text-muted">{prefix}</span>}
                   {baseName(item)}
                 </span>
               )}
+              {git && !renaming && <GitRowMark mark={git} />}
             </>
           ) : column.id === "ext" ? (
             item.kind === "dir" ? (

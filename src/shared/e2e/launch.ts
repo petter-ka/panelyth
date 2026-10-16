@@ -163,22 +163,20 @@ export async function waitForExit(pid: number, ms = 5_000): Promise<boolean> {
 }
 
 /** The shell's state (main process test hook): the visible app and whether the commander view exists. */
-export function shellState(
-  app: ElectronApplication,
-): Promise<{ active: string | null; commanderCreated: boolean; commanderEnabled: boolean }> {
+export interface ShellState {
+  active: string | null
+  commanderCreated: boolean
+  systemCreated: boolean
+  commanderEnabled: boolean
+}
+
+export function shellState(app: ElectronApplication): Promise<ShellState> {
   return app.evaluate(
     () =>
-      (
-        globalThis as {
-          __panelythShellState?: () => {
-            active: string | null
-            commanderCreated: boolean
-            commanderEnabled: boolean
-          }
-        }
-      ).__panelythShellState?.() ?? {
+      (globalThis as { __panelythShellState?: () => ShellState }).__panelythShellState?.() ?? {
         active: null,
         commanderCreated: false,
+        systemCreated: false,
         commanderEnabled: false,
       },
   )
@@ -192,6 +190,17 @@ export async function commanderPage(app: ElectronApplication, timeoutMs = 10_000
     const page = app.windows().find((p) => p.url().startsWith("app://commander/index.html"))
     if (page) return page
     if (Date.now() > deadline) throw new Error("commander view not found")
+    await new Promise((r) => setTimeout(r, 25))
+  }
+}
+
+/** Panelyth System's view (ADR-0042), once it was opened from the rail. */
+export async function systemPage(app: ElectronApplication, timeoutMs = 10_000): Promise<Page> {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const page = app.windows().find((p) => p.url().startsWith("app://system/index.html"))
+    if (page) return page
+    if (Date.now() > deadline) throw new Error("system view not found")
     await new Promise((r) => setTimeout(r, 25))
   }
 }

@@ -31,3 +31,22 @@
     stroke-dashoffset: 44;
   }
 }
+
+/*
+ * A Git run that gives no percent (ADR-0043): a short bar slides along the
+ * Git bar's bottom edge; it stands still without motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .git-indeterminate {
+    animation: git-slide 1.1s ease-in-out infinite;
+  }
+}
+
+@keyframes git-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(300%);
+  }
+}

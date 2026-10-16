@@ -1,3 +1,19 @@
+import {
+  GIT_OPS,
+  GIT_STATES,
+  MAX_GIT_CHANGES,
+  MAX_GIT_MARKS,
+  type GitBranchesResult,
+  type GitCancelResult,
+  type GitChangesResult,
+  type GitLogResult,
+  type GitMark,
+  type GitProgress,
+  type GitRepo,
+  type GitRunResult,
+  type GitState,
+  type GitStatusResult,
+} from "./git"
 // Small runtime guards for untrusted input crossing a process boundary.
 // Deliberately dependency-free; checks shape, not semantics.
 import {
@@ -656,6 +672,50 @@ export const sidecarResultGuards: ResultGuards = {
   "diff.page": (v): v is TextDiffPageResult =>
     isRec(v) && isCount(v.offset) && arrayOf(v.rows, isTextDiffRow),
   "diff.close": isOk,
+  "git.status": isGitStatusResult,
+  "git.changes": (v): v is GitChangesResult =>
+    isRec(v) &&
+    isInt(v.changesId) &&
+    isBool(v.truncated) &&
+    Array.isArray(v.entries) &&
+    v.entries.length <= MAX_GIT_CHANGES &&
+    v.entries.every(
+      (e) =>
+        isRec(e) &&
+        isStr(e.path) &&
+        isStr(e.orig) &&
+        isGitState(e.state) &&
+        isBool(e.staged) &&
+        isBool(e.unstaged),
+    ),
+  "git.run": (v): v is GitRunResult => isRec(v) && isInt(v.opId),
+  "git.cancel": (v): v is GitCancelResult => isRec(v) && isBool(v.cancelled),
+  "git.branches": (v): v is GitBranchesResult =>
+    isRec(v) &&
+    isBool(v.truncated) &&
+    Array.isArray(v.branches) &&
+    v.branches.every(
+      (b) =>
+        isRec(b) &&
+        isStr(b.name) &&
+        isBool(b.remote) &&
+        isBool(b.current) &&
+        isStr(b.upstream) &&
+        isStr(b.subject) &&
+        isInt(b.when),
+    ),
+  "git.log": (v): v is GitLogResult =>
+    isRec(v) &&
+    Array.isArray(v.entries) &&
+    v.entries.every(
+      (e) =>
+        isRec(e) &&
+        isStr(e.hash) &&
+        isStr(e.author) &&
+        isInt(e.when) &&
+        isStr(e.subject) &&
+        isStr(e.refs),
+    ),
   "rename.preview": (v): v is RenamePreviewResult =>
     isRec(v) &&
     isCount(v.total) &&
@@ -977,6 +1037,77 @@ export function isCompareProgress(v: unknown): v is CompareProgress {
   )
 }
 
+const GIT_RUN_STATES: readonly unknown[] = ["running", "completed", "failed", "cancelled"]
+const isGitState = (v: unknown): v is GitState => (GIT_STATES as readonly unknown[]).includes(v)
+
+const isGitMark = (v: unknown): v is GitMark =>
+  isRec(v) &&
+  isStr(v.name) &&
+  isGitState(v.state) &&
+  isBool(v.staged) &&
+  isBool(v.unstaged) &&
+  isBool(v.below)
+
+const GIT_OPERATIONS: readonly unknown[] = [
+  "",
+  "merging",
+  "rebasing",
+  "cherryPicking",
+  "reverting",
+  "bisecting",
+]
+
+const isGitRepo = (v: unknown): v is GitRepo =>
+  isRec(v) &&
+  isInt(v.repoId) &&
+  isStr(v.root) &&
+  isStr(v.name) &&
+  isStr(v.rel) &&
+  isStr(v.branch) &&
+  isStr(v.head) &&
+  isBool(v.unborn) &&
+  isStr(v.upstream) &&
+  isCount(v.ahead) &&
+  isCount(v.behind) &&
+  isCount(v.stashes) &&
+  GIT_OPERATIONS.includes(v.operation) &&
+  isRec(v.counts) &&
+  isCount(v.counts.staged) &&
+  isCount(v.counts.changed) &&
+  isCount(v.counts.untracked) &&
+  isCount(v.counts.conflicted)
+
+export function isGitStatusResult(v: unknown): v is GitStatusResult {
+  return (
+    isRec(v) &&
+    isBool(v.available) &&
+    (v.repo === null || isGitRepo(v.repo)) &&
+    Array.isArray(v.marks) &&
+    v.marks.length <= MAX_GIT_MARKS &&
+    v.marks.every(isGitMark) &&
+    (v.inherited === "" || isGitState(v.inherited)) &&
+    isBool(v.truncated) &&
+    (v.problem === null ||
+      (isRec(v.problem) && isStr(v.problem.message) && isStr(v.problem.reason)))
+  )
+}
+
+export function isGitProgress(v: unknown): v is GitProgress {
+  return (
+    isRec(v) &&
+    isInt(v.opId) &&
+    isInt(v.repoId) &&
+    (GIT_OPS as readonly unknown[]).includes(v.op) &&
+    GIT_RUN_STATES.includes(v.state) &&
+    isStr(v.phase) &&
+    isInt(v.percent) &&
+    isStr(v.message) &&
+    isStr(v.reason) &&
+    isInt(v.restored) &&
+    isInt(v.left)
+  )
+}
+
 export const eventGuards: EventGuards = {
   "sidecar.status": (v): v is SidecarStatus =>
     isRec(v) && isStr(v.state) && isNum(v.restarts) && isNum(v.since),
@@ -1007,6 +1138,7 @@ export const eventGuards: EventGuards = {
     v.connections.every(isSavedConnection),
   "find.progress": isFindProgress,
   "compare.progress": isCompareProgress,
+  "git.progress": isGitProgress,
   "mediaWindow.step": (v): v is EventMap["mediaWindow.step"] =>
     isRec(v) &&
     isInt(v.requestId) &&

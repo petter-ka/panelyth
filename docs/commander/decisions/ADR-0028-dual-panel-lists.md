@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted (2026-10-05, Stage C01). Proposed and revised the same day (owner direction): the Full (table) view uses
+Accepted (2026-10-05, Stage C01). Amended by ADR-0043 (2026-10-16): rows in a Git repository colour their name and end with a
+status letter (or a dot for a folder with changes inside); the row stays one component and one store read. Proposed and revised the same day (owner direction): the Full (table) view uses
 TanStack Table with TanStack Virtual; the Brief (list) and Thumbnails (tile) views use `@tanstack/react-virtual`.
 
 Stage C01 built the Full view this way and measured it: 100k-entry folders scroll with 0 long tasks and a 7 ms p95

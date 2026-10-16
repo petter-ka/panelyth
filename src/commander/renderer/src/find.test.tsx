@@ -1,14 +1,16 @@
 import { ENTRY_ATTRS, type Crumb } from "@panelyth/contracts"
 import { useInterfaceSizeStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"
 import { AppShell } from "./components/AppShell"
 import { resetCarry, startPanels } from "./features/carry"
 import { buildSpec, DEFAULT_FORM, HISTORY_KEY, resetFind, startFind } from "./features/find"
 import { folderPrefix } from "./features/format"
-import { resetListing, useListingStore } from "./features/listing"
+import { quickFilterMask, resetListing, setFilter, useListingStore } from "./features/listing"
 import { usePanelsStore } from "./features/panels"
+import { typesFilter, typesOf } from "./components/TypeCounts"
 import { folder, installFakeCommander, item } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
 import { SETTINGS_KEY } from "./features/settings"
@@ -258,27 +260,145 @@ describe("branch view (Ctrl+B)", () => {
   })
 })
 
-describe("quick filter (Ctrl+S)", () => {
-  it("filters live without a rescan, shows the mask, and Esc clears it", async () => {
+describe("quick filter (Ctrl+F)", () => {
+  it("is plain text: it matches anywhere in a name, its words in the order typed", () => {
+    expect(quickFilterMask("")).toBe("")
+    expect(quickFilterMask("  ")).toBe("")
+    expect(quickFilterMask("holiday")).toBe("*holiday*")
+    expect(quickFilterMask(" my  file ")).toBe("*my*file*")
+    // Brackets and dots are literal in a mask too.
+    expect(quickFilterMask("[2024] v1.2")).toBe("*[2024]*v1.2*")
+    // A mask typed on purpose is used as it is.
+    expect(quickFilterMask("*.jpg")).toBe("*.jpg")
+    expect(quickFilterMask("img_??")).toBe("img_??")
+    expect(quickFilterMask("*.jpg;*.png|*_small.*")).toBe("*.jpg;*.png|*_small.*")
+  })
+
+  it("filters as you type, without a rescan, shows what was typed, and Esc clears it", async () => {
     const fake = await start()
     const opens = fake.api.dir.open.mock.calls.length
-    await key("left", { key: "s", ctrlKey: true })
+    await key("left", { key: "f", ctrlKey: true })
     const input = await screen.findByRole("textbox", { name: "Quick filter" })
     await waitFor(() => expect(input).toHaveFocus())
-    fireEvent.change(input, { target: { value: "file000001*" } })
-    await waitFor(() => expect(fake.lastDescriptor()).toMatchObject({ nameMask: "file000001*" }))
+    expect(input).toHaveAttribute("placeholder", "Type to filter")
+    // Plain text, no wildcards needed.
+    fireEvent.change(input, { target: { value: "file000001" } })
+    await waitFor(() => expect(fake.lastDescriptor()).toMatchObject({ nameMask: "*file000001*" }))
     // Folders always pass: "..", two folders and one file.
     await waitFor(() => expect(rows("left")).toHaveLength(4))
     await act(async () => {
       fireEvent.keyDown(input, { key: "Enter" })
     })
-    expect(screen.getByTestId("filter-left")).toHaveTextContent("file000001*")
+    expect(screen.getByTestId("filter-left")).toHaveTextContent("file000001")
+    expect(screen.getByTestId("filter-left")).not.toHaveTextContent("*")
     expect(fake.api.dir.open.mock.calls.length).toBe(opens)
+    // Ctrl+S, Total Commander's key, edits it too.
     await key("left", { key: "s", ctrlKey: true })
     await act(async () => {
       fireEvent.keyDown(screen.getByRole("textbox", { name: "Quick filter" }), { key: "Escape" })
     })
     await waitFor(() => expect(fake.lastDescriptor().nameMask).toBeUndefined())
     expect(screen.queryByTestId("filter-left")).toBeNull()
+  })
+})
+
+describe("count by type (the path bar)", () => {
+  // From the keyboard: jsdom measures every element at 0,0, so a pointer
+  // press there lands on the panels' resize separator (the e2e spec clicks).
+  const open = async (user: ReturnType<typeof userEvent.setup>) => {
+    act(() => screen.getByTestId("types-left").focus())
+    await user.keyboard("{Enter}")
+    return screen.findByTestId("types-menu-left")
+  }
+  const type = (menu: HTMLElement, ext: string) =>
+    within(menu).getByRole("menuitemcheckbox", { name: new RegExp(`^${ext}`) })
+  const tick = (menu: HTMLElement, ext: string) =>
+    act(async () => {
+      fireEvent.click(type(menu, ext))
+    })
+
+  it("reads the types back from a filter it made, and nothing else", () => {
+    expect(typesOf("")).toEqual([])
+    expect(typesOf("*.jpg")).toEqual(["jpg"])
+    expect(typesOf("*.JPG;*.png;*.txt")).toEqual(["jpg", "png", "txt"])
+    expect(typesOf("*.a;*.b;*.c;*.d")).toBeNull()
+    expect(typesOf("holiday")).toBeNull()
+    expect(typesOf("*holiday*")).toBeNull()
+    expect(typesFilter(["jpg", "png"])).toBe("*.jpg;*.png")
+  })
+
+  it("counts only when opened: folders, then each extension", async () => {
+    const user = userEvent.setup()
+    const fake = await start()
+    // Listing the folder counts nothing.
+    expect(fake.api.query.facets).not.toHaveBeenCalled()
+
+    const menu = await open(user)
+    await waitFor(() => expect(within(menu).getByText("Folders")).toBeInTheDocument())
+    expect(fake.api.query.facets).toHaveBeenCalledTimes(1)
+    // home: two folders and three .txt files (the hidden file is not listed).
+    expect(within(menu).getByText("Folders").parentElement).toHaveTextContent(/Folders\s*2/)
+    expect(type(menu, "txt")).toHaveTextContent(/txt\s*3/)
+
+    // Opened again with the same listing: not counted again.
+    await user.keyboard("{Escape}")
+    await waitFor(() => expect(screen.queryByTestId("types-menu-left")).toBeNull())
+    await open(user)
+    expect(fake.api.query.facets).toHaveBeenCalledTimes(1)
+  })
+
+  it("ticks up to three types, filtering as it goes, and stays open", async () => {
+    const MIX: Crumb = { name: "mix", path: "C:\\mix" }
+    const kinds = { jpg: "image", png: "image", gif: "image", mp4: "video", txt: "file" } as const
+    const fake = installFakeCommander({
+      folders: [
+        folder(20, MIX.path, [ROOT, MIX], 1, 0, [
+          ...Object.entries(kinds).map(([ext, kind], i) =>
+            item(20_000_100 + i, `a.${ext}`, { kind }),
+          ),
+          item(20_000_200, "b.jpg", { kind: "image" }),
+        ]),
+      ],
+      home: MIX.path,
+      volumes: [],
+    })
+    render(<AppShell />)
+    await act(async () => {
+      stops = [await startPanels(), startFind()]
+    })
+    await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
+    const user = userEvent.setup()
+    // A typed filter first: the first type ticked replaces it.
+    act(() => setFilter("left", "a"))
+    const menu = await open(user)
+    await waitFor(() => expect(type(menu, "jpg")).toHaveTextContent(/jpg\s*2/))
+    expect(within(menu).getByText("Show up to 3 types")).toBeInTheDocument()
+
+    await tick(menu, "jpg")
+    await waitFor(() => expect(fake.lastDescriptor()).toMatchObject({ nameMask: "*.jpg" }))
+    // Still open, and still every type: the counts leave the filter out.
+    expect(screen.getByTestId("types-menu-left")).toBe(menu)
+    expect(type(menu, "png")).toBeInTheDocument()
+    await tick(menu, "png")
+    await tick(menu, "txt")
+    await waitFor(() =>
+      expect(fake.lastDescriptor()).toMatchObject({ nameMask: "*.jpg;*.png;*.txt" }),
+    )
+    for (const ext of ["jpg", "png", "txt"]) {
+      expect(type(menu, ext)).toHaveAttribute("aria-checked", "true")
+    }
+    // A fourth waits until one is unticked.
+    expect(type(menu, "gif")).toHaveAttribute("data-disabled")
+    await tick(menu, "png")
+    await waitFor(() => expect(fake.lastDescriptor()).toMatchObject({ nameMask: "*.jpg;*.txt" }))
+    expect(type(menu, "gif")).not.toHaveAttribute("data-disabled")
+    // The panel shows the folder and the types ticked.
+    await waitFor(() => expect(rows("left")).toHaveLength(1 + 1 + 3))
+    expect(fake.api.query.facets).toHaveBeenCalledTimes(1)
+
+    await act(async () => {
+      fireEvent.click(within(menu).getByRole("menuitem", { name: "Show all types" }))
+    })
+    await waitFor(() => expect(fake.lastDescriptor().nameMask).toBeUndefined())
   })
 })

@@ -1,0 +1,2 @@
+{"at":"2026-10-16T13:25:36.570Z","name":"tree","expand1000":{"runs":[10,14,10,10,10,10,10,10,9,10],"medianMs":10,"p95Ms":14},"heldArrow10k":{"keys":866,"frames":432,"p95FrameMs":7,"maxFrameGapMs":7,"longTasks":0,"longTaskMaxMs":0,"maxMountedNodes":50,"visibleRows":34},"enter1kWithoutTree":{"medianMs":14,"p95Ms":14.5},"enter1kWithTree":{"medianMs":19,"p95Ms":26.4}}
+{"at":"2026-10-16T13:25:41.472Z","name":"tabsets-compare","tabSet16OpenMs":104,"compare1000":{"ms":152,"longTasks":0,"longTaskMaxMs":0,"rows":20},"folder":"panelyth-c105-sets-L780Kg"}

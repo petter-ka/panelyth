@@ -453,6 +453,50 @@ type Facets struct {
 // MaxFacetExts bounds the extension list.
 const MaxFacetExts = 50
 
+// FacetCounter adds entries up into Facets: the index's GROUP BY rows, or
+// the rows of a session over a source (find results, an archive, a server).
+type FacetCounter struct {
+	f    Facets
+	exts map[string]int
+}
+
+// Add counts n entries of one kind and extension; folders have no extension.
+func (c *FacetCounter) Add(kind media.Kind, ext string, n int) {
+	switch kind {
+	case media.KindDir:
+		c.f.Folders += n
+		return
+	case media.KindImage:
+		c.f.Images += n
+	case media.KindVideo:
+		c.f.Videos += n
+	default:
+		c.f.Files += n
+	}
+	if c.exts == nil {
+		c.exts = map[string]int{}
+	}
+	c.exts[ext] += n
+}
+
+// Facets returns the counts, the most common extension first (ties by
+// name), at most MaxFacetExts of them.
+func (c *FacetCounter) Facets() Facets {
+	f := c.f
+	f.Exts = make([]ExtCount, 0, len(c.exts))
+	for ext, n := range c.exts {
+		f.Exts = append(f.Exts, ExtCount{Ext: ext, Count: n})
+	}
+	slices.SortFunc(f.Exts, func(a, b ExtCount) int {
+		if c := cmp.Compare(b.Count, a.Count); c != 0 {
+			return c
+		}
+		return strings.Compare(a.Ext, b.Ext)
+	})
+	f.Exts = f.Exts[:min(len(f.Exts), MaxFacetExts)]
+	return f
+}
+
 // Facets computes filter counts for d (its Kinds and Exts are ignored).
 func (s *Store) Facets(ctx context.Context, d Descriptor, dirKey string) (Facets, error) {
 	hidden, err := s.hiddenRanges(ctx, d, dirKey)
@@ -465,34 +509,16 @@ func (s *Store) Facets(ctx context.Context, d Descriptor, dirKey string) (Facets
 		return Facets{}, err
 	}
 	defer rows.Close()
-	f := Facets{Exts: []ExtCount{}}
+	var c FacetCounter
 	for rows.Next() {
 		var kind, n int
 		var ext string
 		if err := rows.Scan(&kind, &ext, &n); err != nil {
 			return Facets{}, err
 		}
-		switch media.Kind(kind) {
-		case media.KindDir:
-			f.Folders += n
-			continue
-		case media.KindImage:
-			f.Images += n
-		case media.KindVideo:
-			f.Videos += n
-		default:
-			f.Files += n
-		}
-		f.Exts = append(f.Exts, ExtCount{Ext: ext, Count: n})
+		c.Add(media.Kind(kind), ext, n)
 	}
-	slices.SortFunc(f.Exts, func(a, b ExtCount) int {
-		if c := cmp.Compare(b.Count, a.Count); c != 0 {
-			return c
-		}
-		return strings.Compare(a.Ext, b.Ext)
-	})
-	f.Exts = f.Exts[:min(len(f.Exts), MaxFacetExts)]
-	return f, rows.Err()
+	return c.Facets(), rows.Err()
 }
 
 // LoadItems returns rows for ids in the same order. Ids that no longer exist

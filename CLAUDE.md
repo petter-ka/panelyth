@@ -49,6 +49,7 @@ Code lives under `src/` and follows the same split as the docs (ADR-0031 "Code l
   under `specs/viewer/`, `specs/commander/`), `bench`; later `ui`, `renderer-core`, `media-ui`
 - `src/viewer/renderer`: the viewer's React app
 - `src/commander/`: the commander's code (from Stage C00)
+- `src/system/renderer`: Panelyth System, the computer dashboard and volume search (ADR-0042)
 - `scripts/`: repository tooling (stays in the root)
 
 ## Stack

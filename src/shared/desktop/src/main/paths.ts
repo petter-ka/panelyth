@@ -57,6 +57,22 @@ export function commanderDevUrl(): string | null {
   return process.env.PANELYTH_COMMANDER_URL || null
 }
 
+/** Panelyth System's built renderer, served through app://system/ (ADR-0042). */
+export function systemDistPath(): string {
+  if (app.isPackaged) return join(process.resourcesPath, "system")
+  return resolve(app.getAppPath(), "..", "..", "system", "renderer", "dist")
+}
+
+/** Panelyth System's dev server URL; set by scripts/dev.mjs. */
+export function systemDevUrl(): string | null {
+  if (app.isPackaged) return null
+  return process.env.PANELYTH_SYSTEM_URL || null
+}
+
+export function systemPreloadPath(): string {
+  return join(__dirname, "..", "preload", "system.cjs")
+}
+
 export function preloadPath(): string {
   return join(__dirname, "..", "preload", "preload.cjs")
 }

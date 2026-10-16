@@ -8,7 +8,12 @@ import { securePreferences } from "./window"
 export const APP_TITLES: Record<AppId, string> = {
   viewer: "Panelyth",
   commander: "Panelyth Commander",
+  system: "Panelyth System",
 }
+
+/** The apps shown in a view laid over the viewer (the viewer is the window's own page). */
+export type ViewApp = Exclude<AppId, "viewer">
+const VIEW_APPS: readonly ViewApp[] = ["commander", "system"]
 
 /**
  * The app shown at start (ADR-0031): Settings → General "Start with", or on
@@ -42,28 +47,33 @@ export function chromeColorOf(appearance: unknown): string {
   return (typeof theme === "string" && CHROME[theme]) || CHROME.dark!
 }
 
-export interface CommanderView {
+/** How an app view is made: its page, origin and preload (ADR-0027). */
+export interface AppViewOptions {
   url: string
   origin: string
   preload: string
   devTools: boolean
 }
 
+export type AppViews = Partial<Record<ViewApp, AppViewOptions>>
+
 /**
  * The shell's app switch (ADR-0031). The viewer is the window's own web
- * contents; the commander is a WebContentsView laid over it, created on the
- * first switch and then kept alive hidden. Each has its own preload and
- * origin, so main checks every call against that app's profile (ADR-0027).
+ * contents; the commander and Panelyth System (ADR-0042) are WebContentsViews
+ * laid over it, each created on its first switch and then kept alive hidden.
+ * Each has its own preload and origin, so main checks every call against that
+ * app's profile (ADR-0027).
  */
 export class AppShell {
-  private commander: WebContentsView | null = null
+  private readonly views = new Map<ViewApp, WebContentsView>()
   private active: AppId = "viewer"
   private switchedByUser = false
   private background = CHROME.dark!
 
   constructor(
     private readonly window: BrowserWindow,
-    private readonly commanderView: CommanderView | null,
+    /** The apps beside the viewer; null when they are off (the feature flag). */
+    private readonly viewOptions: AppViews | null,
     /** Called when another app is shown (the sidecar's watches follow it, ADR-0026). */
     private readonly onShown: (app: AppId) => void = () => undefined,
   ) {
@@ -71,15 +81,21 @@ export class AppShell {
     // The shell owns the title: it names the visible app.
     window.on("page-title-updated", (event) => event.preventDefault())
     window.on("resize", () => this.layout())
+    // The content area also changes without a resize: the native menu, set
+    // after start, takes its bar's height from it on Windows and Linux. The
+    // commander view would then stay taller than the window and lose its
+    // bottom (the function keys, the rail's Settings) until the next resize.
+    window.contentView.on("bounds-changed", () => this.layout())
     window.on("closed", () => {
-      const wc = this.commander?.webContents
-      if (wc && !wc.isDestroyed()) wc.close()
-      this.commander = null
+      for (const view of this.views.values()) {
+        if (!view.webContents.isDestroyed()) view.webContents.close()
+      }
+      this.views.clear()
     })
   }
 
   get enabled(): boolean {
-    return this.commanderView !== null
+    return this.viewOptions !== null
   }
 
   get activeApp(): AppId {
@@ -113,61 +129,63 @@ export class AppShell {
   /** The theme changed (main follows `shared.appearance`). */
   setBackground(color: string): void {
     this.background = color
-    this.commander?.setBackgroundColor(color)
+    for (const view of this.views.values()) view.setBackgroundColor(color)
   }
 
   webContentsOf(app: AppId): WebContents | null {
     if (app === "viewer") return this.window.webContents
-    return this.commander?.webContents ?? null
+    return this.views.get(app)?.webContents ?? null
   }
 
-  /** Shows the given app; creates the commander view the first time. */
+  /** Shows the given app; creates its view the first time. */
   switchTo(to: AppId): void {
     if (this.window.isDestroyed()) return
-    if (to === "commander") {
-      const view = this.ensureCommander()
+    if (to !== "viewer") {
+      const view = this.ensureView(to)
       if (!view) return
       view.setVisible(true)
       view.webContents.focus()
-    } else {
-      this.commander?.setVisible(false)
-      this.window.webContents.focus()
     }
+    // Only one app view is on top of the viewer at a time.
+    for (const [app, view] of this.views) if (app !== to) view.setVisible(false)
+    if (to === "viewer") this.window.webContents.focus()
     if (to === this.active) return
     this.active = to
     this.onShown(to)
     this.window.setTitle(APP_TITLES[to])
-    for (const app of ["viewer", "commander"] as const) {
+    for (const app of ["viewer", ...VIEW_APPS] as const) {
       const wc = this.webContentsOf(app)
       if (wc && !wc.isDestroyed()) broadcast([wc], "app.visibility", { app, visible: app === to })
     }
   }
 
-  private ensureCommander(): WebContentsView | null {
-    if (this.commander) return this.commander
-    const options = this.commanderView
+  private ensureView(app: ViewApp): WebContentsView | null {
+    const existing = this.views.get(app)
+    if (existing) return existing
+    const options = this.viewOptions?.[app]
     if (!options) return null
-    perfMark("commander-view-created")
+    perfMark(app === "commander" ? "commander-view-created" : "system-view-created")
     const view = new WebContentsView({
       webPreferences: securePreferences(options.preload, options.devTools, []),
     })
     // The theme's chrome, so a first switch never flashes another color.
     view.setBackgroundColor(this.background)
     hardenWebContents(view.webContents, options.origin)
-    // A crashed commander reloads alone; the viewer keeps running (NFR-13).
+    // A crashed app reloads alone; the viewer keeps running (NFR-13).
     view.webContents.on("render-process-gone", () => {
       if (!view.webContents.isDestroyed()) view.webContents.reload()
     })
     this.window.contentView.addChildView(view)
-    this.commander = view
+    this.views.set(app, view)
     this.layout()
     void view.webContents.loadURL(options.url)
     return view
   }
 
+  /** The app views cover the window's content area, as the viewer's page does. */
   private layout(): void {
-    if (!this.commander || this.window.isDestroyed()) return
+    if (this.window.isDestroyed()) return
     const [width = 0, height = 0] = this.window.getContentSize()
-    this.commander.setBounds({ x: 0, y: 0, width, height })
+    for (const view of this.views.values()) view.setBounds({ x: 0, y: 0, width, height })
   }
 }

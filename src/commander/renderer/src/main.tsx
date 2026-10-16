@@ -32,6 +32,7 @@ import { startMedia } from "./features/media"
 import { startOpen } from "./features/open"
 import { startMediaWindowHost, startQuickView } from "./features/viewers"
 import { startFind } from "./features/find"
+import { startGit } from "./features/git"
 import { startArchives } from "./features/archives"
 import { startCompareEvents } from "./features/compare"
 import { startRenameEvents } from "./features/rename"
@@ -105,6 +106,8 @@ if (isBridgeAvailable()) {
   startMediaWindowHost()
   // Find files: results and progress of the dialog's search (C06).
   startFind()
+  // Git: the status of the panels' folders and the runs (ADR-0043).
+  startGit()
   // Archives: the results of archive tests are announced (C07).
   startArchives()
   // Compare and synchronize: the dialog's compare, checksum and compare jobs (C08).

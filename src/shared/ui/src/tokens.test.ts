@@ -178,20 +178,47 @@ describe("liquid glass style (ADR-0041)", () => {
       ].map((m) => [m[1]!, { token: m[2]!, share: Number(m[3]) / 100, with: m[4] ?? null }]),
     )
 
-  const brightness = (selector: string): number | undefined => {
-    const m = /--glass-backdrop:[^;]*brightness\(([\d.]+)\)/.exec(body(selector))
-    return m ? Number(m[1]) : undefined
+  /**
+   * What the backdrop filter makes of a gray behind a floating layer: its
+   * contrast() then brightness(), each clamped as CSS filters are. Blur and
+   * the ripple move pixels, so they keep the darkest and the lightest gray.
+   */
+  const toneOf = (
+    selector: string,
+    variable = "glass-backdrop",
+  ): ((v: number) => number) | undefined => {
+    const filter = new RegExp(`--${variable}:([^;]*);`).exec(body(selector))?.[1]
+    if (!filter) return undefined
+    const c = Number(/contrast\(([\d.]+)\)/.exec(filter)?.[1] ?? 1)
+    const b = Number(/brightness\(([\d.]+)\)/.exec(filter)?.[1] ?? 1)
+    const clamp = (v: number): number => Math.min(1, Math.max(0, v))
+    return (v) => 255 * clamp(clamp((v / 255 - 0.5) * c + 0.5) * b)
+  }
+
+  /** The white gloss across the top of a floating layer, as an alpha (0 when none). */
+  const sheenOf = (selector: string): number | undefined => {
+    const v = /--glass-sheen:\s*([^;]*);/.exec(body(selector))?.[1]?.trim()
+    if (v === undefined) return undefined
+    return v === "transparent" ? 0 : Number(/rgb\(255 255 255 \/ ([\d.]+)\)/.exec(v)![1])
   }
 
   const glass = {
     light: mixes(':root[data-style="glass"]'),
     dark: mixes(':root[data-style="glass"].dark'),
   }
-  const backdropBrightness = {
-    light: brightness(':root[data-style="glass"]') ?? 1,
-    dark:
-      brightness(':root[data-style="glass"].dark') ?? brightness(':root[data-style="glass"]') ?? 1,
+  const light = ':root[data-style="glass"]'
+  const dark = ':root[data-style="glass"].dark'
+  const identity = (v: number): number => v
+  const tone = {
+    light: toneOf(light) ?? identity,
+    dark: toneOf(dark) ?? toneOf(light) ?? identity,
   }
+  // Menus and popups have a recipe of their own.
+  const menuTone = {
+    light: toneOf(light, "glass-menu-backdrop") ?? identity,
+    dark: toneOf(dark, "glass-menu-backdrop") ?? toneOf(light, "glass-menu-backdrop") ?? identity,
+  }
+  const sheen = { light: sheenOf(light) ?? 0, dark: sheenOf(dark) ?? sheenOf(light) ?? 0 }
 
   const over = (fg: string, p: number, bg: string): string =>
     `#${[1, 3, 5]
@@ -203,23 +230,81 @@ describe("liquid glass style (ADR-0041)", () => {
       })
       .join("")}`
 
+  const pressShare =
+    Number(
+      /\.glass-press:is\(\[aria-pressed="true"\], \[aria-current="page"\]\) \{[^}]*color-mix\(in srgb, var\(--accent\) (\d+)%, transparent\)/.exec(
+        css,
+      )![1],
+    ) / 100
+
   const gray = (v: number): string => `#${Math.round(v).toString(16).padStart(2, "0").repeat(3)}`
   const readable = ["text", "muted", "accent", "danger"] as const
 
+  /**
+   * A floating layer's fill (styles.css, `:is(.glass-float, .glass-sheet)`):
+   * a gradient whose stops mix the palette's accent, purple and blue into the
+   * layer's base by the tint, laid over the backdrop at the share. Each stop
+   * is checked, since text can sit over any of them.
+   */
+  const HUES = ["accent", "label-purple", "label-blue"] as const
+  const BASE = { float: "raised", sheet: "chrome" } as const
+  const percent = (selector: string, name: string): number | undefined => {
+    const m = new RegExp(`--${name}:\\s*(\\d+)%`).exec(body(selector))
+    return m ? Number(m[1]) / 100 : undefined
+  }
+  const layerMix = (scheme: "light" | "dark", kind: "float" | "sheet") => {
+    const read = (name: string): number =>
+      (scheme === "dark" ? percent(dark, name) : undefined) ?? percent(light, name)!
+    return { tint: read(`glass-${kind}-tint`), share: read(`glass-${kind}-share`) }
+  }
+  const layerStops = (
+    t: Record<string, string>,
+    scheme: "light" | "dark",
+    kind: "float" | "sheet",
+    backdrop: string,
+  ): string[] => {
+    const { tint, share } = layerMix(scheme, kind)
+    return HUES.map((hue) => over(over(t[hue]!, tint, t[BASE[kind]]!), share, backdrop))
+  }
+
   it("defines each share it uses, in both schemes", () => {
-    for (const name of [
-      "fill",
-      "content",
-      "control",
-      "float",
-      "sheet",
-      "chip",
-      "solid",
-      "bloom-1",
-    ]) {
+    for (const name of ["fill", "content", "control", "chip", "solid", "bloom-1"]) {
       expect(glass.light[`glass-${name}`], name).toBeDefined()
     }
+    for (const scheme of ["light", "dark"] as const) {
+      for (const kind of ["float", "sheet"] as const) {
+        const { tint, share } = layerMix(scheme, kind)
+        expect(tint, `${scheme} ${kind} tint`).toBeGreaterThan(0)
+        expect(share, `${scheme} ${kind} share`).toBeGreaterThan(0)
+      }
+    }
+    // The model above is the rule's: each hue mixed by the tint into the base.
+    for (const hue of HUES) expect(css).toContain(`var(--${hue}) var(--tint), var(--tint-base)`)
   })
+
+  it("tone-maps the backdrop of floating layers: dark dims white, light lifts black", () => {
+    expect(tone.dark(255)).toBeLessThan(96)
+    expect(tone.light(0)).toBeGreaterThan(128)
+    expect(menuTone.dark(255)).toBeLessThan(96)
+    expect(menuTone.light(0)).toBeGreaterThan(128)
+  })
+
+  it.each(Object.entries(palettes).filter(([name]) => name.startsWith("dark")))(
+    "an open menu or dialog is lighter than the app, never dimmed, even over black (%s)",
+    (_name, t) => {
+      const mix = (key: string): Mix => (glass.dark[key] ?? glass.light[key])!
+      const fill = mix("glass-fill")
+      const card = over(t[fill.token]!, fill.share, t.canvas!)
+      for (const [kind, map] of [
+        ["float", menuTone.dark],
+        ["sheet", tone.dark],
+      ] as const) {
+        for (const shown of layerStops(t, "dark", kind, gray(map(0)))) {
+          expect(luminance(shown) / luminance(card), `${kind} ${shown}`).toBeGreaterThanOrEqual(1.3)
+        }
+      }
+    },
+  )
 
   it.each(Object.entries(palettes))(
     "text, muted, accent and danger meet AA (4.5:1) on cards over the wallpaper (%s)",
@@ -241,6 +326,14 @@ describe("liquid glass style (ADR-0041)", () => {
           control: color(mix("glass-control"), card),
           sticky: color(mix("glass-solid"), card),
         }
+        // A pressed toggle (.glass-press) shows its label in the text color on the accent tint.
+        const pressed = over(t.accent!, pressShare, card)
+        expect(contrast(t.text!, pressed), `text on pressed over ${w}`).toBeGreaterThanOrEqual(4.5)
+        // The current app's glyph on the rail is the accent there (non-text: 3:1).
+        expect(
+          contrast(t.accent!, pressed),
+          `accent glyph on pressed over ${w}`,
+        ).toBeGreaterThanOrEqual(3)
         for (const [surface, bg] of Object.entries(surfaces)) {
           for (const fg of readable) {
             expect(contrast(t[fg]!, bg), `${fg} on ${surface} over ${w}`).toBeGreaterThanOrEqual(
@@ -258,21 +351,48 @@ describe("liquid glass style (ADR-0041)", () => {
       const scheme =
         name === "light" || name === "beige" || name === "light-brown" ? "light" : "dark"
       const mix = (key: string): Mix => (glass[scheme][key] ?? glass.light[key])!
-      const dim = backdropBrightness[scheme]
-      // Menus and dialogs blur (and in dark, dim) what is behind them; chips do not.
+      // Menus and dialogs tone-map what is behind them; chips show it as it is.
+      const toned = (map: (v: number) => number): string[] => [gray(map(0)), gray(map(255))]
+      const chip = mix("glass-chip")
       const layers = [
-        { name: "menu", mix: mix("glass-float"), backdrops: [gray(0), gray(255 * dim)] },
-        { name: "dialog", mix: mix("glass-sheet"), backdrops: [gray(0), gray(255 * dim)] },
-        { name: "chip", mix: mix("glass-chip"), backdrops: [gray(0), gray(255)] },
+        {
+          name: "menu",
+          fills: (b: string) => layerStops(t, scheme, "float", b),
+          backdrops: toned(menuTone[scheme]),
+          glossy: true,
+        },
+        {
+          name: "dialog",
+          fills: (b: string) => layerStops(t, scheme, "sheet", b),
+          backdrops: toned(tone[scheme]),
+          glossy: true,
+        },
+        {
+          name: "chip",
+          fills: (b: string) => [over(t[chip.token]!, chip.share, b)],
+          backdrops: [gray(0), gray(255)],
+          glossy: false,
+        },
       ]
       for (const layer of layers) {
-        for (const backdrop of layer.backdrops) {
-          const bg = over(t[layer.mix.token]!, layer.mix.share, backdrop)
-          for (const fg of readable) {
-            expect(
-              contrast(t[fg]!, bg),
-              `${fg} on ${layer.name} over ${backdrop}`,
-            ).toBeGreaterThanOrEqual(4.5)
+        for (const plain of layer.backdrops.flatMap(layer.fills)) {
+          const backdrop = plain
+          // On the layer: its own fill, the gloss at the top, and a list well or a control inside.
+          const surfaces: Record<string, string> = {
+            layer: plain,
+            content: over(t[mix("glass-content").token]!, mix("glass-content").share, plain),
+            control: over(t[mix("glass-control").token]!, mix("glass-control").share, plain),
+          }
+          if (layer.glossy && sheen[scheme] > 0) {
+            surfaces.gloss = over("#ffffff", sheen[scheme], plain)
+          }
+          for (const [surface, bg] of Object.entries(surfaces)) {
+            for (const fg of readable) {
+              expect(
+                contrast(t[fg]!, bg),
+                `${fg} on ${layer.name} ${surface} over ${backdrop}`,
+              ).toBeGreaterThanOrEqual(4.5)
+            }
           }
         }
       }

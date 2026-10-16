@@ -68,6 +68,8 @@ export default {
     { from: "build/THIRD-PARTY-NOTICES.txt", to: "THIRD-PARTY-NOTICES.txt" },
     { from: "../../viewer/renderer/dist", to: "renderer" },
     { from: "../../commander/renderer/dist", to: "commander" },
+    // Panelyth System (ADR-0042), served through app://system/.
+    { from: "../../system/renderer/dist", to: "system" },
     { from: "../docviewer/dist", to: "documents" },
     { from: "resources/bin/${platform}-${arch}", to: "bin" },
     // The libraries of a Linux ffmpeg build (its RPATH is $ORIGIN/../lib); empty otherwise.

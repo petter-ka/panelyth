@@ -37,7 +37,7 @@ function fakeWindow() {
     focus: vi.fn(),
     restore: vi.fn(),
     getContentSize: () => [1280, 800],
-    contentView: { addChildView: vi.fn() },
+    contentView: { addChildView: vi.fn(), on: vi.fn() },
     webContents,
   }
   return { window: window as unknown as BrowserWindow, webContents, setTitle: window.setTitle }
@@ -54,7 +54,7 @@ describe("AppShell", () => {
   it("names the app on screen once per switch, and both apps hear of it", () => {
     const { window, webContents, setTitle } = fakeWindow()
     const onShown = vi.fn()
-    const shell = new AppShell(window, commanderView, onShown)
+    const shell = new AppShell(window, { commander: commanderView }, onShown)
     expect(shell.activeApp).toBe("viewer")
     expect(onShown).not.toHaveBeenCalled()
 
@@ -95,7 +95,7 @@ describe("AppShell", () => {
 
   it("works without a listener", () => {
     const { window } = fakeWindow()
-    const shell = new AppShell(window, commanderView)
+    const shell = new AppShell(window, { commander: commanderView })
     shell.switchTo("commander")
     expect(shell.activeApp).toBe("commander")
   })
@@ -113,7 +113,7 @@ describe("the commander view's first color", () => {
 
   it("is set when the view is made, and follows a later theme change", () => {
     const { window } = fakeWindow()
-    const shell = new AppShell(window, commanderView)
+    const shell = new AppShell(window, { commander: commanderView })
     shell.setBackground("#f7f7f7")
     shell.switchTo("commander")
     const added = (window.contentView.addChildView as ReturnType<typeof vi.fn>).mock
@@ -123,5 +123,70 @@ describe("the commander view's first color", () => {
     expect(added.setBackgroundColor).toHaveBeenLastCalledWith("#f7f7f7")
     shell.setBackground("#2a2233")
     expect(added.setBackgroundColor).toHaveBeenLastCalledWith("#2a2233")
+  })
+})
+
+describe("the commander view's size", () => {
+  it("follows the content area when it changes without a resize (the menu bar appearing)", () => {
+    const { window } = fakeWindow()
+    let size = [1280, 800]
+    ;(window as unknown as { getContentSize: () => number[] }).getContentSize = () => size
+    const shell = new AppShell(window, { commander: commanderView })
+    shell.switchTo("commander")
+    const view = (window.contentView.addChildView as ReturnType<typeof vi.fn>).mock
+      .calls[0]![0] as {
+      setBounds: ReturnType<typeof vi.fn>
+    }
+    expect(view.setBounds).toHaveBeenLastCalledWith({ x: 0, y: 0, width: 1280, height: 800 })
+    // The menu bar takes 26 px: no "resize" on the window, only the content view's bounds change.
+    size = [1280, 774]
+    const onBounds = (window.contentView.on as ReturnType<typeof vi.fn>).mock.calls.find(
+      ([event]) => event === "bounds-changed",
+    )![1] as () => void
+    onBounds()
+    expect(view.setBounds).toHaveBeenLastCalledWith({ x: 0, y: 0, width: 1280, height: 774 })
+  })
+})
+
+describe("Panelyth System's view (ADR-0042)", () => {
+  it("is a view of its own: made on its first switch, one app view on top at a time", () => {
+    const { window, webContents } = fakeWindow()
+    const onShown = vi.fn()
+    const shell = new AppShell(
+      window,
+      { commander: commanderView, system: { ...commanderView, url: "app://system/index.html" } },
+      onShown,
+    )
+    shell.switchTo("commander")
+    shell.switchTo("system")
+    const added = (window.contentView.addChildView as ReturnType<typeof vi.fn>).mock.calls.map(
+      ([view]) =>
+        view as {
+          setVisible: ReturnType<typeof vi.fn>
+          webContents: { send: ReturnType<typeof vi.fn> }
+        },
+    )
+    expect(added).toHaveLength(2)
+    const [commander, system] = added
+    expect(commander!.setVisible).toHaveBeenLastCalledWith(false)
+    expect(system!.setVisible).toHaveBeenLastCalledWith(true)
+    expect(shell.activeApp).toBe("system")
+    expect(onShown).toHaveBeenLastCalledWith("system")
+    expect(shell.webContentsOf("system")).toBe(system!.webContents)
+    // Every app hears whether it is the one on screen.
+    for (const [wc, app] of [
+      [webContents, "viewer"],
+      [commander!.webContents, "commander"],
+      [system!.webContents, "system"],
+    ] as const) {
+      expect(wc.send).toHaveBeenLastCalledWith(
+        expect.anything(),
+        expect.objectContaining({ ch: "app.visibility", p: { app, visible: app === "system" } }),
+      )
+    }
+    // Back to the viewer: no app view stays on top.
+    shell.switchTo("viewer")
+    expect(system!.setVisible).toHaveBeenLastCalledWith(false)
+    expect(added).toHaveLength(2)
   })
 })

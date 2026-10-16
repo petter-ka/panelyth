@@ -8,6 +8,7 @@ export type PerfMarkName =
   | "window-created"
   | "ready-to-show"
   | "commander-view-created"
+  | "system-view-created"
   // A file from the OS: its media window was asked for (no main window behind it).
   | "open-with"
 

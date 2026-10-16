@@ -8,6 +8,7 @@ import (
 	"io"
 	"log/slog"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -47,6 +48,8 @@ var volatile = map[string]any{
 	// Watcher rescans (inotify reports the test's own writes) take scan ids at
 	// timing-dependent moments.
 	"scanId": 1,
+	// A Git repository's folder (ADR-0043).
+	"root": "/fixtures/repo",
 }
 
 // platformDependent values are replaced even when null (Linux has no birth time).
@@ -757,6 +760,46 @@ func TestGoldenFrames(t *testing.T) {
 	golden["res-remote.removeConnection.json"] = call(230, byID(230, "remote.removeConnection", map[string]any{"connectionId": 1}))
 	saved.ID, saved.HasPassword, saved.Fingerprint = 1, true, strings.Repeat("ab", 32)
 	golden["evt-connections.changed.json"] = eventFrame(t, evConnectionsChanged, connectionsEvent{Connections: []library.Connection{saved}})
+	// Git in the commander (ADR-0043), when Git is installed: a repository
+	// made with fixed names and dates, so hashes and times are the same on
+	// every machine.
+	if _, err := exec.LookPath("git"); err == nil {
+		repo := filepath.Join(t.TempDir(), "repo")
+		_ = os.MkdirAll(filepath.Join(repo, "src"), 0o755)
+		emptyConfig := filepath.Join(t.TempDir(), "gitconfig")
+		_ = os.WriteFile(emptyConfig, nil, 0o644)
+		gitRun := func(args ...string) {
+			cmd := exec.Command("git", args...)
+			cmd.Dir = repo
+			cmd.Env = append(os.Environ(), "GIT_CONFIG_NOSYSTEM=1", "GIT_CONFIG_GLOBAL="+emptyConfig,
+				"GIT_AUTHOR_NAME=Golden", "GIT_AUTHOR_EMAIL=golden@example.com", "GIT_AUTHOR_DATE=2024-05-06T07:08:09Z",
+				"GIT_COMMITTER_NAME=Golden", "GIT_COMMITTER_EMAIL=golden@example.com", "GIT_COMMITTER_DATE=2024-05-06T07:08:09Z")
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("git %v: %v\n%s", args, err, out)
+			}
+		}
+		gitRun("init", "-q", "-b", "main")
+		_ = os.WriteFile(filepath.Join(repo, "a.txt"), []byte("a\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(repo, "src", "b.txt"), []byte("b\n"), 0o644)
+		gitRun("add", "-A")
+		gitRun("commit", "-q", "-m", "First")
+		_ = os.WriteFile(filepath.Join(repo, "a.txt"), []byte("changed\n"), 0o644)
+		_ = os.WriteFile(filepath.Join(repo, "new.txt"), []byte("n\n"), 0o644)
+		repoDir, repoQ := openListedDir(240, repo)
+		dirID := repoDir["dirId"]
+		golden["res-git.status.json"] = call(242, byID(242, "git.status", map[string]any{"dirId": dirID}))
+		golden["res-git.changes.json"] = call(243, byID(243, "git.changes", map[string]any{"dirId": dirID}))
+		changesID := golden["res-git.changes.json"].(map[string]any)["r"].(map[string]any)["changesId"]
+		golden["res-git.run.json"] = call(244, byID(244, "git.run", map[string]any{"dirId": dirID, "op": "stage",
+			"changesId": changesID, "items": []int{1}}))
+		gitDone := waitEvent("git.progress", "completed")
+		gitDone["seq"] = float64(1) // depends on the events before it
+		golden["evt-git.progress.json"] = gitDone
+		golden["res-git.cancel.json"] = call(245, byID(245, "git.cancel", map[string]any{"opId": 999}))
+		golden["res-git.branches.json"] = call(246, byID(246, "git.branches", map[string]any{"dirId": dirID}))
+		golden["res-git.log.json"] = call(247, byID(247, "git.log", map[string]any{"dirId": dirID, "limit": 5}))
+		_ = repoQ
+	}
 	// "Open with" (main only): a picture the OS handed over, by its path. The
 	// folder was listed above, so the entry is the one the listing made.
 	batchPics, _ := filepath.Glob(filepath.Join(batchDir, "*.jpg"))

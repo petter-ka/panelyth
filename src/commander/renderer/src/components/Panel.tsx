@@ -30,6 +30,7 @@ import { HoldRing } from "./HoldRing"
 import { PathBar, type PathBarHandle } from "./PathBar"
 import { RowMenu } from "./RowMenu"
 import { StatusLine } from "./StatusLine"
+import { GitBar } from "./Git"
 import { TabBar } from "./TabBar"
 import { msg, t } from "@panelyth/i18n"
 
@@ -153,7 +154,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
     seenToken.current = editToken
   }, [editToken])
 
-  // Ctrl+S (view.filter, Stage C06).
+  // Ctrl+F or Ctrl+S (view.filter, Stage C06).
   const filterToken = useUiStore((s) => s.editFilter[side])
   const seenFilter = useRef(filterToken)
   useEffect(() => {
@@ -309,6 +310,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
           </div>
         )}
       </div>
+      <GitBar side={side} />
       <StatusLine side={side} />
     </section>
   )

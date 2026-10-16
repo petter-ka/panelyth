@@ -266,6 +266,7 @@ function PanelsSection({
       />
       <TreeModeRadios />
       <Check setting="treeFollowCursor" label={t("The tree opens folders as the cursor moves")} />
+      <Check setting="showGit" label={t("Show Git status in the folders of a repository")} />
       <fieldset className="flex flex-col gap-1.5">
         <legend className="mb-1 text-muted">{t("Around the panels")}</legend>
         <Check setting="showToolbar" label={t("Toolbar")} />

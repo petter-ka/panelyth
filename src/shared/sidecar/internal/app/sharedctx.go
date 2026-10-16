@@ -116,7 +116,9 @@ type sharedContext struct {
 	timer      *time.Timer
 }
 
-func validApp(app string) bool { return app == "viewer" || app == "commander" }
+// validApp names an app of the family: the viewer, the commander and
+// Panelyth System (ADR-0042).
+func validApp(app string) bool { return app == "viewer" || app == "commander" || app == "system" }
 
 // appSetVisible moves the watches to the folders of the app on screen; the
 // folders it shows are re-listed if they were not watched while it was

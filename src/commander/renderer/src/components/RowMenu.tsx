@@ -4,6 +4,7 @@ import { createPortal } from "react-dom"
 import { runPanelAction, useUiStore } from "../features/commands"
 import { toolAction, useKeymapStore, type ActionId } from "../features/keymap"
 import { useToolsStore } from "../features/tools"
+import { useGitStore } from "../features/git"
 import { enter, pageStoreOf, parentRows, useListingStore } from "../features/listing"
 import { compareLabel } from "../features/compare"
 import { countOf, marksOf } from "../features/marks"
@@ -45,6 +46,14 @@ const ENTRY_ITEMS: readonly Item[] = [
   { action: "files.properties", label: msg("Properties") },
 ]
 
+// In a Git repository (ADR-0043), after the clipboard commands.
+const GIT_ITEMS: readonly Item[] = [
+  { action: "git.stage", label: msg("Stage") },
+  { action: "git.unstage", label: msg("Unstage") },
+  { action: "git.discard", label: msg("Discard changes…") },
+  "separator",
+]
+
 // Commands for the folder itself: "..", or the empty area below the entries.
 const FOLDER_ITEMS: readonly Item[] = [
   { action: "clip.paste", label: msg("Paste") },
@@ -60,9 +69,8 @@ const FOLDER_ITEMS: readonly Item[] = [
   { action: "compare.sync", label: msg("Synchronize directories") },
 ]
 
-const MENU_WIDTH = 256
-const ITEM_HEIGHT = 28
-const SEPARATOR_HEIGHT = 9
+/** Where the Git commands go: after the clipboard's (Cut, Copy, Paste) and their separator. */
+const GIT_AT = ENTRY_ITEMS.findIndex((item) => item !== "separator" && item.action === "copy.paths")
 
 /** What the entry commands will act on: "12 marked", or the cursor entry's name. */
 function operandLabel(side: Side): string {
@@ -84,6 +92,7 @@ export function RowMenu({ side }: { side: Side }) {
   const chords = useKeymapStore((s) => s.keymap.chords)
   // The user's commands that ask for a place in the entry menu (Stage C10).
   const tools = useToolsStore((s) => s.commands)
+  const inRepo = useGitStore((s) => menu !== null && s[menu.side].status?.repo != null)
   const open = menu !== null
   // The backdrop paints nothing, so Chromium would still scroll the list
   // behind it; a cancelling (non-passive) wheel listener stops that. The menu
@@ -105,7 +114,12 @@ export function RowMenu({ side }: { side: Side }) {
       ]
     : []
   let separators = 0
-  for (const item of menu.entry ? ENTRY_ITEMS : FOLDER_ITEMS) {
+  const items = menu.entry
+    ? inRepo
+      ? [...ENTRY_ITEMS.slice(0, GIT_AT), ...GIT_ITEMS, ...ENTRY_ITEMS.slice(GIT_AT)]
+      : ENTRY_ITEMS
+    : FOLDER_ITEMS
+  for (const item of items) {
     if (item === "separator") {
       entries.push({ id: `separator-${separators++}`, label: "", separator: true })
       continue
@@ -122,7 +136,7 @@ export function RowMenu({ side }: { side: Side }) {
 
   const listed = menu.entry ? tools.filter((tool) => tool.menu) : []
   if (listed.length > 0) {
-    entries.push({ id: `separator-${separators++}`, label: "", separator: true })
+    entries.push({ id: `separator-${separators}`, label: "", separator: true })
     for (const tool of listed) {
       const action = toolAction(tool.id)
       const chord = chords[action]?.[0]
@@ -135,8 +149,6 @@ export function RowMenu({ side }: { side: Side }) {
     }
   }
 
-  const height =
-    (entries.length - separators) * ITEM_HEIGHT + separators * SEPARATOR_HEIGHT + ITEM_HEIGHT / 2
   return createPortal(
     // A press on the backdrop closes the menu (PopupMenu) and goes no further.
     <div
@@ -149,12 +161,10 @@ export function RowMenu({ side }: { side: Side }) {
         testId={`row-menu-${side}`}
         entries={entries}
         onClose={() => useUiStore.setState({ rowMenu: null })}
+        // At the pointer: PopupMenu keeps it within the window (above the
+        // pointer near the bottom, scrolling when the window is too small).
         className=""
-        style={{
-          left: Math.max(0, Math.min(menu.left, window.innerWidth - MENU_WIDTH)),
-          top: Math.max(0, Math.min(menu.top, window.innerHeight - height)),
-          maxHeight: "100%",
-        }}
+        style={{ left: menu.left, top: menu.top }}
       />
     </div>,
     document.body,

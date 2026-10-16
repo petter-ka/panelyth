@@ -184,7 +184,10 @@ export interface PanelState {
   disconnected: DisconnectedLocation | null
   /** The panel waits for a server to list a folder (it can be stopped). */
   remoteBusy: boolean
-  /** The quick filter (Ctrl+S): a name mask on the files; "" = none. Cleared by a folder change. */
+  /**
+   * The quick filter (Ctrl+F) as typed: plain text, or a name mask; "" = none
+   * (quickFilterMask makes the mask). Cleared by a folder change.
+   */
   filter: string
 }
 
@@ -313,7 +316,7 @@ function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
     showHidden: p.showHidden,
     // Hidden entries without the system ones unless Settings shows them too.
     ...(p.showHidden && !useSettingsStore.getState().settings.showSystem && { hideSystem: true }),
-    ...(p.filter !== "" && { nameMask: p.filter }),
+    ...(p.filter !== "" && { nameMask: quickFilterMask(p.filter) }),
     ...(p.find && { findId: p.find.findId }),
     ...(p.archive && {
       archiveId: p.archive.archiveId,
@@ -570,7 +573,19 @@ export function toggleBranch(side: Side): Promise<void> {
   return openPath(side, p.path, { branch: !p.branch, focusId: cursorEntryId(side) })
 }
 
-/** Ctrl+S: the quick filter; "" clears it. A new session, never a rescan. */
+/**
+ * The name mask of a quick filter as typed. Plain text matches anywhere in a
+ * name, its words in the order typed: "my file" is "*my*file*" ("my file.txt",
+ * "my_file.jpg", "my old file.doc"). Text with a wildcard or the mask's own
+ * separators (* ? ; |) is a mask already and is used as it is.
+ */
+export function quickFilterMask(text: string): string {
+  const value = text.trim()
+  if (value === "" || /[*?;|]/.test(value)) return value
+  return `*${value.split(/\s+/).join("*")}*`
+}
+
+/** Ctrl+F: the quick filter; "" clears it. A new session, never a rescan. */
 export function setFilter(side: Side, mask: string): void {
   const filter = mask.trim()
   if (getPanel(side).filter === filter) return

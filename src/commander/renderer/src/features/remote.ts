@@ -217,7 +217,7 @@ export async function forgetCertificate(connectionId: number): Promise<void> {
 
 // Dialogs ----------------------------------------------------------------------------------
 
-/** Ctrl+F: the saved connections. */
+/** Ctrl+Shift+N: the saved connections. */
 export function openConnections(side: Side): void {
   set({ dialog: { kind: "list", side }, error: null })
   void ensureConnections()

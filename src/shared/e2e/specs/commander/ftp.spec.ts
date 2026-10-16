@@ -294,7 +294,7 @@ test.describe("FTP connections (Stage C10.5)", () => {
       await grid(c, "left").focus()
 
       // Save a connection, with its password. Saving connects to nothing.
-      await c.keyboard.press("Control+f")
+      await c.keyboard.press("Control+Shift+N")
       await c.getByTestId("connections-dialog").getByRole("button", { name: "New…" }).click()
       const form = c.getByTestId("connection-form")
       await form.getByLabel("Name", { exact: true }).fill("Fixture")
@@ -501,7 +501,7 @@ test.describe("FTP connections (Stage C10.5)", () => {
     try {
       const c = await commanderOf(app)
       await grid(c, "left").focus()
-      await c.keyboard.press("Control+f")
+      await c.keyboard.press("Control+Shift+N")
       await c.getByTestId("connections-dialog").getByRole("button", { name: "New…" }).click()
       const form = c.getByTestId("connection-form")
       await expect(form).toContainText("This computer has no secure store for passwords.")

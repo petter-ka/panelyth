@@ -13,6 +13,7 @@ import (
 
 	"panelyth/sidecar/internal/fixture"
 	"panelyth/sidecar/internal/index"
+	"panelyth/sidecar/internal/media"
 	"panelyth/sidecar/internal/scan"
 )
 
@@ -470,9 +471,141 @@ func TestLeastRecentlyUsedOfAnOwnerGoesFirst(t *testing.T) {
 }
 
 func TestParseOwner(t *testing.T) {
-	for app, want := range map[string]Owner{"viewer": OwnerViewer, "commander": OwnerCommander, "": OwnerMain, "shell": OwnerMain} {
+	for app, want := range map[string]Owner{"viewer": OwnerViewer, "commander": OwnerCommander, "system": OwnerSystem, "": OwnerMain, "shell": OwnerMain} {
 		if got := ParseOwner(app); got != want {
 			t.Errorf("ParseOwner(%q) = %q, want %q", app, got, want)
 		}
 	}
+}
+
+// itemSource lists rows that are not in the index (an archive, a server).
+type itemSource struct{ items []index.Item }
+
+func (s itemSource) IDs(context.Context, index.Descriptor) ([]int64, error) {
+	ids := make([]int64, len(s.items))
+	for i, it := range s.items {
+		ids[i] = it.ID
+	}
+	return ids, nil
+}
+
+func (s itemSource) Names(context.Context) (map[int64]index.NameRow, error) { return nil, nil }
+func (s itemSource) Missing()                                               {}
+
+func (s itemSource) Items(_ context.Context, ids []int64) ([]index.Item, error) {
+	out := make([]index.Item, 0, len(ids))
+	for _, id := range ids {
+		for _, it := range s.items {
+			if it.ID == id {
+				out = append(out, it)
+			}
+		}
+	}
+	return out, nil
+}
+
+// idSource lists rows of the index, as find results do.
+type idSource struct{ ids []int64 }
+
+func (s idSource) IDs(context.Context, index.Descriptor) ([]int64, error) { return s.ids, nil }
+func (s idSource) Names(context.Context) (map[int64]index.NameRow, error) { return nil, nil }
+func (s idSource) Missing()                                               {}
+
+func TestFacetsOfSourceSessions(t *testing.T) {
+	ctx := context.Background()
+	e := setup(t, 12)
+	e.scan(t, false)
+
+	// An archive's or a server's rows: counted from the source itself.
+	var items []index.Item
+	add := func(kind media.Kind, ext string, n int) {
+		for range n {
+			items = append(items, index.Item{ID: int64(len(items) + 1), Kind: kind, Ext: ext})
+		}
+	}
+	add(media.KindDir, "", 3)
+	add(media.KindImage, "jpg", 1500) // more than one chunk
+	add(media.KindVideo, "avi", 2)
+	add(media.KindFile, "exe", 2)
+	add(media.KindFile, "", 1)
+	snap, err := e.mgr.OpenSource(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll}, itemSource{items})
+	if err != nil {
+		t.Fatal(err)
+	}
+	f, err := e.mgr.Facets(ctx, snap.QueryID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []index.ExtCount{{Ext: "jpg", Count: 1500}, {Ext: "avi", Count: 2}, {Ext: "exe", Count: 2}, {Ext: "", Count: 1}}
+	if f.Folders != 3 || f.Images != 1500 || f.Videos != 2 || f.Files != 3 || fmt.Sprint(f.Exts) != fmt.Sprint(want) {
+		t.Fatalf("archive facets %+v", f)
+	}
+
+	// Find results: the session's rows are the index's, counted the same way as the folder's.
+	folder, err := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ids, _, err := e.mgr.IDs(folder.QueryID, folder.Version)
+	if err != nil {
+		t.Fatal(err)
+	}
+	found, err := e.mgr.OpenSource(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll}, idSource{ids})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromRows, err := e.mgr.Facets(ctx, found.QueryID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	fromIndex, err := e.mgr.Facets(ctx, folder.QueryID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if fmt.Sprint(fromRows) != fmt.Sprint(fromIndex) || fromRows.Folders+fromRows.Images+fromRows.Videos+fromRows.Files != len(ids) {
+		t.Fatalf("find facets %+v, folder facets %+v", fromRows, fromIndex)
+	}
+
+	// The quick filter's mask is left out: the counts are what it can choose from.
+	masked, err := e.mgr.Open(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll, NameMask: "*.nothing"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if f, err := e.mgr.Facets(ctx, masked.QueryID); err != nil || fmt.Sprint(f) != fmt.Sprint(fromIndex) {
+		t.Fatalf("masked folder facets %+v %v, want %+v", f, err, fromIndex)
+	}
+	maskedSource, err := e.mgr.OpenSource(ctx, OwnerMain, index.Descriptor{DirID: e.root.ID, Scope: index.ScopeAll, NameMask: "*.jpg"}, maskingSource{itemSource{items}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ids, _, _ := e.mgr.IDs(maskedSource.QueryID, maskedSource.Version); len(ids) != 1500 {
+		t.Fatalf("the masked source lists %d rows", len(ids))
+	}
+	if f, err := e.mgr.Facets(ctx, maskedSource.QueryID); err != nil || f.Folders != 3 || len(f.Exts) != 4 {
+		t.Fatalf("masked source facets %+v %v", f, err)
+	}
+
+	// A cancelled count stops.
+	cancelled, cancel := context.WithCancel(ctx)
+	cancel()
+	// (The newest session: the test manager keeps three per owner.)
+	if _, err := e.mgr.Facets(cancelled, maskedSource.QueryID); !errors.Is(err, context.Canceled) {
+		t.Fatalf("cancelled: %v", err)
+	}
+}
+
+// maskingSource applies the descriptor's name mask, as the archive and
+// remote sources do.
+type maskingSource struct{ itemSource }
+
+func (s maskingSource) IDs(_ context.Context, d index.Descriptor) ([]int64, error) {
+	mask := index.ParseMask(d.NameMask)
+	var ids []int64
+	for _, it := range s.items {
+		if d.NameMask != "" && (it.Kind == media.KindDir || !index.MatchMask(mask, "x."+it.Ext)) {
+			continue
+		}
+		ids = append(ids, it.ID)
+	}
+	return ids, nil
 }

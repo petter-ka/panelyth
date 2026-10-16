@@ -144,8 +144,33 @@ function applyTheme(preference: ThemePreference): void {
   root.dataset.theme = theme
 }
 
+/** The liquid glass ripple (styles.css, --glass-backdrop): fractal noise displacing the blurred backdrop. */
+export const GLASS_LIQUID_FILTER_ID = "glass-liquid"
+
+/** Puts the glass style's SVG filters into this page once; floating layers refer to them by id. */
+function ensureGlassFilters(): void {
+  if (document.getElementById(GLASS_LIQUID_FILTER_ID) || !document.body) return
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg")
+  svg.setAttribute("aria-hidden", "true")
+  svg.setAttribute("width", "0")
+  svg.setAttribute("height", "0")
+  svg.style.position = "absolute"
+  svg.innerHTML =
+    `<filter id="${GLASS_LIQUID_FILTER_ID}" color-interpolation-filters="sRGB">` +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.011 0.016" numOctaves="2" seed="7" result="noise" />' +
+    '<feDisplacementMap in="SourceGraphic" in2="noise" scale="26" xChannelSelector="R" yChannelSelector="G" />' +
+    "</filter>" +
+    // Menus and popups: larger waves, a stronger offset.
+    '<filter id="glass-liquid-strong" color-interpolation-filters="sRGB">' +
+    '<feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="11" result="noise" />' +
+    '<feDisplacementMap in="SourceGraphic" in2="noise" scale="44" xChannelSelector="R" yChannelSelector="G" />' +
+    "</filter>"
+  document.body.appendChild(svg)
+}
+
 function applyStyle(style: DesignStyle): void {
   document.documentElement.dataset.style = style
+  if (style === "glass") ensureGlassFilters()
 }
 
 function applyInterfaceSize(size: InterfaceSize): void {

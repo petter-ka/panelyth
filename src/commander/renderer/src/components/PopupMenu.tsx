@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -7,6 +8,7 @@ import {
   type KeyboardEvent,
   type ReactNode,
 } from "react"
+import { createPortal } from "react-dom"
 
 export interface MenuEntry {
   id: string
@@ -45,8 +47,41 @@ interface PopupMenuProps {
    * when the menu opens; the caller filters the entries by its value.
    */
   search?: { value: string; onChange(value: string): void; label: string }
+  /**
+   * Where the menu opens, in the caller's box: position classes ("top-9
+   * left-2"; "right-2 bottom-full left-2" spans the box and opens upward).
+   */
   className?: string
+  /** Where the menu opens, as a position (left, top, or position: fixed). */
   style?: CSSProperties
+}
+
+/** Space kept between a menu and the window's edges. */
+const EDGE = 8
+
+/**
+ * Places a menu drawn at the top level of the page at its anchor (the spot
+ * the caller chose in its own box), within the window: below the anchor
+ * when it fits, else above it, else from the top of the window, as high as
+ * the window allows and scrolling. An anchor with a width (the command
+ * line) gives the menu its width, and its menu opens upward first.
+ */
+function place(menu: HTMLElement, anchor: HTMLElement, upward: boolean): void {
+  const a = anchor.getBoundingClientRect()
+  const room = window.innerHeight - 2 * EDGE
+  if (a.width > 0) menu.style.width = `${a.width}px`
+  menu.style.maxHeight = ""
+  const height = Math.min(menu.offsetHeight, room)
+  const below = window.innerHeight - EDGE - a.bottom
+  const above = a.top - EDGE
+  const fitsBelow = height <= below
+  const fitsAbove = height <= above
+  const top =
+    upward && fitsAbove ? a.top - height : fitsBelow ? a.bottom : fitsAbove ? a.top - height : EDGE
+  menu.style.top = `${top}px`
+  menu.style.maxHeight = `${room}px`
+  const width = menu.offsetWidth
+  menu.style.left = `${Math.max(EDGE, Math.min(a.left, window.innerWidth - EDGE - width))}px`
 }
 
 const MENU_DRAG_TYPE = "application/x-panelyth-menu-entry"
@@ -58,6 +93,11 @@ const selectable = (e: MenuEntry | undefined): boolean =>
  * A keyboard-first menu inside a panel (drive menu, hotlist, history, tab
  * menu): ↑/↓ move, Enter selects, an access key selects its entry, Esc or a
  * click elsewhere closes. Keys never reach the panel behind it.
+ *
+ * It opens where the caller puts it in its own box, but is drawn at the top
+ * level of the page, over every panel, card edge and bar (a menu drawn in
+ * its bar was covered by the panels below), and kept within the window,
+ * scrolling when the window is too small for it.
  */
 export function PopupMenu({
   label,
@@ -71,6 +111,7 @@ export function PopupMenu({
   search,
 }: PopupMenuProps) {
   const list = useRef<HTMLDivElement>(null)
+  const anchor = useRef<HTMLSpanElement>(null)
   const field = useRef<HTMLInputElement>(null)
   const firstSelectable = useMemo(() => {
     const current = entries.findIndex((e) => e.current && selectable(e))
@@ -108,6 +149,19 @@ export function PopupMenu({
     document.addEventListener("mousedown", onDown, true)
     return () => document.removeEventListener("mousedown", onDown, true)
   }, [onClose])
+
+  // Placed again after every render (the entries, a search) and on a resize.
+  const upward = /\bbottom-/.test(className ?? "")
+  useLayoutEffect(() => {
+    if (list.current && anchor.current) place(list.current, anchor.current, upward)
+  })
+  useEffect(() => {
+    const onResize = (): void => {
+      if (list.current && anchor.current) place(list.current, anchor.current, upward)
+    }
+    window.addEventListener("resize", onResize)
+    return () => window.removeEventListener("resize", onResize)
+  }, [upward])
 
   useEffect(() => {
     list.current
@@ -159,94 +213,106 @@ export function PopupMenu({
     }
   }
 
+  const { position, left, top, right, bottom } = style ?? {}
   return (
-    <div
-      ref={list}
-      role="menu"
-      aria-label={label}
-      aria-activedescendant={shown >= 0 ? `${testId ?? "menu"}-item-${shown}` : undefined}
-      tabIndex={-1}
-      data-testid={testId}
-      onKeyDown={onKeyDown}
-      style={style}
-      className={`glass-float absolute z-20 max-h-[min(28rem,80%)] min-w-64 overflow-y-auto rounded-md border border-border bg-raised py-1 text-xs shadow-xl shadow-black/30 outline-none ${className ?? "top-1 left-2"}`}
-    >
-      {search && (
-        <div className="sticky -top-1 z-10 -mt-1 border-b border-border bg-raised px-2 pt-2 pb-1.5">
-          <input
-            ref={field}
-            type="search"
-            value={search.value}
-            onChange={(e) => search.onChange(e.target.value)}
-            aria-label={search.label}
-            placeholder={search.label}
-            aria-controls={testId}
-            className="h-7 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none placeholder:text-muted focus:border-accent"
-          />
-        </div>
+    <>
+      {/* The spot the caller chose; the menu itself is drawn at the top level. */}
+      <span
+        ref={anchor}
+        aria-hidden="true"
+        className={`pointer-events-none absolute ${className ?? "top-1 left-2"}`}
+        style={{ position, left, top, right, bottom }}
+      />
+      {createPortal(
+        <div
+          ref={list}
+          role="menu"
+          aria-label={label}
+          aria-activedescendant={shown >= 0 ? `${testId ?? "menu"}-item-${shown}` : undefined}
+          tabIndex={-1}
+          data-testid={testId}
+          onKeyDown={onKeyDown}
+          className="glass-float fixed z-[60] min-w-64 overflow-y-auto rounded-md border border-border bg-raised py-1 text-xs shadow-xl shadow-black/30 outline-none"
+        >
+          {search && (
+            <div className="sticky -top-1 z-10 -mt-1 border-b border-border bg-raised px-2 pt-2 pb-1.5">
+              <input
+                ref={field}
+                type="search"
+                value={search.value}
+                onChange={(e) => search.onChange(e.target.value)}
+                aria-label={search.label}
+                placeholder={search.label}
+                aria-controls={testId}
+                className="h-7 w-full rounded-md border border-border bg-canvas px-2 text-xs text-text outline-none placeholder:text-muted focus:border-accent"
+              />
+            </div>
+          )}
+          {entries.map((entry, index) =>
+            entry.separator ? (
+              <div key={entry.id} role="separator" className="my-1 border-t border-border" />
+            ) : entry.heading ? (
+              <div
+                key={entry.id}
+                role="presentation"
+                className="px-3 pt-2 pb-1 text-2xs font-semibold tracking-wide text-muted uppercase"
+              >
+                {entry.label}
+              </div>
+            ) : (
+              <div
+                key={entry.id}
+                id={`${testId ?? "menu"}-item-${index}`}
+                role={entry.checked === undefined ? "menuitem" : "menuitemcheckbox"}
+                aria-disabled={entry.disabled || undefined}
+                aria-current={entry.current || undefined}
+                aria-checked={entry.checked}
+                data-index={index}
+                data-focused={index === shown}
+                onMouseEnter={() => selectable(entry) && setFocus(index)}
+                onClick={() => choose(index)}
+                draggable={entry.dragId !== undefined && onReorder !== undefined}
+                onDragStart={(e) => {
+                  if (entry.dragId === undefined) return
+                  e.dataTransfer.setData(MENU_DRAG_TYPE, entry.dragId)
+                  e.dataTransfer.effectAllowed = "move"
+                }}
+                onDragOver={(e) => {
+                  if (entry.dragId === undefined || !e.dataTransfer.types.includes(MENU_DRAG_TYPE))
+                    return
+                  e.preventDefault()
+                  e.dataTransfer.dropEffect = "move"
+                  const bounds = e.currentTarget.getBoundingClientRect()
+                  setDropAt({ id: entry.id, after: e.clientY > bounds.top + bounds.height / 2 })
+                }}
+                onDragLeave={(e) => {
+                  if (e.currentTarget === e.target) setDropAt(null)
+                }}
+                onDragEnd={() => setDropAt(null)}
+                onDrop={(e) => {
+                  const source = e.dataTransfer.getData(MENU_DRAG_TYPE)
+                  const after = dropAt?.after ?? false
+                  setDropAt(null)
+                  if (!source || entry.dragId === undefined) return
+                  e.preventDefault()
+                  onReorder?.(source, entry.dragId, after)
+                }}
+                className={`flex h-7 cursor-default items-center gap-3 border-y-2 border-transparent px-3 ${entry.disabled ? "text-muted" : "text-text"} data-[focused=true]:bg-accent/20 ${dropAt?.id === entry.id ? (dropAt.after ? "border-b-accent" : "border-t-accent") : ""}`}
+              >
+                <span className="w-3 shrink-0 text-accent" aria-hidden="true">
+                  {entry.checked === true ? "✓" : entry.current ? "•" : ""}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{entry.label}</span>
+                {entry.detail !== undefined && (
+                  <span className="shrink-0 text-2xs text-muted tabular-nums">{entry.detail}</span>
+                )}
+              </div>
+            ),
+          )}
+          {footer}
+        </div>,
+        document.body,
       )}
-      {entries.map((entry, index) =>
-        entry.separator ? (
-          <div key={entry.id} role="separator" className="my-1 border-t border-border" />
-        ) : entry.heading ? (
-          <div
-            key={entry.id}
-            role="presentation"
-            className="px-3 pt-2 pb-1 text-2xs font-semibold tracking-wide text-muted uppercase"
-          >
-            {entry.label}
-          </div>
-        ) : (
-          <div
-            key={entry.id}
-            id={`${testId ?? "menu"}-item-${index}`}
-            role={entry.checked === undefined ? "menuitem" : "menuitemcheckbox"}
-            aria-disabled={entry.disabled || undefined}
-            aria-current={entry.current || undefined}
-            aria-checked={entry.checked}
-            data-index={index}
-            data-focused={index === shown}
-            onMouseEnter={() => selectable(entry) && setFocus(index)}
-            onClick={() => choose(index)}
-            draggable={entry.dragId !== undefined && onReorder !== undefined}
-            onDragStart={(e) => {
-              if (entry.dragId === undefined) return
-              e.dataTransfer.setData(MENU_DRAG_TYPE, entry.dragId)
-              e.dataTransfer.effectAllowed = "move"
-            }}
-            onDragOver={(e) => {
-              if (entry.dragId === undefined || !e.dataTransfer.types.includes(MENU_DRAG_TYPE))
-                return
-              e.preventDefault()
-              e.dataTransfer.dropEffect = "move"
-              const bounds = e.currentTarget.getBoundingClientRect()
-              setDropAt({ id: entry.id, after: e.clientY > bounds.top + bounds.height / 2 })
-            }}
-            onDragLeave={(e) => {
-              if (e.currentTarget === e.target) setDropAt(null)
-            }}
-            onDragEnd={() => setDropAt(null)}
-            onDrop={(e) => {
-              const source = e.dataTransfer.getData(MENU_DRAG_TYPE)
-              const after = dropAt?.after ?? false
-              setDropAt(null)
-              if (!source || entry.dragId === undefined) return
-              e.preventDefault()
-              onReorder?.(source, entry.dragId, after)
-            }}
-            className={`flex h-7 cursor-default items-center gap-3 border-y-2 border-transparent px-3 ${entry.disabled ? "text-muted" : "text-text"} data-[focused=true]:bg-accent/20 ${dropAt?.id === entry.id ? (dropAt.after ? "border-b-accent" : "border-t-accent") : ""}`}
-          >
-            <span className="w-3 shrink-0 text-accent" aria-hidden="true">
-              {entry.checked === true ? "✓" : entry.current ? "•" : ""}
-            </span>
-            <span className="min-w-0 flex-1 truncate">{entry.label}</span>
-            {entry.detail !== undefined && (
-              <span className="shrink-0 text-2xs text-muted tabular-nums">{entry.detail}</span>
-            )}
-          </div>
-        ),
-      )}
-      {footer}
-    </div>
+    </>
   )
 }

@@ -30,6 +30,12 @@ import { t } from "@panelyth/i18n"
  * The connection point to the commander (ADR-0031, docs/shared/APP-SWITCHING.md).
  * The switch exists only while the commander is enabled.
  */
+/** Panelyth System (ADR-0042): nothing carries over to it. */
+export function switchToSystem(): void {
+  if (!canSwitchApps()) return
+  void bridge.switchToApp("system").catch(() => undefined)
+}
+
 export function switchToCommander(): void {
   if (!canSwitchApps()) return
   void (async () => {

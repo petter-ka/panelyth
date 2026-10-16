@@ -196,6 +196,8 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "find.progress",
   // Stage C08: directory compares.
   "compare.progress",
+  // ADR-0043: Git runs.
+  "git.progress",
   // Stage P06: Settings → About and the native menu's items.
   "update.state",
   "menu.command",
@@ -288,6 +290,29 @@ const api: CommanderApi = {
     check: (selection, destinationDirId) =>
       invoke("archive.check", { selection: copySelection(selection), destinationDirId }),
     tools: () => invoke("archive.tools", {}),
+  },
+  // ADR-0043. Copied field by field: only known fields cross the bridge.
+  git: {
+    status: (dirId, force) =>
+      invoke("git.status", { dirId, ...(force === true && { force: true }) }),
+    changes: (dirId) => invoke("git.changes", { dirId }),
+    run: (p) =>
+      invoke("git.run", {
+        dirId: p.dirId,
+        op: p.op,
+        ...(p.selection !== undefined && { selection: copySelection(p.selection) }),
+        ...(p.changesId !== undefined && { changesId: p.changesId }),
+        ...(p.items !== undefined && { items: [...p.items] }),
+        ...(p.message !== undefined && { message: p.message }),
+        ...(p.amend !== undefined && { amend: p.amend }),
+        ...(p.stageAll !== undefined && { stageAll: p.stageAll }),
+        ...(p.push !== undefined && { push: p.push }),
+        ...(p.mode !== undefined && { mode: p.mode }),
+        ...(p.branch !== undefined && { branch: p.branch }),
+      }),
+    cancel: (opId) => invoke("git.cancel", { opId }),
+    branches: (dirId) => invoke("git.branches", { dirId }),
+    log: (dirId, limit) => invoke("git.log", { dirId, ...(limit !== undefined && { limit }) }),
   },
   // Stage C10.5 (ADR-0037). Copied field by field; a password goes to main
   // and never comes back.
@@ -403,6 +428,7 @@ const api: CommanderApi = {
     locate: ({ queryId, pattern, from, direction }) =>
       invoke("query.locate", { queryId, pattern, from, direction }),
     match: (queryId, mask) => invoke("query.match", { queryId, mask }),
+    facets: (queryId) => invoke("query.facets", { queryId }),
   },
   selection: {
     info: (selection) => invoke("selection.info", { selection: copySelection(selection) }),

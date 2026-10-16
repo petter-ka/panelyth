@@ -31,7 +31,7 @@ import { Tooltip } from "./Tooltip"
 
 export { SwitchRow }
 
-type AppId = "viewer" | "commander"
+type AppId = "viewer" | "commander" | "system"
 
 const tabButton =
   "glass-pill h-8 rounded-md px-3 text-xs text-muted hover:bg-raised hover:text-text aria-selected:bg-raised aria-selected:text-text aria-selected:shadow-sm"
@@ -328,15 +328,18 @@ function SettingsTabs({
   // The tab the user chose, unless the native menu asked for another one since.
   const request = useSettingsTabRequest()
   const [chosen, setChosen] = useState<{ tab: SettingsTab; seq: number } | null>(null)
+  // Panelyth System (ADR-0042) has no settings and no shortcuts of its own.
+  const system = currentApp === "system"
+  const firstTab: SettingsTab = system ? "appearance" : currentApp
   const tab: SettingsTab =
-    chosen && chosen.seq === request.seq ? chosen.tab : (request.tab ?? currentApp)
+    chosen && chosen.seq === request.seq ? chosen.tab : (request.tab ?? firstTab)
   const setTab = (next: SettingsTab): void => setChosen({ tab: next, seq: request.seq })
   const appLabel = currentApp === "viewer" ? "Viewer" : "Commander"
   const tabs: readonly { id: SettingsTab; label: string }[] = [
     ...(showGeneral ? [{ id: "general" as const, label: t("General") }] : []),
-    { id: currentApp, label: appLabel },
+    ...(system ? [] : [{ id: currentApp, label: appLabel }]),
     { id: "appearance", label: t("Appearance") },
-    { id: "shortcuts", label: t("Shortcuts") },
+    ...(system ? [] : [{ id: "shortcuts" as const, label: t("Shortcuts") }]),
     { id: "about", label: t("About") },
   ]
 

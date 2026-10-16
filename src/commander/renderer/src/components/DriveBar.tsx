@@ -1,5 +1,6 @@
 import type { Volume, VolumeKind } from "@panelyth/contracts"
 import { Spinner, Tooltip } from "@panelyth/ui"
+import { formatChord } from "@panelyth/renderer-core"
 import { useEffect, useMemo } from "react"
 import {
   closeDriveMenu,
@@ -12,6 +13,7 @@ import {
   volumeFor,
 } from "../features/drives"
 import { formatBytes } from "../features/format"
+import { useKeymapStore } from "../features/keymap"
 import { useListingStore } from "../features/listing"
 import type { Side } from "../features/panels"
 import {
@@ -65,6 +67,12 @@ const GlobeGlyph = () => (
   </svg>
 )
 
+/** The current key of Connections (the keymap's first chord), for tooltips and menus. */
+function useConnectionsKey(): string {
+  const chord = useKeymapStore((s) => s.keymap.chords["remote.connections"]?.[0])
+  return chord ? formatChord(chord) : ""
+}
+
 /** The volume holding the panel's folder (shared by the drive bar and the status line). */
 export function usePanelVolume(side: Side): Volume | null {
   // On a connection the panel is on no drive: its folder of this computer is behind it.
@@ -93,6 +101,7 @@ export function DriveBar({ side }: { side: Side }) {
   // The drive being opened (one that has to spin up or reconnect takes a while).
   const opening = useListingStore((s) => (s[side].loading ? s[side].loadingTarget : null))
   const remote = useListingStore((s) => s[side].remote)
+  const connectionsKey = useConnectionsKey()
   return (
     <div
       role="toolbar"
@@ -128,7 +137,7 @@ export function DriveBar({ side }: { side: Side }) {
               data-not-ready={v.notReady || undefined}
               onClick={() => void openDrive(side, v.path)}
               {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
-              className={`h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
+              className={`glass-press h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
             >
               {opening === v.path && (
                 <Spinner size={10} className="mr-1 inline-block align-[-1px]" />
@@ -140,14 +149,20 @@ export function DriveBar({ side }: { side: Side }) {
       })}
       {/* Servers are not drives: set apart by a divider, outlined, with a globe. */}
       <span aria-hidden="true" className="mx-1.5 h-4 w-px shrink-0 bg-border" />
-      <Tooltip content={t("Connections to FTP servers (Ctrl+F)")}>
+      <Tooltip
+        content={
+          connectionsKey
+            ? t("Connections to FTP servers ({key})", { key: connectionsKey })
+            : t("Connections to FTP servers")
+        }
+      >
         <button
           type="button"
           tabIndex={-1}
           aria-pressed={remote !== null}
           data-testid={`connections-${side}`}
           onClick={() => openConnections(side)}
-          className={`flex h-5 shrink-0 items-center gap-1 rounded-md border px-1.5 font-medium ${remote ? "border-accent/60 bg-raised text-text" : "border-border text-muted hover:border-muted hover:bg-raised hover:text-text"}`}
+          className={`glass-press flex h-5 shrink-0 items-center gap-1 rounded-md border px-1.5 font-medium ${remote ? "border-accent/60 bg-raised text-text" : "border-border text-muted hover:border-muted hover:bg-raised hover:text-text"}`}
         >
           <GlobeGlyph />
           FTP
@@ -182,6 +197,7 @@ export function DriveMenu({ side }: { side: Side }) {
   const loading = useDrivesStore((s) => s.loading)
   const current = usePanelVolume(side)
   const connections = useRemoteStore((s) => s.connections)
+  const connectionsKey = useConnectionsKey()
   // The saved connections are read when the menu first opens; opening it connects to nothing.
   useEffect(() => {
     if (open) void ensureConnections()
@@ -232,7 +248,7 @@ export function DriveMenu({ side }: { side: Side }) {
     out.push({
       id: "connections",
       label: t("Connections…"),
-      detail: "Ctrl+F",
+      detail: connectionsKey || undefined,
       onSelect: () => openConnections(side),
     })
     out.push({
@@ -242,7 +258,7 @@ export function DriveMenu({ side }: { side: Side }) {
       onSelect: () => openQuickConnect(side),
     })
     return out
-  }, [volumes, places, current, side, connections])
+  }, [volumes, places, current, side, connections, connectionsKey])
   if (!open) return null
   return (
     <PopupMenu

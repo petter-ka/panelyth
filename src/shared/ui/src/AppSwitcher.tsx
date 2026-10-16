@@ -1,20 +1,29 @@
 import type { AppId } from "@panelyth/contracts"
-import { CommanderGlyph, ViewerGlyph } from "./AppSwitchButton"
+import { APP_GLYPHS } from "./AppSwitchButton"
 import { Tooltip } from "./Tooltip"
 import { t } from "@panelyth/i18n"
 import { updateWaiting, useAboutStore } from "@panelyth/renderer-core"
 
-const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
-const APPS: AppId[] = ["viewer", "commander"]
+const TITLES: Record<AppId, string> = {
+  viewer: "Viewer",
+  commander: "Commander",
+  system: "System",
+}
+const APPS: AppId[] = ["viewer", "commander", "system"]
 
 export interface AppSwitcherProps {
   current: AppId
+  /** The key that switches between the viewer and the commander (Ctrl+Shift+M). */
   shortcut: string
-  onSwitch(): void
+  onSwitch(to: AppId): void
   onSettings(): void
 }
 
-/** A shared left rail for switching between Panelyth and Panelyth Commander. */
+/**
+ * The shared left rail: Panelyth, Panelyth Commander and Panelyth System
+ * (ADR-0031, ADR-0042). The switch key goes between the viewer and the
+ * commander; System is opened from here.
+ */
 export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwitcherProps) {
   // A newer version was found or is downloaded: Settings → About has it (Stage P06).
   const waiting = useAboutStore(updateWaiting)
@@ -28,32 +37,41 @@ export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwit
       {APPS.map((app) => {
         const active = app === current
         const label = t("Switch to {app}", { app: TITLES[app] })
-        const Glyph = app === "viewer" ? ViewerGlyph : CommanderGlyph
+        const Glyph = APP_GLYPHS[app]
+        // The key switches between the viewer and the commander only.
+        const keyed = app !== "system" && current !== "system"
 
         return (
           <Tooltip
             key={app}
             side="right"
             content={
-              active ? t("{app} (current app)", { app: TITLES[app] }) : `${label} (${shortcut})`
+              active
+                ? t("{app} (current app)", { app: TITLES[app] })
+                : keyed
+                  ? `${label} (${shortcut})`
+                  : label
             }
           >
             <button
               type="button"
-              onClick={active ? undefined : onSwitch}
+              onClick={active ? undefined : () => onSwitch(app)}
               disabled={active}
               aria-label={active ? t("{app} (current app)", { app: TITLES[app] }) : label}
               aria-current={active ? "page" : undefined}
-              aria-keyshortcuts={active ? undefined : shortcut.replace("Ctrl", "Control")}
+              aria-keyshortcuts={active || !keyed ? undefined : shortcut.replace("Ctrl", "Control")}
               data-target={app}
-              data-testid={active ? "current-app" : "app-switch"}
-              // The current app: the accent glyph and a bar on the rail's edge.
-              className={`relative grid size-9 shrink-0 place-items-center rounded-md ${active ? "text-accent" : "text-muted hover:bg-raised hover:text-text"}`}
+              // "app-switch" is the other app of the keyed pair, the one the key goes to.
+              data-testid={active ? "current-app" : keyed ? "app-switch" : `app-switch-${app}`}
+              // The current app: the accent glyph, pressed into the glass in that style, and a
+              // light on the rail's edge.
+              className={`glass-press app-icon relative grid size-9 shrink-0 place-items-center rounded-md ${active ? "text-accent" : "text-muted hover:bg-raised hover:text-text"}`}
             >
               {active && (
                 <span
                   aria-hidden="true"
-                  className="absolute top-1.5 bottom-1.5 -left-1 w-[3px] rounded-r-full bg-accent"
+                  data-testid="app-light"
+                  className="rail-light absolute top-1 bottom-1 -left-1 w-[3px] rounded-r-full"
                 />
               )}
               <Glyph size={18} />

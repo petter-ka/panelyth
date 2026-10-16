@@ -217,8 +217,11 @@
  *   classes: --chrome is clear, --canvas and --raised let the card through.
  *   Cards have no backdrop-filter: the wallpaper behind them is already soft
  *   and never moves, so a blur would cost GPU work and change nothing.
- * - Floating layers (.glass-float: menus, popups; .glass-sheet: dialogs)
- *   blur what is behind them. They are transient and never on the
+ * - Floating layers (.glass-float: menus, popups; .glass-sheet: dialogs) are
+ *   liquid: what is behind them is blurred lightly, rippled by an SVG
+ *   displacement filter (#glass-liquid, injected by appearance.ts) and
+ *   tone-mapped (contrast and brightness), so they can be quite clear and text
+ *   still keeps AA over a black or a white picture. They are transient and never on the
  *   scrolling surface. A layer that stays over the scrolling surface
  *   (.glass-chip) is glass without the blur.
  * - Full-window media overlays keep the solid canvas: pictures are judged
@@ -243,8 +246,16 @@
   --glass-fill: color-mix(in srgb, var(--chrome-solid) 62%, transparent);
   --glass-content: color-mix(in srgb, var(--canvas-solid) 50%, transparent);
   --glass-control: color-mix(in srgb, var(--raised-solid) 70%, transparent);
-  --glass-float: color-mix(in srgb, var(--raised-solid) 90%, transparent);
-  --glass-sheet: color-mix(in srgb, var(--chrome-solid) 93%, transparent);
+  /*
+   * Floating layers take the theme's colors: their fill is a soft diagonal
+   * through the palette's accent, purple and blue (the wallpaper's hues),
+   * each mixed into the layer's base by the tint and laid over the backdrop
+   * at the share. Menus and popups are based on raised, dialogs on chrome.
+   */
+  --glass-float-tint: 12%;
+  --glass-float-share: 70%;
+  --glass-sheet-tint: 8%;
+  --glass-sheet-share: 80%;
   /* No blur under a chip, so it is denser: text stays AA over any picture. */
   --glass-chip: color-mix(in srgb, var(--chrome-solid) 94%, transparent);
   /* Opaque stand-in for a card over the wallpaper: sticky headers that rows scroll under. */
@@ -262,7 +273,17 @@
   );
   --glass-shade: rgb(0 0 0 / 0.05);
   --glass-drop: 0 1px 2px rgb(0 0 0 / 0.08), 0 14px 44px rgb(0 0 0 / 0.2);
-  --glass-backdrop: blur(28px) saturate(180%);
+  /*
+   * Lifted and compressed: a black picture behind turns near white (228 of
+   * 255), so dark text stays AA on the tint. The saturation stays low, so the
+   * pictures behind add a hint of color and the theme's tint leads.
+   */
+  --glass-backdrop: blur(10px) url(#glass-liquid) contrast(0.15) saturate(150%) brightness(2.1);
+  /* Menus and popups: a lighter blur and a stronger ripple. */
+  --glass-menu-backdrop: blur(6px) url(#glass-liquid-strong) contrast(0.15) saturate(150%)
+    brightness(2.1);
+  /* A gloss across the top of a floating layer (light only: it adds contrast to dark text). */
+  --glass-sheen: rgb(255 255 255 / 0.6);
   --wallpaper:
     radial-gradient(70% 80% at 0% 0%, var(--glass-bloom-1), transparent 70%),
     radial-gradient(60% 70% at 100% 100%, var(--glass-bloom-2), transparent 70%),
@@ -275,8 +296,10 @@
   --glass-bloom-3: color-mix(in srgb, var(--label-purple) 36%, var(--canvas-solid));
   --glass-fill: color-mix(in srgb, var(--chrome-solid) 52%, transparent);
   --glass-control: color-mix(in srgb, var(--raised-solid) 76%, transparent);
-  --glass-float: color-mix(in srgb, var(--raised-solid) 88%, transparent);
-  --glass-sheet: color-mix(in srgb, var(--chrome-solid) 88%, transparent);
+  --glass-float-tint: 24%;
+  --glass-float-share: 40%;
+  --glass-sheet-tint: 30%;
+  --glass-sheet-share: 40%;
   --glass-rim: rgb(255 255 255 / 0.1);
   --glass-shine: rgb(255 255 255 / 0.17);
   --glass-edge: linear-gradient(
@@ -288,8 +311,17 @@
   );
   --glass-shade: rgb(0 0 0 / 0.3);
   --glass-drop: 0 1px 2px rgb(0 0 0 / 0.4), 0 18px 50px rgb(0 0 0 / 0.5);
-  /* Darkens a bright picture behind a dark layer, so muted text keeps AA on it. */
-  --glass-backdrop: blur(28px) saturate(160%) brightness(0.5);
+  /*
+   * Squeezed into a narrow band of dark grays (34 to 43 of 255) under the
+   * theme's tint: dark enough that muted text keeps AA over a white picture,
+   * and with the tint still lighter than the app's cards over a black one, so
+   * an open menu or dialog reads as raised above the app, never as dimmed.
+   */
+  --glass-backdrop: blur(10px) url(#glass-liquid) contrast(0.12) saturate(150%) brightness(0.3);
+  --glass-menu-backdrop: blur(6px) url(#glass-liquid-strong) contrast(0.12) saturate(150%)
+    brightness(0.3);
+  /* No gloss: white over a dark layer would take contrast from light text. */
+  --glass-sheen: transparent;
 }
 
 :root[data-style="glass"] body {
@@ -382,20 +414,54 @@
   --raised: var(--glass-control);
   --border: var(--glass-hairline);
   border-color: var(--glass-rim);
-  background: var(--glass-float);
+  background: var(--glass-chip);
   box-shadow:
     inset 0 1px 0 var(--glass-shine),
     var(--glass-drop);
 }
 
-:root[data-style="glass"] .glass-float,
-:root[data-style="glass"] .glass-sheet {
-  backdrop-filter: var(--glass-backdrop);
+:root[data-style="glass"] .glass-float {
+  --tint-base: var(--raised-solid);
+  --tint: var(--glass-float-tint);
+  --share: var(--glass-float-share);
+  backdrop-filter: var(--glass-menu-backdrop);
 }
 
 :root[data-style="glass"] .glass-sheet {
-  background: var(--glass-sheet);
+  --tint-base: var(--chrome-solid);
+  --tint: var(--glass-sheet-tint);
+  --share: var(--glass-sheet-share);
+  backdrop-filter: var(--glass-backdrop);
   border-radius: 1.125rem;
+}
+
+:root[data-style="glass"] :is(.glass-float, .glass-sheet) {
+  background:
+    linear-gradient(to bottom, var(--glass-sheen), transparent 3.5rem),
+    linear-gradient(
+      150deg,
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--accent) var(--tint), var(--tint-base)) var(--share),
+        transparent
+      ),
+      color-mix(
+          in srgb,
+          color-mix(in srgb, var(--label-purple) var(--tint), var(--tint-base)) var(--share),
+          transparent
+        )
+        55%,
+      color-mix(
+        in srgb,
+        color-mix(in srgb, var(--label-blue) var(--tint), var(--tint-base)) var(--share),
+        transparent
+      )
+    );
+}
+
+/* Behind a dialog: a light dim, so the app reads through the glass. */
+:root[data-style="glass"] .glass-scrim {
+  background: rgb(0 0 0 / 0.18);
 }
 
 :root[data-style="glass"] .glass-float .sticky,
@@ -456,6 +522,60 @@
 
 :root[data-style="glass"] .app-curtain[data-rail] {
   left: calc(2.75rem + 2 * var(--glass-gap));
+}
+
+/*
+ * A toggle pressed into the glass (.glass-press with aria-pressed: the
+ * commander's drive buttons): a capsule sunk into the surface, shadowed along
+ * its top edge, with light caught on its lower lip and an accent tint and
+ * glow. Pressing gives way a little, like a liquid surface.
+ */
+:root[data-style="glass"] {
+  --glass-press-shade: rgb(0 0 0 / 0.18);
+  --glass-press-lip: rgb(255 255 255 / 0.9);
+}
+
+:root[data-style="glass"].dark {
+  --glass-press-shade: rgb(0 0 0 / 0.45);
+  --glass-press-lip: rgb(255 255 255 / 0.16);
+}
+
+:root[data-style="glass"] .glass-press {
+  border-radius: 9999px;
+}
+
+/* An app's button on the rail: the shape of an app icon, concentric with the rail's card. */
+:root[data-style="glass"] .glass-press.app-icon {
+  border-radius: calc(var(--glass-radius) - 4px);
+}
+
+:root[data-style="glass"] .glass-press:is([aria-pressed="true"], [aria-current="page"]) {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--text);
+  box-shadow:
+    inset 0 1.5px 3px var(--glass-press-shade),
+    inset 0 -1px 0 var(--glass-press-lip),
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 45%, transparent),
+    0 0 10px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :root[data-style="glass"] .glass-press {
+    transition:
+      background-color var(--motion-fast) var(--motion-ease),
+      box-shadow var(--motion-fast) var(--motion-ease),
+      transform var(--motion-fast) var(--motion-ease);
+  }
+
+  :root[data-style="glass"] .glass-press:active {
+    transform: scale(0.92);
+  }
+}
+
+/* The current app on the rail keeps its accent glyph in the pressed capsule. */
+:root[data-style="glass"] .glass-press[aria-current="page"] {
+  color: var(--accent);
 }
 
 /* Buttons, segmented controls and tabs become capsules. */
@@ -695,6 +815,25 @@
     background: var(--accent);
     color: var(--accent-foreground);
   }
+}
+
+/*
+ * The current app's light on the rail's edge (AppSwitcher.tsx): a tube of the
+ * accent, brightest in the middle and fading out at both ends, with a glow
+ * that follows the fade (a drop shadow, not a box shadow, so the ends stay
+ * soft). Both styles, like the commander's light line on the active panel.
+ */
+.rail-light {
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    var(--accent) 22%,
+    color-mix(in srgb, var(--accent) 60%, white) 50%,
+    var(--accent) 78%,
+    transparent
+  );
+  filter: drop-shadow(0 0 2px var(--accent))
+    drop-shadow(0 0 6px color-mix(in srgb, var(--accent) 70%, transparent));
 }
 
 /*

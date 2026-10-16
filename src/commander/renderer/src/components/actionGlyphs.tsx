@@ -279,6 +279,34 @@ export const GLYPHS = {
       <path d="M1.75 6h12.5M1.75 9.5h12.5M6 6v7.25" />
     </>
   ),
+  // Git (ADR-0043): commits are dots on a line.
+  gitCommit: <path d="M1.5 8h4M10.5 8h4M8 5.5a2.5 2.5 0 1 1 0 5 2.5 2.5 0 0 1 0-5Z" />,
+  gitStage: (
+    <>
+      {doc}
+      <path d="M8 7.25v4.5M5.75 9.5h4.5" />
+    </>
+  ),
+  gitUnstage: (
+    <>
+      {doc}
+      <path d="M5.75 9.5h4.5" />
+    </>
+  ),
+  gitDiscard: <path d="M3.5 6.5h6.25a3.25 3.25 0 0 1 0 6.5H6.5M6 3.75 3.25 6.5 6 9.25" />,
+  gitBranch: (
+    <>
+      <circle cx="4.5" cy="3.5" r="1.5" />
+      <circle cx="4.5" cy="12.5" r="1.5" />
+      <circle cx="11.5" cy="4.5" r="1.5" />
+      <path d="M4.5 5v6M11.5 6c0 3-7 2-7 5" />
+    </>
+  ),
+  gitPull: <path d="M8 2v8.5M4.75 7.25 8 10.5l3.25-3.25M2.75 13.75h10.5" />,
+  gitPush: <path d="M8 13.75V5.25M4.75 8.5 8 5.25l3.25 3.25M2.75 2.25h10.5" />,
+  gitFetch: (
+    <path d="M4.5 12.5h-.25a3 3 0 0 1-.4-5.97A4.5 4.5 0 0 1 12.6 6a2.75 2.75 0 0 1-.6 6.5h-.5M8 8v6M5.75 11.75 8 14l2.25-2.25" />
+  ),
 } satisfies Record<string, ReactNode>
 
 export type GlyphName = keyof typeof GLYPHS
@@ -297,6 +325,14 @@ export const LIBRARY: Record<GlyphName, IconName> = {
   swap: "flip",
   pathEdit: "pencil",
   history: "rotate-ccw",
+  gitCommit: "check",
+  gitStage: "mkdir",
+  gitUnstage: "close",
+  gitDiscard: "rotate-ccw",
+  gitBranch: "branch",
+  gitPull: "arrow-up",
+  gitPush: "arrow-up",
+  gitFetch: "refresh",
   drive: "panel-bottom-left",
   tabAdd: "mkdir",
   tabClose: "close",

@@ -1,4 +1,13 @@
 import type {
+  GitBranchesResult,
+  GitCancelResult,
+  GitChangesResult,
+  GitLogResult,
+  GitRunParams,
+  GitRunResult,
+  GitStatusResult,
+} from "./git"
+import type {
   EditEyesParams,
   EditEyesResult,
   AssetPickResult,
@@ -121,6 +130,8 @@ import type {
   SidecarStatus,
   SystemInfo,
   AppId,
+  SystemHardware,
+  SystemLoad,
 } from "./rpc"
 
 /** Electron IPC channel names. Only preload and main use these. */
@@ -343,6 +354,61 @@ export interface PanelythApi {
  * Shape of `window.panelyth` in the commander's app view (ADR-0027): only the
  * methods in COMMANDER_METHODS.
  */
+/**
+ * Panelyth System's API (ADR-0042): the computer, the volumes, a search over
+ * volumes, and handing a result to the commander through the shared context.
+ */
+export interface SystemApi {
+  app: {
+    exit(): Promise<RpcEnvelope<OkResult>>
+    switch(to: AppId): Promise<RpcEnvelope<OkResult>>
+    about(): Promise<RpcEnvelope<AboutInfo>>
+    openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
+  }
+  settings: {
+    openWindow(tab?: SettingsTab, section?: string): Promise<RpcEnvelope<OkResult>>
+    closeWindow(then?: "shortcuts"): Promise<RpcEnvelope<OkResult>>
+  }
+  update: {
+    get(): Promise<RpcEnvelope<UpdateState>>
+    check(): Promise<RpcEnvelope<UpdateState>>
+    download(): Promise<RpcEnvelope<UpdateState>>
+    install(): Promise<RpcEnvelope<OkResult>>
+  }
+  sidecar: {
+    getStatus(): Promise<RpcEnvelope<SidecarStatus>>
+  }
+  library: {
+    get(): Promise<RpcEnvelope<LibraryState>>
+    /** The shared settings only (shared.*); main refuses the apps' own. */
+    setSetting(key: string, value: unknown): Promise<RpcEnvelope<OkResult>>
+  }
+  system: {
+    hardware(): Promise<RpcEnvelope<SystemHardware>>
+    load(): Promise<RpcEnvelope<SystemLoad>>
+  }
+  fs: {
+    volumes(): Promise<RpcEnvelope<VolumesResult>>
+  }
+  find: {
+    start(params: FindStartParams): Promise<RpcEnvelope<FindStartResult>>
+    cancel(findId: number): Promise<RpcEnvelope<FindCancelResult>>
+  }
+  /** The search's results session. */
+  query: {
+    page(params: QueryPageParams): Promise<RpcEnvelope<QueryPageResult>>
+    close(queryId: number): Promise<RpcEnvelope<QueryCloseResult>>
+  }
+  dir: {
+    /** The folder holding a found entry, for the commander to open. */
+    openContaining(entryId: number): Promise<RpcEnvelope<DirOpenResult>>
+  }
+  context: {
+    publish(dirId: number, focusId: number | null): Promise<RpcEnvelope<OkResult>>
+  }
+  onEvent<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void
+}
+
 export interface CommanderApi {
   app: {
     exit(): Promise<RpcEnvelope<OkResult>>
@@ -440,6 +506,19 @@ export interface CommanderApi {
     secureStore(): Promise<RpcEnvelope<SecureStoreResult>>
   }
   /**
+   * Git (ADR-0043): the status of a panel's folder, runs in the background
+   * (their progress is `git.progress`), the commit dialog's change list,
+   * branches and the log. Files are a selection or rows of a change list.
+   */
+  git: {
+    status(dirId: number, force?: boolean): Promise<RpcEnvelope<GitStatusResult>>
+    changes(dirId: number): Promise<RpcEnvelope<GitChangesResult>>
+    run(params: GitRunParams): Promise<RpcEnvelope<GitRunResult>>
+    cancel(opId: number): Promise<RpcEnvelope<GitCancelResult>>
+    branches(dirId: number): Promise<RpcEnvelope<GitBranchesResult>>
+    log(dirId: number, limit?: number): Promise<RpcEnvelope<GitLogResult>>
+  }
+  /**
    * Compare and synchronize directories (Stage C08): the rows of a compare
    * are a query session; sync, checksum and compare-by-content jobs are
    * files.start jobs.
@@ -487,6 +566,8 @@ export interface CommanderApi {
     locate(params: QueryLocateParams): Promise<RpcEnvelope<QueryLocateResult>>
     /** Marking by mask (Stage C02). */
     match(queryId: number, mask: string): Promise<RpcEnvelope<QueryMatchResult>>
+    /** The panel's entries by type: folders and each extension's count (counted on request). */
+    facets(queryId: number): Promise<RpcEnvelope<QueryFacets>>
   }
   selection: {
     info(selection: SelectionDescriptor): Promise<RpcEnvelope<SelectionInfo>>

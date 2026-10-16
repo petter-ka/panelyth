@@ -1,5 +1,10 @@
 import { isAbsolute } from "node:path"
 import {
+  APP_IDS,
+  GIT_OPS,
+  MAX_BRANCH_NAME_CHARS,
+  MAX_COMMIT_MESSAGE_CHARS,
+  MAX_GIT_ITEMS,
   BATCH_FOLDER_ID,
   MAX_RECIPE_NAME_CHARS,
   recipeProblem,
@@ -81,6 +86,9 @@ import {
 type Validator = (params: unknown) => string | null
 
 type Obj = Record<string, unknown>
+
+/** One of the family's apps (ADR-0031, ADR-0042). */
+const isAppId = (v: unknown): boolean => (APP_IDS as readonly unknown[]).includes(v)
 
 const isPlainObject = (v: unknown): v is Obj =>
   typeof v === "object" &&
@@ -187,6 +195,67 @@ const FIND_KEYS = [
   "attrsClear",
 ] as const
 const isBound = (v: unknown): boolean => v === null || isCount(v)
+
+/** git.status, git.changes, git.branches: a folder by id; status may be read again (`force`). */
+function gitDirProblem(p: unknown): string | null {
+  return shapeWithOptional(p, ["dirId"], ["force"]) &&
+    isId(p.dirId) &&
+    (p.force === undefined || typeof p.force === "boolean")
+    ? null
+    : "expected { dirId } and optionally force"
+}
+
+const gitOps: ReadonlySet<unknown> = new Set(GIT_OPS)
+const gitPullModes: ReadonlySet<unknown> = new Set(["ffOnly", "rebase", "merge"])
+
+/**
+ * git.run (ADR-0043): files are a selection of the panel or rows of a change
+ * list, never paths; a branch is a name Git checks again.
+ */
+function gitRunProblem(p: unknown): string | null {
+  const optional = [
+    "selection",
+    "changesId",
+    "items",
+    "message",
+    "amend",
+    "stageAll",
+    "push",
+    "mode",
+    "branch",
+  ]
+  if (!shapeWithOptional(p, ["dirId", "op"], optional)) return "expected { dirId, op }"
+  if (!isId(p.dirId) || !gitOps.has(p.op)) return "invalid dirId or op"
+  if (p.selection !== undefined) {
+    const problem = selectionProblem(p.selection)
+    if (problem) return problem
+  }
+  if (p.changesId !== undefined && !isId(p.changesId)) return "invalid changesId"
+  if (
+    p.items !== undefined &&
+    (!Array.isArray(p.items) || p.items.length > MAX_GIT_ITEMS || !p.items.every(isCount))
+  )
+    return "invalid items"
+  if ((p.items === undefined) !== (p.changesId === undefined)) return "items go with changesId"
+  if (
+    p.message !== undefined &&
+    (typeof p.message !== "string" || p.message.length > MAX_COMMIT_MESSAGE_CHARS)
+  )
+    return "invalid message"
+  for (const k of ["amend", "stageAll", "push"] as const) {
+    if (p[k] !== undefined && typeof p[k] !== "boolean") return `invalid ${k}`
+  }
+  if (p.mode !== undefined && !gitPullModes.has(p.mode)) return "invalid mode"
+  if (
+    p.branch !== undefined &&
+    (typeof p.branch !== "string" ||
+      p.branch.length === 0 ||
+      p.branch.length > MAX_BRANCH_NAME_CHARS ||
+      p.branch.trim().startsWith("-"))
+  )
+    return "invalid branch"
+  return null
+}
 
 /** find.start (Stage C06): read-only, so typed folder paths are allowed, like dir.open. */
 function findStartProblem(p: unknown): string | null {
@@ -699,6 +768,8 @@ function batchProblem(p: unknown): string | null {
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
   "app.about": empty,
+  "system.hardware": empty,
+  "system.load": empty,
   // A fixed list: main opens its own folders and the project's pages, never a renderer's URL.
   "app.openTarget": (p) =>
     shape(p, ["target"]) && (APP_TARGETS as readonly unknown[]).includes(p.target)
@@ -712,7 +783,7 @@ export const validators: Record<RendererMethod, Validator> = {
   "media.windowReveal": empty,
   "app.switch": (p) =>
     shapeWithOptional(p, ["to"], ["edit"]) &&
-    (p.to === "viewer" || p.to === "commander") &&
+    isAppId(p.to) &&
     (p.edit === undefined || isId(p.edit))
       ? null
       : "expected { to, edit? }",
@@ -800,6 +871,18 @@ export const validators: Record<RendererMethod, Validator> = {
       : "expected { entryId } and optionally lane",
   "find.start": (p) => findStartProblem(p),
   "find.cancel": (p) => (shape(p, ["findId"]) && isId(p.findId) ? null : "expected { findId }"),
+  // ADR-0043: Git in the commander.
+  "git.status": gitDirProblem,
+  "git.changes": gitDirProblem,
+  "git.branches": gitDirProblem,
+  "git.log": (p) =>
+    shapeWithOptional(p, ["dirId"], ["limit"]) &&
+    isId(p.dirId) &&
+    (p.limit === undefined || (isCount(p.limit) && (p.limit as number) <= 100))
+      ? null
+      : "expected { dirId } and optionally limit (0..100)",
+  "git.run": (p) => gitRunProblem(p),
+  "git.cancel": (p) => (shape(p, ["opId"]) && isId(p.opId) ? null : "expected { opId }"),
   "archive.open": entryParams,
   "archive.close": (p) =>
     shape(p, ["archiveId"]) && isId(p.archiveId) ? null : "expected { archiveId }",
@@ -1057,7 +1140,7 @@ export const validators: Record<RendererMethod, Validator> = {
   "context.publish": (p) => {
     if (
       !shapeWithOptional(p, ["app", "dirId", "focusId"], ["selection"]) ||
-      (p.app !== "viewer" && p.app !== "commander") ||
+      !isAppId(p.app) ||
       !isId(p.dirId) ||
       (p.focusId !== null && !isId(p.focusId))
     )

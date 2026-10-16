@@ -130,9 +130,9 @@ async function cursorOn(side: Side, id: number) {
 const panel = (side: Side) => useListingStore.getState()[side]
 const notice = () => screen.getByTestId("files-notice")
 
-/** Ctrl+F, Enter: the first saved connection, connected in a panel. */
+/** Ctrl+Shift+N, Enter: the first saved connection, connected in a panel. */
 async function connectSaved(side: Side = "left") {
-  await key(side, { key: "f", ctrlKey: true })
+  await key(side, { key: "N", ctrlKey: true, shiftKey: true })
   const list = await screen.findByRole("listbox", { name: "Saved connections" })
   await waitFor(() => expect(within(list).getAllByRole("option").length).toBeGreaterThan(0))
   await act(async () => {
@@ -172,7 +172,7 @@ afterEach(() => {
 })
 
 describe("connecting", () => {
-  it("connects to nothing until asked; Ctrl+F, Enter shows the server in the panel", async () => {
+  it("connects to nothing until asked; Ctrl+Shift+N, Enter shows the server in the panel", async () => {
     const fake = await start()
     expect(fake.api.remote.connect).not.toHaveBeenCalled()
     // Not even the list of connections is read before it is wanted.
@@ -592,7 +592,7 @@ describe("files on a connection", () => {
       ["left", 1],
       ["right", 2],
     ] as const) {
-      await key(side, { key: "f", ctrlKey: true })
+      await key(side, { key: "N", ctrlKey: true, shiftKey: true })
       await click(await screen.findByTestId(`connection-${id}`))
       await click(screen.getByRole("button", { name: "Connect" }))
       await waitFor(() => expect(panel(side).remote).not.toBeNull())
@@ -773,7 +773,7 @@ describe("tabs, sessions and lost connections", () => {
 describe("saved connections", () => {
   it("saves a new connection; the password goes to the save call and nowhere else", async () => {
     const fake = await start({ connections: [] })
-    await key("left", { key: "f", ctrlKey: true })
+    await key("left", { key: "N", ctrlKey: true, shiftKey: true })
     const list = await screen.findByTestId("connections-dialog")
     await waitFor(() => expect(list).toHaveTextContent("No connections saved yet."))
     await click(within(list).getByRole("button", { name: "New…" }))
@@ -815,7 +815,7 @@ describe("saved connections", () => {
 
   it("without a secret store no password is saved, and the form says so", async () => {
     const fake = await start({ connections: [], secureStore: false })
-    await key("left", { key: "f", ctrlKey: true })
+    await key("left", { key: "N", ctrlKey: true, shiftKey: true })
     await click(
       within(await screen.findByTestId("connections-dialog")).getByRole("button", { name: "New…" }),
     )
@@ -843,7 +843,7 @@ describe("saved connections", () => {
 
   it("checks the form before sending, and says when a name is taken", async () => {
     const fake = await start()
-    await key("left", { key: "f", ctrlKey: true })
+    await key("left", { key: "N", ctrlKey: true, shiftKey: true })
     await click(
       within(await screen.findByTestId("connections-dialog")).getByRole("button", { name: "New…" }),
     )
@@ -868,7 +868,7 @@ describe("saved connections", () => {
 
   it("duplicates a connection without its password, and saves a quick connection's settings", async () => {
     const fake = await start({ connections: [saved({ hasPassword: true })], passwords: { 1: "x" } })
-    await key("left", { key: "f", ctrlKey: true })
+    await key("left", { key: "N", ctrlKey: true, shiftKey: true })
     const dialog = await screen.findByTestId("connections-dialog")
     await waitFor(() => expect(dialog).toHaveTextContent("Work"))
     await click(within(dialog).getByRole("button", { name: "Duplicate" }))
@@ -904,7 +904,7 @@ describe("saved connections", () => {
 
   it("removes a connection only after asking, with its stored password", async () => {
     const fake = await start({ connections: [saved({ hasPassword: true })], passwords: { 1: "x" } })
-    await key("left", { key: "f", ctrlKey: true })
+    await key("left", { key: "N", ctrlKey: true, shiftKey: true })
     const dialog = await screen.findByTestId("connections-dialog")
     await waitFor(() => expect(dialog).toHaveTextContent("Work"))
     await click(within(dialog).getByRole("button", { name: "Remove" }))

@@ -15,6 +15,7 @@ import (
 
 	"panelyth/sidecar/internal/archive"
 	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/git"
 	"panelyth/sidecar/internal/library"
 	"panelyth/sidecar/internal/platform"
 	"panelyth/sidecar/internal/rpc"
@@ -75,6 +76,9 @@ func Run(ctx context.Context, cfg Config) error {
 		return err
 	}
 	defer svc.close()
+	// Git in the commander (ADR-0043); without it the commander shows no Git UI.
+	gitTool := git.Locate(cfg.Getenv)
+	svc.git = git.NewManager(gitTool, cfg.Logger, svc.emitGit)
 	// library.db holds user data (ADR-0016): never deleted automatically.
 	// It opens in the background so the handshake does not wait for it;
 	// user-data methods wait (see indexService.library). If it cannot be
@@ -100,7 +104,7 @@ func Run(ctx context.Context, cfg Config) error {
 
 	cfg.Logger.Info("sidecar starting", "version", cfg.Version, "pid", os.Getpid(),
 		"cacheRoot", dirs.CacheRoot, "configRoot", dirs.ConfigRoot,
-		"ffmpeg", tools.FFmpeg, "ffprobe", tools.FFprobe, "7z", sevenZip.Path)
+		"ffmpeg", tools.FFmpeg, "ffprobe", tools.FFprobe, "7z", sevenZip.Path, "git", gitTool.Path)
 
 	err = srv.Serve(ctx, cfg.In, cfg.Out, rpc.Hello{
 		Protocol:      rpc.ProtocolVersion,

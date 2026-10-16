@@ -6,6 +6,9 @@ export const APP_ORIGIN = `${APP_SCHEME}://${APP_HOST}`
 /** The commander's app view is served from its own origin (ADR-0031). */
 export const COMMANDER_HOST = "commander"
 export const COMMANDER_ORIGIN = `${APP_SCHEME}://${COMMANDER_HOST}`
+/** Panelyth System's app view, from its own origin too (ADR-0042). */
+export const SYSTEM_HOST = "system"
+export const SYSTEM_ORIGIN = `${APP_SCHEME}://${SYSTEM_HOST}`
 
 // Previews load from panelyth-thumb: (Stage 02); originals and videos from
 // panelyth-media: (Stages 04 and 06). Only the commander may also fetch()

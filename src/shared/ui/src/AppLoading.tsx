@@ -1,7 +1,7 @@
 import type { AppId } from "@panelyth/contracts"
 import { t } from "@panelyth/i18n"
 import { create } from "zustand"
-import { CommanderGlyph, ViewerGlyph } from "./AppSwitchButton"
+import { APP_GLYPHS } from "./AppSwitchButton"
 import { Spinner } from "./Spinner"
 
 /**
@@ -159,7 +159,7 @@ export function AppLoadingOverlay({ app, rail = true }: { app: AppId; rail?: boo
   const visible = useAppLoading((s) => s.visible)
   const label = useAppLoading((s) => s.label)
   if (!visible) return null
-  const Glyph = app === "viewer" ? ViewerGlyph : CommanderGlyph
+  const Glyph = APP_GLYPHS[app]
   return (
     <div
       data-testid="app-loading"

@@ -46,6 +46,9 @@ import {
   rendererDevUrl,
   rendererDistPath,
   sidecarBinaryPath,
+  systemDevUrl,
+  systemDistPath,
+  systemPreloadPath,
   updateFeedPath,
 } from "./paths"
 import {
@@ -56,10 +59,13 @@ import {
   DOCUMENTS_HOST,
   DOCUMENTS_ORIGIN,
   hardenSession,
+  SYSTEM_HOST,
+  SYSTEM_ORIGIN,
   originOf,
   trustedOrigin,
 } from "./security"
 import { AppShell, chromeColorOf, startAppFrom } from "./shell"
+import { systemHardware, systemLoad } from "./systemInfo"
 import {
   COMMANDER_ENABLED_ARG,
   documentKindOf,
@@ -170,8 +176,21 @@ const commanderOrigin = (): string => {
   return (devUrl && originOf(devUrl)) || COMMANDER_ORIGIN
 }
 
+const systemOrigin = (): string => {
+  const devUrl = systemDevUrl()
+  return (devUrl && originOf(devUrl)) || SYSTEM_ORIGIN
+}
+
 /** An app's settings page (ADR-0039): its own origin, preload and renderer arguments. */
 function settingsPageOf(app: AppId): SettingsPage {
+  if (app === "system") {
+    return {
+      url: new URL("settings.html", `${systemDevUrl() ?? SYSTEM_ORIGIN}/`).toString(),
+      origin: systemOrigin(),
+      preload: systemPreloadPath(),
+      args: [],
+    }
+  }
   if (app === "commander") {
     return {
       url: new URL("settings.html", `${commanderDevUrl() ?? COMMANDER_ORIGIN}/`).toString(),
@@ -250,14 +269,23 @@ function openWindow(): BrowserWindow {
     if (mainWindow === win) mainWindow = null
   })
   const commanderUrl = commanderDevUrl() ?? `${COMMANDER_ORIGIN}/index.html`
+  // The commander and Panelyth System (ADR-0042) share the feature flag: the rail shows both.
   appShell = new AppShell(
     win,
     commanderEnabled
       ? {
-          url: commanderUrl,
-          origin: commanderOrigin(),
-          preload: commanderPreloadPath(),
-          devTools: !app.isPackaged,
+          commander: {
+            url: commanderUrl,
+            origin: commanderOrigin(),
+            preload: commanderPreloadPath(),
+            devTools: !app.isPackaged,
+          },
+          system: {
+            url: systemDevUrl() ?? `${SYSTEM_ORIGIN}/index.html`,
+            origin: systemOrigin(),
+            preload: systemPreloadPath(),
+            devTools: !app.isPackaged,
+          },
         }
       : null,
     announceVisibleApp,
@@ -407,10 +435,11 @@ async function lastUsedApp(): Promise<AppId | null> {
   return Promise.race([read, timeout])
 }
 
-// Test hook (main process only): which app is shown and whether the commander view exists.
+// Test hook (main process only): which app is shown and which app views exist.
 ;(globalThis as { __panelythShellState?: () => object }).__panelythShellState = () => ({
   active: appShell?.activeApp ?? null,
   commanderCreated: appShell?.webContentsOf("commander") != null,
+  systemCreated: appShell?.webContentsOf("system") != null,
   commanderEnabled,
 })
 
@@ -436,6 +465,7 @@ async function boot(): Promise<void> {
   handleAppProtocol({
     [APP_HOST]: rendererDistPath(),
     [COMMANDER_HOST]: commanderDistPath(),
+    [SYSTEM_HOST]: systemDistPath(),
     [DOCUMENTS_HOST]: documentsDistPath(),
   })
   documentWindows = new DocumentWindows(
@@ -601,6 +631,9 @@ async function boot(): Promise<void> {
         platform: process.platform,
         arch: process.arch,
       }),
+    // Panelyth System (ADR-0042): the computer, read once; the load, sampled while it is visible.
+    "system.hardware": () => systemHardware(() => app.getGPUInfo("complete")),
+    "system.load": () => systemLoad(),
     "app.openTarget": async (_event, { target }) => {
       await openAppTarget(target)
       return { ok: true }
@@ -818,7 +851,11 @@ async function boot(): Promise<void> {
   registerIpc(ipcMain, {
     sidecar: sc,
     main,
-    origins: { viewer: trustedOrigin(devUrl), commander: commanderOrigin() },
+    origins: {
+      viewer: trustedOrigin(devUrl),
+      commander: commanderOrigin(),
+      system: systemOrigin(),
+    },
     devMethods,
     activeApp: () => appShell?.activeApp ?? "viewer",
     // Shared settings (theme, interface size) reach the other app at once (ADR-0031).

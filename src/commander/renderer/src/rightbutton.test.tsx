@@ -158,8 +158,11 @@ describe("the right mouse button", () => {
     await down("file000003")
     await hold()
     const backdrop = screen.getByTestId("row-menu-backdrop")
-    expect(backdrop).toContainElement(menu())
     expect(backdrop.parentElement).toBe(document.body)
+    // The menu is drawn at the top level, over the backdrop and everything else.
+    expect(menu()!.parentElement).toBe(document.body)
+    expect(menu()).toHaveClass("fixed", "z-[60]")
+    expect(backdrop).toHaveClass("z-50")
     // The wheel does nothing behind the menu, in the list or on the backdrop.
     expect(fireEvent.wheel(row("file000001"), { deltaY: 100 })).toBe(false)
     expect(fireEvent.wheel(backdrop, { deltaY: 100 })).toBe(false)

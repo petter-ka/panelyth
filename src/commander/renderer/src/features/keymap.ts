@@ -414,7 +414,8 @@ export const ACTIONS = [
     scope: "panels",
     group: msg("View"),
     label: msg("Quick filter"),
-    defaults: ["Mod+s"],
+    // Ctrl+F, as a search box elsewhere; Ctrl+S is Total Commander's key.
+    defaults: ["Mod+f", "Mod+s"],
   },
   { id: "sort.name", scope: "panels", group: "View", label: "Sort by name", defaults: ["Mod+F3"] },
   {
@@ -569,7 +570,8 @@ export const ACTIONS = [
     scope: "panels",
     group: msg("Connections"),
     label: msg("Connections"),
-    defaults: ["Mod+f"],
+    // Beside quick connect (Ctrl+N); Ctrl+F is the quick filter.
+    defaults: ["Mod+Shift+n"],
   },
   {
     id: "remote.quick",
@@ -615,6 +617,34 @@ export const ACTIONS = [
     label: msg("Find previous"),
     defaults: ["Shift+F3"],
   },
+  // Git (ADR-0043): in a repository's folder.
+  {
+    id: "git.commit",
+    scope: "panels",
+    group: msg("Git"),
+    label: msg("Commit…"),
+    defaults: ["Mod+Shift+g"],
+  },
+  { id: "git.stage", scope: "panels", group: msg("Git"), label: msg("Stage"), defaults: [] },
+  { id: "git.unstage", scope: "panels", group: msg("Git"), label: msg("Unstage"), defaults: [] },
+  {
+    id: "git.discard",
+    scope: "panels",
+    group: msg("Git"),
+    label: msg("Discard changes…"),
+    defaults: [],
+  },
+  {
+    id: "git.branches",
+    scope: "panels",
+    group: msg("Git"),
+    label: msg("Switch branch…"),
+    defaults: ["Mod+Shift+b"],
+  },
+  { id: "git.pull", scope: "panels", group: msg("Git"), label: msg("Pull"), defaults: [] },
+  { id: "git.push", scope: "panels", group: msg("Git"), label: msg("Push"), defaults: [] },
+  { id: "git.fetch", scope: "panels", group: msg("Git"), label: msg("Fetch"), defaults: [] },
+  { id: "git.history", scope: "panels", group: msg("Git"), label: msg("History"), defaults: [] },
 ] as const satisfies readonly ActionDef<Scope>[]
 
 export type ActionId = (typeof ACTIONS)[number]["id"]

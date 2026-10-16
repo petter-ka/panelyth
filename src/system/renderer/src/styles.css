@@ -1,0 +1,18 @@
+@import "tailwindcss";
+@import "@panelyth/ui/styles.css";
+
+/* Shared components (the app rail, the settings) use Tailwind classes too. */
+@source "../../../shared/ui/src";
+
+/*
+ * The dashboard's charts (components/Charts.tsx): their values ease to the
+ * next sample, once a second; nothing moves under prefers-reduced-motion.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  .chart-ease {
+    transition:
+      stroke-dashoffset 700ms cubic-bezier(0.2, 0, 0, 1),
+      height 700ms cubic-bezier(0.2, 0, 0, 1),
+      width 700ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}

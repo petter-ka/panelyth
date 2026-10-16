@@ -6,6 +6,8 @@ Accepted (2026-10-05). Product direction from the owner: the two apps connect in
 current folder and the selected file. Amended (2026-10-06, owner direction): the app switch is a shared left rail
 with both app icons, the current app highlighted and the other app directly selectable. Specification:
 `docs/shared/APP-SWITCHING.md`. Amended 2026-10-09: Commander opens media in a shared overlay above its own view.
+Amended by ADR-0042 (2026-10-16): a third app view, Panelyth System, created on first use from the rail; the
+switch key stays between the viewer and the commander.
 
 It supersedes ADR-0025's process model: separate Electron apps, one sidecar per app, separate data per app,
 capabilities per app process, and the `apps/*-desktop` and `packages/desktop-core` parts of its code layout. ADR-0025's

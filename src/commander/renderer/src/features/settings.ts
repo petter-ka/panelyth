@@ -89,6 +89,8 @@ export interface PanelSettings {
   tabBar: TabBarMode
   /** The folder tree opens a folder in the panel once its cursor rests on it (off: Enter or a click opens). */
   treeFollowCursor: boolean
+  /** Git (ADR-0043): a repository's folders show its status, a badge and the Git bar. */
+  showGit: boolean
 }
 
 export const DEFAULT_SETTINGS: PanelSettings = {
@@ -115,6 +117,7 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   confirmDrop: true,
   tabBar: "always",
   treeFollowCursor: false,
+  showGit: true,
 }
 
 const policies: ReadonlySet<unknown> = new Set(CONFLICT_POLICIES)
@@ -158,6 +161,7 @@ export function readSettings(value: unknown): PanelSettings {
     confirmDrop: v.confirmDrop !== false,
     tabBar: v.tabBar === "multiple" ? "multiple" : "always",
     treeFollowCursor: v.treeFollowCursor === true,
+    showGit: v.showGit !== false,
   }
 }
 

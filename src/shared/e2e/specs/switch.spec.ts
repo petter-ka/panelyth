@@ -167,6 +167,32 @@ test.describe("app switch (ADR-0031)", () => {
     }
   })
 
+  test("the commander fills the window, also once the menu bar has appeared", async () => {
+    const { app } = await launchApp(commanderEnv("commander"))
+    try {
+      const commander = await commanderPage(app)
+      await waitForReady(commander)
+      // Main installs the native menu after start; on Windows and Linux its bar
+      // takes height from the content without resizing the window.
+      await expect
+        .poll(() => app.evaluate(({ Menu }) => Menu.getApplicationMenu() !== null))
+        .toBe(true)
+      const contentHeight = () =>
+        app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getContentSize()[1]!)
+      await expect
+        .poll(async () => (await commander.evaluate(() => innerHeight)) - (await contentHeight()))
+        .toBe(0)
+      // The bottom of the commander is on screen: the function keys and the rail's Settings.
+      const bottom = (testId: string) =>
+        commander.getByTestId(testId).evaluate((el) => el.getBoundingClientRect().bottom)
+      const height = await commander.evaluate(() => innerHeight)
+      expect(await bottom("app-settings")).toBeLessThanOrEqual(height)
+      expect(await bottom("function-keys")).toBeLessThanOrEqual(height)
+    } finally {
+      await app.close()
+    }
+  })
+
   test("theme and interface size are shared between the apps", async () => {
     const { app, page } = await launchApp(commanderEnv())
     try {

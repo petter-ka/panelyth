@@ -32,8 +32,13 @@ function notice(message: string): void {
   noticeTimer = setTimeout(() => useCarryNotice.setState({ message: null }), 6000)
 }
 
-const isFromViewer = (ctx: SharedContext): boolean =>
-  ctx.version > seenVersion && ctx.app === "viewer" && ctx.dirId > 0
+/**
+ * A newer context from another app: the viewer's, carried over as the switch
+ * settings say, or Panelyth System's (ADR-0042), a found file to show here,
+ * always.
+ */
+const isFromOtherApp = (ctx: SharedContext): boolean =>
+  ctx.version > seenVersion && (ctx.app === "viewer" || ctx.app === "system") && ctx.dirId > 0
 
 /**
  * The active panel's folder becomes the context; on a switch also the entry
@@ -89,14 +94,20 @@ async function applySelection(side: Side, ctx: SharedContext): Promise<void> {
 export async function applyContext(): Promise<void> {
   const ctx = await bridge.getContext().catch(() => null)
   const side = usePanelsStore.getState().active
-  if (ctx && isFromViewer(ctx)) {
+  if (ctx && isFromOtherApp(ctx)) {
     seenVersion = ctx.version
     const { carry } = useSwitchSettings.getState()
-    if (carry.folder && useListingStore.getState()[side].dirId !== ctx.dirId) {
+    // A file System found: its folder opens with the cursor on it, even when it is open already.
+    const found = ctx.app === "system"
+    if (found || (carry.folder && useListingStore.getState()[side].dirId !== ctx.dirId)) {
       // Publishes itself once the folder is open (onActiveFolderChanged).
-      await openFolderEntry(side, ctx.dirId, { focusId: carry.focus ? ctx.focusId : null })
+      await openFolderEntry(side, ctx.dirId, {
+        focusId: found || carry.focus ? ctx.focusId : null,
+      })
     }
-    if (useListingStore.getState()[side].dirId === ctx.dirId) await applySelection(side, ctx)
+    if (!found && useListingStore.getState()[side].dirId === ctx.dirId) {
+      await applySelection(side, ctx)
+    }
   }
   // This app is visible now, so the context names it (the next start opens it).
   await publishContext(false).catch(() => undefined)
@@ -106,6 +117,11 @@ export async function applyContext(): Promise<void> {
 export async function switchToViewer(): Promise<void> {
   await publishContext(true).catch(() => undefined)
   await bridge.switchTo("viewer")
+}
+
+/** Panelyth System (ADR-0042): nothing carries over to it. */
+export async function switchToSystem(): Promise<void> {
+  await bridge.switchTo("system")
 }
 
 /** Edit in the media overlay: the same switch, and the viewer opens its editor on the picture (Stage 12). */
@@ -138,13 +154,14 @@ export async function startPanels(): Promise<() => void> {
   })
   const ctx = await bridge.getContext().catch(() => null)
   const carry = useSwitchSettings.getState().carry
-  const carried = ctx && isFromViewer(ctx) && carry.folder ? ctx : null
-  if (ctx && isFromViewer(ctx)) seenVersion = ctx.version
+  const found = ctx?.app === "system"
+  const carried = ctx && isFromOtherApp(ctx) && (found || carry.folder) ? ctx : null
+  if (ctx && isFromOtherApp(ctx)) seenVersion = ctx.version
   // The active panel publishes the context once its folder is open.
   await restorePanels(
-    carried && { dirId: carried.dirId, focusId: carry.focus ? carried.focusId : null },
+    carried && { dirId: carried.dirId, focusId: found || carry.focus ? carried.focusId : null },
   )
-  if (carried) await applySelection(usePanelsStore.getState().active, carried)
+  if (carried && !found) await applySelection(usePanelsStore.getState().active, carried)
   return () => {
     offEvents()
     offFolder()

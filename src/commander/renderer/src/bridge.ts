@@ -24,6 +24,11 @@ import type {
   FileOpenResult,
   FindStartParams,
   FindStartResult,
+  GitBranchesResult,
+  GitChangesResult,
+  GitLogResult,
+  GitRunParams,
+  GitStatusResult,
   MediaOpenResult,
   PreviewEnsureParams,
   PreviewEnsureResult,
@@ -41,6 +46,7 @@ import type {
   QueryDescriptor,
   QueryIndexOfResult,
   QueryLocateResult,
+  QueryFacets,
   QueryMatchResult,
   JobSnapshot,
   SelectionDescriptor,
@@ -130,6 +136,18 @@ export const bridge = {
     unwrap(() => api().find.start(spec)),
   findCancel: async (findId: number): Promise<boolean> =>
     (await unwrap(() => api().find.cancel(findId))).cancelled,
+  // ADR-0043: Git.
+  gitStatus: (dirId: number, force = false): Promise<GitStatusResult> =>
+    unwrap(() => api().git.status(dirId, force)),
+  gitChanges: (dirId: number): Promise<GitChangesResult> => unwrap(() => api().git.changes(dirId)),
+  gitRun: async (params: GitRunParams): Promise<number> =>
+    (await unwrap(() => api().git.run(params))).opId,
+  gitCancel: async (opId: number): Promise<boolean> =>
+    (await unwrap(() => api().git.cancel(opId))).cancelled,
+  gitBranches: (dirId: number): Promise<GitBranchesResult> =>
+    unwrap(() => api().git.branches(dirId)),
+  gitLog: (dirId: number, limit?: number): Promise<GitLogResult> =>
+    unwrap(() => api().git.log(dirId, limit)),
   // Stage C07: archives as folders.
   openArchive: (entryId: number): Promise<ArchiveOpenResult> =>
     unwrap(() => api().archive.open(entryId)),
@@ -260,6 +278,8 @@ export const bridge = {
     unwrap(() => api().query.locate({ queryId, pattern, from, direction })),
   match: (queryId: number, mask: string): Promise<QueryMatchResult> =>
     unwrap(() => api().query.match(queryId, mask)),
+  /** Folders and each extension's count in a panel's session (counted on request). */
+  facets: (queryId: number): Promise<QueryFacets> => unwrap(() => api().query.facets(queryId)),
   selectionInfo: (selection: SelectionDescriptor): Promise<SelectionInfo> =>
     unwrap(() => api().selection.info(selection)),
   rebase: (selection: SelectionDescriptor): Promise<SelectionDescriptor> =>

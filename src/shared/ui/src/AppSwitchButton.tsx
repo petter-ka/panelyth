@@ -1,8 +1,13 @@
 import type { AppId } from "@panelyth/contracts"
 import { Tooltip } from "./Tooltip"
 import { t } from "@panelyth/i18n"
+import type { ReactElement } from "react"
 
-const TITLES: Record<AppId, string> = { viewer: "Viewer", commander: "Commander" }
+const TITLES: Record<AppId, string> = {
+  viewer: "Viewer",
+  commander: "Commander",
+  system: "System",
+}
 
 /** Two panels side by side: the commander. */
 export function CommanderGlyph({ size = 16 }: { size?: number }) {
@@ -13,6 +18,25 @@ export function CommanderGlyph({ size = 16 }: { size?: number }) {
       <path d="M3 5.5h2.5M3 7.5h2.5M10.5 5.5h2.5M10.5 7.5h2.5" stroke="currentColor" />
     </svg>
   )
+}
+
+/** A gauge: Panelyth System (ADR-0042), the computer at a glance. */
+export function SystemGlyph({ size = 16 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <path d="M2.2 11.5a6 6 0 1 1 11.6 0" stroke="currentColor" strokeLinecap="round" />
+      <path d="m8 10.5 2.8-3.6" stroke="currentColor" strokeLinecap="round" />
+      <circle cx="8" cy="10.5" r="1.2" fill="currentColor" />
+      <path d="M4.5 13.5h7" stroke="currentColor" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+/** Each app's glyph, for the rail and the loading screen. */
+export const APP_GLYPHS: Record<AppId, (props: { size?: number }) => ReactElement> = {
+  viewer: ViewerGlyph,
+  commander: CommanderGlyph,
+  system: SystemGlyph,
 }
 
 /** A 2 × 2 grid of picture tiles: the viewer. */
@@ -52,7 +76,10 @@ export function AppSwitchButton({ target, shortcut, onSwitch }: AppSwitchButtonP
         data-target={target}
         className="grid size-7 shrink-0 place-items-center rounded-md text-text hover:bg-raised"
       >
-        {target === "commander" ? <CommanderGlyph /> : <ViewerGlyph />}
+        {(() => {
+          const Glyph = APP_GLYPHS[target]
+          return <Glyph />
+        })()}
       </button>
     </Tooltip>
   )

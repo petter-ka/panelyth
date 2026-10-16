@@ -17,6 +17,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const renderers = {
   viewer: join(root, "src", "viewer", "renderer", "dist", "assets"),
   commander: join(root, "src", "commander", "renderer", "dist", "assets"),
+  system: join(root, "src", "system", "renderer", "dist", "assets"),
   docviewer: join(root, "src", "shared", "docviewer", "dist", "assets"),
 }
 // de-BhtZOYnd.js: a message catalog of src/shared/i18n.

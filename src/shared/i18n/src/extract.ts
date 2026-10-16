@@ -7,6 +7,7 @@ import { join, relative } from "node:path"
 const SOURCE_ROOTS = [
   "viewer/renderer/src",
   "commander/renderer/src",
+  "system/renderer/src",
   "shared/ui/src",
   "shared/media-ui/src",
   "shared/docviewer/src",

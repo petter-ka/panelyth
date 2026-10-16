@@ -730,11 +730,12 @@ describe("Settings → Panels", () => {
     const dateCell = () =>
       screen.getByTestId("grid-left").querySelector<HTMLElement>("[data-id] [data-column=date]")!
     await waitFor(() => expect(dateCell().textContent).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/))
-    // Dates are a step smaller than the rest of the row.
-    expect(dateCell()).toHaveClass("text-2xs")
-    expect(dateCell().parentElement!.querySelector("[data-column=size]")).not.toHaveClass(
-      "text-2xs",
-    )
+    // The detail columns are a step smaller than the name, all the same size.
+    const row = dateCell().parentElement!
+    for (const column of ["ext", "size", "date", "attr"]) {
+      expect(row.querySelector(`[data-column=${column}]`), column).toHaveClass("text-2xs")
+    }
+    expect(row.querySelector("[data-column=name]")).not.toHaveClass("text-2xs")
     await act(async () => {
       fireEvent.click(within(dialog).getByLabelText("Relative (yesterday at 14:05)"))
     })

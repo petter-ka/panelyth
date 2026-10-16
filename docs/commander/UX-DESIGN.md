@@ -48,9 +48,16 @@ for. People coming from Total Commander find their keys where they expect them.
   folder. A place of the drive menu (Home, Documents) always opens that folder.
 - **Path bar:** the full path and the active mask (`*.*`, or the quick filter). Click it or press Alt+D (as in Explorer) to edit;
   Enter navigates; Esc cancels. A branch view or fed search results show an accent "Branch view" or "Search results: …"
-  chip before the path (click or Backspace returns to the folder); the quick filter (Ctrl+S) is edited in a field
-  after the path, filters as you type, and stays as a chip until clicked or cleared with Esc. Rows from other folders
+  chip before the path (click or Backspace returns to the folder); the quick filter (Ctrl+F, or Ctrl+S) is edited in a field
+  after the path, filters as you type (plain text, matched anywhere in a name, words in order; a mask such as `*.jpg`
+  still works), and stays as a chip until clicked or cleared with Esc. Rows from other folders
   show that folder, relative to the panel's, muted before the name.
+- **Count by type:** an icon in the path bar, beside `..` and `/`, opens a menu of the panel's folders and each
+  extension's files, the most common first (at most 50 extensions; the rest as "Other types"). It is counted only
+  when opened, since a branch view or a large archive takes a while, and again only once the listing has changed. The
+  counts leave the quick filter out, so every type stays to choose from: ticking up to three extensions filters the
+  panel to them (the quick filter becomes `*.jpg;*.png`), the menu stays open meanwhile, a fourth is disabled until
+  one is unticked, and "Show all types" clears them. A typed filter is replaced by the first type ticked.
 - **Column header:** Name, Ext, Size, Date, Attr (the Full view is a TanStack Table, ADR-0028). The sort column shows
   ↑ or ↓; clicking a header sorts in Go, never in the browser. Widths and layouts persist per panel. Drag a column
   header's edge to resize it; headers themselves do not drag. Double-click the edge to fit the header and
@@ -101,7 +108,7 @@ Details and keys: `docs/commander/stages/C10.5-tabs-tree-ftp-compare.md`.
   and the name; the panel's folder is highlighted, and the tree's own cursor is the panel cursor's outline. The
   tree sits on `chrome`, like the bars, and is dimmed while its panel is in an archive, on search results or on a
   connection.
-- **Connections (Ctrl+F):** a dialog with the list of saved connections (groups as sections; Enter connects, F4
+- **Connections (Ctrl+Shift+N):** a dialog with the list of saved connections (groups as sections; Enter connects, F4
   edits, Delete removes after a question) and buttons Quick connect…, New…, Edit…, Duplicate, Remove and Connect
   (primary). New and Edit open the connection's form in the same place: name, group, server, port, encryption,
   user, password (a field that is never filled in: "A password is stored" is its placeholder), "Save the password",
@@ -259,6 +266,59 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   16 MiB of a larger file, with a note. Ctrl+F finds, Enter / Shift+Enter or F3 step, Ctrl+± zoom, Esc closes find.
 - The window is read-only and has no connection to the app: it can only read the one file it was opened for.
 
+## Git (ADR-0043)
+
+A panel on a folder inside a Git repository says so, and shows what Git knows about each entry. The installed Git
+does the work; without it there is no Git UI. Settings → Panels → "Show Git status in the folders of a repository"
+turns it all off.
+
+- **Path bar badge:** a pill with the branch icon and the branch (or the commit, when detached), tinted with the
+  accent. A dot after it is green with no changes, amber with changes, red with conflicts. Its tooltip names the
+  repository, the branch and the number of changes. A click opens the branch menu.
+- **Rows** (all three views): a changed entry's name takes its state's colour, and a letter follows it at the end
+  of the name cell.
+  - The colours: `warning` for modified, `success` for added, renamed and untracked, `danger` for deleted and
+    conflicted. Ignored entries are dimmed and get no letter.
+  - The letters: M, A, D, R, U, ! (conflicted). A fully staged change sits on a soft tint of its colour.
+  - A folder with changes inside shows a small glowing dot instead of a letter.
+  - A marked row keeps the accent of its mark; the letter stays.
+  - Search results and the branch view show no marks; their rows are not one folder's children.
+- **Git bar** (above the status line, 28 px):
+  - The branch and a chevron open the branch menu.
+  - The sync button: ↓ behind and ↑ ahead. A click pulls, pushes, or fetches when there is nothing either way. A
+    branch without an upstream shows "Publish branch" instead.
+  - "Merging", "Rebasing" and the like appear as a red chip while Git is in the middle of one.
+  - The change counts: ! conflicts, ● changed, ✓ staged, + untracked. A click opens the commit dialog.
+  - Commit (the accent button) and More (⋯): Stage, Unstage, Discard changes…, Pull, Pull with rebase, Pull with
+    merge, Push, Fetch, Switch branch…, New branch…, History…, Refresh Git status, Copy branch name and Go to the
+    top folder.
+  - Narrow panels hide the labels and keep the icons (a container query).
+- **Runs** (pull, push, fetch, commit, switch…) run in the background, one per repository at a time.
+  - While one runs, the bar shows its verb ("Pulling…"), Git's phase and percent, a thin accent line filling along
+    its bottom edge (sliding when Git gives no percent), and Stop.
+  - A success says so once in the status bar ("Pushed main", "Committed: [main 1a2b3c4] Fix").
+  - A failure stays in the bar, in red, until dismissed. It says what it means: diverged branches get "Pull with
+    rebase" and "Pull with merge" buttons, a rejected push gets "Pull". Sign-in problems, local changes in the way,
+    a missing remote or upstream, and a folder Git doesn't trust are explained in words.
+- **Branch menu:** a search field, then the local branches (the current one ticked) and the remote ones, each with
+  its last commit's age, then "New branch…". Choosing a remote branch makes a local branch that tracks it, or
+  switches to the local one of that name.
+- **Commit dialog** (Ctrl+Shift+G):
+  - "Commit to main", then the changes in two lists, Staged and Changes, with counts and "Stage all" / "Unstage
+    all". A tick stages or unstages one at once; it shows the new state before Git answers.
+  - Then the message (the first line is the summary; past 72 characters a quiet warning) and "Amend the last
+    commit".
+  - The footer says what Commit will do ("Staged changes to commit: 2", or "Nothing is staged: all 5 changes will
+    be staged and committed.") next to Cancel, Commit and push, and Commit. Ctrl+Enter commits; Ctrl+Shift+Enter
+    also pushes.
+  - A failed commit (a hook) shows Git's words in the dialog, and the message is kept.
+- **Discard changes…** asks first. Tracked files go back to their last commit; untracked files are never deleted,
+  and the result says how many were kept.
+- **History…:** the last 50 commits on a line of dots, each with its subject, branches and tags, author and age; a
+  click copies the hash.
+- **Freshness:** the status is read again when the folder or its entries change, when the commander comes back on
+  screen, when the window gets the focus (a commit made in a terminal), after each run, and on Ctrl+R. Nothing polls.
+
 ## Default keyboard map
 
 Total Commander-compatible defaults in the shared keymap (ADR-0022, scopes `panels`, `lister`, `dialogs`). Every
@@ -297,7 +357,7 @@ entry is remappable.
 | Ctrl+J | Queue panel | C04 |
 | Ctrl+Q | Quick view | C05 |
 | F3 / F4 / Shift+F4 | Lister / edit / new text file | C05 |
-| Alt+F7 / Ctrl+S / Ctrl+B | Find files / quick filter / branch view | C06 |
+| Alt+F7 / Ctrl+F or Ctrl+S / Ctrl+B | Find files / quick filter / branch view | C06 |
 | Alt+F5 / Alt+F9 / Alt+Shift+F9 | Pack / unpack / test archives | C07 |
 | Ctrl+PgDn | Open the archive under the cursor (Enter does too; Backspace at its root leaves it) | C07 |
 | Shift+F2 | Compare directories | C08 |
@@ -308,7 +368,8 @@ entry is remappable.
 | Enter / Shift+Enter (in the command line) | Run the line / run it in a console window (fixed keys) | C10 |
 | Ctrl+Shift+T | Reopen the closed tab | C10.5 |
 | Ctrl+Shift+F8 / Shift+Tab | Folder tree: off / one / one per panel; go to the tree | C10.5 |
-| Ctrl+F / Ctrl+N / Ctrl+Shift+F | Connections / quick connect / disconnect | C10.5 |
+| Ctrl+Shift+N / Ctrl+N / Ctrl+Shift+F | Connections / quick connect / disconnect | C10.5 |
+| Ctrl+Shift+G / Ctrl+Shift+B | Git: commit / switch branch (Stage, Unstage, Discard, Pull, Push, Fetch and History have no default key) | ADR-0043 |
 | F1, Ctrl+/ | Keyboard shortcuts (shared dialog) | C02 |
 | Ctrl+Shift+M | Switch to the viewer (shared `shell` scope) | C00 |
 | Alt+F4 | Exit | C00 |

@@ -1,0 +1,47 @@
+{
+  "id": 242,
+  "ok": true,
+  "r": {
+    "available": true,
+    "inherited": "",
+    "marks": [
+      {
+        "below": false,
+        "name": "a.txt",
+        "staged": false,
+        "state": "modified",
+        "unstaged": true
+      },
+      {
+        "below": false,
+        "name": "new.txt",
+        "staged": false,
+        "state": "untracked",
+        "unstaged": true
+      }
+    ],
+    "problem": null,
+    "repo": {
+      "ahead": 0,
+      "behind": 0,
+      "branch": "main",
+      "counts": {
+        "changed": 1,
+        "conflicted": 0,
+        "staged": 0,
+        "untracked": 1
+      },
+      "head": "af5b909",
+      "name": "repo",
+      "operation": "",
+      "rel": "",
+      "repoId": 1,
+      "root": "/fixtures/repo",
+      "stashes": 0,
+      "unborn": false,
+      "upstream": ""
+    },
+    "truncated": false
+  },
+  "t": "res"
+}

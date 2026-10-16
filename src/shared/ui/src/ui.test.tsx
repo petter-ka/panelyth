@@ -48,10 +48,45 @@ describe("AppSwitcher", () => {
     expect(current).toHaveAttribute("aria-current", "page")
     expect(current).toHaveAttribute("data-target", "commander")
     expect(current.className).toMatch(/text-accent/)
-    expect(current.querySelector("span.bg-accent")).not.toBeNull()
+    expect(current.querySelector('[data-testid="app-light"]')).not.toBeNull()
     expect(other).not.toHaveAttribute("aria-current")
+    expect(other).toHaveAttribute("data-target", "viewer")
     expect(other.className).not.toMatch(/accent/)
-    expect(other.querySelector("span.bg-accent")).toBeNull()
+    expect(other.querySelector('[data-testid="app-light"]')).toBeNull()
+  })
+
+  it("lists System too, which the switch key does not reach (ADR-0042)", () => {
+    const onSwitch = vi.fn()
+    render(
+      <AppSwitcher
+        current="viewer"
+        shortcut="Ctrl+Shift+M"
+        onSwitch={onSwitch}
+        onSettings={vi.fn()}
+      />,
+    )
+    const system = screen.getByTestId("app-switch-system")
+    expect(system).toHaveAccessibleName("Switch to System")
+    expect(system).not.toHaveAttribute("aria-keyshortcuts")
+    expect(screen.getByTestId("app-switch")).toHaveAttribute("aria-keyshortcuts", "Control+Shift+M")
+    fireEvent.click(system)
+    expect(onSwitch).toHaveBeenCalledWith("system")
+  })
+
+  it("from System, offers both other apps without the key", () => {
+    render(
+      <AppSwitcher
+        current="system"
+        shortcut="Ctrl+Shift+M"
+        onSwitch={vi.fn()}
+        onSettings={vi.fn()}
+      />,
+    )
+    expect(screen.getByTestId("current-app")).toHaveAttribute("data-target", "system")
+    expect(screen.queryByTestId("app-switch")).toBeNull()
+    for (const app of ["viewer", "commander"]) {
+      expect(screen.getByTestId(`app-switch-${app}`)).not.toHaveAttribute("aria-keyshortcuts")
+    }
   })
 })
 
@@ -239,6 +274,19 @@ describe("startSharedAppearanceSync", () => {
     initInterfaceSize()
     expect(useStyleStore.getState().style).toBe("glass")
     expect(document.documentElement.dataset.style).toBe("glass")
+  })
+
+  it("puts the liquid glass filter into the page once, when the glass style applies", () => {
+    document.getElementById("glass-liquid")?.closest("svg")?.remove()
+    expect(document.getElementById("glass-liquid-strong")).toBeNull()
+    useStyleStore.getState().setStyle("classic")
+    expect(document.getElementById("glass-liquid")).toBeNull()
+    useStyleStore.getState().setStyle("glass")
+    useStyleStore.getState().setStyle("classic")
+    useStyleStore.getState().setStyle("glass")
+    expect(document.querySelectorAll("#glass-liquid")).toHaveLength(1)
+    expect(document.querySelector("#glass-liquid feDisplacementMap")).not.toBeNull()
+    expect(document.querySelectorAll("#glass-liquid-strong")).toHaveLength(1)
   })
 
   it("follows the other app's style and ignores an unknown one", () => {

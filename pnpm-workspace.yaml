@@ -10,6 +10,7 @@ packages:
   - src/shared/i18n
   - src/viewer/renderer
   - src/commander/renderer
+  - src/system/renderer
 
 onlyBuiltDependencies:
   - electron

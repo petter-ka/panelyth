@@ -31,6 +31,15 @@ import { t } from "@panelyth/i18n"
 /** The icon of every built-in action that can go on the toolbar (a test keeps it complete). */
 export const ACTION_ICONS: Partial<Record<ActionId, CommanderActionIconName>> = {
   "find.open": "search",
+  "git.commit": "gitCommit",
+  "git.stage": "gitStage",
+  "git.unstage": "gitUnstage",
+  "git.discard": "gitDiscard",
+  "git.branches": "gitBranch",
+  "git.pull": "gitPull",
+  "git.push": "gitPush",
+  "git.fetch": "gitFetch",
+  "git.history": "history",
   "view.filter": "filter",
   "view.branch": "branch",
   "compare.dirs": "compare",

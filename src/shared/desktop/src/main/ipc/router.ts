@@ -25,7 +25,7 @@ import { validators } from "./validate"
 
 /** The subset of SidecarProcess the router needs; keeps it unit-testable. */
 export interface SidecarPort {
-  call(method: SidecarMethod, params: unknown): Promise<unknown>
+  call(method: SidecarMethod, params: unknown, options?: { timeoutMs?: number }): Promise<unknown>
   getStatus(): SidecarStatus
 }
 
@@ -64,6 +64,17 @@ type InvokeHandler = (
 ) => Promise<RpcEnvelope<unknown>>
 
 const mainMethods: ReadonlySet<string> = new Set(MAIN_METHODS)
+
+/**
+ * Calls that may take longer than the default 10 s: Git reads a large
+ * repository's whole status (ADR-0043; the sidecar gives up at 60 s).
+ */
+const SLOW_CALLS: Readonly<Partial<Record<string, number>>> = {
+  "git.status": 65_000,
+  "git.changes": 65_000,
+  "git.branches": 30_000,
+  "git.log": 30_000,
+}
 
 // Accepted calls per method: cheap evidence for "one call per range, not per
 // tile" in benchmarks. Main-process only; the renderer cannot read it.
@@ -125,6 +136,7 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
         method === "edit.open"
           ? { ...(params as object), owner: event.sender.id }
           : profileParams(app, method, params),
+        ...(SLOW_CALLS[method] ? [{ timeoutMs: SLOW_CALLS[method] }] : []),
       )
       if (method === "library.setSetting") {
         const { key, value } = params as { key: string; value: unknown }
@@ -197,6 +209,14 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
     return "the other app's settings are the other app's"
   }
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
+  // Panelyth System (ADR-0042) writes the shared settings only (the appearance).
+  if (
+    app === "system" &&
+    method === "library.setSetting" &&
+    !(typeof p.key === "string" && p.key.startsWith("shared."))
+  ) {
+    return "Panelyth System writes the shared settings only"
+  }
   // Stage 12: only the commander hands a picture over, and only to the viewer's editor.
   if (
     method === "app.switch" &&
@@ -255,6 +275,8 @@ const CALLER_APP_METHODS: ReadonlySet<string> = new Set([
   "dir.openEntry",
   "dir.openContaining",
   "query.open",
+  // A search's results session is the app's that started it (ADR-0042).
+  "find.start",
 ])
 
 /**

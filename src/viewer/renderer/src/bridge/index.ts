@@ -1,6 +1,7 @@
 // The viewer's only way to window.panelyth. Feature code imports from here
 // and receives plain results or PanelythError, never envelopes.
 import type {
+  AppId,
   BatchFolder,
   BatchParams,
   BatchPlanResult,
@@ -97,10 +98,12 @@ export const bridge = {
     await unwrap(() => api().app.exit())
   },
   /** Shows the commander in the same window (ADR-0031). */
-  switchToCommander: async (): Promise<void> => {
+  switchToCommander: (): Promise<void> => bridge.switchToApp("commander"),
+  /** Shows another app of the family: the commander, or Panelyth System (ADR-0042). */
+  switchToApp: async (to: AppId): Promise<void> => {
     const switchApp = api().app.switch
     if (!switchApp) throw new PanelythError("METHOD_NOT_FOUND", t("The commander is not enabled"))
-    await unwrap(() => switchApp("commander"))
+    await unwrap(() => switchApp(to))
   },
   ping: (): Promise<PingResult> => unwrap(() => api().system.ping()),
   info: (): Promise<SystemInfo> => unwrap(() => api().system.info()),

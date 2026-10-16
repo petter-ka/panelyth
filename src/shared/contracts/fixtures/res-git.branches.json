@@ -1,0 +1,18 @@
+{
+  "id": 246,
+  "ok": true,
+  "r": {
+    "branches": [
+      {
+        "current": true,
+        "name": "main",
+        "remote": false,
+        "subject": "First",
+        "upstream": "",
+        "when": 1714979289000
+      }
+    ],
+    "truncated": false
+  },
+  "t": "res"
+}

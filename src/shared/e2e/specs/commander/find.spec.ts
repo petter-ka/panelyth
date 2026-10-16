@@ -4,7 +4,7 @@ import { join } from "node:path"
 import { expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
 import { expectWithinBudget, repoRoot } from "../../launch"
-import { commanderOf, goTo, launch, type Side } from "./helpers"
+import { commanderOf, goTo, launch, mixedFolder, type Side } from "./helpers"
 
 // Stage C06: find files, branch view and quick filter
 // (docs/commander/stages/C06-find-and-branch-view.md; scenario 12 of
@@ -133,11 +133,11 @@ test.describe("find files, branch view, quick filter (Stage C06)", () => {
       await c.keyboard.press("Control+b")
       await expect(c.getByTestId("location-left")).toHaveCount(0)
 
-      // Quick filter: folders stay, files match the mask.
-      await c.keyboard.press("Control+s")
-      await c.getByRole("textbox", { name: "Quick filter" }).fill("*.jpg")
+      // Quick filter (Ctrl+F): plain text, no wildcards; folders stay, files match.
+      await c.keyboard.press("Control+f")
+      await c.getByRole("textbox", { name: "Quick filter" }).fill("jpg")
       await c.keyboard.press("Enter")
-      await expect(c.getByTestId("filter-left")).toContainText("*.jpg")
+      await expect(c.getByTestId("filter-left")).toContainText("jpg")
       await expect(grid(c).locator("[data-id]")).toHaveCount(3)
       await c.getByTestId("filter-left").click()
       await expect(grid(c).locator("[data-id]")).toHaveCount(4)
@@ -145,6 +145,34 @@ test.describe("find files, branch view, quick filter (Stage C06)", () => {
       await app.close()
       rmSync(root, { recursive: true, force: true })
       rmSync(dst, { recursive: true, force: true })
+    }
+  })
+})
+
+test.describe("count by type (the path bar)", () => {
+  test("counts on a click; ticking up to three types filters the panel, the menu stays open", async () => {
+    const root = mixedFolder()
+    const { app } = await launch("commander")
+    try {
+      const c = await commanderOf(app)
+      await goTo(c, "left", root)
+      await c.getByTestId("types-left").click()
+      const menu = c.getByTestId("types-menu-left")
+      await expect(menu).toBeVisible()
+      // alpha and beta; a1.jpg, a2.jpg, a3.png, notes.txt (the hidden file is not listed).
+      await expect(menu.getByText("Folders").locator("..")).toHaveText(/Folders\s*2/)
+      const types = menu.getByRole("menuitemcheckbox")
+      await expect(types).toHaveText([/jpg\s*2/, /png\s*1/, /txt\s*1/])
+      await types.filter({ hasText: "jpg" }).click()
+      await types.filter({ hasText: "png" }).click()
+      // Still open, every type still there; the panel shows the two folders and three pictures.
+      await expect(menu).toBeVisible()
+      await expect(types).toHaveCount(3)
+      await expect(c.getByTestId("filter-left")).toContainText("*.jpg;*.png")
+      await expect(grid(c).locator("[data-id]")).toHaveCount(5)
+    } finally {
+      await app.close()
+      rmSync(root, { recursive: true, force: true })
     }
   })
 })

@@ -6,7 +6,9 @@ the next start opens the last used app (Stage C01, 2026-10-05); the selection ca
 holds the carry-over options and "Start with" (Stage C02, 2026-10-05; see "Delivery").
 
 The viewer and the commander are two apps of one product. They meet in the UI in a **left app rail** with both app
-icons; the current app is highlighted and the other icon switches to it. Behind the switch, both apps share state:
+icons; the current app is highlighted and the other icon switches to it. A third app, **Panelyth System**
+(ADR-0042), sits below them on the rail: a dashboard of the computer and its volumes with a search across volumes;
+it shares the appearance and hands a found file to the commander (see "System → Commander"). Behind the switch, both apps share state:
 the folder you are in (and so the drive), the file you are on, what you selected, your bookmarks, your clipboard and
 your appearance settings.
 
@@ -46,8 +48,8 @@ your appearance settings.
 
 ### Placement and look
 
-- **Both apps:** a 44 px wide vertical rail on the left edge, spanning the app view. It shows the same two icons in
-  the same order in both apps: Viewer, then Commander. This keeps switching in one predictable place without taking
+- **Every app:** a 44 px wide vertical rail on the left edge, spanning the app view. It shows the same icons in
+  the same order in every app: Viewer, Commander, then System (ADR-0042). This keeps switching in one predictable place without taking
   space from the navigation toolbar or Commander panels.
 - Each app has an 18 px glyph in a 36 × 36 px button. The current app is highlighted on `raised` with the `accent`
   color and marked current; the other app is muted until hover and switches on click:
@@ -59,6 +61,8 @@ your appearance settings.
 
 - The inactive app has accessible name "Switch to Commander" / "Switch to Viewer", with `aria-keyshortcuts`; the
   selected app has `aria-current="page"` and is disabled.
+- System's icon (a gauge) reads "Switch to System" and has no key: Ctrl/Cmd+Shift+M stays the switch between the
+  viewer and the commander. In System, both other icons switch without a key.
 - A Settings button sits at the bottom of the rail in both apps. General and Appearance settings are shared; the app
   section shows Viewer options in Viewer and Commander options in Commander.
 - The rail appears whenever the commander is enabled. Packaged builds enable it; unpackaged builds can hide it by
@@ -118,6 +122,14 @@ The app being left publishes its context; the app being shown applies it.
 - Marks become the viewer's selection, minus entries the viewer doesn't show (other files, hidden files).
 - If the active panel shows an archive, find results, a branch view or a compare result, the viewer opens the folder
   that contains the cursor entry and carries no selection.
+
+### System → Commander
+
+- "Show in Commander" on a search result (double-click, Enter or the row's button) publishes the result's folder
+  and the file as the shared context, then switches. The commander's active panel opens that folder with the
+  cursor on the file, whatever the carry-over settings say: the user asked for that file.
+- Switching to System carries nothing over; System has no folder, cursor or selection. Leaving System by the rail
+  carries nothing either, and "Start with: the last used app" never starts in System.
 
 ### Open media from Commander
 

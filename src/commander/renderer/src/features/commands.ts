@@ -1,3 +1,15 @@
+import {
+  gitDiscard,
+  gitFetch,
+  gitPull,
+  gitPush,
+  gitStage,
+  gitUnstage,
+  openBranchMenu,
+  openCommit,
+  openHistory,
+  refreshGit,
+} from "./git"
 import { create } from "zustand"
 import { switchToViewer } from "./carry"
 import { isToolAction, setHelpOpen, type ActionId, type ToolActionId } from "./keymap"
@@ -87,7 +99,7 @@ interface UiState {
   lastMask: string
   /** Increments to ask a panel's path bar to start editing. */
   editPath: Record<Side, number>
-  /** Increments to ask a panel's path bar to edit the quick filter (Ctrl+S, Stage C06). */
+  /** Increments to ask a panel's path bar to edit the quick filter (Ctrl+F, Stage C06). */
   editFilter: Record<Side, number>
   /** The entry (or folder) context menu; modal, above everything in the window. */
   rowMenu: RowMenuState | null
@@ -308,6 +320,8 @@ export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
       break
     case "view.refresh":
       void refresh(side)
+      // Ctrl+R reads the Git status again too (ADR-0043).
+      void refreshGit(side, true)
       break
     case "view.hidden":
       toggleHidden(side)
@@ -382,6 +396,37 @@ export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
     case "files.properties":
       closeQuickSearch()
       openProperties(side)
+      break
+    case "git.commit":
+      closeQuickSearch()
+      openCommit(side)
+      break
+    case "git.stage":
+      gitStage(side)
+      break
+    case "git.unstage":
+      gitUnstage(side)
+      break
+    case "git.discard":
+      closeQuickSearch()
+      gitDiscard(side)
+      break
+    case "git.branches":
+      closeQuickSearch()
+      void openBranchMenu(side, "bar")
+      break
+    case "git.pull":
+      gitPull(side)
+      break
+    case "git.push":
+      gitPush(side)
+      break
+    case "git.fetch":
+      gitFetch(side)
+      break
+    case "git.history":
+      closeQuickSearch()
+      void openHistory(side)
       break
     case "view.filter":
       closeQuickSearch()

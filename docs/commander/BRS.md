@@ -76,7 +76,12 @@ an explicit command.
 
 - Typing letters in a panel jumps to the first matching name (prefix, then substring; `*` and `?` wildcards). Arrow
   keys move between matches; Esc ends the search.
-- Quick filter (Ctrl+S) shows only matching entries until cleared (Stage C06).
+- Quick filter (Ctrl+F, or Ctrl+S as in Total Commander) shows only matching entries until cleared (Stage C06).
+  What is typed is plain text: it matches anywhere in a name, its words in the order typed. Wildcards and masks
+  (`*.jpg;*.png|*_small.*`) still work when typed, but are never needed (owner request, 2026-10-16).
+- Count by type: a path bar icon shows how many folders and how many files of each extension the panel lists,
+  counted only when asked for; ticking up to three extensions filters the panel to them (owner request,
+  2026-10-16).
 
 ### CFR-08 — Tabs (C03, C10.5)
 
@@ -245,7 +250,7 @@ archive unreadable, operation failed per item, queue busy, and listing in progre
   tabs and history.
 - Copy and move between a server and a local folder as background jobs with progress, pause, cancel, conflict
   handling and resume; create folders, rename and delete on the server.
-- A connection manager (Ctrl+F) saves connections: host, port, encryption, user, start folder and options. Saved
+- A connection manager (Ctrl+Shift+N; Ctrl+F until 2026-10-16) saves connections: host, port, encryption, user, start folder and options. Saved
   passwords are encrypted with the OS's secure store and are never shown again; without a secure store they are
   asked every time.
 - Encryption is the default. An unencrypted connection is the user's choice per connection and is labelled; an

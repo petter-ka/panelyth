@@ -11,6 +11,8 @@ repository" (the separate Electron apps, one sidecar per app, separate data, cap
 desktop part of "Code layout". Still valid: the shared platform idea, the documentation split, the tracks and stage
 IDs, and the shared packages `packages/ui` and `packages/renderer-core`.
 
+Amended by ADR-0042 (2026-10-16, owner request): a third app, Panelyth System, joins the family in the same shell.
+
 ## Context
 
 - Panelyth was built as one app: the Electron shell (`apps/desktop`), the React renderer (`apps/renderer`),

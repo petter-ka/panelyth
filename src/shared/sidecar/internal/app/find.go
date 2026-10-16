@@ -35,6 +35,8 @@ type (
 		ModifiedBefore *int64 `json:"modifiedBefore"`
 		AttrsSet       int    `json:"attrsSet"`
 		AttrsClear     int    `json:"attrsClear"`
+		// The calling app, added by main: the results session is its (ADR-0042).
+		App string `json:"app"`
 	}
 	findStartResult struct {
 		FindID int64 `json:"findId"`
@@ -92,13 +94,22 @@ func (s *indexService) findStart(ctx context.Context, p findStartParams) (findSt
 	var snap query.Snapshot
 	findID, _, err := s.finds.Start(c, func(src *find.Source) (int64, error) {
 		var err error
-		snap, err = s.queries.OpenSource(ctx, query.OwnerCommander, index.Descriptor{Scope: index.ScopeAll, ShowHidden: true}, src)
+		snap, err = s.queries.OpenSource(ctx, findOwner(p.App), index.Descriptor{Scope: index.ScopeAll, ShowHidden: true}, src)
 		return snap.QueryID, err
 	})
 	if err != nil {
 		return findStartResult{}, dbError(err)
 	}
 	return findStartResult{FindID: findID, Snapshot: snap}, nil
+}
+
+// findOwner is the app that started a search (main names it): the
+// commander's or Panelyth System's sessions (ADR-0042).
+func findOwner(app string) query.Owner {
+	if o := query.ParseOwner(app); o != query.OwnerMain {
+		return o
+	}
+	return query.OwnerCommander
 }
 
 // openFindQuery serves query.open for a search's results (a fed panel).

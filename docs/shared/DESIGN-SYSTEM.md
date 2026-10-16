@@ -47,14 +47,21 @@ How the glass style is built (`src/shared/ui/src/styles.css`, `:root[data-style=
 | `glass-float`, `glass-sheet` | menus and popups, dialogs: blurred floating layers |
 | `glass-chip` | a layer that stays over the scrolling surface: glass without the blur, denser |
 | `glass-pill` | capsule shape for buttons, segmented controls and tabs |
+| `glass-press` | a toggle pressed into the glass while `aria-pressed`, or the current app on the rail (`aria-current="page"`, keeping its accent glyph; with `app-icon` it has an app icon's rounded square instead of a capsule): a sunken capsule with a shadowed top edge, a lit lower lip and an accent tint and glow; pressing squishes it a little |
 | `glass-gutter`, `glass-gutter-y` | resize handles that are the gap between two cards |
 | `glass-page` | a whole window as one card (the settings window) |
 
 - Mark new regions and floating layers with these classes. Over a picture, use `bg-chrome-solid` or
   `bg-canvas-solid` (opaque on glass, the plain surface in classic), never a translucent surface token.
 - No `backdrop-filter` on cards, chips or anything on the scrolling surface. The wallpaper behind the cards is
-  still and soft, so a blur would change nothing. Only floating layers blur, and in dark palettes the blur dims
-  what is behind (`brightness(0.5)`) so muted text keeps AA over a bright picture.
+  still and soft, so a blur would change nothing.
+- Floating layers are liquid and take the theme's colors: their fill is a soft diagonal gradient through the
+  palette's accent, purple and blue (the wallpaper's hues), over a backdrop that is blurred lightly, rippled by
+  the `#glass-liquid` SVG filter and tone-mapped so text keeps AA over any picture. In dark palettes the backdrop
+  is squeezed into a band of dark grays and the tinted layer is always lighter than the app, so it never looks
+  inactive; in light palettes it is lifted to near white, with a gloss across the top. Menus and popups have a
+  lighter blur and the stronger `#glass-liquid-strong` ripple. Dialogs sit on a light scrim, so the app reads
+  through them.
 - Full-window media overlays (image viewer, editor, media window, lister) keep the solid canvas in both styles.
 - `tokens.test.ts` checks text, muted, accent and danger at 4.5:1 on the composite colors: cards over the
   wallpaper's strongest colors in every palette, and menus, dialogs and chips over a black and a white picture.
@@ -149,6 +156,18 @@ added only with a measured trace (ADR-0014).
 Stage 08 motion: menus and dialogs fade and scale in from 98 % over 120 ms (`--motion-fast`, `--motion-ease`) and
 close instantly, and the tree chevron rotates when a node expands. In the glass style they pop from 96 % over
 200 ms with a slight overshoot (`--motion-pop-from`). Everything is off under `prefers-reduced-motion`.
+
+### Menus
+
+- Every menu is drawn at the top level of the page, over the panels, the cards' edges and the bars, and never
+  under what is below the thing that opened it. The shared Radix menus (`src/shared/ui/src/menu.tsx`) are
+  portalled; the commander's keyboard-first `PopupMenu` keeps a zero-size anchor where its caller puts it and draws
+  itself at the top level (`z-index: 60`, above dialogs).
+- A menu stays within the window, 8 px from its edges. It opens below its anchor or the pointer when it fits, above
+  it when only that fits (as a native menu does near the bottom of the screen), and otherwise from the top of the
+  window, as tall as the window allows, scrolling. Submenus follow the same rules.
+- `e2e`: `specs/commander/menus.spec.ts` and `specs/viewer/menus.spec.ts` check that nothing covers a menu and that
+  it fits and scrolls in a small window.
 
 ### Loading states
 
@@ -246,12 +265,16 @@ translated pieces, and a new message needs a translation in each language file (
 The apps meet in a shared left rail (ADR-0031, `docs/shared/APP-SWITCHING.md`). The same `src/shared/ui` component keeps
 its placement and behavior consistent in both apps:
 
-- 44 px wide, full height, with Viewer above Commander; each gets an 18 px glyph in a 36 × 36 px button;
-- `chrome` surface with a border; the current app has an `accent` glyph and a 3 px `accent` bar on the rail's
-  left edge, so it reads at a glance; the other app is
+- 44 px wide, full height, with Viewer, Commander and System (ADR-0042) from the top; each gets an 18 px glyph
+  in a 36 × 36 px button;
+- `chrome` surface with a border; the current app has an `accent` glyph and a light on the rail's left edge (a
+  3 px `accent` tube, brightest in the middle and fading at both ends, with a glow that follows the fade;
+  `.rail-light`), so it reads at a glance; in the glass style its button is also pressed into the glass
+  (`glass-press`); the other app is
   muted and uses `raised` on hover; the global 2 px `accent` focus ring applies;
 - the inactive app's tooltip shows "Switch to Commander (Ctrl+Shift+M)" or "Switch to Viewer (Ctrl+Shift+M)" with
-  the current keymap chord; its accessible name omits the key and `aria-keyshortcuts` exposes it;
+  the current keymap chord; its accessible name omits the key and `aria-keyshortcuts` exposes it; System's icon has
+  no key ("Switch to System"), and in System neither other icon has one;
 - the selected app has `aria-current="page"` and is disabled; switching apps has no transition;
 - packaged builds show the rail; unpackaged builds can hide it with the commander feature flag. It is unavailable
   behind a modal dialog's backdrop.

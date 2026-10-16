@@ -19,6 +19,7 @@ import (
 	"panelyth/sidecar/internal/events"
 	"panelyth/sidecar/internal/find"
 	"panelyth/sidecar/internal/fsx"
+	"panelyth/sidecar/internal/git"
 	"panelyth/sidecar/internal/index"
 	"panelyth/sidecar/internal/jobs"
 	"panelyth/sidecar/internal/library"
@@ -89,6 +90,8 @@ type indexService struct {
 	// opened (user-data methods then fail, browsing keeps working).
 	lib      *library.Library
 	libReady chan struct{}
+	// git is the commander's Git (ADR-0043); nil when not set up (tests).
+	git *git.Manager
 }
 
 // newIndexService opens index.db and the preview cache under cacheRoot
@@ -166,6 +169,9 @@ func (s *indexService) close() {
 	s.jobs.Close()
 	s.editor.Shutdown()
 	s.finds.Close()
+	if s.git != nil {
+		s.git.Close()
+	}
 	s.compares.Shutdown()
 	s.previews.drop()
 	s.watcher.Close()
@@ -347,6 +353,7 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerRename(srv)
 	s.registerEditor(srv)
 	s.registerBatch(srv)
+	s.registerGit(srv)
 	rpc.Register(srv, "query.close", func(_ context.Context, p queryCloseParams) (queryCloseResult, error) {
 		return queryCloseResult{Closed: s.queries.Close(p.QueryID)}, nil
 	})

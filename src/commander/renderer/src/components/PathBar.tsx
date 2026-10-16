@@ -1,4 +1,5 @@
 import { forwardRef, useImperativeHandle, useRef, useState } from "react"
+import { formatChord } from "@panelyth/renderer-core"
 import { Tooltip } from "@panelyth/ui"
 import {
   archivePath,
@@ -13,12 +14,15 @@ import {
   toPanelError,
   useListingStore,
 } from "../features/listing"
+import { useKeymapStore } from "../features/keymap"
+import { TypeCounts } from "./TypeCounts"
+import { GitBadge } from "./Git"
 import type { Side } from "../features/panels"
 import { t } from "@panelyth/i18n"
 
 export interface PathBarHandle {
   edit(): void
-  /** Ctrl+S: edit the quick filter (Stage C06). */
+  /** Ctrl+F (or Ctrl+S): edit the quick filter (Stage C06). */
   editFilter(): void
 }
 
@@ -48,6 +52,8 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
   const archive = useListingStore((s) => s[side].archive)
   const remote = useListingStore((s) => s[side].remote)
   const filter = useListingStore((s) => s[side].filter)
+  const filterChord = useKeymapStore((s) => s.keymap.chords["view.filter"]?.[0])
+  const filterKey = filterChord ? formatChord(filterChord) : ""
   // At the root ".." and "/" have nowhere to go (Backspace and Ctrl+\ do nothing there either).
   const upAllowed = useListingStore((s) => canGoUp(s[side]))
   const rootAllowed = useListingStore((s) => canGoRoot(s[side]))
@@ -200,10 +206,14 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
                   : path || t("No folder open")}
             </button>
           </Tooltip>
+          {/* In a Git repository: the branch, and a dot when there are changes (ADR-0043). */}
+          <GitBadge side={side} />
           {filtering ? (
             <input
               aria-label={t("Quick filter")}
-              placeholder="*.jpg;*.png|*_small.*"
+              placeholder={t("Type to filter")}
+              // The mask made of it stays within the sidecar's limit (256).
+              maxLength={200}
               autoFocus
               onFocus={(e) => e.target.select()}
               value={filterValue}
@@ -227,7 +237,7 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
             />
           ) : (
             filter !== "" && (
-              <Tooltip content={t("Quick filter (Ctrl+S); click to clear")}>
+              <Tooltip content={t("Quick filter ({key}); click to clear", { key: filterKey })}>
                 <button
                   type="button"
                   tabIndex={-1}
@@ -240,6 +250,8 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               </Tooltip>
             )
           )}
+          {/* Folders and each extension's count, counted when opened. */}
+          <TypeCounts side={side} className={pathButton} />
           <Tooltip content={t("Parent folder")}>
             <button
               type="button"

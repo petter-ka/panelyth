@@ -10,7 +10,11 @@ import {
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
-import { editInViewer, switchToViewer as switchWithContext } from "../features/carry"
+import {
+  editInViewer,
+  switchToSystem as showSystem,
+  switchToViewer as switchWithContext,
+} from "../features/carry"
 import { resetSplit, setActivePanel, setSplit, usePanelsStore, type Side } from "../features/panels"
 import { TreePane } from "./TreePane"
 import { runShellAction, useUiStore } from "../features/commands"
@@ -34,6 +38,7 @@ import { CopyDialog, DeleteDialog, MkdirDialog } from "./FileDialogs"
 import { PackDialog, UnpackDialog } from "./ArchiveDialogs"
 import { useArchivesStore } from "../features/archives"
 import { FindDialog } from "./FindDialog"
+import { CommitDialog, DiscardDialog, HistoryDialog, NewBranchDialog } from "./GitDialogs"
 import { SyncDialog } from "./SyncDialog"
 import { DiffDialog } from "./DiffDialog"
 import { CompareManyDialog } from "./CompareManyDialog"
@@ -68,6 +73,7 @@ export const SWITCH_SHORTCUT = IS_MAC ? "⌘⇧M" : "Ctrl+Shift+M"
 
 /** Publishes the active panel's folder and cursor entry, then shows the viewer (C01). */
 const switchToViewer = (): void => void switchWithContext().catch(() => undefined)
+const switchToSystem = (): void => void showSystem().catch(() => undefined)
 
 const FUNCTION_KEYS = new Set(["F3", "F4", "F5", "F6", "F7", "F8"])
 
@@ -232,7 +238,7 @@ export function AppShell() {
         <AppSwitcher
           current="commander"
           shortcut={SWITCH_SHORTCUT}
-          onSwitch={switchToViewer}
+          onSwitch={(to) => (to === "system" ? switchToSystem() : switchToViewer())}
           onSettings={openSettings}
         />
         <div className="glass-stack flex min-h-0 min-w-0 flex-col">
@@ -305,6 +311,10 @@ export function AppShell() {
         <CopyDialog />
         <DeleteDialog />
         <MkdirDialog />
+        <CommitDialog />
+        <DiscardDialog />
+        <NewBranchDialog />
+        <HistoryDialog />
         <PackDialog />
         <UnpackDialog />
         <ConflictDialog />

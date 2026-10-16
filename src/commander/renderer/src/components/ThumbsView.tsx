@@ -1,3 +1,5 @@
+import { useGitMark } from "../features/git"
+import { gitNameStyle, GitRowMark } from "./Git"
 import type { ContentItem, PreviewPriority } from "@panelyth/contracts"
 import {
   CONTENT_PADDING,
@@ -359,6 +361,7 @@ const ThumbTile = memo(function ThumbTile({ side, store, thumbs, index, entry, s
   const glyph = Math.round(m.tile * 0.36)
   const nameSize = size === "small" ? "h-[1.125rem] text-[0.75rem]" : "h-[1.25rem] text-[0.8125rem]"
   const prefix = shown ? folderPrefix(shown.dirPath, panelPath) : ""
+  const git = useGitMark(side, entry < 0 ? undefined : shown?.name)
 
   return (
     <div
@@ -412,10 +415,13 @@ const ThumbTile = memo(function ThumbTile({ side, store, thumbs, index, entry, s
         ) : shown && renaming ? (
           <RenameField onDone={() => focusGrid(side)} />
         ) : shown ? (
-          <span className="truncate">
-            {prefix && <span className="text-muted">{prefix}</span>}
-            {shown.name}
-          </span>
+          <>
+            <span className="truncate" style={gitNameStyle(git, marked)}>
+              {prefix && <span className="text-muted">{prefix}</span>}
+              {shown.name}
+            </span>
+            {git && <GitRowMark mark={git} inline />}
+          </>
         ) : null}
       </div>
     </div>

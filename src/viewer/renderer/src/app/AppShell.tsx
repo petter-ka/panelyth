@@ -29,7 +29,7 @@ import { ChevronDownIcon } from "../components/ui/icons"
 import { openSettings, useSettingsStore } from "../features/settings/settingsStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
 import { useShortcutHint } from "../features/shortcuts/shortcutStore"
-import { switchToCommander } from "../features/workspace/appSwitch"
+import { switchToCommander, switchToSystem } from "../features/workspace/appSwitch"
 import { t } from "@panelyth/i18n"
 
 const separator =
@@ -154,7 +154,7 @@ export function AppShell() {
           <AppSwitcher
             current="viewer"
             shortcut={appSwitchShortcut ?? "Ctrl+Shift+M"}
-            onSwitch={switchToCommander}
+            onSwitch={(to) => (to === "system" ? switchToSystem() : switchToCommander())}
             onSettings={openSettings}
           />
         )}
