@@ -1,7 +1,7 @@
 import { mediaPort } from "./port"
 import { useVideoPrefs, type VideoPrefs } from "./video"
 
-// Volume, mute, repeat and the full-screen auto-hide persist in library.db (setting "player") through the
+// Volume, mute, repeat, the full-screen auto-hide and the full-screen delete question persist in library.db (setting "player") through the
 // app's media port, so they are the same in the viewer, the commander and the
 // media window: mute one video and the next stays muted until it is unmuted.
 // Saves are debounced (the volume slider changes the value on every pointer
@@ -11,7 +11,7 @@ import { useVideoPrefs, type VideoPrefs } from "./video"
 const PLAYER_KEY = "player"
 const SAVE_DELAY_MS = 500
 
-/** The stored setting, or null when it is missing or malformed. Newer fields: `loop` absent = off, the auto-hides absent = on. */
+/** The stored setting, or null when it is missing or malformed. Newer fields: `loop` absent = off, the auto-hides and the delete question absent = on. */
 export function parsePlayerPrefs(value: unknown): VideoPrefs | null {
   if (typeof value !== "object" || value === null) return null
   const v = value as Record<string, unknown>
@@ -24,6 +24,7 @@ export function parsePlayerPrefs(value: unknown): VideoPrefs | null {
     loop: v.loop === true,
     autoHide: v.autoHide !== false,
     autoHideImage: v.autoHideImage !== false,
+    confirmDelete: v.confirmDelete !== false,
   }
 }
 
@@ -37,9 +38,9 @@ export function startVideoPrefsPersistence(): () => void {
 
   const save = (): void => {
     timer = null
-    const { volume, muted, loop, autoHide, autoHideImage } = useVideoPrefs.getState()
+    const { volume, muted, loop, autoHide, autoHideImage, confirmDelete } = useVideoPrefs.getState()
     void settings
-      .write(PLAYER_KEY, { volume, muted, loop, autoHide, autoHideImage })
+      .write(PLAYER_KEY, { volume, muted, loop, autoHide, autoHideImage, confirmDelete })
       .catch(() => undefined)
   }
   const flush = (): void => {
@@ -80,7 +81,8 @@ export function startVideoPrefsPersistence(): () => void {
         s.muted === prev.muted &&
         s.loop === prev.loop &&
         s.autoHide === prev.autoHide &&
-        s.autoHideImage === prev.autoHideImage)
+        s.autoHideImage === prev.autoHideImage &&
+        s.confirmDelete === prev.confirmDelete)
     )
       return
     if (timer) clearTimeout(timer)

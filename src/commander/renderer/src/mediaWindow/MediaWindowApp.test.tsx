@@ -4,16 +4,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const step = vi.fn()
 const reveal = vi.fn(async () => undefined)
+const command = vi.fn()
 const settings: Record<string, unknown> = {}
 vi.mock("../bridge", () => ({
   bridge: {
     mediaWindowStep: (d: number) => step(d),
     mediaWindowReveal: () => reveal(),
+    mediaWindowCommand: (c: string) => command(c),
     libraryNow: async () => ({ settings }),
   },
 }))
 // The overlay itself is tested in media-ui; here only what the window gives it.
+const prefs = { confirmDelete: true }
 vi.mock("@panelyth/media-ui", () => ({
+  useVideoPrefs: (pick: (s: typeof prefs) => unknown) => pick(prefs),
   MediaViewerOverlay: (props: {
     item: ContentItem
     onStep: (d: -1 | 1) => void
@@ -21,6 +25,7 @@ vi.mock("@panelyth/media-ui", () => ({
     closeOnDoubleClick?: boolean
     onEdit?: () => void
     onShowInApp?: () => void
+    onCommand?: (c: string) => void
   }) => (
     <div
       role="dialog"
@@ -31,6 +36,12 @@ vi.mock("@panelyth/media-ui", () => ({
     >
       <button onClick={() => props.onStep(1)}>next</button>
       {props.onShowInApp && <button onClick={props.onShowInApp}>show in app</button>}
+      {props.onCommand &&
+        ["copy", "trash", "delete"].map((c) => (
+          <button key={c} onClick={() => props.onCommand!(c)}>
+            key {c}
+          </button>
+        ))}
     </div>
   ),
 }))
@@ -43,6 +54,8 @@ describe("MediaWindowApp", () => {
   beforeEach(() => {
     step.mockReset()
     reveal.mockClear()
+    command.mockReset()
+    prefs.confirmDelete = true
     window.location.hash = ""
   })
 
@@ -101,5 +114,71 @@ describe("MediaWindowApp", () => {
     step.mockResolvedValueOnce(null)
     render(<MediaWindowApp />)
     expect(await screen.findByRole("alert")).toBeInTheDocument()
+  })
+
+  it("asks before the trash by default; Enter moves the file there", async () => {
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    command.mockResolvedValueOnce({ item: item(2, "b.jpg"), done: true })
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    fireEvent.click(screen.getByText("key trash"))
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Move a.jpg to the trash?")
+    expect(command).not.toHaveBeenCalled()
+    const confirm = screen.getByRole("button", { name: "Move to trash" })
+    expect(confirm).toHaveFocus()
+    fireEvent.click(confirm)
+    expect(await screen.findByRole("dialog", { name: "b.jpg" })).toBeInTheDocument()
+    expect(command).toHaveBeenCalledWith("trash")
+  })
+
+  it("hands the file keys to the opener; after a delete it shows the file the opener names", async () => {
+    // Settings → Appearance → Full screen: no question before the trash.
+    prefs.confirmDelete = false
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    command.mockResolvedValueOnce({ item: item(2, "b.jpg"), done: true })
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    fireEvent.click(screen.getByText("key trash"))
+    expect(await screen.findByRole("dialog", { name: "b.jpg" })).toBeInTheDocument()
+    expect(command).toHaveBeenCalledWith("trash")
+    expect(screen.getByRole("status")).toHaveTextContent("Moved 1 item to the trash")
+  })
+
+  it("asks before deleting for good, and closes when nothing is left", async () => {
+    const close = vi.spyOn(window, "close").mockImplementation(() => undefined)
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    command.mockResolvedValueOnce({ item: null, done: true })
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    fireEvent.click(screen.getByText("key delete"))
+    const confirm = screen.getByRole("alertdialog")
+    expect(confirm).toHaveTextContent("Delete a.jpg permanently?")
+    // Esc keeps the file.
+    fireEvent.keyDown(confirm, { key: "Escape" })
+    expect(screen.queryByRole("alertdialog")).toBeNull()
+    expect(command).not.toHaveBeenCalled()
+    fireEvent.click(screen.getByText("key delete"))
+    fireEvent.click(screen.getByRole("button", { name: "Delete permanently" }))
+    await waitFor(() => expect(close).toHaveBeenCalled())
+    expect(command).toHaveBeenCalledWith("delete")
+    close.mockRestore()
+  })
+
+  it("says when the opener could not carry a key out, and keeps the file", async () => {
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    command.mockResolvedValueOnce({ item: item(1, "a.jpg"), done: false })
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    fireEvent.click(screen.getByText("key copy"))
+    expect(await screen.findByRole("status")).toHaveTextContent("The operation failed.")
+    expect(screen.getByRole("dialog", { name: "a.jpg" })).toBeInTheDocument()
+  })
+
+  it("standing alone, it has no file keys (no app carries them out)", async () => {
+    window.location.hash = "#alone=1"
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    expect(screen.queryByText("key trash")).toBeNull()
   })
 })

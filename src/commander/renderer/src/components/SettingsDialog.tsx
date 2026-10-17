@@ -302,6 +302,15 @@ function OperationsSection() {
         </span>
       </label>
       <Check setting="copyVerify" label={t("Verify files after copying")} />
+      <Check
+        setting="progressDialog"
+        label={t("Show the progress of file operations in a dialog")}
+      />
+      <p className="-mt-3 text-2xs text-muted">
+        {t(
+          "Copying, moving and deleting wait in a dialog; its down arrow sends the job to the queue at the bottom. Off: jobs go to the queue at once.",
+        )}
+      </p>
       <Radios
         setting="compareToleranceMs"
         label={t("Compare dates (Shift+F2, Synchronize directories)")}

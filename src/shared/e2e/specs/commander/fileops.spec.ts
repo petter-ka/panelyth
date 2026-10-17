@@ -59,6 +59,22 @@ async function lastJobState(c: Page, states: string[], timeout = 60_000) {
 }
 
 /**
+ * A file operation started from a dialog shows its progress over the panels
+ * (a job that ends within 300 ms never shows it); its down arrow hands it to the
+ * queue strip, where the tests pause, resume and cancel it.
+ */
+async function toBackground(c: Page): Promise<void> {
+  const progress = c.getByTestId("progress-dialog")
+  await progress.waitFor({ state: "visible", timeout: 1_500 }).catch(() => undefined)
+  // The job may end (and its dialog close) while the click is on its way.
+  await c
+    .getByTestId("progress-minimize")
+    .click({ timeout: 2_000 })
+    .catch(() => undefined)
+  await expect(progress).toHaveCount(0)
+}
+
+/**
  * Presses Enter in an open copy, move or delete dialog and waits for the new
  * job's row (the queue is kept expanded, oldest first), then for one of the
  * states.
@@ -73,6 +89,7 @@ async function confirmJob(c: Page, states: string[], timeout = 60_000) {
   const before = await jobRows(c).count()
   await c.keyboard.press("Enter")
   await expect.poll(() => jobRows(c).count(), { timeout: 10_000 }).toBeGreaterThan(before)
+  await toBackground(c)
   if ((await expanded()) === "false") await c.keyboard.press("Control+j")
   return lastJobState(c, states, timeout)
 }
@@ -211,12 +228,16 @@ test.describe("file operations (Stage C04)", () => {
       await expect(c.getByRole("dialog")).toContainText("“a.txt” already exists")
       await c.keyboard.press("Escape") // the question waits in the queue
       await expect(jobRows(c).last()).toHaveAttribute("data-state", "asking")
+      // Its progress dialog says so; Background leaves the question in the queue.
+      await expect(c.getByTestId("progress-dialog")).toContainText("Needs your decision")
+      await toBackground(c)
       await openFolder(c, "right", freeDst)
       await cursorTo(c, "left", "a")
       await grid(c, "left").focus()
       await c.keyboard.press("F5")
       await c.keyboard.press("Enter")
       await expect.poll(() => existsSync(join(freeDst, "a.txt"))).toBe(true)
+      await toBackground(c)
       await c.keyboard.press("Control+j")
       const asking = c.getByTestId("queue").locator('li[data-state="asking"]')
       await expect(asking).toHaveCount(1)

@@ -1,4 +1,9 @@
-import type { ArchiveWarning, ConflictPolicy, SelectionDescriptor } from "@panelyth/contracts"
+import type {
+  ArchiveWarning,
+  ConflictPolicy,
+  JobSnapshot,
+  SelectionDescriptor,
+} from "@panelyth/contracts"
 import { beginOwnDrag, endOwnDrag, isMarked, ownDrag } from "@panelyth/renderer-core"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
@@ -13,6 +18,7 @@ import {
 } from "./listing"
 import { cursorDescriptor, marksDescriptor, marksOf, markNone } from "./marks"
 import { otherSide, setActivePanel, usePanelsStore, type Side } from "./panels"
+import { trackJob } from "./queue"
 import { useSettingsStore } from "./settings"
 import { useTabsStore } from "./tabs"
 import { msg, t } from "@panelyth/i18n"
@@ -350,13 +356,14 @@ export async function startCopy(now: boolean): Promise<boolean> {
   let dirId = c.destinationDirId
   try {
     if (c.kind === "upload" && c.remoteDirId !== null) {
-      await bridge.startJob({
+      const job = await bridge.startJob({
         kind: "upload",
         source: { selection: c.source },
         remoteDirId: c.remoteDirId,
         conflict: c.conflict,
         ...(c.move && { move: true }),
       })
+      if (now) trackJob(job)
       set({ copy: null })
       if (marksDescriptor(c.side)) markNone(c.side)
       return true
@@ -367,8 +374,9 @@ export async function startCopy(now: boolean): Promise<boolean> {
       dirId = (await bridge.openDir(typed)).dirId
     }
     const mask = c.mask.trim()
+    let job: JobSnapshot
     if (c.kind === "download") {
-      await bridge.startJob({
+      job = await bridge.startJob({
         kind: "download",
         source: { selection: c.source },
         destinationDirId: dirId,
@@ -378,7 +386,7 @@ export async function startCopy(now: boolean): Promise<boolean> {
     } else if (c.kind === "upload") {
       throw new Error(t("The connection is closed."))
     } else if (c.kind === "extract") {
-      await bridge.startJob({
+      job = await bridge.startJob({
         kind: "extract",
         source: { selection: c.source },
         destinationDirId: dirId,
@@ -386,7 +394,7 @@ export async function startCopy(now: boolean): Promise<boolean> {
         links: c.links,
       })
     } else {
-      await bridge.startJob({
+      job = await bridge.startJob({
         kind: c.kind,
         source: { selection: c.source },
         destinationDirId: dirId,
@@ -397,6 +405,8 @@ export async function startCopy(now: boolean): Promise<boolean> {
         ...(c.name !== null && { name: c.name.trim() }),
       })
     }
+    // "Queue" starts it in the background; Copy / Move show its progress.
+    if (now) trackJob(job)
   } catch (error) {
     const reason =
       error instanceof PanelythError ? (error.details as { reason?: string })?.reason : ""
@@ -485,6 +495,54 @@ export function switchToPermanent(): void {
 
 export const closeDelete = (): void => set({ remove: null })
 
+/**
+ * One entry of a panel's session as an operand, by its id (the file a media
+ * window shows, whatever the cursor and the marks are).
+ */
+export function entryOperand(side: Side, entryId: number): SelectionDescriptor | null {
+  const query = panel(side).query
+  return query
+    ? {
+        queryId: query.queryId,
+        version: query.version,
+        ranges: [],
+        include: [entryId],
+        exclude: [],
+      }
+    : null
+}
+
+/**
+ * The media window's Delete and Shift+Delete: the entries go to the trash,
+ * or are deleted for good, without the dialog (the window asked first where
+ * it had to). False when they could not: an archive, a connection, a drive
+ * without a trash.
+ */
+export async function deleteNow(
+  side: Side,
+  source: SelectionDescriptor,
+  permanent: boolean,
+): Promise<boolean> {
+  const p = panel(side)
+  if (p.dirId === null || refusedOnConnection(side)) return false
+  if (p.archive) {
+    notice(t(READ_ONLY))
+    return false
+  }
+  if (!permanent && !(await bridge.canTrash(p.dirId).catch(() => false))) {
+    notice(t("This drive has no trash. The items can only be deleted permanently."))
+    return false
+  }
+  try {
+    // No progress dialog: it would be behind the media window.
+    await bridge.startJob({ kind: permanent ? "delete" : "trash", source: { selection: source } })
+    return true
+  } catch (error) {
+    notice(errorText(error))
+    return false
+  }
+}
+
 export async function confirmDelete(): Promise<void> {
   const r = get().remove
   if (!r) return
@@ -494,10 +552,12 @@ export async function confirmDelete(): Promise<void> {
 
 async function startDelete(r: DeleteDialogState): Promise<void> {
   try {
-    await bridge.startJob({
-      kind: r.remote ? "remoteDelete" : r.permanent ? "delete" : "trash",
-      source: { selection: r.source },
-    })
+    trackJob(
+      await bridge.startJob({
+        kind: r.remote ? "remoteDelete" : r.permanent ? "delete" : "trash",
+        source: { selection: r.source },
+      }),
+    )
     if (marksDescriptor(r.side)) markNone(r.side)
     if (r.next !== null) void focusEntry(r.side, r.next)
   } catch (error) {
@@ -603,11 +663,19 @@ export async function commitRename(name: string): Promise<boolean> {
 /** Ctrl+C / Ctrl+X: the internal file clipboard (shared with the viewer). */
 export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<void> {
   const source = operand(side)
-  if (!source) return
-  if (refusedOnConnection(side)) return
+  if (source) await clipboardSetOf(side, source, mode)
+}
+
+/** The clipboard takes these entries of a panel; true when it did. */
+export async function clipboardSetOf(
+  side: Side,
+  source: SelectionDescriptor,
+  mode: "copy" | "cut",
+): Promise<boolean> {
+  if (refusedOnConnection(side)) return false
   if (panel(side).archive) {
     notice(t(READ_ONLY))
-    return
+    return false
   }
   try {
     const state = await bridge.clipSet(source, mode)
@@ -616,28 +684,32 @@ export async function clipboardSet(side: Side, mode: "copy" | "cut"): Promise<vo
         ? t("{count, plural, one {# item} other {# items}} cut", { count: state.count })
         : t("{count, plural, one {# item} other {# items}} copied", { count: state.count }),
     )
+    return true
   } catch (error) {
     notice(errorText(error))
+    return false
   }
 }
 
-/** Ctrl+V: paste into the panel's folder; conflicts are asked about. */
-export async function clipboardPaste(side: Side): Promise<void> {
+/** Ctrl+V: paste into the panel's folder; conflicts are asked about. True when the paste started. */
+export async function clipboardPaste(side: Side): Promise<boolean> {
   const dirId = panel(side).dirId
-  if (dirId === null) return
-  if (refusedOnConnection(side)) return
+  if (dirId === null) return false
+  if (refusedOnConnection(side)) return false
   if (panel(side).archive) {
     notice(t(INTO_ARCHIVE))
-    return
+    return false
   }
   try {
-    await bridge.clipPaste(dirId, "ask")
+    trackJob(await bridge.clipPaste(dirId, "ask"))
+    return true
   } catch (error) {
     notice(
       error instanceof PanelythError && error.code === "INVALID_ARGUMENT"
         ? t("The clipboard is empty.")
         : errorText(error),
     )
+    return false
   }
 }
 
@@ -725,7 +797,8 @@ export function dropOn(from: Side, target: CopyTarget, shift: boolean): void {
         conflict: defaults().copyConflict,
         ...(defaults().copyVerify && { verify: true }),
       })
-      .then(() => {
+      .then((job) => {
+        trackJob(job)
         if (marksDescriptor(from)) markNone(from)
       })
       .catch((error: unknown) => notice(errorText(error)))

@@ -18,6 +18,7 @@ import {
 import { pageStoreOf, parentRows, useListingStore } from "./listing"
 import { marksDescriptor, markNone } from "./marks"
 import { otherSide, type Side } from "./panels"
+import { trackJob } from "./queue"
 import { msg, t } from "@panelyth/i18n"
 
 // Pack (Alt+F5), unpack (Alt+F9) and test (Alt+Shift+F9), Stage C07
@@ -219,7 +220,7 @@ export async function startPack(): Promise<boolean> {
     const name = p.name.trim()
     if (name === "") throw new Error(t("Enter a name for the archive."))
     const destinationDirId = await resolveDir(p)
-    await bridge.startJob({
+    const job = await bridge.startJob({
       kind: "pack",
       source: { selection: p.source },
       destinationDirId,
@@ -229,6 +230,7 @@ export async function startPack(): Promise<boolean> {
       level: p.level,
       ...(p.deleteOriginals && { deleteOriginals: true }),
     })
+    trackJob(job)
   } catch (error) {
     if (get().pack) set({ pack: { ...get().pack!, error: errorText(error) } })
     return false
@@ -287,7 +289,7 @@ export async function startUnpack(): Promise<boolean> {
   if (!u) return false
   try {
     const destinationDirId = await resolveDir(u)
-    await bridge.startJob({
+    const job = await bridge.startJob({
       kind: "extract",
       source: { selection: u.source },
       destinationDirId,
@@ -295,6 +297,7 @@ export async function startUnpack(): Promise<boolean> {
       links: u.links,
       ...(u.subfolders && { subfolders: true }),
     })
+    trackJob(job)
   } catch (error) {
     if (get().unpack) set({ unpack: { ...get().unpack!, error: errorText(error) } })
     return false

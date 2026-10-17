@@ -82,6 +82,8 @@ export interface PanelSettings {
   /** Operations: what the copy and move dialogs start with. */
   copyConflict: ConflictPolicy
   copyVerify: boolean
+  /** A file operation started here shows its progress in a dialog over the panels (off: in the queue strip only). */
+  progressDialog: boolean
   /** Confirmations: F8 asks before moving to the trash; a drop shows the copy dialog first. */
   confirmTrash: boolean
   confirmDrop: boolean
@@ -113,6 +115,7 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   thumbSize: "small",
   copyConflict: "ask",
   copyVerify: false,
+  progressDialog: true,
   confirmTrash: true,
   confirmDrop: true,
   tabBar: "always",
@@ -157,6 +160,7 @@ export function readSettings(value: unknown): PanelSettings {
     thumbSize: tileSizes.has(v.thumbSize) ? (v.thumbSize as TileSize) : "small",
     copyConflict: policies.has(v.copyConflict) ? (v.copyConflict as ConflictPolicy) : "ask",
     copyVerify: v.copyVerify === true,
+    progressDialog: v.progressDialog !== false,
     confirmTrash: v.confirmTrash !== false,
     confirmDrop: v.confirmDrop !== false,
     tabBar: v.tabBar === "multiple" ? "multiple" : "always",

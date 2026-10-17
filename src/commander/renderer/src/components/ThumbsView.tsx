@@ -45,6 +45,7 @@ import { thumbsOf } from "../features/thumbs"
 import { clickRow, focusGrid, type FullViewHandle } from "./FullView"
 import { panelDnd } from "./panelDnd"
 import { RenameField, useRenaming } from "./RenameField"
+import { cancelClickRename, clickRenameDown } from "../features/clickRename"
 import { useRightButton } from "./useRightButton"
 import { useScrollMemory } from "./useScrollMemory"
 
@@ -274,12 +275,14 @@ export const ThumbsView = forwardRef<FullViewHandle, ThumbsViewProps>(function T
       onKeyDown={onKeyDown}
       onMouseDown={(e) => {
         const row = rowAt(e)
+        if (row !== null) clickRenameDown(side, cursor, row, e)
         if (row !== null && e.button === 0) clickRow(side, cursor, row, e)
         rightButton.onMouseDown(e)
       }}
       onMouseMove={rightButton.onMouseMove}
       onContextMenu={rightButton.onContextMenu}
       onDoubleClick={(e) => {
+        cancelClickRename()
         if (rowAt(e) !== null) void enter(side)
       }}
       {...panelDnd(side)}
@@ -416,7 +419,7 @@ const ThumbTile = memo(function ThumbTile({ side, store, thumbs, index, entry, s
           <RenameField onDone={() => focusGrid(side)} />
         ) : shown ? (
           <>
-            <span className="truncate" style={gitNameStyle(git, marked)}>
+            <span className="truncate" style={gitNameStyle(git, marked)} data-name>
               {prefix && <span className="text-muted">{prefix}</span>}
               {shown.name}
             </span>

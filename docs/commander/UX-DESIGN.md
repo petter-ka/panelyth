@@ -52,7 +52,7 @@ for. People coming from Total Commander find their keys where they expect them.
   after the path, filters as you type (plain text, matched anywhere in a name, words in order; a mask such as `*.jpg`
   still works), and stays as a chip until clicked or cleared with Esc. Rows from other folders
   show that folder, relative to the panel's, muted before the name.
-- **Count by type:** an icon in the path bar, beside `..` and `/`, opens a menu of the panel's folders and each
+- **Count by type:** an icon in the path bar, beside `/` and `..`, opens a menu of the panel's folders and each
   extension's files, the most common first (at most 50 extensions; the rest as "Other types"). It is counted only
   when opened, since a branch view or a large archive takes a while, and again only once the listing has changed. The
   counts leave the quick filter out, so every type stays to choose from: ticking up to three extensions filters the
@@ -180,6 +180,16 @@ A strip above the command line; click or press Ctrl+J to expand it into a list. 
 1,204 files to Backup"), progress, speed, ETA, and Pause / Resume / Cancel. A job waiting for a conflict decision says
 "Needs your decision" and opens its dialog when clicked. Finished jobs with failures keep a Details button.
 
+**Progress dialog (2026-10-17, owner request).** By default a copy, move, delete, paste, drop, pack or unpack
+started in this window shows its progress in a modal dialog over the panels: what it does, the current item, the
+bar, speed and time left, and Pause / Resume and Cancel. The panels wait while it is up. The **down arrow** in its
+title bar (or Esc) minimizes it: the job goes on in the strip, as every job did before, and the job's **up arrow**
+there brings the dialog back. The dialog closes by itself when the job ends. A job that ends within 300 ms never
+shows it, so a quick delete does not flash. A conflict question shows instead of it while it is asked; put aside
+(Esc), the dialog says "Needs your decision". **Queue** in the copy dialog starts the job in the strip at once, and
+jobs started elsewhere (the viewer, sync, multi-rename, checksums) stay in the strip. Settings → Operations → "Show
+the progress of file operations in a dialog" turns the dialog off.
+
 ## Dialogs
 
 All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined letters reach every field.
@@ -193,7 +203,10 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
 - **Delete (F8 / Shift+F8):** count and size; trash vs permanent stated in the title. Permanent delete shows the
   danger color; where the trash is unavailable, the dialog says so and offers permanent delete.
 - **New folder (F7):** one field; `a/b/c` creates the chain.
-- **Rename in place (Shift+F6, F2):** inline editor on the row; the name is selected without the extension.
+- **Rename in place (Shift+F6, F2):** inline editor on the row; the name is selected without the extension. A
+  click on the name of the row that has the cursor, in the active panel, opens it too (as in Explorer and Finder),
+  500 ms after the click when no second click followed: a double-click still opens the entry, and a click that
+  moves the cursor only moves it. A drag, a key or the wheel cancels it; not in an archive.
 - **Find files (Alt+F7, Stage C06):** General (masks, start folders, depth, text, case, whole words, encoding),
   Advanced (size, date, attributes), Results (streaming list; Feed to panel, Go to file, Stop).
 - **Multi-rename (Ctrl+M, Stage C09):** mask fields with placeholder buttons, search and replace, case, counter; a

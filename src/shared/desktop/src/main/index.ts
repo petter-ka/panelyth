@@ -792,8 +792,11 @@ async function boot(): Promise<void> {
     "media.windowStep": async (event, { direction }) => ({
       item: (await mediaWindows?.step(event.sender, direction)) ?? null,
     }),
-    "media.windowAnswer": (event, { requestId, item }) => {
-      mediaWindows?.answer(event.sender, requestId, item)
+    // The media window's file command (copy, cut, paste, trash, delete); the opener carries it out.
+    "media.windowCommand": async (event, { command }) =>
+      (await mediaWindows?.command(event.sender, command)) ?? { item: null, done: false },
+    "media.windowAnswer": (event, { requestId, item, done }) => {
+      mediaWindows?.answer(event.sender, requestId, item, done ?? false)
       return { ok: true }
     },
     // The media window of a file opened from the OS: its picture in the viewer, at its

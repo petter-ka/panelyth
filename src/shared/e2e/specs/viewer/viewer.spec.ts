@@ -119,7 +119,7 @@ test.describe("image viewer (Stage 04; in the media window since ADR-0033)", () 
     try {
       const tile = page.locator('[data-testid="tile"][data-kind="image"]').nth(3)
       const name = await tile.getAttribute("aria-label")
-      const { viewer, image } = await openInMediaWindow(app, tile)
+      const { media, viewer, image } = await openInMediaWindow(app, tile)
       await expect(viewer).toHaveAttribute("aria-label", `Media viewer: ${name}`)
       await expect(image).toHaveAttribute("data-layer", "fit", { timeout: 20_000 })
 
@@ -132,12 +132,19 @@ test.describe("image viewer (Stage 04; in the media window since ADR-0033)", () 
       await expect(viewer).not.toHaveAttribute("aria-label", `Media viewer: ${name}`)
       await viewer.press("ArrowLeft")
       await expect(viewer).toHaveAttribute("data-entry-id", second!)
+      const shown = (await viewer.getAttribute("aria-label"))!.replace("Media viewer: ", "")
+
+      // The file keys work in the window: Ctrl+C copies the file shown.
+      await viewer.press("Control+c")
+      await expect(media.getByRole("status")).toHaveText("1 item copied")
 
       // The window closes under the key press, which then has no page to return to.
       await viewer.press("Escape").catch(() => undefined)
       await expect.poll(() => mediaWindows(app)).toBe(0)
-      // The folder is as it was left: the tile that was opened is selected.
-      await expect(tile).toHaveAttribute("aria-selected", "true")
+      // The tile view selects the file shown last, not the one that was opened.
+      const last = page.locator(`[data-testid="tile"][aria-label="${shown}"]`)
+      await expect(last).toHaveAttribute("aria-selected", "true")
+      await expect(tile).toHaveAttribute("aria-selected", "false")
     } finally {
       await app.close()
     }

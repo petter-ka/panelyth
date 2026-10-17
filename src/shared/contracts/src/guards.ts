@@ -57,6 +57,7 @@ import {
   JOB_ITEM_ERROR_CODES,
   JOB_KINDS,
   JOB_STATES,
+  MEDIA_WINDOW_COMMANDS,
   MAX_FOLDER_COVERS,
   MAX_LABEL,
   MAX_RATING,
@@ -1144,6 +1145,12 @@ export const eventGuards: EventGuards = {
     isInt(v.requestId) &&
     isInt(v.key) &&
     (v.direction === -1 || v.direction === 0 || v.direction === 1),
+  "mediaWindow.command": (v): v is EventMap["mediaWindow.command"] =>
+    isRec(v) &&
+    isInt(v.requestId) &&
+    isInt(v.key) &&
+    (MEDIA_WINDOW_COMMANDS as readonly unknown[]).includes(v.command),
+  "mediaWindow.closed": (v): v is EventMap["mediaWindow.closed"] => isRec(v) && isInt(v.key),
   "edit.request": (v): v is EventMap["edit.request"] =>
     isRec(v) && isInt(v.entryId) && v.entryId > 0,
   "update.state": isUpdateState,

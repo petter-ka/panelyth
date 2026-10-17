@@ -1,11 +1,12 @@
-import type { ContentItem } from "@panelyth/contracts"
+import type { ContentItem, MediaWindowCommand, MediaWindowCommandResult } from "@panelyth/contracts"
 import { create } from "zustand"
 import { currentAppearance } from "@panelyth/ui"
 import { currentLocale } from "@panelyth/i18n"
 import { bridge } from "../bridge"
 import { opensInDocumentWindow, openDocumentWindow } from "./documents"
-import { onSessionChanged, pageStoreOf, parentRows, useListingStore } from "./listing"
-import { otherSide, usePanelsStore, type Side } from "./panels"
+import { clipboardPaste, clipboardSetOf, deleteNow, entryOperand } from "./files"
+import { focusEntry, onSessionChanged, pageStoreOf, parentRows, useListingStore } from "./listing"
+import { otherSide, setActivePanel, usePanelsStore, type Side } from "./panels"
 
 // Quick view (Ctrl+Q) and the lister (F3), Stage C05. Quick view shows the
 // active panel's cursor entry in the other panel once the cursor settles,
@@ -112,6 +113,8 @@ export const closeQuickView = (): void => set({ quick: null, quickItem: null })
 
 interface HostedWindow {
   side: Side
+  /** The panel's session when the window opened; another folder ends the bookkeeping. */
+  queryId: number
   index: number
   item: ContentItem
 }
@@ -135,8 +138,14 @@ export function openMediaViewer(
 ): boolean {
   if (!isMedia(item)) return false
   const panel = useListingStore.getState()[side]
+  if (!panel.query) return false
   const key = nextKey++
-  hosted.set(key, { side, index: panel.cursor - parentRows(panel), item })
+  hosted.set(key, {
+    side,
+    queryId: panel.query.queryId,
+    index: panel.cursor - parentRows(panel),
+    item,
+  })
   if (hosted.size > MAX_HOSTED) hosted.delete(hosted.keys().next().value!)
   void bridge
     .openMediaWindow(item.id, key, currentAppearance().theme, currentLocale())
@@ -147,36 +156,128 @@ export function openMediaViewer(
   return true
 }
 
+/** The window's panel still shows the session it was opened from. */
+const samePanel = (window: HostedWindow): boolean =>
+  useListingStore.getState()[window.side].query?.queryId === window.queryId
+
+/**
+ * The window's file may have moved in the listing since (a delete above it,
+ * a new version): its index is looked up again. False when it left.
+ */
+async function relocate(window: HostedWindow): Promise<boolean> {
+  const store = pageStoreOf(window.side)
+  if (store.getItem(window.index)?.id === window.item.id) return true
+  if (!samePanel(window)) return false
+  const at = await bridge.indexOf(window.queryId, window.item.id).catch(() => null)
+  if (!at || at.index < 0) return false
+  window.index = at.index
+  return true
+}
+
+/** The nearest image or video from `from` in `direction`. */
+async function findMedia(
+  side: Side,
+  from: number,
+  direction: -1 | 1,
+): Promise<{ index: number; item: ContentItem } | null> {
+  const store = pageStoreOf(side)
+  const total = store.getTotal()
+  for (
+    let index = from, scanned = 0;
+    index >= 0 && index < total && scanned < MAX_STEP_SCAN;
+    index += direction, scanned++
+  ) {
+    const item = await store.ensureIndex(index)
+    if (isMedia(item)) return { index, item }
+  }
+  return null
+}
+
 /** The media window asked for its first, previous or next item. */
 async function answerStep(key: number, direction: -1 | 0 | 1): Promise<ContentItem | null> {
   const window = hosted.get(key)
   if (!window) return null
   if (direction === 0) return window.item
-  const store = pageStoreOf(window.side)
-  const total = store.getTotal()
-  for (
-    let index = window.index + direction, scanned = 0;
-    index >= 0 && index < total && scanned < MAX_STEP_SCAN;
-    index += direction, scanned++
-  ) {
-    const item = await store.ensureIndex(index)
-    if (isMedia(item)) {
-      window.index = index
-      window.item = item
-      return item
+  await relocate(window)
+  const found = await findMedia(window.side, window.index + direction, direction)
+  if (!found) return null
+  window.index = found.index
+  window.item = found.item
+  return found.item
+}
+
+/**
+ * A file key in the media window, on the file it shows (never the marks):
+ * the clipboard, paste into the panel's folder, the trash or a permanent
+ * delete. After a delete the window shows the next file (the previous one at
+ * the end), or nothing.
+ */
+export async function runMediaCommand(
+  key: number,
+  command: MediaWindowCommand,
+): Promise<MediaWindowCommandResult> {
+  const window = hosted.get(key)
+  if (!window) return { item: null, done: false }
+  const refused = { item: window.item, done: false }
+  if (!samePanel(window) || !(await relocate(window))) return refused
+  const source = entryOperand(window.side, window.item.id)
+  if (!source) return refused
+  switch (command) {
+    case "copy":
+    case "cut":
+      return { item: window.item, done: await clipboardSetOf(window.side, source, command) }
+    case "paste":
+      return { item: window.item, done: await clipboardPaste(window.side) }
+    case "trash":
+    case "delete": {
+      const next =
+        (await findMedia(window.side, window.index + 1, 1)) ??
+        (await findMedia(window.side, window.index - 1, -1))
+      if (!(await deleteNow(window.side, source, command === "delete"))) return refused
+      if (!next) {
+        hosted.delete(key)
+        return { item: null, done: true }
+      }
+      // The listing drops the deleted row soon; relocate() finds the new index then.
+      window.index = next.index
+      window.item = next.item
+      return { item: next.item, done: true }
     }
   }
-  return null
+}
+
+/** The cursor goes to the file the window showed last, scrolled into view. */
+function revealHosted(key: number): void {
+  const window = hosted.get(key)
+  hosted.delete(key)
+  if (!window || !samePanel(window)) return
+  revealInPanel(window.side, window.item.id)
+}
+
+function revealInPanel(side: Side, entryId: number): void {
+  setActivePanel(side)
+  void focusEntry(side, entryId)
+  set((s) => ({ panelFocus: s.panelFocus + 1 }))
 }
 
 /** Answers the media windows' questions; returns the stop function. */
 export function startMediaWindowHost(): () => void {
-  return bridge.on("mediaWindow.step", ({ requestId, key, direction }) => {
-    void answerStep(key, direction)
-      .catch(() => null)
-      .then((item) => bridge.mediaWindowAnswer(requestId, item))
-      .catch(() => undefined)
-  })
+  const stops = [
+    bridge.on("mediaWindow.step", ({ requestId, key, direction }) => {
+      void answerStep(key, direction)
+        .catch(() => null)
+        .then((item) => bridge.mediaWindowAnswer(requestId, item))
+        .catch(() => undefined)
+    }),
+    bridge.on("mediaWindow.command", ({ requestId, key, command }) => {
+      void runMediaCommand(key, command)
+        .catch(() => ({ item: hosted.get(key)?.item ?? null, done: false }))
+        .then((r) => bridge.mediaWindowAnswer(requestId, r.item, r.done))
+        .catch(() => undefined)
+    }),
+    bridge.on("mediaWindow.closed", ({ key }) => revealHosted(key)),
+  ]
+  return () => stops.forEach((stop) => stop())
 }
 
 /** Opens a shared full-window media surface above Commander. */
@@ -191,9 +292,12 @@ export function openMediaOverlay(
   return true
 }
 
+/** Esc: the cursor goes to the file shown last. */
 export function closeMediaViewer(): void {
-  if (!get().mediaViewer) return
+  const current = get().mediaViewer
+  if (!current) return
   set((s) => ({ mediaViewer: null, panelFocus: s.panelFocus + 1 }))
+  revealInPanel(current.side, current.item.id)
 }
 
 /** Steps to the adjacent image or video in the source panel. */

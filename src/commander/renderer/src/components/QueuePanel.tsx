@@ -9,12 +9,16 @@ import {
   deferQuestion,
   dismissFinished,
   dismissJob,
+  FOREGROUND_KINDS,
+  foregroundJob,
   isActiveJob,
   openQuestion,
   pause,
   resume,
+  sendToBackground,
   setQueueExpanded,
   showDetails,
+  showProgress,
   startNow,
   toggleQueue,
   useQueueStore,
@@ -181,6 +185,30 @@ function JobRow({ j }: { j: JobSnapshot }) {
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-1">
+        {active && FOREGROUND_KINDS.has(j.kind) && (
+          <Tooltip content={t("Show the progress")}>
+            <Button
+              size="sm"
+              aria-label={t("Show the progress")}
+              onClick={() => showProgress(j.jobId)}
+              data-testid={`job-restore-${j.jobId}`}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 16 16"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden="true"
+              >
+                <path d="m4 10 4-4 4 4" />
+              </svg>
+            </Button>
+          </Tooltip>
+        )}
         {j.state === "asking" && (
           <Button size="sm" variant="primary" onClick={() => openQuestion(j.jobId)}>
             {t("Needs your decision")}
@@ -374,6 +402,77 @@ export function ConflictDialog() {
           <Button variant="danger" onClick={() => decide("cancel")}>
             {t("Cancel job")}
           </Button>
+        </div>
+      </div>
+    </DialogWindow>
+  )
+}
+
+/**
+ * The progress of a file operation started here (F5, F6, F8, a drop,
+ * Ctrl+V): a modal dialog over the panels until the job ends. Its down arrow
+ * (or Esc) minimizes it: the job goes on in the queue strip, whose up arrow
+ * brings the dialog back. A conflict question shows instead of it while it
+ * is asked.
+ */
+export function ProgressDialog() {
+  const job = useQueueStore(foregroundJob)
+  const answering = useQueueStore((s) => s.answering)
+  if (!job || answering === job.jobId) return null
+  const tone =
+    job.failed > 0
+      ? "bg-danger"
+      : job.state === "paused" || job.state === "asking"
+        ? "bg-muted"
+        : "bg-accent"
+  return (
+    <DialogWindow
+      open
+      onOpenChange={(open) => {
+        if (!open) sendToBackground(job.jobId)
+      }}
+      title={describeJob(job)}
+      contentClassName="w-[min(32rem,calc(100vw-2rem))]"
+      minimize={{ label: t("Minimize to the queue (Esc)"), testId: "progress-minimize" }}
+    >
+      <div
+        className="flex flex-col gap-2 text-xs"
+        data-testid="progress-dialog"
+        data-job={job.jobId}
+        data-state={job.state}
+      >
+        <Tooltip content={job.current}>
+          <span className="truncate text-text">{job.current || " "}</span>
+        </Tooltip>
+        <div
+          role="progressbar"
+          aria-label={describeJob(job)}
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={Math.round(percent(job))}
+          className="h-1.5 overflow-hidden rounded-full bg-raised"
+        >
+          <div className={`h-full ${tone}`} style={{ width: `${percent(job)}%` }} />
+        </div>
+        <span className="text-2xs text-muted tabular-nums" aria-live="polite">
+          {progressText(job)}
+        </span>
+        <div className="mt-1 flex flex-wrap justify-end gap-2">
+          {job.state === "asking" && (
+            <Button variant="primary" onClick={() => openQuestion(job.jobId)}>
+              {t("Needs your decision")}
+            </Button>
+          )}
+          {job.state === "queued" && (
+            <Button onClick={() => void startNow(job.jobId)}>{t("Start now")}</Button>
+          )}
+          {(job.state === "running" || job.state === "queued") && (
+            <Button onClick={() => void pause(job.jobId)}>{t("Pause")}</Button>
+          )}
+          {job.state === "paused" && (
+            <Button onClick={() => void resume(job.jobId)}>{t("Resume")}</Button>
+          )}
+          <Button onClick={() => void cancel(job.jobId)}>{t("Cancel")}</Button>
         </div>
       </div>
     </DialogWindow>

@@ -30,6 +30,8 @@ import type {
   GitRunParams,
   GitStatusResult,
   MediaOpenResult,
+  MediaWindowCommand,
+  MediaWindowCommandResult,
   PreviewEnsureParams,
   PreviewEnsureResult,
   PreviewProfile,
@@ -348,13 +350,20 @@ export const bridge = {
   /** The media window: the first (0), previous (-1) or next (1) item, asked of the opener. */
   mediaWindowStep: async (direction: -1 | 0 | 1): Promise<ContentItem | null> =>
     (await unwrap(() => api().media.windowStep(direction))).item,
+  /** The media window: a file command on its item, carried out by the opener. */
+  mediaWindowCommand: (command: MediaWindowCommand): Promise<MediaWindowCommandResult> =>
+    unwrap(() => api().media.windowCommand(command)),
   /** The media window of a file opened from the OS: its picture in the viewer, at its folder. */
   mediaWindowReveal: async (): Promise<void> => {
     await unwrap(() => api().media.windowReveal())
   },
-  /** The opener's reply to a mediaWindow.step event. */
-  mediaWindowAnswer: async (requestId: number, item: ContentItem | null): Promise<void> => {
-    await unwrap(() => api().media.windowAnswer(requestId, item))
+  /** The opener's reply to a mediaWindow.step or mediaWindow.command event. */
+  mediaWindowAnswer: async (
+    requestId: number,
+    item: ContentItem | null,
+    done?: boolean,
+  ): Promise<void> => {
+    await unwrap(() => api().media.windowAnswer(requestId, item, done))
   },
   ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
     unwrap(() => api().preview.ensure(params)),

@@ -2548,6 +2548,17 @@ const messages: Messages = {
   "↑↓ next · Esc": "↑↓ következő · Esc",
   "✓ sets it, an empty box clears it, – leaves it as it is.":
     "✓ beállítja, az üres négyzet törli, – változatlanul hagyja.",
+  "Pasting into this folder…": "Beillesztés ebbe a mappába…",
+  "Copying, moving and deleting wait in a dialog; its down arrow sends the job to the queue at the bottom. Off: jobs go to the queue at once.":
+    "A másolás, áthelyezés és törlés egy párbeszédablakban vár; a lefelé mutató nyíl a lenti sorba küldi a feladatot. Kikapcsolva: a feladatok azonnal a sorba kerülnek.",
+  "Delete on a picture or video shown full screen asks first. Shift+Delete always asks.":
+    "A Delete egy teljes képernyős képen vagy videón előbb rákérdez. A Shift+Delete mindig rákérdez.",
+  "Minimize to the queue (Esc)": "Kis méret a sorba (Esc)",
+  "Show the progress": "Folyamat megjelenítése",
+  "Show the progress of file operations in a dialog":
+    "A fájlműveletek folyamatának megjelenítése párbeszédablakban",
+  "You can turn this question off in Settings → Appearance → Full screen.":
+    "Ezt a kérdést a Beállítások → Megjelenés → Teljes képernyő alatt kapcsolhatod ki.",
 }
 
 export default messages

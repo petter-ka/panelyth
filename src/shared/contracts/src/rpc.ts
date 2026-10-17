@@ -757,10 +757,35 @@ export interface MediaWindowStepResult {
   item: ContentItem | null
 }
 
-/** media.windowAnswer (the opener): the reply to one mediaWindow.step event. */
+/**
+ * What a key in the media window does to the file it shows: the file
+ * clipboard (copy, cut, paste into the file's folder), the trash and a
+ * permanent delete. The opener carries it out on that file only.
+ */
+export const MEDIA_WINDOW_COMMANDS = ["copy", "cut", "paste", "trash", "delete"] as const
+export type MediaWindowCommand = (typeof MEDIA_WINDOW_COMMANDS)[number]
+
+/**
+ * media.windowCommand (the media window): a command for the opener, which
+ * answers with the item the window shows next (the same one, a neighbour of
+ * a deleted file, or null when nothing is left).
+ */
+export interface MediaWindowCommandParams {
+  command: MediaWindowCommand
+}
+
+/** media.windowAnswer (the opener): the reply to one mediaWindow.step or mediaWindow.command event. */
 export interface MediaWindowAnswerParams {
   requestId: number
   item: ContentItem | null
+  /** A command's reply: whether it was carried out (a read-only folder, an empty clipboard: false). */
+  done?: boolean
+}
+
+/** media.windowCommand's result: the item to show now (null: none is left) and whether the command ran. */
+export interface MediaWindowCommandResult {
+  item: ContentItem | null
+  done: boolean
 }
 
 export interface Properties {
@@ -2530,6 +2555,8 @@ export interface MainMethodMap {
   "settings.closeWindow": { params: SettingsWindowCloseParams; result: OkResult }
   /** The media window (commander profile): the next, previous or first item, asked of the opener. */
   "media.windowStep": { params: MediaWindowStepParams; result: MediaWindowStepResult }
+  /** The media window (commander profile): a file command on its item, carried out by the opener. */
+  "media.windowCommand": { params: MediaWindowCommandParams; result: MediaWindowCommandResult }
   /** The opener's answer to a mediaWindow.step event (both apps). */
   "media.windowAnswer": { params: MediaWindowAnswerParams; result: OkResult }
   /**
@@ -2707,6 +2734,7 @@ export const COMMANDER_ONLY_METHODS = [
   "file.open",
   "document.open",
   "media.windowStep",
+  "media.windowCommand",
   "media.windowReveal",
   "shell.edit",
   "fs.mkfile",
@@ -2839,6 +2867,7 @@ export const COMMANDER_METHODS = [
   "settings.openWindow",
   "settings.closeWindow",
   "media.windowStep",
+  "media.windowCommand",
   "media.windowAnswer",
   "media.windowReveal",
   "preview.ensure",
@@ -2955,6 +2984,7 @@ export const MAIN_METHODS = [
   "settings.openWindow",
   "settings.closeWindow",
   "media.windowStep",
+  "media.windowCommand",
   "media.windowAnswer",
   "media.windowReveal",
   "file.open",

@@ -22,6 +22,7 @@ import type { Side } from "../features/panels"
 import { clickRow, focusGrid, ROW_HEIGHT, type FullViewHandle } from "./FullView"
 import { panelDnd } from "./panelDnd"
 import { RenameField, useRenaming } from "./RenameField"
+import { cancelClickRename, clickRenameDown } from "../features/clickRename"
 import { useRightButton } from "./useRightButton"
 import { useScrollMemory } from "./useScrollMemory"
 import { MarkTab } from "./MarkTab"
@@ -147,12 +148,14 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
       onKeyDown={onKeyDown}
       onMouseDown={(e) => {
         const row = rowAt(e)
+        if (row !== null) clickRenameDown(side, cursor, row, e)
         if (row !== null && e.button === 0) clickRow(side, cursor, row, e)
         rightButton.onMouseDown(e)
       }}
       onMouseMove={rightButton.onMouseMove}
       onContextMenu={rightButton.onContextMenu}
       onDoubleClick={(e) => {
+        cancelClickRename()
         if (rowAt(e) !== null) void enter(side)
       }}
       {...panelDnd(side)}
@@ -257,7 +260,7 @@ const BriefItem = memo(function BriefItem({
           ) : (
             <TypeGlyph glyph={glyphOf(shown)} muted={isMuted(shown)} />
           )}
-          <span className="truncate" style={gitNameStyle(git, marked)}>
+          <span className="truncate" style={gitNameStyle(git, marked)} data-name>
             {prefix && <span className="text-muted">{prefix}</span>}
             {shown.kind === "dir" ? `[${shown.name}]` : shown.name}
           </span>

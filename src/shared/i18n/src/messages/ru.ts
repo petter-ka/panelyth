@@ -2547,6 +2547,16 @@ const messages: Messages = {
   "↑↓ next · Esc": "↑↓ далее · Esc",
   "✓ sets it, an empty box clears it, – leaves it as it is.":
     "✓ устанавливает, пустой флажок снимает, – оставляет как есть.",
+  "Pasting into this folder…": "Вставка в эту папку…",
+  "Copying, moving and deleting wait in a dialog; its down arrow sends the job to the queue at the bottom. Off: jobs go to the queue at once.":
+    "Копирование, перемещение и удаление ждут в диалоге; его стрелка вниз отправляет задачу в очередь внизу. Выключено: задачи сразу идут в очередь.",
+  "Delete on a picture or video shown full screen asks first. Shift+Delete always asks.":
+    "Delete на изображении или видео во весь экран сначала спрашивает. Shift+Delete спрашивает всегда.",
+  "Minimize to the queue (Esc)": "Свернуть в очередь (Esc)",
+  "Show the progress": "Показать ход выполнения",
+  "Show the progress of file operations in a dialog": "Показывать ход файловых операций в диалоге",
+  "You can turn this question off in Settings → Appearance → Full screen.":
+    "Этот вопрос можно отключить в Настройки → Оформление → Полноэкранный режим.",
 }
 
 export default messages

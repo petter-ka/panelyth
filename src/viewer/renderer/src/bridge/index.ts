@@ -131,9 +131,13 @@ export const bridge = {
   openMediaWindow: async (entryId: number, key: number, lang?: string): Promise<void> => {
     await unwrap(() => api().media.openWindow(entryId, key, undefined, lang))
   },
-  /** The opener's reply to a mediaWindow.step event. */
-  mediaWindowAnswer: async (requestId: number, item: ContentItem | null): Promise<void> => {
-    await unwrap(() => api().media.windowAnswer(requestId, item))
+  /** The opener's reply to a mediaWindow.step or mediaWindow.command event. */
+  mediaWindowAnswer: async (
+    requestId: number,
+    item: ContentItem | null,
+    done?: boolean,
+  ): Promise<void> => {
+    await unwrap(() => api().media.windowAnswer(requestId, item, done))
   },
   ensurePreviews: (params: PreviewEnsureParams): Promise<PreviewEnsureResult> =>
     unwrap(() => api().preview.ensure(params)),

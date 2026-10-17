@@ -79,6 +79,7 @@ import {
   MAX_REMOTE_TRANSFERS,
   REMOTE_TLS,
   APP_TARGETS,
+  MEDIA_WINDOW_COMMANDS,
   type RendererMethod,
 } from "@panelyth/contracts"
 
@@ -1261,12 +1262,17 @@ export const validators: Record<RendererMethod, Validator> = {
     shape(p, ["direction"]) && (p.direction === -1 || p.direction === 0 || p.direction === 1)
       ? null
       : "expected { direction: -1 | 0 | 1 }",
-  "media.windowAnswer": (p) =>
-    shape(p, ["requestId", "item"]) &&
-    Number.isSafeInteger(p.requestId) &&
-    (p.item === null || isContentItem(p.item))
+  "media.windowCommand": (p) =>
+    shape(p, ["command"]) && (MEDIA_WINDOW_COMMANDS as readonly unknown[]).includes(p.command)
       ? null
-      : "expected { requestId, item }",
+      : "expected { command }",
+  "media.windowAnswer": (p) =>
+    shapeWithOptional(p, ["requestId", "item"], ["done"]) &&
+    Number.isSafeInteger(p.requestId) &&
+    (p.item === null || isContentItem(p.item)) &&
+    (p.done === undefined || typeof p.done === "boolean")
+      ? null
+      : "expected { requestId, item, done? }",
   "shell.reveal": entryParams,
   "shell.revealPath": (p) => (shape(p, ["path"]) ? pathProblem(p.path) : "expected { path }"),
   "clipboard.copyPaths": (p) => {

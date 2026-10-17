@@ -80,6 +80,7 @@ import { useSettingsStore } from "../features/settings"
 import { panelDnd } from "./panelDnd"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
 import { RenameField, useRenaming } from "./RenameField"
+import { cancelClickRename, clickRenameDown } from "../features/clickRename"
 import { useRightButton } from "./useRightButton"
 import { useScrollMemory } from "./useScrollMemory"
 import { msg, t } from "@panelyth/i18n"
@@ -385,6 +386,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   const rightButton = useRightButton(side)
   const onMouseDown = (e: MouseEvent<HTMLElement>): void => {
     const row = rowAt(e)
+    if (row !== null) clickRenameDown(side, cursor, row, e)
     if (row !== null && e.button === 0) clickRow(side, cursor, row, e)
     rightButton.onMouseDown(e)
   }
@@ -622,6 +624,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
         onMouseMove={rightButton.onMouseMove}
         onContextMenu={rightButton.onContextMenu}
         onDoubleClick={(e) => {
+          cancelClickRename()
           if (rowAt(e) !== null) void enter(side)
         }}
         {...panelDnd(side)}
@@ -903,7 +906,7 @@ function Cells({
               {renaming ? (
                 <RenameField onDone={() => focusGrid(side)} />
               ) : (
-                <span className="truncate" style={gitNameStyle(git, marked)}>
+                <span className="truncate" style={gitNameStyle(git, marked)} data-name>
                   {prefix && <span className="text-muted">{prefix}</span>}
                   {baseName(item)}
                 </span>

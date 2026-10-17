@@ -1,4 +1,4 @@
-import type { ContentItem, Thumb } from "@panelyth/contracts"
+import type { ContentItem, MediaWindowCommand, Thumb } from "@panelyth/contracts"
 import { useCallback, useEffect, useRef, useState, type KeyboardEvent } from "react"
 import { ImageViewer, type ImageViewerController } from "./ImageViewer"
 import { VideoPlayer } from "./VideoPlayer"
@@ -7,6 +7,7 @@ import { useVideoPrefs } from "./video"
 import { requestFit, requestMedia } from "./viewerImages"
 import { t } from "@panelyth/i18n"
 import { wheelNavigationStep } from "./wheelNavigation"
+import { mediaCommandOf } from "./mediaCommands"
 
 export interface MediaViewerOverlayProps {
   item: ContentItem
@@ -26,7 +27,16 @@ export interface MediaViewerOverlayProps {
    * double-click on the picture or video, take it into the app at its folder.
    */
   onShowInApp?: () => void
+  /**
+   * The file keys (copy, cut, paste, trash, delete): the surface hands them
+   * to the app, which carries them out on the file shown.
+   */
+  onCommand?: (command: MediaWindowCommand) => void
 }
+
+const isTextField = (target: EventTarget | null): boolean =>
+  target instanceof HTMLElement &&
+  (target.isContentEditable || target.matches("input:not([type=range]), textarea, select"))
 
 const zoomButton =
   "h-7 rounded-md border border-border bg-raised px-2 text-xs enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
@@ -46,6 +56,7 @@ export function MediaViewerOverlay({
   closeOnDoubleClick = false,
   onEdit,
   onShowInApp,
+  onCommand,
 }: MediaViewerOverlayProps) {
   const onDoubleClick = onShowInApp ?? (closeOnDoubleClick ? onClose : undefined)
   const root = useRef<HTMLDivElement>(null)
@@ -97,6 +108,14 @@ export function MediaViewerOverlay({
       event.preventDefault()
       event.stopPropagation()
       onClose()
+      return
+    }
+    // A field of the player keeps its own keys (Delete, Ctrl+C in a text box).
+    const command = isTextField(event.target) ? null : mediaCommandOf(event.nativeEvent)
+    if (command && onCommand) {
+      event.preventDefault()
+      event.stopPropagation()
+      onCommand(command)
       return
     }
     if (event.ctrlKey || event.metaKey || event.altKey) return

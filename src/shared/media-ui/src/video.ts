@@ -92,6 +92,8 @@ export interface VideoPrefs {
   autoHide: boolean
   /** Full screen: a picture's header hides while the mouse rests (on unless turned off). */
   autoHideImage: boolean
+  /** Full screen: Delete asks before the file goes to the trash (on unless turned off). */
+  confirmDelete: boolean
 }
 
 export const useVideoPrefs = create<VideoPrefs>(() => ({
@@ -100,6 +102,7 @@ export const useVideoPrefs = create<VideoPrefs>(() => ({
   loop: false,
   autoHide: true,
   autoHideImage: true,
+  confirmDelete: true,
 }))
 
 export function setVolume(volume: number): void {
@@ -121,6 +124,10 @@ export function setAutoHide(autoHide: boolean): void {
 
 export function setAutoHideImage(autoHideImage: boolean): void {
   useVideoPrefs.setState({ autoHideImage })
+}
+
+export function setConfirmDelete(confirmDelete: boolean): void {
+  useVideoPrefs.setState({ confirmDelete })
 }
 
 export const SEEK_STEP_S = 5

@@ -205,6 +205,8 @@ const channels: ReadonlySet<string> = new Set<EventChannel>([
   "preview.ready",
   // ADR-0033: a full-screen media window asks this panel for its next item.
   "mediaWindow.step",
+  "mediaWindow.command",
+  "mediaWindow.closed",
 ])
 const subscribers = new Map<EventChannel, Set<(payload: never) => void>>()
 
@@ -456,8 +458,10 @@ const api: CommanderApi = {
         ...(theme && { theme }),
         ...(lang && { lang }),
       }),
-    windowAnswer: (requestId, item) => invoke("media.windowAnswer", { requestId, item }),
+    windowAnswer: (requestId, item, done) =>
+      invoke("media.windowAnswer", { requestId, item, ...(done !== undefined && { done }) }),
     windowStep: (direction) => invoke("media.windowStep", { direction }),
+    windowCommand: (command) => invoke("media.windowCommand", { command }),
     windowReveal: () => invoke("media.windowReveal", {}),
   },
   preview: {

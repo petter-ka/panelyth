@@ -11,7 +11,7 @@ import { resetDrives } from "./features/drives"
 import { resetFiles, useFilesStore } from "./features/files"
 import { resetHotlist } from "./features/hotlist"
 import { resetKeymap } from "./features/keymap"
-import { resetListing, useListingStore } from "./features/listing"
+import { pageStoreOf, resetListing, useListingStore } from "./features/listing"
 import { resetMarks } from "./features/marks"
 import { resetMediaConfig, startMedia } from "./features/media"
 import { resetOpen, startOpen } from "./features/open"
@@ -22,8 +22,10 @@ import { resetSettings, updateSettings } from "./features/settings"
 import { resetTabs } from "./features/tabs"
 import {
   createSettler,
+  openMediaViewer,
   QUICK_SETTLE_MS,
   resetViewers,
+  startMediaWindowHost,
   startQuickView,
   useViewersStore,
 } from "./features/viewers"
@@ -560,5 +562,96 @@ describe("quick view state", () => {
       "data-slot",
       "left",
     )
+  })
+})
+
+describe("the full-screen media window", () => {
+  /** Opens photo.jpg in a media window; returns the key main would hold for it. */
+  async function openPhoto(fake: Awaited<ReturnType<typeof start>>) {
+    const openWindow = vi.fn(async () => ({ ok: true as const, r: { ok: true } }))
+    Object.assign(fake.api.media, { openWindow })
+    stops.push(startMediaWindowHost())
+    await cursorTo(ROW.photo)
+    const photo = pageStoreOf("left").getItem(ROW.photo - 1)!
+    act(() => {
+      openMediaViewer(photo, "left")
+    })
+    await waitFor(() => expect(openWindow).toHaveBeenCalled())
+    return (openWindow.mock.calls[0] as unknown as [number, number])[1]
+  }
+
+  it("carries out Delete on the shown file only and answers with the next one", async () => {
+    const fake = await start()
+    const key = await openPhoto(fake)
+    // A mark elsewhere is not what the window's Delete deletes.
+    await panelKey({ key: "Insert" })
+    await act(async () => {
+      fake.emit("mediaWindow.command", { requestId: 7, key, command: "trash" })
+    })
+    await waitFor(() => expect(fake.api.media.windowAnswer).toHaveBeenCalled())
+    expect(fake.api.files.start).toHaveBeenCalledWith(
+      expect.objectContaining({
+        kind: "trash",
+        source: { selection: expect.objectContaining({ ranges: [], include: [ID.photo] }) },
+      }),
+    )
+    // photo.jpg was the last picture or video: the window goes back to clip.mp4.
+    expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+      7,
+      expect.objectContaining({ id: ID.clip }),
+      true,
+    )
+  })
+
+  it("copies the shown file to the clipboard and says when a command can't run", async () => {
+    const fake = await start({ trash: false })
+    const key = await openPhoto(fake)
+    await act(async () => {
+      fake.emit("mediaWindow.command", { requestId: 1, key, command: "copy" })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ id: ID.photo }),
+        true,
+      ),
+    )
+    expect(fake.api.clip.set).toHaveBeenLastCalledWith(
+      expect.objectContaining({ include: [ID.photo] }),
+      "copy",
+    )
+    // No trash on this drive: nothing is deleted, the window keeps its file.
+    await act(async () => {
+      fake.emit("mediaWindow.command", { requestId: 2, key, command: "trash" })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        2,
+        expect.objectContaining({ id: ID.photo }),
+        false,
+      ),
+    )
+    expect(fake.api.files.start).not.toHaveBeenCalled()
+  })
+
+  it("puts the cursor on the file shown last when the window closes", async () => {
+    const fake = await start()
+    const key = await openPhoto(fake)
+    await act(async () => {
+      fake.emit("mediaWindow.step", { requestId: 3, key, direction: -1 })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        3,
+        expect.objectContaining({ id: ID.clip }),
+        undefined,
+      ),
+    )
+    // The panel's cursor moved meanwhile; the closed window takes it to clip.mp4.
+    await cursorTo(ROW.dir)
+    await act(async () => {
+      fake.emit("mediaWindow.closed", { key })
+    })
+    await waitFor(() => expect(useListingStore.getState().left.cursor).toBe(ROW.clip))
   })
 })

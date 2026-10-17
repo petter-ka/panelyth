@@ -1,10 +1,22 @@
-import type { ContentItem } from "@panelyth/contracts"
+import type { ContentItem, MediaWindowCommand, MediaWindowCommandResult } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge } from "../../bridge"
 import { currentLocale } from "@panelyth/i18n"
+import { copySelectionToClipboard } from "../clipboard/clipboard"
+import { useFolderStore } from "../folder/folderStore"
+import {
+  copySelection,
+  currentSelection,
+  deletePermanently,
+  paste,
+  refreshClip,
+  trashSelection,
+  useJobsStore,
+} from "../jobs/jobsStore"
 import { playInPane } from "../preview/previewStore"
 import { ensureIndex, getItem, getTotal } from "../tiles/pageStore"
-import { focusSelectAndReveal } from "../tiles/selectionStore"
+import { focusAndSelect, focusSelectAndReveal } from "../tiles/selectionStore"
+import { selectEntry } from "../workspace/appSwitch"
 import { requestFit, requestMedia } from "./viewerImages"
 
 /**
@@ -63,6 +75,8 @@ export function openViewerAt(index: number): boolean {
 // this window keeps the listing, so the media window asks it for neighbours.
 
 interface HostedWindow {
+  /** The folder's session when the window opened; another folder ends the bookkeeping. */
+  queryId: number
   index: number
   item: ContentItem
 }
@@ -82,9 +96,10 @@ const isMedia = (item: ContentItem | undefined): item is ContentItem =>
  */
 export function openFullscreenAt(index: number): boolean {
   const item = getItem(index)
-  if (!isMedia(item)) return false
+  const query = useFolderStore.getState().query
+  if (!isMedia(item) || !query) return false
   const key = nextKey++
-  hosted.set(key, { index, item })
+  hosted.set(key, { queryId: query.queryId, index, item })
   if (hosted.size > MAX_HOSTED) hosted.delete(hosted.keys().next().value!)
   void bridge.openMediaWindow(item.id, key, currentLocale()).catch(() => {
     hosted.delete(key)
@@ -94,10 +109,28 @@ export function openFullscreenAt(index: number): boolean {
   return true
 }
 
+/** The folder still shows the session the window was opened from. */
+const sameFolder = (window: HostedWindow): boolean =>
+  useFolderStore.getState().query?.queryId === window.queryId
+
+/**
+ * The window's file may have moved in the folder since (a delete before it,
+ * a new version): its index is looked up again. False when it left.
+ */
+async function relocate(window: HostedWindow): Promise<boolean> {
+  if (getItem(window.index)?.id === window.item.id) return true
+  if (!sameFolder(window)) return false
+  const at = await bridge.indexOf(window.queryId, window.item.id).catch(() => null)
+  if (!at || at.index < 0) return false
+  window.index = at.index
+  return true
+}
+
 async function answerStep(key: number, direction: -1 | 0 | 1): Promise<ContentItem | null> {
   const window = hosted.get(key)
   if (!window) return null
   if (direction === 0) return window.item
+  await relocate(window)
   const found = await findMedia(window.index + direction, direction)
   if (!found) return null
   window.index = found.index
@@ -117,14 +150,85 @@ async function findMedia(
   return null
 }
 
+/**
+ * A file key in the media window, on the file it shows: the file becomes
+ * the selection and the tile view's own command runs on it (Ctrl+C also puts
+ * a picture on the OS clipboard). After a delete the window shows the next
+ * file (the previous one at the end), or nothing.
+ */
+export async function runMediaCommand(
+  key: number,
+  command: MediaWindowCommand,
+): Promise<MediaWindowCommandResult> {
+  const window = hosted.get(key)
+  if (!window) return { item: null, done: false }
+  const refused = { item: window.item, done: false }
+  if (!sameFolder(window) || !(await relocate(window))) return refused
+  focusAndSelect(window.index, window.item.id)
+  const ran = (): boolean => useJobsStore.getState().error === null
+  switch (command) {
+    case "copy":
+      await copySelectionToClipboard()
+      return { item: window.item, done: ran() }
+    case "cut":
+      await copySelection("cut")
+      return { item: window.item, done: ran() }
+    case "paste":
+      // The clipboard may have been filled in the commander.
+      await refreshClip()
+      if (useJobsStore.getState().clip.mode === "") return refused
+      await paste()
+      return { item: window.item, done: ran() }
+    case "trash":
+    case "delete": {
+      const next = (await findMedia(window.index + 1, 1)) ?? (await findMedia(window.index - 1, -1))
+      if (command === "trash") await trashSelection()
+      else {
+        // The media window asked already: its own dialogs are in front of this window.
+        const cur = currentSelection()
+        if (cur) await deletePermanently(cur.selection, cur.count)
+      }
+      if (!ran()) return refused
+      if (!next) {
+        hosted.delete(key)
+        return { item: null, done: true }
+      }
+      // The folder drops the deleted tile soon; relocate() finds the new index then.
+      window.index = next.index
+      window.item = next.item
+      return { item: next.item, done: true }
+    }
+  }
+}
+
+/** The media window closed: the tile view selects the file it showed last and scrolls to it. */
+function revealHosted(key: number): void {
+  const window = hosted.get(key)
+  hosted.delete(key)
+  if (!window || !sameFolder(window)) return
+  if (getItem(window.index)?.id === window.item.id)
+    focusSelectAndReveal(window.index, window.item.id)
+  else void selectEntry(window.item.id)
+}
+
 /** Answers the media windows' questions; returns the stop function. */
 export function startMediaWindowHost(): () => void {
-  return bridge.on("mediaWindow.step", ({ requestId, key, direction }) => {
-    void answerStep(key, direction)
-      .catch(() => null)
-      .then((item) => bridge.mediaWindowAnswer(requestId, item))
-      .catch(() => undefined)
-  })
+  const stops = [
+    bridge.on("mediaWindow.step", ({ requestId, key, direction }) => {
+      void answerStep(key, direction)
+        .catch(() => null)
+        .then((item) => bridge.mediaWindowAnswer(requestId, item))
+        .catch(() => undefined)
+    }),
+    bridge.on("mediaWindow.command", ({ requestId, key, command }) => {
+      void runMediaCommand(key, command)
+        .catch(() => ({ item: hosted.get(key)?.item ?? null, done: false }))
+        .then((r) => bridge.mediaWindowAnswer(requestId, r.item, r.done))
+        .catch(() => undefined)
+    }),
+    bridge.on("mediaWindow.closed", ({ key }) => revealHosted(key)),
+  ]
+  return () => stops.forEach((stop) => stop())
 }
 
 async function findViewable(

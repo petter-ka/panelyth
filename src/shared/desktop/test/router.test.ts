@@ -97,6 +97,7 @@ const mainHandlers = (): MainHandlers => ({
   "settings.openWindow": vi.fn(() => ({ ok: true })),
   "settings.closeWindow": vi.fn(() => ({ ok: true })),
   "media.windowStep": vi.fn(async () => ({ item: null })),
+  "media.windowCommand": vi.fn(async () => ({ item: null, done: false })),
   "media.windowAnswer": vi.fn(async () => ({ ok: true })),
   "media.windowReveal": vi.fn(async () => ({ ok: true })),
   "app.openRequest": vi.fn(() => ({ request: null })),
@@ -339,6 +340,8 @@ describe("invoke router", () => {
       ["media.openWindow", { entryId: 3, key: 1, theme: "dark", lang: "de" }],
       ["media.windowStep", { direction: -1 }],
       ["media.windowStep", { direction: 0 }],
+      ["media.windowCommand", { command: "trash" }],
+      ["media.windowCommand", { command: "paste" }],
     ] as const) {
       await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
       expect(main[m]).toHaveBeenLastCalledWith(commander, p, "commander")
@@ -371,6 +374,8 @@ describe("invoke router", () => {
     // The viewer can answer a media window's question but not ask one.
     const asked = await handler(ok, "media.windowStep", { direction: 1 })
     expect(asked).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    const commanded = await handler(ok, "media.windowCommand", { command: "copy" })
+    expect(commanded).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     await expect(
       handler(ok, "media.windowAnswer", { requestId: 1, item: null }),
     ).resolves.toMatchObject({ ok: true })
@@ -418,6 +423,8 @@ describe("invoke router", () => {
       ["media.openWindow", { entryId: 3 }],
       ["media.openWindow", { entryId: 0, key: 1 }],
       ["media.windowStep", { direction: 2 }],
+      ["media.windowCommand", { command: "format" }],
+      ["media.windowCommand", { command: "trash", entryId: 3 }],
       ["media.windowAnswer", { requestId: 1, item: { id: 1 } }],
       ["fs.mkfile", { parentDirId: 2, name: "" }],
       ["fs.mkfile", { parentDirId: 2, name: "a\u0000b" }],

@@ -2566,6 +2566,17 @@ const messages: Messages = {
   "↑↓ next · Esc": "↑↓ successivo · Esc",
   "✓ sets it, an empty box clears it, – leaves it as it is.":
     "✓ lo imposta, una casella vuota lo rimuove, – lo lascia com'è.",
+  "Pasting into this folder…": "Incollo in questa cartella…",
+  "Copying, moving and deleting wait in a dialog; its down arrow sends the job to the queue at the bottom. Off: jobs go to the queue at once.":
+    "Copia, spostamento ed eliminazione attendono in una finestra di dialogo; la sua freccia in giù manda l’operazione nella coda in basso. Disattivato: le operazioni vanno subito in coda.",
+  "Delete on a picture or video shown full screen asks first. Shift+Delete always asks.":
+    "Canc su un’immagine o un video a schermo intero chiede prima. Maiusc+Canc chiede sempre.",
+  "Minimize to the queue (Esc)": "Riduci nella coda (Esc)",
+  "Show the progress": "Mostra l’avanzamento",
+  "Show the progress of file operations in a dialog":
+    "Mostra l’avanzamento delle operazioni sui file in una finestra di dialogo",
+  "You can turn this question off in Settings → Appearance → Full screen.":
+    "Puoi disattivare questa domanda in Impostazioni → Aspetto → Schermo intero.",
 }
 
 export default messages

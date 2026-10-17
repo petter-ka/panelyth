@@ -1,0 +1,7 @@
+{"at":"2026-10-17T14:48:00.882Z","test":"pause-latency","pauseMs":0,"finalState":"completed"}
+{"at":"2026-10-17T14:50:22.628Z","test":"pause-latency","pauseMs":0,"finalState":"completed"}
+{"at":"2026-10-17T14:52:14.088Z","test":"copy-from-ui","small10k":{"copyMs":2522,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"large2GB":{"copyMs":2484,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":8,"keyMaxMs":8},"enter1kWhileCopyingMs":113}
+{"at":"2026-10-17T15:38:52.807Z","test":"copy-from-ui","small10k":{"copyMs":2533,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"large2GB":{"copyMs":2468,"longTasks":0,"longTaskMaxMs":0,"keyP95Ms":7,"keyMaxMs":7},"enter1kWhileCopyingMs":110}
+{"at":"2026-10-17T15:40:08.349Z","test":"pause-latency","pauseMs":0,"finalState":"completed"}
+{"at":"2026-10-17T15:40:38.099Z","test":"pause-latency","pauseMs":0,"finalState":"completed"}
+{"at":"2026-10-17T15:41:08.723Z","test":"pause-latency","pauseMs":0,"finalState":"completed"}

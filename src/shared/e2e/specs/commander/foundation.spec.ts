@@ -122,7 +122,14 @@ test.describe("commander foundation (Stage C00)", () => {
         clipboard: ["copyPaths", "copyText"],
         drag: ["start"],
         // windowReveal: the media window of a file opened from the OS asks for the viewer.
-        media: ["open", "openWindow", "windowAnswer", "windowReveal", "windowStep"],
+        media: [
+          "open",
+          "openWindow",
+          "windowAnswer",
+          "windowCommand",
+          "windowReveal",
+          "windowStep",
+        ],
         preview: ["ensure"],
         props: ["get"],
         file: ["open"],

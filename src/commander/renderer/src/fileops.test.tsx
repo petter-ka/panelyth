@@ -4,6 +4,7 @@ import { act, fireEvent, render, screen, waitFor, within } from "@testing-librar
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"
 import { AppShell } from "./components/AppShell"
+import { CLICK_RENAME_MS } from "./features/clickRename"
 import { resetCarry, startPanels } from "./features/carry"
 import { resetDrives } from "./features/drives"
 import { resetFiles, useFilesStore } from "./features/files"
@@ -13,8 +14,8 @@ import { resetListing, useListingStore } from "./features/listing"
 import { resetMarks, useMarksStore } from "./features/marks"
 import { usePanelsStore } from "./features/panels"
 import { PANELS_KEY } from "./features/session"
-import { resetQueue, startQueue, useQueueStore } from "./features/queue"
-import { resetSettings } from "./features/settings"
+import { PROGRESS_DELAY_MS, resetQueue, startQueue, useQueueStore } from "./features/queue"
+import { resetSettings, updateSettings } from "./features/settings"
 import { resetTabs } from "./features/tabs"
 import { folder, installFakeCommander, item, type FakeOptions } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
@@ -509,5 +510,120 @@ describe("the queue", () => {
     })
     expect(await screen.findByLabelText("Folder name")).toBeInTheDocument()
     expect(useListingStore.getState().left.dirId).toBe(10)
+  })
+})
+
+describe("click to rename", () => {
+  const nameOf = (row: number) =>
+    grid("left").querySelector<HTMLElement>(`[data-row="${row}"] [data-name]`)!
+  const click = (el: HTMLElement) =>
+    act(async () => {
+      fireEvent.mouseDown(el, { button: 0 })
+      fireEvent.mouseUp(el, { button: 0 })
+    })
+
+  it("a click on the cursor row's name opens the inline editor once no second click follows", async () => {
+    await start()
+    await cursorTo(7) // photo.jpg
+    await click(nameOf(7))
+    const field = (await screen.findByTestId("rename-field")) as HTMLInputElement
+    expect(field.value).toBe("photo.jpg")
+  })
+
+  it("a double-click opens instead, and a click that moves the cursor only moves it", async () => {
+    await start()
+    await cursorTo(7)
+    await click(nameOf(7))
+    await act(async () => {
+      fireEvent.doubleClick(nameOf(7))
+    })
+    // A click on another row's name moves the cursor there and nothing else.
+    await click(nameOf(4))
+    await new Promise((r) => setTimeout(r, CLICK_RENAME_MS + 150))
+    expect(screen.queryByTestId("rename-field")).toBeNull()
+    expect(cursorRow("left")).toHaveTextContent("file000001")
+  })
+
+  it("a key pressed before it opens cancels it", async () => {
+    await start()
+    await cursorTo(7)
+    await click(nameOf(7))
+    await key("left", { key: "ArrowDown" })
+    await new Promise((r) => setTimeout(r, CLICK_RENAME_MS + 150))
+    expect(screen.queryByTestId("rename-field")).toBeNull()
+    expect(useFilesStore.getState().rename).toBeNull()
+  })
+})
+
+describe("progress dialog", () => {
+  async function trashCursorFile(fake: Awaited<ReturnType<typeof start>>) {
+    await cursorTo(3)
+    await key("left", { key: "F8" })
+    const dialog = await screen.findByTestId("delete-dialog")
+    await waitFor(() =>
+      expect(within(dialog).getByRole("button", { name: "Move to trash" })).toBeEnabled(),
+    )
+    await act(async () => {
+      fireEvent.submit(dialog)
+    })
+    return fake.api.files.start.mock.results.at(-1)!.value as Promise<{ r: { jobId: number } }>
+  }
+
+  it("a delete shows its progress over the panels; the down arrow minimizes it to the queue strip and the up arrow brings it back", async () => {
+    const fake = await start()
+    const { r } = await trashCursorFile(fake)
+    const progress = await screen.findByTestId("progress-dialog")
+    expect(screen.getByRole("dialog")).toHaveTextContent("Moving 1 item to the trash")
+    expect(within(progress).getByRole("progressbar")).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Minimize to the queue (Esc)" }))
+    await waitFor(() => expect(screen.queryByTestId("progress-dialog")).toBeNull())
+    expect(screen.getByTestId("queue")).toHaveTextContent("Moving 1 item to the trash")
+    fireEvent.click(screen.getByTestId(`job-restore-${r.jobId}`))
+    expect(await screen.findByTestId("progress-dialog")).toBeInTheDocument()
+  })
+
+  it("Settings → Operations can leave the progress in the queue strip only", async () => {
+    const fake = await start()
+    updateSettings({ progressDialog: false })
+    const { r } = await trashCursorFile(fake)
+    // Go reports the job as it runs.
+    await act(async () => {
+      fake.emit(
+        "job.progress",
+        fake.job({ jobId: r.jobId, kind: "trash", total: 1, state: "running" }),
+      )
+    })
+    await new Promise((r) => setTimeout(r, PROGRESS_DELAY_MS + 150))
+    expect(screen.queryByTestId("progress-dialog")).toBeNull()
+    expect(screen.getByTestId("queue")).toHaveTextContent("Moving 1 item to the trash")
+  })
+
+  it("closes when the job ends", async () => {
+    const fake = await start()
+    const { r } = await trashCursorFile(fake)
+    await screen.findByTestId("progress-dialog")
+    const snap = useQueueStore.getState().jobs.find((j) => j.jobId === r.jobId)!
+    await act(async () => {
+      fake.emit("job.progress", { ...snap, state: "completed", done: 1, finishedMs: 2 })
+    })
+    await waitFor(() => expect(screen.queryByTestId("progress-dialog")).toBeNull())
+  })
+
+  it("a job that ends at once never shows it, and Queue in the copy dialog starts in the background", async () => {
+    const fake = await start()
+    const { r } = await trashCursorFile(fake)
+    const snap = useQueueStore.getState().jobs.find((j) => j.jobId === r.jobId)!
+    await act(async () => {
+      fake.emit("job.progress", { ...snap, state: "completed", done: 1, finishedMs: 2 })
+    })
+    await key("left", { key: "F5" })
+    await screen.findByTestId("copy-dialog")
+    await act(async () => {
+      fireEvent.click(screen.getByRole("button", { name: "Queue" }))
+    })
+    await waitFor(() => expect(screen.queryByTestId("copy-dialog")).toBeNull())
+    await new Promise((r) => setTimeout(r, PROGRESS_DELAY_MS + 150))
+    expect(screen.queryByTestId("progress-dialog")).toBeNull()
+    expect(useQueueStore.getState().foreground).toEqual([])
   })
 })

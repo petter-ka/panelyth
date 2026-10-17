@@ -22,7 +22,10 @@ const { MediaWindows, mediaWindowUrl, STEP_TIMEOUT_MS } = await import("../src/m
 const item = { id: 7, kind: "image", name: "a.jpg" } as ContentItem
 
 function opener() {
-  const sent: { ch: string; p: { requestId: number; key: number; direction: number } }[] = []
+  const sent: {
+    ch: string
+    p: { requestId: number; key: number; direction?: number; command?: string }
+  }[] = []
   return {
     sent,
     isDestroyed: () => false,
@@ -140,5 +143,35 @@ describe("MediaWindows relay", () => {
     await vi.advanceTimersByTimeAsync(STEP_TIMEOUT_MS)
     await expect(asked).resolves.toBeNull()
     await expect(windows.step({ id: 1 } as never, 1)).resolves.toBeNull()
+  })
+
+  it("relays a file command to the opener and returns the item it shows next", async () => {
+    const { windows, from, child } = setup()
+    const asked = windows.command(child, "trash")
+    expect(from.sent[0]).toMatchObject({
+      ch: "mediaWindow.command",
+      p: { key: 4, command: "trash" },
+    })
+    windows.answer(from as never, from.sent[0]!.p.requestId, item, true)
+    await expect(asked).resolves.toEqual({ item, done: true })
+  })
+
+  it("tells the opener when the window closes", () => {
+    const { from } = setup()
+    const win = created[0]! as unknown as { on: { mock: { calls: [string, () => void][] } } }
+    win.on.mock.calls.find(([name]) => name === "closed")![1]()
+    expect(from.sent).toEqual([{ ch: "mediaWindow.closed", p: { key: 4 } }])
+  })
+})
+
+describe("a window for a file from the OS takes no commands", () => {
+  it("answers null without asking anyone", async () => {
+    created.length = 0
+    const source = { step: vi.fn(async () => item), current: vi.fn(() => null), close: vi.fn() }
+    const windows = new MediaWindows(OPTIONS, () => null)
+    windows.open({ source })
+    await expect(
+      windows.command({ id: created[0]!.webContents.id } as never, "delete"),
+    ).resolves.toEqual({ item: null, done: false })
   })
 })

@@ -1601,6 +1601,8 @@ export function installFakeCommander(options: FakeOptions) {
           audioCodec: "",
         })
       }),
+      // A media window's questions are answered here (tests emit mediaWindow.* events).
+      windowAnswer: vi.fn(async () => ok({ ok: true })),
     },
     preview: {
       ensure: vi.fn(async (p: { profile?: string; items: { id: number }[] }) =>

@@ -67,7 +67,28 @@ player.
   crosses IPC, only one `ContentItem` per step.
 - **Fallback.** The in-app overlay (the commander's `MediaViewerOverlay`, the viewer's image viewer and in-pane
   fullscreen player) stays for when the window cannot open.
-- **Not in the window.** Selection and cursor do not follow the stepping back into the opener.
+- **Not in the window.** Selection and cursor do not follow the stepping back into the opener while it is open
+  (changed on close, below).
+
+## Amendment: file keys and the way back (2026-10-17, owner request)
+
+- **File keys in the window.** Ctrl/Cmd+C, Ctrl/Cmd+X and Ctrl/Cmd+V (the shared file clipboard; paste goes to the
+  opener's folder), Delete and Cmd+Backspace (trash), Shift+Delete and Cmd+Option+Backspace (delete for good) work
+  on the file shown. The window sends `media.windowCommand { command }` (commander profile; `command` is one of
+  `copy`, `cut`, `paste`, `trash`, `delete`, nothing else), main relays a `mediaWindow.command` event to the opener
+  only, and the opener carries it out on that one entry (an id in a selection descriptor of its own session, never
+  a path, never its marks) and answers with `media.windowAnswer { requestId, item, done }`: the item to show now
+  (after a delete the next picture or video, the previous one at the end, null when none is left, which closes the
+  window) and whether the command ran. A delete asks in the window first, since the app's own dialogs are behind
+  it: for good always, for the trash unless Settings → Appearance → Full screen → "Ask before moving to the trash"
+  is off (on by default; stored with the player preferences, setting `player.confirmDelete`, so it is one setting
+  for both apps and the window). A window for a file from the OS has no
+  opener: it shows no file keys, and main answers `done: false`. The keys are the apps' defaults, not the user's
+  keymap (the window does not know which app opened it).
+- **The way back.** When the window closes, main sends the opener `mediaWindow.closed { key }`; the opener selects
+  the file shown last and scrolls to it (the viewer's selection and reveal; the commander's cursor, in that panel,
+  made active), provided the folder is still the one the window was opened from. Its index is looked up again
+  (`query.indexOf`) when the listing moved meanwhile, as it is before every step.
 
 ## Amendment: a file opened from the OS ("Open with", 2026-10-12, owner request)
 
@@ -111,6 +132,11 @@ way, close), the standalone window, the per-app allowlist and validation, the pa
 start and the event; a Go test for `entry.fromPath`; E2E `openwith.spec.ts` (a cold start with a file: one window,
 no main window, next and previous, double-click into the viewer with the file selected; the app already running;
 a file that is no picture). Not run: the packaged app, macOS (`open-file`) and Linux.
+
+Verified (2026-10-17): unit tests for the key map, the overlay, the page (the confirmation, a refused command, the
+window from the OS), main's relay and `closed` event, the allowlists and validation, and both openers (the shown
+file only, the next file after a delete, a drive without a trash, the reveal on close); E2E `viewer.spec.ts`
+(Ctrl+C in the window, the last file shown selected after Esc).
 
 ## Consequences
 

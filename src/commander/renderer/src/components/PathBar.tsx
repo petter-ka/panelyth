@@ -252,19 +252,6 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
           )}
           {/* Folders and each extension's count, counted when opened. */}
           <TypeCounts side={side} className={pathButton} />
-          <Tooltip content={t("Parent folder")}>
-            <button
-              type="button"
-              tabIndex={-1}
-              onClick={() => void goUp(side)}
-              disabled={!upAllowed}
-              aria-label={t("Parent folder")}
-              data-testid={`up-${side}`}
-              className={pathButton}
-            >
-              ..
-            </button>
-          </Tooltip>
           <Tooltip content={t("Root (Ctrl+\\)")}>
             <button
               type="button"
@@ -276,6 +263,19 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
               className={pathButton}
             >
               /
+            </button>
+          </Tooltip>
+          <Tooltip content={t("Parent folder")}>
+            <button
+              type="button"
+              tabIndex={-1}
+              onClick={() => void goUp(side)}
+              disabled={!upAllowed}
+              aria-label={t("Parent folder")}
+              data-testid={`up-${side}`}
+              className={pathButton}
+            >
+              ..
             </button>
           </Tooltip>
         </>

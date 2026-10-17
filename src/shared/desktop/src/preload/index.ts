@@ -126,7 +126,8 @@ const api: PanelythApi = {
         ...(theme && { theme }),
         ...(lang && { lang }),
       }),
-    windowAnswer: (requestId, item) => invoke("media.windowAnswer", { requestId, item }),
+    windowAnswer: (requestId, item, done) =>
+      invoke("media.windowAnswer", { requestId, item, ...(done !== undefined && { done }) }),
   },
   preview: {
     ensure: ({ lane, epoch, profile, items, force }) =>

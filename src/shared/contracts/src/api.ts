@@ -106,6 +106,8 @@ import type {
   DirOpenResult,
   EchoResult,
   MediaOpenResult,
+  MediaWindowCommand,
+  MediaWindowCommandResult,
   MediaWindowStepResult,
   OpenRequestResult,
   OpenFolderDialogResult,
@@ -202,7 +204,11 @@ export interface PanelythApi {
       lang?: string,
     ): Promise<RpcEnvelope<OkResult>>
     /** The opener's reply to a mediaWindow.step event. */
-    windowAnswer(requestId: number, item: ContentItem | null): Promise<RpcEnvelope<OkResult>>
+    windowAnswer(
+      requestId: number,
+      item: ContentItem | null,
+      done?: boolean,
+    ): Promise<RpcEnvelope<OkResult>>
   }
   preview: {
     ensure(params: PreviewEnsureParams): Promise<RpcEnvelope<PreviewEnsureResult>>
@@ -606,10 +612,12 @@ export interface CommanderApi {
     windowAnswer(
       requestId: number,
       item: ContentItem | null,
-    ): Promise<
-      RpcEnvelope<OkResult>
-    > /** The media window: the first, previous or next item, asked of the opener. */
+      done?: boolean,
+    ): Promise<RpcEnvelope<OkResult>>
+    /** The media window: the first, previous or next item, asked of the opener. */
     windowStep(direction: -1 | 0 | 1): Promise<RpcEnvelope<MediaWindowStepResult>>
+    /** The media window: a file command on its item (copy, cut, paste, trash, delete), carried out by the opener. */
+    windowCommand(command: MediaWindowCommand): Promise<RpcEnvelope<MediaWindowCommandResult>>
     /** The media window of a file opened from the OS: show its picture in the viewer, at its folder. */
     windowReveal(): Promise<RpcEnvelope<OkResult>>
   }

@@ -51,7 +51,7 @@ import { useAttributesStore } from "../features/attributes"
 import { Lister } from "./Lister"
 import { NewFileDialog, ProgramDialog } from "./OpenDialogs"
 import { QuickView } from "./QuickView"
-import { ConflictDialog, JobDetailsDialog, QueuePanel } from "./QueuePanel"
+import { ConflictDialog, JobDetailsDialog, ProgressDialog, QueuePanel } from "./QueuePanel"
 import { FunctionKeyBar } from "./FunctionKeyBar"
 import { CommandLine } from "./CommandLine"
 import { QuickActionBar } from "./QuickActionBar"
@@ -317,6 +317,7 @@ export function AppShell() {
         <HistoryDialog />
         <PackDialog />
         <UnpackDialog />
+        <ProgressDialog />
         <ConflictDialog />
         <JobDetailsDialog />
         <SettingsDialog />

@@ -7,6 +7,7 @@ import type {
   FolderCoverItem,
   JobConflict,
   JobSnapshot,
+  MediaWindowCommand,
   PreviewItem,
   QuerySnapshot,
   SavedConnection,
@@ -113,6 +114,10 @@ export interface EventMap {
   "compare.progress": CompareProgress
   /** From main, to the window that opened a media window: find that window's next item (media.windowAnswer replies). */
   "mediaWindow.step": { requestId: number; key: number; direction: -1 | 0 | 1 }
+  /** From main, to the window that opened a media window: a file command on the item it shows (media.windowAnswer replies). */
+  "mediaWindow.command": { requestId: number; key: number; command: MediaWindowCommand }
+  /** From main, to the window that opened a media window: it closed; the opener selects the item it showed last. */
+  "mediaWindow.closed": { key: number }
   /** From main, to the viewer: open the editor on this picture (the commander's Edit button; Stage 12). */
   "edit.request": EditRequestEvent
   /** From main, to the viewer: open this folder and select this entry (a file opened from the OS). */
@@ -142,6 +147,8 @@ export const EVENT_CHANNELS = [
   "compare.progress",
   "git.progress",
   "mediaWindow.step",
+  "mediaWindow.command",
+  "mediaWindow.closed",
   "edit.request",
   "open.request",
   "update.state",

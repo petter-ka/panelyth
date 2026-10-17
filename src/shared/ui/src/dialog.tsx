@@ -19,6 +19,23 @@ const CloseIcon = ({ size }: { size: number }) => (
   </svg>
 )
 
+/** A down arrow: the dialog goes away, its work goes on (the commander's progress dialog). */
+const MinimizeIcon = ({ size }: { size: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="m4 6 4 4 4-4" />
+  </svg>
+)
+
 interface Props {
   open: boolean
   onOpenChange(open: boolean): void
@@ -28,6 +45,8 @@ interface Props {
   contentClassName?: string
   /** Call preventDefault() to keep the dialog open (e.g. while recording keys). */
   onEscapeKeyDown?: (e: KeyboardEvent) => void
+  /** The title bar's button: a close ×, or a down arrow that minimizes (with its own label). */
+  minimize?: { label: string; testId?: string }
 }
 
 export function DialogWindow({
@@ -38,6 +57,7 @@ export function DialogWindow({
   children,
   contentClassName,
   onEscapeKeyDown,
+  minimize,
 }: Props) {
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
@@ -52,10 +72,11 @@ export function DialogWindow({
               {title}
             </Dialog.Title>
             <Dialog.Close
-              aria-label={t("Close")}
+              aria-label={minimize ? minimize.label : t("Close")}
+              {...(minimize && { title: minimize.label, "data-testid": minimize.testId })}
               className="glass-pill grid size-7 place-items-center rounded-md text-muted hover:bg-raised hover:text-text"
             >
-              <CloseIcon size={14} />
+              {minimize ? <MinimizeIcon size={16} /> : <CloseIcon size={14} />}
             </Dialog.Close>
           </div>
           {description ? (

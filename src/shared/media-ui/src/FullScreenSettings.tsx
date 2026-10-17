@@ -1,16 +1,18 @@
 import { t } from "@panelyth/i18n"
 import { SwitchRow } from "@panelyth/ui"
-import { setAutoHide, setAutoHideImage, useVideoPrefs } from "./video"
+import { setAutoHide, setAutoHideImage, setConfirmDelete, useVideoPrefs } from "./video"
 
 /**
  * Settings → Appearance → Full screen: whether a full-screen video hides its
- * controls, and a full-screen picture its header, while the mouse rests.
+ * controls, and a full-screen picture its header, while the mouse rests, and
+ * whether Delete asks before a file shown full screen goes to the trash.
  * Stored with the player preferences ("player"), so they are the same in both
  * apps and the media window.
  */
 export function FullScreenSettings() {
   const autoHide = useVideoPrefs((s) => s.autoHide)
   const autoHideImage = useVideoPrefs((s) => s.autoHideImage)
+  const confirmDelete = useVideoPrefs((s) => s.confirmDelete)
   return (
     <>
       <SwitchRow
@@ -30,6 +32,15 @@ export function FullScreenSettings() {
         checked={autoHideImage}
         disabled={false}
         onChange={setAutoHideImage}
+      />
+      <SwitchRow
+        label={t("Ask before moving to the trash")}
+        description={t(
+          "Delete on a picture or video shown full screen asks first. Shift+Delete always asks.",
+        )}
+        checked={confirmDelete}
+        disabled={false}
+        onChange={setConfirmDelete}
       />
     </>
   )

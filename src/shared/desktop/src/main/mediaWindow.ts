@@ -1,5 +1,10 @@
 import { BrowserWindow, type WebContents } from "electron"
-import type { ContentItem, OpenRequest } from "@panelyth/contracts"
+import type {
+  ContentItem,
+  MediaWindowCommand,
+  MediaWindowCommandResult,
+  OpenRequest,
+} from "@panelyth/contracts"
 import { broadcast } from "./ipc/router"
 import { hardenWebContents } from "./security"
 import { appIconPath } from "./paths"
@@ -57,9 +62,11 @@ type Child = { opener: WebContents; key: number } | { source: MediaSource }
 
 interface Pending {
   opener: WebContents
-  resolve: (item: ContentItem | null) => void
+  resolve: (answer: MediaWindowCommandResult) => void
   timer: ReturnType<typeof setTimeout>
 }
+
+const NO_ANSWER: MediaWindowCommandResult = { item: null, done: false }
 
 export class MediaWindows {
   private readonly windows = new Set<BrowserWindow>()
@@ -108,6 +115,8 @@ export class MediaWindows {
       const child = this.children.get(id)
       this.children.delete(id)
       if (child && "source" in child) child.source.close()
+      // The opener selects the file the window showed last.
+      else if (child) broadcast([child.opener], "mediaWindow.closed", { key: child.key })
     })
     this.windows.add(win)
     void win.loadURL(
@@ -125,26 +134,50 @@ export class MediaWindows {
     const child = this.children.get(sender.id)
     if (!child) return Promise.resolve(null)
     if ("source" in child) return child.source.step(direction)
-    if (child.opener.isDestroyed()) return Promise.resolve(null)
+    return this.ask(child, (requestId) =>
+      broadcast([child.opener], "mediaWindow.step", { requestId, key: child.key, direction }),
+    ).then((answer) => answer.item)
+  }
+
+  /**
+   * A file command from the media window `sender` (copy, cut, paste, trash,
+   * delete), carried out by its opener on the file the window shows; the
+   * answer is the item to show next and whether the command ran. A window
+   * opened from the OS has no opener to carry it out.
+   */
+  command(sender: WebContents, command: MediaWindowCommand): Promise<MediaWindowCommandResult> {
+    const child = this.children.get(sender.id)
+    if (!child || "source" in child) return Promise.resolve(NO_ANSWER)
+    return this.ask(child, (requestId) =>
+      broadcast([child.opener], "mediaWindow.command", { requestId, key: child.key, command }),
+    )
+  }
+
+  /** One question to an opener; it answers through media.windowAnswer, or nothing comes after STEP_TIMEOUT_MS. */
+  private ask(
+    child: { opener: WebContents },
+    send: (requestId: number) => void,
+  ): Promise<MediaWindowCommandResult> {
+    if (child.opener.isDestroyed()) return Promise.resolve(NO_ANSWER)
     const requestId = this.nextRequest++
     return new Promise((resolve) => {
-      const done = (item: ContentItem | null): void => {
+      const done = (answer: MediaWindowCommandResult): void => {
         const entry = this.pending.get(requestId)
         if (!entry) return
         clearTimeout(entry.timer)
         this.pending.delete(requestId)
-        resolve(item)
+        resolve(answer)
       }
-      const timer = setTimeout(() => done(null), STEP_TIMEOUT_MS)
+      const timer = setTimeout(() => done(NO_ANSWER), STEP_TIMEOUT_MS)
       this.pending.set(requestId, { opener: child.opener, resolve: done, timer })
-      broadcast([child.opener], "mediaWindow.step", { requestId, key: child.key, direction })
+      send(requestId)
     })
   }
 
   /** The opener's reply; ignored from anyone but the window the request went to. */
-  answer(sender: WebContents, requestId: number, item: ContentItem | null): void {
+  answer(sender: WebContents, requestId: number, item: ContentItem | null, done = false): void {
     const entry = this.pending.get(requestId)
-    if (entry?.opener === sender) entry.resolve(item)
+    if (entry?.opener === sender) entry.resolve({ item, done })
   }
 
   /** The source of a window opened for a file from the OS; null for any other sender. */

@@ -11,6 +11,7 @@ describe("parsePlayerPrefs", () => {
       loop: true,
       autoHide: false,
       autoHideImage: true,
+      confirmDelete: true,
     })
     expect(parsePlayerPrefs({ volume: 2, muted: false })).toEqual({
       volume: 1,
@@ -18,6 +19,7 @@ describe("parsePlayerPrefs", () => {
       loop: false,
       autoHide: true,
       autoHideImage: true,
+      confirmDelete: true,
     })
     expect(parsePlayerPrefs({ volume: "x", muted: false })).toBeNull()
     expect(parsePlayerPrefs(null)).toBeNull()
@@ -40,6 +42,7 @@ describe("startVideoPrefsPersistence", () => {
       loop: false,
       autoHide: true,
       autoHideImage: true,
+      confirmDelete: true,
     })
     changed = null
     configureMedia({
@@ -73,6 +76,7 @@ describe("startVideoPrefsPersistence", () => {
       loop: true,
       autoHide: true,
       autoHideImage: true,
+      confirmDelete: true,
     })
     expect(write).not.toHaveBeenCalled()
   })
@@ -90,6 +94,7 @@ describe("startVideoPrefsPersistence", () => {
       loop: true,
       autoHide: true,
       autoHideImage: true,
+      confirmDelete: true,
     })
   })
 
