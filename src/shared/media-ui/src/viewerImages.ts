@@ -100,15 +100,51 @@ export async function requestFit(
   }
 }
 
-/** Resolves display size and the original URL (once per id). */
+/**
+ * Failures of the app itself, not properties of the file (a drive still
+ * waking up, the sidecar starting or busy): asking again can succeed.
+ */
+export const TRANSIENT_CODES: ReadonlySet<string> = new Set<ErrorCode>([
+  "TIMEOUT",
+  "BUSY",
+  "SIDECAR_UNAVAILABLE",
+  "CANCELLED",
+  "DB_ERROR",
+  "CACHE_ERROR",
+])
+
+/** The pauses before asking again after a transient failure; the loading state stays meanwhile. */
+export const MEDIA_RETRY_MS = [1000, 3000]
+
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
+/**
+ * Resolves display size and the original URL (once per id while it works).
+ * A failure is never final for the next look at the file, and the app's own
+ * trouble is retried before it is shown.
+ */
 export async function requestMedia(id: number): Promise<void> {
-  if (images.get(id)?.media) return
-  update(id, { media: { status: "pending" } })
-  try {
-    const media = await mediaPort().openMedia(id)
-    update(id, { media: { status: "ready", media, originalDecoded: false } })
-  } catch (error) {
-    update(id, { media: { status: "failed", code: errorCode(error) as ErrorCode } })
+  const current = images.get(id)?.media
+  if (current && current.status !== "failed") return
+  const pending: MediaState = { status: "pending" }
+  update(id, { media: pending })
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const media = await mediaPort().openMedia(id)
+      if (images.get(id)?.media === pending)
+        update(id, { media: { status: "ready", media, originalDecoded: false } })
+      return
+    } catch (error) {
+      const code = errorCode(error)
+      if (!TRANSIENT_CODES.has(code) || attempt >= MEDIA_RETRY_MS.length) {
+        if (images.get(id)?.media === pending)
+          update(id, { media: { status: "failed", code: code as ErrorCode } })
+        return
+      }
+      await sleep(MEDIA_RETRY_MS[attempt]!)
+      // Evicted or asked again meanwhile (Try again): that request carries on.
+      if (images.get(id)?.media !== pending) return
+    }
   }
 }
 

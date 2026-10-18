@@ -46,23 +46,28 @@ export function codecName(codec: string): string {
  * Why a video cannot be shown, as the player presents it:
  * - unsupported: Chromium cannot decode the format (open it elsewhere),
  * - missing: moved, deleted or unreadable (try again),
- * - damaged: the file cannot be read as a video at all.
+ * - damaged: the file cannot be read as a video at all,
+ * - unavailable: the app could not get to it just now (a drive still waking
+ *   up, the sidecar starting or busy); nothing is wrong with the file (try again).
  */
-export type VideoProblem = "unsupported" | "missing" | "damaged"
+export type VideoProblem = "unsupported" | "missing" | "damaged" | "unavailable"
 
-/** Maps a media.open failure. */
+/** Maps a media.open failure (after viewerImages.ts retried the app's own trouble). Only the sidecar's verdict on the file says "unsupported". */
 export function problemFromCode(code: ErrorCode): VideoProblem {
   if (code === "NOT_FOUND" || code === "PERMISSION_DENIED" || code === "INVALID_PATH")
     return "missing"
   if (code === "CORRUPT_MEDIA") return "damaged"
-  return "unsupported"
+  if (code === "UNSUPPORTED_MEDIA") return "unsupported"
+  return "unavailable"
 }
 
 /** Maps HTMLMediaElement.error.code (MediaError constants). */
 export function problemFromMediaError(code: number | undefined): VideoProblem {
+  // 1 = MEDIA_ERR_ABORTED: the load was stopped, not refused.
+  if (code === 1) return "unavailable"
   // 2 = MEDIA_ERR_NETWORK: the protocol could not read the file (moved / deleted).
   if (code === 2) return "missing"
-  // 3 = DECODE, 4 = SRC_NOT_SUPPORTED, anything else: Chromium can't play it.
+  // 3 = DECODE, 4 = SRC_NOT_SUPPORTED: Chromium can't play it.
   return "unsupported"
 }
 

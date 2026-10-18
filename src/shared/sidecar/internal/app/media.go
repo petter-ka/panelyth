@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"time"
 
 	"panelyth/sidecar/internal/archive"
 	"panelyth/sidecar/internal/imaging"
@@ -31,6 +32,12 @@ var browserImage = map[string]bool{"jpg": true, "jpeg": true, "jpe": true, "jfif
 // MaxOriginalPixels caps originals handed to Chromium (ARCHITECTURE-ANALYSIS
 // M9); larger images are viewed through viewer-fit.
 const MaxOriginalPixels = 50_000_000
+
+// resolveProbeWait bounds the video probe in media.resolve. The probe only
+// adds size, duration and codec names; playback must not wait for it behind
+// the posters' probes or a drive that is waking up, and main gives the whole
+// call 10 s. A probe cut short is not cached, so the next open asks again.
+const resolveProbeWait = 3 * time.Second
 
 type (
 	mediaResolveParams struct {
@@ -156,7 +163,9 @@ func (s *indexService) mediaResolve(ctx context.Context, reg *imaging.Registry, 
 	// Videos play through Chromium from the original file; the probe adds
 	// size, duration and codec names for the player and its error messages.
 	res.Original = true
-	info, err := s.video.Probe(ctx, src.Path, fi.Size(), fi.ModTime().UnixNano())
+	pctx, cancel := context.WithTimeout(ctx, resolveProbeWait)
+	info, err := s.video.Probe(pctx, src.Path, fi.Size(), fi.ModTime().UnixNano())
+	cancel()
 	switch {
 	case errors.Is(err, video.ErrCorrupt):
 		return res, rpc.NewError(rpc.CodeCorruptMedia, "video cannot be read")

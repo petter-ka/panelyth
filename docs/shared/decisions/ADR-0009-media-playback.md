@@ -31,6 +31,23 @@ image originals; Stage 06 adds video. `media.open` (renderer) returns only the t
 - Full screen is element full screen on the player. The session permission handler allows only `fullscreen`, and only
   for the app's own origin; everything else is still denied.
 
+## Amendment: the app's own trouble is not the file's (2026-10-18, owner request)
+
+"Can't be played here — Open with default app" showed far more often than files were unplayable. A sample of the
+owner's library (683 videos played in the app's Chromium) found 94 % playing, about 3 % that Chromium can't decode
+(Motion-JPEG, SVQ3 and MPEG-4 Part 2 video) and 3 % playing without sound (AC-3, DTS, E-AC-3 and MP2 audio). The rest
+of the messages came from errors of the app itself: `media.open` failing with `TIMEOUT`, `BUSY`, `SIDECAR_UNAVAILABLE`
+or `CANCELLED` (the sidecar still starting, a drive spinning up, the ffprobe slots taken by posters) was mapped to
+"unsupported", and the failure was kept for that file for the rest of the session.
+
+- Only `UNSUPPORTED_MEDIA` and media errors 3 and 4 say "can't be played here". The app's own failures are a fourth
+  state, **unavailable** ("This video can't be opened right now", with **Try again**), and so is media error 1
+  (aborted).
+- `requestMedia` (`viewerImages.ts`) asks again after 1 s and 3 s on those codes, staying in the loading state, and
+  never keeps a failure for the next look at the file.
+- `media.resolve` waits at most 3 s for the video probe (`resolveProbeWait`): the probe only adds size, duration and
+  codec names, and main gives the whole call 10 s. A probe cut short is not cached.
+
 ## Implementation note (Stage C05)
 
 `file.open` (commander only) mints tokens for any file kind, bound to the commander's origin; the scheme is

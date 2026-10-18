@@ -1925,6 +1925,8 @@ const messages: Messages = {
   "The download failed: {reason}": "Не удалось загрузить обновление: {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "Диск не готов. Вставьте диск или подключите его снова.",
+  "The drive may still be waking up, or Panelyth is busy. Try again in a moment.":
+    "Возможно, диск ещё раскручивается или Panelyth занят. Повторите попытку через минуту.",
   "The editing session has ended. Close the editor and open the picture again.":
     "Сеанс редактирования завершён. Закройте редактор и откройте изображение снова.",
   "The entry could not be saved.": "Не удалось сохранить запись.",
@@ -2105,6 +2107,7 @@ const messages: Messages = {
     "Этот рецепт создан в более новой версии Panelyth.",
   "This repository has no remote.": "У этого репозитория нет удалённого репозитория.",
   "This video can't be opened": "Это видео нельзя открыть",
+  "This video can't be opened right now": "Это видео сейчас нельзя открыть",
   "This video can't be played here": "Это видео нельзя воспроизвести здесь",
   "This video is damaged": "Это видео повреждено",
   "This window was not opened for a document.": "Это окно открыто не для документа.",

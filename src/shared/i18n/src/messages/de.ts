@@ -1946,6 +1946,8 @@ const messages: Messages = {
   "The download failed: {reason}": "Der Download ist fehlgeschlagen: {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "Das Laufwerk ist nicht bereit. Legen Sie einen Datenträger ein oder verbinden Sie es erneut.",
+  "The drive may still be waking up, or Panelyth is busy. Try again in a moment.":
+    "Das Laufwerk läuft vielleicht noch an, oder Panelyth ist beschäftigt. Versuchen Sie es gleich noch einmal.",
   "The editing session has ended. Close the editor and open the picture again.":
     "Die Bearbeitungssitzung ist beendet. Schließen Sie den Editor und öffnen Sie das Bild erneut.",
   "The entry could not be saved.": "Der Eintrag konnte nicht gespeichert werden.",
@@ -2141,6 +2143,7 @@ const messages: Messages = {
     "Dieses Rezept wurde mit einer neueren Version von Panelyth erstellt.",
   "This repository has no remote.": "Dieses Repository hat keinen Remote.",
   "This video can't be opened": "Dieses Video kann nicht geöffnet werden",
+  "This video can't be opened right now": "Dieses Video kann gerade nicht geöffnet werden",
   "This video can't be played here": "Dieses Video kann hier nicht abgespielt werden",
   "This video is damaged": "Dieses Video ist beschädigt",
   "This window was not opened for a document.":

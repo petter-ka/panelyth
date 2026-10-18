@@ -1929,6 +1929,8 @@ const messages: Messages = {
   "The download failed: {reason}": "A letöltés nem sikerült: {reason}",
   "The drive is not ready. Insert a disk or reconnect it.":
     "A meghajtó nem áll készen. Helyezzen be egy lemezt, vagy csatlakoztassa újra.",
+  "The drive may still be waking up, or Panelyth is busy. Try again in a moment.":
+    "Lehet, hogy a meghajtó még ébred, vagy a Panelyth elfoglalt. Próbálja újra egy pillanat múlva.",
   "The editing session has ended. Close the editor and open the picture again.":
     "A szerkesztési munkamenet véget ért. Zárja be a szerkesztőt, és nyissa meg újra a képet.",
   "The entry could not be saved.": "A bejegyzést nem sikerült menteni.",
@@ -2110,6 +2112,7 @@ const messages: Messages = {
     "Ezt a receptet a Panelyth újabb verziója készítette.",
   "This repository has no remote.": "Ennek a tárolónak nincs távoli tárolója.",
   "This video can't be opened": "A videó nem nyitható meg",
+  "This video can't be opened right now": "A videó most nem nyitható meg",
   "This video can't be played here": "A videó itt nem játszható le",
   "This video is damaged": "A videó sérült",
   "This window was not opened for a document.": "Ez az ablak nem dokumentumhoz lett megnyitva.",

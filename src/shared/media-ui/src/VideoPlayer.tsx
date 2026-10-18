@@ -596,6 +596,11 @@ function ProblemView({
       text: t("The file can't be read as a video."),
       action: <ActionButton onClick={onOpen}>{t("Open with default app")}</ActionButton>,
     },
+    unavailable: {
+      title: t("This video can't be opened right now"),
+      text: t("The drive may still be waking up, or Panelyth is busy. Try again in a moment."),
+      action: <ActionButton onClick={onRetry}>{t("Try again")}</ActionButton>,
+    },
   }
   const c = content[problem]
   return (
