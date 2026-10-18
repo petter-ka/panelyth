@@ -4,15 +4,18 @@ import (
 	"bufio"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"image"
 	"image/jpeg"
+	"io/fs"
 	"math"
 	"os"
 	"path/filepath"
 	"sync"
 	"time"
 
+	"panelyth/sidecar/internal/fsx"
 	"panelyth/sidecar/internal/imaging"
 )
 
@@ -48,6 +51,7 @@ type Session struct {
 	baseEdge  int
 	cache     []checkpoint // most recently used last
 	frames    []string     // frame files, oldest first
+	stale     []string     // files something held when they were dropped; removed at close
 	frameSeq  int
 	// Preset thumbnails: the small base they are rendered from and the
 	// files of the last batch.
@@ -77,6 +81,32 @@ func (s *Session) used() time.Time {
 	return s.lastUsed
 }
 
+// drop removes files the session no longer shows, with one quick try: a
+// render must not wait for a virus scanner. What something still holds is
+// removed when the session closes.
+func (s *Session) drop(files []string) {
+	var held []string
+	for _, f := range files {
+		if err := os.Remove(f); err != nil && !errors.Is(err, fs.ErrNotExist) {
+			held = append(held, f)
+		}
+	}
+	if len(held) == 0 {
+		return
+	}
+	s.mu.Lock()
+	closed := s.closed
+	if !closed {
+		s.stale = append(s.stale, held...)
+	}
+	s.mu.Unlock()
+	if closed {
+		for _, f := range held {
+			_ = fsx.RemoveSoon(f)
+		}
+	}
+}
+
 func (s *Session) close() {
 	s.mu.Lock()
 	if s.closed {
@@ -87,8 +117,8 @@ func (s *Session) close() {
 	if s.cancelRun != nil {
 		s.cancelRun()
 	}
-	frames := append(s.frames, s.thumbs...)
-	s.frames, s.thumbs, s.cache, s.base, s.thumbBase = nil, nil, nil, nil, nil
+	frames := append(append(s.frames, s.thumbs...), s.stale...)
+	s.frames, s.thumbs, s.stale, s.cache, s.base, s.thumbBase = nil, nil, nil, nil, nil, nil
 	s.mu.Unlock()
 	// A render still running holds the slot; the memory goes back after it.
 	s.slot <- struct{}{}
@@ -96,8 +126,9 @@ func (s *Session) close() {
 	s.proxy = nil
 	s.mu.Unlock()
 	<-s.slot
+	// The session is over: a frame a scanner still holds is waited for.
 	for _, f := range frames {
-		_ = os.Remove(f)
+		_ = fsx.RemoveSoon(f)
 	}
 	s.release()
 }
@@ -411,15 +442,21 @@ func (s *Session) writeFrame(ctx context.Context, img *image.RGBA, draft bool) (
 	s.mu.Lock()
 	s.frames = append(s.frames, file)
 	var old []string
-	if s.closed {
+	closed := s.closed
+	if closed {
 		old, s.frames = s.frames, nil
 	} else if len(s.frames) > keepFrames {
 		old = s.frames[:len(s.frames)-keepFrames]
 		s.frames = append([]string(nil), s.frames[len(s.frames)-keepFrames:]...)
 	}
 	s.mu.Unlock()
-	for _, o := range old {
-		_ = os.Remove(o)
+	if closed {
+		// Closed while this frame was written: close() has removed the rest.
+		for _, o := range old {
+			_ = fsx.RemoveSoon(o)
+		}
+	} else {
+		s.drop(old)
 	}
 	return file, mime, nil
 }
@@ -603,9 +640,7 @@ func (s *Session) Thumbs(ctx context.Context, lists []imaging.EditList, edge int
 	if closed || proxy == nil {
 		return nil, ErrGone
 	}
-	for _, f := range old {
-		_ = os.Remove(f)
-	}
+	s.drop(old)
 	if base == nil || max(base.Rect.Dx(), base.Rect.Dy()) != min(edge, max(proxy.Rect.Dx(), proxy.Rect.Dy())) {
 		w, h := imaging.FitSize(proxy.Rect.Dx(), proxy.Rect.Dy(), edge)
 		var err error
@@ -669,7 +704,7 @@ func (s *Session) Thumbs(ctx context.Context, lists []imaging.EditList, edge int
 	if s.closed {
 		s.mu.Unlock()
 		for _, f := range files {
-			_ = os.Remove(f)
+			_ = fsx.RemoveSoon(f)
 		}
 		return nil, ErrGone
 	}

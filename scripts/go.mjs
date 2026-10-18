@@ -35,7 +35,15 @@ function gofmt() {
 
 const fixtureRoot = () => process.env.PANELYTH_FIXTURES ?? join(tmpdir(), "panelyth-fixtures")
 
-const run = (cmd, args) => execFileSync(cmd, args, { cwd: goRoot, stdio: "inherit" })
+const run = (cmd, args) => {
+  try {
+    execFileSync(cmd, args, { cwd: goRoot, stdio: "inherit" })
+  } catch (error) {
+    // The tool has printed why; a stack trace here would only bury it.
+    if (typeof error.status === "number") process.exit(error.status)
+    throw error
+  }
+}
 
 // Only when run as a script: the e2e fixtures import goBinary(), and an
 // import must not start a task (under Playwright, argv[2] is "test").

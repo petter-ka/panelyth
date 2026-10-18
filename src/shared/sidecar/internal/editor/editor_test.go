@@ -424,7 +424,13 @@ func TestIdleTimeoutAndShutdown(t *testing.T) {
 	if m.Count() != 0 {
 		t.Fatal("an idle session stayed open")
 	}
-	if _, err := os.Stat(res.File); !errors.Is(err, os.ErrNotExist) {
+	// On Windows a removed file can keep its name for a moment while a virus
+	// scanner still has it open.
+	gone := func() bool { _, err := os.Stat(res.File); return errors.Is(err, os.ErrNotExist) }
+	for !gone() && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	if !gone() {
 		t.Fatal("an idle session's frame stayed")
 	}
 	other, _ := m.Open(context.Background(), 2, writeJPEG(t, t.TempDir(), "b.jpg", 200, 100))
