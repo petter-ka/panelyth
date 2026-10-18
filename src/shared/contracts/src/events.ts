@@ -8,6 +8,7 @@ import type {
   JobConflict,
   JobSnapshot,
   MediaWindowCommand,
+  MediaWindowStep,
   PreviewItem,
   QuerySnapshot,
   SavedConnection,
@@ -112,8 +113,8 @@ export interface EventMap {
   "git.progress": GitProgress
   /** A directory compare's progress (Stage C08, commander); rows arrive through query.invalidated. */
   "compare.progress": CompareProgress
-  /** From main, to the window that opened a media window: find that window's next item (media.windowAnswer replies). */
-  "mediaWindow.step": { requestId: number; key: number; direction: -1 | 0 | 1 }
+  /** From main, to the window that opened a media window: find that window's next item, or the first or last (media.windowAnswer replies). */
+  "mediaWindow.step": { requestId: number; key: number; direction: MediaWindowStep }
   /** From main, to the window that opened a media window: a file command on the item it shows (media.windowAnswer replies). */
   "mediaWindow.command": { requestId: number; key: number; command: MediaWindowCommand }
   /** From main, to the window that opened a media window: it closed; the opener selects the item it showed last. */

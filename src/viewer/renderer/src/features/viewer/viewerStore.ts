@@ -1,7 +1,13 @@
-import type { ContentItem, MediaWindowCommand, MediaWindowCommandResult } from "@panelyth/contracts"
+import type {
+  ContentItem,
+  MediaWindowCommand,
+  MediaWindowCommandResult,
+  MediaWindowStep,
+} from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge } from "../../bridge"
-import { currentLocale } from "@panelyth/i18n"
+import { currentLocale, t } from "@panelyth/i18n"
+import { whileAppLoads } from "@panelyth/ui"
 import { copySelectionToClipboard } from "../clipboard/clipboard"
 import { useFolderStore } from "../folder/folderStore"
 import {
@@ -101,7 +107,11 @@ export function openFullscreenAt(index: number): boolean {
   const key = nextKey++
   hosted.set(key, { queryId: query.queryId, index, item })
   if (hosted.size > MAX_HOSTED) hosted.delete(hosted.keys().next().value!)
-  void bridge.openMediaWindow(item.id, key, currentLocale()).catch(() => {
+  // Main reads the file before the window opens: on a drive still spinning up
+  // that takes a while, so the loading screen shows meanwhile.
+  void whileAppLoads(bridge.openMediaWindow(item.id, key, currentLocale()), {
+    label: t("Opening…"),
+  }).catch(() => {
     hosted.delete(key)
     if (item.kind === "image") openViewerAt(index)
     else playInPane(index, { fullscreen: true })
@@ -126,12 +136,20 @@ async function relocate(window: HostedWindow): Promise<boolean> {
   return true
 }
 
-async function answerStep(key: number, direction: -1 | 0 | 1): Promise<ContentItem | null> {
+/** The media window asked for its own item, the previous, next, first or last one. */
+async function answerStep(key: number, direction: MediaWindowStep): Promise<ContentItem | null> {
   const window = hosted.get(key)
   if (!window) return null
   if (direction === 0) return window.item
-  await relocate(window)
-  const found = await findMedia(window.index + direction, direction)
+  // The ends are those of the folder the window was opened from.
+  if (typeof direction === "string" && !sameFolder(window)) return null
+  let found: Awaited<ReturnType<typeof findMedia>>
+  if (direction === "first") found = await findMedia(0, 1)
+  else if (direction === "last") found = await findMedia(getTotal() - 1, -1)
+  else {
+    await relocate(window)
+    found = await findMedia(window.index + direction, direction)
+  }
   if (!found) return null
   window.index = found.index
   window.item = found.item

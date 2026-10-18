@@ -67,3 +67,33 @@ describe("MediaViewerOverlay wheel over a video", () => {
     expect(onStep).not.toHaveBeenCalled()
   })
 })
+
+describe("MediaViewerOverlay keys through the folder", () => {
+  const image = { id: 2, kind: "image", name: "b.jpg" } as ContentItem
+  const onStep = vi.fn()
+  const onJump = vi.fn()
+  beforeEach(() => {
+    onStep.mockReset()
+    onJump.mockReset()
+  })
+
+  it("steps with the arrows and Page Up / Down, and jumps to the ends with Home and End", () => {
+    render(<MediaViewerOverlay item={image} onClose={vi.fn()} onStep={onStep} onJump={onJump} />)
+    const surface = screen.getByTestId("media-viewer")
+    for (const key of ["ArrowLeft", "ArrowUp", "PageUp"]) fireEvent.keyDown(surface, { key })
+    for (const key of ["ArrowRight", "ArrowDown", "PageDown"]) fireEvent.keyDown(surface, { key })
+    expect(onStep.mock.calls).toEqual([[-1], [-1], [-1], [1], [1], [1]])
+    fireEvent.keyDown(surface, { key: "Home" })
+    fireEvent.keyDown(surface, { key: "End" })
+    expect(onJump.mock.calls).toEqual([["first"], ["last"]])
+  })
+
+  it("leaves the keys to a slider and ignores them with Ctrl", () => {
+    render(<MediaViewerOverlay item={video} onClose={vi.fn()} onStep={onStep} onJump={onJump} />)
+    const volume = screen.getByLabelText("Volume")
+    for (const key of ["PageDown", "Home", "End"]) fireEvent.keyDown(volume, { key })
+    fireEvent.keyDown(screen.getByTestId("media-viewer"), { key: "PageDown", ctrlKey: true })
+    expect(onStep).not.toHaveBeenCalled()
+    expect(onJump).not.toHaveBeenCalled()
+  })
+})

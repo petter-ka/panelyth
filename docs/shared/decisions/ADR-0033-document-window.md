@@ -90,6 +90,19 @@ player.
   made active), provided the folder is still the one the window was opened from. Its index is looked up again
   (`query.indexOf`) when the listing moved meanwhile, as it is before every step.
 
+## Amendment: moving through the folder, and a slow first file (2026-10-18, owner request)
+
+- **Keys.** In the window, ←, ↑ and Page Up show the previous picture or video, →, ↓ and Page Down the next, Home
+  the folder's first and End its last. `media.windowStep` takes `direction: -1 | 0 | 1 | "first" | "last"`
+  (`MediaWindowStep`); the opener answers "first" and "last" from the listing the window was opened from (none when
+  that listing is gone), and a window for a file from the OS asks its own session. A focused video player keeps its
+  arrows, Home and End (seek and volume), and a focused slider its Page Up / Down, Home and End. The commander's
+  in-app overlay takes the same keys. As with the file keys, these are the defaults, not the user's keymap.
+- **Feedback while the file is read.** Main reads the entry before the window opens; on a drive that is still
+  spinning up (just after start, or after it went to sleep) that took seconds with nothing on screen. The opener now
+  shows its loading screen ("Opening…", `whileAppLoads`) while `media.openWindow` is under way, and the window shows
+  the loading chip until its first item comes.
+
 ## Amendment: a file opened from the OS ("Open with", 2026-10-12, owner request)
 
 When Panelyth is the app the OS opens a picture or a video with (chosen as the default app, "Open with", a file

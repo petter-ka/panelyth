@@ -32,6 +32,7 @@ import type {
   MediaOpenResult,
   MediaWindowCommand,
   MediaWindowCommandResult,
+  MediaWindowStep,
   PreviewEnsureParams,
   PreviewEnsureResult,
   PreviewProfile,
@@ -347,8 +348,8 @@ export const bridge = {
   ): Promise<void> => {
     await unwrap(() => api().media.openWindow(entryId, key, theme, lang))
   },
-  /** The media window: the first (0), previous (-1) or next (1) item, asked of the opener. */
-  mediaWindowStep: async (direction: -1 | 0 | 1): Promise<ContentItem | null> =>
+  /** The media window: its own item (0), the previous (-1), next (1), first or last one, asked of the opener. */
+  mediaWindowStep: async (direction: MediaWindowStep): Promise<ContentItem | null> =>
     (await unwrap(() => api().media.windowStep(direction))).item,
   /** The media window: a file command on its item, carried out by the opener. */
   mediaWindowCommand: (command: MediaWindowCommand): Promise<MediaWindowCommandResult> =>

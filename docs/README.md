@@ -111,6 +111,9 @@ pnpm package        # installers for this OS (docs/RELEASING.md); --dir for the 
 pnpm test:smoke     # the packaged smoke test
 ```
 
+`pnpm install` also points git at `.githooks` (`scripts/hooks.mjs`): before every push, `pnpm lint` and
+`pnpm test` run, and a failure stops the push. `git push --no-verify` skips them.
+
 These commands build and run the shell with the viewer. The commander joins them in Stage C00, behind a feature
 flag (`PANELYTH_COMMANDER=1`). Stage P01 lets `BENCH_STAGE` take platform and commander stage IDs (`P01`, `C03`).
 

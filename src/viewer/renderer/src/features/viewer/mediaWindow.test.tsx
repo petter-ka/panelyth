@@ -1,4 +1,5 @@
 import { act, render, screen, waitFor } from "@testing-library/react"
+import { useAppLoading } from "@panelyth/ui"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { ContentPane } from "../../components/ContentPane"
 import { installFakeBridge, makeItems } from "../../test/fakeBridge"
@@ -106,5 +107,60 @@ describe("closing the media window", () => {
       expect(useSelectionStore.getState()).toMatchObject({ focusIndex: 4, selectedId: 5 }),
     )
     expect(useSelectionStore.getState().revealToken).toBeGreaterThan(0)
+  })
+})
+
+describe("Home and End in the media window", () => {
+  it("answers with the folder's first and last picture, skipping the subfolder", async () => {
+    const { bridge, openWindow, windowAnswer } = await setup()
+    const key = await openImg2(openWindow)
+    await act(async () => {
+      bridge.push("mediaWindow.step", { requestId: 1, key, direction: "last" })
+    })
+    await waitFor(() =>
+      expect(windowAnswer).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ id: 6 }),
+        undefined,
+      ),
+    )
+    await act(async () => {
+      bridge.push("mediaWindow.step", { requestId: 2, key, direction: "first" })
+    })
+    await waitFor(() =>
+      expect(windowAnswer).toHaveBeenLastCalledWith(
+        2,
+        expect.objectContaining({ id: 2 }),
+        undefined,
+      ),
+    )
+    // The window's position follows: the next step goes on from the first picture.
+    await act(async () => {
+      bridge.push("mediaWindow.step", { requestId: 3, key, direction: 1 })
+    })
+    await waitFor(() =>
+      expect(windowAnswer).toHaveBeenLastCalledWith(
+        3,
+        expect.objectContaining({ id: 3 }),
+        undefined,
+      ),
+    )
+  })
+})
+
+describe("opening the media window", () => {
+  it("shows the loading screen while main reads the file (a drive spinning up)", async () => {
+    const { openWindow } = await setup()
+    let opened: () => void = () => undefined
+    openWindow.mockImplementation(
+      () => new Promise((resolve) => (opened = () => resolve({ ok: true, r: { ok: true } }))),
+    )
+    act(() => {
+      openFullscreenAt(2)
+    })
+    await waitFor(() => expect(useAppLoading.getState().visible).toBe(true))
+    expect(useAppLoading.getState().label).toBe("Opening…")
+    await act(async () => opened())
+    await waitFor(() => expect(useAppLoading.getState().visible).toBe(false))
   })
 })

@@ -2,6 +2,7 @@ import { isAbsolute, resolve } from "node:path"
 import type {
   ContentItem,
   EntryFromPathResult,
+  MediaWindowStep,
   OpenRequest,
   QueryDescriptor,
   SidecarMethodMap,
@@ -109,8 +110,8 @@ export class OpenWithSession {
     return opened
   }
 
-  /** 0: the file itself; -1 / 1: its neighbour in the folder; null at either end. */
-  async step(direction: -1 | 0 | 1): Promise<ContentItem | null> {
+  /** 0: the file itself; -1 / 1: its neighbour in the folder, null at either end; "first" / "last": the folder's. */
+  async step(direction: MediaWindowStep): Promise<ContentItem | null> {
     if (this.closed) return null
     const s = await (this.opened ??= this.open())
     let item = await this.at(s, direction)
@@ -125,12 +126,9 @@ export class OpenWithSession {
     return item
   }
 
-  /** The item `direction` away from the current one in the session as it is now. */
-  private async at(s: Opened, direction: -1 | 0 | 1): Promise<ContentItem | null> {
-    const entryId = this.currentId ?? s.entryId
-    const at = await this.call("query.indexOf", { queryId: s.queryId, entryId })
-    if (at.index < 0) return null
-    const index = at.index + direction
+  /** The item `direction` names in the session as it is now. */
+  private async at(s: Opened, direction: MediaWindowStep): Promise<ContentItem | null> {
+    const index = await this.indexOf(s, direction)
     if (index < 0) return null
     const page = await this.call("query.page", {
       queryId: s.queryId,
@@ -139,6 +137,24 @@ export class OpenWithSession {
       thumbProfile: null,
     })
     return page.items[0] ?? null
+  }
+
+  /** Where `direction` points: from the current item, or the session's first or last index. */
+  private async indexOf(s: Opened, direction: MediaWindowStep): Promise<number> {
+    if (direction === "first") return 0
+    if (direction === "last") {
+      // The session lists only pictures and videos; its total is up to date.
+      const { total } = await this.call("query.page", {
+        queryId: s.queryId,
+        offset: 0,
+        limit: 1,
+        thumbProfile: null,
+      })
+      return total - 1
+    }
+    const entryId = this.currentId ?? s.entryId
+    const at = await this.call("query.indexOf", { queryId: s.queryId, entryId })
+    return at.index < 0 ? -1 : at.index + direction
   }
 
   /** The folder and the item now shown, once the first item was found. */

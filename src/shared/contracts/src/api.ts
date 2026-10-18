@@ -108,6 +108,7 @@ import type {
   MediaOpenResult,
   MediaWindowCommand,
   MediaWindowCommandResult,
+  MediaWindowStep,
   MediaWindowStepResult,
   OpenRequestResult,
   OpenFolderDialogResult,
@@ -614,8 +615,8 @@ export interface CommanderApi {
       item: ContentItem | null,
       done?: boolean,
     ): Promise<RpcEnvelope<OkResult>>
-    /** The media window: the first, previous or next item, asked of the opener. */
-    windowStep(direction: -1 | 0 | 1): Promise<RpcEnvelope<MediaWindowStepResult>>
+    /** The media window: the item it opened for, the previous, next, first or last one, asked of the opener. */
+    windowStep(direction: MediaWindowStep): Promise<RpcEnvelope<MediaWindowStepResult>>
     /** The media window: a file command on its item (copy, cut, paste, trash, delete), carried out by the opener. */
     windowCommand(command: MediaWindowCommand): Promise<RpcEnvelope<MediaWindowCommandResult>>
     /** The media window of a file opened from the OS: show its picture in the viewer, at its folder. */

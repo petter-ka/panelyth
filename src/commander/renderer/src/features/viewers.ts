@@ -1,7 +1,12 @@
-import type { ContentItem, MediaWindowCommand, MediaWindowCommandResult } from "@panelyth/contracts"
+import type {
+  ContentItem,
+  MediaWindowCommand,
+  MediaWindowCommandResult,
+  MediaWindowStep,
+} from "@panelyth/contracts"
 import { create } from "zustand"
-import { currentAppearance } from "@panelyth/ui"
-import { currentLocale } from "@panelyth/i18n"
+import { currentAppearance, whileAppLoads } from "@panelyth/ui"
+import { currentLocale, t } from "@panelyth/i18n"
 import { bridge } from "../bridge"
 import { opensInDocumentWindow, openDocumentWindow } from "./documents"
 import { clipboardPaste, clipboardSetOf, deleteNow, entryOperand } from "./files"
@@ -147,12 +152,15 @@ export function openMediaViewer(
     item,
   })
   if (hosted.size > MAX_HOSTED) hosted.delete(hosted.keys().next().value!)
-  void bridge
-    .openMediaWindow(item.id, key, currentAppearance().theme, currentLocale())
-    .catch(() => {
-      hosted.delete(key)
-      openMediaOverlay(item, side)
-    })
+  // Main reads the file before the window opens: on a drive still spinning up
+  // that takes a while, so the loading screen shows meanwhile.
+  void whileAppLoads(
+    bridge.openMediaWindow(item.id, key, currentAppearance().theme, currentLocale()),
+    { label: t("Opening…") },
+  ).catch(() => {
+    hosted.delete(key)
+    openMediaOverlay(item, side)
+  })
   return true
 }
 
@@ -193,13 +201,21 @@ async function findMedia(
   return null
 }
 
-/** The media window asked for its first, previous or next item. */
-async function answerStep(key: number, direction: -1 | 0 | 1): Promise<ContentItem | null> {
+/** The media window asked for its own item, the previous, next, first or last one. */
+async function answerStep(key: number, direction: MediaWindowStep): Promise<ContentItem | null> {
   const window = hosted.get(key)
   if (!window) return null
   if (direction === 0) return window.item
-  await relocate(window)
-  const found = await findMedia(window.side, window.index + direction, direction)
+  // The ends are those of the listing the window was opened from.
+  if (typeof direction === "string" && !samePanel(window)) return null
+  let found: Awaited<ReturnType<typeof findMedia>>
+  if (direction === "first") found = await findMedia(window.side, 0, 1)
+  else if (direction === "last")
+    found = await findMedia(window.side, pageStoreOf(window.side).getTotal() - 1, -1)
+  else {
+    await relocate(window)
+    found = await findMedia(window.side, window.index + direction, direction)
+  }
   if (!found) return null
   window.index = found.index
   window.item = found.item
@@ -303,11 +319,26 @@ export function closeMediaViewer(): void {
 /** Steps to the adjacent image or video in the source panel. */
 export async function stepMediaViewer(direction: -1 | 1): Promise<boolean> {
   const current = get().mediaViewer
+  return current ? showMediaFrom(current.index + direction, direction) : false
+}
+
+/** Home / End in the media overlay: the panel's first or last image or video. */
+export async function jumpMediaViewer(to: "first" | "last"): Promise<boolean> {
+  const current = get().mediaViewer
+  if (!current) return false
+  return to === "first"
+    ? showMediaFrom(0, 1)
+    : showMediaFrom(pageStoreOf(current.side).getTotal() - 1, -1)
+}
+
+/** The overlay shows the nearest image or video from `from` in `direction`; false when none. */
+async function showMediaFrom(from: number, direction: -1 | 1): Promise<boolean> {
+  const current = get().mediaViewer
   if (!current) return false
   const store = pageStoreOf(current.side)
   const total = store.getTotal()
   for (
-    let index = current.index + direction, scanned = 0;
+    let index = from, scanned = 0;
     index >= 0 && index < total && scanned < MAX_STEP_SCAN;
     index += direction, scanned++
   ) {

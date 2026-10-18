@@ -8,12 +8,14 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "prepare": "node scripts/hooks.mjs",
     "dev": "node scripts/dev.mjs",
     "build": "pnpm build:sidecar && pnpm -r --filter @panelyth/renderer --filter @panelyth/commander --filter @panelyth/system --filter @panelyth/docviewer --filter @panelyth/desktop build",
     "build:sidecar": "node scripts/build-sidecar.mjs",
     "start": "node scripts/start.mjs",
     "package": "node scripts/package.mjs",
     "notices": "node scripts/notices.mjs",
+    "icons": "node scripts/icons.mjs",
     "media-tools": "node scripts/media-tools.mjs",
     "test:smoke": "pnpm --filter @panelyth/e2e smoke",
     "test:update": "pnpm --filter @panelyth/e2e run update-test",

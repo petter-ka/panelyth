@@ -634,6 +634,31 @@ describe("the full-screen media window", () => {
     expect(fake.api.files.start).not.toHaveBeenCalled()
   })
 
+  it("answers Home and End with the panel's first and last picture or video", async () => {
+    const fake = await start()
+    const key = await openPhoto(fake)
+    await act(async () => {
+      fake.emit("mediaWindow.step", { requestId: 4, key, direction: "first" })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        4,
+        expect.objectContaining({ id: ID.clip }),
+        undefined,
+      ),
+    )
+    await act(async () => {
+      fake.emit("mediaWindow.step", { requestId: 5, key, direction: "last" })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        5,
+        expect.objectContaining({ id: ID.photo }),
+        undefined,
+      ),
+    )
+  })
+
   it("puts the cursor on the file shown last when the window closes", async () => {
     const fake = await start()
     const key = await openPhoto(fake)

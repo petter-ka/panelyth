@@ -46,6 +46,8 @@ export default tseslint.config(
       "src/shared/desktop/release/**",
       "src/shared/e2e/test-results/**",
       "src/shared/e2e/playwright-report/**",
+      // Claude Code's agents and skills: tooling, not the product.
+      ".claude/**",
     ],
   },
   js.configs.recommended,

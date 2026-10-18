@@ -3,6 +3,7 @@ import type {
   ContentItem,
   MediaWindowCommand,
   MediaWindowCommandResult,
+  MediaWindowStep,
   OpenRequest,
 } from "@panelyth/contracts"
 import { broadcast } from "./ipc/router"
@@ -31,7 +32,7 @@ export interface MediaWindowOptions {
 
 /** Where a window without an opener gets its items (a file opened from the OS). */
 export interface MediaSource {
-  step(direction: -1 | 0 | 1): Promise<ContentItem | null>
+  step(direction: MediaWindowStep): Promise<ContentItem | null>
   /** The folder and the item now shown, for "show it in the viewer". */
   current(): OpenRequest | null
   close(): void
@@ -129,8 +130,8 @@ export class MediaWindows {
     return win
   }
 
-  /** The media window `sender` asks for the first, previous or next item: of its opener, or of its source. */
-  step(sender: WebContents, direction: -1 | 0 | 1): Promise<ContentItem | null> {
+  /** The media window `sender` asks for an item (MediaWindowStep): of its opener, or of its source. */
+  step(sender: WebContents, direction: MediaWindowStep): Promise<ContentItem | null> {
     const child = this.children.get(sender.id)
     if (!child) return Promise.resolve(null)
     if ("source" in child) return child.source.step(direction)

@@ -21,6 +21,7 @@ vi.mock("@panelyth/media-ui", () => ({
   MediaViewerOverlay: (props: {
     item: ContentItem
     onStep: (d: -1 | 1) => void
+    onJump: (to: "first" | "last") => void
     wheelMode: string
     closeOnDoubleClick?: boolean
     onEdit?: () => void
@@ -35,6 +36,7 @@ vi.mock("@panelyth/media-ui", () => ({
       data-edit={props.onEdit !== undefined}
     >
       <button onClick={() => props.onStep(1)}>next</button>
+      <button onClick={() => props.onJump("last")}>last</button>
       {props.onShowInApp && <button onClick={props.onShowInApp}>show in app</button>}
       {props.onCommand &&
         ["copy", "trash", "delete"].map((c) => (
@@ -180,5 +182,25 @@ describe("MediaWindowApp", () => {
     render(<MediaWindowApp />)
     await screen.findByRole("dialog", { name: "a.jpg" })
     expect(screen.queryByText("key trash")).toBeNull()
+  })
+
+  it("shows a loading chip until the first item comes (a drive spinning up)", async () => {
+    let answer: (v: ContentItem) => void = () => undefined
+    step.mockImplementation(() => new Promise<ContentItem>((resolve) => (answer = resolve)))
+    render(<MediaWindowApp />)
+    expect(screen.getByTestId("loading-indicator")).toBeTruthy()
+    answer(item(1, "a.jpg"))
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    expect(screen.queryByTestId("loading-indicator")).toBeNull()
+  })
+
+  it("asks the opener for the last item on End", async () => {
+    step.mockImplementation(async (d: unknown) =>
+      d === 0 ? item(1, "a.jpg") : d === "last" ? item(9, "z.jpg") : null,
+    )
+    render(<MediaWindowApp />)
+    fireEvent.click(await screen.findByText("last"))
+    await screen.findByRole("dialog", { name: "z.jpg" })
+    expect(step).toHaveBeenLastCalledWith("last")
   })
 })

@@ -747,9 +747,18 @@ export interface SettingsWindowCloseParams {
   then?: "shortcuts"
 }
 
-/** media.windowStep (the media window): 0 = the first item, -1 / 1 = previous / next. */
+/**
+ * Where the media window moves: 0 = the item it was opened for, -1 / 1 =
+ * previous / next, "first" / "last" = the folder's first or last image or video.
+ */
+export type MediaWindowStep = -1 | 0 | 1 | "first" | "last"
+
+export const isMediaWindowStep = (v: unknown): v is MediaWindowStep =>
+  v === -1 || v === 0 || v === 1 || v === "first" || v === "last"
+
+/** media.windowStep (the media window). */
 export interface MediaWindowStepParams {
-  direction: -1 | 0 | 1
+  direction: MediaWindowStep
 }
 
 /** The item the opener found, or null at either end. */

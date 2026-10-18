@@ -80,6 +80,7 @@ import {
   REMOTE_TLS,
   APP_TARGETS,
   MEDIA_WINDOW_COMMANDS,
+  isMediaWindowStep,
   type RendererMethod,
 } from "@panelyth/contracts"
 
@@ -1259,9 +1260,9 @@ export const validators: Record<RendererMethod, Validator> = {
       ? null
       : "expected { entryId, key, theme?, lang? }",
   "media.windowStep": (p) =>
-    shape(p, ["direction"]) && (p.direction === -1 || p.direction === 0 || p.direction === 1)
+    shape(p, ["direction"]) && isMediaWindowStep(p.direction)
       ? null
-      : "expected { direction: -1 | 0 | 1 }",
+      : 'expected { direction: -1 | 0 | 1 | "first" | "last" }',
   "media.windowCommand": (p) =>
     shape(p, ["command"]) && (MEDIA_WINDOW_COMMANDS as readonly unknown[]).includes(p.command)
       ? null

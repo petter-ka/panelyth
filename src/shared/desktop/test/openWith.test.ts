@@ -162,6 +162,16 @@ describe("OpenWithSession", () => {
     expect(sleep).not.toHaveBeenCalled()
   })
 
+  it("jumps to the folder's first and last file, and steps on from there", async () => {
+    const { call } = sidecar(rows)
+    const session = new OpenWithSession(call as never, "/pics/b.jpg", () => 0, vi.fn())
+    expect(await session.step(0)).toEqual(rows[1])
+    expect(await session.step("last")).toEqual(rows[2])
+    expect(session.current()).toEqual({ dirId: 5, entryId: 3 })
+    expect(await session.step("first")).toEqual(rows[0])
+    expect(await session.step(1)).toEqual(rows[1])
+  })
+
   it("finds a hidden file by listing hidden files too", async () => {
     const { call, closed } = sidecar(rows, [2])
     const session = new OpenWithSession(call as never, "/pics/b.jpg")

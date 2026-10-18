@@ -340,6 +340,8 @@ describe("invoke router", () => {
       ["media.openWindow", { entryId: 3, key: 1, theme: "dark", lang: "de" }],
       ["media.windowStep", { direction: -1 }],
       ["media.windowStep", { direction: 0 }],
+      ["media.windowStep", { direction: "first" }],
+      ["media.windowStep", { direction: "last" }],
       ["media.windowCommand", { command: "trash" }],
       ["media.windowCommand", { command: "paste" }],
     ] as const) {
@@ -423,6 +425,7 @@ describe("invoke router", () => {
       ["media.openWindow", { entryId: 3 }],
       ["media.openWindow", { entryId: 0, key: 1 }],
       ["media.windowStep", { direction: 2 }],
+      ["media.windowStep", { direction: "middle" }],
       ["media.windowCommand", { command: "format" }],
       ["media.windowCommand", { command: "trash", entryId: 3 }],
       ["media.windowAnswer", { requestId: 1, item: { id: 1 } }],

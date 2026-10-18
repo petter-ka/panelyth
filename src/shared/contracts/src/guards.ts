@@ -58,6 +58,7 @@ import {
   JOB_KINDS,
   JOB_STATES,
   MEDIA_WINDOW_COMMANDS,
+  isMediaWindowStep,
   MAX_FOLDER_COVERS,
   MAX_LABEL,
   MAX_RATING,
@@ -1141,10 +1142,7 @@ export const eventGuards: EventGuards = {
   "compare.progress": isCompareProgress,
   "git.progress": isGitProgress,
   "mediaWindow.step": (v): v is EventMap["mediaWindow.step"] =>
-    isRec(v) &&
-    isInt(v.requestId) &&
-    isInt(v.key) &&
-    (v.direction === -1 || v.direction === 0 || v.direction === 1),
+    isRec(v) && isInt(v.requestId) && isInt(v.key) && isMediaWindowStep(v.direction),
   "mediaWindow.command": (v): v is EventMap["mediaWindow.command"] =>
     isRec(v) &&
     isInt(v.requestId) &&

@@ -65,7 +65,7 @@ import { useTabRenameStore } from "../features/tabs"
 import { useTabSetsStore } from "../features/tabsets"
 import { StatusBar } from "./StatusBar"
 import { MediaViewerOverlay } from "@panelyth/media-ui"
-import { closeMediaViewer, stepMediaViewer } from "../features/viewers"
+import { closeMediaViewer, jumpMediaViewer, stepMediaViewer } from "../features/viewers"
 import { t } from "@panelyth/i18n"
 
 const IS_MAC = typeof navigator !== "undefined" && /mac/i.test(navigator.platform)
@@ -341,6 +341,7 @@ export function AppShell() {
             lane="cmd-open"
             onClose={closeMediaViewer}
             onStep={(direction) => void stepMediaViewer(direction)}
+            onJump={(to) => void jumpMediaViewer(to)}
             onEdit={() => {
               const id = mediaViewer.item.id
               closeMediaViewer()

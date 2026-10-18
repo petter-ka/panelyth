@@ -1,4 +1,4 @@
-import type { ContentItem } from "@panelyth/contracts"
+import type { ContentItem, MediaWindowStep } from "@panelyth/contracts"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 const created: { webContents: { id: number } }[] = []
@@ -61,7 +61,7 @@ describe("a window for a file from the OS", () => {
 
   it("stands alone: it asks its source, not an opener, and the source goes with the window", async () => {
     const source = {
-      step: vi.fn(async (direction: number) => (direction === 0 ? item : null)),
+      step: vi.fn(async (direction: MediaWindowStep) => (direction === 0 ? item : null)),
       current: vi.fn(() => ({ dirId: 3, entryId: 7 })),
       close: vi.fn(),
     }

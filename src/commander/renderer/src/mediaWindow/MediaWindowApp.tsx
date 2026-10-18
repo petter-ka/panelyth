@@ -1,6 +1,6 @@
-import type { ContentItem, MediaWindowCommand } from "@panelyth/contracts"
+import type { ContentItem, MediaWindowCommand, MediaWindowStep } from "@panelyth/contracts"
 import { MediaViewerOverlay, useVideoPrefs } from "@panelyth/media-ui"
-import { Button } from "@panelyth/ui"
+import { Button, LoadingIndicator } from "@panelyth/ui"
 import { t } from "@panelyth/i18n"
 import { useCallback, useEffect, useRef, useState } from "react"
 import { bridge } from "../bridge"
@@ -77,7 +77,7 @@ export function MediaWindowApp() {
     [],
   )
 
-  const step = useCallback(async (direction: -1 | 0 | 1): Promise<void> => {
+  const step = useCallback(async (direction: MediaWindowStep): Promise<void> => {
     if (busy.current) return
     busy.current = true
     try {
@@ -160,7 +160,14 @@ export function MediaWindowApp() {
       </div>
     )
   }
-  if (!item) return <div className="h-screen bg-canvas" />
+  // The first item is on its way (a drive that is still spinning up, a folder
+  // opened from the OS); the chip fades in only when that takes a moment.
+  if (!item)
+    return (
+      <div className="grid h-screen place-items-center bg-canvas">
+        <LoadingIndicator />
+      </div>
+    )
   const answer = (confirmed: boolean): void => {
     const command = confirming
     setConfirming(null)
@@ -176,6 +183,7 @@ export function MediaWindowApp() {
         wheelMode={wheelMode}
         onClose={closeWindow}
         onStep={(direction) => void step(direction)}
+        onJump={(to) => void step(to)}
         {...(alone
           ? {
               // Main opens the viewer on this file's folder and closes this window.

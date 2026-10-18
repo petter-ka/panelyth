@@ -13,6 +13,8 @@ export interface MediaViewerOverlayProps {
   item: ContentItem
   onClose: () => void
   onStep?: (direction: -1 | 1) => void
+  /** Home / End: the folder's first or last image or video. */
+  onJump?: (to: "first" | "last") => void
   playToken?: number
   placeholder?: Thumb | null
   lane?: string
@@ -38,6 +40,21 @@ const isTextField = (target: EventTarget | null): boolean =>
   target instanceof HTMLElement &&
   (target.isContentEditable || target.matches("input:not([type=range]), textarea, select"))
 
+/**
+ * The keys that move through the folder. A focused video player keeps its own
+ * arrows, Home and End (seek, volume); they reach this surface otherwise.
+ */
+const STEP_KEYS: Record<string, -1 | 1 | "first" | "last"> = {
+  ArrowLeft: -1,
+  ArrowUp: -1,
+  PageUp: -1,
+  ArrowRight: 1,
+  ArrowDown: 1,
+  PageDown: 1,
+  Home: "first",
+  End: "last",
+}
+
 const zoomButton =
   "h-7 rounded-md border border-border bg-raised px-2 text-xs enabled:hover:border-muted aria-pressed:border-accent aria-pressed:text-accent"
 
@@ -49,6 +66,7 @@ export function MediaViewerOverlay({
   item,
   onClose,
   onStep,
+  onJump,
   playToken = 1,
   placeholder = null,
   lane = "media-overlay",
@@ -119,14 +137,21 @@ export function MediaViewerOverlay({
       return
     }
     if (event.ctrlKey || event.metaKey || event.altKey) return
-    if (event.key === "ArrowLeft" && onStep) {
+    // A field or a slider (the player's seek bar) keeps Page Up / Down, Home and End.
+    const ownKeys =
+      isTextField(event.target) ||
+      (event.target instanceof Element && event.target.closest("input, [role=slider]") !== null)
+    const move = ownKeys ? undefined : STEP_KEYS[event.key]
+    const go =
+      move === "first" || move === "last"
+        ? onJump && (() => onJump(move))
+        : move !== undefined
+          ? onStep && (() => onStep(move))
+          : undefined
+    if (go) {
       event.preventDefault()
       event.stopPropagation()
-      onStep(-1)
-    } else if (event.key === "ArrowRight" && onStep) {
-      event.preventDefault()
-      event.stopPropagation()
-      onStep(1)
+      go()
     } else if (isImage) {
       const actions: Record<string, (() => void) | undefined> = {
         "+": imageController.current?.zoomIn,

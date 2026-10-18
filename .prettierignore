@@ -9,3 +9,4 @@ src/shared/e2e/test-results/
 src/shared/e2e/playwright-report/
 *.md
 src/shared/desktop/release/
+.claude/
