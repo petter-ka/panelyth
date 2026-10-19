@@ -23,6 +23,8 @@ import type {
   LibraryState,
   ListDirsResult,
   Place,
+  ProgramEdit,
+  ProgramsResult,
   Properties,
   QueryFacets,
   SelectionDescriptor,
@@ -197,6 +199,17 @@ export const bridge = {
   },
   reveal: async (entryId: number): Promise<void> => {
     await unwrap(() => api().shell.reveal(entryId))
+  },
+  /** ADR-0044: main picks the program in its dialog; the viewer names programs and entries by id. */
+  addProgram: (): Promise<ProgramsResult> => unwrap(() => api().programs.add()),
+  updatePrograms: (programs: ProgramEdit[]): Promise<ProgramsResult> =>
+    unwrap(() => api().programs.update(programs)),
+  openWithProgram: async (programId: string, entryId: number): Promise<void> => {
+    await unwrap(() => api().programs.open(programId, entryId))
+  },
+  /** A folder of the folder tree, by its path (as revealPath); main checks it is a folder. */
+  openFolderWithProgram: async (programId: string, path: string): Promise<void> => {
+    await unwrap(() => api().programs.openFolder(programId, path))
   },
   revealPath: async (path: string): Promise<void> => {
     await unwrap(() => api().shell.revealPath(path))

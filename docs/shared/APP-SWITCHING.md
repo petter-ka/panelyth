@@ -91,6 +91,7 @@ your appearance settings.
 | Last used app | the next start opens it | `shared.context` | C01 |
 | Theme, interface size, language, icon library | live: a change in one app applies to the other at once | `shared.appearance` | C00 |
 | Carry-over options, start-with | live | `shared.switch` | C02 |
+| "Open with" programs (Settings → Open with) | one list, live: main writes it and sends `settings.changed` to every view; both apps list the programs in their context menus (ADR-0044) | `shared.programs` | ADR-0044 |
 | Bookmarks (viewer) = hotlist (commander) | one list, live: Go sends `bookmarks.changed` after every edit; the commander adds groups, the viewer shows a flat list | `library.db` `bookmarks` (`group_name`, migration 4) | C03 |
 | Recent locations | one list fed by every folder either app opens (`dir.open`); the viewer re-reads it when shown, the commander when its history menu opens; the commander's per-tab history stays its own | `library.db` `recent` | C03 |
 | Favorites, ratings, tags, labels, collections | one library; the commander shows them later | `library.db` | already shared |

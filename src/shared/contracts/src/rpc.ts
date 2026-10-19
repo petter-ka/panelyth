@@ -21,6 +21,12 @@ import type {
   RecipeSaveResult,
 } from "./batch"
 import type { ErrorCode } from "./errors"
+import type {
+  ProgramOpenFolderParams,
+  ProgramOpenParams,
+  ProgramsResult,
+  ProgramsUpdateParams,
+} from "./programs"
 import type { AboutInfo, AppOpenTargetParams, UpdateState } from "./update"
 import type {
   EditEyesParams,
@@ -720,6 +726,8 @@ export const SETTINGS_TABS = [
   "general",
   "viewer",
   "commander",
+  // ADR-0044: the "Open with" programs (viewer and commander).
+  "programs",
   "appearance",
   "shortcuts",
   "about",
@@ -2589,6 +2597,17 @@ export interface MainMethodMap {
   "shell.run": { params: ShellRunParams; result: OkResult }
   /** Commander (Stage C10): runs a user command from commander.tools on the panel's entries. */
   "shell.runTool": { params: ShellRunToolParams; result: OkResult }
+  /**
+   * Both apps (ADR-0044): picks a program for "Open with" in the native dialog
+   * and adds it to shared.programs. No path comes from the renderer.
+   */
+  "programs.add": { params: EmptyParams; result: ProgramsResult }
+  /** Both apps: renames, retargets, reorders and removes programs; paths stay as main stored them. */
+  "programs.update": { params: ProgramsUpdateParams; result: ProgramsResult }
+  /** Both apps: opens an entry with a program from shared.programs (kinds per app profile). */
+  "programs.open": { params: ProgramOpenParams; result: OkResult }
+  /** Viewer: opens a folder of the folder tree (a path, checked by main) with a program. */
+  "programs.openFolder": { params: ProgramOpenFolderParams; result: OkResult }
   /** Shows an indexed entry in the system file manager. */
   "shell.reveal": { params: EntryParams; result: OkResult }
   /** Shows a folder from the sidebar or breadcrumb in the system file manager. */
@@ -2691,6 +2710,11 @@ export const VIEWER_METHODS = [
   "shell.open",
   "shell.reveal",
   "shell.revealPath",
+  // ADR-0044: "Open with" programs from Settings.
+  "programs.add",
+  "programs.update",
+  "programs.open",
+  "programs.openFolder",
   "clipboard.copyPaths",
   "clipboard.copyText",
   "clipboard.copyImage",
@@ -2886,6 +2910,10 @@ export const COMMANDER_METHODS = [
   "shell.open",
   "shell.edit",
   "fs.mkfile",
+  // ADR-0044: "Open with" programs from Settings, shared with the viewer.
+  "programs.add",
+  "programs.update",
+  "programs.open",
   // Stage C06: find files, "Go to file".
   "find.start",
   "find.cancel",
@@ -3003,6 +3031,10 @@ export const MAIN_METHODS = [
   "shell.edit",
   "shell.run",
   "shell.runTool",
+  "programs.add",
+  "programs.update",
+  "programs.open",
+  "programs.openFolder",
   "shell.reveal",
   "shell.revealPath",
   "clipboard.copyPaths",

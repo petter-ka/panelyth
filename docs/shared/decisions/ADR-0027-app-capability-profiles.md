@@ -16,6 +16,13 @@ main methods `system.hardware` / `system.load`; it may set only `shared.*` setti
 Amended by ADR-0043 (2026-10-16): the commander's profile gets `git.status`, `git.changes`, `git.run`, `git.cancel`,
 `git.branches` and `git.log`; files are a selection or rows of a change list, never paths.
 
+Amended by ADR-0044 (2026-10-19, owner request): both profiles get `programs.add`, `programs.update` and
+`programs.open`. A program for "Open with" is picked in main's dialog and stored by main alone
+(`shared.programs`; `library.setSetting` of that key is refused for every app). An open names a program and an
+entry by id; main starts the program without a shell, with the entry's path as its only argument. The viewer
+hands over folders and media only, never a program; its folder tree names a folder by path
+(`programs.openFolder`, viewer only, as `shell.revealPath`), which main checks is an existing folder.
+
 Amended 2026-10-16 (owner request): `query.facets` joins the commander's profile, for the path bar's count by
 type. It returns counts of the panel's own session (folders, file kinds, extensions) and no names or paths; Go
 now also counts the rows of a session over a source (find results, an archive, a server), and leaves the session's

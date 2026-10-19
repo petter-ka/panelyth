@@ -34,7 +34,7 @@ written by the settings window reaches its app view).
   the first paint, as in the app. Main takes the origin and preload from the calling web contents, never from a
   parameter. Nothing is added to either profile but the methods below.
 - **Two methods** (main, both profiles). `settings.openWindow { tab? }`: `tab` is one of `general`, `viewer`,
-  `commander`, `appearance`, `shortcuts`, `about`; the page shows it first, and a tab of the other app is refused.
+  `commander`, `programs` (ADR-0044), `appearance`, `shortcuts`, `about`; the page shows it first, and a tab of the other app is refused.
   `settings.closeWindow { then? }`: only the settings window may call it; it closes, and `then: "shortcuts"` hands
   the keyboard shortcuts to its app view.
 - **The page** is the dialog's content laid out as a window: the same tabs, the same components, the same stores.

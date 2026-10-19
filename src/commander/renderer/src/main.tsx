@@ -10,7 +10,12 @@ import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { aboutApi, bridge, isBridgeAvailable } from "./bridge"
 import { AppShell } from "./components/AppShell"
-import { aboutPortOf, startAboutSync, startSwitchSettingsSync } from "@panelyth/renderer-core"
+import {
+  aboutPortOf,
+  startAboutSync,
+  startProgramsSync,
+  startSwitchSettingsSync,
+} from "@panelyth/renderer-core"
 import { startPanels } from "./features/carry"
 import { startDrives } from "./features/drives"
 import { startHotlist } from "./features/hotlist"
@@ -59,6 +64,13 @@ if (isBridgeAvailable()) {
     loadSettings: () => bridge.library().then((l) => l.settings),
     saveSetting: (key, value) => void bridge.setSetting(key, value).catch(() => undefined),
     onSettingChanged: (listener) => bridge.on("settings.changed", (e) => listener(e.key, e.value)),
+  })
+  // "Open with" programs for the entry menu (ADR-0044, shared with the viewer).
+  startProgramsSync({
+    loadSettings: () => bridge.library().then((l) => l.settings),
+    onSettingChanged: (listener) => bridge.on("settings.changed", (e) => listener(e.key, e.value)),
+    add: bridge.addProgram,
+    update: bridge.updatePrograms,
   })
   // Settings → About and the native menu's items (Stage P06).
   startAboutSync(

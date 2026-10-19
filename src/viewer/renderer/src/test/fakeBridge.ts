@@ -1,4 +1,6 @@
 import type {
+  ExternalProgram,
+  ProgramTarget,
   BatchFolder,
   BatchParams,
   BatchPlanResult,
@@ -444,6 +446,15 @@ export function installFakeBridge(initial: SidecarStatus = readyStatus) {
       open: vi.fn(async () => ok({ ok: true })),
       reveal: vi.fn(async () => ok({ ok: true })),
       revealPath: vi.fn(async () => ok({ ok: true })),
+    },
+    // ADR-0044: main would pick, store and start; the fake keeps the list in memory.
+    programs: {
+      add: vi.fn(async () => ok({ programs: [] as ExternalProgram[], added: null })),
+      update: vi.fn(async (programs: { id: string; name: string; target: ProgramTarget }[]) =>
+        ok({ programs: programs.map((p) => ({ ...p, path: `/usr/bin/${p.id}` })) }),
+      ),
+      open: vi.fn(async () => ok({ ok: true })),
+      openFolder: vi.fn(async () => ok({ ok: true })),
     },
     clipboard: {
       copyPaths: vi.fn(async (sel: { ranges: [number, number][] }) =>

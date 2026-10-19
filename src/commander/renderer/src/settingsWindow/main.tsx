@@ -44,6 +44,7 @@ startSettingsWindowPage({
     onSettingChanged: (listener) => bridge.on("settings.changed", (e) => listener(e.key, e.value)),
   },
   about: aboutPortOf(aboutApi, save),
+  programs: { add: bridge.addProgram, update: bridge.updatePrograms },
 })
 
 const root = document.getElementById("root")

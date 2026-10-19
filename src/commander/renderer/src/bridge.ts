@@ -1,4 +1,6 @@
 import type {
+  ProgramEdit,
+  ProgramsResult,
   ContentItem,
   AppId,
   ArchiveCheckResult,
@@ -392,6 +394,13 @@ export const bridge = {
   /** A user command, by its id in commander.tools; main fills its placeholders from these ids. */
   shellRunTool: async (params: ShellRunToolParams): Promise<void> => {
     await unwrap(() => api().shell.runTool(params))
+  },
+  /** ADR-0044: "Open with" programs, shared with the viewer; picked in main's dialog. */
+  addProgram: (): Promise<ProgramsResult> => unwrap(() => api().programs.add()),
+  updatePrograms: (programs: ProgramEdit[]): Promise<ProgramsResult> =>
+    unwrap(() => api().programs.update(programs)),
+  openWithProgram: async (programId: string, entryId: number): Promise<void> => {
+    await unwrap(() => api().programs.open(programId, entryId))
   },
   mkfile: (parentDirId: number, name: string): Promise<FsMkfileResult> =>
     unwrap(() => api().fs.mkfile(parentDirId, name)),

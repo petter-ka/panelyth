@@ -27,6 +27,8 @@ import {
   type RemoteFailureReason,
   type SavedConnection,
   type SelectionDescriptor,
+  type ExternalProgram,
+  type ProgramTarget,
   type SharedContext,
   type Volume,
 } from "@panelyth/contracts"
@@ -1668,6 +1670,14 @@ export function installFakeCommander(options: FakeOptions) {
         shell.push({ action: "document", entryId: id })
         return ok({ ok: true })
       }),
+    },
+    // ADR-0044: main would pick, store and start; the fake keeps the list in memory.
+    programs: {
+      add: vi.fn(async () => ok({ programs: [] as ExternalProgram[], added: null })),
+      update: vi.fn(async (programs: { id: string; name: string; target: ProgramTarget }[]) =>
+        ok({ programs: programs.map((p) => ({ ...p, path: `/usr/bin/${p.id}` })) }),
+      ),
+      open: vi.fn(async () => ok({ ok: true })),
     },
     shell: {
       open: vi.fn(async (id: number, allowProgram?: boolean) => {

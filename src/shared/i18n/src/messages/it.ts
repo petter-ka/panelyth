@@ -49,6 +49,7 @@ const messages: Messages = {
     "Esiste già un set di schede con questo nome e verrà sostituito.",
   "A texture…": "Una trama…",
   "A to Z": "Dalla A alla Z",
+  "Add program…": "Aggiungi programma…",
   "Add to the toolbar": "Aggiungi alla barra degli strumenti",
   "ALL UPPERCASE": "TUTTO MAIUSCOLO",
   About: "Informazioni",
@@ -713,6 +714,7 @@ const messages: Messages = {
   "Fetch failed": "Fetch non riuscito",
   "Fetched from the remotes": "Recuperato dai remoti",
   "Fetching…": "Fetch in corso…",
+  "Files and folders": "File e cartelle",
   "Find a branch": "Cerca un ramo",
   "Flat, neutral panels: the original Panelyth design.":
     "Pannelli piatti e neutri: il design originale di Panelyth.",
@@ -1205,6 +1207,7 @@ const messages: Messages = {
     "Nessuna riga è diversa, ma i file non sono uguali: differiscono i fine riga o la codifica.",
   "No matches": "Nessuna corrispondenza",
   "No picture chosen": "Nessuna immagine scelta",
+  "No programs yet.": "Ancora nessun programma.",
   "No rating": "Nessuna valutazione",
   "No red eyes found.": "Nessun occhio rosso trovato.",
   "No rows with the chosen results.": "Nessuna riga con i risultati scelti.",
@@ -1288,6 +1291,8 @@ const messages: Messages = {
   "Open log folder": "Apri la cartella dei log",
   "Open the archive under the cursor": "Apri l'archivio sotto il cursore",
   "Open the download page": "Apri la pagina di download",
+  "Open with": "Apri con",
+  "Open with {name}": "Apri con {name}",
   "Open with default app": "Apri con l'app predefinita",
   "Opening the picture…": "Apertura dell'immagine…",
   "Opening…": "Apertura…",
@@ -1427,6 +1432,11 @@ const messages: Messages = {
   Processor: "Processore",
   "Processor load": "Carico del processore",
   "Processor load, last minute": "Carico del processore, ultimo minuto",
+  "Program name": "Nome del programma",
+  "Programs listed in the context menu of files and folders. Each opens the item you right-click.":
+    "Programmi elencati nel menu contestuale di file e cartelle. Ognuno apre l'elemento su cui fai clic con il pulsante destro.",
+  "Programs listed in the context menu. Each opens the item you right-click: a folder, a picture or a video.":
+    "Programmi elencati nel menu contestuale. Ognuno apre l'elemento su cui fai clic con il pulsante destro: una cartella, un'immagine o un video.",
   "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.":
     "Programmi che avvii dalla barra degli strumenti, dal menu dei file o con un tasto (Scorciatoie da tastiera → Strumenti). Un comando viene eseguito solo quando lo avvii.",
   Properties: "Proprietà",
@@ -1711,6 +1721,7 @@ const messages: Messages = {
   Shortcuts: "Scorciatoie",
   "Shortest first": "Prima i più brevi",
   Show: "Mostra",
+  "Show for {name}": "Mostra {name} per",
   "Show Git status in the folders of a repository":
     "Mostra lo stato Git nelle cartelle di un repository",
   "Show all operations (Ctrl+J)": "Mostra tutte le operazioni (Ctrl+J)",
@@ -1854,6 +1865,8 @@ const messages: Messages = {
   "System default opens the Home folder.": "Predefinito di sistema apre la cartella Home.",
   "System follows your operating system's light or dark setting.":
     "Sistema segue l'impostazione chiaro o scuro del tuo sistema operativo.",
+  "This file can't be started as a program.": "Questo file non può essere avviato come programma.",
+  "This program is no longer in Settings.": "Questo programma non è più nelle Impostazioni.",
   "TIFF keeps the color profile and the resolution, not the camera data.":
     "Il TIFF conserva il profilo colore e la risoluzione, non i dati della fotocamera.",
   Tab: "Scheda",
@@ -2315,6 +2328,7 @@ const messages: Messages = {
   Year: "Anno",
   Yellow: "Giallo",
   Yes: "Sì",
+  "You can add up to {count} programs.": "Puoi aggiungere fino a {count} programmi.",
   "You can restore them from the trash.": "Puoi ripristinarli dal cestino.",
   "You don't have permission to open this folder.":
     "Non hai il permesso di aprire questa cartella.",
@@ -2536,12 +2550,15 @@ const messages: Messages = {
     "Impossibile aprire {name} in una finestra: {reason}",
   "{name} can't be opened: {reason}": "Impossibile aprire {name}: {reason}",
   "{name} can't be started: {reason}": "Impossibile avviare {name}: {reason}",
+  "{name} doesn't open this kind of item.": "{name} non apre questo tipo di elemento.",
   "{name} is a program. Run it only if you trust where it came from.":
     "{name} è un programma. Eseguilo solo se ti fidi della sua provenienza.",
   "{name} is a program. Running programs with Enter is off in Settings.":
     "{name} è un programma. L'esecuzione dei programmi con Invio è disattivata nelle Impostazioni.",
   "{name} is the current name, {n} a number, {n:000} a number with three digits.":
     "{name} è il nome corrente, {n} un numero, {n:000} un numero a tre cifre.",
+  "{name} was not found. Add it again in Settings → Open with.":
+    "{name} non è stato trovato. Aggiungilo di nuovo in Impostazioni → Apri con.",
   "{name}, edited picture, {w} × {h} pixels": "{name}, immagine modificata, {w} × {h} pixel",
   "{panel} contents": "Contenuto di {panel}",
   "{renamed} of {total, plural, one {# name} other {# names}} will change":

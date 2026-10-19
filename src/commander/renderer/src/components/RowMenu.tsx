@@ -1,4 +1,5 @@
-import { formatChord, hasMarks } from "@panelyth/renderer-core"
+import { programsFor } from "@panelyth/contracts"
+import { formatChord, hasMarks, usePrograms } from "@panelyth/renderer-core"
 import { useEffect } from "react"
 import { createPortal } from "react-dom"
 import { runPanelAction, useUiStore } from "../features/commands"
@@ -8,6 +9,7 @@ import { useGitStore } from "../features/git"
 import { enter, pageStoreOf, parentRows, useListingStore } from "../features/listing"
 import { compareLabel } from "../features/compare"
 import { countOf, marksOf } from "../features/marks"
+import { openWithProgram, programEntry } from "../features/programs"
 import type { Side } from "../features/panels"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
 import { msg, t } from "@panelyth/i18n"
@@ -92,6 +94,8 @@ export function RowMenu({ side }: { side: Side }) {
   const chords = useKeymapStore((s) => s.keymap.chords)
   // The user's commands that ask for a place in the entry menu (Stage C10).
   const tools = useToolsStore((s) => s.commands)
+  // "Open with" programs from Settings, shared with the viewer (ADR-0044).
+  const programs = usePrograms((s) => s.programs)
   const inRepo = useGitStore((s) => menu !== null && s[menu.side].status?.repo != null)
   const open = menu !== null
   // The backdrop paints nothing, so Chromium would still scroll the list
@@ -113,6 +117,17 @@ export function RowMenu({ side }: { side: Side }) {
         { id: "open", label: "Open", detail: "Enter", onSelect: () => void enter(side) },
       ]
     : []
+  // Like Open, they take the entry under the cursor.
+  const target = menu.entry ? programEntry(side) : null
+  if (target) {
+    for (const program of programsFor(programs, target.kind === "dir")) {
+      entries.push({
+        id: `program-${program.id}`,
+        label: t("Open with {name}", { name: program.name }),
+        onSelect: () => openWithProgram(program, target.id),
+      })
+    }
+  }
   let separators = 0
   const items = menu.entry
     ? inRepo

@@ -1,5 +1,5 @@
 import { DEFAULT_SWITCH_SETTINGS, type Crumb } from "@panelyth/contracts"
-import { markCount, useSwitchSettings } from "@panelyth/renderer-core"
+import { markCount, usePrograms, useSwitchSettings } from "@panelyth/renderer-core"
 import { useInterfaceSizeStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
@@ -140,6 +140,34 @@ describe("the right mouse button", () => {
     await act(async () => fireEvent.click(within(open).getByText("New folder")))
     expect(menu()).toBeNull()
     expect(useFilesStore.getState().mkdir).not.toBeNull()
+  })
+
+  it("lists the Open with programs for the cursor entry's kind (ADR-0044)", async () => {
+    usePrograms.setState({
+      programs: [
+        { id: "gimp", name: "GIMP", path: "C:\\gimp.exe", target: "files" },
+        { id: "term", name: "Terminal", path: "C:\\wt.exe", target: "folders" },
+        { id: "code", name: "Code", path: "C:\\code.exe", target: "both" },
+      ],
+    })
+    const fake = await start()
+    await down("file000002")
+    await hold()
+    const open = menu()!
+    expect(within(open).queryByText("Open with Terminal")).toBeNull()
+    expect(within(open).getByText("Open with Code")).toBeInTheDocument()
+    await up("file000002")
+    await act(async () => fireEvent.click(within(open).getByText("Open with GIMP")))
+    expect(menu()).toBeNull()
+    expect(fake.api.programs.open).toHaveBeenCalledWith("gimp", 10_000_004)
+
+    await down("dir000001")
+    await hold()
+    expect(within(menu()!).queryByText("Open with GIMP")).toBeNull()
+    await up("dir000001")
+    await act(async () => fireEvent.click(within(menu()!).getByText("Open with Terminal")))
+    expect(fake.api.programs.open).toHaveBeenLastCalledWith("term", 10_000_001)
+    usePrograms.setState({ programs: [] })
   })
 
   it("the menu names the marks when there are any, and Esc closes it", async () => {

@@ -56,6 +56,11 @@ import {
   MAX_FIND_TEXT_CHARS,
   MAX_COMMAND_CHARS,
   isCommandText,
+  MAX_PROGRAMS,
+  MAX_PROGRAM_NAME_CHARS,
+  PROGRAM_ID,
+  PROGRAM_TARGETS,
+  isProgramText,
   EDIT_QUALITIES,
   MAX_DPI,
   MAX_EDIT_EDGE,
@@ -1249,6 +1254,42 @@ export const validators: Record<RendererMethod, Validator> = {
     }
     return p.selection === undefined ? null : selectionProblem(p.selection)
   },
+  // ADR-0044: programs by id; a path is picked in main's dialog, never sent.
+  "programs.add": empty,
+  "programs.update": (p) => {
+    if (!shape(p, ["programs"]) || !Array.isArray(p.programs) || p.programs.length > MAX_PROGRAMS)
+      return "expected { programs } (at most 20)"
+    const ids = new Set<unknown>()
+    for (const edit of p.programs as unknown[]) {
+      if (
+        !shape(edit, ["id", "name", "target"]) ||
+        typeof edit.id !== "string" ||
+        !PROGRAM_ID.test(edit.id) ||
+        ids.has(edit.id) ||
+        !isProgramText(edit.name, MAX_PROGRAM_NAME_CHARS) ||
+        edit.name.trim() === "" ||
+        !(PROGRAM_TARGETS as readonly unknown[]).includes(edit.target)
+      ) {
+        return "expected { id, name, target } for each program"
+      }
+      ids.add(edit.id)
+    }
+    return null
+  },
+  "programs.open": (p) =>
+    shape(p, ["programId", "entryId"]) &&
+    typeof p.programId === "string" &&
+    PROGRAM_ID.test(p.programId) &&
+    isId(p.entryId)
+      ? null
+      : "expected { programId, entryId }",
+  // A folder of the viewer's tree is a path, as for shell.revealPath; main checks it.
+  "programs.openFolder": (p) =>
+    shape(p, ["programId", "path"]) &&
+    typeof p.programId === "string" &&
+    PROGRAM_ID.test(p.programId)
+      ? pathProblem(p.path)
+      : "expected { programId, path }",
   "file.open": entryParams,
   "document.open": windowParams,
   "media.openWindow": (p) =>

@@ -36,6 +36,7 @@ import { copyImage, copyName, copySelectionToClipboard } from "../../features/cl
 import { playInPane } from "../../features/preview/previewStore"
 import { formatCount } from "../../lib/format"
 import { SortMenuItems } from "../FolderToolbar"
+import { ProgramMenuItems } from "../ProgramMenuItems"
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -117,6 +118,7 @@ function SelectionItems() {
           <ContextMenuItem onSelect={() => quietly(bridge.openWithSystem(single))}>
             {t("Open with default app")}
           </ContextMenuItem>
+          {item && <ProgramMenuItems target={{ entryId: single, folder: item.kind === "dir" }} />}
           <ContextMenuItem onSelect={() => quietly(bridge.reveal(single))}>
             {t("Show in file manager")}
           </ContextMenuItem>
@@ -308,6 +310,8 @@ function BackgroundItems() {
       {dirId !== null && (
         <>
           <ContextMenuSeparator />
+          {/* The folder that is open (ADR-0044). */}
+          <ProgramMenuItems target={{ entryId: dirId, folder: true }} />
           <ContextMenuItem onSelect={() => openEntryProperties(dirId)}>
             {t("Folder properties")}
           </ContextMenuItem>

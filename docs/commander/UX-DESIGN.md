@@ -405,6 +405,9 @@ Commander): Settings → Panels → Typed letters → "Go to the command line"; 
   or on the cursor entry when nothing is marked; its heading says which. On ".." and the empty area it lists the
   folder's commands (paste, new folder, new text file, refresh, mark all, invert). The Menu key and Shift+F10 open it
   for the cursor entry.
+- After Open, it lists "Open with <name>" for the programs of Settings → Open with that fit the cursor entry (files,
+  folders or both; ADR-0044, shared with the viewer). Like Open, they take the cursor entry; entries of an archive or
+  a connection get none. User commands with placeholders and consoles stay under Editor and tools.
 - Double-click opens.
 - Drag from one panel to the other copies (Shift moves); dropping on a tab or a drive button targets that folder.
   The same drag carries the files to other apps (ADR-0040); entries of an archive or a connection drag only inside

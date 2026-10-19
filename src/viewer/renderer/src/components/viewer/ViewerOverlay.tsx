@@ -27,6 +27,7 @@ import { copyEntryPath, copyImage } from "../../features/clipboard/clipboard"
 import { CopyIcon, FlipIcon, PencilIcon, RotateCcwIcon, RotateCwIcon } from "../ui/icons"
 import { openEditor, useEditorStore } from "../../features/editor/editorStore"
 import { toEditList } from "../../features/media/mediaUi"
+import { ProgramMenuItems } from "../ProgramMenuItems"
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -320,6 +321,7 @@ export function ViewerOverlay() {
           >
             {t("Open with default app")}
           </ContextMenuItem>
+          <ProgramMenuItems target={{ entryId: item.id, folder: false }} />
           <ContextMenuItem onSelect={() => void bridge.reveal(item.id).catch(() => undefined)}>
             {t("Show in file manager")}
           </ContextMenuItem>

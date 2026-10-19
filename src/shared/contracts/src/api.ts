@@ -37,6 +37,7 @@ import type {
   RecipeSaveResult,
 } from "./batch"
 import type { RpcEnvelope } from "./errors"
+import type { ProgramEdit, ProgramsResult } from "./programs"
 import type { AboutInfo, AppTarget, UpdateState } from "./update"
 import type { EventChannel, EventMap } from "./events"
 import type {
@@ -280,6 +281,17 @@ export interface PanelythApi {
     open(entryId: number): Promise<RpcEnvelope<OkResult>>
     reveal(entryId: number): Promise<RpcEnvelope<OkResult>>
     revealPath(path: string): Promise<RpcEnvelope<OkResult>>
+  }
+  /**
+   * "Open with" programs (ADR-0044), shared by both apps. A program is picked
+   * in main's native dialog; the renderer names programs and entries by id.
+   */
+  programs: {
+    add(): Promise<RpcEnvelope<ProgramsResult>>
+    update(programs: ProgramEdit[]): Promise<RpcEnvelope<ProgramsResult>>
+    open(programId: string, entryId: number): Promise<RpcEnvelope<OkResult>>
+    /** A folder of the folder tree, by its path (main checks it is a folder). */
+    openFolder(programId: string, path: string): Promise<RpcEnvelope<OkResult>>
   }
   clipboard: {
     copyPaths(selection: SelectionDescriptor): Promise<RpcEnvelope<CopyPathsResult>>
@@ -646,6 +658,15 @@ export interface CommanderApi {
     edit(entryId: number): Promise<RpcEnvelope<OkResult>>
     run(params: ShellRunParams): Promise<RpcEnvelope<OkResult>>
     runTool(params: ShellRunToolParams): Promise<RpcEnvelope<OkResult>>
+  }
+  /**
+   * "Open with" programs (ADR-0044), shared by both apps. A program is picked
+   * in main's native dialog; the renderer names programs and entries by id.
+   */
+  programs: {
+    add(): Promise<RpcEnvelope<ProgramsResult>>
+    update(programs: ProgramEdit[]): Promise<RpcEnvelope<ProgramsResult>>
+    open(programId: string, entryId: number): Promise<RpcEnvelope<OkResult>>
   }
   places: {
     list(): Promise<RpcEnvelope<PlacesResult>>

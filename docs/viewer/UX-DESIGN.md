@@ -166,7 +166,7 @@ opened from inside the app, a double-click closes it, as before.)
 
 ## Settings (Stage 08.5)
 
-The app rail's Settings button opens the tabbed settings in a native window of their own (ADR-0039): a child of the main window that blocks it until closed and can be moved, with General, Viewer, Appearance, Shortcuts and About tabs; changes apply to the viewer at once. Viewer preferences use
+The app rail's Settings button opens the tabbed settings in a native window of their own (ADR-0039): a child of the main window that blocks it until closed and can be moved, with General, Viewer, Open with (ADR-0044), Appearance, Shortcuts and About tabs; changes apply to the viewer at once. Viewer preferences use
 switch controls for on/off choices and segmented controls for startup folder and mouse-wheel behavior. The startup
 folder can be the last used folder, a chosen folder, or the platform Home place. Escape closes the focused image viewer
 or leaves video fullscreen; outside those contexts it asks to close the app when confirmation is enabled. Appearance
@@ -255,6 +255,13 @@ Show in file manager, Copy path, Add/Remove bookmark, Refresh.
 Stage 08.6 adds: **Play** and **Play full screen** for a video; **Copy picture** for one image (also Ctrl/Cmd+C, see
 below); **Copy name**. The viewer gets a right-click menu (Copy picture, Copy path, Open with default app, Show in file
 manager, Rotate, Flip, Back to folder) and a Copy picture button.
+
+**Open with programs (ADR-0044).** Settings → Open with lists programs the user picked in the system file dialog,
+each with a name and "Files", "Folders" or "Files and folders". The tile menu (one item selected) and the viewer's
+menu list "Open with <name>" after Open with default app, for the programs that fit the item: folders, pictures
+and videos. The empty area's menu lists the folder programs for the folder that is open, and the folder tree's menu
+for the folder right-clicked. A name is saved as it is typed. The program gets the item's path; a program that was moved or uninstalled is reported in the status
+line. The list is shared with the commander.
 
 **Copying.** Ctrl/Cmd+C on one selected image, or in the viewer, puts the picture itself on the OS clipboard, upright
 (EXIF orientation applied), so it pastes into editors, documents and chats. The selection also goes to Panelyth's file

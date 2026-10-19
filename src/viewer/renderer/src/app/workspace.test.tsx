@@ -13,6 +13,7 @@ import { resetThumbs, startThumbMonitoring } from "../features/previews/thumbSto
 import { startSidecarMonitoring, useSidecarStore } from "../features/system/sidecarStore"
 import { resetLayoutStore } from "../features/tiles/layoutStore"
 import { resetTree, startTreeMonitoring } from "../features/tree/treeStore"
+import { usePrograms } from "@panelyth/renderer-core"
 import { installFakeBridge, makeItems } from "../test/fakeBridge"
 import { mockViewport } from "../test/viewport"
 import { AppShell } from "./AppShell"
@@ -198,6 +199,23 @@ describe("sidebar", () => {
     expect(await screen.findByText("Bookmarks")).toBeInTheDocument()
   })
 
+  it("opens a tree folder with a folder program, by its path (ADR-0044)", async () => {
+    usePrograms.setState({
+      programs: [
+        { id: "gimp", name: "GIMP", path: "/usr/bin/gimp", target: "files" },
+        { id: "tc", name: "Total Commander", path: "/usr/bin/tc", target: "both" },
+      ],
+    })
+    const bridge = await setup()
+    await act(() => openFolder("/photos/Trip"))
+    fireEvent.contextMenu(await treeNode("Trip"))
+    expect(await screen.findByRole("menuitem", { name: "Open with Total Commander" })).toBeVisible()
+    expect(screen.queryByRole("menuitem", { name: "Open with GIMP" })).toBeNull()
+    await userEvent.click(screen.getByRole("menuitem", { name: "Open with Total Commander" }))
+    expect(bridge.api.programs.openFolder).toHaveBeenCalledWith("tc", "/photos/Trip")
+    usePrograms.setState({ programs: [] })
+  })
+
   it("moves with the keyboard: Down, Right expands, Enter opens", async () => {
     const bridge = await setup()
     const tree = screen.getByTestId("sidebar-list")
@@ -355,6 +373,74 @@ describe("multi-selection, context menu and properties", () => {
     fireEvent.contextMenu(tile(4))
     await userEvent.click(await screen.findByRole("menuitem", { name: "Show in file manager" }))
     expect(bridge.api.shell.reveal).toHaveBeenCalledWith(5)
+  })
+
+  it("offers the Open with programs for the tile's kind and starts them through main (ADR-0044)", async () => {
+    usePrograms.setState({
+      programs: [
+        { id: "gimp", name: "GIMP", path: "/usr/bin/gimp", target: "files" },
+        { id: "files", name: "Nautilus", path: "/usr/bin/nautilus", target: "folders" },
+        { id: "code", name: "Code", path: "/usr/bin/code", target: "both" },
+      ],
+    })
+    const bridge = await openItems()
+    fireEvent.mouseDown(tile(4), { button: 2 })
+    fireEvent.contextMenu(tile(4))
+    const menu = await screen.findByTestId("tile-menu")
+    expect(
+      within(menu)
+        .getAllByTestId("menu-open-with-program")
+        .map((e) => e.textContent),
+    ).toEqual(["Open with GIMP", "Open with Code"])
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Open with GIMP" }))
+    // The program and the entry by id; main reads the path of each.
+    expect(bridge.api.programs.open).toHaveBeenCalledWith("gimp", 5)
+
+    // A folder tile: the folder programs; a refusal shows in the status line.
+    bridge.api.programs.open.mockResolvedValueOnce({
+      ok: false,
+      e: {
+        code: "PERMISSION_DENIED",
+        message: "x",
+        retryable: false,
+        details: { reason: "missing" },
+      },
+    } as never)
+    fireEvent.mouseDown(tile(0), { button: 2 })
+    fireEvent.contextMenu(tile(0))
+    const folderMenu = await screen.findByTestId("tile-menu")
+    expect(
+      within(folderMenu)
+        .getAllByTestId("menu-open-with-program")
+        .map((e) => e.textContent),
+    ).toEqual(["Open with Nautilus", "Open with Code"])
+    await userEvent.click(within(folderMenu).getByRole("menuitem", { name: "Open with Nautilus" }))
+    expect(bridge.api.programs.open).toHaveBeenLastCalledWith("files", 1)
+    expect(
+      await screen.findByText("Nautilus was not found. Add it again in Settings → Open with."),
+    ).toBeInTheDocument()
+    usePrograms.setState({ programs: [] })
+  })
+
+  it("empty space offers the folder programs for the folder that is open (ADR-0044)", async () => {
+    usePrograms.setState({
+      programs: [
+        { id: "gimp", name: "GIMP", path: "/usr/bin/gimp", target: "files" },
+        { id: "tc", name: "Total Commander", path: "/usr/bin/tc", target: "folders" },
+      ],
+    })
+    const bridge = await openItems()
+    fireEvent.contextMenu(screen.getByTestId("tile-view"))
+    const menu = await screen.findByTestId("tile-menu")
+    expect(
+      within(menu)
+        .getAllByTestId("menu-open-with-program")
+        .map((e) => e.textContent),
+    ).toEqual(["Open with Total Commander"])
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Open with Total Commander" }))
+    const dirId = useFolderStore.getState().folder!.dirId
+    expect(bridge.api.programs.open).toHaveBeenCalledWith("tc", dirId)
+    usePrograms.setState({ programs: [] })
   })
 
   it("empty space offers view actions", async () => {

@@ -5,6 +5,7 @@ import {
   IPC_EVENT,
   IPC_INVOKE,
   MAIN_METHODS,
+  SHARED_PROGRAMS_KEY,
   SIDECAR_EVENT_CHANNELS,
   eventGuards,
   type AppId,
@@ -209,6 +210,11 @@ function profileProblem(app: AppId, method: string, params: unknown): string | n
     return "the other app's settings are the other app's"
   }
   if (method === "context.publish" && p.app !== app) return "context.publish is for the calling app"
+  // ADR-0044: main starts the "Open with" programs, so only main writes their
+  // list (programs.add picks a path in its own dialog).
+  if (method === "library.setSetting" && p.key === SHARED_PROGRAMS_KEY) {
+    return "the programs are changed through programs.add and programs.update"
+  }
   // Panelyth System (ADR-0042) writes the shared settings only (the appearance).
   if (
     app === "system" &&

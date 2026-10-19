@@ -2,6 +2,7 @@ import type { SharedContext } from "@panelyth/contracts"
 import {
   aboutPortOf,
   startAboutSync,
+  startProgramsSync,
   startSwitchSettingsSync,
   useSwitchSettings,
 } from "@panelyth/renderer-core"
@@ -60,6 +61,12 @@ export function startAppearanceSync(): () => void {
   }
   const offAppearance = startSharedAppearanceSync(port)
   const offSwitch = startSwitchSettingsSync(port)
+  // "Open with" programs for the context menus (ADR-0044).
+  const offPrograms = startProgramsSync({
+    ...port,
+    add: bridge.addProgram,
+    update: bridge.updatePrograms,
+  })
   // Settings → About and the native menu's items (Stage P06).
   const offAbout = startAboutSync(
     aboutPortOf(aboutApi, port.saveSetting),
@@ -68,6 +75,7 @@ export function startAppearanceSync(): () => void {
   return () => {
     offAppearance()
     offSwitch()
+    offPrograms()
     offAbout()
   }
 }

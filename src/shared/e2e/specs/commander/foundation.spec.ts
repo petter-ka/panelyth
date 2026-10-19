@@ -56,6 +56,7 @@ test.describe("commander foundation (Stage C00)", () => {
           props: Object.keys(api.props ?? {}).sort(),
           file: Object.keys(api.file ?? {}).sort(),
           shell: Object.keys(api.shell ?? {}).sort(),
+          programs: Object.keys(api.programs ?? {}).sort(),
           remote: Object.keys(api.remote ?? {}).sort(),
         }
       })
@@ -87,12 +88,15 @@ test.describe("commander foundation (Stage C00)", () => {
           "files",
           "find",
           "fs",
+          // ADR-0043: Git in the commander.
+          "git",
           "jobs",
           "library",
           "media",
           "onEvent",
           "places",
           "preview",
+          "programs",
           "props",
           "query",
           "remote",
@@ -134,6 +138,8 @@ test.describe("commander foundation (Stage C00)", () => {
         props: ["get"],
         file: ["open"],
         shell: ["edit", "open", "run", "runTool"],
+        // ADR-0044: programs by id; the path is picked in main's dialog.
+        programs: ["add", "open", "update"],
         remote: [
           "cancel",
           "connect",

@@ -70,6 +70,7 @@ import {
   COMMANDER_ENABLED_ARG,
   documentKindOf,
   readUpdateSettings,
+  SHARED_PROGRAMS_KEY,
   SHARED_UPDATES_KEY,
   type AppId,
   type AppTarget,
@@ -81,6 +82,7 @@ import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
 import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
+import { programsHandlers } from "./programs"
 import { statSync } from "node:fs"
 import { readFile, stat } from "node:fs/promises"
 import { join } from "node:path"
@@ -756,6 +758,54 @@ async function boot(): Promise<void> {
         ),
       platform: process.platform,
       processEnv: process.env,
+    }),
+    // Both apps: "Open with" programs from Settings (ADR-0044).
+    ...programsHandlers({
+      call: (method, params) => sc.call(method, params),
+      pick: async (event) => {
+        // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.
+        const canned = app.isPackaged ? undefined : process.env.PANELYTH_TEST_PROGRAM_PATH
+        if (canned !== undefined) return canned || null
+        const win = BrowserWindow.fromWebContents(event.sender)
+        const options: Electron.OpenDialogOptions = {
+          title: "Choose a program",
+          properties: ["openFile"],
+          ...(process.platform === "win32" && {
+            ...(process.env.ProgramFiles && { defaultPath: process.env.ProgramFiles }),
+            filters: [{ name: "Programs", extensions: ["exe", "com"] }],
+          }),
+          ...(process.platform === "darwin" && { defaultPath: "/Applications" }),
+        }
+        const result = await (win
+          ? dialog.showOpenDialog(win, options)
+          : dialog.showOpenDialog(options))
+        return result.canceled || !result.filePaths[0] ? null : result.filePaths[0]
+      },
+      launch: workspaceDeps.launch,
+      statOf: (path) =>
+        stat(path).then(
+          (s) => ({
+            kind: s.isDirectory() ? ("dir" as const) : ("file" as const),
+            executable: (s.mode & 0o111) !== 0,
+          }),
+          () => null,
+        ),
+      canOpen: (event, caller) =>
+        appShell?.activeApp === caller && event.sender === appShell.webContentsOf(caller),
+      canEdit: (event, caller) => {
+        const view = appShell?.webContentsOf(caller) ?? null
+        return (
+          view !== null &&
+          (event.sender === view || settingsWindow?.openerOf(event.sender) === view)
+        )
+      },
+      changed: (value) =>
+        broadcast(webContents.getAllWebContents(), "settings.changed", {
+          key: SHARED_PROGRAMS_KEY,
+          value,
+        }),
+      log: (message, fields) => logger.info(message, fields),
+      platform: process.platform,
     }),
     "media.open": async (_event, { entryId }) =>
       toMediaOpenResult(await sc.call("media.resolve", { entryId }), mediaTokens),

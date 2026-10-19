@@ -42,6 +42,13 @@ export {
   type ShortcutOverrides,
 } from "./keymap"
 export {
+  addProgram,
+  startProgramsSync,
+  updatePrograms,
+  usePrograms,
+  type ProgramsPort,
+} from "./programs"
+export {
   setSwitchSettings,
   startSwitchSettingsSync,
   useSwitchSettings,

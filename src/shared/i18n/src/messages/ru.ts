@@ -50,6 +50,7 @@ const messages: Messages = {
     "Набор вкладок с таким именем уже есть и будет заменён.",
   "A texture…": "Текстура…",
   "A to Z": "От А до Я",
+  "Add program…": "Добавить программу…",
   "Add to the toolbar": "Добавить на панель инструментов",
   "ALL UPPERCASE": "ВСЕ ПРОПИСНЫЕ",
   About: "О программе",
@@ -713,6 +714,7 @@ const messages: Messages = {
   "Fetch failed": "Fetch не удался",
   "Fetched from the remotes": "Получено с удалённых репозиториев",
   "Fetching…": "Получение…",
+  "Files and folders": "Файлы и папки",
   "Find a branch": "Найти ветку",
   "Flat, neutral panels: the original Panelyth design.":
     "Плоские нейтральные панели: исходный дизайн Panelyth.",
@@ -1204,6 +1206,7 @@ const messages: Messages = {
     "Ни одна строка не отличается, но файлы не одинаковы: различаются концы строк или кодировка.",
   "No matches": "Совпадений нет",
   "No picture chosen": "Изображение не выбрано",
+  "No programs yet.": "Программ пока нет.",
   "No rating": "Без рейтинга",
   "No red eyes found.": "Красные глаза не найдены.",
   "No rows with the chosen results.": "Нет строк с выбранными результатами.",
@@ -1287,6 +1290,8 @@ const messages: Messages = {
   "Open log folder": "Открыть папку журналов",
   "Open the archive under the cursor": "Открыть архив под курсором",
   "Open the download page": "Открыть страницу загрузки",
+  "Open with": "Открыть с помощью",
+  "Open with {name}": "Открыть в {name}",
   "Open with default app": "Открыть в приложении по умолчанию",
   "Opening the picture…": "Открытие изображения…",
   "Opening…": "Открытие…",
@@ -1426,6 +1431,11 @@ const messages: Messages = {
   Processor: "Процессор",
   "Processor load": "Нагрузка процессора",
   "Processor load, last minute": "Нагрузка процессора за последнюю минуту",
+  "Program name": "Название программы",
+  "Programs listed in the context menu of files and folders. Each opens the item you right-click.":
+    "Программы в контекстном меню файлов и папок. Каждая открывает элемент, по которому вы щёлкнули правой кнопкой мыши.",
+  "Programs listed in the context menu. Each opens the item you right-click: a folder, a picture or a video.":
+    "Программы в контекстном меню. Каждая открывает элемент, по которому вы щёлкнули правой кнопкой мыши: папку, изображение или видео.",
   "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.":
     "Программы, которые вы запускаете с панели инструментов, из меню файлов или клавишей (Сочетания клавиш → Инструменты). Команда выполняется, только когда вы её запускаете.",
   Properties: "Свойства",
@@ -1705,6 +1715,7 @@ const messages: Messages = {
   Shortcuts: "Сочетания клавиш",
   "Shortest first": "Сначала короткие",
   Show: "Показать",
+  "Show for {name}": "Показывать {name} для",
   "Show Git status in the folders of a repository": "Показывать состояние Git в папках репозитория",
   "Show all operations (Ctrl+J)": "Показать все операции (Ctrl+J)",
   "Show all types": "Показать все типы",
@@ -1847,6 +1858,8 @@ const messages: Messages = {
   "System default opens the Home folder.": "По умолчанию открывается домашняя папка.",
   "System follows your operating system's light or dark setting.":
     "«Системная» следует светлой или тёмной теме вашей операционной системы.",
+  "This file can't be started as a program.": "Этот файл нельзя запустить как программу.",
+  "This program is no longer in Settings.": "Этой программы больше нет в настройках.",
   "TIFF keeps the color profile and the resolution, not the camera data.":
     "TIFF сохраняет цветовой профиль и разрешение, но не данные камеры.",
   Tab: "Вкладка",
@@ -2300,6 +2313,7 @@ const messages: Messages = {
   Year: "Год",
   Yellow: "Жёлтый",
   Yes: "Да",
+  "You can add up to {count} programs.": "Можно добавить не более {count} программ.",
   "You can restore them from the trash.": "Их можно восстановить из корзины.",
   "You don't have permission to open this folder.": "У вас нет разрешения на открытие этой папки.",
   "Your branch and the remote have both moved on. Pull with rebase or merge.":
@@ -2516,12 +2530,15 @@ const messages: Messages = {
   "{name} can't be opened in a window: {reason}": "Не удалось открыть «{name}» в окне: {reason}",
   "{name} can't be opened: {reason}": "Не удалось открыть «{name}»: {reason}",
   "{name} can't be started: {reason}": "Не удалось запустить «{name}»: {reason}",
+  "{name} doesn't open this kind of item.": "{name} не открывает элементы такого типа.",
   "{name} is a program. Run it only if you trust where it came from.":
     "«{name}» — это программа. Запускайте её, только если доверяете источнику.",
   "{name} is a program. Running programs with Enter is off in Settings.":
     "«{name}» — это программа. Запуск программ по Enter отключён в настройках.",
   "{name} is the current name, {n} a number, {n:000} a number with three digits.":
     "{name} — текущее имя, {n} — число, {n:000} — число из трёх цифр.",
+  "{name} was not found. Add it again in Settings → Open with.":
+    "{name} не найдена. Добавьте её снова в разделе «Настройки → Открыть с помощью».",
   "{name}, edited picture, {w} × {h} pixels":
     "{name}, отредактированное изображение, {w} × {h} пикселей",
   "{panel} contents": "Содержимое: {panel}",

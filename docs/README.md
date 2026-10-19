@@ -233,6 +233,7 @@ Claude Code should read these files in this order:
 | 0041 | Liquid glass style beside the classic one (a shared appearance setting) | shared | Accepted (owner request) |
 | 0042 | Panelyth System, the third app (a dashboard of the computer and a search across volumes) | shared | Accepted (owner request) |
 | 0043 | Git in the commander (the installed Git; status per folder, background runs, badge, row marks, Git bar) | commander | Accepted (owner request) |
+| 0044 | "Open with" programs from Settings (picked in main's dialog, started without a shell, both apps) | shared | Accepted (owner request) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

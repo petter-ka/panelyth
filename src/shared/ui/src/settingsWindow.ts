@@ -1,8 +1,10 @@
 import { SETTINGS_TABS, type SettingsTab } from "@panelyth/contracts"
 import {
   startAboutSync,
+  startProgramsSync,
   startSwitchSettingsSync,
   type AboutPort,
+  type ProgramsPort,
   type SwitchSettingsPort,
 } from "@panelyth/renderer-core"
 import { requestSettingsTab, useSettingsTabRequest } from "./AboutPanel"
@@ -28,16 +30,22 @@ export function settingsTabOf(hash: string): SettingsTab | null {
 export function startSettingsWindowPage(port: {
   settings: AppearanceSyncPort & SwitchSettingsPort
   about: AboutPort
+  /** The "Open with" programs (ADR-0044); Panelyth System has none. */
+  programs?: Pick<ProgramsPort, "add" | "update">
 }): () => void {
   const tab = settingsTabOf(window.location.hash)
   if (tab) requestSettingsTab(tab)
   const offAppearance = startSharedAppearanceSync(port.settings)
   const offSwitch = startSwitchSettingsSync(port.settings)
+  const offPrograms = port.programs
+    ? startProgramsSync({ ...port.settings, ...port.programs })
+    : () => undefined
   // The native menu's items go to the app view, never here.
   const offAbout = startAboutSync(port.about, () => undefined)
   return () => {
     offAppearance()
     offSwitch()
+    offPrograms()
     offAbout()
   }
 }

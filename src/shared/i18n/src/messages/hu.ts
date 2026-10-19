@@ -49,6 +49,7 @@ const messages: Messages = {
     "Ilyen nevű lapkészlet már létezik, és felül lesz írva.",
   "A texture…": "Egy textúra…",
   "A to Z": "A–Z",
+  "Add program…": "Program hozzáadása…",
   "Add to the toolbar": "Hozzáadás az eszköztárhoz",
   "ALL UPPERCASE": "CSUPA NAGYBETŰ",
   About: "Névjegy",
@@ -714,6 +715,7 @@ const messages: Messages = {
   "Fetch failed": "A fetch nem sikerült",
   "Fetched from the remotes": "Lekérve a távoli tárolókból",
   "Fetching…": "Fetch folyamatban…",
+  "Files and folders": "Fájlok és mappák",
   "Find a branch": "Ág keresése",
   "Flat, neutral panels: the original Panelyth design.":
     "Lapos, semleges panelek: a Panelyth eredeti megjelenése.",
@@ -1205,6 +1207,7 @@ const messages: Messages = {
     "Egyetlen sor sem tér el, de a fájlok nem azonosak: a sorvégek vagy a kódolás különbözik.",
   "No matches": "Nincs találat",
   "No picture chosen": "Nincs kép kiválasztva",
+  "No programs yet.": "Még nincs program.",
   "No rating": "Nincs értékelés",
   "No red eyes found.": "Nem található vörös szem.",
   "No rows with the chosen results.": "Nincs sor a kiválasztott eredményekkel.",
@@ -1288,6 +1291,8 @@ const messages: Messages = {
   "Open log folder": "Naplómappa megnyitása",
   "Open the archive under the cursor": "Az kurzor alatti archívum megnyitása",
   "Open the download page": "A letöltési oldal megnyitása",
+  "Open with": "Megnyitás ezzel",
+  "Open with {name}": "Megnyitás: {name}",
   "Open with default app": "Megnyitás az alapértelmezett alkalmazással",
   "Opening the picture…": "Kép megnyitása…",
   "Opening…": "Megnyitás…",
@@ -1428,6 +1433,11 @@ const messages: Messages = {
   Processor: "Processzor",
   "Processor load": "Processzorterhelés",
   "Processor load, last minute": "Processzorterhelés, az utolsó perc",
+  "Program name": "Program neve",
+  "Programs listed in the context menu of files and folders. Each opens the item you right-click.":
+    "A fájlok és mappák helyi menüjében megjelenő programok. Mindegyik a jobb gombbal kattintott elemet nyitja meg.",
+  "Programs listed in the context menu. Each opens the item you right-click: a folder, a picture or a video.":
+    "A helyi menüben megjelenő programok. Mindegyik a jobb gombbal kattintott elemet nyitja meg: egy mappát, képet vagy videót.",
   "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.":
     "Programok, amelyeket az eszköztárról, a fájlok menüjéből vagy egy billentyűvel indít (Billentyűparancsok → Eszközök). Egy parancs csak akkor fut, ha Ön elindítja.",
   Properties: "Tulajdonságok",
@@ -1709,6 +1719,7 @@ const messages: Messages = {
   Shortcuts: "Billentyűparancsok",
   "Shortest first": "Legrövidebb elöl",
   Show: "Megjelenítés",
+  "Show for {name}": "{name} megjelenítése ezeknél",
   "Show Git status in the folders of a repository": "Git-állapot mutatása a tárolók mappáiban",
   "Show all operations (Ctrl+J)": "Az összes művelet megjelenítése (Ctrl+J)",
   "Show all types": "Minden típus megjelenítése",
@@ -1851,6 +1862,8 @@ const messages: Messages = {
   "System default opens the Home folder.": "A rendszer alapértelmezése a Saját mappát nyitja meg.",
   "System follows your operating system's light or dark setting.":
     "A Rendszer az operációs rendszer világos vagy sötét beállítását követi.",
+  "This file can't be started as a program.": "Ez a fájl nem indítható programként.",
+  "This program is no longer in Settings.": "Ez a program már nincs a Beállításokban.",
   "TIFF keeps the color profile and the resolution, not the camera data.":
     "A TIFF megtartja a színprofilt és a felbontást, a kameraadatokat nem.",
   Tab: "Lap",
@@ -2305,6 +2318,7 @@ const messages: Messages = {
   Year: "Év",
   Yellow: "Sárga",
   Yes: "Igen",
+  "You can add up to {count} programs.": "Legfeljebb {count} program adható hozzá.",
   "You can restore them from the trash.": "Visszaállíthatja őket a kukából.",
   "You don't have permission to open this folder.": "Nincs engedélye a mappa megnyitásához.",
   "Your branch and the remote have both moved on. Pull with rebase or merge.":
@@ -2518,12 +2532,15 @@ const messages: Messages = {
   "{name} can't be opened in a window: {reason}": "A(z) {name} nem nyitható meg ablakban: {reason}",
   "{name} can't be opened: {reason}": "A(z) {name} nem nyitható meg: {reason}",
   "{name} can't be started: {reason}": "A(z) {name} nem indítható el: {reason}",
+  "{name} doesn't open this kind of item.": "A(z) {name} nem nyitja meg az ilyen elemeket.",
   "{name} is a program. Run it only if you trust where it came from.":
     "A(z) {name} egy program. Csak akkor futtassa, ha megbízik a forrásában.",
   "{name} is a program. Running programs with Enter is off in Settings.":
     "A(z) {name} egy program. A programok futtatása Enterrel ki van kapcsolva a Beállításokban.",
   "{name} is the current name, {n} a number, {n:000} a number with three digits.":
     "A {name} az aktuális név, az {n} egy szám, az {n:000} háromjegyű szám.",
+  "{name} was not found. Add it again in Settings → Open with.":
+    "A(z) {name} nem található. Adja hozzá újra: Beállítások → Megnyitás ezzel.",
   "{name}, edited picture, {w} × {h} pixels": "{name}, szerkesztett kép, {w} × {h} képpont",
   "{panel} contents": "{panel} tartalma",
   "{renamed} of {total, plural, one {# name} other {# names}} will change":

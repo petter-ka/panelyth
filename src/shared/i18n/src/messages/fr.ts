@@ -50,6 +50,7 @@ const messages: Messages = {
     "Un jeu d'onglets portant ce nom existe et sera remplacé.",
   "A texture…": "Une texture…",
   "A to Z": "De A à Z",
+  "Add program…": "Ajouter un programme…",
   "Add to the toolbar": "Ajouter à la barre d'outils",
   "ALL UPPERCASE": "TOUT EN MAJUSCULES",
   About: "À propos",
@@ -719,6 +720,7 @@ const messages: Messages = {
   "Fetch failed": "Échec de la récupération",
   "Fetched from the remotes": "Récupéré depuis les dépôts distants",
   "Fetching…": "Récupération…",
+  "Files and folders": "Fichiers et dossiers",
   "Find a branch": "Rechercher une branche",
   "Flat, neutral panels: the original Panelyth design.":
     "Des panneaux plats et neutres : le design d'origine de Panelyth.",
@@ -1212,6 +1214,7 @@ const messages: Messages = {
     "Aucune ligne ne diffère, mais les fichiers ne sont pas identiques : les fins de ligne ou l'encodage diffèrent.",
   "No matches": "Aucune correspondance",
   "No picture chosen": "Aucune image choisie",
+  "No programs yet.": "Aucun programme pour l'instant.",
   "No rating": "Sans note",
   "No red eyes found.": "Aucun œil rouge trouvé.",
   "No rows with the chosen results.": "Aucune ligne avec les résultats choisis.",
@@ -1295,6 +1298,8 @@ const messages: Messages = {
   "Open log folder": "Ouvrir le dossier des journaux",
   "Open the archive under the cursor": "Ouvrir l'archive sous le curseur",
   "Open the download page": "Ouvrir la page de téléchargement",
+  "Open with": "Ouvrir avec",
+  "Open with {name}": "Ouvrir avec {name}",
   "Open with default app": "Ouvrir avec l'application par défaut",
   "Opening the picture…": "Ouverture de l'image…",
   "Opening…": "Ouverture…",
@@ -1434,6 +1439,11 @@ const messages: Messages = {
   Processor: "Processeur",
   "Processor load": "Charge du processeur",
   "Processor load, last minute": "Charge du processeur, dernière minute",
+  "Program name": "Nom du programme",
+  "Programs listed in the context menu of files and folders. Each opens the item you right-click.":
+    "Programmes proposés dans le menu contextuel des fichiers et dossiers. Chacun ouvre l'élément sur lequel vous faites un clic droit.",
+  "Programs listed in the context menu. Each opens the item you right-click: a folder, a picture or a video.":
+    "Programmes proposés dans le menu contextuel. Chacun ouvre l'élément sur lequel vous faites un clic droit : un dossier, une image ou une vidéo.",
   "Programs you start from the toolbar, the menu of files or a key (Keyboard shortcuts → Tools). A command runs only when you start it.":
     "Programmes que vous lancez depuis la barre d'outils, le menu des fichiers ou une touche (Raccourcis clavier → Outils). Une commande ne s'exécute que lorsque vous la lancez.",
   Properties: "Propriétés",
@@ -1719,6 +1729,7 @@ const messages: Messages = {
   Shortcuts: "Raccourcis",
   "Shortest first": "Plus court d'abord",
   Show: "Afficher",
+  "Show for {name}": "Proposer {name} pour",
   "Show Git status in the folders of a repository":
     "Afficher l'état Git dans les dossiers d'un dépôt",
   "Show all operations (Ctrl+J)": "Afficher toutes les opérations (Ctrl+J)",
@@ -1862,6 +1873,8 @@ const messages: Messages = {
   "System default opens the Home folder.": "Le défaut du système ouvre le dossier personnel.",
   "System follows your operating system's light or dark setting.":
     "Système suit le réglage clair ou sombre de votre système d'exploitation.",
+  "This file can't be started as a program.": "Ce fichier ne peut pas être lancé comme programme.",
+  "This program is no longer in Settings.": "Ce programme n'est plus dans les Paramètres.",
   "TIFF keeps the color profile and the resolution, not the camera data.":
     "Le TIFF conserve le profil de couleur et la résolution, pas les données de l'appareil.",
   Tab: "Onglet",
@@ -2326,6 +2339,7 @@ const messages: Messages = {
   Year: "Année",
   Yellow: "Jaune",
   Yes: "Oui",
+  "You can add up to {count} programs.": "Vous pouvez ajouter jusqu'à {count} programmes.",
   "You can restore them from the trash.": "Vous pouvez les restaurer depuis la corbeille.",
   "You don't have permission to open this folder.":
     "Vous n'avez pas l'autorisation d'ouvrir ce dossier.",
@@ -2548,12 +2562,15 @@ const messages: Messages = {
     "{name} ne peut pas être ouvert dans une fenêtre : {reason}",
   "{name} can't be opened: {reason}": "{name} ne peut pas être ouvert : {reason}",
   "{name} can't be started: {reason}": "{name} ne peut pas être démarré : {reason}",
+  "{name} doesn't open this kind of item.": "{name} n'ouvre pas ce type d'élément.",
   "{name} is a program. Run it only if you trust where it came from.":
     "{name} est un programme. Ne l'exécutez que si vous faites confiance à sa provenance.",
   "{name} is a program. Running programs with Enter is off in Settings.":
     "{name} est un programme. L'exécution des programmes avec Entrée est désactivée dans les Paramètres.",
   "{name} is the current name, {n} a number, {n:000} a number with three digits.":
     "{name} est le nom actuel, {n} un nombre, {n:000} un nombre à trois chiffres.",
+  "{name} was not found. Add it again in Settings → Open with.":
+    "{name} est introuvable. Ajoutez-le de nouveau dans Paramètres → Ouvrir avec.",
   "{name}, edited picture, {w} × {h} pixels": "{name}, image modifiée, {w} × {h} pixels",
   "{panel} contents": "Contenu de {panel}",
   "{renamed} of {total, plural, one {# name} other {# names}} will change":

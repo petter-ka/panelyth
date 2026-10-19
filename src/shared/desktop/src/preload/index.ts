@@ -219,6 +219,16 @@ const api: PanelythApi = {
     reveal: (entryId) => invoke("shell.reveal", { entryId }),
     revealPath: (path) => invoke("shell.revealPath", { path }),
   },
+  // ADR-0044: only ids and the editable fields cross the bridge; never a program path.
+  programs: {
+    add: () => invoke("programs.add", {}),
+    update: (programs) =>
+      invoke("programs.update", {
+        programs: programs.map(({ id, name, target }) => ({ id, name, target })),
+      }),
+    open: (programId, entryId) => invoke("programs.open", { programId, entryId }),
+    openFolder: (programId, path) => invoke("programs.openFolder", { programId, path }),
+  },
   clipboard: {
     copyPaths: (sel) => invoke("clipboard.copyPaths", { selection: selection(sel) }),
     copyText: (text) => invoke("clipboard.copyText", { text }),

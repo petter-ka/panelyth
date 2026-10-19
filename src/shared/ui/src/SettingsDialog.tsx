@@ -24,6 +24,7 @@ import {
   type SettingsTab,
 } from "./AboutPanel"
 import { Button } from "./button"
+import { ProgramsSettings } from "./ProgramsSettings"
 import { DialogWindow } from "./dialog"
 import { fieldClass } from "./field"
 import { SwitchRow } from "./SwitchRow"
@@ -338,6 +339,7 @@ function SettingsTabs({
   const tabs: readonly { id: SettingsTab; label: string }[] = [
     ...(showGeneral ? [{ id: "general" as const, label: t("General") }] : []),
     ...(system ? [] : [{ id: currentApp, label: appLabel }]),
+    ...(system ? [] : [{ id: "programs" as const, label: t("Open with") }]),
     { id: "appearance", label: t("Appearance") },
     ...(system ? [] : [{ id: "shortcuts" as const, label: t("Shortcuts") }]),
     { id: "about", label: t("About") },
@@ -393,6 +395,7 @@ function SettingsTabs({
       >
         {tab === "general" && showGeneral && <GeneralSettings settingsReady={settingsReady} />}
         {tab === currentApp && appSettings}
+        {tab === "programs" && currentApp !== "system" && <ProgramsSettings app={currentApp} />}
         {tab === "appearance" && (
           <>
             <AppearanceSettings />

@@ -92,6 +92,10 @@ const mainHandlers = (): MainHandlers => ({
   "shell.edit": vi.fn(async () => ({ ok: true })),
   "shell.run": vi.fn(async () => ({ ok: true })),
   "shell.runTool": vi.fn(async () => ({ ok: true })),
+  "programs.add": vi.fn(async () => ({ programs: [], added: null })),
+  "programs.update": vi.fn(async () => ({ programs: [] })),
+  "programs.open": vi.fn(async () => ({ ok: true })),
+  "programs.openFolder": vi.fn(async () => ({ ok: true })),
   "document.open": vi.fn(async () => ({ ok: true })),
   "media.openWindow": vi.fn(async () => ({ ok: true })),
   "settings.openWindow": vi.fn(() => ({ ok: true })),
@@ -174,6 +178,111 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander" | "s
     system: eventFrom(`${SYSTEM}/index.html`),
   }
 }
+
+describe('"Open with" programs (ADR-0044)', () => {
+  it("are in both apps' profiles and go to main, which applies the app's profile", async () => {
+    const { handler, main, sidecar, ok, commander } = setup()
+    const edits = { programs: [{ id: "ab12cd34", name: "Paint", target: "files" }] }
+    for (const [from, app] of [
+      [ok, "viewer"],
+      [commander, "commander"],
+    ] as const) {
+      for (const [m, p] of [
+        ["programs.add", {}],
+        ["programs.update", edits],
+        ["programs.update", { programs: [] }],
+        ["programs.open", { programId: "ab12cd34", entryId: 3 }],
+      ] as const) {
+        await expect(handler(from, m, p), m).resolves.toMatchObject({ ok: true })
+        expect(main[m]).toHaveBeenLastCalledWith(from, p, app)
+      }
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("never take a program path, and no renderer writes the list itself", async () => {
+    const { handler, sidecar, ok, commander, system } = setup()
+    for (const [m, p] of [
+      ["programs.add", { path: "C:\\x.exe" }],
+      [
+        "programs.update",
+        { programs: [{ id: "ab12cd34", name: "x", target: "files", path: "/bin/sh" }] },
+      ],
+      ["programs.update", { programs: [{ id: "ab12cd34", name: "", target: "files" }] }],
+      ["programs.update", { programs: [{ id: "ab12cd34", name: "a\nb", target: "files" }] }],
+      ["programs.update", { programs: [{ id: "AB", name: "x", target: "files" }] }],
+      ["programs.update", { programs: [{ id: "ab12cd34", name: "x", target: "all" }] }],
+      [
+        "programs.update",
+        {
+          programs: [
+            { id: "ab12cd34", name: "x", target: "files" },
+            { id: "ab12cd34", name: "y", target: "files" },
+          ],
+        },
+      ],
+      [
+        "programs.update",
+        {
+          programs: Array.from({ length: 21 }, (_, i) => ({
+            id: `p${i}`,
+            name: "x",
+            target: "both",
+          })),
+        },
+      ],
+      ["programs.open", { programId: "ab12cd34", entryId: 0 }],
+      ["programs.open", { programId: "../x", entryId: 3 }],
+      ["programs.open", { programId: "ab12cd34", entryId: 3, path: "/bin/sh" }],
+    ] as const) {
+      expect(await handler(commander, m, p), `${m} ${JSON.stringify(p)}`).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    for (const from of [ok, commander, system]) {
+      expect(
+        await handler(from, "library.setSetting", {
+          key: "shared.programs",
+          value: { v: 1, programs: [{ id: "a", name: "sh", path: "/bin/sh", target: "both" }] },
+        }),
+      ).toMatchObject({ ok: false, e: { code: "PERMISSION_DENIED" } })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+    // Panelyth System opens nothing.
+    for (const m of ["programs.add", "programs.update", "programs.open", "programs.openFolder"]) {
+      expect(await handler(system, m, {}), m).toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+  })
+
+  it("give the viewer's folder tree a folder by its path, checked in main", async () => {
+    const { handler, main, ok, commander } = setup()
+    const p = { programId: "ab12cd34", path: "C:\\photos" }
+    await expect(handler(ok, "programs.openFolder", p)).resolves.toMatchObject({ ok: true })
+    expect(main["programs.openFolder"]).toHaveBeenLastCalledWith(ok, p, "viewer")
+    for (const bad of [
+      { programId: "ab12cd34", path: "photos" },
+      { programId: "ab12cd34", path: "" },
+      { programId: "ab12cd34", path: "C:\\a\u0000b" },
+      { programId: "ab12cd34" },
+      { programId: "../x", path: "C:\\photos" },
+      { ...p, entryId: 3 },
+    ]) {
+      expect(await handler(ok, "programs.openFolder", bad), JSON.stringify(bad)).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    // The commander's folders are indexed entries: programs.open.
+    expect(await handler(commander, "programs.openFolder", p)).toMatchObject({
+      ok: false,
+      e: { code: "METHOD_NOT_FOUND" },
+    })
+  })
+})
 
 describe("Panelyth System's profile (ADR-0042)", () => {
   it("reads the computer, the volumes and searches; nothing that changes or runs a file", async () => {

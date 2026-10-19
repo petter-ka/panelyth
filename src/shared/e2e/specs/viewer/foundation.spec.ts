@@ -59,6 +59,8 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         "clipboard",
         "dialog",
         "dir",
+        // ADR-0040: dragging the selection to other apps.
+        "drag",
         "edit",
         "entry",
         "folder",
@@ -69,6 +71,8 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         "onEvent",
         "places",
         "preview",
+        // ADR-0044: "Open with" programs (add, update, open; never a path).
+        "programs",
         "props",
         "query",
         "recipes",

@@ -78,6 +78,7 @@ describe("the settings window (ADR-0039)", () => {
     expect(screen.getByTestId("viewer-tab")).toBeInTheDocument()
     expect(screen.getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
       "Viewer",
+      "Open with",
       "Appearance",
       "Shortcuts",
       "About",

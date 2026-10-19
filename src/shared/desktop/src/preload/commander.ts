@@ -500,6 +500,15 @@ const api: CommanderApi = {
         ...(selection !== undefined && { selection: copySelection(selection) }),
       }),
   },
+  // ADR-0044: only ids and the editable fields cross the bridge; never a program path.
+  programs: {
+    add: () => invoke("programs.add", {}),
+    update: (programs) =>
+      invoke("programs.update", {
+        programs: programs.map(({ id, name, target }) => ({ id, name, target })),
+      }),
+    open: (programId, entryId) => invoke("programs.open", { programId, entryId }),
+  },
   files: {
     start: (p) => invoke("jobs.start", startParams(p)),
     pause: (jobId) => invoke("jobs.pause", { jobId }),

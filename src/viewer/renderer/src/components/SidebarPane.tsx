@@ -37,6 +37,7 @@ import {
 } from "../features/tree/treeStore"
 import { setPreviewPlace, usePaneStore } from "../features/workspace/workspace"
 import { ChevronRightIcon, PanelBottomLeftIcon, PanelRightIcon } from "./ui/icons"
+import { ProgramMenuItems } from "./ProgramMenuItems"
 import {
   ContextMenuContent,
   ContextMenuItem,
@@ -607,6 +608,7 @@ export function SidebarPane() {
             >
               {t("Show in file manager")}
             </ContextMenuItem>
+            <ProgramMenuItems target={{ path: menuPath }} />
             <ContextMenuItem onSelect={() => void bridge.copyText(menuPath).catch(() => undefined)}>
               {t("Copy path")}
             </ContextMenuItem>
