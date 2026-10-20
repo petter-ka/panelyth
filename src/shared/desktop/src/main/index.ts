@@ -9,6 +9,7 @@ import {
   ipcMain,
   Menu,
   safeStorage,
+  screen,
   session,
   shell,
   webContents,
@@ -80,6 +81,7 @@ import {
 } from "@panelyth/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
+import { fsDeps, initialBounds, WindowStateFile } from "./windowState"
 import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
 import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
 import { programsHandlers } from "./programs"
@@ -142,6 +144,11 @@ let mediaWindows: MediaWindows | null = null
 let settingsWindow: SettingsWindow | null = null
 let logger: Logger = consoleLogger
 let shutdownState: "running" | "stopping" | "done" = "running"
+// The main window's size and place of the previous run, read while the app loads.
+const windowState = new WindowStateFile(
+  join(app.getPath("userData"), "window-state.json"),
+  fsDeps((message, fields) => logger.warn(message, fields)),
+)
 
 // "Open with" (ADR-0033 amended): a picture or video the OS handed over opens
 // in a media window of its own, and the main window is not created for it.
@@ -265,7 +272,12 @@ function openWindow(): BrowserWindow {
     devMethods,
     devTools: !app.isPackaged,
     extraArgs: commanderEnabled ? [COMMANDER_ENABLED_ARG] : [],
+    bounds: initialBounds(
+      windowState.current,
+      screen.getAllDisplays().map((d) => d.workArea),
+    ),
   })
+  windowState.track(win)
   mainWindow = win
   win.on("closed", () => {
     if (mainWindow === win) mainWindow = null
@@ -447,10 +459,15 @@ async function lastUsedApp(): Promise<AppId | null> {
 
 async function boot(): Promise<void> {
   perfMark("app-ready")
-  logger = await createFileLogger(app.getPath("logs"), !app.isPackaged).catch((error: unknown) => {
-    consoleLogger.error("file logger unavailable", { error: String(error) })
-    return consoleLogger
-  })
+  const [fileLogger] = await Promise.all([
+    createFileLogger(app.getPath("logs"), !app.isPackaged).catch((error: unknown) => {
+      consoleLogger.error("file logger unavailable", { error: String(error) })
+      return consoleLogger
+    }),
+    // Read since the app started loading: the window opens at its last size.
+    windowState.ready(),
+  ])
+  logger = fileLogger
   logger.info("app starting", { version: app.getVersion(), packaged: app.isPackaged, devMethods })
 
   const devUrl = rendererDevUrl()
@@ -980,8 +997,14 @@ if (!app.requestSingleInstanceLock()) {
     if (shutdownState === "stopping") return
     shutdownState = "stopping"
     const started = performance.now()
-    void (sidecar?.stop() ?? Promise.resolve()).finally(() => {
-      logger.info("shutdown complete", { sidecarStopMs: Math.round(performance.now() - started) })
+    // On macOS quitting comes before the window's close: its state is saved here.
+    if (mainWindow && !mainWindow.isDestroyed()) windowState.save(mainWindow)
+    let sidecarStopMs = 0
+    const sidecarStopped = (sidecar?.stop() ?? Promise.resolve()).finally(() => {
+      sidecarStopMs = Math.round(performance.now() - started)
+    })
+    void Promise.all([sidecarStopped, windowState.flush()]).finally(() => {
+      logger.info("shutdown complete", { sidecarStopMs })
       shutdownState = "done"
       app.quit()
     })

@@ -101,7 +101,9 @@ Owns:
 - lifecycle
 - BrowserWindow
 - native dialogs
-- window state
+- window state: the main window opens at the size, place and maximized state of the previous run, kept in
+  `window-state.json` in the user-data folder (read while main loads, so the window never waits for the sidecar;
+  a place on a display that is gone falls back to the saved size, centered)
 - preload registration
 - secure protocol handling
 - start/stop of the Go sidecar
