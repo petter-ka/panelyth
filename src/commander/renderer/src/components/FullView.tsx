@@ -845,7 +845,9 @@ const EntryRow = memo(function EntryRow({
         className="sticky left-0 z-[3] shrink-0 self-stretch"
         style={gutterStyle}
       >
-        <MarkTab marked={marked} />
+        {/* Mid-way between the row's edge and the icon as drawn: the 10 px gutter, the
+            cell's 6 px padding and the glyph's ~1.5-3 px inset; centered at 10 px. */}
+        <MarkTab marked={marked} shift={5} />
       </span>
       {item ? (
         <Cells item={item} marked={marked} columns={columns} renaming={renaming} side={side} />

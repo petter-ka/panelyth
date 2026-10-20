@@ -65,6 +65,8 @@ export default {
   // scripts/media-tools.mjs fetched them (ADR-0018).
   extraResources: [
     { from: "build/icon.png", to: "icon.png" },
+    // The window icon on Windows (paths.ts).
+    { from: "build/icon.ico", to: "icon.ico" },
     { from: "build/THIRD-PARTY-NOTICES.txt", to: "THIRD-PARTY-NOTICES.txt" },
     { from: "../../viewer/renderer/dist", to: "renderer" },
     { from: "../../commander/renderer/dist", to: "commander" },

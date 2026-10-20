@@ -286,15 +286,25 @@ its placement and behavior consistent in both apps:
 One icon for the product: the shell that hosts both apps. `scripts/icons.mjs` (`pnpm icons`) draws it and writes
 every file made from it, so a change goes into the script and never into the files.
 
-- **The mark:** a sheet of paper with lines of text and an eye in the middle of it, circled by two comets, one neon
-  green and one blue. The paper stands for the commander's files and the eye for the viewer; the comets are the two
-  apps, which share one shell, folder and selection. The sheet is tilted and a second one lies under it; like a
-  planet's ring, the ring passes in front of the sheets' lower half and behind the upper half. The eye's catchlight
-  is a window of two panes.
-- **Three drawings** in `src/shared/desktop/build`: `icon.svg`, the mark, for Windows, Linux and the window icon; `icon-small.svg`, the same mark for 32 px and below, with a thicker ring, one
-  sheet, bold lines and a plain eye, because the text, the second sheet and the catchlight do not survive at that
-  size; and `icon-mac.svg`, the mark on the macOS tile (824 px on a 1024 px canvas, corner radius 184).
-- **Files:** `icon.png` (1024 px, the window icon), `icons/*.png` (Linux, 16 to 1024 px), `icon.ico` (16 to 256 px at
-  the scales Windows asks for) and `icon.icns` (the full Retina set); `mark.svg` and `showcase/src/media/mark.svg` are
+- **The mark:** an isometric block, the shell that hosts both apps (and the "-lyth", a stone, in the name), drawn
+  in flat-shaded polygons. Its top is a sheet of white paper that is an eye: the diamond of the top is the eye's
+  lids, and a gem-cut iris lies in the top's own plane, its facets green toward the light and blue away from it,
+  with a small diamond (the top's own shape) for a catchlight. Its two sides are the two panels, the viewer's green
+  (`#3ff0a0` to `#0f9d62`) on the left and the commander's blue (`#3d86ff` to `#1a3fb8`) on the right, with light
+  file rows across them.
+- **Light** falls from the top left: the top is brightest, the green side lit, the blue side in shade. The three
+  front edges are chamfered and catch the light (mint, pale blue and a teal strip down the front), the back corner of
+  the top is cut by as much, so no corner of the outline is sharp, a fine grey-blue
+  rim keeps the top's back edges on a white page, and every element keeps to the isometric axes. The mark stands
+  free on Windows and Linux, over a soft shadow on the ground, and sits on a dark tile on macOS.
+- **Small drawing:** up to 32 px (the taskbar, the menu bar) the mark is drawn again with wider chamfers, a plain
+  teal iris with its pupil and catchlight, bare panels and no shadow, because facets, rows and soft shadows turn
+  into a smudge in a 16 px slot.
+- **Drawings** in `src/shared/desktop/build`: `icon.svg`, the mark, for Windows, Linux and the window icon;
+  `icon-small.svg`, the small drawing; and `icon-mac.svg`, the mark on the macOS tile (824 px on a 1024 px canvas,
+  corner radius 184).
+- **Files:** `icon.png` (1024 px, the window icon on macOS and Linux), `icons/*.png` (Linux, 16 to 1024 px),
+  `icon.ico` (16 to 256 px at the scales Windows asks for; also the window icon on Windows, so the taskbar gets the
+  size drawn for its slot rather than the 1024 px picture scaled down) and `icon.icns` (the full Retina set); `mark.svg` and `showcase/src/media/mark.svg` are
   the mark for pages.
 - The rail's app glyphs are interface icons, not the app icon: they follow the icon set and the theme.

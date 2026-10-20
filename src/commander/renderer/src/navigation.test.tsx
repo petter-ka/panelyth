@@ -7,7 +7,7 @@ import { AppShell } from "./components/AppShell"
 import { BRIEF_COLUMN, BRIEF_OVERSCAN } from "./components/BriefView"
 import { ROW_HEIGHT } from "./components/FullView"
 import { resetCarry, startPanels } from "./features/carry"
-import { resetDrives, SPACE_THROTTLE_MS, startDrives } from "./features/drives"
+import { fitDrives, resetDrives, SPACE_THROTTLE_MS, startDrives } from "./features/drives"
 import { formatDate, formatSize } from "./features/format"
 import { resetHotlist, startHotlist } from "./features/hotlist"
 import { resetKeymap } from "./features/keymap"
@@ -380,6 +380,52 @@ describe("Brief view", () => {
 })
 
 describe("drives", () => {
+  it("fits the drive buttons to the bar, keeping room for » when some don't fit", () => {
+    // Unmeasured (room 0): all.
+    expect(fitDrives([30, 30, 30], 0, 24, 2)).toBe(3)
+    // All fit: no » needed.
+    expect(fitDrives([30, 30, 30], 96, 24, 2)).toBe(3)
+    // One short: » (24 + 2) takes the place of the last ones.
+    expect(fitDrives([30, 30, 30], 95, 24, 2)).toBe(2)
+    expect(fitDrives([30, 30, 30], 89, 24, 2)).toBe(1)
+    expect(fitDrives([30, 30, 30], 40, 24, 2)).toBe(0)
+  })
+
+  it("puts the drives that don't fit behind …, which lists them in a dropdown", async () => {
+    // The bar has 150 px; the tail (divider and FTP) takes 60; each drive 40.
+    const offset = vi
+      .spyOn(HTMLElement.prototype, "offsetWidth", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute("data-drive") ? 40 : this.hasAttribute("data-drive-tail") ? 60 : 0
+      })
+    const client = vi
+      .spyOn(HTMLElement.prototype, "clientWidth", "get")
+      .mockImplementation(function (this: HTMLElement) {
+        return this.hasAttribute("data-drive-strip") ? 150 : 0
+      })
+    try {
+      await start()
+      const bar = screen.getByTestId("drives-left")
+      await waitFor(() => expect(screen.getByTestId("more-drives-left")).toBeInTheDocument())
+      // 90 px of room: one drive and … (26 + 42 ≤ 90; a second would need 110).
+      expect(bar.querySelectorAll("[data-drive]")).toHaveLength(1)
+      expect(within(bar).getByRole("button", { name: "C" })).toBeInTheDocument()
+      await act(async () => fireEvent.click(screen.getByTestId("more-drives-left")))
+      // The dropdown lists the hidden drives only.
+      const more = screen.getByTestId("more-drives-menu-left")
+      const items = within(more).getAllByRole("menuitem")
+      expect(items.map((i) => i.textContent?.charAt(0))).toEqual(["D", "E", "Z"])
+      expect(more).toHaveTextContent("STICK")
+      // A drive there opens like its button.
+      await act(async () => fireEvent.click(within(more).getByText("STICK")))
+      expect(screen.queryByTestId("more-drives-menu-left")).toBeNull()
+      await waitFor(() => expect(path("left")).toHaveTextContent(DROOT.path))
+    } finally {
+      offset.mockRestore()
+      client.mockRestore()
+    }
+  })
+
   it("shows drives with labels, space and markers; Alt+F1 opens the menu", async () => {
     await start()
     await waitFor(() => expect(path("left")).toHaveTextContent(HOME.path))

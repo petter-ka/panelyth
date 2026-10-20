@@ -45,7 +45,9 @@ for. People coming from Total Commander find their keys where they expect them.
   name and a lock glyph when locked. A drive button (and a drive in the drive menu) opens the drive at the **other
   panel's folder** when the other panel is on that drive, as in Total Commander: one click puts both panels in the
   same place. Any other drive opens at its root, and so does the same button when the panel already shows that
-  folder. A place of the drive menu (Home, Documents) always opens that folder.
+  folder. A place of the drive menu (Home, Documents) always opens that folder. The bar stays one line: a volume
+  name with a space ("Macintosh HD") never wraps, and the drive buttons that don't fit the panel's width go behind a
+  "…" button whose dropdown lists them (pressed when the panel's drive is among them).
 - **Path bar:** the full path and the active mask (`*.*`, or the quick filter). Click it or press Alt+D (as in Explorer) to edit;
   Enter navigates; Esc cancels. A branch view or fed search results show an accent "Branch view" or "Search results: …"
   chip before the path (click or Backspace returns to the folder); the quick filter (Ctrl+F, or Ctrl+S) is edited in a field

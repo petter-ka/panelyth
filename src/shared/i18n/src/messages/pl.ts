@@ -1089,6 +1089,7 @@ const messages: Messages = {
   "Modified {date}": "Zmodyfikowano: {date}",
   "More Git commands": "Więcej poleceń Git",
   "More contrast": "Większy kontrast",
+  "More drives": "Więcej dysków",
   "More filters": "Więcej filtrów",
   "More ways to save": "Więcej sposobów zapisu",
   Mosaic: "Mozaika",

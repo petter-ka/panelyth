@@ -1,20 +1,25 @@
 // Draws the app icon and writes every file made from it (`pnpm icons`).
 //
-// The mark: a sheet of paper with lines of text and an eye in the middle of it,
-// circled by two comets, one neon green and one blue. The paper stands for the
-// commander's files and the eye for the viewer; the comets are the two apps,
-// which share one shell, folder and selection (ADR-0031). The sheet is tilted:
-// the ring passes in front of its lower corner and behind its upper one, and a
-// second sheet lies under it. The eye's catchlight is a window of two panes.
+// The mark: an isometric block, the shell that hosts both apps, drawn in
+// flat-shaded polygons with its front edges chamfered. Its top is a sheet of
+// white paper that is an eye (the diamond of the top is the eye's lids, with a
+// gem-cut iris lying in it); its two sides are the two panels, the viewer's
+// green and the commander's blue, with file rows across them. Light falls from
+// the top left. It stands free on Windows and Linux, over a soft shadow, and
+// sits on a dark tile on macOS.
+//
+// The small sizes (up to 32 px: the taskbar, the menu bar) have their own
+// drawing: wider chamfers, a plain iris and bare panels, and no shadow, because
+// facets, rows and soft shadows turn into a smudge in a 16 px slot.
 //
 // In src/shared/desktop/build:
 //   icon.svg        the mark: Windows, Linux and the window icon
-//   icon-small.svg  the mark drawn again for 16 to 32 px: a thicker ring, one sheet, bold lines, a plain eye
+//   icon-small.svg  the mark drawn for 32 px and below
 //   icon-mac.svg    the mark on the macOS tile (the 824 px grid of Apple's template)
-//   mark.svg        icon.svg cropped to the mark, for pages and documents
-//   icon.png        1024 px, the window icon (src/shared/desktop/src/main/paths.ts)
+//   mark.svg        icon.svg cropped to the page, for pages and documents
+//   icon.png        1024 px, the window icon on macOS and Linux (src/shared/desktop/src/main/paths.ts)
 //   icons/*.png     the Linux set
-//   icon.ico        Windows, 16 to 256 px at the scales the shell asks for
+//   icon.ico        Windows, 16 to 256 px at the scales the shell asks for; also the window icon there
 //   icon.icns       macOS, 16 to 1024 px on the tile
 // and showcase/src/media/mark.svg, the site's header and footer.
 //
@@ -54,20 +59,19 @@ const MAC = [
 
 const C = 512
 const num = (n) => String(Math.round(n * 10) / 10)
-const frac = (n) => String(Math.round(n * 1000) / 1000)
-const rad = (deg) => (deg * Math.PI) / 180
-const polar = (r, deg, [cx, cy] = [C, C]) => [
-  cx + r * Math.cos(rad(deg)),
-  cy + r * Math.sin(rad(deg)),
-]
-const xy = ([x, y]) => `${num(x)} ${num(y)}`
-/** `point` turned `deg` degrees round `centre`. */
-const turn = ([x, y], [cx, cy], deg) => {
-  const c = Math.cos(rad(deg))
-  const s = Math.sin(rad(deg))
-  return [cx + (x - cx) * c - (y - cy) * s, cy + (x - cx) * s + (y - cy) * c]
+
+/**
+ * The palette: the viewer's green and the commander's blue on the two
+ * panels, paper white on top, and the eye's colours.
+ */
+const INK = {
+  green: { light: "#3ff0a0", dark: "#0f9d62", edge: "#d9ffec" },
+  blue: { light: "#3d86ff", dark: "#1a3fb8", edge: "#dce8ff" },
+  paper: { back: "#dce5f0", front: "#fbfcfe", rim: "#a9b8cc" },
+  iris: { green: "#2bf07f", teal: "#19c9c2", blue: "#2f6bff", deep: "#0b2f6e" },
+  pupil: "#050d1f",
 }
-const indent = (lines) => lines.map((l) => `  ${l}`)
+
 const stops = (list) =>
   list
     .map(([at, color, opacity = 1]) =>
@@ -80,363 +84,320 @@ const linear = (id, [x1, y1], [x2, y2], list) =>
   `<linearGradient id="${id}" x1="${num(x1)}" y1="${num(y1)}" x2="${num(x2)}" y2="${num(y2)}" gradientUnits="userSpaceOnUse">${stops(list)}</linearGradient>`
 const radial = (id, [cx, cy], r, list) =>
   `<radialGradient id="${id}" cx="${num(cx)}" cy="${num(cy)}" r="${num(r)}" gradientUnits="userSpaceOnUse">${stops(list)}</radialGradient>`
+const shape = (points) => `M${points.map(([x, y]) => `${num(x)} ${num(y)}`).join("L")}Z`
 
-/** Head to tail: lime, neon green, spring green, teal, blue. */
-const GREEN = [
-  [0, "#f2ff7a"],
-  [0.12, "#c6ff3a"],
-  [0.32, "#5cff4a"],
-  [0.54, "#1ef09a"],
-  [0.77, "#13c8d8"],
-  [1, "#1f7bff"],
-]
-/** Head to tail: ice, cyan, azure, blue, royal blue. */
-const BLUE = [
-  [0, "#b8fbff"],
-  [0.12, "#4fe3ff"],
-  [0.32, "#2aa8ff"],
-  [0.54, "#2f6bff"],
-  [0.77, "#3346e8"],
-  [1, "#2a5cff"],
-]
+/** `a` to `b` (hex colours) by `k`. */
+function mix(a, b, k) {
+  const ch = (hex, i) => parseInt(hex.slice(1 + 2 * i, 3 + 2 * i), 16)
+  const out = [0, 1, 2].map((i) => Math.round(ch(a, i) + (ch(b, i) - ch(a, i)) * k))
+  return `#${out.map((v) => v.toString(16).padStart(2, "0")).join("")}`
+}
 
+const COS = Math.cos(Math.PI / 6)
+const SIN = 0.5
 /**
- * A comet: a round head at `head` degrees (clockwise from three o'clock) moving
- * clockwise, and a body trailing `span` degrees behind it. Its outer edge
- * spirals in from radius `r0` to `r1` while it thins from `w0` to `w1`.
+ * A point of the block on the canvas, in isometric view: `x` runs toward
+ * you on the right, `y` toward you on the left and `z` up; the block's top
+ * back corner is at the origin.
  */
-function comet({ head, span, r0, r1, w0, w1, thin, spiral }) {
-  const N = 160
-  const outer = []
-  const inner = []
-  for (let i = 0; i <= N; i++) {
-    const t = i / N
-    const ro = r0 + (r1 - r0) * t ** spiral
-    const w = w1 + (w0 - w1) * (1 - t) ** thin
-    outer.push(polar(ro, head - span * t))
-    inner.push(polar(ro - w, head - span * t))
-  }
-  // Half a circle from the outer edge to the inner one, ahead of the head or behind the tail.
-  const cap = (deg, mid, r, ahead, from, to) => {
-    const [cx, cy] = polar(mid, deg)
-    const n = [Math.cos(rad(deg)), Math.sin(rad(deg))]
-    const d = ahead ? 1 : -1
-    const t = [-n[1] * d, n[0] * d]
-    const out = []
-    for (let i = 1; i < 24; i++) {
-      const th = from + ((to - from) * i) / 24
-      const u = Math.cos(th) * r
-      const v = Math.sin(th) * r
-      out.push([cx + n[0] * u + t[0] * v, cy + n[1] * u + t[1] * v])
-    }
-    return out
-  }
-  const tail = cap(head - span, r1 - w1 / 2, w1 / 2, false, 0, Math.PI)
-  const nose = cap(head, r0 - w0 / 2, w0 / 2, true, Math.PI, 0)
-  return `M${[...outer, ...tail, ...inner.reverse(), ...nose].map(xy).join("L")}Z`
-}
-
-/** The eye at `at`: dark blue glass, green and cyan coating reflections, a two-pane catchlight. */
-function eye(p, at, r, small) {
-  const [ex, ey] = at
-  const circle = (rr, attributes) =>
-    `<circle cx="${num(ex)}" cy="${num(ey)}" r="${num(rr)}" ${attributes}/>`
-  const arc = (rr, a0, a1) =>
-    `M${xy(polar(rr, a0, at))}A${num(rr)} ${num(rr)} 0 0 1 ${xy(polar(rr, a1, at))}`
-  const defs = [
-    radial(`${p}glass`, [ex - r * 0.35, ey - r * 0.4], r * 1.5, [
-      [0, "#2f86ff"],
-      [0.28, "#1146a8"],
-      [0.62, "#06204e"],
-      [1, "#020a1a"],
-    ]),
-    linear(
-      `${p}rim`,
-      [ex - r, ey - r],
-      [ex + r, ey + r],
-      [
-        [0, "#ffffff", 0.9],
-        [0.5, "#3fd0ff", 0.35],
-        [1, "#5cff7a", 0.85],
-      ],
-    ),
-  ]
-  if (small) {
-    // A pupil, a rim and one square catchlight: what still reads at 16 px.
-    return {
-      defs,
-      body: [
-        circle(r, `fill="url(#${p}glass)"`),
-        circle(r * 0.42, `fill="#010812"`),
-        circle(r * 0.95, `fill="none" stroke="url(#${p}rim)" stroke-width="${num(r * 0.1)}"`),
-        `<rect x="${num(ex - r * 0.66)}" y="${num(ey - r * 0.66)}" width="${num(r * 0.34)}" height="${num(r * 0.34)}" rx="${num(r * 0.1)}" fill="#fff" fill-opacity=".9"/>`,
-      ],
-    }
-  }
-  defs.push(
-    linear(
-      `${p}pane`,
-      [0, ey - r * 0.64],
-      [0, ey - r * 0.26],
-      [
-        [0, "#ffffff"],
-        [1, "#ffffff", 0.55],
-      ],
-    ),
-    `<filter id="${p}soft" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="${num(r * 0.07)}"/></filter>`,
-    `<clipPath id="${p}clip">${circle(r, "")}</clipPath>`,
-  )
-  const pane = (x) =>
-    `<rect x="${num(x)}" y="${num(ey - r * 0.64)}" width="${num(r * 0.19)}" height="${num(r * 0.34)}" rx="${num(r * 0.055)}"/>`
-  return {
-    defs,
-    body: [
-      circle(r, `fill="url(#${p}glass)"`),
-      `<g clip-path="url(#${p}clip)" filter="url(#${p}soft)" fill="none" stroke-linecap="round">`,
-      `  <path d="${arc(r * 0.8, 10, 80)}" stroke="#5cff7a" stroke-width="${num(r * 0.12)}" stroke-opacity=".7"/>`,
-      `  <path d="${arc(r * 0.8, 190, 245)}" stroke="#38e0ff" stroke-width="${num(r * 0.1)}" stroke-opacity=".5"/>`,
-      `</g>`,
-      circle(
-        r * 0.64,
-        `fill="none" stroke="#6fb8ff" stroke-opacity=".3" stroke-width="${num(r * 0.022)}"`,
-      ),
-      circle(r * 0.36, `fill="#010812"`),
-      circle(r * 0.975, `fill="none" stroke="url(#${p}rim)" stroke-width="${num(r * 0.05)}"`),
-      `<g fill="url(#${p}pane)" transform="rotate(-22 ${num(ex - r * 0.4)} ${num(ey - r * 0.44)})">`,
-      `  ${pane(ex - r * 0.63)}`,
-      `  ${pane(ex - r * 0.4)}`,
-      `</g>`,
-      `<circle cx="${num(ex + r * 0.27)}" cy="${num(ey + r * 0.3)}" r="${num(r * 0.045)}" fill="#fff" fill-opacity=".6"/>`,
-    ],
-  }
-}
+const iso = ([x, y, z]) => [(x - y) * COS, (x + y) * SIN - z]
 
 /**
- * A sheet of paper turned `rot` degrees round its centre, with its top right
- * corner folded over. `text` lines run across it and part round a circle of
- * radius `gap` at `hole` (the eye, in the sheet's own unturned frame).
- */
-function sheet(p, { x, y, w, h, rot, fold }, { text, hole = [0, 0], gap = 0, plain = false }) {
-  const r = w * 0.07
-  const f = w * fold
-  const defs = [
-    linear(
-      `${p}sheet`,
-      [x, y],
-      [x + w, y + h],
-      plain
-        ? [
-            [0, "#e4eefa"],
-            [1, "#c3d8f0"],
-          ]
-        : [
-            [0, "#ffffff"],
-            [0.6, "#eef6ff"],
-            [1, "#d9eaff"],
-          ],
-    ),
-    linear(
-      `${p}sheetEdge`,
-      [x, y],
-      [x, y + h],
-      [
-        [0, "#ffffff", 0.9],
-        [1, "#8fb2dc", 0.7],
-      ],
-    ),
-    linear(
-      `${p}flap`,
-      [x + w - f, y + f],
-      [x + w - f / 2, y + f / 2],
-      [
-        [0, "#b9d4f5"],
-        [1, "#f4f9ff"],
-      ],
-    ),
-  ]
-  const R = (a, b) => `${num(a)} ${num(b)}`
-  const outline = [
-    `M${R(x + r, y)}H${num(x + w - f)}L${R(x + w, y + f)}V${num(y + h - r)}`,
-    `Q${R(x + w, y + h)} ${R(x + w - r, y + h)}H${num(x + r)}`,
-    `Q${R(x, y + h)} ${R(x, y + h - r)}V${num(y + r)}Q${R(x, y)} ${R(x + r, y)}Z`,
-  ].join("")
-  const flap = `M${R(x + w - f, y)}V${num(y + f - r * 0.6)}Q${R(x + w - f, y + f)} ${R(x + w - f + r * 0.6, y + f)}H${num(x + w)}Z`
-  const lines = []
-  for (const { top, length, thick, color, opacity } of text) {
-    const ly = y + h * top
-    const t = h * thick
-    const x0 = x + w * 0.14
-    const x1 = x0 + w * 0.72 * length
-    // A line that crosses the eye is split round it, as text flows round a picture.
-    const dy = Math.max(Math.abs(ly + t / 2 - hole[1]) - t / 2, 0)
-    const half = dy < gap ? Math.sqrt(gap * gap - dy * dy) : 0
-    const parts = half
-      ? [
-          [x0, Math.min(x1, hole[0] - half)],
-          [Math.max(x0, hole[0] + half), x1],
-        ]
-      : [[x0, x1]]
-    for (const [a, b] of parts)
-      if (b - a > t * 1.5)
-        lines.push(
-          `<rect x="${num(a)}" y="${num(ly)}" width="${num(b - a)}" height="${num(t)}" rx="${num(t / 2)}" fill="${color}" fill-opacity="${opacity}"/>`,
-        )
-  }
-  const transform = `rotate(${rot} ${num(x + w / 2)} ${num(y + h / 2)})`
-  return {
-    defs,
-    outline,
-    transform,
-    body: [
-      `<g transform="${transform}">`,
-      `  <path d="${outline}" fill="url(#${p}sheet)"/>`,
-      `  <path d="${outline}" fill="none" stroke="url(#${p}sheetEdge)" stroke-width="${num(w * 0.008)}"/>`,
-      ...indent(lines),
-      `  <path d="${flap}" fill="url(#${p}flap)"/>`,
-      `</g>`,
-    ],
-  }
-}
-
-/** Lines of text: a title, then body lines `step` apart (fractions of the sheet's height). */
-function textLines({ first, step, count, title, body, lengths }, small) {
-  return Array.from({ length: count }, (_, i) => ({
-    top: first + i * step,
-    length: lengths[i % lengths.length],
-    thick: i === 0 ? title : body,
-    color: i === 0 ? "#2a4a78" : small ? "#6a88b0" : "#7f98b8",
-    opacity: i === 0 ? 0.85 : small ? 0.8 : 0.55,
-  }))
-}
-
-/**
- * Each drawing: the comets round the canvas centre; the `sheet` (and the `under`
- * one); the eye in the middle of the sheet, `dy` below its centre; `size`, the
- * ring's diameter once fitted to the canvas; and `tile`, its diameter on the
- * macOS tile.
+ * Each drawing, the block's sizes as parts of its top's side: its height, and
+ * how far its three front edges are chamfered; the iris's radius as a part of
+ * the top's side; how many file rows each panel shows; and how much of the
+ * canvas the block fills.
  */
 const DRAWINGS = {
-  big: {
-    comet: { head: -38, span: 172, r0: 468, r1: 398, w0: 168, w1: 26, thin: 0.7, spiral: 1.4 },
-    sheet: { x: 282, y: 212, w: 460, h: 600, rot: -10, fold: 0.22 },
-    under: { x: 318, y: 190, w: 440, h: 580, rot: 4, fold: 0.22 },
-    eye: { r: 146, dy: 0.04 },
-    text: {
-      first: 0.13,
-      step: 0.068,
-      count: 11,
-      title: 0.044,
-      body: 0.026,
-      lengths: [0.55, 1, 0.92, 1, 0.84, 1, 0.96, 0.72, 1, 0.88, 0.6],
-    },
-    size: 944,
-    tile: 690,
-  },
-  small: {
-    comet: { head: -38, span: 168, r0: 500, r1: 470, w0: 200, w1: 96, thin: 0.9, spiral: 1.2 },
-    sheet: { x: 300, y: 196, w: 424, h: 620, rot: -10, fold: 0.3 },
-    eye: { r: 120, dy: 0.06 },
-    text: { first: 0.12, step: 0.11, count: 8, title: 0.055, body: 0.055, lengths: [0.62, 1] },
-    size: 1000,
-    tile: 800,
-  },
+  big: { height: 0.8, chamfer: 0.055, iris: 0.52, rows: 4, fill: 0.86 },
+  small: { height: 0.78, chamfer: 0.08, iris: 0.56, rows: 0, fill: 0.95 },
 }
 
-/** The mark's defs and body; `p` prefixes its ids. */
+/** The file rows on a panel, in the panel's own units (its width and height 1): left end, top, length. */
+const ROWS = [
+  [0.14, 0.2, 0.62],
+  [0.14, 0.38, 0.44],
+  [0.14, 0.56, 0.7],
+  [0.14, 0.74, 0.36],
+]
+
+/**
+ * The iris, a cut gem round `[cx, cy]` of radius `r`, lying in a plane that
+ * `squash`es it upright (1 / √3 on the block's top): two rings of facets,
+ * green toward the light at the top left and blue away from it, each lit by
+ * which way it leans and darker the deeper it lies; the pupil in its middle.
+ */
+function iris([cx, cy], r, squash) {
+  const ring = (rr, offset) =>
+    Array.from({ length: 12 }, (_, k) => {
+      const a = ((k * 30 + offset - 90) * Math.PI) / 180
+      return [cx + rr * Math.cos(a), cy + rr * Math.sin(a) * squash]
+    })
+  const A = ring(r, 0)
+  const B = ring(r * 0.7, 15)
+  const P = ring(r * 0.4, 0)
+  /** The facet's colour: its hue by where it lies round the iris, its light by which way it leans and how deep it lies. */
+  const tone = (points, lean, depth) => {
+    const [x, y] = points.reduce(([sx, sy], [px, py]) => [sx + px / 3, sy + py / 3], [0, 0])
+    const a = Math.atan2((y - cy) / squash, x - cx)
+    // 0 toward the light (top left), 1 away from it.
+    const away = (1 - Math.cos(a + (3 * Math.PI) / 4)) / 2
+    const hue =
+      away < 0.5
+        ? mix(INK.iris.green, INK.iris.teal, away * 2)
+        : mix(INK.iris.teal, INK.iris.blue, away * 2 - 1)
+    const lit =
+      lean > 0
+        ? mix(hue, "#ffffff", 0.18 * lean * (1 - away))
+        : mix(hue, INK.iris.deep, -0.35 * lean)
+    return mix(lit, INK.iris.deep, depth)
+  }
+  const facets = []
+  for (let k = 0; k < 12; k++) {
+    const n = (k + 1) % 12
+    facets.push({ points: [A[k], A[n], B[k]], lean: 1, depth: 0 })
+    facets.push({ points: [B[k], B[n], A[n]], lean: -0.4, depth: 0.1 })
+    facets.push({ points: [B[k], B[n], P[n]], lean: 0.6, depth: 0.28 })
+    facets.push({ points: [P[k], P[n], B[k]], lean: -0.6, depth: 0.4 })
+  }
+  return {
+    facets: facets.map((f) => ({ d: shape(f.points), fill: tone(f.points, f.lean, f.depth) })),
+    rim: shape(A),
+    pupil: shape(P),
+  }
+}
+
+/**
+ * The block in isometric view, its top 100 a side and `height` of that tall,
+ * with its three front edges chamfered and its back edge too (which, seen
+ * edge on, cuts the top's back corner as the others are cut): each face as a
+ * polygon on the canvas, and the maps that take a panel's own units (its width
+ * and height 1) onto the left and right panels.
+ */
+function block({ height, chamfer }) {
+  const L = 100
+  const H = height * L
+  const c = chamfer * L
+  const e = L - c
+  const P = (list) => list.map(iso)
+  const faces = {
+    // From the back corner's cut round by the right, front and left corners.
+    top: P([
+      [0, c, H],
+      [c, 0, H],
+      [e, 0, H],
+      [e, e, H],
+      [0, e, H],
+    ]),
+    left: P([
+      [0, L, H - c],
+      [e, L, H - c],
+      [e, L, 0],
+      [0, L, 0],
+    ]),
+    right: P([
+      [L, e, H - c],
+      [L, 0, H - c],
+      [L, 0, 0],
+      [L, e, 0],
+    ]),
+    // The chamfers: along the top's front left and front right edges, down the front edge, and where they meet.
+    topLeft: P([
+      [0, e, H],
+      [e, e, H],
+      [e, L, H - c],
+      [0, L, H - c],
+    ]),
+    topRight: P([
+      [e, 0, H],
+      [e, e, H],
+      [L, e, H - c],
+      [L, 0, H - c],
+    ]),
+    front: P([
+      [e, L, H - c],
+      [L, e, H - c],
+      [L, e, 0],
+      [e, L, 0],
+    ]),
+    corner: P([
+      [e, e, H],
+      [L, e, H - c],
+      [e, L, H - c],
+    ]),
+    ground: P([
+      [0, 0, 0],
+      [L, 0, 0],
+      [L, L, 0],
+      [0, L, 0],
+    ]),
+  }
+  // A panel's (u, v) to the canvas: u along its top edge, v down it.
+  const [lx, ly] = iso([0, L, H - c])
+  const [rx, ry] = iso([L, e, H - c])
+  const maps = {
+    left: [COS * e, SIN * e, 0, H - c, lx, ly],
+    right: [COS * e, -SIN * e, 0, H - c, rx, ry],
+  }
+  const eye = iso([e / 2, e / 2, H])
+  return { faces, maps, eye, side: e }
+}
+
+/**
+ * The mark: an isometric block, the shell that hosts both apps. Its top is a
+ * sheet of white paper that is an eye: the diamond of the top is the eye's
+ * lids, and a gem-cut iris lies in it, with a small diamond (the top's own
+ * shape) for a catchlight. Its two sides are the two panels, the viewer's
+ * green on the left and the commander's blue on the right, with file rows
+ * across them. Light falls from the top left: the top is brightest, the green
+ * side lit, the blue side in shade, and the chamfered front edges catch the
+ * light. Small, the iris is plain and the panels bare. `p` prefixes its ids.
+ */
 function mark(small, p = "") {
   const d = small ? DRAWINGS.small : DRAWINGS.big
-  const green = d.comet
-  const blue = { ...green, head: green.head + 180 }
-  const head = (c) => polar(c.r0 - c.w0 / 2, c.head)
-  const tail = (c) => polar(c.r1, c.head - c.span)
-  const innermost = Math.min(green.r0 - green.w0, green.r1 - green.w1)
+  const b = block(d)
+  const f = b.faces
+  const all = Object.values(f).flat()
+  const xs = all.map(([x]) => x)
+  const ys = all.map(([, y]) => y)
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
+  const scale = (2 * C * d.fill) / Math.max(x1 - x0, y1 - y0)
+  const place = `translate(${C} ${C}) scale(${Math.round(scale * 1000) / 1000}) translate(${num(-(x0 + x1) / 2)} ${num(-(y0 + y1) / 2)})`
+  const [ex, ey] = b.eye
+  const r = d.iris * b.side
+  const top = (k) => [f.top[3][0], f.top[0][1] + (f.top[3][1] - f.top[0][1]) * k]
   const defs = [
-    linear(`${p}green`, head(green), tail(green), GREEN),
-    linear(`${p}blue`, head(blue), tail(blue), BLUE),
-    // Shading across each comet: darker on the inner edge, a lit outer rim.
-    radial(`${p}tube`, [C, C], green.r0, [
-      [frac(innermost / green.r0), "#031a38", 0.38],
-      [frac((innermost + (green.r0 - innermost) * 0.55) / green.r0), "#031a38", 0],
-      [0.93, "#ffffff", 0],
-      [1, "#ffffff", 0.3],
+    linear(`${p}paper`, top(0), top(1), [
+      [0, INK.paper.back],
+      [1, INK.paper.front],
     ]),
+    linear(`${p}green`, f.left[0], f.left[3], [
+      [0, INK.green.light],
+      [1, INK.green.dark],
+    ]),
+    linear(`${p}blue`, f.right[0], f.right[3], [
+      [0, INK.blue.light],
+      [1, INK.blue.dark],
+    ]),
+    linear(`${p}front`, f.front[0], f.front[3], [
+      [0, "#7defd3"],
+      [1, "#16928f"],
+    ]),
+    // The upper lid's shadow on the eye.
+    linear(`${p}lid`, top(0), top(0.4), [
+      [0, "#0a2340", 0.1],
+      [1, "#0a2340", 0],
+    ]),
+    `<clipPath id="${p}top"><path d="${shape(f.top)}"/></clipPath>`,
   ]
-  const outlines = []
-  const ring = []
-  for (const [c, name, light] of [
-    [green, "green", "#f6ffd0"],
-    [blue, "blue", "#e6fdff"],
-  ]) {
-    const outline = comet(c)
-    outlines.push(outline)
-    ring.push(`<path d="${outline}" fill="url(#${p}${name})"/>`)
-    if (!small) {
-      defs.push(
-        radial(`${p}${name}Head`, head(c), c.w0 * 0.55, [
-          [0, light, 0.7],
-          [1, light, 0],
-        ]),
-      )
-      ring.push(`<path d="${outline}" fill="url(#${p}${name}Head)"/>`)
-    }
-    ring.push(`<path d="${outline}" fill="url(#${p}tube)"/>`)
-  }
-
-  const { x, y, w, h, rot } = d.sheet
-  const hole = [x + w / 2, y + h / 2 + h * d.eye.dy]
-  const S = sheet(p, d.sheet, { text: textLines(d.text, small), hole, gap: d.eye.r * 1.18 })
-  const U = d.under && sheet(`${p}under-`, d.under, { text: [], plain: true })
-  const E = eye(p, turn(hole, [x + w / 2, y + h / 2], rot), d.eye.r, small)
-  defs.push(...S.defs, ...(U ? U.defs : []), ...E.defs)
-  // Like a planet's ring, the ring runs in front of the sheets' lower half and
-  // behind the upper half; it crosses over beside the sheets, clear of them. It is
-  // drawn once, under the sheets, and the sheets are cut away where it is in front.
-  const lowerRing = (fill) => [
-    `<g clip-path="url(#${p}lowerHalf)" fill="${fill}">`,
-    ...outlines.map((o) => `  <path d="${o}"/>`),
-    `</g>`,
-  ]
-  defs.push(
-    `<clipPath id="${p}lowerHalf"><rect y="${C}" width="1024" height="${C}"/></clipPath>`,
-    [
-      `<mask id="${p}inFront" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">`,
-      `<rect width="1024" height="1024" fill="#fff"/>`,
-      ...lowerRing("#000"),
-      `</mask>`,
-    ].join(""),
-  )
-  const sheets = [...(U ? U.body : []), ...S.body]
-  const body = [...ring, `<g mask="url(#${p}inFront)">`]
-  if (small) body.push(...indent(sheets))
-  else {
-    // The sheets' shadow on the ring behind them, and the ring's on the paper in front.
-    const onSheets = [S, ...(U ? [U] : [])].map(
-      (s) => `<path d="${s.outline}" transform="${s.transform}"/>`,
-    )
+  const body = []
+  if (!small) {
     defs.push(
-      `<filter id="${p}lift" x="-20%" y="-15%" width="140%" height="140%"><feDropShadow dy="${num(h * 0.025)}" stdDeviation="${num(h * 0.03)}" flood-color="#021026" flood-opacity=".45"/></filter>`,
-      `<filter id="${p}soften" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="10"/></filter>`,
-      `<clipPath id="${p}onSheets">${onSheets.join("")}</clipPath>`,
+      `<filter id="${p}blur" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="3.5"/></filter>`,
     )
+    // The block's shadow on the ground.
     body.push(
-      `  <g filter="url(#${p}lift)">`,
-      ...indent(indent(sheets)),
-      `  </g>`,
-      `  <g clip-path="url(#${p}onSheets)">`,
-      `    <g transform="translate(0 8)" filter="url(#${p}soften)" opacity=".35">`,
-      ...indent(indent(indent(lowerRing("#021026")))),
-      `    </g>`,
-      `  </g>`,
+      `<path d="${shape(f.ground)}" transform="translate(0 6)" fill="#04101f" fill-opacity=".28" filter="url(#${p}blur)"/>`,
     )
   }
-  body.push(`</g>`, ...E.body)
-  const k = d.size / (2 * green.r0)
+  body.push(
+    `<path d="${shape(f.left)}" fill="url(#${p}green)"/>`,
+    `<path d="${shape(f.right)}" fill="url(#${p}blue)"/>`,
+    `<path d="${shape(f.front)}" fill="url(#${p}front)"/>`,
+  )
+  // The file rows: light bars across each panel, as a file list shows them.
+  for (const [side, opacity] of [
+    ["left", 0.32],
+    ["right", 0.26],
+  ])
+    if (d.rows)
+      body.push(
+        `<g transform="matrix(${b.maps[side].map((v) => num(v)).join(" ")})" fill="#ffffff" fill-opacity="${opacity}">`,
+        ...ROWS.slice(0, d.rows).map(
+          ([u, v, len]) => `  <rect x="${u}" y="${v}" width="${len}" height=".085" rx=".04"/>`,
+        ),
+        `</g>`,
+      )
+  body.push(
+    `<path d="${shape(f.top)}" fill="url(#${p}paper)"/>`,
+    `<path d="${shape(f.topLeft)}" fill="${INK.green.edge}"/>`,
+    `<path d="${shape(f.topRight)}" fill="${INK.blue.edge}"/>`,
+    `<path d="${shape(f.corner)}" fill="#ffffff"/>`,
+  )
+  // The eye, lying in the top's own plane, and its catchlight: a small diamond, the block's own top.
+  const eye = iris([ex, ey], r, 1 / Math.sqrt(3))
+  const glint = (w) => {
+    const [gx, gy] = [ex - r * 0.36, ey - r * 0.2]
+    return shape([
+      [gx - w * COS, gy],
+      [gx, gy - w * SIN],
+      [gx + w * COS, gy],
+      [gx, gy + w * SIN],
+    ])
+  }
+  body.push(`<g clip-path="url(#${p}top)">`)
+  if (small)
+    body.push(
+      `  <path d="${eye.rim}" fill="${INK.iris.teal}"/>`,
+      `  <path d="${eye.pupil}" fill="${INK.pupil}"/>`,
+      `  <path d="${glint(r * 0.3)}" fill="#ffffff"/>`,
+    )
+  else
+    body.push(
+      ...eye.facets.map((facet) => `  <path d="${facet.d}" fill="${facet.fill}"/>`),
+      `  <path d="${eye.rim}" fill="none" stroke="${INK.iris.deep}" stroke-opacity=".55" stroke-width="${num(r * 0.04)}" stroke-linejoin="round"/>`,
+      `  <path d="${eye.pupil}" fill="${INK.pupil}"/>`,
+      `  <path d="${shape(f.top)}" fill="url(#${p}lid)"/>`,
+      `  <path d="${glint(r * 0.24)}" fill="#ffffff" fill-opacity=".95"/>`,
+    )
+  body.push(`</g>`)
+  // The top's back edges and the chamfers' ends, drawn fine so the block keeps its shape on a white page.
+  body.push(
+    `<path d="M${[f.topLeft[3], f.top[4], f.top[0], f.top[1], f.top[2], f.topRight[3]].map(([x, y]) => `${num(x)} ${num(y)}`).join("L")}" fill="none" stroke="${INK.paper.rim}" stroke-width="${small ? 1.4 : 0.8}" stroke-linejoin="round"/>`,
+  )
+  return { defs, body: [`<g transform="${place}">`, ...body.map((l) => `  ${l}`), `</g>`] }
+}
+
+/** The mark on the macOS tile: 824 px with a 100 px margin, corner radius 184. */
+function macTile(small) {
+  const m = mark(small, "m-")
+  const k = small ? 0.84 : 0.74
   return {
-    defs,
+    defs: [
+      linear(
+        "tile",
+        [C, 100],
+        [C, 924],
+        [
+          [0, "#162133"],
+          [1, "#070b12"],
+        ],
+      ),
+      linear(
+        "edge",
+        [C, 100],
+        [C, 924],
+        [
+          [0, "#ffffff", 0.2],
+          [0.5, "#ffffff", 0.03],
+          [1, "#ffffff", 0.08],
+        ],
+      ),
+      radial("glow", [C, C * 0.9], 430, [
+        [0, INK.iris.teal, 0.22],
+        [1, INK.iris.teal, 0],
+      ]),
+      ...m.defs,
+    ],
     body: [
-      `<g transform="translate(${C} ${C}) scale(${frac(k)}) translate(-${C} -${C})">`,
-      ...indent(body),
+      `<rect x="100" y="100" width="824" height="824" rx="184" fill="url(#tile)"/>`,
+      ...(small
+        ? []
+        : [`<rect x="100" y="100" width="824" height="824" rx="184" fill="url(#glow)"/>`]),
+      `<g transform="translate(${C} ${C}) scale(${k}) translate(-${C} -${C})">`,
+      ...m.body.map((l) => `  ${l}`),
       `</g>`,
+      `<rect x="102" y="102" width="820" height="820" rx="182" fill="none" stroke="url(#edge)" stroke-width="4"/>`,
     ],
   }
 }
@@ -447,51 +408,16 @@ const doc = ({ defs, body }, { viewBox = "0 0 1024 1024", size = 1024, title } =
     `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="${viewBox}">`,
     ...(title ? [`  <title>${title}</title>`] : []),
     `  ${NOTE}`,
-    `  <defs>`,
-    ...defs.map((l) => `    ${l}`),
-    `  </defs>`,
-    ...indent(body),
+    ...(defs.length ? [`  <defs>`, ...defs.map((l) => `    ${l}`), `  </defs>`] : []),
+    ...body.map((l) => `  ${l}`),
     `</svg>`,
     ``,
   ].join("\n")
 
-/** The mark on the macOS tile: 824 px with a 100 px margin, corner radius 184. */
-function macTile(small) {
-  const m = mark(small, "m-")
-  const d = small ? DRAWINGS.small : DRAWINGS.big
-  return {
-    defs: [
-      linear(
-        "tile",
-        [512, 100],
-        [512, 924],
-        [
-          [0, "#0f3157"],
-          [0.55, "#081a33"],
-          [1, "#030b17"],
-        ],
-      ),
-      linear(
-        "edge",
-        [512, 100],
-        [512, 924],
-        [
-          [0, "#ffffff", 0.22],
-          [0.5, "#ffffff", 0.04],
-          [1, "#ffffff", 0.1],
-        ],
-      ),
-      `<filter id="lift" x="-10%" y="-10%" width="120%" height="125%"><feDropShadow dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".3"/></filter>`,
-      ...m.defs,
-    ],
-    body: [
-      `<rect x="100" y="100" width="824" height="824" rx="184" fill="url(#tile)" filter="url(#lift)"/>`,
-      `<g transform="translate(512 512) scale(${frac(d.tile / d.size)}) translate(-512 -512)">`,
-      ...indent(m.body),
-      `</g>`,
-      `<rect x="102" y="102" width="820" height="820" rx="182" fill="none" stroke="url(#edge)" stroke-width="4"/>`,
-    ],
-  }
+/** Cropped to the drawing, as a square, with a little room round it. */
+const crop = ({ fill }) => {
+  const at = Math.floor(C * (1 - fill)) - 12
+  return `${at} ${at} ${2 * (C - at)} ${2 * (C - at)}`
 }
 
 // ---- Packing ------------------------------------------------------------------------
@@ -643,8 +569,6 @@ const write = (path, data) => {
 write(join(BUILD, "icon.svg"), svgs.big)
 write(join(BUILD, "icon-small.svg"), svgs.small)
 write(join(BUILD, "icon-mac.svg"), svgs.mac)
-// Cropped to the ring, whose diameter is `size`.
-const crop = ({ size }) => `${C - size / 2 - 4} ${C - size / 2 - 4} ${size + 8} ${size + 8}`
 write(
   join(BUILD, "mark.svg"),
   doc(mark(false), { viewBox: crop(DRAWINGS.big), size: 96, title: "Panelyth" }),

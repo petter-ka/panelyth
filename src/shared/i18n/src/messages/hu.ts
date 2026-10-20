@@ -1090,6 +1090,7 @@ const messages: Messages = {
   "Modified {date}": "Módosítva: {date}",
   "More Git commands": "További Git-parancsok",
   "More contrast": "Nagyobb kontraszt",
+  "More drives": "További meghajtók",
   "More filters": "További szűrők",
   "More ways to save": "További mentési módok",
   Mosaic: "Mozaik",

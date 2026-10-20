@@ -1,11 +1,12 @@
 import type { Volume, VolumeKind } from "@panelyth/contracts"
 import { Spinner, Tooltip } from "@panelyth/ui"
 import { formatChord } from "@panelyth/renderer-core"
-import { useEffect, useMemo } from "react"
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import {
   closeDriveMenu,
   driveName,
   ensureVolumes,
+  fitDrives,
   openDrive,
   openDriveMenu,
   openPlace,
@@ -49,6 +50,29 @@ const driveTitle = (v: Volume): string =>
     .filter(Boolean)
     .join(" · ")
 
+/** A drive in a menu: name, label, marker and space (the drive menu and the … dropdown). */
+function driveEntry(v: Volume, side: Side, current: Volume | null): MenuEntry {
+  const name = driveName(v)
+  return {
+    id: `drive-${v.path}`,
+    label: (
+      <span className="flex items-center gap-2">
+        <span className="font-medium">{name}</span>
+        {v.label && v.label !== name && <span className="text-muted">{v.label}</span>}
+        {MARKERS[v.kind] && (
+          <span className="rounded border border-border px-1 text-3xs text-muted">
+            {t(MARKERS[v.kind]!)}
+          </span>
+        )}
+      </span>
+    ),
+    detail: spaceText(v),
+    current: current?.path === v.path,
+    ...(name.length === 1 && { accessKey: name }),
+    onSelect: () => void openDrive(side, v.path),
+  }
+}
+
 const NO_CRUMBS: readonly never[] = []
 
 /** A small globe for the FTP button: drawn here, since the icon libraries have no server icon in use. */
@@ -87,6 +111,57 @@ export function usePanelVolume(side: Side): Volume | null {
   return useMemo(() => volumeFor(volumes, crumbs), [volumes, crumbs])
 }
 
+const DRIVE_GAP = 2 // gap-0.5
+const MORE_WIDTH = 24 // the … button, w-6
+
+/**
+ * How many drive buttons fit the bar. A new drive list renders in full once
+ * and its buttons are measured before paint; a resize refits from those
+ * widths, so only a change of the count re-renders.
+ */
+function useDriveFit(volumes: readonly Volume[]) {
+  const stripRef = useRef<HTMLDivElement>(null)
+  const tailRef = useRef<HTMLDivElement>(null)
+  const widths = useRef<number[]>([])
+  // Free-space refreshes replace the list; only new names need measuring.
+  const names = useMemo(() => volumes.map(driveName).join("\n"), [volumes])
+  const [fit, setFit] = useState<{ names: string; shown: number } | null>(null)
+
+  const refit = useCallback(() => {
+    const strip = stripRef.current
+    const tail = tailRef.current
+    if (!strip || !tail) return
+    const room = strip.clientWidth - tail.offsetWidth
+    const shown = fitDrives(widths.current, room, MORE_WIDTH, DRIVE_GAP)
+    setFit((prev) => (prev && prev.shown === shown ? prev : prev && { ...prev, shown }))
+  }, [])
+
+  useLayoutEffect(() => {
+    const strip = stripRef.current
+    const tail = tailRef.current
+    if (!strip || !tail) return
+    widths.current = Array.from(
+      strip.querySelectorAll<HTMLElement>("[data-drive]"),
+      (b) => b.offsetWidth,
+    )
+    const room = strip.clientWidth - tail.offsetWidth
+    setFit({ names, shown: fitDrives(widths.current, room, MORE_WIDTH, DRIVE_GAP) })
+  }, [names])
+
+  useEffect(() => {
+    const strip = stripRef.current
+    const tail = tailRef.current
+    if (!strip || !tail || typeof ResizeObserver === "undefined") return
+    const observer = new ResizeObserver(refit)
+    observer.observe(strip)
+    observer.observe(tail)
+    return () => observer.disconnect()
+  }, [refit])
+
+  const shown = fit?.names === names ? fit.shown : volumes.length
+  return { stripRef, tailRef, shown }
+}
+
 /**
  * The drive bar (Stage C03, CFR-09): a button per drive with the panel's
  * drive pressed, and the drive menu (Alt+F1 / Alt+F2) with labels, space,
@@ -102,6 +177,22 @@ export function DriveBar({ side }: { side: Side }) {
   const opening = useListingStore((s) => (s[side].loading ? s[side].loadingTarget : null))
   const remote = useListingStore((s) => s[side].remote)
   const connectionsKey = useConnectionsKey()
+  const { stripRef, tailRef, shown } = useDriveFit(volumes)
+  const hidden = volumes.slice(shown)
+  const currentHidden = hidden.some((v) => v.path === current?.path)
+  // The dropdown of the drives that don't fit, opened under the … button.
+  const [more, setMore] = useState<{ left: number; top: number } | null>(null)
+  // A click on … while its dropdown is open closes it (the dropdown's outside
+  // press) and must not open it again.
+  const moreClosedAt = useRef(0)
+  const closeMore = useCallback(() => {
+    moreClosedAt.current = performance.now()
+    setMore(null)
+  }, [])
+  const moreEntries = useMemo<MenuEntry[]>(
+    () => (more ? volumes.slice(shown).map((v) => driveEntry(v, side, current)) : []),
+    [more, volumes, shown, side, current],
+  )
   return (
     <div
       role="toolbar"
@@ -117,73 +208,112 @@ export function DriveBar({ side }: { side: Side }) {
           aria-expanded={menuOpen}
           aria-label={t("Drive menu")}
           onClick={() => (menuOpen ? closeDriveMenu() : openDriveMenu(side))}
-          className="mr-1 flex h-5 items-center gap-1 rounded px-1.5 font-medium text-text hover:bg-raised"
+          className="mr-1 flex h-5 shrink-0 items-center gap-1 rounded px-1.5 font-medium whitespace-nowrap text-text hover:bg-raised"
         >
+          {/* One line: a volume name with a space ("Macintosh HD") never wraps. */}
           {remote ? remote.label : current ? driveName(current) : t("Drives")}
           <span aria-hidden="true" className="text-muted">
             ▾
           </span>
         </button>
       </Tooltip>
-      {volumes.map((v) => {
-        const pressed = current?.path === v.path
-        return (
-          <Tooltip key={v.path} content={driveTitle(v)}>
+      {/* The drives take the room left; the ones that don't fit go behind …. */}
+      <div
+        ref={stripRef}
+        data-drive-strip=""
+        className="flex min-w-0 flex-1 items-center gap-0.5 overflow-hidden"
+      >
+        {volumes.slice(0, shown).map((v) => {
+          const pressed = current?.path === v.path
+          return (
+            <Tooltip key={v.path} content={driveTitle(v)}>
+              <button
+                type="button"
+                tabIndex={-1}
+                aria-pressed={pressed}
+                aria-busy={opening === v.path || undefined}
+                data-drive=""
+                data-not-ready={v.notReady || undefined}
+                onClick={() => void openDrive(side, v.path)}
+                {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
+                className={`glass-press h-5 min-w-6 shrink-0 rounded px-1.5 font-medium whitespace-nowrap ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
+              >
+                {opening === v.path && (
+                  <Spinner size={10} className="mr-1 inline-block align-[-1px]" />
+                )}
+                {driveName(v)}
+              </button>
+            </Tooltip>
+          )
+        })}
+        {hidden.length > 0 && (
+          <Tooltip content={t("More drives")}>
             <button
               type="button"
               tabIndex={-1}
-              aria-pressed={pressed}
-              aria-busy={opening === v.path || undefined}
-              data-not-ready={v.notReady || undefined}
-              onClick={() => void openDrive(side, v.path)}
-              {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
-              className={`glass-press h-5 max-w-24 min-w-6 truncate rounded px-1.5 font-medium ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
+              aria-haspopup="menu"
+              aria-expanded={more !== null}
+              aria-label={t("More drives")}
+              data-testid={`more-drives-${side}`}
+              onClick={(e) => {
+                if (performance.now() - moreClosedAt.current < 300) return
+                const r = e.currentTarget.getBoundingClientRect()
+                setMore({ left: r.left, top: r.bottom + 2 })
+              }}
+              className={`glass-press h-5 w-6 shrink-0 rounded font-medium ${currentHidden || more ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"}`}
             >
-              {opening === v.path && (
-                <Spinner size={10} className="mr-1 inline-block align-[-1px]" />
-              )}
-              {driveName(v)}
+              …
             </button>
           </Tooltip>
-        )
-      })}
-      {/* Servers are not drives: set apart by a divider, outlined, with a globe. */}
-      <span aria-hidden="true" className="mx-1.5 h-4 w-px shrink-0 bg-border" />
-      <Tooltip
-        content={
-          connectionsKey
-            ? t("Connections to FTP servers ({key})", { key: connectionsKey })
-            : t("Connections to FTP servers")
-        }
-      >
-        <button
-          type="button"
-          tabIndex={-1}
-          aria-pressed={remote !== null}
-          data-testid={`connections-${side}`}
-          onClick={() => openConnections(side)}
-          className={`glass-press flex h-5 shrink-0 items-center gap-1 rounded-md border px-1.5 font-medium ${remote ? "border-accent/60 bg-raised text-text" : "border-border text-muted hover:border-muted hover:bg-raised hover:text-text"}`}
-        >
-          <GlobeGlyph />
-          FTP
-        </button>
-      </Tooltip>
-      {remote && (
-        <Tooltip content={t("Disconnect (Ctrl+Shift+F)")}>
-          <button
-            type="button"
-            tabIndex={-1}
-            data-testid={`disconnect-${side}`}
-            onClick={() => void disconnect(side)}
-            className="h-5 shrink-0 rounded px-1.5 text-muted hover:bg-raised hover:text-text"
+        )}
+        {more && hidden.length > 0 && (
+          <PopupMenu
+            label={t("More drives")}
+            testId={`more-drives-menu-${side}`}
+            entries={moreEntries}
+            onClose={closeMore}
+            style={{ position: "fixed", left: more.left, top: more.top }}
+          />
+        )}
+        <div ref={tailRef} data-drive-tail="" className="flex shrink-0 items-center gap-0.5">
+          {/* Servers are not drives: set apart by a divider, outlined, with a globe. */}
+          <span aria-hidden="true" className="mx-1.5 h-4 w-px shrink-0 bg-border" />
+          <Tooltip
+            content={
+              connectionsKey
+                ? t("Connections to FTP servers ({key})", { key: connectionsKey })
+                : t("Connections to FTP servers")
+            }
           >
-            {t("Disconnect")}
-          </button>
-        </Tooltip>
-      )}
-      <span className="flex-1" />
+            <button
+              type="button"
+              tabIndex={-1}
+              aria-pressed={remote !== null}
+              data-testid={`connections-${side}`}
+              onClick={() => openConnections(side)}
+              className={`glass-press flex h-5 shrink-0 items-center gap-1 rounded-md border px-1.5 font-medium ${remote ? "border-accent/60 bg-raised text-text" : "border-border text-muted hover:border-muted hover:bg-raised hover:text-text"}`}
+            >
+              <GlobeGlyph />
+              FTP
+            </button>
+          </Tooltip>
+          {remote && (
+            <Tooltip content={t("Disconnect (Ctrl+Shift+F)")}>
+              <button
+                type="button"
+                tabIndex={-1}
+                data-testid={`disconnect-${side}`}
+                onClick={() => void disconnect(side)}
+                className="h-5 shrink-0 rounded px-1.5 text-muted hover:bg-raised hover:text-text"
+              >
+                {t("Disconnect")}
+              </button>
+            </Tooltip>
+          )}
+        </div>
+      </div>
       {current && spaceText(current) && (
-        <span className="shrink-0 truncate pl-2 text-muted prose-nums">{spaceText(current)}</span>
+        <span className="min-w-0 truncate pl-2 text-muted prose-nums">{spaceText(current)}</span>
       )}
     </div>
   )
@@ -204,27 +334,7 @@ export function DriveMenu({ side }: { side: Side }) {
   }, [open])
   const entries = useMemo<MenuEntry[]>(() => {
     const out: MenuEntry[] = [{ id: "h-drives", label: t("Drives"), heading: true }]
-    for (const v of volumes) {
-      const name = driveName(v)
-      out.push({
-        id: `drive-${v.path}`,
-        label: (
-          <span className="flex items-center gap-2">
-            <span className="font-medium">{name}</span>
-            {v.label && v.label !== name && <span className="text-muted">{v.label}</span>}
-            {MARKERS[v.kind] && (
-              <span className="rounded border border-border px-1 text-3xs text-muted">
-                {t(MARKERS[v.kind]!)}
-              </span>
-            )}
-          </span>
-        ),
-        detail: spaceText(v),
-        current: current?.path === v.path,
-        ...(name.length === 1 && { accessKey: name }),
-        onSelect: () => void openDrive(side, v.path),
-      })
-    }
+    for (const v of volumes) out.push(driveEntry(v, side, current))
     if (places.length > 0) {
       out.push({ id: "h-places", label: t("Places"), heading: true })
       for (const p of places) {

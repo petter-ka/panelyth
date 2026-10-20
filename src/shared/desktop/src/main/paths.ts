@@ -3,10 +3,16 @@ import { join, resolve } from "node:path"
 
 const exe = process.platform === "win32" ? ".exe" : ""
 
-/** The app-window icon; electron-builder uses the native .ico/.icns variants. */
+/**
+ * The app-window icon; electron-builder uses the native .ico/.icns variants.
+ * On Windows the .ico: the window's icon is what the taskbar shows, and from
+ * the .ico Windows takes the size drawn for the slot (16 to 48 px on their
+ * own pixel grid) instead of shrinking the 1024 px picture into a smudge.
+ */
 export function appIconPath(): string {
-  if (app.isPackaged) return join(process.resourcesPath, "icon.png")
-  return join(app.getAppPath(), "build", "icon.png")
+  const file = process.platform === "win32" ? "icon.ico" : "icon.png"
+  if (app.isPackaged) return join(process.resourcesPath, file)
+  return join(app.getAppPath(), "build", file)
 }
 
 /** The licence notices: beside the app's resources when packaged, else where `pnpm notices` writes them. */

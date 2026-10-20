@@ -82,6 +82,25 @@ export function driveName(v: Volume): string {
   return v.label || v.path
 }
 
+/**
+ * How many drive buttons of `widths` fit in `room` px, each followed by
+ * `gap`. When not all fit, room is kept for the overflow button
+ * (`moreWidth`). An unmeasured bar (room 0) shows them all.
+ */
+export function fitDrives(
+  widths: readonly number[],
+  room: number,
+  moreWidth: number,
+  gap: number,
+): number {
+  const total = widths.reduce((sum, w) => sum + w + gap, 0)
+  if (room <= 0 || total <= room) return widths.length
+  let used = moreWidth + gap
+  let n = 0
+  while (n < widths.length && used + widths[n]! + gap <= room) used += widths[n++]! + gap
+  return n
+}
+
 export function openDriveMenu(side: Side): void {
   setActivePanel(side)
   set({ menu: side })

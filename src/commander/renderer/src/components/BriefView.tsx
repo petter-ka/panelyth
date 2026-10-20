@@ -241,7 +241,9 @@ const BriefItem = memo(function BriefItem({
       style={{ left, top, width, height }}
     >
       <span aria-hidden="true" className="relative w-2 shrink-0 self-stretch">
-        <MarkTab marked={marked} />
+        {/* Mid-way between the item's edge and the icon as drawn: pl-1 (4 px), the 8 px
+            gutter, gap-1.5 (6 px) and the glyph's ~1.5-3 px inset; centered at 11 px. */}
+        <MarkTab marked={marked} shift={3} />
       </span>
       {entry < 0 ? (
         <>
