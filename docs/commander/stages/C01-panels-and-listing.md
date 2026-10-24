@@ -30,6 +30,7 @@ commander starts being useful.
   of fixed height for the body. Columns Name, Ext, Size, Date, Attr; type glyphs; `<DIR>` for folders; hidden entries
   muted; the synthetic `..` row.
 - Sorting: column-header click (again reverses) and Ctrl+F3 / F4 / F5 / F6; folders first; persisted per panel.
+  (Since 2026-10-24 folders stay in name order by default, a setting; see `docs/commander/UX-DESIGN.md`.)
 - Hidden and system files: Ctrl+H toggles `showHidden` (no rescan).
 - Path bar: the current path; Alt+D or click edits it; Enter navigates; errors are shown inline.
 - Status line: total count, marked count and size (once C02 adds marks), free space of the volume.

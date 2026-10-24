@@ -242,7 +242,7 @@ export function BranchMenu({ side, className }: { side: Side; className: string 
         out.push({
           id: `l-${b.name}`,
           label: b.name,
-          ...(b.when > 0 && { detail: formatListDate(b.when, "relative") }),
+          ...(b.when > 0 && { detail: formatListDate(b.when, "locale", true) }),
           checked: b.current,
           ...(!b.current && { onSelect: () => switchBranch(side, b.name) }),
         })
@@ -253,7 +253,7 @@ export function BranchMenu({ side, className }: { side: Side; className: string 
         out.push({
           id: `r-${b.name}`,
           label: b.name,
-          ...(b.when > 0 && { detail: formatListDate(b.when, "relative") }),
+          ...(b.when > 0 && { detail: formatListDate(b.when, "locale", true) }),
           onSelect: () => switchBranch(side, b.name),
         })
       }

@@ -70,6 +70,10 @@ function place(menu: HTMLElement, anchor: HTMLElement, upward: boolean): void {
   const a = anchor.getBoundingClientRect()
   const room = window.innerHeight - 2 * EDGE
   if (a.width > 0) menu.style.width = `${a.width}px`
+  // Measured at its full height for a moment, the menu cannot scroll, and the
+  // browser drops its scroll position: kept, or every hover while scrolling
+  // (a render, a new placement) threw a long menu back to its top.
+  const scrolled = menu.scrollTop
   menu.style.maxHeight = ""
   const height = Math.min(menu.offsetHeight, room)
   const below = window.innerHeight - EDGE - a.bottom
@@ -80,6 +84,7 @@ function place(menu: HTMLElement, anchor: HTMLElement, upward: boolean): void {
     upward && fitsAbove ? a.top - height : fitsBelow ? a.bottom : fitsAbove ? a.top - height : EDGE
   menu.style.top = `${top}px`
   menu.style.maxHeight = `${room}px`
+  menu.scrollTop = scrolled
   const width = menu.offsetWidth
   menu.style.left = `${Math.max(EDGE, Math.min(a.left, window.innerWidth - EDGE - width))}px`
 }

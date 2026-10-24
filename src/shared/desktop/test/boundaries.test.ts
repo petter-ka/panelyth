@@ -55,6 +55,8 @@ const cases: [file: string, specifier: string, allowed: boolean][] = [
   ["src/shared/media-ui/src/x.tsx", "node:fs", false],
   ["src/shared/contracts/src/x.ts", "node:path", false],
   ["src/shared/docviewer/src/x.tsx", "node:fs", false],
+  ["src/shared/doceditor/src/x.tsx", "node:fs", false],
+  ["src/shared/doceditor/src/x.tsx", "electron", false],
   ["src/viewer/renderer/src/x.tsx", "electron", false],
   ["src/commander/renderer/src/x.tsx", "node:child_process", false],
   // The catalog tooling runs in Node; the shell is not renderer code.
@@ -92,6 +94,10 @@ describe("package boundaries (manifests)", () => {
 
   it("the document window depends on no app", () => {
     for (const dep of workspaceDeps("src/shared/docviewer")) expect(outside).not.toContain(dep)
+  })
+
+  it("the text editor window depends on no app (ADR-0046)", () => {
+    for (const dep of workspaceDeps("src/shared/doceditor")) expect(outside).not.toContain(dep)
   })
 
   it("an app does not depend on the other app", () => {

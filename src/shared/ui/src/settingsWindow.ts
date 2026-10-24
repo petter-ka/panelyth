@@ -9,6 +9,7 @@ import {
 } from "@panelyth/renderer-core"
 import { requestSettingsTab, useSettingsTabRequest } from "./AboutPanel"
 import { startSharedAppearanceSync, type AppearanceSyncPort } from "./appearance"
+import { connectWindowFrame, type WindowFramePort } from "./windowFrame"
 
 /** The section of the app's tab main named in the settings window's URL (`#section=…`). */
 export function settingsSectionOf(hash: string): string | null {
@@ -32,6 +33,8 @@ export function startSettingsWindowPage(port: {
   about: AboutPort
   /** The "Open with" programs (ADR-0044); Panelyth System has none. */
   programs?: Pick<ProgramsPort, "add" | "update">
+  /** The title strip's Close button (ADR-0045). */
+  frame?: WindowFramePort
 }): () => void {
   const tab = settingsTabOf(window.location.hash)
   if (tab) requestSettingsTab(tab)
@@ -42,7 +45,9 @@ export function startSettingsWindowPage(port: {
     : () => undefined
   // The native menu's items go to the app view, never here.
   const offAbout = startAboutSync(port.about, () => undefined)
+  const offFrame = port.frame ? connectWindowFrame(port.frame) : () => undefined
   return () => {
+    offFrame()
     offAppearance()
     offSwitch()
     offPrograms()

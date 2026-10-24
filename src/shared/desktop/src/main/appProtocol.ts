@@ -5,8 +5,10 @@ import {
   APP_SCHEME,
   COMMANDER_HOST,
   DOCUMENTS_HOST,
+  TEXTEDITOR_HOST,
   contentSecurityPolicy,
   documentsCsp,
+  textEditorCsp,
 } from "./security"
 import { MEDIA_SCHEME } from "./mediaProtocol"
 import { THUMB_SCHEME } from "./thumbProtocol"
@@ -71,6 +73,7 @@ export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): v
   // The commander's lister fetch()es token URLs; the viewer never may (ADR-0027).
   const commanderCsp = contentSecurityPolicy(null, true)
   const documents = documentsCsp()
+  const textEditor = textEditorCsp()
   protocol.handle(APP_SCHEME, async (request) => {
     const url = new URL(request.url)
     const root = Object.hasOwn(distDirs, url.host) ? distDirs[url.host] : undefined
@@ -87,7 +90,9 @@ export function handleAppProtocol(distDirs: Readonly<Record<string, string>>): v
             ? commanderCsp
             : url.host === DOCUMENTS_HOST
               ? documents
-              : csp,
+              : url.host === TEXTEDITOR_HOST
+                ? textEditor
+                : csp,
         "X-Content-Type-Options": "nosniff",
       },
     })

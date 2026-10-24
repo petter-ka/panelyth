@@ -16,6 +16,7 @@ import {
 } from "../features/listing"
 import { useKeymapStore } from "../features/keymap"
 import { TypeCounts } from "./TypeCounts"
+import { ViewOptions } from "./ViewOptions"
 import { GitBadge } from "./Git"
 import type { Side } from "../features/panels"
 import { t } from "@panelyth/i18n"
@@ -252,6 +253,10 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
           )}
           {/* Folders and each extension's count, counted when opened. */}
           <TypeCounts side={side} className={pathButton} />
+          {/* What the panel shows and how: hidden and system files, the view (owner request). */}
+          <ViewOptions side={side} className={pathButton} />
+          {/* The listing's tools apart from the ways out of the folder. */}
+          <span aria-hidden="true" className="mr-0.5 ml-1.5 h-4 w-px shrink-0 bg-border" />
           <Tooltip content={t("Root (Ctrl+\\)")}>
             <button
               type="button"

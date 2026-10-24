@@ -15,6 +15,8 @@ vi.mock("electron", () => ({}))
 const ORIGIN = "app://panelyth"
 const COMMANDER = "app://commander"
 const SYSTEM = "app://system"
+const TEXTEDITOR = "app://texteditor"
+const DOCUMENTS = "app://documents"
 const status: SidecarStatus = {
   state: "ready",
   pid: 1,
@@ -50,6 +52,14 @@ const updateState: UpdateState = {
 
 const mainHandlers = (): MainHandlers => ({
   "app.exit": vi.fn(async () => ({ ok: true })),
+  "window.getState": vi.fn(() => ({
+    maximized: false,
+    fullScreen: false,
+    shown: true,
+    minimizable: true,
+    maximizable: true,
+  })),
+  "window.control": vi.fn(() => ({ ok: true })),
   "app.about": vi.fn(() => ({
     name: "Panelyth",
     version: "1.0.0",
@@ -158,10 +168,20 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander" | "s
   const main = mainHandlers()
   const onSharedSetting = vi.fn()
   const onSettingWritten = vi.fn()
+  const editor = {
+    "texteditor.session": vi.fn(),
+    "texteditor.write": vi.fn(() => ({ ok: true })),
+    "texteditor.commit": vi.fn(),
+    "texteditor.check": vi.fn(),
+    "texteditor.setDirty": vi.fn(() => ({ ok: true })),
+    "texteditor.close": vi.fn(() => ({ ok: true })),
+  }
   const handler = createInvokeHandler({
     sidecar,
     main,
     origins: { viewer: ORIGIN, commander: COMMANDER, system: SYSTEM },
+    textEditor: { origin: TEXTEDITOR, handlers: editor as never },
+    documentsOrigin: DOCUMENTS,
     devMethods,
     onSharedSetting,
     onSettingWritten,
@@ -176,8 +196,119 @@ function setup(devMethods = false, activeApp?: () => "viewer" | "commander" | "s
     ok: eventFrom(`${ORIGIN}/index.html`),
     commander: eventFrom(`${COMMANDER}/index.html`),
     system: eventFrom(`${SYSTEM}/index.html`),
+    textEditor: eventFrom(`${TEXTEDITOR}/index.html`),
+    documents: eventFrom(`${DOCUMENTS}/index.html`),
+    editor,
   }
 }
+
+describe("the title strip's window calls in windows of their own (ADR-0045)", () => {
+  it("the document window makes them and nothing else", async () => {
+    const { handler, documents, main, sidecar } = setup()
+    await expect(handler(documents, "window.control", { action: "close" })).resolves.toEqual({
+      ok: true,
+      r: { ok: true },
+    })
+    expect(main["window.control"]).toHaveBeenCalledWith(documents, { action: "close" }, "viewer")
+    await expect(handler(documents, "window.getState", {})).resolves.toMatchObject({ ok: true })
+    for (const [m, p] of [
+      ["file.resolve", { entryId: 1 }],
+      ["library.get", {}],
+      ["texteditor.write", { seq: 0, text: "x" }],
+      ["document.open", { entryId: 1 }],
+    ] as const) {
+      await expect(handler(documents, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("the text editor window makes them besides its own methods", async () => {
+    const { handler, textEditor, main } = setup()
+    await expect(
+      handler(textEditor, "window.control", { action: "minimize" }),
+    ).resolves.toMatchObject({
+      ok: true,
+    })
+    expect(main["window.control"]).toHaveBeenCalledWith(
+      textEditor,
+      { action: "minimize" },
+      "viewer",
+    )
+  })
+})
+
+describe("the text editor window's profile (ADR-0046)", () => {
+  it("takes its own methods only, and gives them its window, never a file", async () => {
+    const { handler, editor, textEditor, sidecar, main } = setup()
+    await expect(handler(textEditor, "texteditor.write", { seq: 0, text: "hi" })).resolves.toEqual({
+      ok: true,
+      r: { ok: true },
+    })
+    expect(editor["texteditor.write"]).toHaveBeenCalledWith(textEditor, { seq: 0, text: "hi" })
+    // Nothing of an app's: no files, no settings, no programs.
+    for (const [m, p] of [
+      ["file.resolve", { entryId: 1 }],
+      ["library.get", {}],
+      ["shell.edit", { entryId: 1 }],
+      ["textedit.open", { entryId: 1 }],
+      [
+        "textedit.commit",
+        { sessionId: "x", baseVersion: "0".repeat(64), force: true, asUtf8: false },
+      ],
+    ] as const) {
+      await expect(handler(textEditor, m, p), m).resolves.toMatchObject({
+        ok: false,
+        e: { code: "METHOD_NOT_FOUND" },
+      })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+    expect(main["shell.edit"]).not.toHaveBeenCalled()
+  })
+
+  it("is no app's: the apps cannot call the editor's methods or the sidecar's text edit", async () => {
+    const { handler, ok, commander, system, editor, sidecar } = setup()
+    for (const from of [ok, commander, system]) {
+      for (const [m, p] of [
+        ["texteditor.write", { seq: 0, text: "x" }],
+        ["texteditor.close", { discard: true }],
+        ["textedit.open", { entryId: 1 }],
+        ["textedit.write", { sessionId: "x", seq: 0, text: "x" }],
+      ] as const) {
+        await expect(handler(from, m, p), m).resolves.toMatchObject({
+          ok: false,
+          e: { code: "METHOD_NOT_FOUND" },
+        })
+      }
+    }
+    expect(Object.values(editor).every((f) => f.mock.calls.length === 0)).toBe(true)
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("validates a chunk, a commit and the close", async () => {
+    const { handler, textEditor, editor } = setup()
+    for (const [m, p] of [
+      ["texteditor.write", { seq: -1, text: "x" }],
+      ["texteditor.write", { seq: 0, text: "x".repeat(256 * 1024 + 1) }],
+      ["texteditor.write", { seq: 0, text: "x", path: "/etc/passwd" }],
+      ["texteditor.commit", { baseVersion: "abc", force: false, asUtf8: false }],
+      ["texteditor.commit", { baseVersion: "0".repeat(64), force: "yes", asUtf8: false }],
+      ["texteditor.setDirty", { dirty: 1 }],
+      ["texteditor.close", {}],
+      ["texteditor.exportPdf", { pageSize: "A3", margins: "normal" }],
+      ["texteditor.exportPdf", { pageSize: "A4", margins: "huge" }],
+      ["texteditor.exportPdf", { pageSize: "A4", margins: "normal", path: "C:/x.pdf" }],
+    ] as const) {
+      await expect(handler(textEditor, m, p), JSON.stringify(p)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    expect(Object.values(editor).every((f) => f.mock.calls.length === 0)).toBe(true)
+  })
+})
 
 describe('"Open with" programs (ADR-0044)', () => {
   it("are in both apps' profiles and go to main, which applies the app's profile", async () => {
@@ -1629,6 +1760,26 @@ describe("invoke router", () => {
     }
     expect(main["app.openTarget"]).toHaveBeenCalledTimes(2)
     expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
+  it("takes the title strip's three window buttons and nothing else (ADR-0045)", async () => {
+    const { handler, ok, main } = setup()
+    await expect(handler(ok, "window.control", { action: "toggleMaximize" })).resolves.toEqual({
+      ok: true,
+      r: { ok: true },
+    })
+    expect(main["window.control"]).toHaveBeenCalledWith(
+      ok,
+      { action: "toggleMaximize" },
+      expect.any(String),
+    )
+    for (const p of [{ action: "fullScreen" }, { action: "close", x: 1 }, {}]) {
+      await expect(handler(ok, "window.control", p)).resolves.toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    expect(main["window.control"]).toHaveBeenCalledTimes(1)
   })
 
   it("validates app.switch", async () => {

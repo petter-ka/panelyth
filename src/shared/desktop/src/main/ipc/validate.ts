@@ -1,6 +1,13 @@
 import { isAbsolute } from "node:path"
 import {
   APP_IDS,
+  TEXTEDIT_CHUNK_CHARS,
+  PDF_MARGINS,
+  PDF_PAGE_SIZES,
+  TEXTEDIT_IMAGE_CHUNK_BYTES,
+  TEXTEDIT_MAX_CHARS,
+  TEXTEDIT_MAX_IMAGE_BYTES,
+  TEXTEDIT_MAX_IMAGE_LINKS,
   GIT_OPS,
   MAX_BRANCH_NAME_CHARS,
   MAX_COMMIT_MESSAGE_CHARS,
@@ -775,6 +782,64 @@ function batchProblem(p: unknown): string | null {
 export const validators: Record<RendererMethod, Validator> = {
   "app.exit": empty,
   "app.about": empty,
+  // The text editor window (ADR-0046): its own session only; nothing names a file.
+  "texteditor.session": empty,
+  "texteditor.check": empty,
+  "texteditor.write": (p) =>
+    shape(p, ["seq", "text"]) &&
+    Number.isSafeInteger(p.seq) &&
+    (p.seq as number) >= 0 &&
+    (p.seq as number) * TEXTEDIT_CHUNK_CHARS < TEXTEDIT_MAX_CHARS &&
+    typeof p.text === "string" &&
+    p.text.length <= TEXTEDIT_CHUNK_CHARS
+      ? null
+      : "expected { seq, text } within a chunk",
+  "texteditor.commit": (p) =>
+    shape(p, ["baseVersion", "force", "asUtf8"]) &&
+    typeof p.baseVersion === "string" &&
+    /^[0-9a-f]{64}$/.test(p.baseVersion) &&
+    typeof p.force === "boolean" &&
+    typeof p.asUtf8 === "boolean"
+      ? null
+      : "expected { baseVersion, force, asUtf8 }",
+  "texteditor.setDirty": (p) =>
+    shape(p, ["dirty"]) && typeof p.dirty === "boolean" ? null : "expected { dirty }",
+  "texteditor.close": (p) =>
+    shape(p, ["discard"]) && typeof p.discard === "boolean" ? null : "expected { discard }",
+  // Stage C10.7: a picture's bytes, bounded per chunk and in all; a name to start from; links.
+  "texteditor.assetChunk": (p) =>
+    shape(p, ["seq", "data"]) &&
+    Number.isSafeInteger(p.seq) &&
+    (p.seq as number) >= 0 &&
+    (p.seq as number) * TEXTEDIT_IMAGE_CHUNK_BYTES < TEXTEDIT_MAX_IMAGE_BYTES &&
+    p.data instanceof Uint8Array &&
+    p.data.byteLength > 0 &&
+    p.data.byteLength <= TEXTEDIT_IMAGE_CHUNK_BYTES
+      ? null
+      : "expected { seq, data } within a chunk",
+  "texteditor.assetCommit": (p) =>
+    shape(p, ["name"]) && typeof p.name === "string" && p.name.length <= MAX_NAME_CHARS
+      ? null
+      : "expected { name }",
+  "texteditor.exportPdf": (p) =>
+    shape(p, ["pageSize", "margins"]) &&
+    (PDF_PAGE_SIZES as readonly unknown[]).includes(p.pageSize) &&
+    (PDF_MARGINS as readonly unknown[]).includes(p.margins)
+      ? null
+      : "expected { pageSize, margins }",
+  "texteditor.resolveImages": (p) =>
+    shape(p, ["links"]) &&
+    Array.isArray(p.links) &&
+    p.links.length <= TEXTEDIT_MAX_IMAGE_LINKS &&
+    p.links.every((l) => typeof l === "string" && l.length > 0 && l.length <= MAX_PATH_CHARS)
+      ? null
+      : "expected { links } (at most 200)",
+  "window.getState": empty,
+  "window.control": (p) =>
+    shape(p, ["action"]) &&
+    (p.action === "minimize" || p.action === "toggleMaximize" || p.action === "close")
+      ? null
+      : "expected { action }",
   "system.hardware": empty,
   "system.load": empty,
   // A fixed list: main opens its own folders and the project's pages, never a renderer's URL.
@@ -1039,6 +1104,7 @@ export const validators: Record<RendererMethod, Validator> = {
       "scope",
       "showHidden",
       "hideSystem",
+      "dirsByName",
       "nameMask",
       "findId",
       "archiveId",
@@ -1053,6 +1119,7 @@ export const validators: Record<RendererMethod, Validator> = {
       return "showHidden needs the all scope"
     if (p.hideSystem !== undefined && (typeof p.hideSystem !== "boolean" || p.scope !== "all"))
       return "hideSystem needs the all scope"
+    if (p.dirsByName !== undefined && typeof p.dirsByName !== "boolean") return "invalid dirsByName"
     if (
       p.nameMask !== undefined &&
       (typeof p.nameMask !== "string" || p.nameMask.length > MAX_NAME_MASK_CHARS)

@@ -31,6 +31,7 @@ import (
 	"panelyth/sidecar/internal/remote"
 	"panelyth/sidecar/internal/rpc"
 	"panelyth/sidecar/internal/scan"
+	"panelyth/sidecar/internal/textedit"
 	"panelyth/sidecar/internal/video"
 	"panelyth/sidecar/internal/watch"
 )
@@ -78,14 +79,16 @@ type indexService struct {
 	meta     *meta.Extractor
 	// editor holds the image editor's sessions, saves where its recent
 	// saves wrote (Stage 12, ADR-0035).
-	editor  *editor.Manager
-	saves   editSaves
-	clip    clipboard
-	clipImg *clipImager
-	context *sharedContext
-	stopBg  context.CancelFunc
-	bg      context.Context
-	volumes volumeMonitor
+	editor *editor.Manager
+	saves  editSaves
+	// textedits are the text editor's sessions (Stage C10.6, ADR-0046).
+	textedits *textedit.Manager
+	clip      clipboard
+	clipImg   *clipImager
+	context   *sharedContext
+	stopBg    context.CancelFunc
+	bg        context.Context
+	volumes   volumeMonitor
 	// lib is set before libReady closes; nil when library.db could not be
 	// opened (user-data methods then fail, browsing keeps working).
 	lib      *library.Library
@@ -161,6 +164,7 @@ func newIndexService(cacheRoot string, cacheMaxBytes int64, log *slog.Logger, em
 	// decode budget previews use.
 	svc.editor = editor.NewManager(editor.Config{TmpDir: filepath.Join(cacheRoot, "tmp", "edit"),
 		Reserve: svc.preview.ReserveDecode, Log: log})
+	svc.textedits = textedit.NewManager(textedit.Config{Log: log})
 	return svc, nil
 }
 
@@ -168,6 +172,7 @@ func (s *indexService) close() {
 	s.stopBg()
 	s.jobs.Close()
 	s.editor.Shutdown()
+	s.textedits.Shutdown()
 	s.finds.Close()
 	if s.git != nil {
 		s.git.Close()
@@ -242,7 +247,9 @@ type (
 		Scope      string `json:"scope"`
 		ShowHidden bool   `json:"showHidden"`
 		// HideSystem keeps system entries out while hidden ones are shown.
-		HideSystem bool   `json:"hideSystem"`
+		HideSystem bool `json:"hideSystem"`
+		// DirsByName orders folders by name whatever the sort (the commander's setting).
+		DirsByName bool   `json:"dirsByName"`
 		NameMask   string `json:"nameMask"`
 		// FindID opens a session over a search's results (Stage C06); the
 		// folder fields do not apply then.
@@ -352,6 +359,7 @@ func (s *indexService) register(srv *rpc.Server) {
 	s.registerCompare(srv)
 	s.registerRename(srv)
 	s.registerEditor(srv)
+	s.registerTextEdit(srv)
 	s.registerBatch(srv)
 	s.registerGit(srv)
 	rpc.Register(srv, "query.close", func(_ context.Context, p queryCloseParams) (queryCloseResult, error) {
@@ -418,7 +426,7 @@ func (s *indexService) dirOpen(ctx context.Context, p dirOpenParams) (dirOpenRes
 
 func (s *indexService) queryOpen(ctx context.Context, p queryOpenParams) (query.Snapshot, error) {
 	d := index.Descriptor{DirID: p.DirID, Recursive: p.Recursive, Scope: index.Scope(p.Scope),
-		ShowHidden: p.ShowHidden, HideSystem: p.HideSystem}
+		ShowHidden: p.ShowHidden, HideSystem: p.HideSystem, DirsByName: p.DirsByName}
 	if p.App != "" && !validApp(p.App) {
 		return query.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "app must be viewer or commander")
 	}

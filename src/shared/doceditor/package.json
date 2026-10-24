@@ -1,0 +1,48 @@
+{
+  "name": "@panelyth/doceditor",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The text editor window's renderer: text, Markdown, code and config files with CodeMirror 6 (ADR-0046)",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-json": "6.0.2",
+    "@codemirror/lang-markdown": "6.5.2",
+    "@codemirror/lang-xml": "6.1.0",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/language-data": "6.5.2",
+    "@codemirror/legacy-modes": "6.5.5",
+    "@codemirror/search": "6.7.2",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.15",
+    "@lezer/common": "1.5.4",
+    "@lezer/highlight": "1.2.5",
+    "@lezer/markdown": "1.8.1",
+    "@panelyth/contracts": "workspace:*",
+    "@panelyth/i18n": "workspace:*",
+    "@panelyth/renderer-core": "workspace:*",
+    "@panelyth/ui": "workspace:*",
+    "dompurify": "3.4.17",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "style-mod": "4.1.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/jest-dom": "7.0.1",
+    "@testing-library/react": "16.3.3",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.1",
+    "jsdom": "30.1.1",
+    "tailwindcss": "4.3.3",
+    "vite": "8.3.1",
+    "vitest": "5.0.3"
+  }
+}

@@ -27,6 +27,19 @@ export const isBridgeAvailable = core.isAvailable
 export const aboutApi = (): SystemApi => core.api()
 
 export const bridge = {
+  /** The main window's frame, for the title strip and its buttons (ADR-0045). */
+  windowFrame: () => ({
+    titleBar: api().frame.titleBar,
+    state: () => unwrap(() => api().frame.state()),
+    control: async (action: "minimize" | "toggleMaximize" | "close"): Promise<void> => {
+      await unwrap(() => api().frame.control(action))
+    },
+    onState: (listener: (state: { maximized: boolean; fullScreen: boolean }) => void) =>
+      core.on("window.state", listener),
+    // Main tells each app only about itself.
+    onShown: (listener: (shown: boolean) => void) =>
+      core.on("app.visibility", (e) => listener(e.visible)),
+  }),
   hardware: (): Promise<SystemHardware> => unwrap(() => api().system.hardware()),
   load: (): Promise<SystemLoad> => unwrap(() => api().system.load()),
   volumes: async (): Promise<Volume[]> => (await unwrap(() => api().fs.volumes())).volumes,

@@ -79,6 +79,16 @@ export function systemPreloadPath(): string {
   return join(__dirname, "..", "preload", "system.cjs")
 }
 
+/** The text editor window's preload (ADR-0046): its own file, nothing else. */
+export function textEditorPreloadPath(): string {
+  return join(__dirname, "..", "preload", "texteditor.cjs")
+}
+
+/** The document window's preload (ADR-0033, ADR-0045): its title strip's buttons only. */
+export function framePreloadPath(): string {
+  return join(__dirname, "..", "preload", "frame.cjs")
+}
+
 export function preloadPath(): string {
   return join(__dirname, "..", "preload", "preload.cjs")
 }
@@ -97,4 +107,15 @@ export function documentsDistPath(): string {
 export function documentsDevUrl(): string | null {
   if (app.isPackaged) return null
   return process.env.PANELYTH_DOCUMENTS_URL || null
+}
+
+/** The text editor window's page (ADR-0046), served as app://texteditor/. */
+export function textEditorDistPath(): string {
+  if (app.isPackaged) return join(process.resourcesPath, "texteditor")
+  return resolve(app.getAppPath(), "..", "doceditor", "dist")
+}
+
+export function textEditorDevUrl(): string | null {
+  if (app.isPackaged) return null
+  return process.env.PANELYTH_TEXTEDITOR_URL || null
 }

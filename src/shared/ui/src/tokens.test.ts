@@ -409,3 +409,107 @@ describe("liquid glass style (ADR-0041)", () => {
     }
   })
 })
+
+describe("terminal style (ADR-0047)", () => {
+  // Each theme has a console palette of its own; the surfaces are opaque, so
+  // the contrast that counts is the palette's, and that of the cursor row and
+  // the dialog header, which are tinted by the signal.
+  const consoles = Object.fromEntries(
+    ["dark", "dark-purple", "dark-brown", "light", "beige", "light-brown"].map((name) => [
+      name,
+      block(`:root[data-style="terminal"][data-theme="${name}"]`),
+    ]),
+  )
+  const tokens = Object.keys(consoles.dark!).sort()
+  const mixed = (fg: string, share: number, bg: string): string =>
+    `#${[1, 3, 5]
+      .map((i) => {
+        const [f, b] = [fg, bg].map((hex) => parseInt(hex.slice(i, i + 2), 16))
+        return Math.round(f! * share + b! * (1 - share))
+          .toString(16)
+          .padStart(2, "0")
+      })
+      .join("")}`
+  const shareOf = (pattern: RegExp): number => Number(pattern.exec(css)![1]) / 100
+  // Dark consoles draw their frames and titles in the accent, paper in the red stamp.
+  const signalOf = (name: string, t: Record<string, string>): string =>
+    name.startsWith("dark") ? t.accent! : t.danger!
+
+  it("defines every surface, text and status color in each console", () => {
+    expect(tokens).toEqual(
+      [
+        "accent",
+        "accent-foreground",
+        "border",
+        "canvas",
+        "chrome",
+        "danger",
+        "muted",
+        "raised",
+        "skeleton",
+        "success",
+        "text",
+        "warning",
+      ].sort(),
+    )
+    for (const t of Object.values(consoles)) expect(Object.keys(t).sort()).toEqual(tokens)
+  })
+
+  describe.each(Object.entries(consoles))("%s console", (name, t) => {
+    it.each(surfaces)("text, muted, accent and danger meet AA (4.5:1) on %s", (surface) => {
+      for (const fg of ["text", "muted", "accent", "danger"]) {
+        expect(contrast(t[fg]!, t[surface]!), `${fg} on ${surface}`).toBeGreaterThanOrEqual(4.5)
+      }
+      for (const fg of ["success", "warning"]) {
+        expect(contrast(t[fg]!, t[surface]!), `${fg} on ${surface}`).toBeGreaterThanOrEqual(3)
+      }
+    })
+
+    it("accent foreground is readable on the accent", () => {
+      expect(contrast(t["accent-foreground"]!, t.accent!)).toBeGreaterThanOrEqual(4.5)
+    })
+
+    it("keeps the canvas, where pictures sit, the deepest field (near neutral but on tinted paper)", () => {
+      expect(luminance(t.canvas!)).toBeLessThan(luminance(t.chrome!))
+      // Manila and Archive are tinted paper, as Beige and Light brown are in the classic style.
+      if (name === "beige" || name === "light-brown") return
+      const [r, g, b] = [1, 3, 5].map((i) => parseInt(t.canvas!.slice(i, i + 2), 16))
+      expect(Math.max(r!, g!, b!) - Math.min(r!, g!, b!)).toBeLessThanOrEqual(2)
+    })
+
+    it("the cursor row keeps text, muted and accent at AA on its tint", () => {
+      const share = shareOf(
+        /\[data-cursor="true"\] \{\s*background-color: color-mix\(in srgb, var\(--accent\) (\d+)%/,
+      )
+      const row = mixed(t.accent!, share, t.canvas!)
+      for (const fg of ["text", "muted", "accent"]) {
+        expect(contrast(t[fg]!, row), `${fg} on the cursor row`).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
+    it("the signal color reads as text on the title strip and in a dialog's header", () => {
+      const signal = signalOf(name, t)
+      expect(contrast(signal, t.chrome!), "the strip's name").toBeGreaterThanOrEqual(4.5)
+      const share = shareOf(
+        /\.glass-sheet > :first-child \{\s*background: color-mix\(in srgb, var\(--term-signal\) (\d+)%/,
+      )
+      const header = mixed(signal, share, t.chrome!)
+      for (const fg of [signal, t.text!, t.muted!]) {
+        expect(contrast(fg, header), `${fg} on the dialog header`).toBeGreaterThanOrEqual(4.5)
+      }
+    })
+
+    it("a field's border meets non-text contrast (3:1) on the chrome around it", () => {
+      const share = Number(/border-muted\/(\d+)/.exec(fieldLook)![1]) / 100
+      expect(contrast(mixed(t.muted!, share, t.raised!), t.chrome!)).toBeGreaterThanOrEqual(3)
+    })
+  })
+
+  it("filters no backdrop and stays opaque: no effect costs more than in the classic style", () => {
+    const start = css.indexOf("Terminal style (ADR-0047")
+    expect(start).toBeGreaterThan(0)
+    const terminal = css.slice(start)
+    expect(terminal).not.toMatch(/backdrop-filter/)
+    expect(terminal).not.toMatch(/--(canvas|chrome|raised):[^;]*transparent/)
+  })
+})

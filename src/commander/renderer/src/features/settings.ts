@@ -13,8 +13,10 @@ export const SETTINGS_KEY = "commander.settings"
  * v3: hidden entries shown by default (older stored values are not a choice).
  * v4: dates have a relative choice, the default ("locale" stored before was the
  * default written with every save, not a choice).
+ * v5: relative dates are a setting of their own (`relativeDates`), so they go
+ * with either format; `dateFormat` is the format itself.
  */
-export const SETTINGS_VERSION = 4
+export const SETTINGS_VERSION = 5
 
 /** The stored settings' version; 0 for none or a malformed one. */
 export const settingsVersion = (value: unknown): number => {
@@ -23,13 +25,27 @@ export const settingsVersion = (value: unknown): number => {
 }
 export const MAX_EDITOR_CHARS = 1024
 
+/**
+ * The folder beside a document that pasted and dropped pictures go to (Stage
+ * C10.7): one plain name; "" = "assets". The sidecar checks it again.
+ */
+export function readAssetsFolder(v: unknown): string {
+  if (typeof v !== "string") return ""
+  const name = v.trim()
+  const plain =
+    name.length <= 64 &&
+    !/[\\/:*?"<>|]/.test(name) &&
+    ![...name].some((c) => c.charCodeAt(0) < 32) &&
+    name !== "." &&
+    name !== ".." &&
+    !/[. ]$/.test(name)
+  return plain ? name : ""
+}
+
 /** Size column: readable units by default, or exact bytes with separators. */
 export type SizeFormat = "bytes" | "units"
-/**
- * Dates in the lists: relative ("today at 14:05", the default), as the system
- * shows them, or ISO. Quick View and the dialogs show relative ones as the system does.
- */
-export type DateFormat = "relative" | "locale" | "iso"
+/** Dates: as the system shows them, or ISO (2026-10-06 14:05). */
+export type DateFormat = "locale" | "iso"
 /** Where typed letters go: quick search, or the command line (quick search then starts with Alt; Stage C10). */
 export type LettersMode = "quickSearch" | "altLetters"
 /** "Run programs with Enter" (ADR-0027, Stage C05): ask first (default), always, never. */
@@ -50,6 +66,14 @@ export type CompareTolerance = 0 | 2000
 export interface PanelSettings {
   sizeFormat: SizeFormat
   dateFormat: DateFormat
+  /**
+   * The lists' Date column says "today at 14:05" for the last week, and the
+   * format above for older dates (on by default). Quick View and the
+   * dialogs show full dates.
+   */
+  relativeDates: boolean
+  /** Folders stay in name order whatever the panel's sort; files follow it (on by default). */
+  sortFoldersByName: boolean
   /** Hidden entries (dot-names, the hidden attribute) shown in the panels; Ctrl+H switches one panel. */
   showHidden: boolean
   /**
@@ -62,8 +86,10 @@ export interface PanelSettings {
   documentOpen: DocumentOpen
   rightButton: RightButton
   runPrograms: RunPrograms
-  /** F4's editor: an absolute program path; "" = the system's text editor. Main reads it from library.db. */
+  /** F4's editor: an absolute program path; "" = Panelyth's own editor (ADR-0046). Main reads it from library.db. */
   editor: string
+  /** Stage C10.7: the folder beside a document for its pictures; "" = "assets". Main reads it from library.db. */
+  assetsFolder: string
   /**
    * How dates are compared (Stage C08: Shift+F2 and Synchronize directories):
    * the tolerance in ms (0 = exact, 2000 for FAT drives), whether a
@@ -97,7 +123,9 @@ export interface PanelSettings {
 
 export const DEFAULT_SETTINGS: PanelSettings = {
   sizeFormat: "units",
-  dateFormat: "relative",
+  dateFormat: "locale",
+  relativeDates: true,
+  sortFoldersByName: true,
   showHidden: true,
   showSystem: false,
   letters: "quickSearch",
@@ -106,6 +134,7 @@ export const DEFAULT_SETTINGS: PanelSettings = {
   rightButton: "mark",
   runPrograms: "ask",
   editor: "",
+  assetsFolder: "",
   compareToleranceMs: 2000,
   compareDst: false,
   compareIgnoreDates: false,
@@ -135,14 +164,16 @@ export function readSettings(value: unknown): PanelSettings {
   const hiddenChosen = version >= 3
   // Before v4 "locale" was the default every save stored; ISO was always a choice.
   const dateChosen = version >= 4
+  // Before v5 the format held the relative choice: "relative", "locale" or "iso".
+  const relativeDates =
+    version >= 5
+      ? v.relativeDates !== false
+      : !(v.dateFormat === "iso" || (v.dateFormat === "locale" && dateChosen))
   return {
     sizeFormat: v.sizeFormat === "bytes" && !oldDefaultUsesBytes ? "bytes" : "units",
-    dateFormat:
-      v.dateFormat === "iso"
-        ? "iso"
-        : v.dateFormat === "locale" && dateChosen
-          ? "locale"
-          : "relative",
+    dateFormat: v.dateFormat === "iso" ? "iso" : "locale",
+    relativeDates,
+    sortFoldersByName: v.sortFoldersByName !== false,
     showHidden: hiddenChosen ? v.showHidden !== false : true,
     showSystem: v.showSystem === true,
     letters: v.letters === "altLetters" ? "altLetters" : "quickSearch",
@@ -151,6 +182,7 @@ export function readSettings(value: unknown): PanelSettings {
     rightButton: v.rightButton === "menu" ? "menu" : "mark",
     runPrograms: v.runPrograms === "always" || v.runPrograms === "never" ? v.runPrograms : "ask",
     editor: typeof v.editor === "string" ? v.editor.slice(0, MAX_EDITOR_CHARS) : "",
+    assetsFolder: readAssetsFolder(v.assetsFolder),
     compareToleranceMs: v.compareToleranceMs === 0 ? 0 : 2000,
     compareDst: v.compareDst === true,
     compareIgnoreDates: v.compareIgnoreDates === true,

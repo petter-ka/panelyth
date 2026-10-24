@@ -91,7 +91,7 @@ func (s *Source) IDs(_ context.Context, d index.Descriptor) ([]int64, error) {
 			}
 			return 1
 		}
-		for _, k := range d.Sort {
+		for _, k := range d.SortFor(a.dir) {
 			var c int
 			switch k.Field {
 			case index.SortModified:

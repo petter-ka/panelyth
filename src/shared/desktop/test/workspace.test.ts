@@ -37,6 +37,7 @@ function setup(overrides: Partial<WorkspaceDeps> = {}) {
     writeClipboard: vi.fn(),
     writeClipboardImage: vi.fn(async () => undefined),
     launch: vi.fn(async () => undefined),
+    openTextEditor: vi.fn(async () => undefined),
     startDrag: vi.fn(async () => undefined),
     platform: "linux",
     ...overrides,
@@ -270,22 +271,23 @@ describe("workspace handlers", () => {
       )
     })
 
-    it("falls back to the platform's text editor", async () => {
-      const win = setup({ call: entry("C:\\a.bat", "file", true), platform: "win32" })
-      await win.h["shell.edit"](ev, { entryId: 5 }, "commander")
-      expect(win.deps.launch).toHaveBeenCalledWith("notepad.exe", ["C:\\a.bat"])
-      const mac = setup({ call: entry("/a.sh", "file", true), platform: "darwin" })
-      await mac.h["shell.edit"](ev, { entryId: 5 }, "commander")
-      expect(mac.deps.launch).toHaveBeenCalledWith("open", ["-t", "/a.sh"])
-      // Linux: xdg-open for text; a program would run, so it needs an editor.
-      const text = setup({ call: entry("/a.txt", "file", false), platform: "linux" })
-      await text.h["shell.edit"](ev, { entryId: 5 }, "commander")
-      expect(text.deps.openPath).toHaveBeenCalledWith("/a.txt")
-      const program = setup({ call: entry("/a.sh", "file", true), platform: "linux" })
-      await expect(program.h["shell.edit"](ev, { entryId: 5 }, "commander")).rejects.toThrow(
-        "editor",
+    it("opens the built-in editor when Settings names none (ADR-0046), on every platform", async () => {
+      for (const platform of ["win32", "darwin", "linux"] as const) {
+        // A script too: the editor shows it as text and never runs it.
+        const { h, deps } = setup({ call: entry("/a.sh", "file", true), platform })
+        await h["shell.edit"](ev, { entryId: 5 }, "commander")
+        expect(deps.openTextEditor).toHaveBeenCalledWith(5)
+        expect(deps.launch).not.toHaveBeenCalled()
+        expect(deps.openPath).not.toHaveBeenCalled()
+      }
+      // The editor's refusals (a binary, too large) reach the commander as they are.
+      const binary = setup({ call: entry("/a.bin", "file", false) })
+      vi.mocked(binary.deps.openTextEditor).mockRejectedValueOnce(
+        Object.assign(new Error("binary"), { details: { reason: "binary" } }),
       )
-      expect(program.deps.openPath).not.toHaveBeenCalled()
+      await expect(binary.h["shell.edit"](ev, { entryId: 5 }, "commander")).rejects.toMatchObject({
+        details: { reason: "binary" },
+      })
     })
   })
 })

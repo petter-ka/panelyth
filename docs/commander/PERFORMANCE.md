@@ -70,6 +70,18 @@ turns and the best run of each counted: a server that writes to the same disk me
 | Renderer during a transfer | no long tasks > 50 ms; both panels navigable |
 | Compare by content of 1,000 pairs of small files | recorded; one job, no long task in the renderer |
 
+### Text editor (Stages C10.6–C10.9, ADR-0046)
+
+The editor window's own budgets; the commander's are unchanged by it (its bundle does not grow).
+
+| Metric | Budget |
+|---|---|
+| F4 on a 1 MB Markdown file → text painted in the editor window | < 300 ms after the window shows |
+| Keystroke → paint, 1 MB Markdown | p95 ≤ 16 ms; no long tasks > 50 ms while typing |
+| Ctrl+S of 1 MB (local) → "Saved" | ≤ 150 ms |
+| Word count of 1 MB | off the keystroke path: never a long task |
+| The viewer's and the commander's bundles | unchanged (`pnpm bench:bundle`) |
+
 ## Benchmarks per stage
 
 | Stage | Benchmarks |
@@ -86,6 +98,7 @@ turns and the best run of each counted: a server that writes to the same disk me
 | C09 | multi-rename preview and apply on 10k files; folder sizes for a panel of 1,000 folders |
 | C10 | command line start-up cost; thumbnails view scroll (viewer tile budgets) |
 | C10.5 | tree expand and held key, folder enter with the tree shown, tab set open, remote listing and transfers against `curl`, a dead server, multi-file compare; the viewer's sidebar tree on the shared code |
+| C10.6 | editor open, typing and save of 1 MB Markdown; the sidecar's commit benchmark (`internal/textedit`); bundles |
 
 ## Rules
 

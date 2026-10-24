@@ -1,0 +1,1 @@
+{"at":"2026-10-24T11:36:14.431Z","test":"c06-bench","quickFilter100kMs":41,"branchTree50kColdMs":15,"branchTree50kWarmMs":27,"findTree50k":{"firstResultMs":54.69999999925494,"doneMs":311,"status":"Done: 12,950 found in 259 folders (0.3 s)"}}

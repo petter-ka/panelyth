@@ -147,7 +147,7 @@ export function ViewerOverlay() {
       aria-label={t("Image viewer: {name}", { name: item.name })}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-50 flex flex-col bg-canvas outline-none"
+      className="below-title-bar fixed z-50 flex flex-col bg-canvas outline-none"
       data-testid="viewer"
       data-entry-id={item.id}
       data-index={index}

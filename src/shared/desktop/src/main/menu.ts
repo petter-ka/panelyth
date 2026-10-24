@@ -1,5 +1,6 @@
-// The native application menu (Stage P06): the menu bar on Windows and Linux,
-// the app menu on macOS. It replaces Electron's default menu, whose Help
+// The native application menu (Stage P06): the app menu on macOS. On Windows
+// and Linux no window shows its bar; the menu stays set for its shortcuts
+// (Settings, zoom, full screen). It replaces Electron's default menu, whose Help
 // points at Electron's own site and whose View reloads the page in a release.
 // Items that belong to an app (About, Settings, Shortcuts) are sent to the
 // app on screen; the rest is main's.

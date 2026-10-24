@@ -41,6 +41,16 @@ import type { ProgramEdit, ProgramsResult } from "./programs"
 import type { AboutInfo, AppTarget, UpdateState } from "./update"
 import type { EventChannel, EventMap } from "./events"
 import type {
+  TextEditCheckResult,
+  TextEditCommitResult,
+  TextEditorCommitParams,
+  TextEditorSession,
+  TextEditAssetCommitResult,
+  TextEditorResolveImagesResult,
+  TextEditorExportParams,
+  TextEditorExportResult,
+} from "./textedit"
+import type {
   ArchiveCheckResult,
   ArchiveCloseResult,
   ArchiveOpenResult,
@@ -136,6 +146,8 @@ import type {
   AppId,
   SystemHardware,
   SystemLoad,
+  WindowControlParams,
+  WindowFrameInfo,
 } from "./rpc"
 
 /** Electron IPC channel names. Only preload and main use these. */
@@ -147,6 +159,17 @@ export const DEV_METHODS_ARG = "--panelyth-dev-methods"
 
 /** Renderer argument: the commander is enabled, so preload exposes app.switch (ADR-0031). */
 export const COMMANDER_ENABLED_ARG = "--panelyth-commander"
+
+/** Renderer argument (ADR-0045): the app view draws the window's title strip and its buttons (Windows). */
+export const TITLE_BAR_ARG = "--panelyth-title-bar"
+
+/** The main window's frame, for the title strip (ADR-0045); in all three app views. */
+export interface WindowFrameApi {
+  /** True when this view draws the title strip (the renderer argument). */
+  titleBar: boolean
+  state(): Promise<RpcEnvelope<WindowFrameInfo>>
+  control(action: WindowControlParams["action"]): Promise<RpcEnvelope<OkResult>>
+}
 
 /**
  * Shape of `window.panelyth`, exposed by preload through contextBridge.
@@ -165,6 +188,7 @@ export interface PanelythApi {
     /** Opens the log folder, the licence notices or a page of the project. */
     openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
   }
+  frame: WindowFrameApi
   /** Settings in a native window (ADR-0039). */
   settings: {
     openWindow(tab?: SettingsTab, section?: string): Promise<RpcEnvelope<OkResult>>
@@ -384,6 +408,7 @@ export interface SystemApi {
     about(): Promise<RpcEnvelope<AboutInfo>>
     openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
   }
+  frame: WindowFrameApi
   settings: {
     openWindow(tab?: SettingsTab, section?: string): Promise<RpcEnvelope<OkResult>>
     closeWindow(then?: "shortcuts"): Promise<RpcEnvelope<OkResult>>
@@ -428,6 +453,40 @@ export interface SystemApi {
   onEvent<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void
 }
 
+/**
+ * The document window's API (ADR-0033, amended by ADR-0045): its title strip's
+ * window buttons and nothing else; the page still reads only its one token.
+ */
+export interface DocumentFrameApi {
+  frame: WindowFrameApi
+  /** window.state only. */
+  onEvent<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void
+}
+
+/**
+ * The text editor window's API (ADR-0046), `window.panelyth` there: its own
+ * file only, through the session main bound to the window.
+ */
+export interface TextEditorApi {
+  /** The title strip's buttons (ADR-0045). */
+  frame: WindowFrameApi
+  session(): Promise<RpcEnvelope<TextEditorSession>>
+  write(seq: number, text: string): Promise<RpcEnvelope<OkResult>>
+  commit(params: TextEditorCommitParams): Promise<RpcEnvelope<TextEditCommitResult>>
+  check(): Promise<RpcEnvelope<TextEditCheckResult>>
+  setDirty(dirty: boolean): Promise<RpcEnvelope<OkResult>>
+  close(discard: boolean): Promise<RpcEnvelope<OkResult>>
+  /** Stage C10.7: a picture's bytes in chunks (seq from 0), then the commit into the assets folder. */
+  assetChunk(seq: number, data: Uint8Array): Promise<RpcEnvelope<OkResult>>
+  assetCommit(name: string): Promise<RpcEnvelope<TextEditAssetCommitResult>>
+  /** Stage C10.7: tokens for the pictures these links name. */
+  resolveImages(links: string[]): Promise<RpcEnvelope<TextEditorResolveImagesResult>>
+  /** Stage C10.8: prints the print view the page laid out to a PDF where the user chooses. */
+  exportPdf(params: TextEditorExportParams): Promise<RpcEnvelope<TextEditorExportResult>>
+  /** texteditor.closeRequest and settings.changed (the shared appearance). */
+  onEvent<C extends EventChannel>(channel: C, listener: (payload: EventMap[C]) => void): () => void
+}
+
 export interface CommanderApi {
   app: {
     exit(): Promise<RpcEnvelope<OkResult>>
@@ -438,6 +497,7 @@ export interface CommanderApi {
     /** Opens the log folder, the licence notices or a page of the project. */
     openTarget(target: AppTarget): Promise<RpcEnvelope<OkResult>>
   }
+  frame: WindowFrameApi
   /** Settings in a native window (ADR-0039). */
   settings: {
     openWindow(tab?: SettingsTab, section?: string): Promise<RpcEnvelope<OkResult>>

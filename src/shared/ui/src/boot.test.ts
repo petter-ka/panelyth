@@ -35,6 +35,7 @@ describe("boot.js", () => {
     { "panelyth.theme": "light" },
     { "panelyth.theme": "dark-purple", "panelyth.style": "glass" },
     { "panelyth.theme": "beige", "panelyth.interfaceSize": "xlarge" },
+    { "panelyth.theme": "dark-brown", "panelyth.style": "terminal" },
     { "panelyth.theme": "system" },
     { "panelyth.theme": "klingon", "panelyth.style": "aqua", "panelyth.interfaceSize": "huge" },
   ])("agrees with the appearance stores for %o", (stored: Record<string, string>) => {

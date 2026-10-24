@@ -529,6 +529,10 @@ export function installFakeCommander(options: FakeOptions) {
     return rows.sort((a, b) => {
       const dirs = Number(b.kind === "dir") - Number(a.kind === "dir")
       if (dirs !== 0) return dirs
+      // dirsByName: folders by name (ascending) unless the sort is by name.
+      if (d.dirsByName && a.kind === "dir" && key.field !== "name") {
+        return a.name.localeCompare(b.name)
+      }
       const c = compare(key.field, a, b)
       return (key.direction === "desc" ? -c : c) || a.name.localeCompare(b.name)
     })

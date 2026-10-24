@@ -4,7 +4,8 @@
 
 Accepted (2026-10-16), at the owner's request, outside the stage list, like ADR-0033, ADR-0039 and ADR-0040.
 Amends ADR-0014: its rule against `backdrop-filter`, shadows and gradients in the chrome holds for the classic
-style; the glass style below is the measured exception.
+style; the glass style below is the measured exception. Amended 2026-10-24 by ADR-0047: the style has a third
+value, `"terminal"`, built on the same marker classes.
 
 ## Context
 

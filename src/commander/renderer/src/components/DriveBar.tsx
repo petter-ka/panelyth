@@ -236,7 +236,7 @@ export function DriveBar({ side }: { side: Side }) {
                 data-not-ready={v.notReady || undefined}
                 onClick={() => void openDrive(side, v.path)}
                 {...dropTarget(side, () => (v.notReady ? null : { path: v.path, dirId: null }))}
-                className={`glass-press h-5 min-w-6 shrink-0 rounded px-1.5 font-medium whitespace-nowrap ${pressed ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
+                className={`glass-press h-5 min-w-6 shrink-0 rounded px-1.5 font-medium whitespace-nowrap ${pressed ? "bg-raised text-text ring-1 ring-accent/60 ring-inset" : "text-muted hover:bg-raised hover:text-text"} ${v.notReady ? "opacity-50" : ""}`}
               >
                 {opening === v.path && (
                   <Spinner size={10} className="mr-1 inline-block align-[-1px]" />
@@ -260,7 +260,7 @@ export function DriveBar({ side }: { side: Side }) {
                 const r = e.currentTarget.getBoundingClientRect()
                 setMore({ left: r.left, top: r.bottom + 2 })
               }}
-              className={`glass-press h-5 w-6 shrink-0 rounded font-medium ${currentHidden || more ? "bg-raised text-text ring-1 ring-accent/60" : "text-muted hover:bg-raised hover:text-text"}`}
+              className={`glass-press h-5 w-6 shrink-0 rounded font-medium ${currentHidden || more ? "bg-raised text-text ring-1 ring-accent/60 ring-inset" : "text-muted hover:bg-raised hover:text-text"}`}
             >
               …
             </button>

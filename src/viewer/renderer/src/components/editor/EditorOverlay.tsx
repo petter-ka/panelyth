@@ -546,7 +546,7 @@ export function EditorOverlay() {
       onKeyUp={(e) => {
         if (useEditorStore.getState().compare && !e.ctrlKey && !e.metaKey) setCompare(false)
       }}
-      className="fixed inset-0 z-50 flex flex-col bg-canvas text-text outline-none"
+      className="below-title-bar fixed z-50 flex flex-col bg-canvas text-text outline-none"
       data-testid="editor"
       data-status={status}
       data-entry-id={entry.id}

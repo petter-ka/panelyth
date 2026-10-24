@@ -78,6 +78,12 @@ that ships), ADR-0027 (six methods in both profiles) and ADR-0034 (the native me
   Shortcuts, Check for Updates…, Release Notes, Report a Problem, Panelyth Website, Open Log Folder, Third-Party
   Licenses, About Panelyth). macOS: About, Check for Updates… and Settings… are in the app menu; a Window menu is
   added. Development builds add Reload and the developer tools; a release has neither.
+- Amended 2026-10-23 (owner request): on Windows and Linux no window shows the menu bar (the main window calls
+  `setMenuBarVisibility(false)` like the media, settings and document windows; Alt does not bring it back). The menu
+  stays set, so its accelerators (Settings…, zoom, full screen, and Reload and the developer tools in development)
+  still work. The menu's other items are reached from the apps: the rail (switching apps), Settings → About (updates, release
+  notes, logs, licenses) and Settings → Shortcuts.
+  macOS is unchanged: its menu is the system's menu bar, not a row in the window.
 - Items that belong to an app (About, Check for Updates…, Settings…, Keyboard Shortcuts) are sent to the app on
   screen as a `menu.command` event; the app opens its own dialog. An item chosen while no window is open (macOS)
   opens the window and is handed over when the viewer asks for the update state, which it does once it listens.

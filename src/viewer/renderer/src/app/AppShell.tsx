@@ -4,6 +4,7 @@ import {
   AppSwitcher,
   GlyphSprite,
   SeparatorReadout,
+  TitleBar,
   Tooltip,
   TooltipProvider,
 } from "@panelyth/ui"
@@ -18,6 +19,7 @@ import { PreviewPane } from "../components/PreviewPane"
 import { SidebarPane } from "../components/SidebarPane"
 import { Notice } from "../components/Notice"
 import { StatusBar } from "../components/StatusBar"
+import { ViewerTitleControls } from "../components/TitleControls"
 import { ViewerOverlay } from "../components/viewer/ViewerOverlay"
 import { EditorOverlay } from "../components/editor/EditorOverlay"
 import { registerPaneControls } from "../features/workspace/paneControls"
@@ -28,6 +30,7 @@ import { Button } from "../components/ui/button"
 import { ChevronDownIcon } from "../components/ui/icons"
 import { openSettings, useSettingsStore } from "../features/settings/settingsStore"
 import { useViewerStore } from "../features/viewer/viewerStore"
+import { useFolderStore } from "../features/folder/folderStore"
 import { useShortcutHint } from "../features/shortcuts/shortcutStore"
 import { switchToCommander, switchToSystem } from "../features/workspace/appSwitch"
 import { t } from "@panelyth/i18n"
@@ -59,6 +62,12 @@ function groupLayout(
 function saveGroupLayout(layout: Record<string, number>, prefix = ""): void {
   const saved = Object.fromEntries(Object.entries(layout).map(([id, size]) => [prefix + id, size]))
   setPanes({ ...(usePaneStore.getState().panes ?? {}), ...saved })
+}
+
+/** The title strip with the open folder; on its own, so a folder change renders only it. */
+function ViewerTitleBar({ rail }: { rail: boolean }) {
+  const path = useFolderStore((s) => s.folder?.path ?? null)
+  return <TitleBar title="Panelyth" detail={path} controls={<ViewerTitleControls />} rail={rail} />
 }
 
 /**
@@ -148,7 +157,7 @@ export function AppShell() {
     <TooltipProvider>
       <GlyphSprite />
       <div
-        className={`glass-shell relative grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[minmax(0,1fr)_auto]`}
+        className={`glass-shell relative grid h-full ${commanderEnabled ? "grid-cols-[2.75rem_minmax(0,1fr)]" : "grid-cols-1"} grid-rows-[auto_minmax(0,1fr)_auto]`}
       >
         {commanderEnabled && (
           <AppSwitcher
@@ -158,6 +167,7 @@ export function AppShell() {
             onSettings={openSettings}
           />
         )}
+        <ViewerTitleBar rail={commanderEnabled} />
         {/* A layout applied from library.db (or reset) remounts the group with it. */}
         <Group
           key={`${applyToken}-${previewRight}`}

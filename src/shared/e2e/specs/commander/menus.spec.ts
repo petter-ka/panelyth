@@ -38,7 +38,7 @@ function fit(c: Page, testId: string) {
 }
 
 test.describe("popup menus stay on top and within the window", () => {
-  for (const style of ["classic", "glass"] as const) {
+  for (const style of ["classic", "glass", "terminal"] as const) {
     test(`the toolbar's add menu is drawn over the panels below it (${style})`, async () => {
       const { app } = await launch("commander")
       try {
@@ -57,6 +57,33 @@ test.describe("popup menus stay on top and within the window", () => {
       }
     })
   }
+
+  test("a scrolled menu stays where it was scrolled while the pointer moves over it", async () => {
+    const { app } = await launch("commander")
+    try {
+      const c = await commanderOf(app)
+      // Small enough that the toolbar's add menu scrolls.
+      await resize(app, 1000, 600)
+      await c.getByTestId("toolbar-edit").click()
+      await c.getByTestId("toolbar-add").click()
+      const menu = c.getByTestId("toolbar-add-menu")
+      await expect(menu).toBeVisible()
+      expect(await fit(c, "toolbar-add-menu")).toMatchObject({ scrolls: true })
+      const box = (await menu.boundingBox())!
+      await c.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+      await c.mouse.wheel(0, 400)
+      const scrolled = () => menu.evaluate((el) => el.scrollTop)
+      await expect.poll(scrolled).toBeGreaterThan(100)
+      const at = await scrolled()
+      // Each item the pointer passes is highlighted (a render): the menu used to jump to its top.
+      for (let y = box.y + 60; y < box.y + box.height - 20; y += 28) {
+        await c.mouse.move(box.x + box.width / 2, y)
+      }
+      expect(await scrolled()).toBe(at)
+    } finally {
+      await app.close()
+    }
+  })
 
   test("the row menu opens above a row near the bottom, and scrolls in a small window", async () => {
     const root = folderOf(60)

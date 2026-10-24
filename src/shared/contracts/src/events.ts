@@ -15,6 +15,7 @@ import type {
   SidecarStatus,
   Volume,
   OpenRequest,
+  WindowFrameState,
 } from "./rpc"
 
 export type ScanState = "running" | "completed" | "cancelled" | "failed"
@@ -99,6 +100,12 @@ export interface EventMap {
   "job.conflict": { jobId: number; conflict: JobConflict }
   /** From main: this app view was shown or hidden by the app switch (ADR-0031). */
   "app.visibility": { app: AppId; visible: boolean }
+  /** From main (ADR-0045): the main window was maximized, restored, or went into or out of full screen. */
+  "window.state": WindowFrameState
+  /** From main (ADR-0046): the editor window is being closed with unsaved changes; the page asks. */
+  "texteditor.closeRequest": Record<string, never>
+  /** From main (ADR-0046): F4 on a file this read-only window shows; editing starts here. */
+  "texteditor.editable": Record<string, never>
   /** From main: a shared.* setting changed, so the other app can apply it (ADR-0031). */
   "settings.changed": { key: string; value: unknown }
   /** Drives came or went (Stage C03): the new list, coalesced. */
@@ -140,6 +147,9 @@ export const EVENT_CHANNELS = [
   "job.progress",
   "job.conflict",
   "app.visibility",
+  "window.state",
+  "texteditor.closeRequest",
+  "texteditor.editable",
   "settings.changed",
   "volumes.changed",
   "bookmarks.changed",

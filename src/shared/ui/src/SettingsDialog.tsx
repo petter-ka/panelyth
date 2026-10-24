@@ -1,3 +1,4 @@
+import { TitleBar } from "./TitleBar"
 import {
   setAutoUpdateCheck,
   setSwitchSettings,
@@ -10,6 +11,7 @@ import {
   ICON_SET_OPTIONS,
   setLanguage,
   STYLE_OPTIONS,
+  TERMINAL_THEME_LABELS,
   THEME_GROUPS,
   themeOfSystem,
   useIconSetStore,
@@ -154,7 +156,11 @@ function AppearanceSettings() {
         <p className="text-2xs text-muted">
           {style === "glass"
             ? t("Translucent panels float over a soft background drawn from the theme's colors.")
-            : t("Flat, neutral panels: the original Panelyth design.")}
+            : style === "terminal"
+              ? t(
+                  "A field operative's console: framed panels, monospaced type and the theme's signal color.",
+                )
+              : t("Flat, neutral panels: the original Panelyth design.")}
         </p>
       </section>
       <section className="space-y-2 border-t border-border pt-3">
@@ -170,7 +176,7 @@ function AppearanceSettings() {
               />
               {t("System")}
             </label>
-            <p className="pt-1 pl-5 text-2xs text-muted">
+            <p className="pt-0.5 text-2xs text-muted">
               {t("System follows your operating system's light or dark setting.")}
             </p>
           </div>
@@ -182,7 +188,14 @@ function AppearanceSettings() {
                 label={t(group.label)}
                 value={preference}
                 disabled={false}
-                options={group.themes.map((o) => ({ ...o, label: t(o.label) }))}
+                options={group.themes.map((o) => ({
+                  ...o,
+                  label: t(
+                    style === "terminal" && o.value !== "system"
+                      ? TERMINAL_THEME_LABELS[o.value]
+                      : o.label,
+                  ),
+                }))}
                 onChange={setPreference}
               />
             </div>
@@ -312,6 +325,8 @@ export function SettingsWindowPage({
       className="glass-page flex h-full min-h-0 flex-col bg-chrome text-text"
       data-testid="settings-window"
     >
+      {/* Windows: the window's own strip, with Close only (ADR-0045). */}
+      <TitleBar title={t("Settings")} rail={false} mark />
       <SettingsTabs {...content} panelClassName="min-h-0 flex-1" />
     </div>
   )
@@ -391,7 +406,8 @@ function SettingsTabs({
         role="tabpanel"
         aria-labelledby={`settings-tab-${tab}`}
         tabIndex={0}
-        className={`${panelClassName} overflow-y-auto p-4 outline-none`}
+        // settings-form: switches and option rows (styles.css "Settings controls").
+        className={`settings-form ${panelClassName} overflow-y-auto p-4 outline-none`}
       >
         {tab === "general" && showGeneral && <GeneralSettings settingsReady={settingsReady} />}
         {tab === currentApp && appSettings}

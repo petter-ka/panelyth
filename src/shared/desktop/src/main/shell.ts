@@ -1,9 +1,14 @@
-import { nativeTheme, WebContentsView, type BrowserWindow, type WebContents } from "electron"
+import { WebContentsView, type BrowserWindow, type WebContents } from "electron"
 import { readSwitchSettings, SHARED_SWITCH_KEY, type AppId } from "@panelyth/contracts"
 import { broadcast } from "./ipc/router"
 import { perfMark } from "./perf"
 import { hardenWebContents } from "./security"
+import { themeColorsOf } from "./themeColors"
 import { securePreferences } from "./window"
+
+// The view background follows the theme (themeColors.ts): a first switch shows
+// the theme's surface rather than a dark one in a light theme.
+export { chromeColorOf } from "./themeColors"
 
 export const APP_TITLES: Record<AppId, string> = {
   viewer: "Panelyth",
@@ -26,33 +31,14 @@ export function startAppFrom(settings: Record<string, unknown>): AppId {
   return context?.app === "commander" ? "commander" : "viewer"
 }
 
-/**
- * The chrome color of each theme (src/shared/ui/src/styles.css): what the
- * commander view shows before its page has painted, so a first switch shows
- * the theme's surface rather than a dark one in a light theme.
- */
-const CHROME: Record<string, string> = {
-  dark: "#242424",
-  light: "#f7f7f7",
-  "dark-purple": "#2a2233",
-  "dark-brown": "#30251e",
-  beige: "#f6f1e7",
-  "light-brown": "#f2e4d0",
-}
-
-/** The view background for a `shared.appearance` value; dark when unknown. */
-export function chromeColorOf(appearance: unknown): string {
-  const theme = (appearance as { theme?: unknown } | null | undefined)?.theme
-  if (theme === "system") return nativeTheme.shouldUseDarkColors ? CHROME.dark! : CHROME.light!
-  return (typeof theme === "string" && CHROME[theme]) || CHROME.dark!
-}
-
 /** How an app view is made: its page, origin and preload (ADR-0027). */
 export interface AppViewOptions {
   url: string
   origin: string
   preload: string
   devTools: boolean
+  /** Renderer arguments (TITLE_BAR_ARG). */
+  args?: readonly string[]
 }
 
 export type AppViews = Partial<Record<ViewApp, AppViewOptions>>
@@ -68,7 +54,7 @@ export class AppShell {
   private readonly views = new Map<ViewApp, WebContentsView>()
   private active: AppId = "viewer"
   private switchedByUser = false
-  private background = CHROME.dark!
+  private background = themeColorsOf("dark").chrome
 
   constructor(
     private readonly window: BrowserWindow,
@@ -166,7 +152,7 @@ export class AppShell {
     if (!options) return null
     perfMark(app === "commander" ? "commander-view-created" : "system-view-created")
     const view = new WebContentsView({
-      webPreferences: securePreferences(options.preload, options.devTools, []),
+      webPreferences: securePreferences(options.preload, options.devTools, options.args ?? []),
     })
     // The theme's chrome, so a first switch never flashes another color.
     view.setBackgroundColor(this.background)

@@ -22,6 +22,31 @@ import type {
 } from "./batch"
 import type { ErrorCode } from "./errors"
 import type {
+  TextEditCheckResult,
+  TextEditCommitParams,
+  TextEditCommitResult,
+  TextEditOpenParams,
+  TextEditOpenResult,
+  TextEditSessionParams,
+  TextEditWriteParams,
+  TextEditorCloseParams,
+  TextEditorCommitParams,
+  TextEditorDirtyParams,
+  TextEditorSession,
+  TextEditorWriteParams,
+  TextEditAssetChunkParams,
+  TextEditAssetCommitParams,
+  TextEditAssetCommitResult,
+  TextEditResolveImagesParams,
+  TextEditResolveImagesResult,
+  TextEditorAssetChunkParams,
+  TextEditorAssetCommitParams,
+  TextEditorResolveImagesParams,
+  TextEditorResolveImagesResult,
+  TextEditorExportParams,
+  TextEditorExportResult,
+} from "./textedit"
+import type {
   ProgramOpenFolderParams,
   ProgramOpenParams,
   ProgramsResult,
@@ -268,6 +293,11 @@ export interface QueryDescriptor {
    * and the hidden attribute, are listed). An entry that is both is a system one.
    */
   hideSystem?: boolean
+  /**
+   * Folders in name order whatever the sort (the commander's Settings →
+   * Panels); files follow `sort`. A sort by name orders them by it anyway.
+   */
+  dirsByName?: boolean
   /**
    * Wildcard masks for files ("*", "?"), separated by ";" or spaces; masks
    * after "|" exclude. Folders always pass. "" or omitted = all files.
@@ -2300,6 +2330,24 @@ export type RemoteJobParams =
 
 /** Methods implemented by the Go sidecar. */
 export interface SidecarMethodMap {
+  /**
+   * The text editor (Stage C10.6, ADR-0046): main's calls only, for the editor
+   * window it bound the session to. No renderer profile lists them.
+   */
+  "textedit.open": { params: TextEditOpenParams; result: TextEditOpenResult }
+  "textedit.write": { params: TextEditWriteParams; result: OkResult }
+  "textedit.commit": { params: TextEditCommitParams; result: TextEditCommitResult }
+  "textedit.check": { params: TextEditSessionParams; result: TextEditCheckResult }
+  "textedit.close": { params: TextEditSessionParams; result: OkResult }
+  /** Stage C10.7: a chunk of a pasted or dropped picture. */
+  "textedit.assetChunk": { params: TextEditAssetChunkParams; result: OkResult }
+  /** Stage C10.7: writes the picture into the assets folder beside the document; its link. */
+  "textedit.assetCommit": { params: TextEditAssetCommitParams; result: TextEditAssetCommitResult }
+  /** Stage C10.7: the pictures links name, inside the document's folder tree only. */
+  "textedit.resolveImages": {
+    params: TextEditResolveImagesParams
+    result: TextEditResolveImagesResult
+  }
   "system.ping": { params: EmptyParams; result: PingResult }
   "system.info": { params: EmptyParams; result: SystemInfo }
   "system.shutdown": { params: EmptyParams; result: ShutdownResult }
@@ -2538,6 +2586,30 @@ export interface AppSwitchParams {
   edit?: number
 }
 
+/** The main window's frame (ADR-0045): what the title strip shows on its window buttons. */
+export interface WindowFrameState {
+  maximized: boolean
+  fullScreen: boolean
+}
+
+/**
+ * `window.getState`'s answer: the frame, and whether the calling app is the one
+ * on screen. An app that is not gives up its strip's drag area, which would
+ * otherwise lie over the shown app's buttons (the viewer's page is under the
+ * other apps' views).
+ */
+export interface WindowFrameInfo extends WindowFrameState {
+  shown: boolean
+  /** The window's own buttons: a modal settings window has only Close. */
+  minimizable: boolean
+  maximizable: boolean
+}
+
+/** A window button of the title strip (ADR-0045); toggleMaximize restores a maximized window. */
+export interface WindowControlParams {
+  action: "minimize" | "toggleMaximize" | "close"
+}
+
 /** Methods answered by Electron main itself (never forwarded to Go). */
 export interface MainMethodMap {
   /** Requests an orderly Electron app exit (sidecar shutdown remains main-owned). */
@@ -2546,6 +2618,36 @@ export interface MainMethodMap {
   "app.switch": { params: AppSwitchParams; result: OkResult }
   /** Both apps (Stage P06): the product's version and what it runs on. */
   "app.about": { params: EmptyParams; result: AboutInfo }
+  /** The app views (ADR-0045): the main window's maximized and full-screen state. */
+  "window.getState": { params: EmptyParams; result: WindowFrameInfo }
+  /** The app views (ADR-0045): a window button of the title strip. */
+  "window.control": { params: WindowControlParams; result: OkResult }
+  /** The text editor window (ADR-0046): its file, read through a token. */
+  "texteditor.session": { params: EmptyParams; result: TextEditorSession }
+  /** A chunk of the text of a save, in order from 0. */
+  "texteditor.write": { params: TextEditorWriteParams; result: OkResult }
+  /** Writes the chunks to the file, unless it changed on disk since baseVersion. */
+  "texteditor.commit": { params: TextEditorCommitParams; result: TextEditCommitResult }
+  /** The file on disk now (the window regained the focus). */
+  "texteditor.check": { params: EmptyParams; result: TextEditCheckResult }
+  /** Unsaved changes: the title shows them, and closing asks first. */
+  "texteditor.setDirty": { params: TextEditorDirtyParams; result: OkResult }
+  /** Closes the window (after the page asked about unsaved changes). */
+  "texteditor.close": { params: TextEditorCloseParams; result: OkResult }
+  /** Stage C10.7: a chunk of a pasted or dropped picture, in order from 0. */
+  "texteditor.assetChunk": { params: TextEditorAssetChunkParams; result: OkResult }
+  /** Stage C10.7: the picture into the assets folder; the link to insert. */
+  "texteditor.assetCommit": {
+    params: TextEditorAssetCommitParams
+    result: TextEditAssetCommitResult
+  }
+  /** Stage C10.8: a PDF of the print view the page laid out; main's save dialog names the file. */
+  "texteditor.exportPdf": { params: TextEditorExportParams; result: TextEditorExportResult }
+  /** Stage C10.7: read-only tokens for the pictures the visible links name. */
+  "texteditor.resolveImages": {
+    params: TextEditorResolveImagesParams
+    result: TextEditorResolveImagesResult
+  }
   /** Panelyth System (ADR-0042): the OS, CPU, memory and graphics adapters. */
   "system.hardware": { params: EmptyParams; result: SystemHardware }
   /** Panelyth System: the CPU time per core and the memory now (sampled while it is visible). */
@@ -2663,6 +2765,8 @@ export const VIEWER_METHODS = [
   "app.exit",
   "app.switch",
   "app.about",
+  "window.getState",
+  "window.control",
   "app.openTarget",
   "update.get",
   "update.check",
@@ -2818,10 +2922,37 @@ export const COMMANDER_ONLY_METHODS = [
 const SYSTEM_ONLY_METHODS = ["system.hardware", "system.load"] as const
 
 /** Every method some renderer may invoke. Main rejects everything else. */
+/**
+ * The text editor window's profile (ADR-0046): its own file and nothing else.
+ * Not an app of the shell: main matches it by its origin before the apps.
+ */
+export const TEXTEDITOR_METHODS = [
+  "texteditor.session",
+  "texteditor.write",
+  "texteditor.commit",
+  "texteditor.check",
+  "texteditor.setDirty",
+  "texteditor.close",
+  "texteditor.assetChunk",
+  "texteditor.assetCommit",
+  "texteditor.resolveImages",
+  "texteditor.exportPdf",
+] as const
+
+export type TextEditorMethod = (typeof TEXTEDITOR_METHODS)[number]
+
+/**
+ * The title strip's own window calls (ADR-0045): every window that draws the
+ * strip may make them, about itself only. The document window, which has no
+ * other bridge, may make nothing else (ADR-0033, amended).
+ */
+export const FRAME_METHODS = ["window.getState", "window.control"] as const
+
 export const RENDERER_METHODS = [
   ...VIEWER_METHODS,
   ...COMMANDER_ONLY_METHODS,
   ...SYSTEM_ONLY_METHODS,
+  ...TEXTEDITOR_METHODS,
 ] as const
 
 /** Additionally allowed when dev methods are enabled (never in packaged builds). */
@@ -2838,6 +2969,8 @@ export const COMMANDER_METHODS = [
   "app.exit",
   "app.switch",
   "app.about",
+  "window.getState",
+  "window.control",
   "app.openTarget",
   "update.get",
   "update.check",
@@ -2975,6 +3108,8 @@ export const SYSTEM_METHODS = [
   "app.exit",
   "app.switch",
   "app.about",
+  "window.getState",
+  "window.control",
   "app.openTarget",
   "update.get",
   "update.check",
@@ -3006,6 +3141,8 @@ export const MAIN_METHODS = [
   "app.exit",
   "app.switch",
   "app.about",
+  "window.getState",
+  "window.control",
   "system.hardware",
   "system.load",
   "app.openTarget",

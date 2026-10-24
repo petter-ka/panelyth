@@ -57,6 +57,12 @@ commander's profile has none of them; from its media overlay or the media window
 neither a path nor the session's owner: a "save as" destination comes from main's save dialog, a frame is a token
 URL, and a saved file is shown in the file manager by job id.
 
+Amended by ADR-0046 (Stage C10.6, 2026-10-24): a fourth profile, `TEXTEDITOR_METHODS`, for the text editor
+window (`app://texteditor/`), which is no app of the shell: main matches its origin before the apps. Its six main
+methods (`texteditor.session`, `write`, `commit`, `check`, `setDirty`, `close`) act on the one file main bound
+to the window; it names no file and calls nothing else. The commander's `shell.edit` opens that window when
+Settings names no editor.
+
 ## Context
 
 - Electron main checks every renderer call against one allowlist (`RENDERER_METHODS`, ADR-0012). The viewer's

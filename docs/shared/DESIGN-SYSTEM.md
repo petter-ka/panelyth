@@ -28,8 +28,9 @@ Avoid expensive backdrop blur and per-thumbnail animations on the scrolling surf
 
 ## Styles
 
-Two design styles, chosen in Settings → Appearance → Style and shared by both apps (`shared.appearance.style`,
-ADR-0041). They are independent of the theme: every palette below works in both.
+Three design styles, chosen in Settings → Appearance → Style and shared by both apps
+(`shared.appearance.style`, ADR-0041, ADR-0047). They are independent of the theme: every palette below works in
+each.
 
 - **Classic** (the default for a fresh profile): the flat, neutral design the rest of this document describes.
   It was the only style before ADR-0041.
@@ -37,6 +38,10 @@ ADR-0041). They are independent of the theme: every palette below works in both.
   8 px gap over a still wallpaper, which is three soft blooms of the palette's accent, blue and purple over its
   canvas. Edges are lit by a 1 px gradient ring. Menus, popups and dialogs blur what is behind them. Buttons,
   segmented controls and tabs are capsules, and the gap between two cards is the resize handle.
+- **Terminal** (ADR-0047): a field operative's console. Square panels with a gap over a still grid, each framed
+  with corner brackets in the theme's signal color, monospaced type, scanlines on the title strip and behind
+  dialogs. Each theme becomes a console of its own, named so in Settings: Phosphor, Ice, Amber, Dossier, Manila
+  and Archive (see "Terminal style" below).
 
 How the glass style is built (`src/shared/ui/src/styles.css`, `:root[data-style="glass"]`):
 
@@ -65,6 +70,27 @@ How the glass style is built (`src/shared/ui/src/styles.css`, `:root[data-style=
 - Full-window media overlays (image viewer, editor, media window, lister) keep the solid canvas in both styles.
 - `tokens.test.ts` checks text, muted, accent and danger at 4.5:1 on the composite colors: cards over the
   wallpaper's strongest colors in every palette, and menus, dialogs and chips over a black and a white picture.
+
+### Terminal style
+
+Built on the glass style's marker classes (`:root[data-style="terminal"]` in `src/shared/ui/src/styles.css`), so a
+region or layer marked for the glass gets the terminal's frame too.
+
+- **Palettes:** the style redefines each theme's tokens. Dark consoles (Phosphor, Ice, Amber) draw frames and
+  titles in the accent and let it glow; paper (Dossier, Manila, Archive) draws them in the red stamp (`--danger`)
+  and has no glow, with ink blue as the accent. `--term-signal` is that color; `--term-line`,
+  `--term-line-strong` and `--term-corner` are mixed from it.
+- **Surfaces are opaque.** No translucent token and no `backdrop-filter`; effects are static (the grid, frames,
+  scanlines) and drawn by pseudo-elements, so the layout never moves.
+- **Type:** "Panelyth Terminal" (variable JetBrains Mono, OFL) for `--font-sans` and `--font-mono`; ligatures off.
+  Section labels (`h3`, `h4`) and column headers are stencilled (capitals, tracking). Never capitalize a file's
+  name: the main window's strip stencils the product's name, a child window's shows its file name as it is.
+- **States:** the cursor row of the active panel has a signal tint and a lit bar at its left edge; pressed toggles
+  and the chosen option of a segmented choice are in reverse video; the active panel lights its frame.
+- **Motion:** menus and dialogs scan in from the top (seven steps, 140 ms); the title strip's cursor blinks. Both
+  are off under `prefers-reduced-motion`.
+- `tokens.test.ts` checks each console's contrast (the palette, the cursor row, the dialog header, the signal on
+  the strip); `specs/style-scroll.spec.ts` measures scrolling in the classic and the terminal style.
 
 ## Theme and color
 
@@ -139,6 +165,21 @@ themes. The optional palettes keep those contrast targets while adding their sur
   Dark (`tokens.test.ts`). Focus is the accent border plus a 1px accent ring.
 - Fields edited in place on the content (the commander's path, rename and command line) stay on `canvas`.
 - Native checkboxes, radio buttons and ranges take the palette's accent (`accent-color`).
+
+### Settings controls
+
+In the settings window (owner request 2026-10-24; `styles.css` "Settings controls", scoped by `.settings-form`):
+
+- Every on/off setting is a switch: the native checkbox (or `SwitchRow`'s `role="switch"` button, `.ui-switch`)
+  drawn as a track and a thumb. Off: an outlined track with a muted thumb; on: the accent track with a light thumb,
+  as Windows 11 draws them, so both states read in every theme. The thumb slides with a slight overshoot, grows on
+  hover and stretches while pressed.
+- A checkbox's row starts with the switch, then the label. A radio takes a switch's width with its dot in the middle,
+  so the controls form one column on the left and every label starts at the same place (owner request).
+- A one-of choice is a list of rows with a dot: the row is the target and highlights on hover; the chosen one is
+  tinted in the accent with a filled dot.
+- The native inputs stay, so keyboard, labels and screen readers work as before. Motion is off under
+  `prefers-reduced-motion`; the terminal style squares them.
 
 ### Segmented control
 

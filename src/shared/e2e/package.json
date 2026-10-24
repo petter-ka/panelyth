@@ -14,6 +14,7 @@
     "@panelyth/contracts": "workspace:*",
     "@playwright/test": "1.63.0",
     "@types/node": "24.19.0",
-    "electron": "44.5.1"
+    "electron": "44.5.1",
+    "pdfjs-dist": "6.4.299"
   }
 }

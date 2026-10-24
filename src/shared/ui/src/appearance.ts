@@ -47,15 +47,31 @@ export const DEFAULT_THEME: ThemePreference = "dark"
 const ORDER: readonly ThemePreference[] = ["dark", "light", "system"]
 
 /**
- * The design style (ADR-0041): the classic flat surfaces, or liquid glass.
- * Independent of the palette: every theme works in both.
+ * The design style (ADR-0041, ADR-0047): the classic flat surfaces, liquid
+ * glass, or the terminal (a field operative's console). Independent of the
+ * palette: every theme works in each; the terminal draws its own version of
+ * each theme (TERMINAL_THEME_LABELS).
  */
-export type DesignStyle = "glass" | "classic"
+export type DesignStyle = "glass" | "classic" | "terminal"
 
 export const STYLE_OPTIONS: readonly { value: DesignStyle; label: string }[] = [
   { value: "classic", label: msg("Classic") },
   { value: "glass", label: msg("Liquid glass") },
+  { value: "terminal", label: msg("Terminal") },
 ]
+
+/**
+ * The terminal style's names of the themes (ADR-0047): it draws each palette
+ * as a console of its own, so Settings names what is on screen.
+ */
+export const TERMINAL_THEME_LABELS: Readonly<Record<Exclude<ThemePreference, "system">, string>> = {
+  dark: msg("Phosphor"),
+  "dark-purple": msg("Ice"),
+  "dark-brown": msg("Amber"),
+  light: msg("Dossier"),
+  beige: msg("Manila"),
+  "light-brown": msg("Archive"),
+}
 
 /** A fresh profile opens in the classic style; liquid glass is one click away. */
 export const DEFAULT_STYLE: DesignStyle = "classic"

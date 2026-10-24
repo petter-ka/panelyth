@@ -23,7 +23,13 @@ const apps = {
   commander: [...pkg("commander"), "**/commander/renderer/**"],
 }
 const noApps = {
-  group: [...apps.viewer, ...apps.commander, ...pkg("desktop"), ...pkg("docviewer")],
+  group: [
+    ...apps.viewer,
+    ...apps.commander,
+    ...pkg("desktop"),
+    ...pkg("docviewer"),
+    ...pkg("doceditor"),
+  ],
   message: "Shared packages never import an app or the shell (ADR-0031).",
 }
 /** Bottom to top: each renderer package may import only the ones before it. */
@@ -93,6 +99,14 @@ export default tseslint.config(
   {
     // The window of its own for PDFs and text (ADR-0033): a renderer like the apps.
     files: ["src/shared/docviewer/src/**/*.{ts,tsx}"],
+    rules: restrict(noNative, {
+      group: [...apps.viewer, ...apps.commander, ...pkg("desktop")],
+      message: noApps.message,
+    }),
+  },
+  {
+    // The text editor window (ADR-0046): a renderer of its own, like the document window.
+    files: ["src/shared/doceditor/src/**/*.{ts,tsx}"],
     rules: restrict(noNative, {
       group: [...apps.viewer, ...apps.commander, ...pkg("desktop")],
       message: noApps.message,

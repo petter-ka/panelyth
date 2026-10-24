@@ -2,6 +2,7 @@ import {
   initInterfaceSize,
   initTheme,
   menuCommandHandler,
+  connectWindowFrame,
   startSharedAppearanceSync,
   whileAppLoads,
 } from "@panelyth/ui"
@@ -52,6 +53,8 @@ startSidecarMonitoring()
 startOpen()
 startQuickView()
 if (isBridgeAvailable()) {
+  // The title strip's window buttons (ADR-0045).
+  connectWindowFrame(bridge.windowFrame())
   // Theme and interface size are shared with the viewer (ADR-0031).
   startSharedAppearanceSync({
     loadSettings: () => bridge.library().then((l) => l.settings),

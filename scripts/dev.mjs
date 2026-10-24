@@ -13,6 +13,7 @@ const renderer = join(root, "src", "viewer", "renderer")
 const commander = join(root, "src", "commander", "renderer")
 const system = join(root, "src", "system", "renderer")
 const documents = join(root, "src", "shared", "docviewer")
+const textEditor = join(root, "src", "shared", "doceditor")
 const pnpm = process.platform === "win32" ? "pnpm.cmd" : "pnpm"
 
 execFileSync(process.execPath, [join(root, "scripts", "build-sidecar.mjs")], { stdio: "inherit" })
@@ -35,10 +36,12 @@ async function devServer(dir, fallbackUrl) {
 const viewer = await devServer(renderer, "http://localhost:5173/")
 const commanderDev = await devServer(commander, "http://localhost:5174/")
 const documentsDev = await devServer(documents, "http://localhost:5175/")
+const textEditorDev = await devServer(textEditor, "http://localhost:5177/")
 const systemDev = await devServer(system, "http://localhost:5176/")
 console.log(`viewer dev server: ${viewer.url}`)
 console.log(`commander dev server: ${commanderDev.url}`)
 console.log(`document window dev server: ${documentsDev.url}`)
+console.log(`text editor window dev server: ${textEditorDev.url}`)
 console.log(`system dev server: ${systemDev.url}`)
 
 const electronPath = createRequire(join(desktop, "package.json"))("electron")
@@ -49,6 +52,7 @@ const child = spawn(electronPath, [desktop], {
     PANELYTH_RENDERER_URL: viewer.url,
     PANELYTH_COMMANDER_URL: commanderDev.url,
     PANELYTH_DOCUMENTS_URL: documentsDev.url,
+    PANELYTH_TEXTEDITOR_URL: textEditorDev.url,
     PANELYTH_SYSTEM_URL: systemDev.url,
     PANELYTH_COMMANDER: process.env.PANELYTH_COMMANDER ?? "1",
   },
@@ -58,6 +62,7 @@ child.on("exit", async (code) => {
     viewer.server.close(),
     commanderDev.server.close(),
     documentsDev.server.close(),
+    textEditorDev.server.close(),
     systemDev.server.close(),
   ])
   process.exit(code ?? 0)

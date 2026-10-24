@@ -21,7 +21,8 @@
 //   icons/*.png     the Linux set
 //   icon.ico        Windows, 16 to 256 px at the scales the shell asks for; also the window icon there
 //   icon.icns       macOS, 16 to 1024 px on the tile
-// and showcase/src/media/mark.svg, the site's header and footer.
+// and showcase/src/media/mark.svg, the site's header and footer, also written to
+// src/shared/ui/src/assets/mark.svg, the mark at the top of the apps' rail.
 //
 // Chromium renders the pictures, through the e2e package's Playwright: its own
 // build when installed (`pnpm --filter @panelyth/e2e exec playwright install
@@ -35,6 +36,7 @@ import { inflateSync } from "node:zlib"
 const root = join(dirname(fileURLToPath(import.meta.url)), "..")
 const BUILD = join(root, "src", "shared", "desktop", "build")
 const SHOWCASE_MARK = join(root, "showcase", "src", "media", "mark.svg")
+const RAIL_MARK = join(root, "src", "shared", "ui", "src", "assets", "mark.svg")
 
 /** Up to this size the small drawing is used. */
 const SMALL = 32
@@ -573,10 +575,9 @@ write(
   join(BUILD, "mark.svg"),
   doc(mark(false), { viewBox: crop(DRAWINGS.big), size: 96, title: "Panelyth" }),
 )
-write(
-  SHOWCASE_MARK,
-  doc(mark(true), { viewBox: crop(DRAWINGS.small), size: 96, title: "Panelyth" }),
-)
+const smallMark = doc(mark(true), { viewBox: crop(DRAWINGS.small), size: 96, title: "Panelyth" })
+write(SHOWCASE_MARK, smallMark)
+write(RAIL_MARK, smallMark)
 
 const chromium = await browser()
 try {

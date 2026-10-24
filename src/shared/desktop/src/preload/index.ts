@@ -7,6 +7,7 @@ import {
   EVENT_CHANNELS,
   IPC_EVENT,
   IPC_INVOKE,
+  TITLE_BAR_ARG,
   type EventChannel,
   type EventMessage,
   type PanelythApi,
@@ -89,6 +90,11 @@ const api: PanelythApi = {
     openRequest: () => invoke("app.openRequest", {}),
     about: () => invoke("app.about", {}),
     openTarget: (target) => invoke("app.openTarget", { target }),
+  },
+  frame: {
+    titleBar: process.argv.includes(TITLE_BAR_ARG),
+    state: () => invoke("window.getState", {}),
+    control: (action) => invoke("window.control", { action }),
   },
   settings: {
     openWindow: (tab, section) =>

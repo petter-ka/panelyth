@@ -150,8 +150,8 @@ an explicit command.
   Commander workspace mounted underneath. Closing the image or video reveals the same Commander session. Settings
   can route images and videos to the system default app instead.
 - Other files open with their default app. Programs need confirmation by default (ADR-0027).
-- F4 opens the file in the configured external editor (default: the OS's default app for text). Shift+F4 creates a new
-  text file and opens it.
+- F4 opens the file in the built-in editor (CFR-32), or in the external editor when Settings names one. Shift+F4
+  creates a new text file and opens it the same way.
 
 ### CFR-18 — Find files and branch view (C06)
 
@@ -261,6 +261,23 @@ archive unreadable, operation failed per item, queue busy, and listing in progre
   (find, synchronize, compare, checksums, pack, multi-rename, attributes, the command line, user commands, the file
   clipboard, the hotlist) say that they are not available on a connection.
 
+### CFR-32 — Text and Markdown editor (C10.6–C10.9, ADR-0046)
+
+Owner request 2026-10-23: in the first release.
+
+- Write notes, fix a README or change a config file right next to the files, in an editor window of its own.
+- Markdown that looks like the finished page while typing; the file's text stays exactly as typed (C10.7).
+- A switch between three modes for Markdown: the text editor, the live preview editor and a read-only
+  preview (C10.7).
+- Code and config files open in the same editor, with syntax colors (C10.6).
+- Pictures dropped or pasted into the text are saved into `assets/` beside the document and linked (C10.7).
+- Find and replace, and a word count (C10.6).
+- Export a clean PDF (C10.8).
+- Files on FTP and FTPS servers open in the editor, and saving puts them back on the server without risking the
+  server's copy (C10.9).
+- Saving keeps the file's encoding and line endings, never leaves half a file, and never overwrites a change made
+  elsewhere since the file was opened without asking.
+
 ## 4. Non-functional requirements
 
 ### CNFR-01 — Keyboard first
@@ -303,7 +320,6 @@ panel and job progress are announced to screen readers.
 
 - SFTP, WebDAV and cloud storage (FTP and FTPS came into scope with CFR-31, owner request 2026-10-12)
 - plugins (Total Commander WCX/WFX/WLX compatibility)
-- a built-in text editor
 - a terminal emulator
 - changing files inside archives in place
 - OS file-clipboard interop

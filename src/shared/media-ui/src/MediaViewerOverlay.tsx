@@ -176,7 +176,7 @@ export function MediaViewerOverlay({
       aria-label={t("Media viewer: {name}", { name: item.name })}
       tabIndex={-1}
       onKeyDown={onKeyDown}
-      className={`fixed inset-0 z-[100] flex flex-col bg-canvas text-text outline-none ${isImage && imageIdle ? "cursor-none" : ""}`}
+      className={`below-title-bar fixed z-[100] flex flex-col bg-canvas text-text outline-none ${isImage && imageIdle ? "cursor-none" : ""}`}
       data-testid="media-viewer"
       data-entry-id={item.id}
     >

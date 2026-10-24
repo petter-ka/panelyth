@@ -179,6 +179,54 @@ describe("WindowStateFile", () => {
     expect(JSON.parse(writes[1]!)).toMatchObject({ width: 1100, maximized: true })
   })
 
+  it("keeps the theme, so the next window opens in its colors", async () => {
+    const { deps, writes } = fakeFile(JSON.stringify({ v: 1, ...saved, theme: "beige" }))
+    const file = new WindowStateFile("w.json", deps)
+    await file.ready()
+    expect(file.theme).toBe("beige")
+    expect(file.current).toEqual(saved)
+
+    file.setTheme("beige")
+    await file.flush()
+    expect(writes).toEqual([])
+    file.setTheme("system")
+    await file.flush()
+    expect(JSON.parse(writes[0]!)).toEqual({ v: 1, ...saved, theme: "system" })
+    // A resize keeps it.
+    const { win } = fakeWindow({ x: 0, y: 0, width: 1000, height: 700 })
+    file.save(win)
+    await file.flush()
+    expect(JSON.parse(writes[1]!)).toMatchObject({ width: 1000, theme: "system" })
+  })
+
+  it("keeps the design style beside the theme", async () => {
+    const { deps, writes } = fakeFile(
+      JSON.stringify({ v: 1, ...saved, theme: "dark", style: "terminal" }),
+    )
+    const file = new WindowStateFile("w.json", deps)
+    await file.ready()
+    expect(file.style).toBe("terminal")
+    file.setStyle("terminal")
+    await file.flush()
+    expect(writes).toEqual([])
+    file.setStyle("glass")
+    await file.flush()
+    expect(JSON.parse(writes[0]!)).toEqual({ v: 1, ...saved, theme: "dark", style: "glass" })
+  })
+
+  it("waits for the window's first save before writing a theme of a first run", async () => {
+    const { deps, writes } = fakeFile(null)
+    const file = new WindowStateFile("w.json", deps)
+    await file.ready()
+    expect(file.theme).toBeNull()
+    file.setTheme("light")
+    await file.flush()
+    expect(writes).toEqual([])
+    file.save(fakeWindow({ x: 0, y: 0, width: 1000, height: 700 }).win)
+    await file.flush()
+    expect(JSON.parse(writes[0]!)).toMatchObject({ width: 1000, theme: "light" })
+  })
+
   it("tries again after a failed write", async () => {
     const { deps, writes } = fakeFile(null)
     vi.mocked(deps.write).mockRejectedValueOnce(new Error("disk full"))

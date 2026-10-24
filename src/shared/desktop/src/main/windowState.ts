@@ -4,7 +4,8 @@ import { readFile, rename, writeFile } from "node:fs/promises"
 // The main window's size, place and maximized state, kept between runs.
 // Electron main owns window state (ARCHITECTURE.md): a small file in the
 // user-data folder, read before the app is ready, so the window opens at its
-// size without waiting for the sidecar.
+// size without waiting for the sidecar. The theme and the design style are kept
+// with it for the same reason: the window and its title bar open in their colors.
 
 export interface WindowState {
   x: number
@@ -12,6 +13,14 @@ export interface WindowState {
   width: number
   height: number
   maximized: boolean
+}
+
+interface StoredState {
+  state: WindowState | null
+  /** The theme of Settings → Appearance as stored ("system" included). */
+  theme: string | null
+  /** The design style of Settings → Appearance (ADR-0041, ADR-0047). */
+  style: string | null
 }
 
 /** What the window is created with: no x and y means Electron centers it. */
@@ -33,6 +42,24 @@ const VISIBLE_TOP = { width: 120, height: 32 }
 const SAVE_DELAY_MS = 1000
 
 const isInt = (v: unknown): v is number => typeof v === "number" && Number.isSafeInteger(v)
+
+function parseStored(text: string): StoredState {
+  let value: unknown
+  try {
+    value = JSON.parse(text)
+  } catch {
+    return { state: null, theme: null, style: null }
+  }
+  if (typeof value !== "object" || value === null || (value as { v?: unknown }).v !== 1) {
+    return { state: null, theme: null, style: null }
+  }
+  const { theme, style } = value as Record<string, unknown>
+  return {
+    state: parseWindowState(text),
+    theme: typeof theme === "string" && theme.length <= 32 ? theme : null,
+    style: typeof style === "string" && style.length <= 32 ? style : null,
+  }
+}
 
 /** The stored state, or null when it is missing or not ours. */
 export function parseWindowState(text: string): WindowState | null {
@@ -105,6 +132,8 @@ export const fsDeps = (log: WindowStateFileDeps["log"]): WindowStateFileDeps => 
 /** The window state file: loaded once, then kept up to date by the window it tracks. */
 export class WindowStateFile {
   private state: WindowState | null = null
+  private storedTheme: string | null = null
+  private storedStyle: string | null = null
   private readonly loaded: Promise<void>
   private timer: ReturnType<typeof setTimeout> | null = null
   private written = ""
@@ -118,7 +147,10 @@ export class WindowStateFile {
     this.loaded = deps.read(path).then(
       (text) => {
         this.written = text
-        this.state = parseWindowState(text)
+        const stored = parseStored(text)
+        this.state = stored.state
+        this.storedTheme = stored.theme
+        this.storedStyle = stored.style
       },
       () => undefined,
     )
@@ -132,6 +164,30 @@ export class WindowStateFile {
   /** The last known state: the file's, then the window's. */
   get current(): WindowState | null {
     return this.state
+  }
+
+  /** The theme the window was last shown in; null before the first run that knew it. */
+  get theme(): string | null {
+    return this.storedTheme
+  }
+
+  /** The theme changed: kept now when the window's state is known, else with the window's next save. */
+  setTheme(theme: string): void {
+    if (theme === this.storedTheme) return
+    this.storedTheme = theme
+    if (this.state) this.write()
+  }
+
+  /** The design style the window was last shown in; null before the first run that knew it. */
+  get style(): string | null {
+    return this.storedStyle
+  }
+
+  /** The style changed: kept like the theme. */
+  setStyle(style: string): void {
+    if (style === this.storedStyle) return
+    this.storedStyle = style
+    if (this.state) this.write()
   }
 
   /** Saves the window's state as it is resized, moved, maximized and closed. */
@@ -172,7 +228,13 @@ export class WindowStateFile {
     // The size the window has when it is neither maximized, minimized nor full screen.
     const { x, y, width, height } = win.getNormalBounds()
     this.state = { x, y, width, height, maximized }
-    const text = JSON.stringify({ v: 1, ...this.state })
+    this.write()
+  }
+
+  private write(): void {
+    const theme = this.storedTheme === null ? {} : { theme: this.storedTheme }
+    const style = this.storedStyle === null ? {} : { style: this.storedStyle }
+    const text = JSON.stringify({ v: 1, ...this.state, ...theme, ...style })
     if (text === this.written) return
     this.written = text
     this.writing = this.writing

@@ -13,6 +13,7 @@ import {
   useSettingsStore,
 } from "./features/settings"
 import { startSidecarMonitoring, useSidecarStore } from "./features/sidecar"
+import { formatDate, formatListDate } from "./features/format"
 
 // Stage P01: the commander's bridge, sidecar store and settings store are
 // built on src/shared/renderer-core, like the viewer's.
@@ -115,7 +116,7 @@ describe("commander settings store", () => {
     expect(useSettingsStore.getState().settings.confirmTrash).toBe(false)
     expect(api.library.setSetting).toHaveBeenCalledExactlyOnceWith(SETTINGS_KEY, {
       ...DEFAULT_SETTINGS,
-      v: 4,
+      v: 5,
       showHidden: false,
       tabBar: "multiple",
       confirmTrash: false,
@@ -131,12 +132,49 @@ describe("commander settings store", () => {
     expect(readSettings({ v: 4, showHidden: false }).showHidden).toBe(false)
   })
 
-  it("dates are relative unless chosen; a stored ISO stays, an old stored default does not", () => {
-    expect(readSettings(undefined).dateFormat).toBe("relative")
-    expect(readSettings({ v: 3, dateFormat: "locale" }).dateFormat).toBe("relative")
-    expect(readSettings({ v: 2, dateFormat: "iso" }).dateFormat).toBe("iso")
-    expect(readSettings({ v: 4, dateFormat: "locale" }).dateFormat).toBe("locale")
-    expect(readSettings({ v: 4, dateFormat: "relative" }).dateFormat).toBe("relative")
+  it("recent dates in words are a setting of their own beside the format (v5)", () => {
+    const dates = (v: unknown) => {
+      const { dateFormat, relativeDates } = readSettings(v)
+      return { dateFormat, relativeDates }
+    }
+    expect(dates(undefined)).toEqual({ dateFormat: "locale", relativeDates: true })
+    // Before v4 "locale" was the default every save stored, not a choice.
+    expect(dates({ v: 3, dateFormat: "locale" })).toEqual({
+      dateFormat: "locale",
+      relativeDates: true,
+    })
+    expect(dates({ v: 2, dateFormat: "iso" })).toEqual({ dateFormat: "iso", relativeDates: false })
+    expect(dates({ v: 4, dateFormat: "locale" })).toEqual({
+      dateFormat: "locale",
+      relativeDates: false,
+    })
+    expect(dates({ v: 4, dateFormat: "relative" })).toEqual({
+      dateFormat: "locale",
+      relativeDates: true,
+    })
+    // v5: both at once, as the owner asked (relative with ISO).
+    expect(dates({ v: 5, dateFormat: "iso" })).toEqual({ dateFormat: "iso", relativeDates: true })
+    expect(dates({ v: 5, dateFormat: "iso", relativeDates: false })).toEqual({
+      dateFormat: "iso",
+      relativeDates: false,
+    })
+  })
+
+  it("keeps folders sorted by name unless turned off", () => {
+    expect(readSettings(undefined).sortFoldersByName).toBe(true)
+    expect(readSettings({ v: 4 }).sortFoldersByName).toBe(true)
+    expect(readSettings({ v: 5, sortFoldersByName: false }).sortFoldersByName).toBe(false)
+  })
+
+  it("recent dates in words take the format's time; older ones the format itself", () => {
+    const now = new Date()
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 5).getTime()
+    const old = new Date(2024, 0, 9, 8, 30).getTime()
+    expect(formatListDate(today, "iso", true)).toMatch(/^today at 14:05$/)
+    expect(formatListDate(today, "iso", false)).toMatch(/^\d{4}-\d{2}-\d{2} 14:05$/)
+    expect(formatListDate(today, "locale", true)).toMatch(/^today at 2:05 PM$/)
+    expect(formatListDate(old, "iso", true)).toBe("2024-01-09 08:30")
+    expect(formatListDate(old, "locale", true)).toBe(formatDate(old, "locale"))
   })
 
   it("changes in memory without a bridge, and opens its dialog", () => {

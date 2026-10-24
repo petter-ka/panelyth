@@ -1,6 +1,7 @@
 import { ENTRY_ATTRS, type Crumb } from "@panelyth/contracts"
 import { useInterfaceSizeStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
+import userEvent from "@testing-library/user-event"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"
 import { AppShell } from "./components/AppShell"
@@ -8,10 +9,12 @@ import { OVERSCAN, ROW_HEIGHT } from "./components/FullView"
 import { applyContext, resetCarry, startPanels } from "./features/carry"
 import { formatAttrs } from "./features/format"
 import { DEFAULT_COLUMNS, pageStoreOf, resetListing, useListingStore } from "./features/listing"
+import { applyLayoutPreset } from "./features/layoutPresets"
 import { usePanelsStore } from "./features/panels"
 import { showHiddenEverywhere, useTabsStore } from "./features/tabs"
 import { PANELS_KEY, readStoredPanels } from "./features/session"
-import { SETTINGS_KEY } from "./features/settings"
+import { applyStoredSettings, SETTINGS_KEY, useSettingsStore } from "./features/settings"
+import { startSettingsRelay } from "./features/settingsRelay"
 import { folder, installFakeCommander, item, type FakeOptions } from "./test/fakeApi"
 import { mockViewport } from "./test/viewport"
 
@@ -226,6 +229,111 @@ describe("listing (Stage C01)", () => {
     await waitFor(() => expect(screen.getByTestId("path-left")).toHaveTextContent("C:\\"))
   })
 
+  it("the Single preset shows the active panel alone as thumbnails; Tab shows the other", async () => {
+    await start()
+    await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
+    act(() => applyLayoutPreset("single"))
+    expect(usePanelsStore.getState().arrangement).toBe("single")
+    expect(useListingStore.getState().left.view).toBe("thumbs")
+    expect(useListingStore.getState().right.view).toBe("thumbs")
+    expect(screen.queryByTestId("grid-left")).not.toBeNull()
+    expect(screen.queryByTestId("grid-right")).toBeNull()
+    expect(screen.queryByRole("separator", { name: "Resize panels" })).toBeNull()
+    // Tab makes the other panel active, and it takes the place.
+    await key("left", { key: "Tab" })
+    await waitFor(() => expect(screen.queryByTestId("grid-left")).toBeNull())
+    expect(screen.getByTestId("grid-right")).toBeInTheDocument()
+    await waitFor(() => expect(document.activeElement).toBe(grid("right")))
+    // Back to two panels with another preset.
+    act(() => applyLayoutPreset("details"))
+    expect(screen.getByTestId("grid-left")).toBeInTheDocument()
+    expect(screen.getByTestId("grid-right")).toBeInTheDocument()
+  })
+
+  it("the path bar's eye menu: hidden and system files for both panels, this panel's view", async () => {
+    const fake = await start(HIDDEN_OFF)
+    // main.tsx loads the stored settings at start; the test does it here.
+    act(() => applyStoredSettings({ v: 5, showHidden: false }))
+    const user = userEvent.setup()
+    await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
+    // From the keyboard: jsdom measures every element at 0,0 (see find.test.tsx).
+    const open = async () => {
+      act(() => screen.getByTestId("view-options-left").focus())
+      await user.keyboard("{Enter}")
+      return screen.findByTestId("view-options-menu-left")
+    }
+    let menu = await open()
+    const hidden = within(menu).getByRole("menuitemcheckbox", { name: "Show hidden files" })
+    const system = within(menu).getByRole("menuitemcheckbox", { name: "Show system files too" })
+    expect(hidden).toHaveAttribute("aria-checked", "false")
+    expect(system).toHaveAttribute("data-disabled")
+    // A switch keeps the menu open, and reaches Settings and both panels.
+    await user.click(hidden)
+    expect(screen.getByTestId("view-options-menu-left")).toBe(menu)
+    expect(hidden).toHaveAttribute("aria-checked", "true")
+    expect(system).not.toHaveAttribute("data-disabled")
+    expect(useSettingsStore.getState().settings.showHidden).toBe(true)
+    expect(fake.settings[SETTINGS_KEY]).toMatchObject({ showHidden: true })
+    expect(useListingStore.getState().left.showHidden).toBe(true)
+    expect(useListingStore.getState().right.showHidden).toBe(true)
+    await user.keyboard("{Escape}")
+    // The views of this panel, the current one checked, each with its shortcut.
+    menu = await open()
+    const views = within(menu).getAllByRole("menuitemradio")
+    expect(views.map((v) => v.textContent)).toEqual([
+      "Full viewCtrl+F2",
+      "Brief viewCtrl+F1",
+      "Thumbnails viewCtrl+Shift+F1",
+    ])
+    expect(views[0]).toHaveAttribute("aria-checked", "true")
+    await user.click(views[1]!)
+    expect(useListingStore.getState().left.view).toBe("brief")
+    expect(useListingStore.getState().right.view).toBe("full")
+  })
+
+  it("keeps folders sorted by name unless Settings lets the sort reach them (owner request)", async () => {
+    const fake = await start({
+      folders: [
+        folder(10, HOME.path, [ROOT, HOME], 0, 0, [
+          item(11, "b-dir", { kind: "dir", sizeBytes: 1 }),
+          item(12, "a-dir", { kind: "dir", sizeBytes: 3 }),
+          item(13, "c-dir", { kind: "dir", sizeBytes: 2 }),
+          item(14, "x.txt", { sizeBytes: 5 }),
+          item(15, "y.txt", { sizeBytes: 9 }),
+        ]),
+      ],
+    })
+    const stopRelay = startSettingsRelay()
+    try {
+      const names = () =>
+        [...rows("left")].map((r) => r.querySelector("[data-name]")?.textContent ?? "")
+      await waitFor(() => expect(names()).toContain("y"))
+      const header = within(grid("left")).getByRole("button", { name: /^Size/ })
+      await act(async () => fireEvent.click(header))
+      await act(async () => fireEvent.click(header))
+      expect(fake.lastDescriptor()).toMatchObject({
+        sort: [{ field: "size", direction: "desc" }],
+        dirsByName: true,
+      })
+      await waitFor(() =>
+        expect(names().filter(Boolean)).toEqual(["a-dir", "b-dir", "c-dir", "y", "x"]),
+      )
+      // The settings window turns it off: the panels list again, folders by size too.
+      await act(async () =>
+        fake.emit("settings.changed", {
+          key: SETTINGS_KEY,
+          value: { v: 5, sortFoldersByName: false },
+        }),
+      )
+      await waitFor(() => expect(fake.lastDescriptor().dirsByName).toBeUndefined())
+      await waitFor(() =>
+        expect(names().filter(Boolean)).toEqual(["a-dir", "c-dir", "b-dir", "y", "x"]),
+      )
+    } finally {
+      stopRelay()
+    }
+  })
+
   it("sorts in Go on a header click (again reverses) and with Ctrl+F3…F6, folders first", async () => {
     const fake = await start()
     await waitFor(() => expect(rows("left").length).toBeGreaterThan(2))
@@ -324,7 +432,7 @@ describe("listing (Stage C01)", () => {
     expect(useListingStore.getState().right.showHidden).toBe(true)
     // Once: the settings are stored as v3, where an explicit off stays off.
     await waitFor(() =>
-      expect(fake.settings[SETTINGS_KEY]).toMatchObject({ v: 4, showHidden: true }),
+      expect(fake.settings[SETTINGS_KEY]).toMatchObject({ v: 5, showHidden: true }),
     )
   })
 

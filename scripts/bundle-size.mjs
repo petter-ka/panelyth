@@ -19,6 +19,8 @@ const renderers = {
   commander: join(root, "src", "commander", "renderer", "dist", "assets"),
   system: join(root, "src", "system", "renderer", "dist", "assets"),
   docviewer: join(root, "src", "shared", "docviewer", "dist", "assets"),
+  // The text editor window (ADR-0046): its own bundle; the apps' must not grow with it.
+  doceditor: join(root, "src", "shared", "doceditor", "dist", "assets"),
 }
 // de-BhtZOYnd.js: a message catalog of src/shared/i18n.
 const localeChunk = /^[a-z]{2}-[\w-]{8}\.js$/

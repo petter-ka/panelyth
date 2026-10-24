@@ -20,8 +20,8 @@ export const resultsDir = join(
  */
 export function resultPath(kind, ext = "json") {
   const stage = process.env.BENCH_STAGE
-  // Viewer stages (03, 08.6), platform (P01) and commander (C00) stage IDs.
-  if (!stage || !/^(\d{2}(\.\d)?|[PC]\d{2})$/.test(stage)) {
+  // Viewer stages (03, 08.6), platform (P01) and commander (C00, C10.6) stage IDs.
+  if (!stage || !/^(\d{2}(\.\d)?|[PC]\d{2}(\.\d)?)$/.test(stage)) {
     throw new Error("Set BENCH_STAGE to the stage being measured, e.g. BENCH_STAGE=02, P01 or C00")
   }
   mkdirSync(resultsDir, { recursive: true })

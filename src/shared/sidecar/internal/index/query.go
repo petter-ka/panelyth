@@ -121,6 +121,10 @@ type Descriptor struct {
 	// folded. Empty means all files.
 	NameMask string
 	Sort     []SortKey
+	// DirsByName orders folders by name whatever the sort (the commander's
+	// Settings → Panels): ascending, while files follow Sort. A sort that
+	// starts with the name orders the folders by it already, either way.
+	DirsByName bool
 	// Kinds restricts entry kinds; empty means all. Recursive queries never
 	// include directories.
 	Kinds []media.Kind
@@ -147,6 +151,21 @@ type UserRow struct {
 	Rating   int
 	FirstTag string
 	Match    bool
+}
+
+// SortFor is the ordering within one group of a listing (folders, then
+// files): the folders' own with DirsByName, else the descriptor's.
+func (d Descriptor) SortFor(dir bool) []SortKey {
+	if !dir || !d.DirsByName || !d.reordersDirs() {
+		return d.Sort
+	}
+	return []SortKey{{Field: SortName}}
+}
+
+// reordersDirs reports whether DirsByName changes the folders' order: only
+// when the sort does not already start with the name.
+func (d Descriptor) reordersDirs() bool {
+	return len(d.Sort) > 0 && d.Sort[0].Field != SortName
 }
 
 // NeedsUser reports whether the descriptor sorts or filters by user data.
@@ -327,7 +346,27 @@ func (s *Store) QueryIDs(ctx context.Context, d Descriptor, dirKey string) ([]in
 		return nil, err
 	}
 	where, args := scope(d, dirKey, true, hidden)
+	ids, err := s.orderedIDs(ctx, d, where, args, d.Sort)
+	// Recursive queries hold no folders. Otherwise the listing (folders
+	// first) keeps its index walk, and the folders at its front are replaced
+	// by the same folders by name: a second walk over the folders alone.
+	if err != nil || !d.DirsByName || d.Recursive || !d.reordersDirs() {
+		return ids, err
+	}
+	// The listing indexes' own expression, so the walk seeks to the folders.
+	dirs, err := s.orderedIDs(ctx, d, "("+where+") AND (kind <> 0) = 0", args, d.SortFor(true))
+	if err != nil {
+		return nil, err
+	}
+	if len(dirs) > len(ids) {
+		return nil, fmt.Errorf("folders by name: %d folders in a listing of %d", len(dirs), len(ids))
+	}
+	copy(ids, dirs)
+	return ids, nil
+}
 
+// orderedIDs runs one listing query over where, ordered by keys.
+func (s *Store) orderedIDs(ctx context.Context, d Descriptor, where string, args []any, keys []SortKey) ([]int64, error) {
 	order := []string{"(kind <> 0)"} // directories first, always
 	used := map[string]bool{}
 	add := func(term string, desc bool) {
@@ -341,7 +380,7 @@ func (s *Store) QueryIDs(ctx context.Context, d Descriptor, dirKey string) ([]in
 		}
 		order = append(order, term+dir)
 	}
-	for _, k := range d.Sort {
+	for _, k := range keys {
 		spec, ok := sortSpecs[k.Field]
 		if !ok {
 			return nil, fmt.Errorf("unknown sort field %q", k.Field)

@@ -1,0 +1,1110 @@
+{
+  "stage": "C10.6",
+  "benchmark": "bundle-size",
+  "date": "2026-10-24T07:16:23.245Z",
+  "commit": "fde3bc6-dirty",
+  "note": null,
+  "renderers": {
+    "viewer": {
+      "jsBytes": 831622,
+      "jsGzipBytes": 257701,
+      "cssBytes": 61578,
+      "cssGzipBytes": 11944,
+      "localeBytes": 1051654,
+      "files": [
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 141542,
+          "gzipBytes": 44866
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 142955,
+          "gzipBytes": 44155
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 146400,
+          "gzipBytes": 44890
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 140667,
+          "gzipBytes": 45880
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 142219,
+          "gzipBytes": 43860
+        },
+        {
+          "name": "main.js",
+          "kind": "js",
+          "bytes": 354013,
+          "gzipBytes": 105755
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 143335,
+          "gzipBytes": 46309
+        },
+        {
+          "name": "rolldown-runtime.js",
+          "kind": "js",
+          "bytes": 589,
+          "gzipBytes": 368
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 194536,
+          "gzipBytes": 52691
+        },
+        {
+          "name": "settings.js",
+          "kind": "js",
+          "bytes": 1110,
+          "gzipBytes": 656
+        },
+        {
+          "name": "styles.css",
+          "kind": "css",
+          "bytes": 61578,
+          "gzipBytes": 11944
+        },
+        {
+          "name": "styles.js",
+          "kind": "js",
+          "bytes": 475910,
+          "gzipBytes": 150922
+        }
+      ]
+    },
+    "commander": {
+      "jsBytes": 1068186,
+      "jsGzipBytes": 323963,
+      "cssBytes": 70199,
+      "cssGzipBytes": 13073,
+      "localeBytes": 1051654,
+      "files": [
+        {
+          "name": "SettingsDialog.js",
+          "kind": "js",
+          "bytes": 258588,
+          "gzipBytes": 75958
+        },
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 141542,
+          "gzipBytes": 44866
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 142955,
+          "gzipBytes": 44155
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 146400,
+          "gzipBytes": 44890
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 140667,
+          "gzipBytes": 45880
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 142219,
+          "gzipBytes": 43860
+        },
+        {
+          "name": "main.js",
+          "kind": "js",
+          "bytes": 353917,
+          "gzipBytes": 99428
+        },
+        {
+          "name": "media.js",
+          "kind": "js",
+          "bytes": 4387,
+          "gzipBytes": 1970
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 143335,
+          "gzipBytes": 46309
+        },
+        {
+          "name": "rolldown-runtime.js",
+          "kind": "js",
+          "bytes": 589,
+          "gzipBytes": 368
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 194536,
+          "gzipBytes": 52691
+        },
+        {
+          "name": "settings.js",
+          "kind": "js",
+          "bytes": 1262,
+          "gzipBytes": 716
+        },
+        {
+          "name": "styles.css",
+          "kind": "css",
+          "bytes": 70199,
+          "gzipBytes": 13073
+        },
+        {
+          "name": "styles.js",
+          "kind": "js",
+          "bytes": 449443,
+          "gzipBytes": 145523
+        }
+      ]
+    },
+    "system": {
+      "jsBytes": 389443,
+      "jsGzipBytes": 124584,
+      "cssBytes": 47254,
+      "cssGzipBytes": 9815,
+      "localeBytes": 1051654,
+      "files": [
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 141542,
+          "gzipBytes": 44866
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 142955,
+          "gzipBytes": 44155
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 146400,
+          "gzipBytes": 44890
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 140667,
+          "gzipBytes": 45880
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 142219,
+          "gzipBytes": 43860
+        },
+        {
+          "name": "main.js",
+          "kind": "js",
+          "bytes": 48951,
+          "gzipBytes": 15304
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 143335,
+          "gzipBytes": 46309
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 194536,
+          "gzipBytes": 52691
+        },
+        {
+          "name": "settings.js",
+          "kind": "js",
+          "bytes": 826,
+          "gzipBytes": 518
+        },
+        {
+          "name": "styles.css",
+          "kind": "css",
+          "bytes": 47254,
+          "gzipBytes": 9815
+        },
+        {
+          "name": "styles.js",
+          "kind": "js",
+          "bytes": 339666,
+          "gzipBytes": 108762
+        }
+      ]
+    },
+    "docviewer": {
+      "jsBytes": 765364,
+      "jsGzipBytes": 235591,
+      "cssBytes": 33215,
+      "cssGzipBytes": 7438,
+      "localeBytes": 1051654,
+      "files": [
+        {
+          "name": "PdfViewer.js",
+          "kind": "js",
+          "bytes": 500699,
+          "gzipBytes": 151284
+        },
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 141542,
+          "gzipBytes": 44866
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 142955,
+          "gzipBytes": 44155
+        },
+        {
+          "name": "esm.js",
+          "kind": "js",
+          "bytes": 42036,
+          "gzipBytes": 13481
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 146400,
+          "gzipBytes": 44890
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 140667,
+          "gzipBytes": 45880
+        },
+        {
+          "name": "index.css",
+          "kind": "css",
+          "bytes": 33215,
+          "gzipBytes": 7438
+        },
+        {
+          "name": "index.js",
+          "kind": "js",
+          "bytes": 222629,
+          "gzipBytes": 70826
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 142219,
+          "gzipBytes": 43860
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 143335,
+          "gzipBytes": 46309
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 194536,
+          "gzipBytes": 52691
+        }
+      ]
+    },
+    "doceditor": {
+      "jsBytes": 1901819,
+      "jsGzipBytes": 692826,
+      "cssBytes": 44955,
+      "cssGzipBytes": 9336,
+      "localeBytes": 1058265,
+      "files": [
+        {
+          "name": "apl.js",
+          "kind": "js",
+          "bytes": 2331,
+          "gzipBytes": 1258
+        },
+        {
+          "name": "asciiarmor.js",
+          "kind": "js",
+          "bytes": 825,
+          "gzipBytes": 439
+        },
+        {
+          "name": "asn1.js",
+          "kind": "js",
+          "bytes": 4016,
+          "gzipBytes": 1992
+        },
+        {
+          "name": "asterisk.js",
+          "kind": "js",
+          "bytes": 4105,
+          "gzipBytes": 1771
+        },
+        {
+          "name": "brainfuck.js",
+          "kind": "js",
+          "bytes": 646,
+          "gzipBytes": 361
+        },
+        {
+          "name": "clike.js",
+          "kind": "js",
+          "bytes": 22097,
+          "gzipBytes": 7765
+        },
+        {
+          "name": "clojure.js",
+          "kind": "js",
+          "bytes": 9451,
+          "gzipBytes": 4046
+        },
+        {
+          "name": "cmake.js",
+          "kind": "js",
+          "bytes": 800,
+          "gzipBytes": 496
+        },
+        {
+          "name": "cobol.js",
+          "kind": "js",
+          "bytes": 6238,
+          "gzipBytes": 3014
+        },
+        {
+          "name": "coffeescript.js",
+          "kind": "js",
+          "bytes": 3897,
+          "gzipBytes": 1727
+        },
+        {
+          "name": "commonlisp.js",
+          "kind": "js",
+          "bytes": 2362,
+          "gzipBytes": 1135
+        },
+        {
+          "name": "crystal.js",
+          "kind": "js",
+          "bytes": 5064,
+          "gzipBytes": 2140
+        },
+        {
+          "name": "css.js",
+          "kind": "js",
+          "bytes": 24705,
+          "gzipBytes": 8248
+        },
+        {
+          "name": "cypher.js",
+          "kind": "js",
+          "bytes": 3226,
+          "gzipBytes": 1523
+        },
+        {
+          "name": "d.js",
+          "kind": "js",
+          "bytes": 3730,
+          "gzipBytes": 1708
+        },
+        {
+          "name": "de.js",
+          "kind": "locale",
+          "bytes": 141542,
+          "gzipBytes": 44866
+        },
+        {
+          "name": "diff.js",
+          "kind": "js",
+          "bytes": 344,
+          "gzipBytes": 271
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 26934,
+          "gzipBytes": 8752
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 4976,
+          "gzipBytes": 2376
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 26863,
+          "gzipBytes": 12715
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 11604,
+          "gzipBytes": 5185
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 98182,
+          "gzipBytes": 28540
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 20729,
+          "gzipBytes": 9261
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 44615,
+          "gzipBytes": 19073
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 83721,
+          "gzipBytes": 30370
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 2652,
+          "gzipBytes": 1529
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 21753,
+          "gzipBytes": 10045
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 2029,
+          "gzipBytes": 1294
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 22997,
+          "gzipBytes": 10369
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 14343,
+          "gzipBytes": 5800
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 28405,
+          "gzipBytes": 11511
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 30761,
+          "gzipBytes": 12620
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 16272,
+          "gzipBytes": 7442
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 32191,
+          "gzipBytes": 12964
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 103940,
+          "gzipBytes": 34395
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 8474,
+          "gzipBytes": 3586
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 3370,
+          "gzipBytes": 1733
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 44619,
+          "gzipBytes": 15257
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 47773,
+          "gzipBytes": 19362
+        },
+        {
+          "name": "dist.js",
+          "kind": "js",
+          "bytes": 84662,
+          "gzipBytes": 33448
+        },
+        {
+          "name": "dockerfile.js",
+          "kind": "js",
+          "bytes": 1954,
+          "gzipBytes": 693
+        },
+        {
+          "name": "dtd.js",
+          "kind": "js",
+          "bytes": 2133,
+          "gzipBytes": 911
+        },
+        {
+          "name": "dylan.js",
+          "kind": "js",
+          "bytes": 4086,
+          "gzipBytes": 1667
+        },
+        {
+          "name": "ebnf.js",
+          "kind": "js",
+          "bytes": 2021,
+          "gzipBytes": 840
+        },
+        {
+          "name": "ecl.js",
+          "kind": "js",
+          "bytes": 5151,
+          "gzipBytes": 2339
+        },
+        {
+          "name": "eiffel.js",
+          "kind": "js",
+          "bytes": 1736,
+          "gzipBytes": 948
+        },
+        {
+          "name": "elm.js",
+          "kind": "js",
+          "bytes": 1907,
+          "gzipBytes": 851
+        },
+        {
+          "name": "erlang.js",
+          "kind": "js",
+          "bytes": 7890,
+          "gzipBytes": 2934
+        },
+        {
+          "name": "es.js",
+          "kind": "locale",
+          "bytes": 142955,
+          "gzipBytes": 44155
+        },
+        {
+          "name": "factor.js",
+          "kind": "js",
+          "bytes": 1713,
+          "gzipBytes": 646
+        },
+        {
+          "name": "fcl.js",
+          "kind": "js",
+          "bytes": 2070,
+          "gzipBytes": 985
+        },
+        {
+          "name": "forth.js",
+          "kind": "js",
+          "bytes": 2582,
+          "gzipBytes": 1358
+        },
+        {
+          "name": "fortran.js",
+          "kind": "js",
+          "bytes": 3907,
+          "gzipBytes": 1967
+        },
+        {
+          "name": "fr.js",
+          "kind": "locale",
+          "bytes": 146400,
+          "gzipBytes": 44890
+        },
+        {
+          "name": "gas.js",
+          "kind": "js",
+          "bytes": 4591,
+          "gzipBytes": 1305
+        },
+        {
+          "name": "gherkin.js",
+          "kind": "js",
+          "bytes": 10201,
+          "gzipBytes": 5125
+        },
+        {
+          "name": "groovy.js",
+          "kind": "js",
+          "bytes": 4166,
+          "gzipBytes": 1784
+        },
+        {
+          "name": "haskell.js",
+          "kind": "js",
+          "bytes": 4204,
+          "gzipBytes": 1924
+        },
+        {
+          "name": "haxe.js",
+          "kind": "js",
+          "bytes": 7904,
+          "gzipBytes": 2964
+        },
+        {
+          "name": "http.js",
+          "kind": "js",
+          "bytes": 887,
+          "gzipBytes": 461
+        },
+        {
+          "name": "hu.js",
+          "kind": "locale",
+          "bytes": 140667,
+          "gzipBytes": 45880
+        },
+        {
+          "name": "idl.js",
+          "kind": "js",
+          "bytes": 9867,
+          "gzipBytes": 4419
+        },
+        {
+          "name": "index.js",
+          "kind": "js",
+          "bytes": 644462,
+          "gzipBytes": 205478
+        },
+        {
+          "name": "index.css",
+          "kind": "css",
+          "bytes": 44955,
+          "gzipBytes": 9336
+        },
+        {
+          "name": "it.js",
+          "kind": "locale",
+          "bytes": 142219,
+          "gzipBytes": 43860
+        },
+        {
+          "name": "javascript.js",
+          "kind": "js",
+          "bytes": 17011,
+          "gzipBytes": 5729
+        },
+        {
+          "name": "julia.js",
+          "kind": "js",
+          "bytes": 5306,
+          "gzipBytes": 2203
+        },
+        {
+          "name": "languages.js",
+          "kind": "js",
+          "bytes": 20901,
+          "gzipBytes": 4903
+        },
+        {
+          "name": "livescript.js",
+          "kind": "js",
+          "bytes": 4129,
+          "gzipBytes": 1663
+        },
+        {
+          "name": "lua.js",
+          "kind": "js",
+          "bytes": 3169,
+          "gzipBytes": 1434
+        },
+        {
+          "name": "mathematica.js",
+          "kind": "js",
+          "bytes": 1948,
+          "gzipBytes": 844
+        },
+        {
+          "name": "mbox.js",
+          "kind": "js",
+          "bytes": 1428,
+          "gzipBytes": 686
+        },
+        {
+          "name": "mirc.js",
+          "kind": "js",
+          "bytes": 5959,
+          "gzipBytes": 2723
+        },
+        {
+          "name": "mllike.js",
+          "kind": "js",
+          "bytes": 4867,
+          "gzipBytes": 1603
+        },
+        {
+          "name": "modelica.js",
+          "kind": "js",
+          "bytes": 2841,
+          "gzipBytes": 1323
+        },
+        {
+          "name": "mscgen.js",
+          "kind": "js",
+          "bytes": 3543,
+          "gzipBytes": 1009
+        },
+        {
+          "name": "mumps.js",
+          "kind": "js",
+          "bytes": 1865,
+          "gzipBytes": 991
+        },
+        {
+          "name": "nginx.js",
+          "kind": "js",
+          "bytes": 7450,
+          "gzipBytes": 2756
+        },
+        {
+          "name": "nsis.js",
+          "kind": "js",
+          "bytes": 7103,
+          "gzipBytes": 3107
+        },
+        {
+          "name": "ntriples.js",
+          "kind": "js",
+          "bytes": 2113,
+          "gzipBytes": 760
+        },
+        {
+          "name": "octave.js",
+          "kind": "js",
+          "bytes": 2145,
+          "gzipBytes": 1116
+        },
+        {
+          "name": "oz.js",
+          "kind": "locale",
+          "bytes": 2921,
+          "gzipBytes": 1308
+        },
+        {
+          "name": "pascal.js",
+          "kind": "js",
+          "bytes": 2300,
+          "gzipBytes": 1211
+        },
+        {
+          "name": "perl.js",
+          "kind": "js",
+          "bytes": 9775,
+          "gzipBytes": 3485
+        },
+        {
+          "name": "pig.js",
+          "kind": "js",
+          "bytes": 2554,
+          "gzipBytes": 1414
+        },
+        {
+          "name": "pl.js",
+          "kind": "locale",
+          "bytes": 143335,
+          "gzipBytes": 46309
+        },
+        {
+          "name": "powershell.js",
+          "kind": "js",
+          "bytes": 7742,
+          "gzipBytes": 3321
+        },
+        {
+          "name": "properties.js",
+          "kind": "js",
+          "bytes": 712,
+          "gzipBytes": 385
+        },
+        {
+          "name": "protobuf.js",
+          "kind": "js",
+          "bytes": 848,
+          "gzipBytes": 544
+        },
+        {
+          "name": "pug.js",
+          "kind": "js",
+          "bytes": 6687,
+          "gzipBytes": 1994
+        },
+        {
+          "name": "puppet.js",
+          "kind": "js",
+          "bytes": 2561,
+          "gzipBytes": 1234
+        },
+        {
+          "name": "python.js",
+          "kind": "js",
+          "bytes": 6316,
+          "gzipBytes": 2710
+        },
+        {
+          "name": "q.js",
+          "kind": "js",
+          "bytes": 3730,
+          "gzipBytes": 1730
+        },
+        {
+          "name": "r.js",
+          "kind": "js",
+          "bytes": 2959,
+          "gzipBytes": 1375
+        },
+        {
+          "name": "rpm.js",
+          "kind": "js",
+          "bytes": 1638,
+          "gzipBytes": 855
+        },
+        {
+          "name": "ru.js",
+          "kind": "locale",
+          "bytes": 194536,
+          "gzipBytes": 52691
+        },
+        {
+          "name": "ruby.js",
+          "kind": "js",
+          "bytes": 5119,
+          "gzipBytes": 2188
+        },
+        {
+          "name": "sas.js",
+          "kind": "js",
+          "bytes": 9372,
+          "gzipBytes": 4141
+        },
+        {
+          "name": "scheme.js",
+          "kind": "js",
+          "bytes": 6401,
+          "gzipBytes": 2414
+        },
+        {
+          "name": "shell.js",
+          "kind": "js",
+          "bytes": 2477,
+          "gzipBytes": 1235
+        },
+        {
+          "name": "sieve.js",
+          "kind": "js",
+          "bytes": 1656,
+          "gzipBytes": 805
+        },
+        {
+          "name": "simple-mode.js",
+          "kind": "js",
+          "bytes": 2324,
+          "gzipBytes": 1131
+        },
+        {
+          "name": "smalltalk.js",
+          "kind": "js",
+          "bytes": 2043,
+          "gzipBytes": 885
+        },
+        {
+          "name": "solr.js",
+          "kind": "js",
+          "bytes": 903,
+          "gzipBytes": 492
+        },
+        {
+          "name": "sparql.js",
+          "kind": "js",
+          "bytes": 3375,
+          "gzipBytes": 1632
+        },
+        {
+          "name": "spreadsheet.js",
+          "kind": "js",
+          "bytes": 1184,
+          "gzipBytes": 573
+        },
+        {
+          "name": "sql.js",
+          "kind": "js",
+          "bytes": 36877,
+          "gzipBytes": 10848
+        },
+        {
+          "name": "stex.js",
+          "kind": "js",
+          "bytes": 3134,
+          "gzipBytes": 1214
+        },
+        {
+          "name": "stylus.js",
+          "kind": "js",
+          "bytes": 23559,
+          "gzipBytes": 8547
+        },
+        {
+          "name": "swift.js",
+          "kind": "js",
+          "bytes": 3805,
+          "gzipBytes": 1849
+        },
+        {
+          "name": "tcl.js",
+          "kind": "js",
+          "bytes": 2394,
+          "gzipBytes": 1250
+        },
+        {
+          "name": "textile.js",
+          "kind": "js",
+          "bytes": 6790,
+          "gzipBytes": 2477
+        },
+        {
+          "name": "tiddlywiki.js",
+          "kind": "js",
+          "bytes": 2808,
+          "gzipBytes": 1112
+        },
+        {
+          "name": "tiki.js",
+          "kind": "js",
+          "bytes": 3265,
+          "gzipBytes": 1298
+        },
+        {
+          "name": "toml.js",
+          "kind": "js",
+          "bytes": 1087,
+          "gzipBytes": 570
+        },
+        {
+          "name": "troff.js",
+          "kind": "js",
+          "bytes": 1000,
+          "gzipBytes": 473
+        },
+        {
+          "name": "ttcn.js",
+          "kind": "js",
+          "bytes": 4884,
+          "gzipBytes": 2174
+        },
+        {
+          "name": "ttcn-cfg.js",
+          "kind": "js",
+          "bytes": 4142,
+          "gzipBytes": 1765
+        },
+        {
+          "name": "turtle.js",
+          "kind": "js",
+          "bytes": 1999,
+          "gzipBytes": 927
+        },
+        {
+          "name": "vb.js",
+          "kind": "locale",
+          "bytes": 3690,
+          "gzipBytes": 1845
+        },
+        {
+          "name": "vbscript.js",
+          "kind": "js",
+          "bytes": 5477,
+          "gzipBytes": 2583
+        },
+        {
+          "name": "velocity.js",
+          "kind": "js",
+          "bytes": 2749,
+          "gzipBytes": 1147
+        },
+        {
+          "name": "verilog.js",
+          "kind": "js",
+          "bytes": 8227,
+          "gzipBytes": 3502
+        },
+        {
+          "name": "vhdl.js",
+          "kind": "js",
+          "bytes": 3357,
+          "gzipBytes": 1535
+        },
+        {
+          "name": "webidl.js",
+          "kind": "js",
+          "bytes": 2493,
+          "gzipBytes": 1284
+        },
+        {
+          "name": "xquery.js",
+          "kind": "js",
+          "bytes": 6203,
+          "gzipBytes": 2595
+        },
+        {
+          "name": "yacas.js",
+          "kind": "js",
+          "bytes": 2184,
+          "gzipBytes": 1120
+        },
+        {
+          "name": "z80.js",
+          "kind": "js",
+          "bytes": 1797,
+          "gzipBytes": 832
+        }
+      ]
+    }
+  }
+}

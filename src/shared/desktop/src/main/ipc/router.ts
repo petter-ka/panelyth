@@ -7,6 +7,8 @@ import {
   MAIN_METHODS,
   SHARED_PROGRAMS_KEY,
   SIDECAR_EVENT_CHANNELS,
+  FRAME_METHODS,
+  TEXTEDITOR_METHODS,
   eventGuards,
   type AppId,
   type EventChannel,
@@ -18,6 +20,7 @@ import {
   type RpcEnvelope,
   type SidecarMethod,
   type SidecarStatus,
+  type TextEditorMethod,
 } from "@panelyth/contracts"
 import type { IpcMainInvokeEvent, WebContents } from "electron"
 import { RpcError } from "../sidecar/RpcClient"
@@ -30,7 +33,7 @@ export interface SidecarPort {
   getStatus(): SidecarStatus
 }
 
-type MainMethod = keyof MainMethodMap
+type MainMethod = Exclude<keyof MainMethodMap, TextEditorMethod>
 
 /**
  * Handlers for methods answered in main (dialogs, status). `app` is the
@@ -41,6 +44,17 @@ export type MainHandlers = {
     event: IpcMainInvokeEvent,
     params: MainMethodMap[M]["params"],
     app: AppId,
+  ) => Promise<MainMethodMap[M]["result"]> | MainMethodMap[M]["result"]
+}
+
+/**
+ * The text editor window's methods (ADR-0046), answered in main for the
+ * window that calls: its session is found by the sender.
+ */
+export type TextEditorHandlers = {
+  [M in TextEditorMethod]: (
+    event: IpcMainInvokeEvent,
+    params: MainMethodMap[M]["params"],
   ) => Promise<MainMethodMap[M]["result"]> | MainMethodMap[M]["result"]
 }
 
@@ -56,6 +70,10 @@ export interface RouterOptions {
   onSettingWritten?: (sender: WebContents, key: string, value: unknown) => void
   /** The visible app; only it may publish the shared context (ADR-0031). Absent = any app. */
   activeApp?: () => AppId
+  /** The text editor window's origin and methods (ADR-0046): a profile of its own, not an app's. */
+  textEditor?: { origin: string; handlers: TextEditorHandlers }
+  /** The document window's origin (ADR-0033): its title strip's window calls and nothing else. */
+  documentsOrigin?: string
 }
 
 type InvokeHandler = (
@@ -65,6 +83,8 @@ type InvokeHandler = (
 ) => Promise<RpcEnvelope<unknown>>
 
 const mainMethods: ReadonlySet<string> = new Set(MAIN_METHODS)
+const textEditorMethods: ReadonlySet<string> = new Set(TEXTEDITOR_METHODS)
+const frameMethods: ReadonlySet<string> = new Set(FRAME_METHODS)
 
 /**
  * Calls that may take longer than the default 10 s: Git reads a large
@@ -106,7 +126,56 @@ export function createInvokeHandler(options: RouterOptions): InvokeHandler {
     ]),
   ) as unknown as Record<AppId, ReadonlySet<string>>
 
+  /**
+   * A window that is no app view: its own window calls (the title strip's
+   * buttons; main resolves the window from the sender), and its own methods.
+   */
+  const windowCall = async (
+    event: IpcMainInvokeEvent,
+    method: unknown,
+    params: unknown,
+    own: ReadonlySet<string>,
+    handle: (method: string, params: unknown) => unknown,
+  ): Promise<RpcEnvelope<unknown>> => {
+    if (typeof method !== "string" || !(own.has(method) || frameMethods.has(method))) {
+      return fail("METHOD_NOT_FOUND", `method not allowed: ${String(method)}`)
+    }
+    const invalid = validators[method as RendererMethod](params)
+    if (invalid) return fail("INVALID_ARGUMENT", invalid)
+    invokeCounts.set(method, (invokeCounts.get(method) ?? 0) + 1)
+    try {
+      if (frameMethods.has(method)) {
+        // `app` only tells an app view whether it is on screen; this sender is none.
+        const frame = options.main[method as "window.getState"] as (
+          e: IpcMainInvokeEvent,
+          p: unknown,
+          a: AppId,
+        ) => unknown
+        return { ok: true, r: await frame(event, params ?? {}, "viewer") }
+      }
+      return { ok: true, r: await handle(method, params ?? {}) }
+    } catch (error) {
+      if (error instanceof RpcError) return { ok: false, e: error.toShape() }
+      return fail("INTERNAL", String(error))
+    }
+  }
+  const noOwnMethods: ReadonlySet<string> = new Set()
+
   return async (event, method, params) => {
+    // The text editor window: its own file and nothing else (ADR-0046).
+    const editor = options.textEditor
+    if (editor && isTrustedSender(event.senderFrame, editor.origin)) {
+      return windowCall(event, method, params, textEditorMethods, (m, p) =>
+        (editor.handlers[m as TextEditorMethod] as (e: IpcMainInvokeEvent, p: unknown) => unknown)(
+          event,
+          p,
+        ),
+      )
+    }
+    // The document window: its title strip's buttons only (ADR-0033, amended).
+    if (options.documentsOrigin && isTrustedSender(event.senderFrame, options.documentsOrigin)) {
+      return windowCall(event, method, params, noOwnMethods, () => undefined)
+    }
     const app = APP_IDS.find((id) => isTrustedSender(event.senderFrame, options.origins[id]))
     if (!app) return fail("PERMISSION_DENIED", "untrusted sender")
     if (typeof method !== "string" || !allowed[app].has(method)) {

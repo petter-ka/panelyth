@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Panelyth editor</title>
+    <!-- The stored theme before the first paint (src/shared/ui/boot/boot.js). -->
+    <script src="/boot.js"></script>
+  </head>
+  <body>
+    <div id="root">
+      <!-- Shown from the first paint until React renders (styles.css, .boot-screen). -->
+      <div class="boot-screen" aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" class="pending-spinner">
+          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-opacity=".25" stroke-width="2" />
+          <circle
+            cx="8"
+            cy="8"
+            r="6"
+            stroke="var(--accent)"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-dasharray="11 100"
+          />
+        </svg>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

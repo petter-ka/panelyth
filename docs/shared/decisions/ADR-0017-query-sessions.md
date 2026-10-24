@@ -75,6 +75,12 @@ Ctrl+A.
 - `query.page(queryId, offset, limit ≤ 1000)` slices the id list and loads the rows with `WHERE id IN (…)`,
   so every offset costs the same.
 - Ordering is always deterministic: directories first, then the requested sort keys, then `id`.
+  Amended 2026-10-24 (owner request): with `dirsByName` (the commander's "Keep folders sorted by name", on by
+  default) the directories are ordered by name whatever the keys, and the keys order the files. The query keeps its
+  index walk and a second walk over the folders alone (the listing indexes' own `(kind <> 0) = 0`) replaces the
+  folders at its front: 10k folders and 90k files by date take about 60 ms against 53 ms
+  (`BenchmarkDirsByName100k`). Archives, connections and search results apply it in their own sorts
+  (`Descriptor.SortFor`).
 - When the index changes under a session (scan batches, watcher reconciles), Go re-materializes it on a
   debounce (about 250 ms) and emits `query.invalidated { queryId, version, total }`. The renderer refetches only
   the pages it holds, and ids keep selection stable.

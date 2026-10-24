@@ -21,7 +21,8 @@
   if (themes.indexOf(theme) < 0) theme = "dark"
   root.classList.toggle("dark", theme.indexOf("dark") === 0)
   root.dataset.theme = theme
-  root.dataset.style = read("panelyth.style") === "glass" ? "glass" : "classic"
+  var style = read("panelyth.style")
+  root.dataset.style = style === "glass" || style === "terminal" ? style : "classic"
   var size = read("panelyth.interfaceSize")
   root.dataset.interfaceSize =
     ["small", "medium", "large", "xlarge"].indexOf(size) >= 0 ? size : "medium"

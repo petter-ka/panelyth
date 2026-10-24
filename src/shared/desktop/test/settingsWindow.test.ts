@@ -84,17 +84,23 @@ describe("the settings window (ADR-0039)", () => {
   it("is a modal child of the shell on Windows and Linux, with the opener's page and preload", () => {
     const parent = shell()
     const windows = new SettingsWindow(
-      { devTools: false, platform: "win32" },
+      { devTools: false, platform: "win32", titleBar: true },
       () => parent as never,
     )
     windows.open(opener, PAGE, "appearance")
     const win = created[0]!
-    expect(win.options).toMatchObject({ parent, modal: true, minimizable: false })
+    // Windows: the page draws the title strip, with Close only (ADR-0045).
+    expect(win.options).toMatchObject({
+      parent,
+      modal: true,
+      minimizable: false,
+      titleBarStyle: "hidden",
+    })
     expect(win.options.webPreferences).toMatchObject({
       preload: "viewer.cjs",
       sandbox: true,
       contextIsolation: true,
-      additionalArguments: ["--panelyth-commander"],
+      additionalArguments: ["--panelyth-commander", "--panelyth-title-bar"],
     })
     expect(win.url).toBe("app://panelyth/settings.html#tab=appearance")
     expect(parent.setEnabled).not.toHaveBeenCalled()
@@ -103,7 +109,7 @@ describe("the settings window (ADR-0039)", () => {
   it("on macOS is a movable child window that keeps the focus, without dimming the shell", () => {
     const parent = shell()
     const windows = new SettingsWindow(
-      { devTools: false, platform: "darwin" },
+      { devTools: false, platform: "darwin", titleBar: false },
       () => parent as never,
     )
     windows.open(opener, PAGE)
@@ -122,7 +128,7 @@ describe("the settings window (ADR-0039)", () => {
 
   it("is one window: asking again focuses it", () => {
     const windows = new SettingsWindow(
-      { devTools: false, platform: "linux" },
+      { devTools: false, platform: "linux", titleBar: false },
       () => shell() as never,
     )
     windows.open(opener, PAGE)
@@ -133,7 +139,7 @@ describe("the settings window (ADR-0039)", () => {
 
   it("knows its opener, and only the window itself may close it", () => {
     const windows = new SettingsWindow(
-      { devTools: false, platform: "linux" },
+      { devTools: false, platform: "linux", titleBar: false },
       () => shell() as never,
     )
     windows.open(opener, PAGE)

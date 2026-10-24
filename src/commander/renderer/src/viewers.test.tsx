@@ -539,6 +539,22 @@ describe("open and edit", () => {
     )
   })
 
+  it("F4 on a file the built-in editor can't take says why, and points to F3 (ADR-0046)", async () => {
+    const fake = await start()
+    await cursorTo(ROW.data)
+    for (const [reason, said] of [
+      ["binary", /data\.bin isn't a text file\. F3 views it/],
+      ["tooLarge", /data\.bin is too large to edit here \(over 8 MB\)\. F3 views it/],
+    ] as const) {
+      fake.api.shell.edit.mockResolvedValueOnce({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT", message: reason, retryable: false, details: { reason } },
+      })
+      await panelKey({ key: "F4" })
+      await waitFor(() => expect(useFilesStore.getState().notice).toMatch(said))
+    }
+  })
+
   it("reports a file that can't be opened", async () => {
     const fake = await start()
     fake.api.shell.open.mockResolvedValueOnce({

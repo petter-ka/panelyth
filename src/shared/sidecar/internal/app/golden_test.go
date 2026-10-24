@@ -3,6 +3,7 @@ package app
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"flag"
 	"io"
@@ -50,6 +51,8 @@ var volatile = map[string]any{
 	"scanId": 1,
 	// A Git repository's folder (ADR-0043).
 	"root": "/fixtures/repo",
+	// A text file's modified time (Stage C10.6).
+	"mtimeNs": 1,
 }
 
 // platformDependent values are replaced even when null (Linux has no birth time).
@@ -807,6 +810,53 @@ func TestGoldenFrames(t *testing.T) {
 		t.Fatal("no picture to open by path")
 	}
 	golden["res-entry.fromPath.json"] = call(231, byID(231, "entry.fromPath", map[string]any{"path": batchPics[0]}))
+	// Stage C10.6 (ADR-0046): a text file opened in the editor, a save in one
+	// chunk, the check after it and the session closed.
+	teDir := filepath.Join(t.TempDir(), "textedit")
+	_ = os.MkdirAll(teDir, 0o755)
+	if err := os.WriteFile(filepath.Join(teDir, "notes.md"), []byte("# Notes\r\n\r\nText.\r\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	_, teQ := openListedDir(250, teDir)
+	// The session id is random and replaced in the fixture: the frame is
+	// read raw to keep the real one.
+	send(byID(253, "textedit.open", map[string]any{"entryId": cmpPage(252, teQ, "notes.md")}))
+	var teSession, teVersion string
+	for teSession == "" {
+		p, err := fr.ReadFrame()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var raw, f map[string]any
+		_ = json.Unmarshal(p, &raw)
+		_ = json.Unmarshal(p, &f)
+		f = normalize(f).(map[string]any)
+		if raw["t"] == "evt" {
+			events = append(events, f)
+			continue
+		}
+		r, _ := raw["r"].(map[string]any)
+		if raw["id"] != float64(253) || r == nil {
+			t.Fatalf("textedit.open: %v", raw)
+		}
+		teSession, teVersion = r["sessionId"].(string), r["version"].(string)
+		golden["res-textedit.open.json"] = f
+	}
+	golden["res-textedit.write.json"] = call(255, byID(255, "textedit.write", map[string]any{"sessionId": teSession, "seq": 0,
+		"text": "# Notes\n\nMore text.\n"}))
+	golden["res-textedit.commit.json"] = call(256, byID(256, "textedit.commit", map[string]any{"sessionId": teSession,
+		"baseVersion": teVersion, "force": false, "asUtf8": false}))
+	golden["res-textedit.check.json"] = call(257, byID(257, "textedit.check", map[string]any{"sessionId": teSession}))
+	// Stage C10.7: a picture pasted into the document, and its link resolved
+	// with one that leaves the folder.
+	png := base64.StdEncoding.EncodeToString(append([]byte("\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR"), make([]byte, 24)...))
+	golden["res-textedit.assetChunk.json"] = call(260, byID(260, "textedit.assetChunk", map[string]any{"sessionId": teSession,
+		"seq": 0, "data": png}))
+	golden["res-textedit.assetCommit.json"] = call(261, byID(261, "textedit.assetCommit", map[string]any{"sessionId": teSession,
+		"name": "Screenshot 1.png", "folder": "assets"}))
+	golden["res-textedit.resolveImages.json"] = call(262, byID(262, "textedit.resolveImages", map[string]any{"sessionId": teSession,
+		"links": []string{"assets/Screenshot%201.png", "../outside.png", "https://example.org/a.png"}}))
+	golden["res-textedit.close.json"] = call(258, byID(258, "textedit.close", map[string]any{"sessionId": teSession}))
 	golden["res-system.shutdown.json"] = call(5, `{"t":"req","id":5,"m":"system.shutdown","p":{}}`)
 	if err := <-done; err != nil {
 		t.Fatalf("run: %v", err)

@@ -8,22 +8,26 @@ import {
   ClipboardItem,
   ipcMain,
   Menu,
+  nativeTheme,
   safeStorage,
   screen,
   session,
   shell,
   webContents,
+  type WebContents,
 } from "electron"
 import { handleAppProtocol, registerAppScheme } from "./appProtocol"
 import { spawn } from "node:child_process"
 import {
   handleMediaProtocol,
   MediaTokens,
+  mintMediaUrl,
   toFileOpenResult,
   toMediaOpenResult,
 } from "./mediaProtocol"
 import { handleThumbProtocol } from "./thumbProtocol"
 import { DocumentWindows } from "./documentWindow"
+import { TextEditorWindows } from "./textEditorWindow"
 import { MediaWindows } from "./mediaWindow"
 import { startFileDrag } from "./dragOut"
 import { SettingsWindow, type SettingsPage } from "./settingsWindow"
@@ -50,6 +54,10 @@ import {
   systemDevUrl,
   systemDistPath,
   systemPreloadPath,
+  textEditorDevUrl,
+  textEditorDistPath,
+  textEditorPreloadPath,
+  framePreloadPath,
   updateFeedPath,
 } from "./paths"
 import {
@@ -62,14 +70,20 @@ import {
   hardenSession,
   SYSTEM_HOST,
   SYSTEM_ORIGIN,
+  TEXTEDITOR_HOST,
+  TEXTEDITOR_ORIGIN,
   originOf,
   trustedOrigin,
 } from "./security"
-import { AppShell, chromeColorOf, startAppFrom } from "./shell"
+import { AppShell, startAppFrom } from "./shell"
+import { appearanceStyle, appearanceTheme, themeColorsOf } from "./themeColors"
 import { systemHardware, systemLoad } from "./systemInfo"
 import {
   COMMANDER_ENABLED_ARG,
+  TEXTEDIT_DEFAULT_ASSETS,
   documentKindOf,
+  isMarkdownName,
+  TITLE_BAR_ARG,
   readUpdateSettings,
   SHARED_PROGRAMS_KEY,
   SHARED_UPDATES_KEY,
@@ -78,15 +92,16 @@ import {
   type MenuCommand,
   type OpenRequest,
   type UpdateMode,
+  type WindowFrameState,
 } from "@panelyth/contracts"
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { fsDeps, initialBounds, WindowStateFile } from "./windowState"
-import { pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
+import { COMMANDER_SETTINGS_KEY, pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
 import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
 import { programsHandlers } from "./programs"
 import { statSync } from "node:fs"
-import { readFile, stat } from "node:fs/promises"
+import { readFile, rename, stat, unlink, writeFile } from "node:fs/promises"
 import { join } from "node:path"
 import { perfMark } from "./perf"
 import { electronSecretStore, noSecretStore, remoteHandlers } from "./remote"
@@ -140,6 +155,7 @@ let sidecar: SidecarProcess | null = null
 let appShell: AppShell | null = null
 let mainWindow: BrowserWindow | null = null
 let documentWindows: DocumentWindows | null = null
+let textEditors: TextEditorWindows | null = null
 let mediaWindows: MediaWindows | null = null
 let settingsWindow: SettingsWindow | null = null
 let logger: Logger = consoleLogger
@@ -149,6 +165,11 @@ const windowState = new WindowStateFile(
   join(app.getPath("userData"), "window-state.json"),
   fsDeps((message, fields) => logger.warn(message, fields)),
 )
+// The apps draw the title strip and the native frame keeps only its buttons
+// (Windows). macOS and Linux keep their own title bar.
+const titleBar = process.platform === "win32"
+/** The app views' renderer arguments: they draw the strip and its window buttons. */
+const viewArgs = titleBar ? [TITLE_BAR_ARG] : []
 
 // "Open with" (ADR-0033 amended): a picture or video the OS handed over opens
 // in a media window of its own, and the main window is not created for it.
@@ -174,6 +195,11 @@ let updates: UpdateService | null = null
 /** The language of Settings → Appearance, for the native menu. */
 let menuLanguage = "en"
 let shownMenu = ""
+
+const textEditorOrigin = (): string => {
+  const devUrl = textEditorDevUrl()
+  return (devUrl && originOf(devUrl)) || TEXTEDITOR_ORIGIN
+}
 
 const documentsOrigin = (): string => {
   const devUrl = documentsDevUrl()
@@ -271,11 +297,13 @@ function openWindow(): BrowserWindow {
     origin: trustedOrigin(devUrl),
     devMethods,
     devTools: !app.isPackaged,
-    extraArgs: commanderEnabled ? [COMMANDER_ENABLED_ARG] : [],
+    extraArgs: [...(commanderEnabled ? [COMMANDER_ENABLED_ARG] : []), ...viewArgs],
     bounds: initialBounds(
       windowState.current,
       screen.getAllDisplays().map((d) => d.workArea),
     ),
+    colors: themeColorsOf(windowState.theme, windowState.style),
+    titleBar,
   })
   windowState.track(win)
   mainWindow = win
@@ -292,12 +320,14 @@ function openWindow(): BrowserWindow {
             url: commanderUrl,
             origin: commanderOrigin(),
             preload: commanderPreloadPath(),
+            args: viewArgs,
             devTools: !app.isPackaged,
           },
           system: {
             url: systemDevUrl() ?? `${SYSTEM_ORIGIN}/index.html`,
             origin: systemOrigin(),
             preload: systemPreloadPath(),
+            args: viewArgs,
             devTools: !app.isPackaged,
           },
         }
@@ -305,6 +335,8 @@ function openWindow(): BrowserWindow {
     announceVisibleApp,
   )
   const shell = appShell
+  shell.setBackground(themeColorsOf(windowState.theme, windowState.style).chrome)
+  if (titleBar) announceWindowFrame(win)
   // Opened to show a file's folder or for a menu item: the viewer, whichever app was used last.
   if (pendingOpen || pendingCommand) return win
   if (forcedStartApp === "commander") shell.switchTo("commander")
@@ -430,12 +462,78 @@ async function updateMode(scripted: string | undefined): Promise<UpdateMode> {
 function applySharedSetting(key: string, value: unknown): void {
   if (key === SHARED_UPDATES_KEY) updates?.setAuto(readUpdateSettings(value).auto)
   if (key === "shared.appearance") {
-    appShell?.setBackground(chromeColorOf(value))
+    const theme = appearanceTheme(value)
+    if (theme) windowState.setTheme(theme)
+    const style = appearanceStyle(value)
+    if (style) windowState.setStyle(style)
+    applyTheme()
     const language = (value as { language?: unknown } | null | undefined)?.language
     menuLanguage = typeof language === "string" ? language : "en"
     refreshMenu()
   }
 }
+
+/** The app views follow the theme; the window buttons are the page's (ADR-0045). */
+function applyTheme(): void {
+  appShell?.setBackground(themeColorsOf(windowState.theme, windowState.style).chrome)
+}
+
+/** The main window, when the caller is one of its app views; anything else is refused. */
+function mainWindowOf(sender: WebContents): BrowserWindow {
+  const win = mainWindow && !mainWindow.isDestroyed() ? mainWindow : null
+  const apps = appShell ? (["viewer", "commander", "system"] as const) : []
+  if (!win || !apps.some((app) => appShell?.webContentsOf(app) === sender)) {
+    throw new Error("not an app view of the main window")
+  }
+  return win
+}
+
+/**
+ * The window a title strip's button acts on (ADR-0045): the main window for its
+ * app views, else the caller's own window (a settings, document or editor
+ * window). A page moves, sizes or closes only the window it is in.
+ */
+function frameWindowOf(sender: WebContents): BrowserWindow {
+  const isAppView =
+    appShell !== null &&
+    (["viewer", "commander", "system"] as const).some(
+      (app) => appShell?.webContentsOf(app) === sender,
+    )
+  if (isAppView) return mainWindowOf(sender)
+  const own = BrowserWindow.fromWebContents(sender)
+  if (!own || own.isDestroyed() || own === mainWindow) {
+    throw new Error("no window of its own")
+  }
+  return own
+}
+
+function windowFrameState(win: BrowserWindow): WindowFrameState {
+  return { maximized: win.isMaximized(), fullScreen: win.isFullScreen() }
+}
+
+/** The title strip shows restore or maximize, and hides in full screen. */
+function announceWindowFrame(win: BrowserWindow): void {
+  const send = (): void => {
+    if (win.isDestroyed() || !appShell) return
+    const views = (["viewer", "commander", "system"] as const)
+      .map((app) => appShell?.webContentsOf(app))
+      .filter((wc): wc is WebContents => wc != null && !wc.isDestroyed())
+    broadcast(views, "window.state", windowFrameState(win))
+  }
+  for (const event of [
+    "maximize",
+    "unmaximize",
+    "enter-full-screen",
+    "leave-full-screen",
+  ] as const) {
+    win.on(event as "maximize", send)
+  }
+}
+
+// "System" follows the OS's light or dark mode while the app runs.
+nativeTheme.on("updated", () => {
+  if (windowState.theme === "system") applyTheme()
+})
 
 /** Settings → General "Start with", else the app the previous run ended in. */
 async function lastUsedApp(): Promise<AppId | null> {
@@ -455,6 +553,7 @@ async function lastUsedApp(): Promise<AppId | null> {
   commanderCreated: appShell?.webContentsOf("commander") != null,
   systemCreated: appShell?.webContentsOf("system") != null,
   commanderEnabled,
+  textEditorWindows: textEditors?.count ?? 0,
 })
 
 async function boot(): Promise<void> {
@@ -471,27 +570,31 @@ async function boot(): Promise<void> {
   logger.info("app starting", { version: app.getVersion(), packaged: app.isPackaged, devMethods })
 
   const devUrl = rendererDevUrl()
-  const devUrls = [devUrl, commanderDevUrl(), documentsDevUrl()].filter(
+  const devUrls = [devUrl, commanderDevUrl(), documentsDevUrl(), textEditorDevUrl()].filter(
     (u): u is string => u !== null,
   )
   hardenSession(
     session.defaultSession,
     [trustedOrigin(devUrl), commanderOrigin()],
     devUrls,
-    [commanderOrigin(), documentsOrigin()],
+    [commanderOrigin(), documentsOrigin(), textEditorOrigin()],
     documentsOrigin(),
+    textEditorOrigin(),
   )
   handleAppProtocol({
     [APP_HOST]: rendererDistPath(),
     [COMMANDER_HOST]: commanderDistPath(),
     [SYSTEM_HOST]: systemDistPath(),
     [DOCUMENTS_HOST]: documentsDistPath(),
+    [TEXTEDITOR_HOST]: textEditorDistPath(),
   })
   documentWindows = new DocumentWindows(
     {
       url: documentsDevUrl() ?? `${DOCUMENTS_ORIGIN}/index.html`,
       origin: documentsOrigin(),
       devTools: !app.isPackaged,
+      titleBar,
+      framePreload: framePreloadPath(),
     },
     () => mainWindow,
   )
@@ -505,7 +608,7 @@ async function boot(): Promise<void> {
     () => mainWindow,
   )
   settingsWindow = new SettingsWindow(
-    { devTools: !app.isPackaged, platform: process.platform },
+    { devTools: !app.isPackaged, platform: process.platform, titleBar },
     () => mainWindow,
   )
 
@@ -523,7 +626,59 @@ async function boot(): Promise<void> {
   const frameTokens = new MediaTokens(16)
   // Preset thumbnails (Stage 13): two batches' worth.
   const thumbTokens = new MediaTokens(48)
-  handleMediaProtocol(mediaTokens, frameTokens, thumbTokens)
+  // The pictures the text editor's documents link to (Stage C10.7): a store of their own,
+  // so a long document never pushes the viewer's or the editor's own tokens out.
+  const editorImageTokens = new MediaTokens(256)
+  handleMediaProtocol(mediaTokens, frameTokens, thumbTokens, editorImageTokens)
+  // The text editor windows (Stage C10.6, ADR-0046): F4 in the commander.
+  const editors = new TextEditorWindows(
+    {
+      url: textEditorDevUrl() ?? `${TEXTEDITOR_ORIGIN}/index.html`,
+      origin: textEditorOrigin(),
+      preload: textEditorPreloadPath(),
+      devTools: !app.isPackaged,
+      platform: process.platform,
+      titleBar,
+    },
+    {
+      call: (method, params) => sc.call(method, params),
+      mintSrc: (path) =>
+        mintMediaUrl(mediaTokens, { path, mime: "text/plain", fetchOrigin: textEditorOrigin() }),
+      mintImage: (path, type) => mintMediaUrl(editorImageTokens, { path, mime: `image/${type}` }),
+      savePdfDialog: async (win, defaultPath) => {
+        // E2E tests cannot drive the native dialog; unpackaged builds accept a canned answer.
+        const canned = app.isPackaged ? undefined : process.env.PANELYTH_TEST_SAVE_PATH
+        if (canned !== undefined) return canned || null
+        const result = await dialog.showSaveDialog(win, {
+          defaultPath,
+          filters: [{ name: "PDF", extensions: ["pdf"] }],
+        })
+        return result.canceled || !result.filePath ? null : result.filePath
+      },
+      writeFileAtomic: async (path, data) => {
+        const partial = `${path}.panelyth-partial`
+        try {
+          await writeFile(partial, data)
+          await rename(partial, path)
+        } catch (error) {
+          await unlink(partial).catch(() => undefined)
+          throw error
+        }
+      },
+      assetsFolder: async () => {
+        const stored = (await sc.call("library.get", {})).settings[COMMANDER_SETTINGS_KEY] as
+          { assetsFolder?: unknown } | undefined
+        const name = typeof stored?.assetsFolder === "string" ? stored.assetsFolder.trim() : ""
+        return name || TEXTEDIT_DEFAULT_ASSETS
+      },
+      theme: () => windowState.theme ?? "dark",
+      style: () => windowState.style ?? "classic",
+      lang: () => menuLanguage,
+      background: () => themeColorsOf(windowState.theme, windowState.style).chrome,
+      log: (message, fields) => logger.warn(message, fields),
+    },
+  )
+  textEditors = editors
   sc.onStatus((status) => {
     if (status.state === "ready") {
       perfMark("sidecar-ready")
@@ -578,6 +733,7 @@ async function boot(): Promise<void> {
       if (recordShell) shellLog.push({ action: "clipboard", value: text })
       else clipboard.writeText(text)
     },
+    openTextEditor: (entryId) => editors.open(entryId),
     launch: (file, args) => {
       if (recordShell) {
         shellLog.push({ action: "launch", value: [file, ...args].join("|") })
@@ -650,6 +806,28 @@ async function boot(): Promise<void> {
         platform: process.platform,
         arch: process.arch,
       }),
+    // The title strip's window buttons (ADR-0045): only an app view of the main
+    // window moves it, never the settings window that shares the viewer's origin.
+    "window.getState": (event, _params, caller) => {
+      const win = frameWindowOf(event.sender)
+      const appView = win === mainWindow
+      return {
+        ...windowFrameState(win),
+        shown: !appView || appShell?.activeApp === caller,
+        minimizable: win.isMinimizable(),
+        maximizable: win.isMaximizable(),
+      }
+    },
+    "window.control": (event, { action }) => {
+      const win = frameWindowOf(event.sender)
+      if (action === "minimize" && !win.isMinimizable()) return { ok: true }
+      if (action === "toggleMaximize" && !win.isMaximizable()) return { ok: true }
+      if (action === "minimize") win.minimize()
+      else if (action === "close") win.close()
+      else if (win.isMaximized()) win.unmaximize()
+      else win.maximize()
+      return { ok: true }
+    },
     // Panelyth System (ADR-0042): the computer, read once; the load, sampled while it is visible.
     "system.hardware": () => systemHardware(() => app.getGPUInfo("complete")),
     "system.load": () => systemLoad(),
@@ -887,6 +1065,15 @@ async function boot(): Promise<void> {
       const r = await sc.call("file.resolve", { entryId })
       // Main decides from the resolved path; no token is minted for anything else.
       if (!documentKindOf(r.path)) throw new Error("this file is not a document")
+      // Markdown (owner request, ADR-0046): shown in Live, read-only, in the text editor
+      // window. One it can't take (in an archive, too large) goes to the document window.
+      if (isMarkdownName(r.path) && textEditors) {
+        const shown = await textEditors.open(entryId, { readOnly: true }).then(
+          () => true,
+          () => false,
+        )
+        if (shown) return { ok: true }
+      }
       const { url } = toFileOpenResult(r, mediaTokens, documentsOrigin())
       documentWindows?.open({
         tokenUrl: url,
@@ -928,6 +1115,8 @@ async function boot(): Promise<void> {
     },
     devMethods,
     activeApp: () => appShell?.activeApp ?? "viewer",
+    textEditor: { origin: textEditorOrigin(), handlers: editors.handlers() },
+    documentsOrigin: documentsOrigin(),
     // Shared settings (theme, interface size) reach the other app at once (ADR-0031).
     onSharedSetting: (key, value) => {
       broadcast(webContents.getAllWebContents(), "settings.changed", { key, value })
@@ -995,6 +1184,9 @@ if (!app.requestSingleInstanceLock()) {
     if (shutdownState === "done") return
     event.preventDefault()
     if (shutdownState === "stopping") return
+    // Unsaved text first (ADR-0046): its windows ask, and nothing stops while they
+    // do, so Save still reaches the sidecar. Quitting again goes on once none is left.
+    if (textEditors?.askUnsaved()) return
     shutdownState = "stopping"
     const started = performance.now()
     // On macOS quitting comes before the window's close: its state is saved here.

@@ -1,7 +1,7 @@
 import { appendFileSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type ElectronApplication } from "@playwright/test"
+import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { commanderOf, goTo, launch, mixedFolder } from "./commander/helpers"
 import {
   commanderEnv,
@@ -10,8 +10,11 @@ import {
   launchApp,
   repoRoot,
   shellState,
+  showViewerFolder,
+  systemPage,
   waitForReady,
 } from "../launch"
+import { hitTest } from "../hitTest"
 
 // The app switch between the viewer and the commander (ADR-0031,
 // docs/shared/APP-SWITCHING.md), Stage C00 part: the switch itself and shared
@@ -167,16 +170,21 @@ test.describe("app switch (ADR-0031)", () => {
     }
   })
 
-  test("the commander fills the window, also once the menu bar has appeared", async () => {
+  test("the commander fills the window, also once the native menu is installed", async () => {
     const { app } = await launchApp(commanderEnv("commander"))
     try {
       const commander = await commanderPage(app)
       await waitForReady(commander)
-      // Main installs the native menu after start; on Windows and Linux its bar
-      // takes height from the content without resizing the window.
+      // Main installs the native menu after start; its bar is never shown, so it
+      // takes no height from the content.
       await expect
         .poll(() => app.evaluate(({ Menu }) => Menu.getApplicationMenu() !== null))
         .toBe(true)
+      expect(
+        await app.evaluate(({ BrowserWindow }) =>
+          BrowserWindow.getAllWindows()[0]!.isMenuBarVisible(),
+        ),
+      ).toBe(false)
       const contentHeight = () =>
         app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.getContentSize()[1]!)
       await expect
@@ -188,6 +196,137 @@ test.describe("app switch (ADR-0031)", () => {
       const height = await commander.evaluate(() => innerHeight)
       expect(await bottom("app-settings")).toBeLessThanOrEqual(height)
       expect(await bottom("function-keys")).toBeLessThanOrEqual(height)
+      // Windows: the title strip is the page's, at the top, with the window's buttons (ADR-0045).
+      const strip = commander.getByTestId("title-bar")
+      if (process.platform === "win32") {
+        await expect(strip).toContainText("Panelyth Commander")
+        const box = await strip.evaluate((el) => el.getBoundingClientRect().toJSON())
+        expect(box).toMatchObject({ top: 0, height: 33 })
+        // The mark takes the corner, level with the strip; the rail starts below it.
+        const rect = (testId: string) =>
+          commander.getByTestId(testId).evaluate((el) => el.getBoundingClientRect().toJSON())
+        expect(await rect("title-bar-mark")).toMatchObject({ top: 0, left: 0, height: 33 })
+        expect((await rect("app-switcher")).top).toBe(33)
+        const maximized = () =>
+          app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMaximized())
+        await commander.getByRole("button", { name: "Maximize" }).click()
+        await expect.poll(maximized).toBe(true)
+        // Main reports it: the button offers Restore.
+        await commander.getByRole("button", { name: "Restore" }).click()
+        await expect.poll(maximized).toBe(false)
+        await commander.getByRole("button", { name: "Minimize" }).click()
+        await expect
+          .poll(() =>
+            app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.isMinimized()),
+          )
+          .toBe(true)
+        await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0]!.restore())
+      } else {
+        await expect(strip).toHaveAttribute("aria-hidden", "true")
+      }
+    } finally {
+      await app.close()
+    }
+  })
+
+  test("the title strip's switchers: the viewer's tile size and preview, the commander's layouts (ADR-0045)", async () => {
+    test.skip(process.platform !== "win32", "the strip is drawn on Windows only")
+    const dir = mixedFolder()
+    const { app, page } = await launch("viewer")
+    try {
+      await showViewerFolder(page, dir)
+      // The viewer: the tile size and the preview's place.
+      const tiles = page.getByTestId("tile-view")
+      await page.getByTestId("title-tile-size").getByRole("radio", { name: "Large tiles" }).click()
+      await expect(tiles).toHaveAttribute("data-tile-size", "large")
+      await page.getByTestId("title-tile-size").getByRole("radio", { name: "Medium tiles" }).click()
+      await expect(tiles).toHaveAttribute("data-tile-size", "medium")
+      const right = page
+        .getByTestId("title-preview-place")
+        .getByRole("radio", { name: "Preview in a column on the right" })
+      await right.click()
+      await expect(right).toHaveAttribute("aria-checked", "true")
+      await page
+        .getByTestId("title-preview-place")
+        .getByRole("radio", { name: "Preview under the folders" })
+        .click()
+
+      // The commander: layout presets set the whole window, whichever panel is active.
+      await page.getByRole("button", { name: "Switch to Commander" }).click()
+      const c = await commanderOf(app)
+      await goTo(c, "left", dir)
+      await goTo(c, "right", dir)
+      const panels = [c.getByTestId("panel-left"), c.getByTestId("panel-right")]
+      const presets = c.getByTestId("title-layout")
+      const preset = (name: RegExp) => presets.getByRole("radio", { name })
+      await expect(preset(/^Details/)).toHaveAttribute("aria-checked", "true")
+
+      await preset(/^List/).click()
+      for (const panel of panels) {
+        await expect(panel.getByRole("listbox")).toBeVisible()
+        await expect(panel.getByRole("grid")).toHaveCount(0)
+      }
+      await expect(preset(/^List/)).toHaveAttribute("aria-checked", "true")
+      // The click left the keys with the active panel (the right one, opened last).
+      await expect(panels[1]!.getByRole("listbox")).toBeFocused()
+
+      await preset(/^Tree/).click()
+      await expect(c.getByTestId("tree-one")).toBeVisible()
+      for (const panel of panels) await expect(panel.getByRole("grid")).toBeVisible()
+
+      await preset(/^Preview/).click()
+      await expect(c.getByTestId("quick-view")).toBeVisible()
+      await expect(c.getByTestId("tree-one")).toHaveCount(0)
+
+      // Stacked: the left panel above the right one, as wide as the window.
+      const box = (i: 0 | 1) => panels[i]!.evaluate((el) => el.getBoundingClientRect().toJSON())
+      await preset(/^Stacked/).click()
+      await expect(c.getByTestId("quick-view")).toHaveCount(0)
+      await expect.poll(async () => (await box(0)).bottom <= (await box(1)).top + 1).toBe(true)
+      expect((await box(0)).left).toBe((await box(1)).left)
+
+      // Single: the active panel alone across the window, as thumbnails.
+      await preset(/^Single/).click()
+      await expect(c.getByTestId("panel-left")).toHaveCount(0)
+      await expect(panels[1]!).toBeVisible()
+      await expect(preset(/^Single/)).toHaveAttribute("aria-checked", "true")
+
+      await preset(/^Details/).click()
+      for (const panel of panels) await expect(panel.getByRole("grid")).toBeVisible()
+      await expect.poll(async () => (await box(0)).right <= (await box(1)).left + 1).toBe(true)
+
+      // A change by hand that matches no preset lights none.
+      await c.keyboard.press("Control+F1")
+      await expect(presets.getByRole("radio", { checked: true })).toHaveCount(0)
+    } finally {
+      await app.close()
+    }
+  })
+
+  test("a real mouse: the strip's buttons click and the strip drags, in every app (ADR-0045)", async () => {
+    test.skip(process.platform !== "win32", "the strip is drawn on Windows only")
+    // The commander first: the viewer's page lies under it from the start.
+    const { app, page } = await launch("commander")
+    try {
+      const expectRealMouse = async (p: Page) => {
+        const buttons = await hitTest(app, p, "[data-testid=title-bar] button")
+        expect(buttons.length).toBeGreaterThan(2)
+        expect(buttons).toEqual(buttons.map(() => "click"))
+        // The name and the corner are the window's handle.
+        expect(await hitTest(app, p, "[data-testid=title-bar] > span")).toContain("drag")
+        expect(await hitTest(app, p, "[data-testid=title-bar-mark]")).toEqual(["drag"])
+      }
+      const c = await commanderOf(app)
+      await expectRealMouse(c)
+
+      await c.getByRole("button", { name: "Switch to Viewer" }).click()
+      await expect(page.getByTestId("current-app")).toHaveAttribute("data-target", "viewer")
+      await expectRealMouse(page)
+
+      await page.getByRole("button", { name: "Switch to System" }).click()
+      const system = await systemPage(app)
+      await expect(system.getByTestId("current-app")).toHaveAttribute("data-target", "system")
+      await expectRealMouse(system)
     } finally {
       await app.close()
     }

@@ -782,10 +782,10 @@ describe("Settings → Panels", () => {
       expect(row.querySelector(`[data-column=${column}]`), column).toHaveClass("text-2xs")
     }
     expect(row.querySelector("[data-column=name]")).not.toHaveClass("text-2xs")
-    await act(async () => {
-      fireEvent.click(within(dialog).getByLabelText("Relative (yesterday at 14:05)"))
-    })
-    await waitFor(() => expect(dateCell().textContent).not.toMatch(/^\d{4}-\d{2}-\d{2}/))
+    // Recent dates in words reach dates of the last week only; this one is older.
+    expect(
+      within(dialog).getByLabelText("Recent dates in words (yesterday at 14:05)"),
+    ).toBeChecked()
     await act(async () => {
       fireEvent.click(within(dialog).getByLabelText("As the system shows them"))
     })

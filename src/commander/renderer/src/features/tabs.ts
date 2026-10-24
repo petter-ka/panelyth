@@ -12,6 +12,7 @@ import {
   parkSession,
   patch,
   releaseRemote,
+  relistForFolderSort,
   relistForSystemFiles,
   schedulePersist,
   setHidden,
@@ -231,14 +232,22 @@ export function showHiddenEverywhere(showHidden: boolean): void {
   schedulePersist()
 }
 
+/** The other tabs' parked sessions, dropped: they list again when shown. */
+function dropOtherTabs(side: Side): void {
+  const t = get(side)
+  t.tabs.forEach((tab, i) => {
+    if (i !== t.active) dropParked(tab.id)
+  })
+}
+
 /** Settings → Show system files: every panel and tab lists with the new rule. */
 export function systemFilesChanged(): void {
-  relistForSystemFiles((side) => {
-    const t = get(side)
-    t.tabs.forEach((tab, i) => {
-      if (i !== t.active) dropParked(tab.id)
-    })
-  })
+  relistForSystemFiles(dropOtherTabs)
+}
+
+/** Settings → Sort folders by name: every panel and tab lists in the new order. */
+export function folderSortChanged(): void {
+  relistForFolderSort(dropOtherTabs)
 }
 
 /** Shows a tab in its panel: its parked session if still open, else its folder again. */

@@ -5,7 +5,7 @@
   "description": "Panelyth Electron main process and preload",
   "main": "dist/main/main.cjs",
   "scripts": {
-    "build": "vite build --config vite.main.config.mts && vite build --config vite.preload.config.mts && vite build --config vite.preload-commander.config.mts && vite build --config vite.preload-system.config.mts",
+    "build": "vite build --config vite.main.config.mts && vite build --config vite.preload.config.mts && vite build --config vite.preload-commander.config.mts && vite build --config vite.preload-system.config.mts && vite build --config vite.preload-texteditor.config.mts && vite build --config vite.preload-frame.config.mts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"
   },

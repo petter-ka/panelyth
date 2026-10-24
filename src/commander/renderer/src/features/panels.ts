@@ -10,6 +10,14 @@ export type Side = "left" | "right"
 export type TreeMode = "off" | "one" | "two"
 export const TREE_MODES: readonly TreeMode[] = ["off", "one", "two"]
 
+/** The two panels side by side (left and right), or stacked (left on top, right below). */
+/**
+ * Side by side, the left panel above the right one, or the active panel alone
+ * (Tab shows the other; quick view brings both back while it is open).
+ */
+export type Arrangement = "side" | "stacked" | "single"
+export const ARRANGEMENTS: readonly Arrangement[] = ["side", "stacked", "single"]
+
 /** The commander's own layout setting (ADR-0031: per-app keys under commander.*). */
 export const LAYOUT_KEY = "commander.layout"
 const DEFAULT_SPLIT = 50
@@ -18,8 +26,9 @@ export const TREE_WIDTH = { min: 120, max: 480, initial: 220 }
 
 interface PanelsState {
   active: Side
-  /** Left panel width in percent of the panel pair. */
+  /** Left (or top) panel size in percent of the panel pair. */
   split: number
+  arrangement: Arrangement
   /** Changes when a stored layout is applied, so the panel group remounts with it. */
   layoutToken: number
   tree: TreeMode
@@ -30,6 +39,7 @@ interface PanelsState {
 export const usePanelsStore = create<PanelsState>(() => ({
   active: "left",
   split: DEFAULT_SPLIT,
+  arrangement: "side",
   layoutToken: 0,
   tree: "off",
   treeWidth: TREE_WIDTH.initial,
@@ -54,8 +64,10 @@ function saveLayout(): void {
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => {
     timer = null
-    const { split, tree, treeWidth } = usePanelsStore.getState()
-    void bridge.setSetting(LAYOUT_KEY, { v: 1, split, tree, treeWidth }).catch(() => undefined)
+    const { split, arrangement, tree, treeWidth } = usePanelsStore.getState()
+    void bridge
+      .setSetting(LAYOUT_KEY, { v: 1, split, arrangement, tree, treeWidth })
+      .catch(() => undefined)
   }, SAVE_DELAY_MS)
 }
 
@@ -70,6 +82,13 @@ export function setSplit(split: number): void {
 export function resetSplit(): void {
   setSplit(DEFAULT_SPLIT)
   usePanelsStore.setState((s) => ({ layoutToken: s.layoutToken + 1 }))
+}
+
+/** Side by side or stacked; the panel group is rebuilt in the other direction. */
+export function setArrangement(arrangement: Arrangement): void {
+  if (usePanelsStore.getState().arrangement === arrangement) return
+  usePanelsStore.setState((s) => ({ arrangement, layoutToken: s.layoutToken + 1 }))
+  saveLayout()
 }
 
 export function setTreeMode(tree: TreeMode): void {
@@ -102,12 +121,15 @@ export function setTreeWidth(width: number): void {
 /** Validated stored layout; unknown values keep the defaults. */
 export function readLayout(
   value: unknown,
-): Partial<Pick<PanelsState, "split" | "tree" | "treeWidth">> {
+): Partial<Pick<PanelsState, "split" | "arrangement" | "tree" | "treeWidth">> {
   const stored = (value ?? {}) as Record<string, unknown>
   if (stored.v !== 1) return {}
-  const { split, tree, treeWidth } = stored
+  const { split, arrangement, tree, treeWidth } = stored
   return {
     ...(typeof split === "number" && split >= 10 && split <= 90 && { split }),
+    ...(ARRANGEMENTS.includes(arrangement as Arrangement) && {
+      arrangement: arrangement as Arrangement,
+    }),
     ...(TREE_MODES.includes(tree as TreeMode) && { tree: tree as TreeMode }),
     ...(typeof treeWidth === "number" &&
       treeWidth >= TREE_WIDTH.min &&
@@ -123,7 +145,10 @@ export async function loadLayout(): Promise<void> {
   if (Object.keys(layout).length === 0) return
   usePanelsStore.setState((s) => ({
     ...layout,
-    // The panel group takes its split when it mounts.
-    layoutToken: layout.split === undefined ? s.layoutToken : s.layoutToken + 1,
+    // The panel group takes its split and direction when it mounts.
+    layoutToken:
+      layout.split === undefined && layout.arrangement === undefined
+        ? s.layoutToken
+        : s.layoutToken + 1,
   }))
 }

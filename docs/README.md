@@ -234,6 +234,9 @@ Claude Code should read these files in this order:
 | 0042 | Panelyth System, the third app (a dashboard of the computer and a search across volumes) | shared | Accepted (owner request) |
 | 0043 | Git in the commander (the installed Git; status per folder, background runs, badge, row marks, Git bar) | commander | Accepted (owner request) |
 | 0044 | "Open with" programs from Settings (picked in main's dialog, started without a shell, both apps) | shared | Accepted (owner request) |
+| 0045 | The window's title strip (Windows: the apps draw the title, the folder and the window buttons, in the theme) | shared | Accepted (owner request) |
+| 0046 | Text and Markdown editor (a window of its own, sessions, CodeMirror 6, atomic save, PDF, FTP save) | commander | Accepted with amendments (Stage C10.6) |
+| 0047 | Terminal style (a third design style: a console for each theme, framed panels, monospaced type) | shared | Accepted (owner request) |
 
 Files: `docs/<scope>/decisions/ADR-<number>-<slug>.md`.
 

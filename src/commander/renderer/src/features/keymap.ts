@@ -205,8 +205,20 @@ export const ACTIONS = [
     label: msg("Tab sets"),
     defaults: [],
   },
-  { id: "view.brief", scope: "panels", group: "View", label: "Brief view", defaults: ["Mod+F1"] },
-  { id: "view.full", scope: "panels", group: "View", label: "Full view", defaults: ["Mod+F2"] },
+  {
+    id: "view.brief",
+    scope: "panels",
+    group: msg("View"),
+    label: msg("Brief view"),
+    defaults: ["Mod+F1"],
+  },
+  {
+    id: "view.full",
+    scope: "panels",
+    group: msg("View"),
+    label: msg("Full view"),
+    defaults: ["Mod+F2"],
+  },
   {
     id: "files.copy",
     scope: "panels",

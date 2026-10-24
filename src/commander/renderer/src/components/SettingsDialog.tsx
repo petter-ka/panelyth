@@ -15,6 +15,7 @@ import { setTreeMode, usePanelsStore, type TreeMode } from "../features/panels"
 import { isToolAction, setHelpOpen, toolAction, type ActionId } from "../features/keymap"
 import {
   MAX_EDITOR_CHARS,
+  readAssetsFolder,
   setSettingsOpen,
   takeSettingsSection,
   updateSettings,
@@ -120,14 +121,53 @@ function EditorField() {
         value={value}
         maxLength={MAX_EDITOR_CHARS}
         spellCheck={false}
-        placeholder={t("The system's text editor")}
+        placeholder={t("Panelyth's editor")}
         onChange={(e) => setValue(e.target.value)}
         onBlur={save}
         onKeyDown={(e) => {
           if (e.key === "Enter") save()
         }}
       />
-      <span className="text-2xs text-muted">{t("The full path of a program, or empty.")}</span>
+      <span className="text-2xs text-muted">
+        {t("The full path of a program, or empty for Panelyth's own editor.")}
+      </span>
+    </label>
+  )
+}
+
+/** Stage C10.7: where the editor puts pasted and dropped pictures; saved when the field is left. */
+function AssetsFolderField() {
+  const stored = useSettingsStore((s) => s.settings.assetsFolder)
+  const [value, setValue] = useState(stored)
+  const [invalid, setInvalid] = useState(false)
+  const save = (): void => {
+    const name = value.trim()
+    const clean = readAssetsFolder(name)
+    setInvalid(name !== "" && clean === "")
+    if (clean === name && name !== stored) updateSettings({ assetsFolder: name })
+  }
+  return (
+    <label className="flex flex-col gap-1">
+      <span className="text-muted">{t("Pictures folder")}</span>
+      <input
+        aria-label={t("Pictures folder")}
+        aria-invalid={invalid || undefined}
+        className={fieldClass}
+        value={value}
+        maxLength={64}
+        spellCheck={false}
+        placeholder="assets"
+        onChange={(e) => setValue(e.target.value)}
+        onBlur={save}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") save()
+        }}
+      />
+      <span className={`text-2xs ${invalid ? "text-danger" : "text-muted"}`}>
+        {invalid
+          ? t("One folder name, without {chars}.", { chars: '\\ / : * ? " < > |' })
+          : t("Pictures pasted or dropped into a document go to this folder beside it.")}
+      </span>
     </label>
   )
 }
@@ -183,14 +223,25 @@ function PanelsSection({
           { value: "bytes", label: t("Bytes (1,234,567)") },
         ]}
       />
-      <Radios
-        setting="dateFormat"
-        label={t("Dates")}
-        options={[
-          { value: "relative", label: t("Relative (yesterday at 14:05)") },
-          { value: "locale", label: t("As the system shows them") },
-          { value: "iso", label: t("ISO (2026-10-06 14:05)") },
-        ]}
+      <div className="flex flex-col gap-1.5">
+        <Radios
+          setting="dateFormat"
+          label={t("Dates")}
+          options={[
+            { value: "locale", label: t("As the system shows them") },
+            { value: "iso", label: t("ISO (2026-10-06 14:05)") },
+          ]}
+        />
+        {/* Either format: the last week in words, older dates in the format above. */}
+        <Check
+          setting="relativeDates"
+          label={t("Recent dates in words (yesterday at 14:05)")}
+          className="pt-1"
+        />
+      </div>
+      <Check
+        setting="sortFoldersByName"
+        label={t("Keep folders sorted by name (the sort order applies to files)")}
       />
       <div className="flex flex-col gap-1.5">
         <Check
@@ -198,14 +249,16 @@ function PanelsSection({
           label={t("Show hidden files")}
           {...(onShowHidden && { onChange: onShowHidden })}
         />
-        {/* System files are hidden ones too (Windows marks its own both ways): under hidden files. */}
-        <Check
-          setting="showSystem"
-          label={t("Show system files too")}
-          disabled={!showHidden}
-          className="pl-6"
-          {...(onShowSystem && { onChange: onShowSystem })}
-        />
+        {/* System files are hidden ones too (Windows marks its own both ways): under hidden files.
+            The indent is the wrapper's: the settings' rows set their own padding. */}
+        <div className="pl-7">
+          <Check
+            setting="showSystem"
+            label={t("Show system files too")}
+            disabled={!showHidden}
+            {...(onShowSystem && { onChange: onShowSystem })}
+          />
+        </div>
       </div>
       <Radios
         setting="letters"
@@ -473,6 +526,7 @@ function ToolsSection() {
   return (
     <Section>
       <EditorField />
+      <AssetsFolderField />
       <div className="flex flex-col gap-2">
         <span className="text-muted">{t("Your commands")}</span>
         <p className="text-2xs text-muted">

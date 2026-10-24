@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="13 13 998 998">
+  <title>Panelyth</title>
+  <!-- Drawn by scripts/icons.mjs (pnpm icons): change the script, not this file. -->
+  <defs>
+    <linearGradient id="paper" x1="0" y1="-74" x2="0" y2="14" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#dce5f0"/><stop offset="1" stop-color="#fbfcfe"/></linearGradient>
+    <linearGradient id="green" x1="-86.6" y1="-20" x2="-86.6" y2="50" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3ff0a0"/><stop offset="1" stop-color="#0f9d62"/></linearGradient>
+    <linearGradient id="blue" x1="6.9" y1="26" x2="6.9" y2="96" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#3d86ff"/><stop offset="1" stop-color="#1a3fb8"/></linearGradient>
+    <linearGradient id="front" x1="-6.9" y1="26" x2="-6.9" y2="96" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#7defd3"/><stop offset="1" stop-color="#16928f"/></linearGradient>
+    <linearGradient id="lid" x1="0" y1="-74" x2="0" y2="-38.8" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#0a2340" stop-opacity="0.1"/><stop offset="1" stop-color="#0a2340" stop-opacity="0"/></linearGradient>
+    <clipPath id="top"><path d="M-6.9 -74L6.9 -74L79.7 -32L0 14L-79.7 -32Z"/></clipPath>
+  </defs>
+  <g transform="translate(512 512) scale(5.591) translate(0 -13)">
+    <path d="M-86.6 -20L-6.9 26L-6.9 96L-86.6 50Z" fill="url(#green)"/>
+    <path d="M6.9 26L86.6 -20L86.6 50L6.9 96Z" fill="url(#blue)"/>
+    <path d="M-6.9 26L6.9 26L6.9 96L-6.9 96Z" fill="url(#front)"/>
+    <path d="M-6.9 -74L6.9 -74L79.7 -32L0 14L-79.7 -32Z" fill="url(#paper)"/>
+    <path d="M-79.7 -32L0 14L-6.9 26L-86.6 -20Z" fill="#d9ffec"/>
+    <path d="M79.7 -32L0 14L6.9 26L86.6 -20Z" fill="#dce8ff"/>
+    <path d="M0 14L6.9 26L-6.9 26Z" fill="#ffffff"/>
+    <g clip-path="url(#top)">
+      <path d="M0 -61.7L25.8 -57.8L44.6 -46.9L51.5 -32L44.6 -17.1L25.8 -6.2L0 -2.3L-25.8 -6.2L-44.6 -17.1L-51.5 -32L-44.6 -46.9L-25.8 -57.8Z" fill="#19c9c2"/>
+      <path d="M0 -43.9L10.3 -42.3L17.8 -37.9L20.6 -32L17.8 -26.1L10.3 -21.7L0 -20.1L-10.3 -21.7L-17.8 -26.1L-20.6 -32L-17.8 -37.9L-10.3 -42.3Z" fill="#050d1f"/>
+      <path d="M-31.9 -42.3L-18.5 -50L-5.2 -42.3L-18.5 -34.6Z" fill="#ffffff"/>
+    </g>
+    <path d="M-86.6 -20L-79.7 -32L-6.9 -74L6.9 -74L79.7 -32L86.6 -20" fill="none" stroke="#a9b8cc" stroke-width="1.4" stroke-linejoin="round"/>
+  </g>
+</svg>

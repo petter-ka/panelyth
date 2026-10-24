@@ -475,7 +475,7 @@ export function HistoryDialog() {
                         ))}
                     </span>
                     <span className="mt-0.5 block truncate text-2xs text-muted">
-                      {e.author} · {formatListDate(e.when, "relative")}
+                      {e.author} · {formatListDate(e.when, "locale", true)}
                     </span>
                   </span>
                   <span className="shrink-0 font-mono text-2xs text-muted group-hover:text-accent">

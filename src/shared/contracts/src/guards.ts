@@ -145,6 +145,17 @@ import {
   type SidecarStatus,
   type SystemInfo,
 } from "./rpc"
+import {
+  LINE_ENDINGS,
+  TEXT_ENCODINGS,
+  TEXTEDIT_IMAGE_TYPES,
+  type TextEditAssetCommitResult,
+  type TextEditResolveImagesResult,
+  type TextEditCheckResult,
+  type TextEditCommitResult,
+  type TextEditOpenResult,
+  type TextFileState,
+} from "./textedit"
 import { isMenuCommandEvent, isUpdateState } from "./update"
 import type { EventFrame, HelloFrame, InboundFrame, ResponseFrame } from "./wire"
 
@@ -593,12 +604,63 @@ export function isRecipeListResult(v: unknown): v is RecipeListResult {
   )
 }
 
+const isTextFileState = (v: unknown): v is TextFileState =>
+  isRec(v) &&
+  isStr(v.version) &&
+  /^[0-9a-f]{64}$/.test(v.version) &&
+  isNum(v.sizeBytes) &&
+  isNum(v.mtimeNs)
+
+const isTextEncoding = (v: unknown): boolean => (TEXT_ENCODINGS as readonly unknown[]).includes(v)
+
+const isTextEditOpen = (v: unknown): v is TextEditOpenResult =>
+  isTextFileState(v) &&
+  isRec(v) &&
+  isStr(v.sessionId) &&
+  isStr(v.name) &&
+  isStr(v.path) &&
+  isTextEncoding(v.encoding) &&
+  isNum(v.bom) &&
+  (LINE_ENDINGS as readonly unknown[]).includes(v.lineEnding)
+
+const isTextEditCommit = (v: unknown): v is TextEditCommitResult => {
+  if (!isRec(v)) return false
+  if (v.status === "saved") return isTextFileState(v) && isTextEncoding(v.encoding)
+  if (v.status === "conflict") return isBool(v.gone)
+  return v.status === "unencodable" && isNum(v.line)
+}
+
+const isTextEditCheck = (v: unknown): v is TextEditCheckResult =>
+  isRec(v) && (v.disk === null || isTextFileState(v.disk))
+
+const isTextEditAsset = (v: unknown): v is TextEditAssetCommitResult =>
+  isRec(v) && isStr(v.link) && v.link.length > 0 && !v.link.includes("\\") && isBool(v.reused)
+
+const isTextEditImages = (v: unknown): v is TextEditResolveImagesResult =>
+  isRec(v) &&
+  Array.isArray(v.images) &&
+  v.images.every(
+    (i) =>
+      isRec(i) &&
+      isStr(i.link) &&
+      (i.path === null || isStr(i.path)) &&
+      (i.type === null || (TEXTEDIT_IMAGE_TYPES as readonly unknown[]).includes(i.type)),
+  )
+
 type ResultGuards = {
   [M in keyof SidecarMethodMap]: (v: unknown) => v is SidecarMethodMap[M]["result"]
 }
 
 /** Result guards; used by contract tests against the Go golden fixtures. */
 export const sidecarResultGuards: ResultGuards = {
+  "textedit.open": isTextEditOpen,
+  "textedit.write": isOk,
+  "textedit.commit": isTextEditCommit,
+  "textedit.check": isTextEditCheck,
+  "textedit.close": isOk,
+  "textedit.assetChunk": isOk,
+  "textedit.assetCommit": isTextEditAsset,
+  "textedit.resolveImages": isTextEditImages,
   "system.ping": (v): v is PingResult => isRec(v) && v.pong === true && isNum(v.serverTimeNs),
   "system.info": (v): v is SystemInfo =>
     isRec(v) &&
@@ -1124,6 +1186,12 @@ export const eventGuards: EventGuards = {
     isRec(v) && isInt(v.jobId) && isJobConflict(v.conflict),
   "app.visibility": (v): v is EventMap["app.visibility"] =>
     isRec(v) && (v.app === "viewer" || v.app === "commander") && typeof v.visible === "boolean",
+  "texteditor.closeRequest": (v): v is EventMap["texteditor.closeRequest"] =>
+    isRec(v) && Object.keys(v).length === 0,
+  "texteditor.editable": (v): v is EventMap["texteditor.editable"] =>
+    isRec(v) && Object.keys(v).length === 0,
+  "window.state": (v): v is EventMap["window.state"] =>
+    isRec(v) && typeof v.maximized === "boolean" && typeof v.fullScreen === "boolean",
   "settings.changed": (v): v is EventMap["settings.changed"] =>
     isRec(v) && isStr(v.key) && v.key.startsWith("shared."),
   "volumes.changed": (v): v is EventMap["volumes.changed"] =>

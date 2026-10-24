@@ -2,6 +2,7 @@ import type { CommanderApi } from "@panelyth/contracts"
 import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { AppShell } from "./components/AppShell"
+import { resetBridgeCache } from "./bridge"
 import { LAYOUT_KEY, loadLayout, setSplit, usePanelsStore } from "./features/panels"
 
 const ok = <R,>(r: R) => ({ ok: true as const, r })
@@ -23,6 +24,7 @@ function installApi(settings: Record<string, unknown> = {}) {
 
 beforeEach(() => {
   usePanelsStore.setState({ active: "left", split: 50, layoutToken: 0 })
+  resetBridgeCache()
 })
 afterEach(() => {
   delete window.panelyth
@@ -69,13 +71,27 @@ describe("commander shell (Stage C00)", () => {
       await vi.advanceTimersByTimeAsync(500)
     })
     expect(api.library.setSetting).toHaveBeenCalledTimes(1)
-    // The folder tree's mode and width are part of the layout since Stage C10.5.
+    // The folder tree's mode and width are part of the layout since Stage C10.5,
+    // the panels' arrangement since the title strip's presets (ADR-0045).
     expect(api.library.setSetting).toHaveBeenCalledWith(LAYOUT_KEY, {
       v: 1,
       split: 35,
+      arrangement: "side",
       tree: "off",
       treeWidth: 220,
     })
+  })
+
+  it("applies a stored arrangement and ignores an unknown one", async () => {
+    installApi({ [LAYOUT_KEY]: { v: 1, arrangement: "stacked" } })
+    await loadLayout()
+    expect(usePanelsStore.getState().arrangement).toBe("stacked")
+    usePanelsStore.setState({ arrangement: "side" })
+    // library.db is read once per start: a new start for the second value.
+    resetBridgeCache()
+    installApi({ [LAYOUT_KEY]: { v: 1, arrangement: "diagonal" } })
+    await loadLayout()
+    expect(usePanelsStore.getState().arrangement).toBe("side")
   })
 
   it("applies a stored split and ignores invalid ones", async () => {

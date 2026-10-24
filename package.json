@@ -10,7 +10,7 @@
   "scripts": {
     "prepare": "node scripts/hooks.mjs",
     "dev": "node scripts/dev.mjs",
-    "build": "pnpm build:sidecar && pnpm -r --filter @panelyth/renderer --filter @panelyth/commander --filter @panelyth/system --filter @panelyth/docviewer --filter @panelyth/desktop build",
+    "build": "pnpm build:sidecar && pnpm -r --filter @panelyth/renderer --filter @panelyth/commander --filter @panelyth/system --filter @panelyth/docviewer --filter @panelyth/doceditor --filter @panelyth/desktop build",
     "build:sidecar": "node scripts/build-sidecar.mjs",
     "start": "node scripts/start.mjs",
     "package": "node scripts/package.mjs",

@@ -1,6 +1,7 @@
 import type { BrowserWindow } from "electron"
 import { describe, expect, it, vi } from "vitest"
 import { AppShell, chromeColorOf } from "../src/main/shell"
+import { themeColorsOf } from "../src/main/themeColors"
 
 // The app switch in main (ADR-0031): which app is on screen, and telling the
 // sidecar so its watches follow (Stage P02, ADR-0026).
@@ -109,6 +110,21 @@ describe("the commander view's first color", () => {
     expect(chromeColorOf({ theme: "system" })).toBe("#f7f7f7")
     expect(chromeColorOf({ theme: "aqua" })).toBe("#242424")
     expect(chromeColorOf(null)).toBe("#242424")
+  })
+
+  it("is known for a stored theme before the sidecar answers (the window's first color)", () => {
+    expect(themeColorsOf("light-brown")).toEqual({ chrome: "#f2e4d0" })
+    expect(themeColorsOf("system")).toEqual({ chrome: "#f7f7f7" })
+    expect(themeColorsOf(null)).toEqual({ chrome: "#242424" })
+    expect(themeColorsOf("aqua")).toEqual(themeColorsOf("dark"))
+  })
+
+  it("is the terminal console's chrome in the terminal style (ADR-0047)", () => {
+    expect(chromeColorOf({ theme: "dark", style: "terminal" })).toBe("#07100b")
+    expect(chromeColorOf({ theme: "beige", style: "terminal" })).toBe("#efe4cb")
+    expect(chromeColorOf({ theme: "dark", style: "glass" })).toBe("#242424")
+    expect(themeColorsOf("system", "terminal")).toEqual({ chrome: "#f3f2ee" })
+    expect(themeColorsOf("aqua", "terminal")).toEqual(themeColorsOf("dark", "terminal"))
   })
 
   it("is set when the view is made, and follows a later theme change", () => {

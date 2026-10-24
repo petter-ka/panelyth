@@ -1,0 +1,24 @@
+{
+  "id": 262,
+  "ok": true,
+  "r": {
+    "images": [
+      {
+        "link": "assets/Screenshot%201.png",
+        "path": "/fixtures/golden",
+        "type": "png"
+      },
+      {
+        "link": "../outside.png",
+        "path": null,
+        "type": null
+      },
+      {
+        "link": "https://example.org/a.png",
+        "path": null,
+        "type": null
+      }
+    ]
+  },
+  "t": "res"
+}

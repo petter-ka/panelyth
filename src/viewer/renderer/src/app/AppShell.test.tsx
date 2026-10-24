@@ -2,6 +2,7 @@ import { act, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it } from "vitest"
 import { startSidecarMonitoring, useSidecarStore } from "../features/system/sidecarStore"
+import { useWindowFrameStore } from "@panelyth/ui"
 import { usePaneStore } from "../features/workspace/workspace"
 import { initTheme } from "../features/theme/themeStore"
 import { installFakeBridge, readyStatus } from "../test/fakeBridge"
@@ -48,6 +49,36 @@ describe("AppShell", () => {
 
     await userEvent.click(place("Preview under the folders"))
     expect(leftColumn()).toContainElement(preview())
+  })
+
+  it("the title strip takes over the sidebar's title row and the view bar's tile size (ADR-0045)", async () => {
+    installFakeBridge()
+    startSidecarMonitoring()
+    const sizes = () => [
+      ...screen.queryAllByRole("group", { name: "Tile size" }),
+      ...screen.queryAllByRole("radiogroup", { name: "Tile size" }),
+    ]
+    const places = () => screen.queryAllByRole("radiogroup", { name: "Preview position" })
+    const locations = () => screen.getByRole("navigation", { name: "Locations" })
+    render(<AppShell />)
+    // No strip (macOS, Linux, full screen): the sidebar's row and the view bar have them.
+    expect(within(locations()).getByText("Panelyth")).toBeInTheDocument()
+    expect(sizes()).toHaveLength(1)
+    expect(places()).toHaveLength(1)
+    expect(locations()).toContainElement(places()[0]!)
+
+    act(() => useWindowFrameStore.setState({ titleBar: true, fullScreen: false }))
+    // Each control once, in the strip.
+    expect(within(locations()).queryByText("Panelyth")).toBeNull()
+    expect(sizes()).toHaveLength(1)
+    expect(places()).toHaveLength(1)
+    const strip = screen.getByTestId("title-bar")
+    expect(strip).toContainElement(sizes()[0]!)
+    expect(strip).toContainElement(places()[0]!)
+
+    act(() => useWindowFrameStore.setState({ fullScreen: true }))
+    expect(locations()).toContainElement(places()[0]!)
+    act(() => useWindowFrameStore.setState({ titleBar: false, fullScreen: false }))
   })
 
   it("shows the grid placeholder while starting, then follows pushed status", async () => {

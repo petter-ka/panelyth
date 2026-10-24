@@ -3,6 +3,7 @@ import {
   AppLoadingOverlay,
   AppSwitcher,
   GlyphSprite,
+  TitleBar,
   TooltipProvider,
 } from "@panelyth/ui"
 import type { AppId } from "@panelyth/contracts"
@@ -25,13 +26,14 @@ export function App() {
   return (
     <TooltipProvider>
       <GlyphSprite />
-      <div className="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)]">
+      <div className="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]">
         <AppSwitcher
           current="system"
           shortcut={SWITCH_SHORTCUT}
           onSwitch={switchTo}
           onSettings={openSettings}
         />
+        <TitleBar title="Panelyth System" />
         <main
           className="glass-stack min-h-0 min-w-0 overflow-y-auto bg-canvas"
           data-testid="system-dashboard"

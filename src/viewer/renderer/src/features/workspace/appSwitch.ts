@@ -9,6 +9,7 @@ import {
 import {
   menuCommandHandler,
   showAppLoadingNow,
+  connectWindowFrame,
   startSharedAppearanceSync,
   whileAppLoads,
 } from "@panelyth/ui"
@@ -60,6 +61,8 @@ export function startAppearanceSync(): () => void {
       bridge.on("settings.changed", (e) => listener(e.key, e.value)),
   }
   const offAppearance = startSharedAppearanceSync(port)
+  // The title strip's window buttons (ADR-0045).
+  const offFrame = connectWindowFrame(bridge.windowFrame())
   const offSwitch = startSwitchSettingsSync(port)
   // "Open with" programs for the context menus (ADR-0044).
   const offPrograms = startProgramsSync({
@@ -73,6 +76,7 @@ export function startAppearanceSync(): () => void {
     menuCommandHandler({ openSettings, openShortcuts: openShortcutHelp }),
   )
   return () => {
+    offFrame()
     offAppearance()
     offSwitch()
     offPrograms()

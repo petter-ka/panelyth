@@ -44,10 +44,16 @@ export interface WorkspaceDeps {
   startDrag(sender: WebContents, files: readonly string[]): Promise<void>
   /** Starts a program detached (the F4 editor); never through a shell. */
   launch(file: string, args: readonly string[]): Promise<void>
+  /**
+   * The built-in text editor (ADR-0046): opens the file in an editor window.
+   * The sidecar's refusals (a binary, too large, not on this computer) reach
+   * the commander with their reasons.
+   */
+  openTextEditor(entryId: number): Promise<void>
   platform: NodeJS.Platform
 }
 
-/** The editor path from the commander's settings ("" = the OS text editor). */
+/** The editor path from the commander's settings ("" = the built-in editor, ADR-0046). */
 export function editorFrom(settings: Record<string, unknown>): string {
   const value = (settings[COMMANDER_SETTINGS_KEY] as { editor?: unknown } | undefined)?.editor
   return typeof value === "string" ? value.trim() : ""
@@ -115,33 +121,25 @@ export function workspaceHandlers(deps: WorkspaceDeps): Pick<MainHandlers, Works
       if (error) throw new Error(error)
       return { ok: true }
     },
-    // F4 (commander only): the editor from settings, else the OS text editor.
-    // The editor path never comes from the call, and nothing goes through a
-    // shell, so a file name cannot inject arguments or commands.
+    // F4 (commander only): the editor from settings, else the built-in one
+    // (ADR-0046). The editor path never comes from the call, and nothing goes
+    // through a shell, so a file name cannot inject arguments or commands.
     "shell.edit": async (_event, { entryId }) => {
-      const { path, kind, program } = await deps.call("entry.path", { entryId })
+      const { path, kind } = await deps.call("entry.path", { entryId })
       if (kind === "dir") throw refused("folder", "a folder cannot be edited")
       const editor = editorFrom((await deps.call("library.get", {})).settings)
-      if (editor) {
-        const isFile =
-          isAbsolute(editor) &&
-          (await stat(editor).then(
-            (s) => s.isFile(),
-            () => false,
-          ))
-        if (!isFile) throw refused("editor", `the editor was not found: ${editor}`)
-        await deps.launch(editor, [path])
-      } else if (deps.platform === "win32") {
-        await deps.launch("notepad.exe", [path])
-      } else if (deps.platform === "darwin") {
-        await deps.launch("open", ["-t", path])
-      } else if (program) {
-        // xdg-open could run it: Linux needs an editor in Settings for these.
-        throw refused("editor", "choose an editor in Settings to edit programs")
-      } else {
-        const error = await deps.openPath(path)
-        if (error) throw new Error(error)
+      if (!editor) {
+        await deps.openTextEditor(entryId)
+        return { ok: true }
       }
+      const isFile =
+        isAbsolute(editor) &&
+        (await stat(editor).then(
+          (s) => s.isFile(),
+          () => false,
+        ))
+      if (!isFile) throw refused("editor", `the editor was not found: ${editor}`)
+      await deps.launch(editor, [path])
       return { ok: true }
     },
     "shell.reveal": async (_event, { entryId }) => {

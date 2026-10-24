@@ -61,7 +61,9 @@ for. People coming from Total Commander find their keys where they expect them.
   panel to them (the quick filter becomes `*.jpg;*.png`), the menu stays open meanwhile, a fourth is disabled until
   one is unticked, and "Show all types" clears them. A typed filter is replaced by the first type ticked.
 - **Column header:** Name, Ext, Size, Date, Attr (the Full view is a TanStack Table, ADR-0028). The sort column shows
-  ↑ or ↓; clicking a header sorts in Go, never in the browser. Widths and layouts persist per panel. Drag a column
+  ↑ or ↓; clicking a header sorts in Go, never in the browser. Folders come first and, by default, stay in name
+  order whatever the sort: the sort orders the files (Settings → Panels → "Keep folders sorted by name", as Total
+  Commander does; owner request 2026-10-24). Turned off, the sort orders the folders too. Widths and layouts persist per panel. Drag a column
   header's edge to resize it; headers themselves do not drag. Double-click the edge to fit the header and
   currently virtualized cells. Right-click a header to sort, move, hide or show columns (drag the entries of the "Show columns" list to reorder them), reset widths and pin columns
   to the logical start or end. Name always stays visible.
@@ -74,9 +76,10 @@ for. People coming from Total Commander find their keys where they expect them.
   - a subtle `raised` surface on hover; the cursor keeps its outline and marked entries keep their accent;
   - name and extension in separate columns; folders show `<DIR>` in Size until calculated;
   - size, date and attributes use muted secondary text; sizes use B/KB/MB/GB units by default, with a setting to
-    switch to exact bytes with thousands separators. Dates use relative labels such as "today" and "yesterday" by
-    default (switchable in code to the configured locale or ISO format); attributes are `rhsa` on Windows and
-    permissions (`rwxr-xr-x`) on Unix;
+    switch to exact bytes with thousands separators. Dates use a format (as the system shows them, or ISO) and,
+    apart from it, recent dates in words (on by default): the last and the next week read "today at 14:05" or
+    "last Monday at 9:12", in the format's time (24-hour with ISO), and older dates use the format (Settings →
+    Panels, owner request 2026-10-24); attributes are `rhsa` on Windows and permissions (`rwxr-xr-x`) on Unix;
     numbers use tabular numerals;
   - hidden and system entries in `muted` text; links with a link glyph.
 - **Cursor and marks:** the cursor is a `raised` bar with an `accent` outline; marked entries use `accent` text and a

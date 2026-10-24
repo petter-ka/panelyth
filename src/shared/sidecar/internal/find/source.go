@@ -168,7 +168,7 @@ func (s *Source) IDs(ctx context.Context, d index.Descriptor) ([]int64, error) {
 		keep = append(keep, i)
 	}
 	if len(d.Sort) > 0 {
-		slices.SortStableFunc(keep, func(a, b int) int { return compare(&list[a], &list[b], d.Sort) })
+		slices.SortStableFunc(keep, func(a, b int) int { return compare(&list[a], &list[b], d) })
 	}
 	ids := make([]int64, len(keep))
 	for i, k := range keep {
@@ -177,14 +177,15 @@ func (s *Source) IDs(ctx context.Context, d index.Descriptor) ([]int64, error) {
 	return ids, nil
 }
 
-func compare(a, b *result, keys []index.SortKey) int {
-	if ad, bd := a.kind == media.KindDir, b.kind == media.KindDir; ad != bd {
+func compare(a, b *result, d index.Descriptor) int {
+	ad, bd := a.kind == media.KindDir, b.kind == media.KindDir
+	if ad != bd {
 		if ad {
 			return -1
 		}
 		return 1
 	}
-	for _, k := range keys {
+	for _, k := range d.SortFor(ad) {
 		var c int
 		switch k.Field {
 		case index.SortModified:

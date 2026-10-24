@@ -1,7 +1,7 @@
 import type { GlyphName } from "@panelyth/ui"
 import { ENTRY_ATTRS, type ContentItem } from "@panelyth/contracts"
 import { currentLocale, perLocale, type Locale } from "@panelyth/i18n"
-import { formatRelative, type Locale as DateFnsLocale } from "date-fns"
+import { differenceInCalendarDays, formatRelative, type Locale as DateFnsLocale } from "date-fns"
 import { de, enUS, es, fr, hu, it, pl, ru } from "date-fns/locale"
 import type { DateFormat, SizeFormat } from "./settings"
 
@@ -26,8 +26,7 @@ export function formatSize(item: ContentItem, format: SizeFormat = "units"): str
 
 const pad = (n: number): string => String(n).padStart(2, "0")
 
-/** Configured date format for Quick View and Commander lists in `configured` mode. */
-/** A full date and time: ISO, or as the system shows it (also for the relative setting). */
+/** A full date and time: ISO, or as the system shows it. */
 export function formatDate(ms: number, format: DateFormat = "locale"): string {
   if (ms <= 0) return ""
   if (format !== "iso") return dateTime().format(ms)
@@ -35,12 +34,30 @@ export function formatDate(ms: number, format: DateFormat = "locale"): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-/** The list's Date column, as Settings → Panels → Dates says ("today at 14:05" by default). */
-export function formatListDate(ms: number, format: DateFormat): string {
+/** The language's relative words with a 24-hour time, for ISO dates ("today at 14:05"). */
+const isoTimes = new Map<Locale, DateFnsLocale>()
+function isoTimeLocale(locale: Locale): DateFnsLocale {
+  let l = isoTimes.get(locale)
+  if (!l) {
+    const base = DATE_FNS[locale]
+    l = { ...base, formatLong: { ...base.formatLong!, time: () => "HH:mm" } }
+    isoTimes.set(locale, l)
+  }
+  return l
+}
+
+/**
+ * The list's Date column, as Settings → Panels → Dates says: with relative
+ * dates, the last and the next week in words ("today at 14:05", "last Monday
+ * at 9:12"), older ones in the format; without, the format alone.
+ */
+export function formatListDate(ms: number, format: DateFormat, relative: boolean): string {
   if (ms <= 0) return ""
-  return format === "relative"
-    ? formatRelative(new Date(ms), new Date(), { locale: DATE_FNS[currentLocale()] })
-    : formatDate(ms, format)
+  const now = new Date()
+  // formatRelative's own bound: beyond six days it would show a bare date.
+  if (!relative || Math.abs(differenceInCalendarDays(ms, now)) > 6) return formatDate(ms, format)
+  const locale = format === "iso" ? isoTimeLocale(currentLocale()) : DATE_FNS[currentLocale()]
+  return formatRelative(new Date(ms), now, { locale })
 }
 
 export function formatCount(n: number): string {

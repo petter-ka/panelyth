@@ -73,6 +73,8 @@ export default {
     // Panelyth System (ADR-0042), served through app://system/.
     { from: "../../system/renderer/dist", to: "system" },
     { from: "../docviewer/dist", to: "documents" },
+    // The text editor window's page (ADR-0046), served as app://texteditor/.
+    { from: "../doceditor/dist", to: "texteditor" },
     { from: "resources/bin/${platform}-${arch}", to: "bin" },
     // The libraries of a Linux ffmpeg build (its RPATH is $ORIGIN/../lib); empty otherwise.
     { from: "resources/lib/${platform}-${arch}", to: "lib" },

@@ -1,6 +1,6 @@
 import type { Crumb, PlaceId } from "@panelyth/contracts"
 import { useVirtualizer } from "@tanstack/react-virtual"
-import { Spinner, Tooltip, TreeTwisty, TypeGlyph } from "@panelyth/ui"
+import { Spinner, Tooltip, TreeTwisty, TypeGlyph, useTitleBarShown } from "@panelyth/ui"
 import {
   memo,
   useEffect,
@@ -421,6 +421,7 @@ function PreviewPlaceSwitch() {
  */
 export function SidebarPane() {
   const rows = useRows()
+  const stripShown = useTitleBarShown()
   const folderPath = useFolderStore((s) => s.folder?.path ?? null)
   const folderCrumbs = useFolderStore((s) => s.folder?.crumbs ?? EMPTY_CRUMBS)
   const bookmarks = useLibraryStore((s) => s.bookmarks)
@@ -525,10 +526,13 @@ export function SidebarPane() {
       data-pane="locations"
       className="glass-region flex h-full min-h-0 flex-col bg-chrome"
     >
-      <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4 text-[0.8125rem] font-semibold">
-        Panelyth
-        <PreviewPlaceSwitch />
-      </div>
+      {/* The title strip names the app and has the preview switch (ADR-0045); without it, this row does. */}
+      {!stripShown && (
+        <div className="flex h-11 shrink-0 items-center gap-3 border-b border-border px-4 text-[0.8125rem] font-semibold">
+          Panelyth
+          <PreviewPlaceSwitch />
+        </div>
+      )}
       <ContextMenuRoot onOpenChange={(open) => !open && setMenuRow(null)}>
         {/* Rows record the target in onContextMenu (bubbles before the trigger opens). */}
         <ContextMenuTrigger asChild>

@@ -32,7 +32,7 @@ export function AppSwitcher({ current, shortcut, onSwitch, onSettings }: AppSwit
     <nav
       aria-label={t("Applications")}
       data-testid="app-switcher"
-      className="glass-region row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
+      className="app-rail glass-region row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
     >
       {APPS.map((app) => {
         const active = app === current

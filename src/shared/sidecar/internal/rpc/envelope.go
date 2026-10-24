@@ -47,6 +47,9 @@ const (
 	// CodeEditAssetInvalid: a file picked as a logo, mask or texture is not
 	// a picture the editor can use (wrong type, too large, not a file).
 	CodeEditAssetInvalid ErrorCode = "EDIT_ASSET_INVALID"
+	// The text editor (Stage C10.6, ADR-0046): the session was closed (its
+	// window closed, it was idle for long or evicted by newer ones).
+	CodeTextEditSessionGone ErrorCode = "TEXTEDIT_SESSION_GONE"
 )
 
 // Error is the explicit error envelope returned to callers.

@@ -208,11 +208,12 @@ describe("Settings → Appearance", () => {
     expect(useThemeStore.getState().preference).toBe("light")
   })
 
-  it("offers the classic and the liquid glass style, apart from the theme", () => {
+  it("offers the classic, the liquid glass and the terminal style, apart from the theme", () => {
     const style = screen.getByRole("group", { name: "Design style" })
     expect([...style.querySelectorAll("button")].map((b) => b.textContent)).toEqual([
       "Classic",
       "Liquid glass",
+      "Terminal",
     ])
     expect(chosen()).toContain("Classic")
     fireEvent.click(screen.getByRole("button", { name: "Liquid glass" }))
@@ -225,6 +226,24 @@ describe("Settings → Appearance", () => {
     ).toBeVisible()
     expect(useThemeStore.getState().preference).toBe("dark")
     expect(chosen()).toEqual(expect.arrayContaining(["Liquid glass", "Dark"]))
+  })
+
+  it("the terminal style names the themes after its consoles (ADR-0047)", () => {
+    fireEvent.click(screen.getByRole("button", { name: "Terminal" }))
+    expect(useStyleStore.getState().style).toBe("terminal")
+    expect(document.documentElement.dataset.style).toBe("terminal")
+    expect(screen.getByText(/A field operative's console/)).toBeVisible()
+    const dark = screen.getByRole("group", { name: "Dark themes" })
+    const light = screen.getByRole("group", { name: "Light themes" })
+    const names = (group: HTMLElement) =>
+      [...group.querySelectorAll("button")].map((b) => b.textContent)
+    expect(names(dark)).toEqual(["Phosphor", "Ice", "Amber"])
+    expect(names(light)).toEqual(["Dossier", "Manila", "Archive"])
+    // The same themes underneath: choosing Ice is choosing Dark purple.
+    fireEvent.click(screen.getByRole("button", { name: "Ice" }))
+    expect(useThemeStore.getState().preference).toBe("dark-purple")
+    fireEvent.click(screen.getByRole("button", { name: "Classic" }))
+    expect(names(dark)).toEqual(["Dark", "Dark purple", "Dark brown"])
   })
 
   it("offers an extra large interface size", () => {

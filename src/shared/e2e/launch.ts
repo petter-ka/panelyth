@@ -101,6 +101,17 @@ export async function waitForReady(
 }
 
 /**
+ * A tile size button: the title strip's on Windows (ADR-0045), the view bar's
+ * elsewhere. `pressed` is the attribute that says it is the current size.
+ */
+export function tileSizeSwitch(page: Page, name: string) {
+  return {
+    button: page.getByLabel(name, { exact: true }),
+    pressed: process.platform === "win32" ? "aria-checked" : "aria-pressed",
+  }
+}
+
+/**
  * Shows a folder in the viewer: the viewer opens the folder named in its
  * settings at start, so the folder is set there and the page reloaded. (The
  * toolbar has had no "Open folder…" button since the sidebar took over

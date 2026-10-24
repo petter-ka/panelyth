@@ -316,6 +316,8 @@ function descriptor(dirId: number, p: DescriptorState): QueryDescriptor {
     showHidden: p.showHidden,
     // Hidden entries without the system ones unless Settings shows them too.
     ...(p.showHidden && !useSettingsStore.getState().settings.showSystem && { hideSystem: true }),
+    // Folders in name order unless Settings lets the sort reach them too.
+    ...(useSettingsStore.getState().settings.sortFoldersByName && { dirsByName: true }),
     ...(p.filter !== "" && { nameMask: quickFilterMask(p.filter) }),
     ...(p.find && { findId: p.find.findId }),
     ...(p.archive && {
@@ -1323,9 +1325,18 @@ export function setSort(side: Side, sort: SortKey): void {
  * they list again when shown.
  */
 export function relistForSystemFiles(dropTab: (side: Side) => void): void {
+  relist(dropTab, (side) => getPanel(side).showHidden)
+}
+
+/** Settings → Sort folders by name changed: both panels list again, as for system files. */
+export function relistForFolderSort(dropTab: (side: Side) => void): void {
+  relist(dropTab, () => true)
+}
+
+function relist(dropTab: (side: Side) => void, affects: (side: Side) => boolean): void {
   for (const side of SIDES) {
     dropTab(side)
-    if (getPanel(side).showHidden) void reopenQuery(side)
+    if (affects(side)) void reopenQuery(side)
   }
 }
 

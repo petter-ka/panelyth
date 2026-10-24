@@ -8,6 +8,9 @@ hand a folder, a picture or a video to a program the user chose) and ADR-0031 (o
 `shared.programs`). Amended the same day (owner request): the folder that is open and the folders of the viewer's
 folder tree get the programs too, and a name is saved as it is typed.
 
+Amended by ADR-0046 (Stage C10.6, 2026-10-24): F4 opens Panelyth's own editor when Settings names no editor
+(before: Notepad, `open -t` or the OS default app); a program named in Settings starts as before.
+
 ## Context
 
 - The owner wants programs set in Settings, listed in the context menu of files and folders, each opening the item

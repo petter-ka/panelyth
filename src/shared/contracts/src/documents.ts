@@ -141,3 +141,22 @@ export function documentKindOf(name: string): DocumentKind | null {
   if (TEXT_NAMES.has(base)) return "text"
   return null
 }
+
+/**
+ * Markdown files (ADR-0046, owner request 2026-10-24): F3 and Enter show them in
+ * the text editor window in Live, read-only, instead of the document window;
+ * F4 edits them there in Live. The editor's mode switch is for these only.
+ */
+export const MARKDOWN_EXTS: ReadonlySet<string> = new Set([
+  "md",
+  "markdown",
+  "mdown",
+  "mkd",
+  "mkdn",
+])
+
+export function isMarkdownName(name: string): boolean {
+  const base = name.slice(Math.max(name.lastIndexOf("/"), name.lastIndexOf("\\")) + 1).toLowerCase()
+  const dot = base.lastIndexOf(".")
+  return dot > 0 && MARKDOWN_EXTS.has(base.slice(dot + 1))
+}

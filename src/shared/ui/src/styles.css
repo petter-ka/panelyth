@@ -505,9 +505,105 @@
  * 44 px app rail. In the glass style, the wallpaper inside the cards' margins,
  * as if the cards had lifted off.
  */
+/*
+ * The window's title strip (TitleBar.tsx, ADR-0045). On Windows main creates
+ * the window without a title bar and the strip draws its own minimize,
+ * maximize and close buttons; `data-title-bar` on <html> says it is there.
+ * The strip is the window's drag handle, its buttons are not. Where the OS
+ * draws the frame and in full screen it has no height, and the full-window
+ * overlays below start at the top as before.
+ */
+:root {
+  --title-bar-height: 0px;
+}
+
+:root[data-title-bar] {
+  --title-bar-height: 33px;
+}
+
+.title-bar {
+  height: var(--title-bar-height);
+  overflow: hidden;
+  -webkit-app-region: drag;
+  app-region: drag;
+  /*
+   * Clear of the window's edge: Windows 11 rounds a window's corners (8 px),
+   * and Close's red hover square 3 px from the edge ran into the curve.
+   */
+  padding-right: 7px;
+}
+
+/*
+ * An app hidden by the switch: its strip lies under the shown app's (the
+ * viewer's page is under the other apps' views), and Windows would take its
+ * drag area over the shown app's buttons.
+ */
+:root[data-title-bar] .title-bar[data-inert],
+:root[data-title-bar] .title-bar-mark[data-inert] {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+.title-bar-controls {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
+:root[data-title-bar] .title-bar {
+  border-bottom: 1px solid var(--border);
+}
+
+/* Glass: the strip runs to the window's top and right edges; the cards keep their gaps below and beside it. */
+:root[data-style="glass"][data-title-bar] .glass-shell {
+  padding-top: 0;
+}
+
+:root[data-style="glass"][data-title-bar] .title-bar {
+  /* Over the column gap too: the name sits next to the mark, as in the classic style. */
+  margin-left: calc(-1 * var(--glass-gap));
+  margin-right: calc(-1 * var(--glass-gap));
+  margin-bottom: var(--glass-gap);
+  border-bottom-color: transparent;
+}
+
+/*
+ * The product's mark in the corner above the rail (TitleBar.tsx): the start of
+ * the title row, as tall as the strip, its line continuing the strip's. The
+ * rail starts below it. It drags the window like the strip.
+ */
+.title-bar-mark {
+  display: none;
+}
+
+:root[data-title-bar] .title-bar-mark {
+  display: grid;
+  grid-column: 1;
+  grid-row: 1;
+  place-items: center;
+  height: var(--title-bar-height);
+  border-bottom: 1px solid var(--border);
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+:root[data-title-bar] .app-rail {
+  grid-row: 2 / -1;
+}
+
+/* Glass: the corner and the strip are one band from the window's left edge to its right. */
+:root[data-style="glass"][data-title-bar] .title-bar-mark {
+  margin-left: calc(-1 * var(--glass-gap));
+  border-bottom-color: transparent;
+}
+
+/* Full-window overlays (the image viewer, the editor, the lister, media) start below the strip. */
+.below-title-bar {
+  inset: var(--title-bar-height) 0 0 0;
+}
+
 .app-curtain {
   position: absolute;
-  inset: 0;
+  inset: var(--title-bar-height) 0 0 0;
 }
 
 .app-curtain[data-rail] {
@@ -515,7 +611,7 @@
 }
 
 :root[data-style="glass"] .app-curtain {
-  inset: var(--glass-gap);
+  inset: calc(var(--title-bar-height) + var(--glass-gap)) var(--glass-gap) var(--glass-gap);
   border-radius: var(--glass-radius);
   background: var(--wallpaper) fixed;
 }
@@ -849,4 +945,752 @@
     0 0 0 1px var(--accent),
     0 0 12px 1px color-mix(in srgb, var(--accent) 60%, transparent),
     0 6px 16px rgb(0 0 0 / 0.45);
+}
+
+/*
+ * Terminal style (ADR-0047, docs/shared/DESIGN-SYSTEM.md "Styles"):
+ * `data-style="terminal"` on <html>. A field operative's console: framed
+ * panels with corner brackets over a still grid, monospaced type, and one
+ * signal color per theme.
+ *
+ * - Each palette has a console of its own: Dark is Phosphor (green), Dark
+ *   purple is Ice (cyan), Dark brown is Amber; the light ones are paper:
+ *   Dossier, Manila and Archive, ink blue with a red stamp. Settings names
+ *   them so (TERMINAL_THEME_LABELS). The canvas, where pictures sit, stays a
+ *   neutral (or near neutral) field in every one.
+ * - Surfaces stay opaque: no blur and no translucency, so text contrast is
+ *   the palette's own (tokens.test.ts) and nothing on the scrolling surface
+ *   costs more than in the classic style.
+ * - Effects are static and drawn once: the grid between the panels, the
+ *   frames and brackets (an ::after over each region, so the layout never
+ *   moves), scanlines on the title strip and behind a dialog. The only
+ *   motion is the title strip's cursor (a 1 s blink) and a short scan as a
+ *   menu or dialog opens; both stop under prefers-reduced-motion.
+ * - Full-window media overlays keep the solid canvas, as in every style.
+ */
+@font-face {
+  font-family: "Panelyth Terminal";
+  src: url("./fonts/JetBrainsMonoVariable-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  unicode-range:
+    U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329,
+    U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: "Panelyth Terminal";
+  src: url("./fonts/JetBrainsMonoVariable-latin-ext.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  unicode-range:
+    U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329,
+    U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Panelyth Terminal";
+  src: url("./fonts/JetBrainsMonoVariable-cyrillic.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+:root[data-style="terminal"] {
+  --font-sans: "Panelyth Terminal", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --font-mono: "Panelyth Terminal", "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --term-gap: 6px;
+  --radius-sm: 1px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 3px;
+  --motion-fast: 140ms;
+  --motion-ease: steps(7, end);
+  /* What draws the frames and the brackets; the accent, or a red stamp on paper. */
+  --term-signal: var(--accent);
+  --term-line: color-mix(in srgb, var(--term-signal) 26%, var(--chrome-solid));
+  --term-line-strong: color-mix(in srgb, var(--term-signal) 55%, var(--chrome-solid));
+  --term-corner: color-mix(in srgb, var(--term-signal) 75%, var(--chrome-solid));
+  --term-grid: color-mix(in srgb, var(--term-signal) 7%, var(--canvas-solid));
+  --term-scan: color-mix(in srgb, var(--term-signal) 5%, transparent);
+  --term-glow: 0 0 6px color-mix(in srgb, var(--term-signal) 60%, transparent);
+  --term-halo: 0 0 18px color-mix(in srgb, var(--term-signal) 14%, transparent);
+  --term-drop: 0 18px 48px rgb(0 0 0 / 0.65);
+  /* A still grid on the deck, lit from the top. */
+  --term-deck:
+    linear-gradient(var(--term-grid) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, var(--term-grid) 1px, transparent 1px) 0 0 / 24px 24px,
+    radial-gradient(
+      120% 70% at 50% 0%,
+      color-mix(in srgb, var(--term-signal) 9%, var(--canvas-solid)),
+      var(--canvas-solid) 70%
+    );
+  --term-bracket: linear-gradient(var(--term-corner), var(--term-corner));
+}
+
+/* Phosphor: green on black. */
+:root[data-style="terminal"][data-theme="dark"] {
+  --canvas: #0a0a0a;
+  --chrome: #07100b;
+  --raised: #0d1a12;
+  --border: #1f3d2b;
+  --text: #c6f6d5;
+  --muted: #6fae88;
+  --skeleton: #11231a;
+  --accent: #3dff8f;
+  --accent-foreground: #00170a;
+  --success: #8dffbe;
+  --warning: #ffd34d;
+  --danger: #ff5c6a;
+}
+
+/* Ice: a cyan display over deep navy. */
+:root[data-style="terminal"][data-theme="dark-purple"] {
+  --canvas: #0a0b0c;
+  --chrome: #060c13;
+  --raised: #0b1622;
+  --border: #1c3550;
+  --text: #d5edff;
+  --muted: #7fa6c6;
+  --skeleton: #0f1d2c;
+  --accent: #4fd9ff;
+  --accent-foreground: #00141c;
+  --success: #62f5b4;
+  --warning: #ffd45e;
+  --danger: #ff5d6e;
+}
+
+/* Amber: a monochrome CRT. */
+:root[data-style="terminal"][data-theme="dark-brown"] {
+  --canvas: #0b0b0a;
+  --chrome: #110c05;
+  --raised: #1b130a;
+  --border: #3e2d15;
+  --text: #ffe3b3;
+  --muted: #c49a62;
+  --skeleton: #22180c;
+  --accent: #ffb21a;
+  --accent-foreground: #1a1000;
+  --success: #a6e57f;
+  --warning: #ffe066;
+  --danger: #ff6650;
+}
+
+/* Dossier: typed on white paper, ink blue, stamped red. */
+:root[data-style="terminal"][data-theme="light"] {
+  --canvas: #e2e2e2;
+  --chrome: #f3f2ee;
+  --raised: #ffffff;
+  --border: #c9c6bd;
+  --text: #151515;
+  --muted: #55534f;
+  --skeleton: #dad8d2;
+  --accent: #1f3b99;
+  --accent-foreground: #ffffff;
+  --success: #1d6b33;
+  --warning: #7a5d00;
+  --danger: #b0141d;
+}
+
+/* Manila: a case folder. */
+:root[data-style="terminal"][data-theme="beige"] {
+  --canvas: #e2d7c1;
+  --chrome: #efe4cb;
+  --raised: #f9f2e1;
+  --border: #c9b68f;
+  --text: #231b0f;
+  --muted: #5a4c34;
+  --skeleton: #e3d6ba;
+  --accent: #1e3a8a;
+  --accent-foreground: #ffffff;
+  --success: #22652f;
+  --warning: #6d5300;
+  --danger: #a3141c;
+}
+
+/* Archive: an old file, browned. */
+:root[data-style="terminal"][data-theme="light-brown"] {
+  --canvas: #d8c6a9;
+  --chrome: #e7d5b6;
+  --raised: #f3e5ca;
+  --border: #bba175;
+  --text: #281c0e;
+  --muted: #4f3d26;
+  --skeleton: #dcc8a6;
+  --accent: #1d3778;
+  --accent-foreground: #ffffff;
+  --success: #205f2c;
+  --warning: #614a00;
+  --danger: #94130f;
+}
+
+/* Paper: the stamp draws the frames, and ink does not glow. */
+:root[data-style="terminal"]:not(.dark) {
+  --term-signal: var(--danger);
+  --term-line: color-mix(in srgb, var(--text) 22%, var(--chrome-solid));
+  --term-line-strong: color-mix(in srgb, var(--text) 45%, var(--chrome-solid));
+  --term-grid: color-mix(in srgb, var(--accent) 9%, var(--canvas-solid));
+  --term-scan: color-mix(in srgb, var(--text) 4%, transparent);
+  --term-glow: none;
+  --term-halo: 0 0 0 transparent;
+  --term-drop: 0 14px 36px rgb(0 0 0 / 0.22);
+}
+
+:root[data-style="terminal"] body {
+  background: var(--term-deck);
+  font-variant-ligatures: none;
+}
+
+:root[data-style="terminal"] button {
+  font-weight: 600;
+}
+
+/* Section labels (Settings, About, shortcuts, the editor's panels): stencilled. */
+:root[data-style="terminal"] :is(h3, h4) {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+/* App roots and stacks: the panels keep a gap, so the deck's grid shows between them. */
+:root[data-style="terminal"] .glass-shell {
+  padding: var(--term-gap);
+  column-gap: var(--term-gap);
+}
+
+:root[data-style="terminal"] .glass-stack {
+  gap: var(--term-gap);
+}
+
+/* A panel: its own surface, framed; the frame and brackets are drawn over it. */
+:root[data-style="terminal"] .glass-region {
+  position: relative;
+  border-color: transparent;
+  border-radius: 0;
+}
+
+:root[data-style="terminal"] .glass-region:empty {
+  display: none;
+}
+
+:root[data-style="terminal"] :is(.glass-region, .glass-float, .glass-sheet, .glass-chip)::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  border: 1px solid var(--term-line);
+  border-radius: inherit;
+  background:
+    var(--term-bracket) top left / 12px 2px no-repeat border-box,
+    var(--term-bracket) top left / 2px 12px no-repeat border-box,
+    var(--term-bracket) top right / 12px 2px no-repeat border-box,
+    var(--term-bracket) top right / 2px 12px no-repeat border-box,
+    var(--term-bracket) bottom left / 12px 2px no-repeat border-box,
+    var(--term-bracket) bottom left / 2px 12px no-repeat border-box,
+    var(--term-bracket) bottom right / 12px 2px no-repeat border-box,
+    var(--term-bracket) bottom right / 2px 12px no-repeat border-box;
+  pointer-events: none;
+}
+
+/* The commander's active panel: the frame lights up. */
+:root[data-style="terminal"] .glass-region[data-active="true"] {
+  --term-corner: var(--term-signal);
+  box-shadow: var(--term-halo);
+}
+
+:root[data-style="terminal"] .glass-region[data-active="true"]::after {
+  border-color: var(--term-line-strong);
+}
+
+/* Bars stacked in one panel (the commander's bottom dock): no line above the first. */
+:root[data-style="terminal"] .glass-dock > :first-child {
+  border-top-color: transparent;
+}
+
+/* Column headers: stencilled, like the section labels (their buttons too: a button does not inherit it). */
+:root[data-style="terminal"] :is([role="columnheader"], [role="columnheader"] button) {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* The chosen option of a segmented choice (Settings): lit in the accent. */
+:root[data-style="terminal"] [role="group"] > button[aria-pressed="true"] {
+  color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent);
+  text-shadow: var(--term-glow);
+}
+
+/*
+ * The cursor row of the active panel: a lit bar at its left edge on a
+ * signal-tinted row, the way a console marks the line it is on.
+ */
+:root[data-style="terminal"] [data-active="true"] [data-cursor="true"] {
+  background-color: color-mix(in srgb, var(--accent) 16%, var(--canvas-solid));
+  box-shadow: inset 3px 0 0 var(--accent);
+  outline-color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+/* Menus, popups, dialogs and chips: opaque, framed, with a halo of the signal. */
+:root[data-style="terminal"] :is(.glass-float, .glass-sheet, .glass-chip) {
+  --term-corner: var(--term-signal);
+  border-color: transparent;
+  border-radius: 2px;
+  box-shadow: var(--term-halo), var(--term-drop);
+}
+
+:root[data-style="terminal"] :is(.glass-float, .glass-sheet, .glass-chip)::after {
+  border-color: var(--term-line-strong);
+}
+
+/* A dialog's header: a tinted band, its title in the signal color behind a lit square. */
+:root[data-style="terminal"] .glass-sheet > :first-child {
+  background: color-mix(in srgb, var(--term-signal) 8%, transparent);
+}
+
+:root[data-style="terminal"] .glass-sheet h2 {
+  color: var(--term-signal);
+  letter-spacing: 0.06em;
+  text-shadow: var(--term-glow);
+}
+
+:root[data-style="terminal"] .glass-sheet h2::before {
+  content: "";
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-right: 0.6em;
+  vertical-align: 0.08em;
+  background: var(--term-signal);
+  box-shadow: var(--term-glow);
+}
+
+/* Behind a dialog: the app dimmed under scanlines. */
+:root[data-style="terminal"] .glass-scrim {
+  background:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.18) 0 1px, transparent 1px 3px),
+    rgb(0 0 0 / 0.5);
+}
+
+/* On paper: a lighter dim, fainter lines. */
+:root[data-style="terminal"]:not(.dark) .glass-scrim {
+  background:
+    repeating-linear-gradient(to bottom, rgb(0 0 0 / 0.07) 0 1px, transparent 1px 3px),
+    rgb(0 0 0 / 0.3);
+}
+
+/* Buttons and segmented controls: squared; the primary one glows. */
+:root[data-style="terminal"] .glass-pill {
+  border-radius: 2px;
+}
+
+:root[data-style="terminal"] .glass-pill.bg-accent {
+  box-shadow: var(--term-glow);
+}
+
+/* Toggles pressed (the drive buttons, the rail's current app): reverse video in the signal's tint. */
+:root[data-style="terminal"] .glass-press {
+  border-radius: 2px;
+}
+
+:root[data-style="terminal"] .glass-press:is([aria-pressed="true"], [aria-current="page"]) {
+  border-color: transparent;
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--accent) 60%, transparent),
+    var(--term-glow);
+}
+
+/* Resize gutters: the gap is the handle; a dashed line shows on hover and lights while dragging. */
+:root[data-style="terminal"] .glass-gutter,
+:root[data-style="terminal"] .glass-gutter-y {
+  --term-grip: transparent;
+  background-color: transparent;
+  background-repeat: repeat;
+}
+
+:root[data-style="terminal"] .glass-gutter {
+  width: var(--term-gap);
+  background-image: linear-gradient(to bottom, var(--term-grip) 50%, transparent 50%);
+  background-size: 1px 6px;
+  background-position: center top;
+  background-repeat: repeat-y;
+}
+
+:root[data-style="terminal"] .glass-gutter-y {
+  height: var(--term-gap);
+  background-image: linear-gradient(to right, var(--term-grip) 50%, transparent 50%);
+  background-size: 6px 1px;
+  background-position: left center;
+  background-repeat: repeat-x;
+}
+
+:root[data-style="terminal"] .glass-gutter:hover,
+:root[data-style="terminal"] .glass-gutter-y:hover,
+:root[data-style="terminal"] [data-separator="hover"]:is(.glass-gutter, .glass-gutter-y) {
+  --term-grip: var(--term-line-strong);
+}
+
+:root[data-style="terminal"] .glass-gutter:focus-visible,
+:root[data-style="terminal"] .glass-gutter-y:focus-visible,
+:root[data-style="terminal"] [data-separator="active"]:is(.glass-gutter, .glass-gutter-y) {
+  --term-grip: var(--term-signal);
+}
+
+/*
+ * The title strip: scanlines, the product's name stencilled in the signal
+ * color, the place after it as a prompt with a blinking cursor.
+ */
+:root[data-style="terminal"] .title-bar {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    var(--term-scan) 2px 3px
+  );
+}
+
+:root[data-style="terminal"] .title-bar-name {
+  color: var(--term-signal);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-shadow: var(--term-glow);
+}
+
+/* The main window's strip names the product (the mark's corner is beside it): stencilled. A child window's names a file, as it is. */
+:root[data-style="terminal"] .title-bar-mark + .title-bar .title-bar-name {
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+:root[data-style="terminal"] .title-bar-detail::before {
+  content: "> ";
+  color: var(--term-signal);
+}
+
+:root[data-style="terminal"] .title-bar-detail::after {
+  content: "";
+  display: inline-block;
+  width: 0.55em;
+  height: 1.05em;
+  margin-left: 0.25em;
+  vertical-align: -0.2em;
+  background: var(--term-signal);
+  box-shadow: var(--term-glow);
+}
+
+/*
+ * The mark: a wire frame of the cube in the signal color. The picture is
+ * moved out of its own box, and its background, cut by the wire frame
+ * (assets/mark-wire.svg as a mask), shows instead.
+ */
+:root[data-style="terminal"] img.title-bar-mark-img {
+  object-position: -9999px 0;
+  background: var(--term-signal);
+  mask: url("./assets/mark-wire.svg") center / contain no-repeat;
+}
+
+/* The strip runs to the window's edges; the panels keep their gaps below and beside it. */
+:root[data-style="terminal"][data-title-bar] .glass-shell {
+  padding-top: 0;
+}
+
+:root[data-style="terminal"][data-title-bar] .title-bar {
+  margin-left: calc(-1 * var(--term-gap));
+  margin-right: calc(-1 * var(--term-gap));
+  margin-bottom: var(--term-gap);
+  border-bottom-color: var(--term-line);
+}
+
+:root[data-style="terminal"][data-title-bar] .title-bar-mark {
+  margin-left: calc(-1 * var(--term-gap));
+  margin-bottom: var(--term-gap);
+  border-bottom-color: var(--term-line);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0 2px,
+    var(--term-scan) 2px 3px
+  );
+}
+
+/* The loading curtain and the boot screen: the deck, inside the panels' margins. */
+:root[data-style="terminal"] .boot-screen {
+  background: var(--term-deck);
+}
+
+:root[data-style="terminal"] .app-curtain {
+  inset: calc(var(--title-bar-height) + var(--term-gap)) var(--term-gap) var(--term-gap);
+  background: var(--term-deck);
+  box-shadow: inset 0 0 0 1px var(--term-line);
+}
+
+:root[data-style="terminal"] .app-curtain[data-rail] {
+  left: calc(2.75rem + 2 * var(--term-gap));
+}
+
+/* Fields: a signal caret. */
+:root[data-style="terminal"] :is(input, textarea) {
+  caret-color: var(--accent);
+}
+
+/* Scrollbars: square thumbs. */
+:root[data-style="terminal"] ::-webkit-scrollbar-thumb {
+  border-radius: 0;
+  border-width: 4px;
+}
+
+/* A selected tile: a thinner frame, a wider glow. */
+:root[data-style="terminal"] .tile-selected {
+  outline-width: 2px;
+  outline-offset: -2px;
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 14px 1px color-mix(in srgb, var(--accent) 55%, transparent),
+    0 6px 16px rgb(0 0 0 / 0.5);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* A menu or dialog scans in from the top in a few steps; closing stays instant. */
+  :root[data-style="terminal"] .motion-pop[data-state="open"] {
+    animation: term-scan-in var(--motion-fast) var(--motion-ease);
+  }
+
+  :root[data-style="terminal"] .title-bar-detail::after {
+    animation: term-blink 1.1s steps(1, end) infinite;
+  }
+}
+
+@keyframes term-scan-in {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+@keyframes term-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/*
+ * Settings controls (owner request 2026-10-24): in the settings window every
+ * on/off choice is a switch and every one-of choice a row with a dot. The
+ * native inputs stay (keyboard, labels, screen readers); `.settings-form`
+ * scopes the look to the settings' panels, and `.ui-switch` gives a
+ * role="switch" button (SwitchRow) the same switch.
+ *
+ * - A checkbox's row starts with the switch, then the label (owner request:
+ *   the controls line up on the left, as the radios' dots do).
+ * - A radio's row is the whole option: it highlights on hover, and the chosen
+ *   one is tinted in the accent with its dot filled.
+ * - Off, a switch is an outlined track with a muted thumb, on, a filled
+ *   accent track with a light thumb (as Windows 11 draws them): both read
+ *   in every theme, light ones too, without a white thumb on a pale track.
+ * - The thumb slides with a slight overshoot and grows a little on hover;
+ *   nothing moves under prefers-reduced-motion.
+ */
+:root {
+  --switch-w: 2.125rem;
+  --switch-h: 1.25rem;
+  --switch-thumb: 0.625rem;
+  --switch-thumb-on: 0.75rem;
+  --switch-ease: cubic-bezier(0.3, 1.45, 0.5, 1);
+}
+
+:is(.ui-switch, .settings-form input[type="checkbox"]) {
+  appearance: none;
+  position: relative;
+  flex-shrink: 0;
+  width: var(--switch-w);
+  height: var(--switch-h);
+  margin: 0;
+  border: 1.5px solid var(--muted);
+  border-radius: 9999px;
+  background: var(--raised-solid);
+  cursor: pointer;
+}
+
+:is(.ui-switch, .settings-form input[type="checkbox"])::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: calc((var(--switch-h) - var(--switch-thumb)) / 2 - 1.5px);
+  width: var(--switch-thumb);
+  height: var(--switch-thumb);
+  border-radius: 9999px;
+  background: var(--muted);
+  transform: translateY(-50%);
+}
+
+:is(.ui-switch[aria-checked="true"], .settings-form input[type="checkbox"]:checked) {
+  border-color: var(--accent);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, white 14%, var(--accent)),
+    var(--accent)
+  );
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+:is(.ui-switch[aria-checked="true"], .settings-form input[type="checkbox"]:checked)::before {
+  left: calc((var(--switch-h) - var(--switch-thumb-on)) / 2 - 1.5px);
+  width: var(--switch-thumb-on);
+  height: var(--switch-thumb-on);
+  background: var(--accent-foreground);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+  transform: translate(calc(var(--switch-w) - var(--switch-h)), -50%);
+}
+
+/* Hover: the thumb grows a little; pressed, it stretches toward where it goes. */
+:is(.ui-switch, .settings-form input[type="checkbox"]):not(:disabled):hover::before {
+  scale: 1.15;
+}
+
+:is(.ui-switch, .settings-form input[type="checkbox"]):not(:disabled):hover {
+  border-color: var(--text);
+}
+
+:is(.ui-switch[aria-checked="true"], .settings-form input[type="checkbox"]:checked):not(
+    :disabled
+  ):hover {
+  border-color: var(--accent);
+  filter: brightness(1.06);
+}
+
+:is(.ui-switch, .settings-form input[type="checkbox"]):not(:disabled):active::before {
+  width: calc(var(--switch-thumb) + 4px);
+}
+
+:is(.ui-switch[aria-checked="true"], .settings-form input[type="checkbox"]:checked):not(
+    :disabled
+  ):active::before {
+  width: calc(var(--switch-thumb-on) + 4px);
+  transform: translate(calc(var(--switch-w) - var(--switch-h) - 4px), -50%);
+}
+
+:is(.ui-switch, .settings-form input[type="checkbox"]):disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+:is(.ui-switch, .settings-form input[type="checkbox"]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A radio: a ring, filled with the accent and a dot when chosen. */
+.settings-form input[type="radio"] {
+  appearance: none;
+  display: grid;
+  place-content: center;
+  flex-shrink: 0;
+  width: 1rem;
+  height: 1rem;
+  /* As wide as a switch, the dot in its middle: radio and switch labels start alike. */
+  margin: 0 calc((var(--switch-w) - 1rem) / 2);
+  border: 1.5px solid color-mix(in srgb, var(--muted) 75%, transparent);
+  border-radius: 9999px;
+  background: var(--raised-solid);
+  cursor: pointer;
+}
+
+.settings-form input[type="radio"]::before {
+  content: "";
+  width: 0.375rem;
+  height: 0.375rem;
+  border-radius: 9999px;
+  background: var(--accent-foreground);
+  transform: scale(0);
+}
+
+.settings-form input[type="radio"]:checked {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.settings-form input[type="radio"]:checked::before {
+  transform: scale(1);
+}
+
+.settings-form input[type="radio"]:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The rows: the whole row is the target, highlighted on hover. */
+.settings-form label:has(> input:is([type="checkbox"], [type="radio"])) {
+  margin-inline: -0.5rem;
+  padding: 0.375rem 0.5rem;
+  border-radius: 0.5rem;
+  cursor: pointer;
+}
+
+/* The radios' gap (gap-2): with the radio as wide as a switch, every label starts at the same place. */
+.settings-form label:has(> input[type="checkbox"]) {
+  gap: 0.5rem;
+}
+
+.settings-form label:has(> input:is([type="checkbox"], [type="radio"]):not(:disabled)):hover {
+  background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+.settings-form label:has(> input[type="radio"]:checked) {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 35%, transparent);
+  color: var(--text);
+  font-weight: 500;
+}
+
+.settings-form label:has(> input:disabled) {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  :is(.ui-switch, .settings-form input[type="checkbox"]) {
+    transition:
+      background-color 160ms ease,
+      box-shadow 160ms ease;
+  }
+
+  :is(.ui-switch, .settings-form input[type="checkbox"])::before {
+    transition:
+      transform 220ms var(--switch-ease),
+      left 220ms var(--switch-ease),
+      width 140ms ease,
+      height 140ms ease,
+      scale 140ms ease,
+      background-color 160ms ease;
+  }
+
+  .settings-form input[type="radio"] {
+    transition:
+      background-color 140ms ease,
+      border-color 140ms ease,
+      box-shadow 140ms ease;
+  }
+
+  .settings-form input[type="radio"]::before {
+    transition: transform 220ms var(--switch-ease);
+  }
+
+  .settings-form label:has(> input:is([type="checkbox"], [type="radio"])) {
+    transition: background-color 120ms ease;
+  }
+}
+
+/* The terminal style's consoles: square switches and radios, a square thumb. */
+:root[data-style="terminal"] :is(.ui-switch, .settings-form input[type="checkbox"]),
+:root[data-style="terminal"] :is(.ui-switch, .settings-form input[type="checkbox"])::before {
+  border-radius: 2px;
+}
+
+:root[data-style="terminal"] .settings-form input[type="radio"],
+:root[data-style="terminal"] .settings-form input[type="radio"]::before {
+  border-radius: 1px;
 }

@@ -6,6 +6,14 @@ Accepted (2026-10-11), at the owner's request, outside the stage list (the activ
 and one dependency; it does not change another decision. Amends ADR-0027 (one new commander-only method) and
 ADR-0032 (a third renderer in the package).
 
+Amended by ADR-0045 (2026-10-24, owner request): on Windows the window draws the title strip; a preload of its
+own (`frame.cjs`) exposes its window buttons and the window's state, nothing else, and the documents origin may
+make only `window.getState` and `window.control`, about its own window. Elsewhere there is still no preload.
+
+Amended by ADR-0046 (Stage C10.6, 2026-10-24): the document window stays read-only. Editing
+text has a window of its own (`app://texteditor/`), with a preload and a narrow profile; F3 and Enter still open
+the document window.
+
 ## Context
 
 - In the commander, Enter on a PDF or a text file opened the system's app, and F3 opened the in-app lister (text

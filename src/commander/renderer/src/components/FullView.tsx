@@ -875,7 +875,7 @@ function Cells({
   renaming: boolean
   side: Side
 }) {
-  const { sizeFormat, dateFormat } = useSettingsStore((s) => s.settings)
+  const { sizeFormat, dateFormat, relativeDates } = useSettingsStore((s) => s.settings)
   const panelPath = useListingStore((s) => s[side].path)
   // Enter on this folder or archive is still being answered (a slow drive).
   const opening = useListingStore((s) => s[side].loading && s[side].loadingTarget === item.id)
@@ -924,7 +924,7 @@ function Cells({
           ) : column.id === "size" ? (
             formatSize(item, sizeFormat)
           ) : column.id === "date" ? (
-            formatListDate(item.modifiedMs, dateFormat)
+            formatListDate(item.modifiedMs, dateFormat, relativeDates)
           ) : (
             formatAttrs(item.attrs)
           )}

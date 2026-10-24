@@ -5,8 +5,10 @@ import {
   GlyphSprite,
   SeparatorReadout,
   ShortcutsDialog,
+  TitleBar,
   TooltipProvider,
 } from "@panelyth/ui"
+import { archivePath, remoteUrl, useListingStore } from "../features/listing"
 import { useEffect, useMemo, useRef, type ReactNode } from "react"
 import { Group, Panel as ResizablePanel, Separator } from "react-resizable-panels"
 import { bridge, isBridgeAvailable } from "../bridge"
@@ -64,6 +66,7 @@ import { RemoteDialogs } from "./ConnectionsDialog"
 import { useTabRenameStore } from "../features/tabs"
 import { useTabSetsStore } from "../features/tabsets"
 import { StatusBar } from "./StatusBar"
+import { CommanderTitleControls } from "./TitleControls"
 import { MediaViewerOverlay } from "@panelyth/media-ui"
 import { closeMediaViewer, jumpMediaViewer, stepMediaViewer } from "../features/viewers"
 import { t } from "@panelyth/i18n"
@@ -93,6 +96,9 @@ export function AppShell() {
   const showCommandLine = useSettingsStore((s) => s.settings.showCommandLine)
   const showFunctionKeys = useSettingsStore((s) => s.settings.showFunctionKeys)
   const tree = usePanelsStore((s) => s.tree)
+  const stacked = usePanelsStore((s) => s.arrangement === "stacked")
+  // The active panel alone; quick view needs the other slot, so both show while it is open.
+  const single = usePanelsStore((s) => s.arrangement === "single") && quick === null
   const lists = useRef<Record<Side, PanelHandle | null>>({ left: null, right: null })
   /** The border between the panels, for the size readout while it is hovered or dragged. */
   const splitBorder = useRef<HTMLDivElement>(null)
@@ -231,65 +237,92 @@ export function AppShell() {
     })
   }, [])
 
+  // A rebuilt panel group (another arrangement, a reset split) takes the
+  // focused list with it: the keys go back to the active panel.
+  const builtToken = useRef(layoutToken)
+  useEffect(() => {
+    if (builtToken.current === layoutToken) return
+    builtToken.current = layoutToken
+    const focused = document.activeElement
+    if (focused && focused !== document.body) return
+    lists.current[usePanelsStore.getState().active]?.focus()
+  }, [layoutToken])
+
+  const slots: Record<Side, ReactNode> = {
+    left: (
+      <PanelSlot key="left" side="left" quick={quick === "left"} tree={tree === "two"}>
+        <Panel
+          side="left"
+          active={active === "left"}
+          onActivate={() => setActivePanel("left")}
+          ref={(el) => {
+            lists.current.left = el
+          }}
+        />
+      </PanelSlot>
+    ),
+    right: (
+      <PanelSlot key="right" side="right" quick={quick === "right"} tree={tree === "two"}>
+        <Panel
+          side="right"
+          active={active === "right"}
+          onActivate={() => setActivePanel("right")}
+          ref={(el) => {
+            lists.current.right = el
+          }}
+        />
+      </PanelSlot>
+    ),
+  }
+
   return (
     <TooltipProvider>
       <GlyphSprite />
-      <div className="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[minmax(0,1fr)]">
+      <div className="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]">
         <AppSwitcher
           current="commander"
           shortcut={SWITCH_SHORTCUT}
           onSwitch={(to) => (to === "system" ? switchToSystem() : switchToViewer())}
           onSettings={openSettings}
         />
+        <CommanderTitleBar />
         <div className="glass-stack flex min-h-0 min-w-0 flex-col">
           {showToolbar && <QuickActionBar />}
           <div className="flex min-h-0 flex-1">
             {/* One tree for the active panel (Stage C10.5); a tree per panel sits in its slot. */}
             {tree === "one" && <TreePane id="one" />}
             <div className="min-h-0 min-w-0 flex-1">
-              <Group
-                key={layoutToken}
-                id="panels"
-                orientation="horizontal"
-                defaultLayout={{ left: split, right: 100 - split }}
-                onLayoutChanged={(layout, meta) => {
-                  const left = layout.left
-                  if (meta.isUserInteraction && typeof left === "number") setSplit(left)
-                }}
-              >
-                <ResizablePanel id="left" minSize="10%">
-                  <PanelSlot side="left" quick={quick === "left"} tree={tree === "two"}>
-                    <Panel
-                      side="left"
-                      active={active === "left"}
-                      onActivate={() => setActivePanel("left")}
-                      ref={(el) => {
-                        lists.current.left = el
-                      }}
-                    />
-                  </PanelSlot>
-                </ResizablePanel>
-                <Separator
-                  id="panels-separator"
-                  elementRef={splitBorder}
-                  aria-label={t("Resize panels")}
-                  className="glass-gutter w-1 bg-border outline-none hover:bg-accent focus-visible:bg-accent"
-                  onDoubleClick={resetSplit}
-                />
-                <SeparatorReadout separator={splitBorder} />
-                <ResizablePanel id="right" minSize="10%">
-                  <PanelSlot side="right" quick={quick === "right"} tree={tree === "two"}>
-                    <Panel
-                      side="right"
-                      active={active === "right"}
-                      onActivate={() => setActivePanel("right")}
-                      ref={(el) => {
-                        lists.current.right = el
-                      }}
-                    />
-                  </PanelSlot>
-                </ResizablePanel>
-              </Group>
+              {single ? (
+                // One panel across the window (the Single preset); Tab shows the other one here.
+                slots[active]
+              ) : (
+                <Group
+                  key={layoutToken}
+                  id="panels"
+                  // Side by side, or the left panel on top of the right one.
+                  orientation={stacked ? "vertical" : "horizontal"}
+                  defaultLayout={{ left: split, right: 100 - split }}
+                  onLayoutChanged={(layout, meta) => {
+                    const left = layout.left
+                    if (meta.isUserInteraction && typeof left === "number") setSplit(left)
+                  }}
+                >
+                  <ResizablePanel id="left" minSize="10%">
+                    {slots.left}
+                  </ResizablePanel>
+                  <Separator
+                    id="panels-separator"
+                    elementRef={splitBorder}
+                    aria-label={t("Resize panels")}
+                    className={`${stacked ? "glass-gutter-y h-1" : "glass-gutter w-1"} bg-border outline-none hover:bg-accent focus-visible:bg-accent`}
+                    onDoubleClick={resetSplit}
+                  />
+                  <SeparatorReadout separator={splitBorder} />
+                  <ResizablePanel id="right" minSize="10%">
+                    {slots.right}
+                  </ResizablePanel>
+                </Group>
+              )}
             </div>
           </div>
           {/* One card for the bars at the bottom in the glass style (ADR-0041); no box of its own otherwise. */}
@@ -351,6 +384,23 @@ export function AppShell() {
         )}
       </div>
     </TooltipProvider>
+  )
+}
+
+/** The title strip with the active panel's location, written as its path bar writes it. */
+function CommanderTitleBar() {
+  const active = usePanelsStore((s) => s.active)
+  const location = useListingStore((s) => {
+    const panel = s[active]
+    if (panel.remote) return remoteUrl(panel.remote)
+    return panel.archive ? archivePath(panel.path, panel.archive) : panel.path
+  })
+  return (
+    <TitleBar
+      title="Panelyth Commander"
+      detail={location || null}
+      controls={<CommanderTitleControls />}
+    />
   )
 }
 

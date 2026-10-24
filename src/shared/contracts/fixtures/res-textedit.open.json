@@ -1,0 +1,16 @@
+{
+  "id": 253,
+  "ok": true,
+  "r": {
+    "bom": 0,
+    "encoding": "utf-8",
+    "lineEnding": "crlf",
+    "mtimeNs": 1,
+    "name": "notes.md",
+    "path": "/fixtures/golden",
+    "sessionId": "0123456789abcdef01234567",
+    "sizeBytes": 18,
+    "version": "d50eddd5d299006b577d7a7357446acf5109315a00bf2ef6d8cdfa06f7063efb"
+  },
+  "t": "res"
+}

@@ -1,3 +1,4 @@
+import { childFrameArgs, childFrameOptions, trackChildFrame } from "./childFrame"
 import { BrowserWindow } from "electron"
 import { basename } from "node:path"
 import { documentKindOf, type DocumentKind } from "@panelyth/contracts"
@@ -13,6 +14,10 @@ export interface DocumentWindowOptions {
   url: string
   origin: string
   devTools: boolean
+  /** Windows: the page draws the title strip (ADR-0045) through the frame-only preload. */
+  titleBar: boolean
+  /** The frame-only preload (`frame.cjs`): the strip's window buttons, nothing else. */
+  framePreload: string
 }
 
 export interface DocumentRequest {
@@ -65,8 +70,14 @@ export class DocumentWindows {
       icon: appIconPath(),
       ...(parent && !parent.isDestroyed() ? { parent } : {}),
       backgroundColor: request.theme?.startsWith("dark") || !request.theme ? "#242424" : "#f7f7f7",
+      ...childFrameOptions(this.options.titleBar),
       webPreferences: {
-        // No preload: the page has no bridge to main (ADR-0033).
+        // No bridge to main but the title strip's window buttons (ADR-0033, amended by
+        // ADR-0045); without the strip (macOS, Linux) no preload at all.
+        ...(this.options.titleBar && {
+          preload: this.options.framePreload,
+          additionalArguments: childFrameArgs(true),
+        }),
         contextIsolation: true,
         sandbox: true,
         nodeIntegration: false,
@@ -79,6 +90,7 @@ export class DocumentWindows {
       },
     })
     win.setMenuBarVisibility(false)
+    if (this.options.titleBar) trackChildFrame(win)
     hardenWebContents(win.webContents, this.options.origin)
     // The page sets no title of its own that outlives the file's name.
     win.on("page-title-updated", (event) => event.preventDefault())

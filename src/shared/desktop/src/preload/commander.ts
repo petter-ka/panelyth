@@ -5,6 +5,7 @@ import { contextBridge, ipcRenderer } from "electron"
 import {
   IPC_EVENT,
   IPC_INVOKE,
+  TITLE_BAR_ARG,
   type CommanderApi,
   type CommanderJobParams,
   type EventChannel,
@@ -184,6 +185,7 @@ const invoke = <R>(method: RendererMethod, params?: unknown): Promise<RpcEnvelop
 const channels: ReadonlySet<string> = new Set<EventChannel>([
   "sidecar.status",
   "app.visibility",
+  "window.state",
   "settings.changed",
   "job.progress",
   "job.conflict",
@@ -226,6 +228,11 @@ const api: CommanderApi = {
     switch: (to, edit) => invoke("app.switch", { to, ...(edit !== undefined && { edit }) }),
     about: () => invoke("app.about", {}),
     openTarget: (target) => invoke("app.openTarget", { target }),
+  },
+  frame: {
+    titleBar: process.argv.includes(TITLE_BAR_ARG),
+    state: () => invoke("window.getState", {}),
+    control: (action) => invoke("window.control", { action }),
   },
   settings: {
     openWindow: (tab, section) =>
@@ -416,6 +423,7 @@ const api: CommanderApi = {
         ...(d.scope !== undefined && { scope: d.scope }),
         ...(d.showHidden !== undefined && { showHidden: d.showHidden }),
         ...(d.hideSystem !== undefined && { hideSystem: d.hideSystem }),
+        ...(d.dirsByName !== undefined && { dirsByName: d.dirsByName }),
         ...(d.nameMask !== undefined && { nameMask: d.nameMask }),
         ...(d.findId !== undefined && { findId: d.findId }),
         ...(d.archiveId !== undefined && { archiveId: d.archiveId }),

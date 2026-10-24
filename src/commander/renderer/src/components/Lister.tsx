@@ -206,7 +206,7 @@ function ListerWindow({ l }: { l: ListerState }) {
       data-entry={item.id}
       data-mode={mode ?? ""}
       onKeyDown={onKeyDown}
-      className="fixed inset-0 z-40 flex flex-col bg-canvas outline-none"
+      className="below-title-bar fixed z-40 flex flex-col bg-canvas outline-none"
     >
       <div className="flex h-10 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2 text-xs">
         <Tooltip content={item.name}>

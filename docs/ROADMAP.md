@@ -33,6 +33,10 @@ Only one stage is active at a time. Default order:
 | 14 | C09 — Multi-rename, attributes, properties | commander | implementation done (2026-10-11): one rename engine, a previewed multi-rename with an undo, attribute jobs |
 | 15 | C10 — Command line, tools, customization | commander | implementation done (2026-10-11): ADR-0027 accepted in full; the command line, user commands, toolbar, Thumbnails view, settings |
 | 15a | C10.5 — Tab sets, folder tree, FTP connections, compare selected files | commander | implementation done (2026-10-12, owner request): ADR-0037 accepted with amendments; tab sets, the folder tree on shared code, FTP and FTPS as a session source with saved connections, compare for several files. P04 covers FTP and the tree on all three OSes |
+| 15b | C10.6 — Text editor: window, save, find and replace, word count | commander | implementation done (2026-10-24): ADR-0046 accepted with amendments; F4 opens the editor window |
+| 15c | C10.7 — Markdown modes (Source, Live, Preview) and images | commander | implementation done (2026-10-24): the three modes, pictures pasted and dropped into `assets/`, linked pictures through tokens |
+| 15d | C10.8 — PDF export | commander | implementation done (2026-10-24): A4 or Letter, Preview's rendering on white paper, 101 pages in about 1.2 s |
+| 15e | C10.9 — Editing files on servers | commander | next: FTP and FTPS (ADR-0037 amended) |
 | 16 | P04 — Cross-platform hardening | platform | active (in progress since 2026-10-08, taken up again 2026-10-12): packaging, CI, the Linux pass, paths, volumes, media tools, wheel input and the viewer's e2e specs done; the macOS items remain |
 | 17 | P05 — Performance hardening | platform | both apps |
 | 18 | P06 — Release engineering | platform | implementation done on Windows (2026-10-12, owner request, before P05): ADR-0038 accepted; one version, updates from Settings → About, the native menu, signing by secrets, notices, ffmpeg, migration tests, the release workflow and docs. Certificates, a public update feed and the macOS and Linux runs remain |
@@ -226,6 +230,14 @@ passwords encrypted by the OS store, and transfers as queue jobs (ADR-0037, acce
 content for any number of marked files with a result list, and changes marked inside a line. The security review of
 the remote path is recorded with no open blocking finding. Whether FTP is on in the first release is the owner's to
 confirm before C11.
+
+### C10.6–C10.9 — Text and Markdown editor (planned 2026-10-23, owner request)
+
+A built-in editor in the first release (CFR-32, ADR-0046): an editor window of its own opened by F4, Shift+F4 and
+the entry menu; syntax colors, safe saving with a conflict check, find and replace and a word count (C10.6);
+Markdown in three modes, the text, a live preview editor and a read-only preview, and pictures pasted or dropped
+into `assets/` (C10.7); a
+clean PDF export (C10.8); files on FTP and FTPS servers saved back to them (C10.9). Before P05, so P05 profiles it.
 
 ### C11 — Commander release
 

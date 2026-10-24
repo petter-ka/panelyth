@@ -14,6 +14,8 @@ const messages: Messages = {
   "5 levels": "5 szint",
   "7-Zip isn't installed, so {name} opens with its default app.":
     "A 7-Zip nincs telepítve, ezért a(z) {name} az alapértelmezett alkalmazással nyílik meg.",
+  "A PDF of the document on white paper, with page numbers.":
+    "A dokumentum PDF-je fehér papíron, oldalszámokkal.",
   "A connection that is not saved. Nothing is kept once it is closed.":
     "Nem mentett kapcsolat. A bezárása után semmi sem marad meg.",
   "A connection with this name already exists.": "Már van ilyen nevű kapcsolat.",
@@ -21,6 +23,8 @@ const messages: Messages = {
     "Az egyik meghajtón nincs kuka, ezért semmit sem lehet biztonságosan lecserélni. Válasszon másik célt vagy szabályt.",
   "A drive in this selection has no trash, so the originals can't be replaced safely.":
     "A kijelölés egyik meghajtóján nincs kuka, ezért az eredetik nem cserélhetők le biztonságosan.",
+  "A field operative's console: framed panels, monospaced type and the theme's signal color.":
+    "Egy terepen dolgozó ügynök konzolja: keretezett panelek, fix szélességű betűk és a téma jelzőszíne.",
   "A file changed since it was compared. Compare again.":
     "Egy fájl megváltozott az összehasonlítás óta. Hasonlítsa össze újra.",
   "A file name has characters {command} can't be given.":
@@ -84,6 +88,7 @@ const messages: Messages = {
   "Added to the directory hotlist.": "Hozzáadva a gyorslistához.",
   "Adding {count, plural, one {# file} other {# files}} to favorites":
     "{count, plural, one {# fájl hozzáadása} other {# fájl hozzáadása}} a kedvencekhez",
+  "Adding {name}… {percent}%": "{name} hozzáadása… {percent}%",
   "Adds a Levels step fitted to this picture; adjust it there.":
     "A képhez igazított Szintek lépést ad hozzá; ott finomíthatja.",
   Adjust: "Beállítás",
@@ -102,6 +107,7 @@ const messages: Messages = {
   "Always shown": "Mindig látható",
   "Always trust this certificate": "Mindig megbízom ebben a tanúsítványban",
   Amount: "Mérték",
+  Amber: "Borostyán",
   "Amend the last commit": "Az utolsó commit módosítása",
   "An empty date stays as it is.": "Az üres dátum változatlan marad.",
   "An existing file of that name opens as it is.":
@@ -111,6 +117,10 @@ const messages: Messages = {
   "Another Git operation is running in this repository.":
     "Ebben a tárolóban már fut egy másik Git-művelet.",
   "Another hotlist entry has this folder.": "Egy másik gyorslista-elem már ezt a mappát használja.",
+  "Another picture is still being added. Try again in a moment.":
+    "Egy másik kép hozzáadása még folyamatban van. Próbálja újra egy pillanat múlva.",
+  "Another program changed it after you opened it. Overwrite it with your text, or reload it and lose your changes.":
+    "Egy másik program módosította a megnyitása után. Írja felül a saját szövegével, vagy töltse újra, és elvesznek a módosításai.",
   "Another tab set has this name, or it is empty.":
     "Egy másik lapkészletnek ez a neve, vagy a név üres.",
   Any: "Bármely",
@@ -207,6 +217,7 @@ const messages: Messages = {
   "Branch: {branch}": "Ág: {branch}",
   Branches: "Ágak",
   "Branches of {name}": "{name} ágai",
+  "Brief view": "Rövid nézet",
   "Bright parts stand out": "A világos részek kiemelkednek",
   Brighten: "Világosítás",
   Brightness: "Fényerő",
@@ -249,6 +260,7 @@ const messages: Messages = {
   Changed: "Módosítva",
   "Changed attributes of {count, plural, one {# item} other {# items}}":
     "{count, plural, one {# elem attribútumai módosítva} other {# elem attribútumai módosítva}}",
+  "Changed on disk": "Megváltozott a lemezen",
   "Changed {count, plural, one {# item} other {# items}}.":
     "{count, plural, one {# elem módosítva.} other {# elem módosítva.}}",
   "Changed {done} of {total, plural, one {# item} other {# items}}; the rest is listed.":
@@ -401,6 +413,7 @@ const messages: Messages = {
   Contains: "Tartalma",
   Content: "Tartalom",
   Contrast: "Kontraszt",
+  "Control character": "Vezérlőkarakter",
   Cool: "Hideg",
   Copied: "Másolva",
   "Copied {count, plural, one {# item} other {# items}}":
@@ -469,6 +482,8 @@ const messages: Messages = {
   Counter: "Számláló",
   "Counting the pictures…": "Képek számlálása…",
   "Counting…": "Számolás…",
+  "Counts of the document": "A dokumentum számai",
+  "Counts of the selection": "A kijelölés számai",
   Create: "Létrehozás",
   "Create and edit": "Létrehozás és szerkesztés",
   "Create and switch": "Létrehozás és váltás",
@@ -551,6 +566,7 @@ const messages: Messages = {
   Detail: "Részletek",
   Details: "Részletek",
   "Design style": "Megjelenési stílus",
+  "Details: both panels in columns": "Részletek: mindkét panel oszlopokban",
   "Did not fire": "Nem villant",
   Differences: "Különbségek",
   Different: "Eltérő",
@@ -576,6 +592,7 @@ const messages: Messages = {
   "Don't save": "Ne mentse",
   Done: "Kész",
   "Done editing (Esc)": "Szerkesztés befejezése (Esc)",
+  Dossier: "Dosszié",
   "Double line": "Kettős vonal",
   "Double-click": "Dupla kattintás",
   "Double-click edge": "Dupla kattintás a szegélyre",
@@ -633,6 +650,7 @@ const messages: Messages = {
   "Each pixel keeps its own brightness.": "Minden képpont megtartja saját fényerejét.",
   Edge: "Él",
   Edit: "Szerkesztés",
+  "Edit (F4)": "Szerkesztés (F4)",
   "Edit connection": "Kapcsolat szerkesztése",
   "Edit picture": "Kép szerkesztése",
   "Edit pictures…": "Képek szerkesztése…",
@@ -697,6 +715,10 @@ const messages: Messages = {
   "Expand preview": "Előnézet kibontása",
   "Expand preview pane": "Előnézeti panel kibontása",
   "Expand {name}": "{name} kibontása",
+  Export: "Exportálás",
+  "Export PDF": "Exportálás PDF-be",
+  "Exported {name}": "{name} exportálva",
+  "Exporting…": "Exportálás…",
   Exposure: "Expozíció",
   "Exposure compensation": "Expozíciókorrekció",
   "Exposure program": "Expozíciós program",
@@ -717,6 +739,7 @@ const messages: Messages = {
   "Fetching…": "Fetch folyamatban…",
   "Files and folders": "Fájlok és mappák",
   "Find a branch": "Ág keresése",
+  "Find and replace": "Keresés és csere",
   "Flat, neutral panels: the original Panelyth design.":
     "Lapos, semleges panelek: a Panelyth eredeti megjelenése.",
   "FTP, not encrypted": "FTP, titkosítás nélkül",
@@ -833,10 +856,12 @@ const messages: Messages = {
   "From the picture": "A képből",
   "Full screen": "Teljes képernyő",
   "Full screen (F)": "Teljes képernyő (F)",
+  "Full view": "Teljes nézet",
   "Function keys": "Funkcióbillentyűk",
   "Function-key bar": "Funkcióbillentyű-sáv",
   "GIF holds 256 colors, no transparency here and no camera data.":
     "A GIF 256 színt tárol, itt átlátszóság és kameraadatok nélkül.",
+  "Gallery: both panels as thumbnails": "Galéria: mindkét panel bélyegképekkel",
   Gamma: "Gamma",
   Gaussian: "Gauss",
   Gear: "Fogaskerék",
@@ -849,7 +874,9 @@ const messages: Messages = {
     "A Git nem bízik ebben a mappában: egy másik felhasználóé.",
   "Git repository {name}": "Git-tároló: {name}",
   "Git was not found on this computer.": "A Git nem található ezen a számítógépen.",
+  Go: "Ugrás",
   "Go to file": "Ugrás a fájlhoz",
+  "Go to line": "Ugrás sorra",
   "Go to the command line": "Ugrás a parancssorra",
   "Go to the command line (quick search starts with Alt)":
     "A parancssorba kerülnek (a gyorskeresés Alt-tal indul)",
@@ -904,6 +931,7 @@ const messages: Messages = {
   Hue: "Árnyalat",
   "ISO (2026-10-06 14:05)": "ISO (2026-10-06 14:05)",
   Icon: "Ikon",
+  Ice: "Jég",
   "Icon library": "Ikonkönyvtár",
   "Identical: {same} · Not identical: {other}": "Azonos: {same} · Nem azonos: {other}",
   "If the name exists": "Ha a név már létezik",
@@ -935,9 +963,12 @@ const messages: Messages = {
   "Interface language": "Felület nyelve",
   "Into the folder": "Ebbe a mappába",
   "Invalid name": "Érvénytelen név",
+  "Invalid regular expression": "Érvénytelen reguláris kifejezés",
   Invert: "Invertálás",
   "Invert marks": "Jelölések megfordítása",
   "Issued to:": "Kiállítva:",
+  "It was deleted or moved after you opened it. Save your text to write the file again.":
+    "A megnyitása után törölték vagy áthelyezték. Mentse a szöveget a fájl újbóli írásához.",
   Italic: "Dőlt",
   "It starts from {branch} and becomes the current branch.":
     "A(z) {branch} ágból indul, és ez lesz az aktuális ág.",
@@ -952,6 +983,8 @@ const messages: Messages = {
   "Keep detail": "Részletek megőrzése",
   "Keep each picture's format": "Minden kép megtartja a formátumát",
   "Keep editing": "Szerkesztés folytatása",
+  "Keep folders sorted by name (the sort order applies to files)":
+    "A mappák mindig név szerint (a rendezés a fájlokra vonatkozik)",
   "Keep size": "Méret megtartása",
   "Keep the colors": "Színek megtartása",
   "Keep the shading": "Árnyalás megtartása",
@@ -986,6 +1019,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "A későbbi módosítások rejtve vannak, amíg a vágást állítja.",
   Latitude: "Szélesség",
+  Layout: "Elrendezés",
   "Leave alone": "Békén hagyás",
   "Leave one side at 0 to keep the proportions.":
     "Hagyja az egyik oldalt 0-n az arányok megtartásához.",
@@ -1003,6 +1037,7 @@ const messages: Messages = {
   Lens: "Objektív",
   "Lens maker": "Objektív gyártója",
   "Less contrast": "Kisebb kontraszt",
+  Letter: "Letter",
   Levels: "Szintek",
   Light: "Világos",
   "Light brown": "Világosbarna",
@@ -1013,16 +1048,24 @@ const messages: Messages = {
   Lighting: "Megvilágítás",
   Line: "Vonal",
   "Line between": "Köztes vonal",
+  "Line endings: CR (classic Mac)": "Sorvégek: CR (klasszikus Mac)",
+  "Line endings: CRLF (Windows)": "Sorvégek: CRLF (Windows)",
+  "Line endings: LF (Unix, macOS)": "Sorvégek: LF (Unix, macOS)",
   "Line strength": "Vonalerősség",
+  "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
+    "A(z) {line}. sorban van egy karakter, amely a(z) {encoding} kódolásban nem szerepel. Menti inkább UTF-8 kódolással?",
   "Lines of both files": "Mindkét fájl sorai",
   Link: "Hivatkozás",
+  "Link target: {url}": "Hivatkozás célja: {url}",
   "Liquid glass": "Folyékony üveg",
   "List name": "A lista neve",
+  "List: both panels in the Brief view": "Lista: mindkét panel rövid nézetben",
   Lister: "Megjelenítő",
   "Lister: {name}": "Megjelenítő: {name}",
   "Listing…": "Listázás…",
   "Listing… {count} entries so far": "Listázás… eddig {count} elem",
   Live: "Élő",
+  "Ln {line}, Col {column}": "{line}. sor, {column}. oszlop",
   Load: "Terhelés",
   "Load of each logical processor": "Az egyes logikai processzorok terhelése",
   "Loading branches…": "Ágak betöltése…",
@@ -1051,7 +1094,9 @@ const messages: Messages = {
   "Magnify (bulge)": "Nagyítás (domborítás)",
   Maker: "Gyártó",
   Manual: "Kézi",
+  Margins: "Margók",
   Mark: "Jelölés",
+  Manila: "Manila",
   "Mark (folders: calculate the size)": "Jelölés (mappáknál a méret kiszámítása)",
   "Mark all": "Összes jelölése",
   "Mark and move down": "Jelölés és lépés lefelé",
@@ -1068,6 +1113,7 @@ const messages: Messages = {
   "Match case": "Kis- és nagybetű",
   "Material Symbols": "Material Symbols",
   Matrix: "Mátrix",
+  Maximize: "Teljes méret",
   Maximum: "Maximális",
   "Measure backend round trip": "A háttérszolgáltatás válaszidejének mérése",
   "Media viewer: {name}": "Médianéző: {name}",
@@ -1081,6 +1127,7 @@ const messages: Messages = {
   "Memory in use, last minute": "Használt memória, az utolsó perc",
   Merging: "Összefésülés folyamatban",
   Message: "Üzenet",
+  Minimize: "Kis méret",
   "Minimum rating": "Minimális értékelés",
   Missing: "Hiányzik",
   Model: "Típus",
@@ -1092,6 +1139,7 @@ const messages: Messages = {
   "More contrast": "Nagyobb kontraszt",
   "More drives": "További meghajtók",
   "More filters": "További szűrők",
+  "More than {count} matches": "Több mint {count} találat",
   "More ways to save": "További mentési módok",
   Mosaic: "Mozaik",
   "Most common colors": "Leggyakoribb színek",
@@ -1147,6 +1195,7 @@ const messages: Messages = {
   "Name mask": "Névmaszk",
   "Name to search for": "Keresett név",
   "Names are exchanged": "A nevek felcserélődnek",
+  Narrow: "Keskeny",
   Navigation: "Navigáció",
   "Nearest (pixel art)": "Legközelebbi szomszéd (pixelgrafika)",
   "Needs 7-Zip, which was not found": "Ehhez 7-Zip kell, de nem található",
@@ -1259,6 +1308,7 @@ const messages: Messages = {
     "Mentés után a kitakart rész nem hozható vissza a mentett fájlból. Az eredeti változatlan marad, hacsak nem cseréli le.",
   "One beside each file ({example})": "Egy-egy minden fájl mellé ({example})",
   "One beside each panel": "Egy-egy mindkét panel mellett",
+  "One folder name, without {chars}.": "Egyetlen mappanév, ezek nélkül: {chars}.",
   "One list for all of them": "Egy lista az összeshez",
   "One of the folders could not be read.": "Az egyik mappát nem sikerült beolvasni.",
   "One picture at a time: this tool needs a place in the picture.":
@@ -1334,6 +1384,7 @@ const messages: Messages = {
     "{count, plural, one {# elem tömörítése} other {# elem tömörítése}}",
   "Pack…": "Tömörítés…",
   "Page number": "Oldalszám",
+  "Page size": "Oldalméret",
   "Page {page}": "{page}. oldal",
   Pages: "Oldalak",
   "Paint over what to repair. The texture comes from the source, the light from around the stroke.":
@@ -1352,6 +1403,7 @@ const messages: Messages = {
     "A Panelyth nem jogosult a kép olvasására.",
   "Panelyth is up to date.": "A Panelyth naprakész.",
   "Panelyth will close.": "A Panelyth bezárul.",
+  "Panelyth's editor": "A Panelyth szerkesztője",
   "Paper tone": "Papírtónus",
   Parameters: "Paraméterek",
   "Parent folder": "Szülőmappa",
@@ -1378,6 +1430,7 @@ const messages: Messages = {
   "Percent of the shorter edge": "A rövidebb oldal százaléka",
   "Permission denied": "Hozzáférés megtagadva",
   Permissions: "Jogosultságok",
+  Phosphor: "Foszfor",
   "Pick a neutral gray": "Semleges szürke felvétele",
   "Pick from the picture": "Felvétel a képről",
   "Pick the black point": "Feketepont felvétele",
@@ -1385,9 +1438,14 @@ const messages: Messages = {
   Picture: "Kép",
   "Picture copied to the clipboard": "A kép a vágólapra másolva",
   "Picture information": "Képadatok",
+  "Picture not found": "A kép nem található",
   "Picture position": "Kép helyzete",
   "Picture to count": "Megszámolandó kép",
   Pictures: "Képek",
+  "Pictures folder": "Képek mappája",
+  "Pictures from the web are not loaded": "A webes képek nem töltődnek be",
+  "Pictures pasted or dropped into a document go to this folder beside it.":
+    "A dokumentumba beillesztett vagy behúzott képek ebbe a mellette lévő mappába kerülnek.",
   "Pin to end": "Rögzítés a végére",
   "Pin to start": "Rögzítés az elejére",
   Pinch: "Összehúzás",
@@ -1399,6 +1457,7 @@ const messages: Messages = {
   Placeholders: "Helyőrzők",
   Places: "Helyek",
   Plain: "Egyszerű",
+  "Plain text": "Egyszerű szöveg",
   Play: "Lejátszás",
   "Play (Space)": "Lejátszás (Szóköz)",
   "Play full screen": "Lejátszás teljes képernyőn",
@@ -1417,6 +1476,7 @@ const messages: Messages = {
   "Preview in a column on the right": "Előnézet jobb oldali oszlopban",
   "Preview position": "Előnézet helye",
   "Preview under the folders": "Előnézet a mappák alatt",
+  "Preview: quick view in the other panel": "Előnézet: gyorsnézet a másik panelen",
   Previous: "Előző",
   "Previous / next": "Előző / következő",
   "Previous difference": "Előző különbség",
@@ -1486,6 +1546,7 @@ const messages: Messages = {
   "Reading the results…": "Eredmények beolvasása…",
   "Reading…": "Olvasás…",
   Recent: "Legutóbbi",
+  "Recent dates in words (yesterday at 14:05)": "Friss dátumok szavakkal (tegnap 14:05-kor)",
   Recipe: "Recept",
   Recipes: "Receptek",
   Rebasing: "Rebase folyamatban",
@@ -1507,7 +1568,6 @@ const messages: Messages = {
   "Refresh Git status": "Git-állapot frissítése",
   "Region to obscure; arrow keys move it": "Kitakarandó terület; a nyilak mozgatják",
   "Regular expression": "Reguláris kifejezés",
-  "Relative (yesterday at 14:05)": "Relatív (tegnap 14:05)",
   "Release notes": "Kiadási megjegyzések",
   "Relief from": "Dombormű forrása",
   Reload: "Újratöltés",
@@ -1562,6 +1622,7 @@ const messages: Messages = {
   "Repeat: off (L)": "Ismétlés: ki (L)",
   "Repeat: on (L)": "Ismétlés: be (L)",
   Replace: "Csere",
+  "Replace all": "Összes cseréje",
   "Replace color": "Színcsere",
   "Replace existing items": "Meglévő elemek cseréje",
   "Replace original": "Eredeti cseréje",
@@ -1572,6 +1633,8 @@ const messages: Messages = {
   "Replace the originals": "Az eredetik lecserélése",
   "Replace with": "Csere erre",
   "Replace {pictures}?": "Lecserél {pictures}?",
+  "Replaced the match on line {line}": "Találat cserélve a(z) {line}. sorban",
+  "Replaced {count} matches": "{count} találat cserélve",
   "Replaces a newer file": "Újabb fájlt ír felül",
   "Report a problem": "Hiba bejelentése",
   "Resample to keep the print size": "Újramintavételezés a nyomtatási méret megtartásához",
@@ -1593,6 +1656,7 @@ const messages: Messages = {
   Resolution: "Felbontás",
   "Resolution (0 keeps the picture's)": "Felbontás (0: a képé marad)",
   "Restart to update": "Újraindítás a frissítéshez",
+  Restore: "Előző méret",
   Results: "Eredmények",
   Resume: "Folytatás",
   "Restored: {restored}": "Visszaállítva: {restored}",
@@ -1637,9 +1701,11 @@ const messages: Messages = {
   Save: "Mentés",
   "Save a copy": "Másolat mentése",
   "Save and connect": "Mentés és kapcsolódás",
+  "Save anyway": "Mentés mindenképp",
   "Save as PNG or GIF to keep the palette; other formats store full color.":
     "A paletta megtartásához mentse PNG vagy GIF formátumban; a többi formátum teljes színnel ment.",
   "Save as PNG to keep the transparent part.": "Az átlátszó rész megtartásához mentse PNG-ként.",
+  "Save as UTF-8": "Mentés UTF-8 kódolással",
   "Save as…": "Mentés másként…",
   "Save command": "Parancs mentése",
   "Save format set to PNG: it keeps the reduced colors as a palette.":
@@ -1648,11 +1714,13 @@ const messages: Messages = {
   "Save options… ({format})": "Mentési beállítások… ({format})",
   "Save tabs": "Lapok mentése",
   "Save tabs…": "Lapok mentése…",
+  "Save the changes to {name}?": "Menti a(z) {name} módosításait?",
   "Save the current recipe as": "A jelenlegi recept mentése ezen a néven",
   "Save the password (encrypted by this computer's secret store)":
     "A jelszó mentése (a számítógép titoktára titkosítja)",
   "Save this connection…": "A kapcsolat mentése…",
   "Save your changes?": "Menti a módosításokat?",
+  Saved: "Mentve",
   "Saved as {format}, the picture is stored with this palette.":
     "{format} formátumban mentve a kép ezzel a palettával tárolódik.",
   "Saved as {name}": "Mentve mint {name}",
@@ -1696,6 +1764,8 @@ const messages: Messages = {
   Selected: "Kijelölve",
   "Selected folder path": "A kijelölt mappa elérési útja",
   "Selection actions": "Kijelölési műveletek",
+  "Selection deleted": "Kijelölés törölve",
+  "Selection: {counts}": "Kijelölés: {counts}",
   "Sends the edited pictures to the trash. The originals are not touched.":
     "A szerkesztett képeket a kukába helyezi. Az eredetikhez nem nyúl.",
   Sepia: "Szépia",
@@ -1738,6 +1808,7 @@ const messages: Messages = {
   "Show or hide the function-key bar": "Funkcióbillentyű-sáv megjelenítése vagy elrejtése",
   "Show or hide the toolbar": "Eszköztár megjelenítése vagy elrejtése",
   "Show parent folders": "Szülőmappák megjelenítése",
+  "Show replace": "Csere megjelenítése",
   "Show system files too": "A rendszerfájlok megjelenítése is",
   "Show the Adjust tools": "A beállítóeszközök megjelenítése",
   "Show the Color tools": "A színeszközök megjelenítése",
@@ -1762,6 +1833,8 @@ const messages: Messages = {
     "Az első {shown} látható, összesen: {total}. A többihez használja a Commander megjelenítőjét (F3, hexa nézet) vagy egy szerkesztőt (F4).",
   "Shutter priority": "Záridő-előválasztás",
   "Shutter speed": "Záridő",
+  "Single: one panel as thumbnails (Tab shows the other)":
+    "Egy panel: miniatűrökkel (a Tab a másikat mutatja)",
   Size: "Méret",
   "Size and place": "Méret és hely",
   "Size at least": "Legalább ekkora",
@@ -1793,9 +1866,11 @@ const messages: Messages = {
   "Sort by (folders first)": "Rendezés (előbb a mappák)",
   "Sort by extension": "Rendezés kiterjesztés szerint",
   "Sort descending": "Rendezés csökkenő sorrendben",
+  Source: "Forrás",
   Spacing: "Térköz",
   Specified: "Megadott",
   Spot: "Pontszerű",
+  "Stacked: one panel above the other": "Egymás alatt: az egyik panel a másik fölött",
   Stage: "Előkészítés",
   "Stage all": "Összes előkészítése",
   "Stage all and commit": "Összes előkészítése és commit",
@@ -1816,6 +1891,7 @@ const messages: Messages = {
   "Starting…": "Indítás…",
   "Startup folder": "Indítási mappa",
   Status: "Állapot",
+  "Status bar": "Állapotsor",
   Step: "Lépésköz",
   Stop: "Leállítás",
   Stopped: "Leállítva",
@@ -1863,6 +1939,30 @@ const messages: Messages = {
   "System default opens the Home folder.": "A rendszer alapértelmezése a Saját mappát nyitja meg.",
   "System follows your operating system's light or dark setting.":
     "A Rendszer az operációs rendszer világos vagy sötét beállítását követi.",
+  Task: "Feladat",
+  Terminal: "Terminál",
+  "The PDF could not be exported: {message}": "A PDF nem exportálható: {message}",
+  "The background service is not running. Try again in a moment.":
+    "A háttérszolgáltatás nem fut. Próbálja újra egy pillanat múlva.",
+  "The file changed on disk": "A fájl megváltozott a lemezen",
+  "The file changed on disk. Reload?": "A fájl megváltozott a lemezen. Újratölti?",
+  "The file could not be opened.": "A fájl nem nyitható meg.",
+  "The file could not be reloaded: {message}": "A fájl nem tölthető újra: {message}",
+  "The file could not be saved: {message}": "A fájl nem menthető: {message}",
+  "The file is in use by another program. Try again in a moment.":
+    "A fájlt egy másik program használja. Próbálja újra egy pillanat múlva.",
+  "The file is no longer on disk.": "A fájl már nincs a lemezen.",
+  "The file was deleted": "A fájlt törölték",
+  "The file was deleted or moved on disk. Save to write it again.":
+    "A fájlt törölték vagy áthelyezték a lemezen. Mentse az újbóli íráshoz.",
+  "The file's folder is no longer there.": "A fájl mappája már nem létezik.",
+  "The full path of a program, or empty for Panelyth's own editor.":
+    "Egy program teljes elérési útja, vagy üresen a Panelyth saját szerkesztőjéhez.",
+  "The pictures folder beside this document can't be written.":
+    "A dokumentum melletti képmappába nem lehet írni.",
+  "The text is too long to save here.": "A szöveg túl hosszú ahhoz, hogy itt mentse.",
+  "This editing session has ended. Copy your text to keep it, then reopen the file.":
+    "Ez a szerkesztési munkamenet véget ért. Másolja ki a szöveget, hogy megmaradjon, majd nyissa meg újra a fájlt.",
   "This file can't be started as a program.": "Ez a fájl nem indítható programként.",
   "This program is no longer in Settings.": "Ez a program már nincs a Beállításokban.",
   "TIFF keeps the color profile and the resolution, not the camera data.":
@@ -1978,7 +2078,6 @@ const messages: Messages = {
   "The folder on the server starts with “/”.": "A kiszolgálón lévő mappa „/” jellel kezdődik.",
   "The frame covers the edge instead of growing the picture.":
     "A keret a szélt takarja, nem növeli a képet.",
-  "The full path of a program, or empty.": "Egy program teljes elérési útja, vagy üresen hagyva.",
   "The home folder is not known.": "A saját mappa nem ismert.",
   "The last commit gets the new message.": "Az utolsó commit megkapja az új üzenetet.",
   "The left panel's ({tabs})": "A bal panelé ({tabs})",
@@ -2034,7 +2133,6 @@ const messages: Messages = {
     "A forrás be van állítva; az ecsettel együtt mozog.",
   "The stored password can't be read on this computer. Type it to connect.":
     "A mentett jelszó ezen a számítógépen nem olvasható. A kapcsolódáshoz írja be.",
-  "The system's text editor": "A rendszer szövegszerkesztője",
   "The table changed since you confirmed. Check it and confirm again.":
     "A táblázat megváltozott a megerősítés óta. Ellenőrizze, és erősítse meg újra.",
   "The text can't be written in this encoding": "A szöveg nem írható le ebben a kódolásban",
@@ -2125,11 +2223,14 @@ const messages: Messages = {
   "This recipe was made by a newer version of Panelyth.":
     "Ezt a receptet a Panelyth újabb verziója készítette.",
   "This repository has no remote.": "Ennek a tárolónak nincs távoli tárolója.",
+  "This text can't be saved in {encoding}": "Ez a szöveg nem menthető {encoding} kódolással",
   "This video can't be opened": "A videó nem nyitható meg",
   "This video can't be opened right now": "A videó most nem nyitható meg",
   "This video can't be played here": "A videó itt nem játszható le",
   "This video is damaged": "A videó sérült",
   "This window was not opened for a document.": "Ez az ablak nem dokumentumhoz lett megnyitva.",
+  "This window was not opened for a file to edit.":
+    "Ez az ablak nem fájl szerkesztéséhez nyílt meg.",
   Threshold: "Küszöb",
   "Thumbnail, 256 px square": "Bélyegkép, 256 px-es négyzet",
   "Thumbnails view": "Miniatűr nézet",
@@ -2171,6 +2272,7 @@ const messages: Messages = {
   Transparent: "Átlátszó",
   "Translucent panels float over a soft background drawn from the theme's colors.":
     "Áttetsző panelek lebegnek a téma színeiből készült lágy háttér fölött.",
+  "Tree: a folder tree beside the panels": "Fa: mappafa a panelek mellett",
   "Trust this time": "Most megbízom benne",
   "Try again": "Próbálja újra",
   "Two arrows": "Két nyíl",
@@ -2209,6 +2311,7 @@ const messages: Messages = {
   "Unpack {what}": "{what} kicsomagolása",
   "Unpack…": "Kicsomagolás…",
   "Unpin column": "Oszlop rögzítésének feloldása",
+  "Unsaved changes": "Nem mentett módosítások",
   Up: "Fel",
   Unstage: "Előkészítés visszavonása",
   "Unstage all": "Összes visszavonása",
@@ -2259,6 +2362,7 @@ const messages: Messages = {
   "Videos can't be edited": "Videók nem szerkeszthetők",
   View: "Nézet",
   "View as": "Megjelenítés mint",
+  "View options": "Nézetbeállítások",
   Viewer: "Viewer",
   "Viewer toolbar": "Viewer eszköztár",
   Vignette: "Vignetta",
@@ -2295,14 +2399,18 @@ const messages: Messages = {
   "White point": "Fehérpont",
   "White shows the picture, black hides it.": "A fehér megmutatja a képet, a fekete elrejti.",
   Whites: "Fehérek",
+  "Whole word": "Teljes szó",
   "Whole words": "Egész szavak",
+  Wide: "Széles",
   Width: "Szélesség",
   "Width is measured in": "A szélesség mértékegysége",
+  Window: "Ablak",
   "Windows-1250 (Central European)": "Windows-1250 (közép-európai)",
   "Windows-1251 (Cyrillic)": "Windows-1251 (cirill)",
   "Windows-1252 (Western)": "Windows-1252 (nyugat-európai)",
   With: "Erre",
   "Within 2 seconds (FAT drives)": "2 másodpercen belül (FAT-meghajtók)",
+  "Word wrap": "Sortördelés",
   "Words in braces are filled in for each picture; the picture shows the result.":
     "A kapcsos zárójelben lévő szavak képenként kitöltődnek; a kép mutatja az eredményt.",
   "Worked on {count, plural, one {# item} other {# items}}":
@@ -2322,8 +2430,12 @@ const messages: Messages = {
   "You can add up to {count} programs.": "Legfeljebb {count} program adható hozzá.",
   "You can restore them from the trash.": "Visszaállíthatja őket a kukából.",
   "You don't have permission to open this folder.": "Nincs engedélye a mappa megnyitásához.",
+  "You don't have permission to save this file.": "Nincs jogosultsága a fájl mentéséhez.",
+  "You don't have permission to write the pictures folder.":
+    "Nincs jogosultsága a képmappába írni.",
   "Your branch and the remote have both moved on. Pull with rebase or merge.":
     "Az ön ága és a távoli is továbbhaladt. Használjon pullt rebase-zel vagy összefésüléssel.",
+  "Your changes are lost if you don't save them.": "Ha nem menti, a módosítások elvesznek.",
   "Your commands": "Saját parancsok",
   "Z to A": "Z–A",
   Zoom: "Nagyítás",
@@ -2352,6 +2464,7 @@ const messages: Messages = {
   "colors saturation vibrance hue temperature tint balance":
     "színek telítettség élénkség árnyalat színhőmérséklet színezet egyensúly",
   "crop cut trim ratio": "vágás körülvágás levágás arány",
+  "current match": "aktuális találat",
   "curves tone curve points": "görbék tónusgörbe pontok",
   "distinct colors": "különböző szín",
   done: "kész",
@@ -2383,6 +2496,7 @@ const messages: Messages = {
   "obscure blur pixelate censor hide face plate":
     "kitakarás elmosás pixelesítés cenzúra elrejtés arc rendszám",
   "oil painting paint brush": "olajfestmény ecset",
+  "on line": "sor:",
   optical: "optikai",
   paused: "szüneteltetve",
   "ping {ms} ms": "ping {ms} ms",
@@ -2421,6 +2535,10 @@ const messages: Messages = {
   "{copied} (the first 10,000)": "{copied} (az első 10 000)",
   "{count, plural, one {# archive} other {# archives}} tested: no errors.":
     "{count, plural, one {# archívum tesztelve} other {# archívum tesztelve}}: nincs hiba.",
+  "{count, plural, one {# character} other {# characters}}":
+    "{count, plural, one {# karakter} other {# karakter}}",
+  "{count, plural, one {# cursor} other {# cursors}}":
+    "{count, plural, one {# kurzor} other {# kurzor}}",
   "{count, plural, one {# difference} other {# differences}}":
     "{count, plural, one {# különbség} other {# különbség}}",
   "{count, plural, one {# entry} other {# entries}}":
@@ -2460,6 +2578,8 @@ const messages: Messages = {
   "{count, plural, one {# item} other {# items}} will be moved to “{folder}”. Items with matching names at the destination may be replaced.":
     "{count, plural, one {# elem} other {# elem}} át lesz helyezve ide: „{folder}”. A célhelyen azonos nevű elemek felülíródhatnak.",
   "{count, plural, one {# line} other {# lines}}": "{count, plural, one {# sor} other {# sor}}",
+  "{count, plural, one {# match} other {# matches}}":
+    "{count, plural, one {# találat} other {# találat}}",
   "{count, plural, one {# name is} other {# names are}} back.":
     "{count, plural, one {# név visszaállítva.} other {# név visszaállítva.}}",
   "{count, plural, one {# name is} other {# names are}} invalid":
@@ -2492,6 +2612,7 @@ const messages: Messages = {
   "{count, plural, one {# tab} other {# tabs}}": "{count, plural, one {# lap} other {# lap}}",
   "{count, plural, one {# video} other {# videos}}":
     "{count, plural, one {# videó} other {# videó}}",
+  "{count, plural, one {# word} other {# words}}": "{count, plural, one {# szó} other {# szó}}",
   "{count, plural, one {The file is identical.} other {All # files are identical.}}":
     "{count, plural, one {A fájl azonos.} other {Mind a(z) # fájl azonos.}}",
   "{counts}. Click to commit.": "{counts}. Kattintson a commithoz.",
@@ -2533,13 +2654,19 @@ const messages: Messages = {
   "{name} can't be opened in a window: {reason}": "A(z) {name} nem nyitható meg ablakban: {reason}",
   "{name} can't be opened: {reason}": "A(z) {name} nem nyitható meg: {reason}",
   "{name} can't be started: {reason}": "A(z) {name} nem indítható el: {reason}",
+  "{name} could not be added: {message}": "A(z) {name} nem adható hozzá: {message}",
   "{name} doesn't open this kind of item.": "A(z) {name} nem nyitja meg az ilyen elemeket.",
   "{name} is a program. Run it only if you trust where it came from.":
     "A(z) {name} egy program. Csak akkor futtassa, ha megbízik a forrásában.",
   "{name} is a program. Running programs with Enter is off in Settings.":
     "A(z) {name} egy program. A programok futtatása Enterrel ki van kapcsolva a Beállításokban.",
+  "{name} is larger than 25 MB.": "A(z) {name} nagyobb 25 MB-nál.",
   "{name} is the current name, {n} a number, {n:000} a number with three digits.":
     "A {name} az aktuális név, az {n} egy szám, az {n:000} háromjegyű szám.",
+  "{name} is too large to edit here (over 8 MB). F3 views it.":
+    "A(z) {name} túl nagy az itteni szerkesztéshez (több mint 8 MB). Az F3 megjeleníti.",
+  "{name} isn't a picture.": "A(z) {name} nem kép.",
+  "{name} isn't a text file. F3 views it.": "A(z) {name} nem szövegfájl. Az F3 megjeleníti.",
   "{name} was not found. Add it again in Settings → Open with.":
     "A(z) {name} nem található. Adja hozzá újra: Beállítások → Megnyitás ezzel.",
   "{name}, edited picture, {w} × {h} pixels": "{name}, szerkesztett kép, {w} × {h} képpont",

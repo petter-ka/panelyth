@@ -4,6 +4,7 @@ import {
   initInterfaceSize,
   initTheme,
   menuCommandHandler,
+  connectWindowFrame,
   startSharedAppearanceSync,
 } from "@panelyth/ui"
 import { StrictMode } from "react"
@@ -20,6 +21,8 @@ await initLocale()
 initTheme()
 initInterfaceSize()
 if (isBridgeAvailable()) {
+  // The title strip's window buttons (ADR-0045).
+  connectWindowFrame(bridge.windowFrame())
   const settings = {
     loadSettings: () => bridge.library().then((l) => l.settings),
     saveSetting: (key: string, value: unknown) =>

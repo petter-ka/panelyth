@@ -21,6 +21,8 @@ export const ERROR_CODES = [
   "EDIT_SESSION_GONE",
   "TRASH_UNAVAILABLE",
   "EDIT_ASSET_INVALID",
+  // The text editor (Stage C10.6, ADR-0046).
+  "TEXTEDIT_SESSION_GONE",
 ] as const
 
 export type ErrorCode = (typeof ERROR_CODES)[number]

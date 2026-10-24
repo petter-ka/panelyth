@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="13 13 998 998">
+  <title>Panelyth</title>
+  <!-- The terminal style's mark (ADR-0047): the cube of mark.svg as a wire frame, used as a mask. -->
+  <g transform="translate(512 512) scale(5.591) translate(0 -13)" fill="none" stroke="#000" stroke-width="9" stroke-linejoin="round">
+    <path d="M-86.6 -20L-6.9 26L-6.9 96L-86.6 50Z"/>
+    <path d="M6.9 26L86.6 -20L86.6 50L6.9 96Z"/>
+    <path d="M-6.9 -74L6.9 -74L79.7 -32L0 14L-79.7 -32Z"/>
+    <path d="M-46.6 3L-46.6 73M46.6 3L46.6 73" stroke-width="5" opacity="0.6"/>
+    <circle cx="0" cy="-32" r="9" fill="#000" stroke="none"/>
+  </g>
+</svg>

@@ -3,7 +3,7 @@ import { tmpdir } from "node:os"
 import { basename, dirname, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, showDialogFolder, waitForReady } from "../../launch"
+import { launchApp, repoRoot, showDialogFolder, tileSizeSwitch, waitForReady } from "../../launch"
 
 // Stage 05: navigation, lazy tree, index-backed search, pane resize,
 // workspace persistence, multi-selection (docs/viewer/stages/05-filesystem-ux.md).
@@ -235,7 +235,7 @@ test.describe("workspace", () => {
       expect(long.filter((d) => d > 100)).toHaveLength(0)
       expect(perRowAfter).toBeLessThan(perRowBefore)
 
-      await page.getByRole("button", { name: "Large tiles" }).click()
+      await tileSizeSwitch(page, "Large tiles").button.click()
       await page.getByRole("button", { name: "Sort" }).click()
       await page
         .getByRole("group", { name: "Sort by" })
@@ -254,10 +254,8 @@ test.describe("workspace", () => {
     try {
       const { page } = second
       await waitForReady(page)
-      await expect(page.getByRole("button", { name: "Large tiles" })).toHaveAttribute(
-        "aria-pressed",
-        "true",
-      )
+      const large = tileSizeSwitch(page, "Large tiles")
+      await expect(large.button).toHaveAttribute(large.pressed, "true")
       await expect(page.getByRole("button", { name: "Sort" })).toContainText("Date modified")
       await expect
         .poll(async () =>

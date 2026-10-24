@@ -1,0 +1,12 @@
+{
+  "id": 257,
+  "ok": true,
+  "r": {
+    "disk": {
+      "mtimeNs": 1,
+      "sizeBytes": 23,
+      "version": "eebc79cb57684d44ec46a4830f002c9331d7007ebef86f454ebb72a89e5e84ba"
+    }
+  },
+  "t": "res"
+}

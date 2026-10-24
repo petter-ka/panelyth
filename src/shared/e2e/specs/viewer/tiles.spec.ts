@@ -14,7 +14,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { launchApp, repoRoot, showViewerFolder } from "../../launch"
+import { launchApp, repoRoot, showViewerFolder, tileSizeSwitch } from "../../launch"
 
 // Mirrors src/viewer/renderer/src/features/tiles/layout.ts (docs/viewer/stages/03-tile-view.md).
 const METRICS = {
@@ -76,9 +76,7 @@ async function openFolderAt(dir: string, size?: "small" | "medium" | "large") {
   const { page } = launched
   await showViewerFolder(page, dir)
   if (size)
-    await page
-      .getByRole("button", { name: `${size[0]!.toUpperCase()}${size.slice(1)} tiles` })
-      .click()
+    await tileSizeSwitch(page, `${size[0]!.toUpperCase()}${size.slice(1)} tiles`).button.click()
   await expect(page.getByTestId("tile").first()).toBeVisible({ timeout: 30_000 })
   return launched
 }
@@ -449,7 +447,7 @@ test.describe("tile view (Stage 03)", () => {
     })
     try {
       await showViewerFolder(first.page, dir)
-      await first.page.getByRole("button", { name: "Large tiles" }).click()
+      await tileSizeSwitch(first.page, "Large tiles").button.click()
       await expect(first.page.getByTestId("tile-view")).toHaveAttribute("data-tile-size", "large")
       expect((await viewState(first.page)).boxWidth).toBe("260px")
     } finally {

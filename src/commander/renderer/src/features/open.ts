@@ -101,7 +101,19 @@ export async function runConfirmedProgram(): Promise<void> {
 
 export const cancelProgram = (): void => set({ program: null })
 
-/** F4: the editor from settings, or the system's text editor. */
+/**
+ * Why a file did not open for editing: the built-in editor (ADR-0046) takes
+ * text files of up to 8 MB; F3 still views the rest.
+ */
+function editRefused(name: string, error: unknown): void {
+  const reason = reasonOf(error)
+  if (reason === "binary") notice(t("{name} isn't a text file. F3 views it.", { name }))
+  else if (reason === "tooLarge") {
+    notice(t("{name} is too large to edit here (over 8 MB). F3 views it.", { name }))
+  } else notice(t("{name} can't be edited: {reason}", { name, reason: messageOf(error) }))
+}
+
+/** F4: the editor from settings, or the built-in one (ADR-0046). */
 export async function editCursor(side: Side): Promise<void> {
   const item = cursorItem(side)
   if (!item || item.kind === "dir") return
@@ -113,7 +125,7 @@ export async function editCursor(side: Side): Promise<void> {
   try {
     await bridge.shellEdit(item.id)
   } catch (error) {
-    notice(t("{name} can't be edited: {reason}", { name: item.name, reason: messageOf(error) }))
+    editRefused(item.name, error)
   }
 }
 
@@ -151,9 +163,7 @@ export async function createTextFile(name: string): Promise<boolean> {
     const { entryId } = await bridge.mkfile(dirId, name.trim())
     set({ newFile: null })
     void focusEntry(n.side, entryId)
-    await bridge.shellEdit(entryId).catch((error: unknown) => {
-      notice(t("{name} can't be edited: {reason}", { name: name.trim(), reason: messageOf(error) }))
-    })
+    await bridge.shellEdit(entryId).catch((error: unknown) => editRefused(name.trim(), error))
     return true
   } catch (error) {
     set({ newFile: { ...n, error: messageOf(error) } })

@@ -132,6 +132,47 @@ func TestMultiKeySort(t *testing.T) {
 	}
 }
 
+// The commander's "sort folders by name" (DirsByName): folders stay first and
+// in name order whatever the sort; files follow the sort. A sort by name is
+// unchanged, and a recursive query (files only) is too.
+func TestDirsByName(t *testing.T) {
+	s, _ := openTest(t)
+	root, _ := s.EnsureDir(ctx, filepath.Join(t.TempDir(), "r"))
+	var rows []Row
+	for i, n := range []string{"b-dir", "a-dir", "c-dir"} {
+		r := dirRow(root, n)
+		r.MtimeNs = []int64{1, 3, 2}[i]
+		r.Size = []int64{30, 10, 20}[i]
+		rows = append(rows, r)
+	}
+	rows = append(rows, fileRow(root, "x.jpg", 1, 5), fileRow(root, "y.jpg", 2, 4))
+	if _, err := s.Commit(ctx, s.NextGeneration(), rows, []Finish{{DirID: root.ID, State: ListingComplete}}); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct {
+		name   string
+		sort   SortKey
+		byName bool
+		want   []string
+	}{
+		{"date desc", SortKey{Field: SortModified, Desc: true}, false, []string{"a-dir", "c-dir", "b-dir", "x.jpg", "y.jpg"}},
+		{"date desc, folders by name", SortKey{Field: SortModified, Desc: true}, true, []string{"a-dir", "b-dir", "c-dir", "x.jpg", "y.jpg"}},
+		{"size desc, folders by name", SortKey{Field: SortSize, Desc: true}, true, []string{"a-dir", "b-dir", "c-dir", "y.jpg", "x.jpg"}},
+		{"type, folders by name", SortKey{Field: SortType}, true, []string{"a-dir", "b-dir", "c-dir", "x.jpg", "y.jpg"}},
+		{"name desc, folders by name", SortKey{Field: SortName, Desc: true}, true, []string{"c-dir", "b-dir", "a-dir", "y.jpg", "x.jpg"}},
+	} {
+		d := Descriptor{DirID: root.ID, Scope: ScopeAll, Sort: []SortKey{c.sort}, DirsByName: c.byName}
+		if got := names(t, s, d, root.Key); !slices.Equal(got, c.want) {
+			t.Errorf("%s: %q, want %q", c.name, got, c.want)
+		}
+	}
+	d := Descriptor{DirID: root.ID, Recursive: true, Scope: ScopeAll, DirsByName: true,
+		Sort: []SortKey{{Field: SortModified}}}
+	if got, want := names(t, s, d, root.Key), []string{"y.jpg", "x.jpg"}; !slices.Equal(got, want) {
+		t.Errorf("recursive: %q, want %q", got, want)
+	}
+}
+
 func TestFacets(t *testing.T) {
 	s, root := seedSearch(t)
 	f, err := s.Facets(ctx, Descriptor{DirID: root.ID, Exts: []string{"png"}, Kinds: []media.Kind{media.KindVideo}}, root.Key)
@@ -291,6 +332,41 @@ func BenchmarkSearch100k(b *testing.B) {
 			}
 		}
 	})
+}
+
+// BenchmarkDirsByName100k: 10k folders and 90k files sorted by date, with
+// the folders in the sort or by name (two index walks instead of one).
+func BenchmarkDirsByName100k(b *testing.B) {
+	s, err := Open(filepath.Join(b.TempDir(), "index.db"), slog.New(slog.DiscardHandler))
+	if err != nil {
+		b.Fatal(err)
+	}
+	defer s.Close()
+	root, _ := s.EnsureDir(ctx, filepath.Join(b.TempDir(), "big"))
+	rows := make([]Row, 0, 100_000)
+	for i := range 100_000 {
+		if i%10 == 0 {
+			r := dirRow(root, fmt.Sprintf("dir_%06d", i))
+			r.MtimeNs = int64(100_000 - i)
+			rows = append(rows, r)
+			continue
+		}
+		rows = append(rows, fileRow(root, fmt.Sprintf("IMG_%06d.jpg", i), int64(i), int64(100_000-i)))
+	}
+	if _, err := s.Commit(ctx, s.NextGeneration(), rows, []Finish{{DirID: root.ID, State: ListingComplete}}); err != nil {
+		b.Fatal(err)
+	}
+	for _, byName := range []bool{false, true} {
+		b.Run(fmt.Sprintf("dirsByName=%v", byName), func(b *testing.B) {
+			d := Descriptor{DirID: root.ID, Scope: ScopeAll, DirsByName: byName,
+				Sort: []SortKey{{Field: SortModified, Desc: true}}}
+			for b.Loop() {
+				if ids, err := s.QueryIDs(ctx, d, root.Key); err != nil || len(ids) != 100_000 {
+					b.Fatal(err, len(ids))
+				}
+			}
+		})
+	}
 }
 
 // BenchmarkUserSort100k measures ADR-0021's json_each join: 100k files, 10k

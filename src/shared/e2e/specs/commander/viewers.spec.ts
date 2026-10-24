@@ -206,17 +206,18 @@ test.describe("quick view and lister (Stage C05)", () => {
         .toMatch(new RegExp(`${program.replace(".", "\\.")}$`))
       expect((await shellLog(app)).at(-1)!.action).toBe("open")
 
-      // A document opens with its default app (recorded); F4 starts the editor without a shell.
+      // A document opens with its default app (recorded); F4 opens Panelyth's own editor
+      // (ADR-0046) when Settings names no editor: no program is started.
       await cursorToFile(c, "utf8.txt")
       await c.keyboard.press("Enter")
       await expect.poll(async () => (await shellLog(app)).at(-1)?.value ?? "").toMatch(/utf8\.txt$/)
+      const launched = (await shellLog(app)).length
       await c.keyboard.press("F4")
-      const edit = IS_WINDOWS
-        ? /^notepad\.exe\|.*utf8\.txt$/
-        : process.platform === "darwin"
-          ? /^open\|-t\|.*utf8\.txt$/
-          : /utf8\.txt$/
-      await expect.poll(async () => (await shellLog(app)).at(-1)?.value ?? "").toMatch(edit)
+      const editor = await app.waitForEvent("window", (p) =>
+        p.url().startsWith("app://texteditor/index.html"),
+      )
+      expect((await shellLog(app)).length).toBe(launched)
+      await editor.close()
 
       // The id of a text file, as the commander sees it.
       const textId = Number(await fileRow(c, "utf8.txt").getAttribute("data-id"))

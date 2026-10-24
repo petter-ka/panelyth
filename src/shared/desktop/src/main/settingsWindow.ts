@@ -1,3 +1,4 @@
+import { childFrameArgs, childFrameOptions, trackChildFrame } from "./childFrame"
 import { BrowserWindow, type WebContents } from "electron"
 import type { SettingsTab } from "@panelyth/contracts"
 import { hardenWebContents } from "./security"
@@ -22,6 +23,8 @@ export interface SettingsPage {
 export interface SettingsWindowOptions {
   devTools: boolean
   platform: NodeJS.Platform
+  /** Windows: the page draws the title strip with its Close button (ADR-0045). */
+  titleBar: boolean
 }
 
 /** The fragment the page reads: the tab (and the section of an app's tab) to show first. */
@@ -75,12 +78,17 @@ export class SettingsWindow {
       maximizable: false,
       fullscreenable: false,
       autoHideMenuBar: true,
+      ...childFrameOptions(this.options.titleBar),
       ...(shell ? { parent: shell, modal: !sheetless } : {}),
-      webPreferences: securePreferences(page.preload, this.options.devTools, page.args),
+      webPreferences: securePreferences(page.preload, this.options.devTools, [
+        ...page.args,
+        ...childFrameArgs(this.options.titleBar),
+      ]),
     })
     this.win = win
     this.opener = opener
     win.setMenuBarVisibility(false)
+    if (this.options.titleBar) trackChildFrame(win)
     hardenWebContents(win.webContents, page.origin)
     const keepFocus = (): void => {
       if (!win.isDestroyed() && win.isVisible()) win.focus()

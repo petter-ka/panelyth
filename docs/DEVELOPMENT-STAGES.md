@@ -8,7 +8,7 @@ Only one stage is active at a time, across all tracks. The order across tracks i
 |---|---|---|---|
 | Viewer | `00`…`08.6` (history), `12`…`16` (image editor); next new stage `17` | `docs/viewer/stages/` | `stage-03-…`, `stage-08.6-…`, `stage-12-…`, `stage-13-…`, `stage-14-…`, `stage-15-…`, `stage-16-…` |
 | Platform | `P01`…`P06` | `docs/shared/stages/` | `stage-P01-…`, `stage-P06-…` |
-| Commander | `C00`…`C11`, with `C10.5` between C10 and C11 | `docs/commander/stages/` | `stage-C00-…`, `stage-C10.5-…` |
+| Commander | `C00`…`C11`, with `C10.5`…`C10.9` between C10 and C11 | `docs/commander/stages/` | `stage-C00-…`, `stage-C10.5-…`, `stage-C10.6-…` |
 
 - The viewer stages 00–08.6 also built most of the shared platform; their records stay in the viewer track.
 - The viewer's planned Stages 09, 10 and 11 became P04, P05 and P06 (2026-10-05, ADR-0025). Viewer numbers 09–11 are
@@ -19,6 +19,9 @@ Only one stage is active at a time, across all tracks. The order across tracks i
 - Commander Stage C10.5 (2026-10-12, owner request) adds tab sets, a folder tree, FTP connections (ADR-0037,
   accepted with amendments in the stage) and comparing several selected files. It sits before the release stage, as
   08.5 and 08.6 sat before the viewer's hardening stages. The owner started it the day it was planned, after 16.
+- Commander Stages C10.6–C10.9 (2026-10-23, owner request) are the text and Markdown editor (ADR-0046, proposed,
+  decided in C10.6; CFR-32). The owner put the editor in the first release, so they sit before C11 and before P05,
+  which profiles the editor too.
 - New stage documents start from `docs/STAGE-TEMPLATE.md`.
 
 ## Stage gates
@@ -82,7 +85,11 @@ A stage is complete only when:
 | C09 | Multi-rename, attributes and properties | C08 | implementation done (2026-10-11); the NVDA pass and the Linux and macOS runs remain |
 | C10 | Command line, tools and customization | C09 | implementation done (2026-10-11); the NVDA pass and the Linux and macOS runs remain (the viewer's e2e tile suite ran green on 2026-10-12, Stage P01) |
 | C10.5 | Tab sets, folder tree, FTP connections, compare selected files | C10 | implementation done (2026-10-12); ADR-0037 accepted with amendments; the owner's confirmation of FTP in the first release, the Linux and macOS runs and the NVDA pass remain |
-| C11 | Commander release | C10, C10.5, P04, P05, P06 | planned |
+| C10.6 | Text editor: window, save, find and replace, word count | C10.5 | implementation done (2026-10-24); ADR-0046 accepted with amendments; the Linux Go run, the macOS and Linux app runs and the NVDA pass remain |
+| C10.7 | Markdown modes (Source, Live, Preview) and images | C10.6 | implementation done (2026-10-24); the Linux Go run, the macOS and Linux app runs and the NVDA pass remain; following links later |
+| C10.8 | PDF export | C10.7 | implementation done (2026-10-24); the macOS and Linux runs and the NVDA pass remain |
+| C10.9 | Editing files on servers | C10.6, C10.5 | planned |
+| C11 | Commander release | C10, C10.5, C10.6–C10.9, P04, P05, P06 | planned |
 
 ## Completed stages
 
@@ -101,6 +108,14 @@ A stage is complete only when:
 
 ## Active stage
 
+`C10.9 — Editing files on servers` (`docs/commander/stages/C10.9-remote-editing.md`), next. Before it, on
+2026-10-24 at the owner's request: `C10.8 — PDF export` (`docs/commander/stages/C10.8-pdf-export.md`),
+implementation done the same day, and `C10.7 — Markdown modes (Source, Live, Preview) and images`
+(`docs/commander/stages/C10.7-markdown-modes.md`), implementation done the same day, after C10.6 (implementation done the same day: the editor window, F4,
+saving in the file's own encoding, find and replace, word count; ADR-0046 accepted with amendments). P06 stays
+implementation done with its open items below.
+
+Before that:
 `P06 — Release engineering` (`docs/shared/stages/P06-release.md`), started 2026-10-12 at the owner's request while
 P04's macOS items and P05 stay open; implementation done on Windows the same day. ADR-0038 is accepted. The owner
 added two things to the stage: the app is upgraded from inside the app, and a native menu. **Updates:** Electron

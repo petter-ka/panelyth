@@ -1,5 +1,5 @@
 import type { Crumb, SortDirection, SortField, Tag } from "@panelyth/contracts"
-import { Tooltip } from "@panelyth/ui"
+import { Tooltip, useTitleBarShown } from "@panelyth/ui"
 import {
   useEffect,
   useLayoutEffect,
@@ -749,6 +749,7 @@ function SortMenu({ disabled }: { disabled: boolean }) {
 }
 
 function ViewBar() {
+  const stripShown = useTitleBarShown()
   const ready = useSidecarStore((s) => s.status?.state === "ready")
   const folder = useFolderStore((s) => s.folder)
   const recursive = useFolderStore((s) => s.recursive)
@@ -770,7 +771,8 @@ function ViewBar() {
         {t("Include subfolders")}
       </label>
       <SortMenu disabled={!folder} />
-      <TileSizeControl />
+      {/* The title strip has the tile size (ADR-0045); without it, the view bar does. */}
+      {!stripShown && <TileSizeControl />}
     </div>
   )
 }

@@ -11,6 +11,7 @@ const SOURCE_ROOTS = [
   "shared/ui/src",
   "shared/media-ui/src",
   "shared/docviewer/src",
+  "shared/doceditor/src",
 ]
 
 function* walk(dir: string): Generator<string> {
