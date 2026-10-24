@@ -26,9 +26,11 @@ so the built page works at a domain's root and under a project path such as GitH
 ## Screenshots
 
 Everything in `src/media/` is taken from the real app, running on a generated demo library. The hero is a slideshow
-of six of the screenshots, the commander and the viewer in turn (`heroSlides` in `src/main.jsx`); it changes every
-five seconds, waits while the pointer or the focus is on it, and does not start by itself for people who asked their
-system for less motion. To make the pictures again after the app's look changed:
+of seven of the screenshots, the commander, the viewer and the editor in turn (`heroSlides` in `src/main.jsx`); it
+changes every five seconds, waits while the pointer or the focus is on it, and does not start by itself for people
+who asked their system for less motion. "What's new" shows the newest work beside its pictures (`newFeatures`), and
+the Viewer and Commander sections show their features as cards with a screenshot each. To make the pictures again
+after the app's look changed:
 
 ```sh
 pnpm build                                   # in the repository root: the app
@@ -42,8 +44,13 @@ node showcase/scripts/capture.mjs stills --only=commander-find   # retake some p
   rights. It needs `ffmpeg` on the `PATH`.
 - `scripts/session.mjs` starts the built app with a profile of its own and points its places (Home, Pictures, …) into
   the demo home. On Windows the library is mounted as drive `U:` for the run, so paths read `U:\Users\user\…`
-  whatever the checkout's path and the account's name are.
-- `scripts/capture.mjs stills` takes the nine screenshots. `capture.mjs video` records a walk through both apps
+  whatever the checkout's path and the account's name are. The other drives of the machine show in the viewer's
+  folder tree; before each picture their volume labels read as plain drive letters (`D:\`), and the tree is scrolled
+  to the demo drive. Check new pictures for anything of the machine's before committing them.
+- `scripts/capture.mjs stills` takes the nineteen screenshots: the viewer (tiles, a picture, the editor, the light
+  theme, Liquid glass), the commander (two panels, quick view, find, multi-rename, the view options, the Single
+  layout, the command line with a history the capture writes into its own profile, Liquid glass, Terminal) and the
+  text editor (Live, Preview, Export PDF). `capture.mjs video` records a walk through both apps
   (`hero.mp4`, `hero.webm`, `hero-poster.jpg`) from the frames the app paints; the page no longer shows it, since the
   hero became a slideshow. The video draws a pointer and names the keys that are pressed, and is recorded with the
   preview cache warm, as on a second visit to a folder.

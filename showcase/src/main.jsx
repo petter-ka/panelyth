@@ -2,12 +2,22 @@ import { useEffect, useState } from "react"
 import { createRoot } from "react-dom/client"
 import "./styles.css"
 import brandMark from "./media/mark.svg"
+import shotCmdline from "./media/commander-cmdline.webp"
 import shotFiles from "./media/commander-files.webp"
 import shotFindResults from "./media/commander-find-results.webp"
 import shotFind from "./media/commander-find.webp"
+import shotCommanderGlass from "./media/commander-glass.webp"
 import shotCommander from "./media/commander-panels.webp"
 import shotQuickView from "./media/commander-quick-view.webp"
+import shotRename from "./media/commander-rename.webp"
+import shotSingle from "./media/commander-single.webp"
+import shotTerminal from "./media/commander-terminal.webp"
+import shotViewOptions from "./media/commander-view-options.webp"
+import shotEditorExport from "./media/editor-export.webp"
+import shotEditorLive from "./media/editor-live.webp"
+import shotEditorPreview from "./media/editor-preview.webp"
 import shotEditor from "./media/viewer-editor.webp"
+import shotViewerGlass from "./media/viewer-glass.webp"
 import shotLight from "./media/viewer-light.webp"
 import shotPhoto from "./media/viewer-photo.webp"
 import shotTiles from "./media/viewer-tiles.webp"
@@ -42,57 +52,11 @@ const principles = [
   },
   {
     title: "An interface for today",
-    copy: "One design system across both apps, in light and dark, at the interface size you choose, in eight languages.",
+    copy: "One design system across both apps, in three styles (classic, liquid glass and a terminal) and light and dark themes, at the interface size you choose, in eight languages.",
   },
   {
     title: "Nothing waits",
     copy: "Scrolling and the cursor never wait for thumbnails, listings or a running copy. Long work goes to a background queue you can watch, pause and cancel.",
-  },
-]
-
-const viewerFeatures = [
-  {
-    title: "Tiles for very large folders",
-    copy: "Small, medium or large tiles that reflow with the window. Only what is on screen is drawn, so a folder of 100,000 pictures scrolls like a folder of a hundred.",
-  },
-  {
-    title: "A closer look",
-    copy: "Zoom and pan a still, play local video, and step through the folder with the arrow keys or the wheel. Thumbnails are cached, so a second visit is immediate.",
-  },
-  {
-    title: "Search, sort and filter",
-    copy: "Find a file by name, sort by name, date, size or type, and keep bookmarks and recent folders in the sidebar next to the folder tree.",
-  },
-  {
-    title: "An editor built in",
-    copy: "Crop and straighten, adjust light and color with levels and curves, add borders and watermarks, retouch. Save the steps as a recipe and run it over a whole folder.",
-  },
-]
-
-const commanderFeatures = [
-  {
-    title: "Three views per panel",
-    copy: "Full with sortable, resizable columns, Brief with names in columns, and Thumbnails. Tabs in each panel, and tab sets you can save.",
-  },
-  {
-    title: "A queue for the heavy work",
-    copy: "Copy, move and delete run in the background with progress, pause and a clear dialog for conflicts. Both panels stay usable throughout.",
-  },
-  {
-    title: "Find, compare, synchronize",
-    copy: "Find files by name, content, size or date. Compare two folders and synchronize them, compare files line by line, create and verify checksums.",
-  },
-  {
-    title: "Archives and servers as folders",
-    copy: "Enter a zip or tar archive as you would a folder, pack and unpack, and connect to FTP and FTPS servers with saved connections.",
-  },
-  {
-    title: "Rename many at once",
-    copy: "A multi-rename tool with counters, search and replace and a preview of every new name, plus undo for the last run.",
-  },
-  {
-    title: "Quick view and lister",
-    copy: "See the file under the cursor in the other panel, or open text, hex, pictures and video in the lister with F3.",
   },
 ]
 
@@ -124,80 +88,271 @@ const shared = [
   },
 ]
 
-const shots = [
-  {
+/** Every screenshot, by name. `label` and `title` caption it in the gallery. */
+const SHOTS = {
+  tiles: {
     src: shotTiles,
     label: "VIEWER / TILES",
     title: "A folder at a glance, with the preview beside it.",
     alt: "The Panelyth viewer showing a folder of landscape photographs as tiles, with the folder tree and a preview of the selected picture on the left",
-    wide: true,
   },
-  {
+  photo: {
     src: shotPhoto,
     label: "VIEWER / PICTURE",
     title: "One picture, the whole window.",
     alt: "A single photograph opened in Panelyth's media window",
   },
-  {
+  editor: {
     src: shotEditor,
     label: "VIEWER / EDITOR",
     title: "Adjust, retouch and save a copy.",
-    alt: "Panelyth's image editor with its tools beside a photograph",
+    alt: "Panelyth's image editor with the Lighting tool open beside a photograph",
   },
-  {
+  light: {
+    src: shotLight,
+    label: "VIEWER / LIGHT THEME",
+    title: "Large tiles, in the light theme.",
+    alt: "The Panelyth viewer in the light theme, showing a folder of photographs as large tiles with the filter bar above them",
+  },
+  viewerGlass: {
+    src: shotViewerGlass,
+    label: "VIEWER / LIQUID GLASS",
+    title: "Translucent panels over a soft wallpaper.",
+    alt: "The Panelyth viewer in the Liquid glass style: rounded, translucent panels floating over a soft background, a folder of city and beach photographs as tiles",
+  },
+  commander: {
     src: shotCommander,
     label: "COMMANDER / PANELS",
     title: "Two folders, side by side.",
     alt: "Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar",
-    wide: true,
   },
-  {
+  files: {
     src: shotFiles,
     label: "COMMANDER / TWO PANELS",
     title: "Files on the left, files on the right, marks in between.",
     alt: "Panelyth Commander with two folders of files in the Full view, five files marked in the left panel",
-    span: true,
   },
-  {
+  quickView: {
     src: shotQuickView,
     label: "COMMANDER / QUICK VIEW",
     title: "The file under the cursor, in the other panel.",
     alt: "Panelyth Commander showing a quick view of a picture in the right panel",
   },
-  {
+  find: {
     src: shotFind,
     label: "COMMANDER / FIND FILES",
     title: "Search by size, date and attributes.",
     alt: "The Find files dialog of Panelyth Commander on its Advanced tab, with a minimum size and a date range filled in",
   },
-  {
+  findResults: {
     src: shotFindResults,
     label: "COMMANDER / SEARCH RESULTS",
     title: "Go to a result, or feed them all to a panel.",
-    alt: "The Find files dialog listing 32 results with their folders and sizes",
+    alt: "The Find files dialog listing its results with their folders and sizes",
+  },
+  rename: {
+    src: shotRename,
+    label: "COMMANDER / MULTI-RENAME",
+    title: "Nine files renamed by date and counter, previewed first.",
+    alt: "The Multi-rename dialog with the mask 'Dolomites [Y]-[M]-[D] [C]' and a preview of nine new names",
+  },
+  single: {
+    src: shotSingle,
+    label: "COMMANDER / SINGLE LAYOUT",
+    title: "One panel across the window, as thumbnails.",
+    alt: "Panelyth Commander in the Single layout: one panel filling the window with a folder of photographs as thumbnails, nine of them marked",
+  },
+  viewOptions: {
+    src: shotViewOptions,
+    label: "COMMANDER / VIEW OPTIONS",
+    title: "Hidden files and the panel's view, from the path bar.",
+    alt: "The view options menu open from the eye button of the commander's path bar, with the Show and View groups",
+  },
+  cmdline: {
+    src: shotCmdline,
+    label: "COMMANDER / COMMAND LINE",
+    title: "The commands you ran before, a key away.",
+    alt: "The commander's command line with a command being typed and its history of earlier commands open above it",
+  },
+  commanderGlass: {
+    src: shotCommanderGlass,
+    label: "COMMANDER / LIQUID GLASS",
+    title: "A list and thumbnails, in Liquid glass.",
+    alt: "Panelyth Commander in the Liquid glass style, a file list on the left and thumbnails on the right in translucent panels",
+  },
+  terminal: {
+    src: shotTerminal,
+    label: "COMMANDER / TERMINAL",
+    title: "The Terminal style, in Phosphor.",
+    alt: "Panelyth Commander in the Terminal style: green monospaced text on black, panels framed with corner brackets",
+  },
+  editorLive: {
+    src: shotEditorLive,
+    label: "EDITOR / LIVE",
+    title: "Markdown that looks finished while you type.",
+    alt: "The text editor window in Live mode, a Markdown note with a heading and a numbered list",
+  },
+  editorPreview: {
+    src: shotEditorPreview,
+    label: "EDITOR / PREVIEW",
+    title: "Tables and task lists, drawn.",
+    alt: "The text editor window in Preview mode, showing a trip itinerary with a table and a to-do list",
+  },
+  editorExport: {
+    src: shotEditorExport,
+    label: "EDITOR / EXPORT PDF",
+    title: "A clean PDF: A4 or Letter, three margins.",
+    alt: "The Export PDF dialog of the text editor, with the page size and margins to choose",
+  },
+}
+
+const viewerFeatures = [
+  {
+    title: "Tiles for very large folders",
+    copy: "Small, medium or large tiles that reflow with the window. Only what is on screen is drawn, so a folder of 100,000 pictures scrolls like a folder of a hundred.",
+    shot: SHOTS.tiles,
   },
   {
-    src: shotLight,
-    label: "VIEWER / LIGHT THEME",
-    title: "Large tiles, in the light theme.",
-    alt: "The Panelyth viewer in the light theme, showing a folder of photographs as large tiles",
+    title: "A closer look",
+    copy: "Zoom and pan a still, play local video, and step through the folder with the arrow keys or the wheel. Thumbnails are cached, so a second visit is immediate.",
+    shot: SHOTS.photo,
+  },
+  {
+    title: "Search, sort and filter",
+    copy: "Find a file by name, sort by name, date, size or type, filter by type, rating or tag, and keep bookmarks and recent folders in the sidebar next to the folder tree.",
+    shot: SHOTS.light,
+  },
+  {
+    title: "An editor built in",
+    copy: "Crop and straighten, adjust light and color with levels and curves, add borders and watermarks, retouch. Save the steps as a recipe and run it over a whole folder.",
+    shot: SHOTS.editor,
   },
 ]
 
-/** The hero's slides: the commander and the viewer in turn. */
+const commanderFeatures = [
+  {
+    title: "Three views per panel",
+    copy: "Full with sortable, resizable columns, Brief with names in columns, and Thumbnails. Tabs in each panel, and tab sets you can save.",
+    shot: SHOTS.commander,
+  },
+  {
+    title: "Find, compare, synchronize",
+    copy: "Find files by name, content, size or date. Compare two folders and synchronize them, compare files line by line, create and verify checksums.",
+    shot: SHOTS.findResults,
+  },
+  {
+    title: "Rename many at once",
+    copy: "A multi-rename tool with counters, dates, search and replace and a preview of every new name, plus undo for the last run.",
+    shot: SHOTS.rename,
+  },
+  {
+    title: "Quick view and lister",
+    copy: "See the file under the cursor in the other panel, or open text, hex, pictures and video in the lister with F3.",
+    shot: SHOTS.quickView,
+  },
+  {
+    title: "A queue for the heavy work",
+    copy: "Copy, move and delete run in the background with progress, pause and a clear dialog for conflicts. Both panels stay usable throughout.",
+  },
+  {
+    title: "Archives and servers as folders",
+    copy: "Enter a zip or tar archive as you would a folder, pack and unpack, and connect to FTP and FTPS servers with saved connections.",
+  },
+]
+
+/** The newest work, each with its pictures: the first is the large one. */
+const newFeatures = [
+  {
+    eyebrow: "TEXT AND MARKDOWN EDITOR",
+    title: "Notes and Markdown, right next to your files.",
+    copy: "F4 opens text, code and Markdown in an editor window of its own, and saving puts the file back whole, never half written.",
+    points: [
+      "Three ways to see Markdown: Live looks like the finished page while you type, Preview draws tables and task lists, Source shows every character.",
+      "Find and replace, word count, and code and config files with their colours.",
+      "Drop a picture in or paste a screenshot: it is saved next to the note.",
+      "Export a clean PDF on white paper, A4 or Letter, with page numbers.",
+    ],
+    shots: [SHOTS.editorPreview, SHOTS.editorLive, SHOTS.editorExport],
+    window: "Dolomites itinerary.md",
+  },
+  {
+    eyebrow: "DESIGN STYLES",
+    title: "Three styles. The same app.",
+    copy: "Choose the look in Settings; both apps follow at once, and every theme works in every style.",
+    points: [
+      "Classic: flat, neutral panels, so photos are judged on a quiet surround.",
+      "Liquid glass: rounded, translucent panels over a soft wallpaper drawn from the theme's colours.",
+      "Terminal: a field operative's console with framed panels and monospaced type, where the themes become Phosphor, Ice, Amber and three paper dossiers.",
+    ],
+    shots: [SHOTS.terminal, SHOTS.viewerGlass, SHOTS.commanderGlass],
+    window: "Panelyth — Commander",
+  },
+  {
+    eyebrow: "LAYOUT PRESETS",
+    title: "One click sets the whole window.",
+    copy: "The commander's title bar holds layout presets that set both panels together, instead of changing one panel at a time.",
+    points: [
+      "Details, List, Tree, Gallery, Preview and Stacked, one above the other.",
+      "Single: the active panel alone across the window, as thumbnails; Tab brings up the other one.",
+      "The preset that matches the window stays lit; change something by hand and none is.",
+    ],
+    shots: [SHOTS.single],
+    window: "Panelyth — Commander",
+  },
+  {
+    eyebrow: "PANELS YOUR WAY",
+    title: "Panels that read the way you do.",
+    copy: "The eye in the path bar holds what a panel shows and how, and the panel settings follow how people sort and read.",
+    points: [
+      "Show hidden and system files, and switch the panel between Full, Brief and Thumbnails.",
+      "Folders stay in name order while you sort the files by size or date.",
+      'Recent dates in words, "yesterday at 14:05", with the system\'s format or ISO for older ones.',
+    ],
+    shots: [SHOTS.viewOptions],
+    window: "Panelyth — Commander",
+  },
+  {
+    eyebrow: "COMMAND LINE",
+    title: "A command line that remembers.",
+    copy: "Type a command for the folder you are in, as you would in a terminal opened there.",
+    points: [
+      "Enter runs it; Shift+Enter runs it in a console window.",
+      "Alt+F8 brings back the commands you ran before.",
+      "cd moves the panel to another folder, without leaving the keyboard.",
+    ],
+    shots: [SHOTS.cmdline],
+    window: "Panelyth — Commander",
+  },
+]
+
+/** The hero's slides: the commander and the viewer in turn, the new work among them. */
 const heroSlides = [
-  shotFiles,
-  shotTiles,
-  shotCommander,
-  shotPhoto,
-  shotFindResults,
-  shotEditor,
-].map((src) => shots.find((shot) => shot.src === src))
+  SHOTS.files,
+  SHOTS.tiles,
+  SHOTS.terminal,
+  SHOTS.viewerGlass,
+  SHOTS.editorPreview,
+  SHOTS.single,
+  SHOTS.editor,
+]
+/** The app a screenshot shows, from its label ("VIEWER / TILES"). */
+const windowName = (label) =>
+  label.startsWith("VIEWER") ? "Viewer" : label.startsWith("EDITOR") ? "Editor" : "Commander"
+
 /** How long the hero shows one slide. */
 const SLIDE_MS = 5000
 
-/** The two wide shots head the app sections; the gallery shows the rest. */
-const gallery = shots.filter((shot) => !shot.wide)
+/** The gallery: what the sections above do not show large, two of them across the grid. */
+const gallery = [
+  { ...SHOTS.files, span: true },
+  SHOTS.find,
+  SHOTS.commanderGlass,
+  SHOTS.editorLive,
+  SHOTS.editorExport,
+  { ...SHOTS.viewerGlass, span: true },
+  SHOTS.photo,
+  SHOTS.light,
+]
 
 const platforms = [
   {
@@ -318,7 +473,7 @@ function HeroSlideshow() {
       onFocus={() => setHeld(true)}
       onBlur={() => setHeld(false)}
     >
-      <AppWindow title={`Panelyth — ${slide.label.startsWith("VIEWER") ? "Viewer" : "Commander"}`}>
+      <AppWindow title={`Panelyth — ${windowName(slide.label)}`}>
         <div className="hero-slides" aria-live={playing ? "off" : "polite"}>
           {heroSlides.map((shot, i) => (
             <img
@@ -377,19 +532,59 @@ function HeroSlideshow() {
   )
 }
 
-function FeatureList({ items }) {
+/** An app's features as cards: a screenshot above the ones that have one. */
+function FeatureCards({ items }) {
   return (
-    <ul className="feature-list">
+    <ul className="feature-cards">
       {items.map((item, index) => (
-        <li key={item.title}>
-          <span className="feature-number">{String(index + 1).padStart(2, "0")}</span>
-          <div>
-            <h3>{item.title}</h3>
-            <p>{item.copy}</p>
+        <li key={item.title} className={item.shot ? "feature-card" : "feature-card is-text"}>
+          {item.shot && <Screenshot shot={item.shot} />}
+          <div className="feature-card-body">
+            <span className="feature-number">{String(index + 1).padStart(2, "0")}</span>
+            <div>
+              <h3>{item.title}</h3>
+              <p>{item.copy}</p>
+            </div>
           </div>
         </li>
       ))}
     </ul>
+  )
+}
+
+/** One piece of new work: its pictures beside what it does. */
+function NewFeature({ feature, index }) {
+  const [main, ...more] = feature.shots
+  return (
+    <article className="new-block">
+      <div className="new-media">
+        <AppWindow title={feature.window}>
+          <Screenshot shot={main} />
+        </AppWindow>
+        {more.length > 0 && (
+          <div className="new-thumbs">
+            {more.map((shot) => (
+              <figure key={shot.label}>
+                <Screenshot shot={shot} />
+                <figcaption>{shot.title}</figcaption>
+              </figure>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="new-copy">
+        <span className="new-eyebrow">
+          {String(index + 1).padStart(2, "0")} · {feature.eyebrow}
+        </span>
+        <h3>{feature.title}</h3>
+        <p>{feature.copy}</p>
+        <ul>
+          {feature.points.map((point) => (
+            <li key={point}>{point}</li>
+          ))}
+        </ul>
+      </div>
+    </article>
   )
 }
 
@@ -417,7 +612,7 @@ function Download({ release }) {
   return (
     <section className="download-section" id="download">
       <div className="section-topline">
-        <span>07 / DOWNLOAD</span>
+        <span>08 / DOWNLOAD</span>
         <span>
           {release ? `VERSION ${release.version} · ${release.date}` : "WINDOWS · macOS · LINUX"}{" "}
           <i>✳</i>
@@ -520,6 +715,9 @@ function App() {
           <a href="#why" onClick={closeMenu}>
             Why
           </a>
+          <a href="#new" onClick={closeMenu}>
+            What&apos;s new
+          </a>
           <a href="#viewer" onClick={closeMenu}>
             Viewer
           </a>
@@ -621,9 +819,34 @@ function App() {
           </div>
         </section>
 
+        <section className="new-section" id="new">
+          <div className="section-topline">
+            <span>03 / WHAT&apos;S NEW</span>
+            <span>
+              EDITOR · STYLES · LAYOUTS <i>✳</i>
+            </span>
+          </div>
+          <div className="section-heading">
+            <h2>
+              New in
+              <br />
+              <em>Panelyth.</em>
+            </h2>
+            <p>
+              A text and Markdown editor, three design styles, layouts that set the whole window,
+              and panels and a command line that work the way you do.
+            </p>
+          </div>
+          <div className="new-list">
+            {newFeatures.map((feature, index) => (
+              <NewFeature key={feature.eyebrow} feature={feature} index={index} />
+            ))}
+          </div>
+        </section>
+
         <section className="app-section" id="viewer">
           <div className="section-topline">
-            <span>03 / VIEWER</span>
+            <span>04 / VIEWER</span>
             <span>
               PHOTOS AND VIDEO <i>✳</i>
             </span>
@@ -639,17 +862,12 @@ function App() {
               the picture you select is already in the preview.
             </p>
           </div>
-          <div className="app-layout">
-            <AppWindow title="Panelyth — Viewer">
-              <Screenshot shot={shots[0]} />
-            </AppWindow>
-            <FeatureList items={viewerFeatures} />
-          </div>
+          <FeatureCards items={viewerFeatures} />
         </section>
 
         <section className="app-section app-section-alt" id="commander">
           <div className="section-topline">
-            <span>04 / COMMANDER</span>
+            <span>05 / COMMANDER</span>
             <span>
               TWO-PANEL FILE MANAGER <i>✳</i>
             </span>
@@ -665,12 +883,7 @@ function App() {
               file without an explicit command, and nothing blocks while it runs.
             </p>
           </div>
-          <div className="app-layout app-layout-reverse">
-            <AppWindow title="Panelyth — Commander">
-              <Screenshot shot={shots[3]} />
-            </AppWindow>
-            <FeatureList items={commanderFeatures} />
-          </div>
+          <FeatureCards items={commanderFeatures} />
           <div className="key-bar" aria-label="The function keys of the commander">
             {functionKeys.map(([key, action]) => (
               <span key={key}>
@@ -682,7 +895,7 @@ function App() {
 
         <section className="together-section" id="together">
           <div className="section-topline">
-            <span>05 / ONE WINDOW</span>
+            <span>06 / ONE WINDOW</span>
             <span>
               SHARED STATE <i>✳</i>
             </span>
@@ -715,7 +928,7 @@ function App() {
 
         <section className="screenshots-section" id="screenshots">
           <div className="section-topline">
-            <span>06 / IN THE APP</span>
+            <span>07 / IN THE APP</span>
             <span>
               SCREENSHOTS <i>✳</i>
             </span>
@@ -751,7 +964,7 @@ function App() {
 
         <section className="about-section" id="about">
           <div className="section-topline">
-            <span>08 / ABOUT</span>
+            <span>09 / ABOUT</span>
             <span>LOCAL FILES · CLEAR WORKFLOW</span>
           </div>
           <div className="about-content">

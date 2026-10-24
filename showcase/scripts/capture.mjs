@@ -59,11 +59,35 @@ async function sized(app, page) {
   throw new Error("the window did not take the capture size")
 }
 
-/** Scrolls the folder tree past the drives of the machine this runs on. */
+/**
+ * Scrolls the folder tree past the drives of the machine this runs on (their
+ * labels are the owner's): it starts at the demo library's drive.
+ */
 async function treeAtDemoHome(viewer) {
   await viewer.evaluate(() => {
     const nodes = [...document.querySelectorAll('[data-testid="tree-node"]')]
-    nodes.find((n) => n.textContent.trim() === "user")?.scrollIntoView({ block: "start" })
+    const demo =
+      nodes.find((n) => /^U:\\?$/.test(n.textContent.trim())) ??
+      nodes.find((n) => n.textContent.trim() === "user")
+    demo?.scrollIntoView({ block: "start" })
+  })
+}
+
+/**
+ * The drives of the machine this runs on show in the viewer's folder tree with
+ * their volume labels ("Storage (D:)"), which are the owner's: before a
+ * picture they read as plain drive letters, as C:\ does. The demo drive (U:)
+ * and every folder keep their names.
+ */
+async function plainDrives(page) {
+  await page.evaluate(() => {
+    for (const node of document.querySelectorAll('[data-testid="tree-node"]')) {
+      const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT)
+      for (let text = walker.nextNode(); text; text = walker.nextNode()) {
+        const label = /^\s*.+\(([A-Z]):\)\s*$/.exec(text.nodeValue)
+        if (label) text.nodeValue = `${label[1]}:\\`
+      }
+    }
   })
 }
 
@@ -77,6 +101,7 @@ async function still(page, name, pointer = { x: VIEW.width - 6, y: VIEW.height /
   // Park the pointer where it raises no tooltip and no hover state.
   await page.mouse.move(pointer.x, pointer.y)
   await sleep(700)
+  await plainDrives(page)
   const png = join(work, `${name}.png`)
   await page.screenshot({ path: png })
   ffmpeg([
@@ -146,18 +171,16 @@ async function stills(demo) {
 
     // The viewer again, in the light theme with large tiles.
     await showFolder(viewer, at("Pictures", "Iceland"))
-    await viewer.getByRole("button", { name: "Large tiles" }).click()
-    await viewer.getByTestId("theme-toggle").click()
+    // The tile size is the title strip's on Windows, the view bar's elsewhere.
+    await viewer.getByLabel("Large tiles", { exact: true }).click()
+    await chooseStyle(app, viewer, null, "Light")
     await settled(viewer)
     await tile(viewer, "IMG_2216.jpg").click()
     await treeAtDemoHome(viewer)
     await sleep(900)
     await still(viewer, "viewer-light")
-    // The toggle goes Dark → Light → System: step on until it is dark again.
-    for (let i = 0; i < 3; i++) {
-      if ((await viewer.getByTestId("theme-toggle").textContent()).includes("Dark")) break
-      await viewer.getByTestId("theme-toggle").click()
-    }
+    await chooseStyle(app, viewer, null, "Dark")
+    await viewer.getByLabel("Medium tiles", { exact: true }).click()
 
     // The commander: a marked selection on the left, thumbnails on the right.
     await showFolder(viewer, at("Pictures", "Dolomites 2026"))
@@ -205,9 +228,167 @@ async function stills(demo) {
     await commander.getByTestId("find-status").filter({ hasText: "Done" }).waitFor()
     await sleep(600)
     await still(commander, "commander-find-results", { x: VIEW.width / 2, y: 26 })
+    await commander.keyboard.press("Escape")
+    await find.waitFor({ state: "detached" })
+
+    // Multi-rename: a mask with the date and a counter, and the new names previewed.
+    await goTo(commander, "left", at("Pictures", "Dolomites 2026"))
+    await commander.getByTestId("grid-left").focus()
+    await row(commander, "left", "DSC_4180").click()
+    for (let i = 0; i < 9; i++) await commander.keyboard.press("Insert")
+    await commander.keyboard.press("Control+m")
+    const rename = commander.getByTestId("multi-rename-dialog")
+    await rename.getByLabel("Name mask").fill("Dolomites [Y]-[M]-[D] [C]")
+    await rename
+      .getByTestId("rename-preview")
+      .getByText(/^Dolomites /)
+      .first()
+      .waitFor()
+    await sleep(500)
+    await still(commander, "commander-rename", { x: VIEW.width / 2, y: 26 })
+    await commander.keyboard.press("Escape")
+    await rename.waitFor({ state: "detached" })
+
+    // The path bar's view options: hidden and system files, the panel's view.
+    await commander.getByTestId("view-options-left").click()
+    await commander.getByTestId("view-options-menu-left").waitFor()
+    await still(commander, "commander-view-options", { x: VIEW.width / 2, y: 26 })
+    await commander.keyboard.press("Escape")
+
+    // The Single layout preset: one panel across the window, as thumbnails.
+    const presets = commander.getByTestId("title-layout")
+    await presets.getByRole("radio", { name: /^Single/ }).click()
+    await settled(commander, '[data-testid="grid-left"] img')
+    await row(commander, "left", "DSC_4198").click()
+    await sleep(700)
+    await still(commander, "commander-single", { x: VIEW.width / 2, y: 26 })
+    await presets.getByRole("radio", { name: /^Details/ }).click()
+
+    // The command line: earlier commands in its history (Alt+F8), a new one being typed.
+    // The history is the capture profile's own, written before the view loads it.
+    await commander.evaluate(async (items) => {
+      await window.panelyth.library.setSetting("commander.commandHistory", { v: 1, items })
+    }, COMMAND_HISTORY)
+    // The layout is saved after a quiet moment: a reload before it would bring Single back.
+    await sleep(1500)
+    await commander.reload()
+    await commander.getByTestId("grid-left").locator("[data-id]").first().waitFor()
+    await goTo(commander, "left", at("Pictures", "Iceland"))
+    await row(commander, "left", "Aurora over Kirkjufell").click()
+    const line = commander.getByRole("textbox", { name: "Command line" })
+    await line.click()
+    await line.pressSequentially('ffmpeg -i "Aurora over Kirkjufell.mp4" -t 8 ', { delay: 10 })
+    await commander.keyboard.press("Alt+F8")
+    await commander.getByRole("menu", { name: "Command history" }).waitFor()
+    await sleep(500)
+    await still(commander, "commander-cmdline", { x: VIEW.width / 2, y: 26 })
+    await commander.keyboard.press("Escape")
+    await line.fill("")
+    await commander.getByTestId("grid-left").focus()
+
+    // The text and Markdown editor (F4): notes in Live, the itinerary (a table, a
+    // to-do list) in Preview, where tables are drawn, then the PDF export.
+    const closeEditors = () =>
+      app.evaluate(({ BrowserWindow }) => {
+        for (const w of BrowserWindow.getAllWindows())
+          if (w.webContents.getURL().startsWith("app://texteditor/")) w.destroy()
+      })
+    const openEditor = async (folder, name) => {
+      await goTo(commander, "left", at("Documents", folder))
+      await row(commander, "left", name).click()
+      await commander.keyboard.press("F4")
+      const page = await pageOf(app, "app://texteditor/")
+      await page.getByTestId("mode-switch").waitFor()
+      await sized(app, page)
+      await sleep(1200)
+      return page
+    }
+    const corner = { x: VIEW.width - 6, y: VIEW.height - 60 }
+    const notes = await openEditor("Notes", "Photo book ideas")
+    await still(notes, "editor-live", corner)
+    await closeEditors()
+    const editor = await openEditor("Trips", "Dolomites itinerary")
+    await editor.getByTestId("mode-preview").click()
+    await editor.getByTestId("preview").locator("table").waitFor()
+    await sleep(600)
+    await still(editor, "editor-preview", corner)
+    await editor.keyboard.press("Control+Shift+E")
+    await editor.getByRole("dialog").waitFor()
+    await sleep(500)
+    await still(editor, "editor-export", corner)
+    await editor.keyboard.press("Escape")
+    await closeEditors()
+
+    // The design styles: the viewer in Liquid glass, the commander in Terminal (Phosphor).
+    await chooseStyle(app, commander, "Liquid glass")
+    await commander.getByRole("button", { name: "Switch to Viewer" }).click()
+    await showFolder(viewer, at("Pictures", "Lisbon weekend"))
+    await settled(viewer)
+    await tile(
+      viewer,
+      (await viewer.getByTestId("tile").nth(5).getAttribute("aria-label")) ?? "",
+    ).click()
+    await treeAtDemoHome(viewer)
+    await sleep(900)
+    await still(viewer, "viewer-glass")
+    // The commander in Liquid glass: thumbnails beside a list.
+    await viewer.getByRole("button", { name: "Switch to Commander" }).click()
+    await goTo(commander, "left", at("Pictures", "Countryside"))
+    await goTo(commander, "right", at("Pictures", "Lisbon weekend"))
+    await commander.getByTestId("grid-right").focus()
+    await commander.keyboard.press("Control+Shift+F1")
+    await settled(commander, '[data-testid="grid-right"] img')
+    await commander.getByTestId("grid-left").focus()
+    await commander.keyboard.press("Control+F2")
+    await sleep(900)
+    await still(commander, "commander-glass", { x: VIEW.width / 2, y: 26 })
+    await commander.getByTestId("grid-right").focus()
+    await commander.keyboard.press("Control+F2")
+    await commander.getByRole("button", { name: "Switch to Viewer" }).click()
+    await chooseStyle(app, viewer, "Terminal", "Phosphor")
+    await viewer.getByRole("button", { name: "Switch to Commander" }).click()
+    await goTo(commander, "left", at("Pictures", "Iceland"))
+    await goTo(commander, "right", at("Pictures", "Sahara"))
+    await commander.getByTestId("grid-left").focus()
+    await row(commander, "left", "IMG_2212").click()
+    for (let i = 0; i < 3; i++) await commander.keyboard.press("Insert")
+    await sleep(900)
+    await still(commander, "commander-terminal", { x: VIEW.width / 2, y: 26 })
   } finally {
     await app.close().catch(() => {})
   }
+}
+
+/** The command line's history in the commander-cmdline shot, newest first. */
+const COMMAND_HISTORY = [
+  "magick mogrify -resize 2048x2048 -quality 88 *.jpg",
+  'exiftool -DateTimeOriginal "IMG_2212.jpg"',
+  "git status",
+  "cd ..\\Sahara",
+  'ffmpeg -i "Dunes at dusk.mp4" -vf scale=1280:-2 dunes-720p.mp4',
+  "code .",
+]
+
+/** Settings → Appearance: a design style, and the theme by the name the style gives it. */
+async function chooseStyle(app, page, style, theme) {
+  await page.getByTestId("app-settings").click()
+  const settings = await pageOf(app, "/settings.html")
+  await settings.getByRole("tab", { name: "Appearance" }).click()
+  if (style)
+    await settings
+      .getByRole("group", { name: "Design style" })
+      .getByRole("button", { name: style, exact: true })
+      .click()
+  if (theme)
+    await settings
+      .getByRole("group", { name: "Color theme" })
+      .getByRole("button", { name: theme, exact: true })
+      .click()
+  await sleep(400)
+  // Esc closes the window on keydown.
+  await settings.keyboard.down("Escape")
+  for (let i = 0; i < 50 && app.windows().includes(settings); i++) await sleep(50)
+  await sleep(500)
 }
 
 /** Opens the Lighting panel and moves a few of its controls with the keyboard. */

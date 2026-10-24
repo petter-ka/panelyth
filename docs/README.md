@@ -34,14 +34,38 @@ you selected comes with you. Bookmarks, recent folders and appearance are shared
 - **Archives and servers as folders.** Enter zip and tar archives like folders, pack and unpack, and connect to FTP
   and FTPS servers.
 - **And the rest of the toolbox:** a multi-rename tool with undo, a quick view of the file under the cursor, a lister
-  for text, hex, pictures and video, and a command line.
+  for text, hex, pictures and video, and a command line that remembers the commands you ran (Alt+F8).
+- **Panels the way you read them.** The eye in the path bar switches hidden and system files and the panel's view;
+  folders stay in name order while the files are sorted by size or date; recent dates can read "yesterday at 14:05"
+  in the system's format or ISO.
+- **Layouts in one click.** Presets in the title bar set the whole window: details, list, tree, gallery, preview,
+  stacked, or Single, one panel across the window as thumbnails.
 
 ![Panelyth Commander with a file list on the left, thumbnails on the right and the function-key bar](../showcase/src/media/commander-panels.webp)
 
 <p>
-  <img src="../showcase/src/media/commander-find.webp" width="32%" alt="The Find files dialog on its Advanced tab, with a minimum size and a date range filled in" />
-  <img src="../showcase/src/media/commander-find-results.webp" width="32%" alt="The Find files dialog listing 32 results with their folders and sizes" />
+  <img src="../showcase/src/media/commander-single.webp" width="32%" alt="The commander in the Single layout: one panel across the window with a folder of photographs as thumbnails" />
+  <img src="../showcase/src/media/commander-rename.webp" width="32%" alt="The Multi-rename dialog with a date and counter mask and a preview of nine new names" />
+  <img src="../showcase/src/media/commander-cmdline.webp" width="32%" alt="The command line with its history of earlier commands open above it" />
+</p>
+
+<p>
+  <img src="../showcase/src/media/commander-find-results.webp" width="32%" alt="The Find files dialog listing its results with their folders and sizes" />
   <img src="../showcase/src/media/commander-quick-view.webp" width="32%" alt="The commander's quick view showing the picture under the cursor in the right panel" />
+  <img src="../showcase/src/media/commander-view-options.webp" width="32%" alt="The view options menu of the path bar, with hidden files and the panel's views" />
+</p>
+
+## The text and Markdown editor
+
+F4 opens text, code and Markdown in an editor window of its own. **Live** shows Markdown as the finished page while
+you type, **Preview** draws tables and task lists, and **Source** shows every character. Find and replace, word count,
+code and config files in their colours, pictures dropped in or pasted (saved next to the note), and a clean PDF export
+on white paper. Saving puts the file back whole, never half written.
+
+<p>
+  <img src="../showcase/src/media/editor-preview.webp" width="32%" alt="The editor in Preview, a trip itinerary with a table and a to-do list" />
+  <img src="../showcase/src/media/editor-live.webp" width="32%" alt="The editor in Live, a Markdown note with a heading and a numbered list" />
+  <img src="../showcase/src/media/editor-export.webp" width="32%" alt="The Export PDF dialog with the page size and margins" />
 </p>
 
 ## The Viewer
@@ -59,6 +83,18 @@ you selected comes with you. Bookmarks, recent folders and appearance are shared
   <img src="../showcase/src/media/viewer-photo.webp" width="32%" alt="A single photograph opened in the media window" />
   <img src="../showcase/src/media/viewer-editor.webp" width="32%" alt="The image editor with the Lighting tool open beside a photograph" />
   <img src="../showcase/src/media/viewer-light.webp" width="32%" alt="The viewer in the light theme with large tiles" />
+</p>
+
+## Three styles
+
+Both apps come in three design styles, chosen in Settings → Appearance, and every theme works in each: **Classic**,
+flat and neutral; **Liquid glass**, translucent panels over a soft wallpaper; and **Terminal**, a console with framed
+panels and monospaced type, where the themes become Phosphor, Ice, Amber and three paper dossiers.
+
+<p>
+  <img src="../showcase/src/media/viewer-glass.webp" width="32%" alt="The viewer in the Liquid glass style" />
+  <img src="../showcase/src/media/commander-glass.webp" width="32%" alt="The commander in the Liquid glass style, a list beside thumbnails" />
+  <img src="../showcase/src/media/commander-terminal.webp" width="32%" alt="The commander in the Terminal style, green monospaced text on black" />
 </p>
 
 The screenshots are taken from the app itself, on a library of generated pictures;
