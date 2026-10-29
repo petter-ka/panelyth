@@ -1,7 +1,15 @@
 import type { TextDiffFile, TextDiffOpenResult, TextDiffRow } from "@panelyth/contracts"
 import { Button, DialogWindow } from "@panelyth/ui"
-import { useVirtualizer } from "@tanstack/react-virtual"
-import { useEffect, useRef, useSyncExternalStore, type KeyboardEvent } from "react"
+import { useVirtualizer, type VirtualItem } from "@tanstack/react-virtual"
+import {
+  useEffect,
+  useRef,
+  useSyncExternalStore,
+  type KeyboardEvent,
+  type ReactNode,
+  type RefObject,
+  type UIEvent,
+} from "react"
 import {
   closeDiff,
   diffRows,
@@ -15,6 +23,18 @@ import { t } from "@panelyth/i18n"
 
 const ROW_HEIGHT = 18
 const GUTTER = "3.5rem"
+
+type Side = "left" | "right"
+
+/**
+ * The two panes keep the same scroll position. Setting a position that is
+ * already there raises no scroll event, so they do not chase each other.
+ */
+function follow(from: HTMLElement, to: HTMLElement | null): void {
+  if (!to) return
+  if (to.scrollTop !== from.scrollTop) to.scrollTop = from.scrollTop
+  if (to.scrollLeft !== from.scrollLeft) to.scrollLeft = from.scrollLeft
+}
 
 /** Row backgrounds: a changed pair, a line only on the left, a line only on the right. */
 const LEFT_TONE: Record<TextDiffRow["op"], string> = {
@@ -184,6 +204,7 @@ function TextDiff({
   fromList: boolean
 }) {
   const scroll = useRef<HTMLDivElement>(null)
+  const otherPane = useRef<HTMLDivElement>(null)
   // The visible rows render again when a page of them arrives.
   useSyncExternalStore(diffRows.subscribe, diffRows.getVersion)
   // TanStack Virtual returns methods that React Compiler cannot safely memoize.
@@ -251,47 +272,107 @@ function TextDiff({
           {fromList ? t("Back to the list") : t("Close")}
         </Button>
       </div>
+      {/* Two panes, one file each; they scroll together, so a long line never hides one of them. */}
       <div
-        ref={scroll}
-        role="region"
-        aria-label={t("Lines of both files")}
-        tabIndex={0}
-        onKeyDown={onKeyDown}
         data-testid="diff-rows"
-        className="relative h-[calc(100vh-14rem)] min-h-40 overflow-auto rounded-md border border-border bg-canvas font-mono text-[0.75rem] leading-[18px] outline-none focus:border-accent"
+        onKeyDown={onKeyDown}
+        className="flex h-[calc(100vh-14rem)] min-h-40 gap-3"
       >
-        <div
-          style={{
-            height: virtualizer.getTotalSize(),
-            position: "relative",
-            // Wide enough for the longest line seen so far, on both sides.
-            minWidth: `calc(${2 * Math.min(maxChars, 600)}ch + 2 * ${GUTTER} + 2rem)`,
-          }}
-        >
-          {items.map((v) => (
-            <Line key={v.key} index={v.index} start={v.start} />
-          ))}
-        </div>
+        <Pane
+          side="left"
+          label={t("Lines of the left file")}
+          scrollRef={scroll}
+          onScroll={(e) => follow(e.currentTarget, otherPane.current)}
+          size={virtualizer.getTotalSize()}
+          maxChars={maxChars}
+          items={items}
+        />
+        <Pane
+          side="right"
+          label={t("Lines of the right file")}
+          scrollRef={otherPane}
+          onScroll={(e) => follow(e.currentTarget, scroll.current)}
+          size={virtualizer.getTotalSize()}
+          maxChars={maxChars}
+          items={items}
+        />
       </div>
     </>
   )
 }
 
-/** A changed line with the part that differs marked (not by color alone: it is underlined too). */
-function Marked({ text, from, to }: { text: string; from: number; to: number }) {
-  if (to <= from) return <>{text}</>
+/** One file of the comparison; the left pane is the virtualizer's scroll element. */
+function Pane({
+  side,
+  label,
+  scrollRef,
+  onScroll,
+  size,
+  maxChars,
+  items,
+}: {
+  side: Side
+  label: string
+  scrollRef: RefObject<HTMLDivElement | null>
+  onScroll: (e: UIEvent<HTMLDivElement>) => void
+  size: number
+  maxChars: number
+  items: VirtualItem[]
+}) {
   return (
-    <>
-      {text.slice(0, from)}
-      <mark className="rounded-sm bg-warning/40 text-inherit underline decoration-dotted underline-offset-2">
-        {text.slice(from, to)}
-      </mark>
-      {text.slice(to)}
-    </>
+    <div
+      ref={scrollRef}
+      role="region"
+      aria-label={label}
+      tabIndex={0}
+      onScroll={onScroll}
+      data-side={side}
+      className="relative min-w-0 flex-1 overflow-auto rounded-md border border-border bg-canvas font-mono text-[0.75rem] leading-[18px] outline-none focus:border-accent"
+    >
+      <div
+        style={{
+          height: size,
+          position: "relative",
+          // Wide enough for the longest line seen so far.
+          minWidth: `calc(${Math.min(maxChars, 600)}ch + ${GUTTER} + 1rem)`,
+        }}
+      >
+        {items.map((v) => (
+          <Line key={v.key} side={side} index={v.index} start={v.start} />
+        ))}
+      </div>
+    </div>
   )
 }
 
-function Line({ index, start }: { index: number; start: number }) {
+/**
+ * A changed line with the words and characters that differ marked (not by
+ * color alone: they are underlined too). `spans` holds groups of [left from,
+ * left to, right from, right to]; `at` is 0 for the left line, 2 for the right.
+ */
+function Marked({ text, spans, at }: { text: string; spans: number[]; at: 0 | 2 }) {
+  const parts: ReactNode[] = []
+  let done = 0
+  for (let k = 0; k + 3 < spans.length; k += 4) {
+    const from = spans[k + at]!
+    const to = spans[k + at + 1]!
+    if (to <= from) continue
+    if (from > done) parts.push(text.slice(done, from))
+    parts.push(
+      <mark
+        key={k}
+        className="rounded-sm bg-warning/40 text-inherit underline decoration-dotted underline-offset-2"
+      >
+        {text.slice(from, to)}
+      </mark>,
+    )
+    done = to
+  }
+  parts.push(text.slice(done))
+  return <>{parts}</>
+}
+
+function Line({ side, index, start }: { side: Side; index: number; start: number }) {
   const row = diffRows.getRow(index)
   const style = { position: "absolute" as const, top: start, height: ROW_HEIGHT, left: 0, right: 0 }
   if (!row) {
@@ -301,41 +382,27 @@ function Line({ index, start }: { index: number; start: number }) {
       </div>
     )
   }
-  const right = row.op === "equal" ? row.left : (row.right ?? "")
-  const number = "shrink-0 px-2 text-right text-muted tabular-nums select-none"
-  const text = "min-w-0 flex-1 overflow-hidden whitespace-pre"
+  const left = side === "left"
+  const n = left ? row.l : row.r
+  // An equal row carries its text once, in `left`.
+  const text = left ? row.left : row.op === "equal" ? row.left : (row.right ?? "")
   return (
-    <div style={style} data-op={row.op} className="flex">
-      <div className={`flex w-1/2 border-r border-border ${LEFT_TONE[row.op]}`}>
-        <span className={number} style={{ width: GUTTER }}>
-          {row.l || ""}
-        </span>
-        <span className={text}>
-          {!row.l ? (
-            ""
-          ) : row.spans ? (
-            <Marked text={row.left} from={row.spans[0]} to={row.spans[1]} />
-          ) : (
-            row.left
-          )}
-          {row.cut && row.l ? "…" : ""}
-        </span>
-      </div>
-      <div className={`flex w-1/2 ${RIGHT_TONE[row.op]}`}>
-        <span className={number} style={{ width: GUTTER }}>
-          {row.r || ""}
-        </span>
-        <span className={text}>
-          {!row.r ? (
-            ""
-          ) : row.spans ? (
-            <Marked text={right} from={row.spans[2]} to={row.spans[3]} />
-          ) : (
-            right
-          )}
-          {row.cut && row.r ? "…" : ""}
-        </span>
-      </div>
+    <div
+      style={style}
+      data-op={row.op}
+      data-side={side}
+      className={`flex ${(left ? LEFT_TONE : RIGHT_TONE)[row.op]}`}
+    >
+      <span
+        className="shrink-0 px-2 text-right text-muted tabular-nums select-none"
+        style={{ width: GUTTER }}
+      >
+        {n || ""}
+      </span>
+      <span className="min-w-0 flex-1 whitespace-pre">
+        {!n ? "" : row.spans ? <Marked text={text} spans={row.spans} at={left ? 0 : 2} /> : text}
+        {row.cut && n ? "…" : ""}
+      </span>
     </div>
   )
 }

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "@panelyth/ui/styles.css";
+/* The shared components' classes (the title strip, ADR-0045): without them its buttons lose their place. */
+@source "../../ui/src";
 
 html,
 body,

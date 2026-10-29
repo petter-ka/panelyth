@@ -1,5 +1,5 @@
 import type { ReactNode } from "react"
-import { TitleBarSegment, type TitleBarOption } from "@panelyth/ui"
+import { TitleBarGridMenu, type TitleBarGridOption } from "@panelyth/ui"
 import { t } from "@panelyth/i18n"
 import {
   applyLayoutPreset,
@@ -8,17 +8,22 @@ import {
   useLayoutState,
   type LayoutPresetId,
 } from "../features/layoutPresets"
+import { usePanelsStore } from "../features/panels"
 
-/** A small drawing of the window: two panels, and what each preset puts in them (16px). */
-function LayoutIcon({ children }: { children: ReactNode }) {
+/**
+ * A drawing of the window: two panels, and what each preset puts in them;
+ * 16px on the strip's button, larger in the menu's tiles (thinner lines there,
+ * so they keep the same weight on screen).
+ */
+function LayoutIcon({ children, size = 16 }: { children: ReactNode; size?: number }) {
   return (
     <svg
-      width="16"
-      height="16"
+      width={size}
+      height={size}
       viewBox="0 0 16 16"
       fill="none"
       stroke="currentColor"
-      strokeWidth="1.25"
+      strokeWidth={size > 16 ? 0.75 : 1.25}
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
@@ -53,23 +58,50 @@ const ICONS: Record<LayoutPresetId, ReactNode> = {
 }
 
 /**
- * The commander's layout presets in the title strip (ADR-0045): each sets the
- * whole window, so a click never depends on which panel is active. Lit when the
- * window matches a preset; none is lit after the layout was changed by hand.
+ * A preset that rebuilt the panels (Single and back) took the list that had the
+ * keys with it: they go to the active panel's list.
+ */
+function focusActivePanel(): void {
+  const side = usePanelsStore.getState().active
+  document
+    .querySelector<HTMLElement>(`[data-testid="grid-${side}"]`)
+    ?.focus({ preventScroll: true })
+}
+
+/** The menu's tiles are this large. */
+const LARGE = 40
+
+/**
+ * A preset's message is its name and what it does ("Details: both panels in
+ * columns"): the tile shows them apart. Every language keeps the colon.
+ */
+function nameOf(label: string): { name: string; description?: string } {
+  const [name = label, ...rest] = label.split(/\s*:\s*/)
+  return rest.length > 0 ? { name, description: rest.join(": ") } : { name }
+}
+
+/**
+ * The commander's layout presets (ADR-0045): one button on the title strip
+ * (owner request 2026-10-27) showing the preset the window matches; pointing at
+ * it opens every preset as a large tile. Each sets the whole window, so a
+ * choice never depends on which panel is active. None is lit after the layout
+ * was changed by hand.
  */
 export function CommanderTitleControls() {
   const current = matchingPreset(useLayoutState())
-  const options: TitleBarOption<LayoutPresetId | "">[] = LAYOUT_PRESETS.map((p) => ({
+  const options: TitleBarGridOption<LayoutPresetId>[] = LAYOUT_PRESETS.map((p) => ({
     value: p.id,
-    label: t(p.label),
+    ...nameOf(t(p.label)),
     icon: <LayoutIcon>{ICONS[p.id]}</LayoutIcon>,
+    largeIcon: <LayoutIcon size={LARGE}>{ICONS[p.id]}</LayoutIcon>,
   }))
   return (
-    <TitleBarSegment
-      label={t("Layout")}
+    <TitleBarGridMenu
+      label={t("Layout presets")}
       value={current ?? ""}
       options={options}
-      onChange={(id) => id && applyLayoutPreset(id)}
+      onChange={applyLayoutPreset}
+      onFocusLost={focusActivePanel}
       testId="title-layout"
     />
   )

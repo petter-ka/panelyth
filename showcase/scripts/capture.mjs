@@ -257,12 +257,16 @@ async function stills(demo) {
 
     // The Single layout preset: one panel across the window, as thumbnails.
     const presets = commander.getByTestId("title-layout")
-    await presets.getByRole("radio", { name: /^Single/ }).click()
+    const preset = async (name) => {
+      await presets.hover()
+      await commander.getByTestId("title-layout-menu").getByRole("menuitemradio", { name }).click()
+    }
+    await preset(/^Single/)
     await settled(commander, '[data-testid="grid-left"] img')
     await row(commander, "left", "DSC_4198").click()
     await sleep(700)
     await still(commander, "commander-single", { x: VIEW.width / 2, y: 26 })
-    await presets.getByRole("radio", { name: /^Details/ }).click()
+    await preset(/^Details/)
 
     // The command line: earlier commands in its history (Alt+F8), a new one being typed.
     // The history is the capture profile's own, written before the view loads it.

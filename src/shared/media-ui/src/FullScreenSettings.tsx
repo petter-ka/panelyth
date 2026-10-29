@@ -18,7 +18,7 @@ export function FullScreenSettings() {
       <SwitchRow
         label={t("Hide the video controls")}
         description={t(
-          "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.",
+          "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.",
         )}
         checked={autoHide}
         disabled={false}

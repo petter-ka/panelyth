@@ -40,8 +40,12 @@ amendment of the same day).
   folder tree beside them), Gallery (both Thumbnails), Single (the active panel alone across the window as thumbnails,
   Tab showing the other; quick view brings both back while open; owner request 2026-10-24), Preview (quick view in
   the other panel) and Stacked (the left panel above the right one). Stacked and Single are arrangements kept in
-  `commander.layout`. A preset is lit only while the
-  window matches it; after a change by hand none is. A rebuilt panel group gives the keys back to the active panel.
+  `commander.layout`. The presets are one button, "Layout presets" (owner request 2026-10-27,
+  `TitleBarGridMenu`), showing the drawing of the preset the window matches; pointing at it (or a click, Enter or
+  the down arrow) opens every preset as a large tile with its name and what it does, four to a row. Opened by
+  pointing, the menu closes once the pointer has left both the button and the menu. A preset is lit only while the
+  window matches it; after a change by hand none is. Closing the menu gives the keys back to the panel that had
+  them, or to the active panel's list when the preset rebuilt the panels.
   While the strip is on screen, the viewer's sidebar has no title row ("Panelyth" and the preview switch) and its
   view bar no tile size control (owner request); without the strip (macOS, Linux, full screen) they are back. The
   tile menu's "Tile size", Ctrl + wheel and the keys stay. Panelyth System has no switchers.
@@ -72,7 +76,9 @@ amendment of the same day).
   Close). The window calls act on the caller's own window only (`frameWindowOf`); the document window, which had
   no preload, gets a frame-only one (`frame.cjs`) on Windows, and its origin may make the two window calls and
   nothing else. Windows without a title row (the full-screen media window) stay as they are.
-- On macOS and Linux the strip is not drawn, so its switchers are not there; the controls they repeat are.
+- On macOS and Linux the strip is not drawn, so its switchers are not there; the controls they repeat are. The
+  commander's layout presets have no other control, so without the strip (macOS, Linux, full screen) the same
+  button sits in the toolbar right after the edit button (owner request 2026-10-29).
 - E2E specs pick the tile size through `tileSizeSwitch` (`src/shared/e2e/launch.ts`): the strip's on Windows.
 - `src/shared/e2e/specs/switch.spec.ts` checks the strip's place and height and that its buttons maximize, restore
   and minimize the window; `src/shared/ui/src/titleBar.test.tsx` the labels, the full-screen state and the order

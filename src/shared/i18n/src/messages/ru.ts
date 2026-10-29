@@ -1018,7 +1018,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "Последующие правки скрыты, пока вы настраиваете обрезку.",
   Latitude: "Широта",
-  Layout: "Макет",
+  "Layout presets": "Готовые макеты",
   "Leave alone": "Оставить как есть",
   "Leave one side at 0 to keep the proportions.":
     "Оставьте одну сторону равной 0, чтобы сохранить пропорции.",
@@ -1053,7 +1053,8 @@ const messages: Messages = {
   "Line strength": "Сила линий",
   "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
     "В строке {line} есть символ, которого нет в кодировке {encoding}. Сохранить файл в UTF-8?",
-  "Lines of both files": "Строки обоих файлов",
+  "Lines of the left file": "Строки левого файла",
+  "Lines of the right file": "Строки правого файла",
   Link: "Ссылка",
   "Link target: {url}": "Адрес ссылки: {url}",
   "Liquid glass": "Жидкое стекло",
@@ -1303,6 +1304,8 @@ const messages: Messages = {
   "Oldest first": "Сначала старые",
   "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
     "На изображении заголовок и указатель скрываются, если мышь не двигается 3 секунды.",
+  "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "На видео, во время воспроизведения или на паузе, панели и указатель скрываются через 3 секунды без движения мыши.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "После сохранения скрытое нельзя восстановить из сохранённого файла. Оригинал остаётся как есть, если вы его не замените.",
   "One beside each file ({example})": "По одному рядом с каждым файлом ({example})",
@@ -2386,8 +2389,6 @@ const messages: Messages = {
   "When a name is taken": "Если имя занято",
   "When switching apps, carry over": "При переключении приложений переносить",
   "Where the results go": "Куда сохраняются результаты",
-  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
-    "Во время воспроизведения видео панели и указатель скрываются, если мышь не двигается 3 секунды.",
   White: "Белый",
   "White balance": "Баланс белого",
   "White point": "Точка белого",

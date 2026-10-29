@@ -16,6 +16,7 @@ type CommanderActionIconName =
   | "refresh"
   | "star"
   | "compare"
+  | "compareDirs"
   | "sync"
   // Stage C10: user commands, the command line, the Thumbnails view, the hidden-files toggle.
   | "tool"
@@ -39,6 +40,7 @@ const ICON_NAMES: Record<CommanderActionIconName, IconName> = {
   refresh: "refresh",
   star: "star",
   compare: "flip",
+  compareDirs: "panel-left",
   sync: "sort",
   // The other icon libraries have no drawing of their own for these.
   tool: "settings",
@@ -121,6 +123,14 @@ export function CommanderActionIcon({
           <rect x="1.75" y="3" width="4.75" height="10" rx="1" />
           <rect x="9.5" y="3" width="4.75" height="10" rx="1" />
           <path d="M3.5 6h1.25M3.5 8.5h1.25M11.25 6h1.25M11.25 10.5h1.25" />
+        </>
+      )}
+      {/* Two folders side by side, the right one with an extra line: compare directories. */}
+      {name === "compareDirs" && (
+        <>
+          <path d="M1.5 4.75c0-.28.22-.5.5-.5h1.9l.85 1H7c.28 0 .5.22.5.5v5.5c0 .28-.22.5-.5.5H2a.5.5 0 0 1-.5-.5v-6.5Z" />
+          <path d="M8.5 4.75c0-.28.22-.5.5-.5h1.9l.85 1H14c.28 0 .5.22.5.5v5.5c0 .28-.22.5-.5.5H9a.5.5 0 0 1-.5-.5v-6.5Z" />
+          <path d="M3.25 8.5h2.5M10.25 8.5h2.5M10.25 10h1.5" />
         </>
       )}
       {name === "sync" && (

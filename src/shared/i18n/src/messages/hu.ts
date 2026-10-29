@@ -1019,7 +1019,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "A későbbi módosítások rejtve vannak, amíg a vágást állítja.",
   Latitude: "Szélesség",
-  Layout: "Elrendezés",
+  "Layout presets": "Elrendezés-sablonok",
   "Leave alone": "Békén hagyás",
   "Leave one side at 0 to keep the proportions.":
     "Hagyja az egyik oldalt 0-n az arányok megtartásához.",
@@ -1054,7 +1054,8 @@ const messages: Messages = {
   "Line strength": "Vonalerősség",
   "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
     "A(z) {line}. sorban van egy karakter, amely a(z) {encoding} kódolásban nem szerepel. Menti inkább UTF-8 kódolással?",
-  "Lines of both files": "Mindkét fájl sorai",
+  "Lines of the left file": "A bal oldali fájl sorai",
+  "Lines of the right file": "A jobb oldali fájl sorai",
   Link: "Hivatkozás",
   "Link target: {url}": "Hivatkozás célja: {url}",
   "Liquid glass": "Folyékony üveg",
@@ -1304,6 +1305,8 @@ const messages: Messages = {
   "Oldest first": "Legrégebbi elöl",
   "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
     "Képnél a fejléc és az egérmutató eltűnik, ha 3 másodpercig nem mozdul az egér.",
+  "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "Videón, lejátszás közben vagy szüneteltetve, a sávok és a mutató 3 másodperc egérmozgás nélkül eltűnnek.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Mentés után a kitakart rész nem hozható vissza a mentett fájlból. Az eredeti változatlan marad, hacsak nem cseréli le.",
   "One beside each file ({example})": "Egy-egy minden fájl mellé ({example})",
@@ -2392,8 +2395,6 @@ const messages: Messages = {
   "When a name is taken": "Ha a név foglalt",
   "When switching apps, carry over": "Alkalmazásváltáskor átvitele",
   "Where the results go": "Hová kerülnek az eredmények",
-  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
-    "Videó lejátszása közben a sávok és az egérmutató eltűnnek, ha 3 másodpercig nem mozdul az egér.",
   White: "Fehér",
   "White balance": "Fehéregyensúly",
   "White point": "Fehérpont",

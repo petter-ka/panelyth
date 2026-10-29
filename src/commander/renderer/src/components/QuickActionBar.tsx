@@ -1,5 +1,5 @@
 import { formatChord } from "@panelyth/renderer-core"
-import { Tooltip } from "@panelyth/ui"
+import { Tooltip, useTitleBarShown } from "@panelyth/ui"
 import {
   useEffect,
   useRef,
@@ -26,6 +26,7 @@ import {
 import { quickTarget, useViewersStore } from "../features/viewers"
 import { CommanderActionIcon, type CommanderActionIconName } from "./CommanderActionIcon"
 import { PopupMenu, type MenuEntry } from "./PopupMenu"
+import { CommanderTitleControls } from "./TitleControls"
 import { t } from "@panelyth/i18n"
 
 /** The icon of every built-in action that can go on the toolbar (a test keeps it complete). */
@@ -42,7 +43,7 @@ export const ACTION_ICONS: Partial<Record<ActionId, CommanderActionIconName>> = 
   "git.history": "history",
   "view.filter": "filter",
   "view.branch": "branch",
-  "compare.dirs": "compare",
+  "compare.dirs": "compareDirs",
   "compare.sync": "sync",
   "compare.content": "compare",
   "view.quick": "preview",
@@ -163,6 +164,9 @@ export function QuickActionBar() {
   const filter = useListingStore((s) => s[active].filter)
   const view = useListingStore((s) => s[active].view)
   const quick = useViewersStore(quickTarget)
+  // The layout presets live on the title strip (Windows); where there is none (macOS,
+  // Linux, full screen) they sit beside the edit button instead (ADR-0045).
+  const stripShown = useTitleBarShown()
 
   const pressedOf = (action: string): boolean | undefined => {
     switch (action) {
@@ -315,6 +319,7 @@ export function QuickActionBar() {
           <CommanderActionIcon name="attrs" />
         </button>
       </Tooltip>
+      {!stripShown && <CommanderTitleControls />}
       {menu && items[menu.index] !== undefined && (
         <PopupMenu
           label={t("Toolbar button")}

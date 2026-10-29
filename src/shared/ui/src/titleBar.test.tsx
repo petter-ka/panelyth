@@ -1,6 +1,7 @@
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import { afterEach, describe, expect, it, vi } from "vitest"
 import { TitleBar } from "./TitleBar"
+import { TitleBarGridMenu } from "./TitleBarControls"
 import {
   connectWindowFrame,
   useWindowFrameStore,
@@ -113,5 +114,112 @@ describe("the window's title strip", () => {
     expect(screen.getByTestId("title-bar")).toHaveAttribute("aria-hidden", "true")
     expect(screen.queryByRole("button")).toBeNull()
     expect(port.state).not.toHaveBeenCalled()
+  })
+})
+
+describe("the strip's grid menu (the commander's layout presets)", () => {
+  const options = [
+    {
+      value: "a",
+      name: "Details",
+      description: "both panels in columns",
+      icon: "A",
+      largeIcon: "AA",
+    },
+    {
+      value: "b",
+      name: "Single",
+      description: "one panel as thumbnails",
+      icon: "B",
+      largeIcon: "BB",
+    },
+  ] as const
+
+  function renderMenu(value: "a" | "b" | "", onChange = vi.fn()) {
+    render(
+      <>
+        <input aria-label="Panel" />
+        <TitleBarGridMenu
+          label="Layout presets"
+          value={value}
+          options={options}
+          onChange={onChange}
+          testId="presets"
+        />
+      </>,
+    )
+    return onChange
+  }
+
+  it("is one button showing the chosen option's drawing", () => {
+    renderMenu("b")
+    const button = screen.getByRole("button", { name: "Layout presets" })
+    expect(button).toHaveTextContent("B")
+    expect(screen.queryByRole("menu")).toBeNull()
+  })
+
+  it("opens every option as a tile, the chosen one checked; a choice gives the keys back", async () => {
+    const onChange = renderMenu("a")
+    const panel = screen.getByRole("textbox", { name: "Panel" })
+    panel.focus()
+    const button = screen.getByRole("button", { name: "Layout presets" })
+    await act(async () => {
+      fireEvent.keyDown(button, { key: "Enter" })
+    })
+    const menu = await screen.findByRole("menu", { name: "Layout presets" })
+    const tiles = screen.getAllByRole("menuitemradio")
+    expect(tiles.map((t) => t.textContent)).toEqual([
+      "AADetailsboth panels in columns",
+      "BBSingleone panel as thumbnails",
+    ])
+    expect(tiles[0]).toHaveAttribute("aria-checked", "true")
+    expect(menu).toBeInTheDocument()
+    await act(async () => {
+      fireEvent.click(tiles[1]!)
+    })
+    expect(onChange).toHaveBeenCalledWith("b")
+    expect(screen.queryByRole("menu")).toBeNull()
+    // Radix gives the focus back once the menu has unmounted.
+    await waitFor(() => expect(document.activeElement).toBe(panel))
+  })
+
+  it("hands the keys to the caller when the element that had them is gone", async () => {
+    const onFocusLost = vi.fn()
+    const view = (panel: boolean) => (
+      <>
+        {panel && <input aria-label="Panel" />}
+        <TitleBarGridMenu
+          label="Layout presets"
+          value="a"
+          options={options}
+          onChange={vi.fn()}
+          onFocusLost={onFocusLost}
+        />
+      </>
+    )
+    const { rerender } = render(view(true))
+    screen.getByRole("textbox", { name: "Panel" }).focus()
+    await act(async () => {
+      fireEvent.keyDown(screen.getByRole("button", { name: "Layout presets" }), { key: "Enter" })
+    })
+    await screen.findByRole("menu")
+    // The choice rebuilds what had the keys.
+    rerender(view(false))
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole("menuitemradio")[1]!)
+    })
+    await waitFor(() => expect(onFocusLost).toHaveBeenCalledOnce())
+  })
+
+  it("lights no tile when the window matches none", async () => {
+    renderMenu("")
+    const button = screen.getByRole("button", { name: "Layout presets" })
+    await act(async () => {
+      fireEvent.keyDown(button, { key: "Enter" })
+    })
+    await screen.findByRole("menu")
+    for (const tile of screen.getAllByRole("menuitemradio")) {
+      expect(tile).toHaveAttribute("aria-checked", "false")
+    }
   })
 })

@@ -8,6 +8,13 @@ describe("toolbar icons", () => {
   it("every action that can go on the toolbar has an icon of its own", () => {
     expect(TOOLBAR_ACTIONS.filter((id) => !ACTION_ICONS[id])).toEqual([])
   })
+
+  it("comparing directories, comparing contents and synchronizing look different", () => {
+    const icons = ["compare.dirs", "compare.content", "compare.sync"].map(
+      (id) => ACTION_ICONS[id as keyof typeof ACTION_ICONS],
+    )
+    expect(new Set(icons).size).toBe(3)
+  })
 })
 
 describe("deleting from the keyboard", () => {

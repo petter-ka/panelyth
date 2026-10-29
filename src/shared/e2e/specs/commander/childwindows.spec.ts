@@ -26,6 +26,16 @@ async function expectRealMouse(app: ElectronApplication, page: Page): Promise<vo
   expect(await hitTest(app, page, "[data-testid=title-bar] > span")).toContain("drag")
 }
 
+/** The window buttons sit at the strip's right end (Close last, a few pixels from the edge). */
+async function expectRightAligned(page: Page): Promise<void> {
+  const gap = await page
+    .getByTestId("title-bar")
+    .getByRole("button", { name: "Close" })
+    .evaluate((el) => window.innerWidth - el.getBoundingClientRect().right)
+  expect(gap).toBeGreaterThanOrEqual(0)
+  expect(gap).toBeLessThan(16)
+}
+
 test.describe("child windows' title strips (ADR-0045)", () => {
   test("the settings window: the strip with Close only, and Close closes it", async () => {
     const { app, page } = await launch("viewer")
@@ -35,6 +45,7 @@ test.describe("child windows' title strips (ADR-0045)", () => {
       await expect(strip).toContainText("Settings")
       await expect(strip.getByTestId("title-bar-mark")).toBeVisible()
       await expect(strip.getByRole("button", { name: "Close" })).toBeVisible()
+      await expectRightAligned(settings)
       // Modal: no minimize or maximize.
       await expect(strip.getByRole("button", { name: "Minimize" })).toHaveCount(0)
       await expect(strip.getByRole("button", { name: "Maximize" })).toHaveCount(0)
@@ -66,6 +77,7 @@ test.describe("child windows' title strips (ADR-0045)", () => {
       const strip = doc.getByTestId("title-bar")
       await expect(strip).toContainText("notes.txt")
       await expect(strip.getByTestId("title-bar-mark")).toBeVisible()
+      await expectRightAligned(doc)
       await expectRealMouse(app, doc)
       await strip.getByRole("button", { name: "Maximize", exact: true }).click()
       await expect.poll(async () => (await windowOf(app, doc)).maximized).toBe(true)
@@ -105,6 +117,7 @@ test.describe("child windows' title strips (ADR-0045)", () => {
       const strip = ed.getByTestId("title-bar")
       await expect(strip).toContainText("todo.txt")
       await expect(strip.getByTestId("title-bar-mark")).toBeVisible()
+      await expectRightAligned(ed)
       await expectRealMouse(app, ed)
       await strip.getByRole("button", { name: "Maximize", exact: true }).click()
       await expect.poll(async () => (await windowOf(app, ed)).maximized).toBe(true)

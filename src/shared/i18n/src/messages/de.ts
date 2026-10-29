@@ -1026,7 +1026,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "Spätere Bearbeitungen sind ausgeblendet, während Sie den Zuschnitt anpassen.",
   Latitude: "Breitengrad",
-  Layout: "Layout",
+  "Layout presets": "Layout-Vorlagen",
   "Leave alone": "Unverändert lassen",
   "Leave one side at 0 to keep the proportions.":
     "Lassen Sie eine Seite auf 0, um die Proportionen zu behalten.",
@@ -1061,7 +1061,8 @@ const messages: Messages = {
   "Line strength": "Linienstärke",
   "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
     "Zeile {line} enthält ein Zeichen, das es in {encoding} nicht gibt. Die Datei stattdessen als UTF-8 speichern?",
-  "Lines of both files": "Zeilen beider Dateien",
+  "Lines of the left file": "Zeilen der linken Datei",
+  "Lines of the right file": "Zeilen der rechten Datei",
   Link: "Link",
   "Link target: {url}": "Linkziel: {url}",
   "Liquid glass": "Flüssigglas",
@@ -1313,6 +1314,8 @@ const messages: Messages = {
   "Oldest first": "Älteste zuerst",
   "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
     "Bei einem Bild verschwinden die Kopfzeile und der Mauszeiger, wenn die Maus 3 Sekunden lang nicht bewegt wird.",
+  "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "Bei einem Video, ob es läuft oder pausiert, werden die Leisten und der Mauszeiger nach 3 Sekunden ohne Mausbewegung ausgeblendet.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Nach dem Speichern lässt sich das Unkenntlichgemachte aus der gespeicherten Datei nicht zurückholen. Das Original bleibt unverändert, solange Sie es nicht ersetzen.",
   "One beside each file ({example})": "Eine neben jeder Datei ({example})",
@@ -2427,8 +2430,6 @@ const messages: Messages = {
   "When a name is taken": "Wenn ein Name vergeben ist",
   "When switching apps, carry over": "Beim Wechsel der App übernehmen",
   "Where the results go": "Wohin die Ergebnisse kommen",
-  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
-    "Während ein Video läuft, verschwinden die Leisten und der Mauszeiger, wenn die Maus 3 Sekunden lang nicht bewegt wird.",
   White: "Weiß",
   "White balance": "Weißabgleich",
   "White point": "Weißpunkt",

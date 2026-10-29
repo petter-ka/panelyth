@@ -96,7 +96,7 @@ describe("full-screen video: the controls hide while the mouse rests", () => {
     }
   })
 
-  it("stays while paused, and while the pointer is on the controls", async () => {
+  it("stays while the pointer is on the controls, and hides while paused too", async () => {
     render(<MediaViewerOverlay item={video} onClose={vi.fn()} />)
     await act(async () => undefined)
     const controls = screen.getByRole("toolbar", { name: "Playback controls" })
@@ -108,7 +108,13 @@ describe("full-screen video: the controls hide while the mouse rests", () => {
     // jsdom reports every video as paused, so the pause is announced directly.
     act(() => void fireEvent.pause(screen.getByTestId("video-element")))
     expect(player()).toHaveAttribute("data-state", "paused")
-    act(() => vi.advanceTimersByTime(CONTROLS_IDLE_MS * 2))
+    // A paused frame is looked at too (owner request): the bars still go after 3 s.
+    act(() => void fireEvent.pointerMove(window))
+    expect(player()).toHaveAttribute("data-controls", "shown")
+    act(() => vi.advanceTimersByTime(CONTROLS_IDLE_MS + 100))
+    expect(player()).toHaveAttribute("data-controls", "hidden")
+    expect(header()).toHaveAttribute("data-hidden", "true")
+    act(() => void fireEvent.pointerMove(window))
     expect(player()).toHaveAttribute("data-controls", "shown")
   })
 })

@@ -217,10 +217,11 @@ export function VideoPlayer({
     return () => document.removeEventListener("fullscreenchange", onChange)
   }, [])
 
-  // Full screen, while playing: the controls (and the media window's header)
+  // Full screen: the controls (and the media window's header)
   // hide when the mouse rests; moving it, a click or a key brings them back.
-  // Not while the pointer is on the controls, never while paused, and not at
-  // all when Settings says to keep them.
+  // Playing or paused (owner request 2026-10-27: a paused frame is looked at
+  // too); not while the pointer is on the controls, and not at all when
+  // Settings says to keep them.
   const immersive = fullscreen || appFullscreen
   const overControls = useRef(false)
   const hold = useMemo<RefObject<boolean>>(
@@ -232,7 +233,7 @@ export function VideoPlayer({
     [chromeHover],
   )
   // Settings → Appearance → Full screen can keep them shown.
-  const hidden = useIdle(immersive && playing && autoHide, hold)
+  const hidden = useIdle(immersive && autoHide, hold)
   useEffect(() => onIdleChange?.(hidden), [hidden, onIdleChange])
 
   const toggle = (): void => {

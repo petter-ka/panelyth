@@ -104,10 +104,18 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
       await menu(c, "left", "Compare by content")
       const diff = c.getByTestId("diff-dialog")
       await expect(c.getByTestId("diff-status")).toHaveText("2 differences")
-      await expect(diff.locator("[data-op=changed]")).toContainText("beta")
-      await expect(diff.locator("[data-op=changed]")).toContainText("BETA (edited)")
-      await expect(diff.locator("[data-op=added]")).toContainText("epsilon")
-      await expect(diff.locator("[data-op=equal]").first()).toContainText("Panelyth sync fixture")
+      // Two panes, one file each.
+      await expect(diff.locator("[data-op=changed][data-side=left]")).toContainText("beta")
+      await expect(diff.locator("[data-op=changed][data-side=right]")).toContainText(
+        "BETA (edited)",
+      )
+      await expect(diff.locator("[data-op=added][data-side=right]")).toContainText("epsilon")
+      await expect(diff.locator("[data-op=equal][data-side=left]").first()).toContainText(
+        "Panelyth sync fixture",
+      )
+      await expect(diff.locator("[data-op=equal][data-side=right]").first()).toContainText(
+        "Panelyth sync fixture",
+      )
       await c.keyboard.press("Escape")
       await expect(diff).toHaveCount(0)
       await expect(grid(c, "left")).toBeFocused()

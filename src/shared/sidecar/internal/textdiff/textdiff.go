@@ -6,6 +6,7 @@ import (
 	"os"
 	"slices"
 	"strings"
+	"unicode"
 	"unicode/utf8"
 )
 
@@ -139,39 +140,175 @@ type Row struct {
 	Left, Right string
 	// Cut: a line was longer than MaxLineBytes.
 	Cut bool
-	// Spans marks what differs inside a changed row (Stage C10.5): the part
-	// of Left and of Right between their common start and their common end,
-	// as [left from, left to, right from, right to] in UTF-16 units (the
-	// renderer's string positions). Nil for rows that are not changed.
+	// Spans marks what differs inside a changed row (Stage C10.5): the words
+	// and characters that changed, as groups of [left from, left to, right
+	// from, right to] in UTF-16 units (the renderer's string positions), one
+	// group per changed place. Nil for rows that are not changed.
 	Spans []int
 }
 
-// spans returns where two lines differ once their common start and end are
-// taken away. The cuts fall between characters, never inside one.
-func spans(l, r string) []int {
-	// The common start, in bytes.
-	p := 0
-	for p < len(l) && p < len(r) {
-		a, an := utf8.DecodeRuneInString(l[p:])
-		b, bn := utf8.DecodeRuneInString(r[p:])
+// maxSpanCells bounds the table that matches the words of two lines; a pair of
+// lines with more words than that between their common start and end is
+// marked as one stretch.
+const maxSpanCells = 40_000
+
+// trim returns where two strings differ once their common start and end are
+// taken away, as byte offsets: both start at from, the left one ends at
+// leftTo and the right one at rightTo. The cuts fall between characters,
+// never inside one.
+func trim(l, r string) (from, leftTo, rightTo int) {
+	// The common start.
+	for from < len(l) && from < len(r) {
+		a, an := utf8.DecodeRuneInString(l[from:])
+		b, bn := utf8.DecodeRuneInString(r[from:])
 		if a != b || an != bn {
 			break
 		}
-		p += an
+		from += an
 	}
 	// The common end, never reaching into the common start.
-	le, re := len(l), len(r)
-	for le > p && re > p {
-		a, an := utf8.DecodeLastRuneInString(l[p:le])
-		b, bn := utf8.DecodeLastRuneInString(r[p:re])
+	leftTo, rightTo = len(l), len(r)
+	for leftTo > from && rightTo > from {
+		a, an := utf8.DecodeLastRuneInString(l[from:leftTo])
+		b, bn := utf8.DecodeLastRuneInString(r[from:rightTo])
 		if a != b || an != bn {
 			break
 		}
-		le -= an
-		re -= bn
+		leftTo -= an
+		rightTo -= bn
 	}
-	start := utf16Len(l[:p])
-	return []int{start, start + utf16Len(l[p:le]), start, start + utf16Len(r[p:re])}
+	return from, leftTo, rightTo
+}
+
+// tokens is a line cut into words (letters, digits, marks and "_"), runs of
+// white space, and single other characters. Token i is text[b[i]:b[i+1]], and
+// starts at UTF-16 unit u[i].
+type tokens struct {
+	text string
+	b, u []int
+	word []bool
+}
+
+func (t *tokens) n() int          { return len(t.word) }
+func (t *tokens) at(i int) string { return t.text[t.b[i]:t.b[i+1]] }
+
+const (
+	kindWord = iota
+	kindSpace
+	kindOther
+)
+
+func tokenize(s string) *tokens {
+	t := &tokens{text: s, b: []int{0}, u: []int{0}}
+	u, kind := 0, -1
+	closeAt := func(i int) {
+		t.b = append(t.b, i)
+		t.u = append(t.u, u)
+		t.word = append(t.word, kind == kindWord)
+	}
+	for i, c := range s {
+		k := kindOther
+		switch {
+		case unicode.IsLetter(c) || unicode.IsDigit(c) || unicode.IsMark(c) || c == '_':
+			k = kindWord
+		case unicode.IsSpace(c):
+			k = kindSpace
+		}
+		if i > 0 && (k != kind || k == kindOther) {
+			closeAt(i)
+		}
+		kind = k
+		u++
+		if c >= 0x10000 {
+			u++
+		}
+	}
+	if len(s) > 0 {
+		closeAt(len(s))
+	}
+	return t
+}
+
+// spans returns where two lines differ, as groups of four numbers in UTF-16
+// units: [left from, left to, right from, right to], one group per changed
+// place, in order. The lines are compared word by word; a place where one word
+// became another is narrowed to the characters that differ. Nil when the
+// lines are the same text.
+func spans(l, r string) []int {
+	lt, rt := tokenize(l), tokenize(r)
+	n, m := lt.n(), rt.n()
+	// The common start and end, in tokens.
+	p := 0
+	for p < n && p < m && lt.at(p) == rt.at(p) {
+		p++
+	}
+	ln, rn := n, m
+	for ln > p && rn > p && lt.at(ln-1) == rt.at(rn-1) {
+		ln--
+		rn--
+	}
+	var out []int
+	// A changed place: tokens [i0, i1) of the left line and [j0, j1) of the right.
+	add := func(i0, i1, j0, j1 int) {
+		if i1-i0 == 1 && j1-j0 == 1 && lt.word[i0] && rt.word[j0] {
+			x, y := lt.at(i0), rt.at(j0)
+			from, xe, ye := trim(x, y)
+			out = append(out,
+				lt.u[i0]+utf16Len(x[:from]), lt.u[i0]+utf16Len(x[:xe]),
+				rt.u[j0]+utf16Len(y[:from]), rt.u[j0]+utf16Len(y[:ye]))
+			return
+		}
+		out = append(out, lt.u[i0], lt.u[i1], rt.u[j0], rt.u[j1])
+	}
+	a, b := ln-p, rn-p // the tokens between the common start and end
+	switch {
+	case a == 0 && b == 0:
+		return nil
+	case a == 0 || b == 0 || a*b > maxSpanCells:
+		add(p, ln, p, rn)
+		return out
+	}
+	// lcs[i*w+j]: the most words the tails a[i:] and b[j:] have in common.
+	w := b + 1
+	lcs := make([]uint16, (a+1)*w)
+	same := func(i, j int) bool { return lt.at(p+i) == rt.at(p+j) }
+	for i := a - 1; i >= 0; i-- {
+		for j := b - 1; j >= 0; j-- {
+			switch {
+			case same(i, j):
+				lcs[i*w+j] = lcs[(i+1)*w+j+1] + 1
+			case lcs[(i+1)*w+j] >= lcs[i*w+j+1]:
+				lcs[i*w+j] = lcs[(i+1)*w+j]
+			default:
+				lcs[i*w+j] = lcs[i*w+j+1]
+			}
+		}
+	}
+	// Walk both lines; a stretch between two shared words is a changed place.
+	i, j, hi, hj := 0, 0, -1, -1
+	for i < a || j < b {
+		if i < a && j < b && same(i, j) {
+			if hi >= 0 {
+				add(p+hi, p+i, p+hj, p+j)
+				hi = -1
+			}
+			i++
+			j++
+			continue
+		}
+		if hi < 0 {
+			hi, hj = i, j
+		}
+		if j >= b || (i < a && lcs[(i+1)*w+j] >= lcs[i*w+j+1]) {
+			i++
+		} else {
+			j++
+		}
+	}
+	if hi >= 0 {
+		add(p+hi, p+a, p+hj, p+b)
+	}
+	return out
 }
 
 // utf16Len is the length of s in UTF-16 units.

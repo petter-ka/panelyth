@@ -1018,7 +1018,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "Późniejsze zmiany są ukryte podczas dostosowywania przycięcia.",
   Latitude: "Szerokość geograficzna",
-  Layout: "Układ",
+  "Layout presets": "Gotowe układy",
   "Leave alone": "Pozostaw bez zmian",
   "Leave one side at 0 to keep the proportions.":
     "Zostaw jeden bok równy 0, aby zachować proporcje.",
@@ -1053,7 +1053,8 @@ const messages: Messages = {
   "Line strength": "Siła linii",
   "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
     "Wiersz {line} zawiera znak, którego nie ma w kodowaniu {encoding}. Zapisać plik jako UTF-8?",
-  "Lines of both files": "Wiersze obu plików",
+  "Lines of the left file": "Wiersze lewego pliku",
+  "Lines of the right file": "Wiersze prawego pliku",
   Link: "Łącze",
   "Link target: {url}": "Cel linku: {url}",
   "Liquid glass": "Płynne szkło",
@@ -1304,6 +1305,8 @@ const messages: Messages = {
   "Oldest first": "Najpierw najstarsze",
   "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
     "Na obrazie nagłówek i wskaźnik znikają po 3 sekundach bez ruchu myszy.",
+  "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "W filmie, odtwarzanym lub wstrzymanym, paski i wskaźnik znikają po 3 sekundach bez ruchu myszy.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Po zapisaniu tego, co zasłonięte, nie da się odzyskać z zapisanego pliku. Oryginał pozostaje bez zmian, chyba że go zastąpisz.",
   "One beside each file ({example})": "Po jednym obok każdego pliku ({example})",
@@ -2387,8 +2390,6 @@ const messages: Messages = {
   "When a name is taken": "Gdy nazwa jest zajęta",
   "When switching apps, carry over": "Przy przełączaniu aplikacji przenoś",
   "Where the results go": "Gdzie trafią wyniki",
-  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
-    "Podczas odtwarzania wideo paski i wskaźnik znikają po 3 sekundach bez ruchu myszy.",
   White: "Biały",
   "White balance": "Balans bieli",
   "White point": "Punkt bieli",

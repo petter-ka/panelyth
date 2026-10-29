@@ -306,7 +306,7 @@ test.describe("tab bar, tab sets, folder tree, compare several files (Stage C10.
       await c.keyboard.press("Enter")
       await expect(diff).toContainText("f03.txt")
       await expect(c.getByTestId("diff-rows").locator("mark")).toHaveText(["wo", "bi"])
-      await c.getByTestId("diff-rows").focus()
+      await c.getByTestId("diff-rows").locator("[data-side=left][role=region]").focus()
       await c.keyboard.press("Shift+N")
       await expect(diff).toContainText("f07.txt")
       await diff.getByRole("button", { name: "Back to the list" }).click()

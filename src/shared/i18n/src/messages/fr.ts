@@ -1025,7 +1025,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "Les modifications suivantes sont masquées pendant que vous ajustez le recadrage.",
   Latitude: "Latitude",
-  Layout: "Disposition",
+  "Layout presets": "Dispositions prédéfinies",
   "Leave alone": "Laisser tel quel",
   "Leave one side at 0 to keep the proportions.":
     "Laissez un côté à 0 pour garder les proportions.",
@@ -1060,7 +1060,8 @@ const messages: Messages = {
   "Line strength": "Intensité des traits",
   "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
     "La ligne {line} contient un caractère absent de {encoding}. Enregistrer plutôt le fichier en UTF-8 ?",
-  "Lines of both files": "Lignes des deux fichiers",
+  "Lines of the left file": "Lignes du fichier de gauche",
+  "Lines of the right file": "Lignes du fichier de droite",
   Link: "Lien",
   "Link target: {url}": "Cible du lien : {url}",
   "Liquid glass": "Verre liquide",
@@ -1311,6 +1312,8 @@ const messages: Messages = {
   "Oldest first": "Plus ancien d'abord",
   "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
     "Sur une image, l'en-tête et le pointeur se masquent après 3 secondes sans mouvement de la souris.",
+  "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "Sur une vidéo, en lecture ou en pause, les barres et le pointeur se masquent après 3 secondes sans bouger la souris.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Une fois enregistré, ce qui est masqué ne peut pas être récupéré du fichier enregistré. L'original reste tel quel sauf si vous le remplacez.",
   "One beside each file ({example})": "Un à côté de chaque fichier ({example})",
@@ -2413,8 +2416,6 @@ const messages: Messages = {
   "When a name is taken": "Quand un nom est déjà pris",
   "When switching apps, carry over": "Lors du changement d'application, conserver",
   "Where the results go": "Où vont les résultats",
-  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
-    "Pendant la lecture d'une vidéo, les barres et le pointeur se masquent après 3 secondes sans mouvement de la souris.",
   White: "Blanc",
   "White balance": "Balance des blancs",
   "White point": "Point blanc",

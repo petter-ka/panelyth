@@ -1019,7 +1019,7 @@ const messages: Messages = {
   "Later edits are hidden while you adjust the crop.":
     "Las ediciones posteriores se ocultan mientras ajusta el recorte.",
   Latitude: "Latitud",
-  Layout: "Diseño",
+  "Layout presets": "Diseños predefinidos",
   "Leave alone": "Dejar como está",
   "Leave one side at 0 to keep the proportions.":
     "Deje un lado en 0 para mantener las proporciones.",
@@ -1054,7 +1054,8 @@ const messages: Messages = {
   "Line strength": "Intensidad de las líneas",
   "Line {line} has a character {encoding} doesn't have. Save the file as UTF-8 instead?":
     "La línea {line} tiene un carácter que {encoding} no tiene. ¿Guardar el archivo como UTF-8?",
-  "Lines of both files": "Líneas de ambos archivos",
+  "Lines of the left file": "Líneas del archivo izquierdo",
+  "Lines of the right file": "Líneas del archivo derecho",
   Link: "Enlace",
   "Link target: {url}": "Destino del enlace: {url}",
   "Liquid glass": "Cristal líquido",
@@ -1306,6 +1307,8 @@ const messages: Messages = {
   "Oldest first": "Más antiguo primero",
   "On a picture, the header and the pointer hide after 3 seconds without moving the mouse.":
     "En una imagen, la cabecera y el puntero se ocultan tras 3 segundos sin mover el ratón.",
+  "On a video, playing or paused, the bars and the pointer hide after 3 seconds without moving the mouse.":
+    "En un vídeo, en reproducción o en pausa, las barras y el puntero se ocultan tras 3 segundos sin mover el ratón.",
   "Once saved, what is obscured cannot be brought back from the saved file. The original stays as it is unless you replace it.":
     "Una vez guardado, lo ocultado no puede recuperarse del archivo guardado. El original queda como está salvo que lo sustituyas.",
   "One beside each file ({example})": "Uno junto a cada archivo ({example})",
@@ -2403,8 +2406,6 @@ const messages: Messages = {
   "When a name is taken": "Cuando un nombre está ocupado",
   "When switching apps, carry over": "Al cambiar de aplicación, conservar",
   "Where the results go": "Dónde van los resultados",
-  "While a video plays, the bars and the pointer hide after 3 seconds without moving the mouse.":
-    "Mientras se reproduce un vídeo, las barras y el puntero se ocultan tras 3 segundos sin mover el ratón.",
   White: "Blanco",
   "White balance": "Balance de blancos",
   "White point": "Punto blanco",

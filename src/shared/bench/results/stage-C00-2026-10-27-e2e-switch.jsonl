@@ -1,0 +1,5 @@
+{"at":"2026-10-27T07:34:46.958Z","test":"switch","firstSwitchMs":213,"laterSwitchMs":[8,7,6,8],"viewerOnlyMb":382,"bothViewsMb":552,"commanderViewMb":170}
+{"at":"2026-10-27T07:35:42.086Z","test":"switch","firstSwitchMs":199,"laterSwitchMs":[7,7,7,7],"viewerOnlyMb":381,"bothViewsMb":547,"commanderViewMb":166}
+{"at":"2026-10-27T07:36:16.157Z","test":"switch","firstSwitchMs":201,"laterSwitchMs":[6,9,7,7],"viewerOnlyMb":379,"bothViewsMb":545,"commanderViewMb":166}
+{"at":"2026-10-27T07:36:46.102Z","test":"switch","firstSwitchMs":202,"laterSwitchMs":[7,8,8,9],"viewerOnlyMb":381,"bothViewsMb":546,"commanderViewMb":165}
+{"at":"2026-10-27T07:38:12.748Z","test":"switch","firstSwitchMs":230,"laterSwitchMs":[11,7,9,9],"viewerOnlyMb":381,"bothViewsMb":546,"commanderViewMb":165}

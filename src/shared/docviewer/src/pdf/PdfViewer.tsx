@@ -6,6 +6,7 @@ import { PdfThumbs } from "./PdfThumbs"
 import { PDFJS_DATA, pdfjs, type PDFDocumentProxy } from "./pdfjs"
 import { locateMatch, usePdfSearch } from "./search"
 import { t } from "@panelyth/i18n"
+import { useTitleBarShown } from "@panelyth/ui"
 
 type Zoom = "width" | "page" | number
 const ZOOM_STEPS = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 2, 3, 4] as const
@@ -134,6 +135,8 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
   const [rotation, setRotation] = useState(0)
   const [sidebar, setSidebar] = useState(false)
   const [night, setNight] = useState(false)
+  // The window's title strip names the file already (ADR-0045): the bar keeps it for screen readers only.
+  const stripShown = useTitleBarShown()
   const [viewport, setViewport] = useState({ width: 800, height: 600 })
   const [current, setCurrent] = useState(1)
   const [pageInput, setPageInput] = useState("1")
@@ -275,7 +278,9 @@ function Reader({ params, doc, pageWidth, pageHeight }: ReaderProps) {
           ☰
         </Button>
         <h1
-          className="mx-2 min-w-0 max-w-[30%] shrink truncate text-sm font-medium"
+          className={
+            stripShown ? "sr-only" : "mx-2 min-w-0 max-w-[30%] shrink truncate text-sm font-medium"
+          }
           title={params.name}
         >
           {params.name}

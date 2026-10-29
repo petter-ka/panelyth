@@ -1845,11 +1845,12 @@ export interface TextDiffRow {
   /** A line was longer than 4 KiB and is cut. */
   cut?: boolean
   /**
-   * A changed row only (Stage C10.5): what differs inside the line once the
-   * common start and end are taken away, as [left from, left to, right from,
-   * right to] in string positions of `left` and `right`.
+   * A changed row only (Stage C10.5): the words and characters that differ
+   * inside the line, as groups of four numbers, one group per changed place, in
+   * order: [left from, left to, right from, right to] in string positions of
+   * `left` and `right`. What lies between the groups is the same on both sides.
    */
-  spans?: [number, number, number, number]
+  spans?: number[]
 }
 
 export interface TextDiffPageResult {

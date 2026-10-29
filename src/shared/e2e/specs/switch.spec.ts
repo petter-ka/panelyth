@@ -257,47 +257,70 @@ test.describe("app switch (ADR-0031)", () => {
       await goTo(c, "left", dir)
       await goTo(c, "right", dir)
       const panels = [c.getByTestId("panel-left"), c.getByTestId("panel-right")]
+      // One button (owner request 2026-10-27); pointing at it opens the presets as tiles.
       const presets = c.getByTestId("title-layout")
-      const preset = (name: RegExp) => presets.getByRole("radio", { name })
+      const menu = c.getByTestId("title-layout-menu")
+      const preset = (name: RegExp) => menu.getByRole("menuitemradio", { name })
+      const open = async () => {
+        // From elsewhere: a pointer resting on the button after Esc opens nothing until it comes again.
+        await c.mouse.move(10, 400)
+        await presets.hover()
+        await expect(menu).toBeVisible()
+      }
+      const choose = async (name: RegExp) => {
+        await open()
+        await preset(name).click()
+        await expect(menu).toHaveCount(0)
+      }
+      await open()
       await expect(preset(/^Details/)).toHaveAttribute("aria-checked", "true")
+      // The pointer gone from the button and the menu: it closes by itself.
+      await c.mouse.move(10, 400)
+      await expect(menu).toHaveCount(0)
 
-      await preset(/^List/).click()
+      await choose(/^List/)
       for (const panel of panels) {
         await expect(panel.getByRole("listbox")).toBeVisible()
         await expect(panel.getByRole("grid")).toHaveCount(0)
       }
+      await open()
       await expect(preset(/^List/)).toHaveAttribute("aria-checked", "true")
+      await c.keyboard.press("Escape")
       // The click left the keys with the active panel (the right one, opened last).
       await expect(panels[1]!.getByRole("listbox")).toBeFocused()
 
-      await preset(/^Tree/).click()
+      await choose(/^Tree/)
       await expect(c.getByTestId("tree-one")).toBeVisible()
       for (const panel of panels) await expect(panel.getByRole("grid")).toBeVisible()
 
-      await preset(/^Preview/).click()
+      await choose(/^Preview/)
       await expect(c.getByTestId("quick-view")).toBeVisible()
       await expect(c.getByTestId("tree-one")).toHaveCount(0)
 
       // Stacked: the left panel above the right one, as wide as the window.
       const box = (i: 0 | 1) => panels[i]!.evaluate((el) => el.getBoundingClientRect().toJSON())
-      await preset(/^Stacked/).click()
+      await choose(/^Stacked/)
       await expect(c.getByTestId("quick-view")).toHaveCount(0)
       await expect.poll(async () => (await box(0)).bottom <= (await box(1)).top + 1).toBe(true)
       expect((await box(0)).left).toBe((await box(1)).left)
 
       // Single: the active panel alone across the window, as thumbnails.
-      await preset(/^Single/).click()
+      await choose(/^Single/)
       await expect(c.getByTestId("panel-left")).toHaveCount(0)
       await expect(panels[1]!).toBeVisible()
+      await open()
       await expect(preset(/^Single/)).toHaveAttribute("aria-checked", "true")
+      await c.keyboard.press("Escape")
 
-      await preset(/^Details/).click()
+      await choose(/^Details/)
       for (const panel of panels) await expect(panel.getByRole("grid")).toBeVisible()
       await expect.poll(async () => (await box(0)).right <= (await box(1)).left + 1).toBe(true)
 
       // A change by hand that matches no preset lights none.
       await c.keyboard.press("Control+F1")
-      await expect(presets.getByRole("radio", { checked: true })).toHaveCount(0)
+      await open()
+      await expect(menu.getByRole("menuitemradio", { checked: true })).toHaveCount(0)
+      await c.keyboard.press("Escape")
     } finally {
       await app.close()
     }

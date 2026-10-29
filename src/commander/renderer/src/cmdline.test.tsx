@@ -1,5 +1,5 @@
 import type { Crumb } from "@panelyth/contracts"
-import { useInterfaceSizeStore } from "@panelyth/ui"
+import { useInterfaceSizeStore, useWindowFrameStore } from "@panelyth/ui"
 import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetBridgeCache } from "./bridge"
@@ -589,6 +589,17 @@ describe("user commands", () => {
 })
 
 describe("the toolbar and the bars", () => {
+  it("without the title strip (macOS, Linux) the layout presets sit right after the edit button", async () => {
+    await start()
+    const presets = within(toolbar()).getByRole("button", { name: "Layout presets" })
+    expect(screen.getByTestId("toolbar-edit").nextElementSibling).toBe(presets)
+
+    // With the strip (Windows) the presets are on it, not twice.
+    await act(async () => void useWindowFrameStore.setState({ titleBar: true }))
+    expect(within(toolbar()).queryByRole("button", { name: "Layout presets" })).toBeNull()
+    await act(async () => void useWindowFrameStore.setState({ titleBar: false }))
+  })
+
   it("in edit mode its buttons move instead of running: drag, or right-click to move or remove", async () => {
     await start()
     const ids = () => useToolsStore.getState().toolbar
@@ -712,12 +723,17 @@ describe("the toolbar and the bars", () => {
 
   it("shows the default buttons until it is changed, and stores the change", async () => {
     const fake = await start()
-    // The toolbar's own edit switch is not one of its buttons.
+    // The toolbar's own edit switch and the layout presets are not among its buttons.
     const names = () =>
       within(toolbar())
         .getAllByRole("button", { hidden: true })
         .map((b) => b.getAttribute("aria-label"))
-        .filter((name) => name !== "Edit the toolbar" && name !== "Add to the toolbar")
+        .filter(
+          (name) =>
+            name !== "Edit the toolbar" &&
+            name !== "Add to the toolbar" &&
+            name !== "Layout presets",
+        )
     expect(names()).toEqual([
       "Find files",
       "Quick filter",

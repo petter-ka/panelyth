@@ -455,10 +455,19 @@ const isTextDiffFile = (v: unknown): boolean =>
   textEncodings.has(v.encoding)
 const textDiffOps: ReadonlySet<unknown> = new Set(["equal", "changed", "removed", "added"])
 /** [left from, left to, right from, right to] of a changed row. */
+/** Groups of [left from, left to, right from, right to]: each ordered, none before the end of the last. */
 const isDiffSpans = (v: unknown): boolean => {
-  if (!Array.isArray(v) || v.length !== 4 || !v.every(isCount)) return false
-  const [leftFrom, leftTo, rightFrom, rightTo] = v as [number, number, number, number]
-  return leftFrom <= leftTo && rightFrom <= rightTo
+  if (!Array.isArray(v) || v.length === 0 || v.length % 4 !== 0 || !v.every(isCount)) return false
+  const s = v as number[]
+  let leftEnd = 0
+  let rightEnd = 0
+  for (let k = 0; k < s.length; k += 4) {
+    if (s[k]! < leftEnd || s[k]! > s[k + 1]! || s[k + 2]! < rightEnd || s[k + 2]! > s[k + 3]!)
+      return false
+    leftEnd = s[k + 1]!
+    rightEnd = s[k + 3]!
+  }
+  return true
 }
 const isTextDiffRow = (v: unknown): v is TextDiffRow =>
   isRec(v) &&

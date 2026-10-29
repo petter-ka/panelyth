@@ -138,8 +138,9 @@ type (
 		Left  string `json:"left"`
 		Right string `json:"right,omitempty"`
 		Cut   bool   `json:"cut,omitempty"`
-		// Spans: what differs inside a changed row, as [left from, left to,
-		// right from, right to] in UTF-16 units (Stage C10.5).
+		// Spans: the words and characters that differ inside a changed row, as
+		// groups of [left from, left to, right from, right to] in UTF-16 units
+		// (Stage C10.5).
 		Spans []int `json:"spans,omitempty"`
 	}
 	textDiffPageResult struct {

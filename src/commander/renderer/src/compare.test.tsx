@@ -562,7 +562,11 @@ describe("compare by content", () => {
     await waitFor(() =>
       expect(screen.getByTestId("diff-status")).toHaveTextContent("2 differences"),
     )
-    const lines = () => [...screen.getByTestId("diff-rows").querySelectorAll("[data-op]")]
+    const side = (s: "left" | "right") => () => [
+      ...screen.getByTestId("diff-rows").querySelectorAll(`[data-op][data-side=${s}]`),
+    ]
+    const lines = side("left")
+    const right = side("right")
     await waitFor(() => expect(lines()).toHaveLength(4))
     expect(lines().map((l) => l.getAttribute("data-op"))).toEqual([
       "equal",
@@ -570,10 +574,16 @@ describe("compare by content", () => {
       "equal",
       "added",
     ])
+    expect(right().map((l) => l.getAttribute("data-op"))).toEqual(
+      lines().map((l) => l.getAttribute("data-op")),
+    )
     // An equal row shows its text on both sides; an added row only on the right.
-    expect(lines()[0]).toHaveTextContent("1one1one")
-    expect(lines()[1]).toHaveTextContent("2two22")
-    expect(lines()[3]).toHaveTextContent("4four")
+    expect(lines()[0]).toHaveTextContent("1one")
+    expect(right()[0]).toHaveTextContent("1one")
+    expect(lines()[1]).toHaveTextContent("2two")
+    expect(right()[1]).toHaveTextContent("22")
+    expect(lines()[3]).toHaveTextContent(/^$/)
+    expect(right()[3]).toHaveTextContent("4four")
     expect(dialog).toHaveTextContent("UTF-8")
     // One page of rows for the whole view, not a call per line.
     expect(fake.api.diff.page).toHaveBeenCalledTimes(1)
@@ -782,6 +792,40 @@ describe("compare several files (Stage C10.5)", () => {
         [...screen.getByTestId("diff-rows").querySelectorAll("mark")].map((m) => m.textContent),
       ).toEqual(["word", "bird"]),
     )
+  })
+
+  it("shows the two files in two panes and marks every changed word in its own pane", async () => {
+    await start({
+      textDiff: {
+        rows: [
+          { op: "equal", l: 1, r: 1, left: "same line" },
+          {
+            op: "changed",
+            l: 2,
+            r: 2,
+            left: "the quick brown fox",
+            right: "the slow brown cat",
+            spans: [4, 9, 4, 8, 16, 19, 15, 18],
+          },
+        ],
+      },
+    })
+    await mark(["newer.txt"])
+    await mark(["only-right.txt"], "right")
+    await run("compare.content", "right")
+    const rows = await screen.findByTestId("diff-rows")
+    await waitFor(() => expect(rows.querySelectorAll("[data-op]")).toHaveLength(4))
+    const pane = (side: string) =>
+      rows.querySelector<HTMLElement>(`[role=region][data-side=${side}]`)!
+    const marks = (side: string) =>
+      [...pane(side).querySelectorAll("mark")].map((m) => m.textContent)
+    expect(marks("left")).toEqual(["quick", "fox"])
+    expect(marks("right")).toEqual(["slow", "cat"])
+    // Each pane holds one file's lines: what is not marked stays plain text.
+    expect(pane("left")).toHaveTextContent("the quick brown fox")
+    expect(pane("left")).not.toHaveTextContent("slow")
+    expect(pane("right")).toHaveTextContent("the slow brown cat")
+    expect(pane("right")).not.toHaveTextContent("quick")
   })
 
   it("compares more than two marked files with the other panel as one job, and lists what is not identical", async () => {
