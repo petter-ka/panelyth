@@ -3,7 +3,14 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { _electron, expect, test, type Page } from "@playwright/test"
 import { ensureFixture } from "../fixtures"
-import { desktopDir, isAlive, openSettingsWindow, waitForExit, waitForReady } from "../launch"
+import {
+  desktopDir,
+  isAlive,
+  openSettingsWindow,
+  pressEscapeToClose,
+  waitForExit,
+  waitForReady,
+} from "../launch"
 
 // Stage P04: the packaged product launches, opens a folder, previews an
 // image, switches to the commander and back, lists, copies a file and quits
@@ -107,8 +114,7 @@ test("packaged: one version, our menu, the update feed, notices and media tools"
     await settings.getByRole("tab", { name: "About" }).click()
     await expect(settings.getByTestId("about-version")).toHaveText(`Version ${version}`)
     await expect(settings.getByTestId("about-details")).toContainText(`Sidecar ${version}`)
-    // Esc closes the window on keydown: there is no page left for a keyup.
-    await settings.keyboard.down("Escape")
+    await pressEscapeToClose(settings)
     await expect.poll(() => app.windows().includes(settings)).toBe(false)
 
     // The licence notices are in the package and name what it holds.

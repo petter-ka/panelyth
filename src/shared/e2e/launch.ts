@@ -296,3 +296,15 @@ export async function settingsWindow(
     await new Promise((r) => setTimeout(r, 25))
   }
 }
+
+/**
+ * Esc in the settings window: it closes the window on keydown, so there is no
+ * page left for a keyup, and on a fast machine not even for the answer to the
+ * keydown ("Target page, context or browser has been closed"). The window being
+ * gone is the outcome the callers want; they wait for it.
+ */
+export async function pressEscapeToClose(settings: Page): Promise<void> {
+  await settings.keyboard.down("Escape").catch((e: unknown) => {
+    if (!settings.isClosed() && !/has been closed/.test(String(e))) throw e
+  })
+}

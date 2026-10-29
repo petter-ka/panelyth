@@ -3,6 +3,7 @@ import {
   commanderEnv,
   commanderPage,
   launchApp,
+  pressEscapeToClose,
   settingsWindow,
   shellState,
   waitForReady,
@@ -155,8 +156,7 @@ test.describe("About, updates and the native menu (Stage P06)", () => {
         .toEqual([{ action: "update.install", value: "9.9.9" }])
 
       // The rail marks the waiting version, in the other app too.
-      // Esc closes the window on keydown: there is no page left for a keyup.
-      await settings.keyboard.down("Escape")
+      await pressEscapeToClose(settings)
       await expect.poll(() => app.windows().includes(settings)).toBe(false)
       await expect(page.getByTestId("app-settings")).toHaveAttribute("data-update", "waiting")
       await page.getByTestId("app-switch").click()

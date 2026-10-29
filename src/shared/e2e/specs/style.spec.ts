@@ -3,7 +3,13 @@ import { tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { hitTest } from "../hitTest"
-import { commanderEnv, launchApp, openSettingsWindow, waitForReady } from "../launch"
+import {
+  commanderEnv,
+  launchApp,
+  openSettingsWindow,
+  pressEscapeToClose,
+  waitForReady,
+} from "../launch"
 import { commanderOf } from "./commander/helpers"
 
 // The terminal style (ADR-0047): chosen in Settings → Appearance next to
@@ -26,7 +32,7 @@ async function chooseTerminal(app: ElectronApplication, page: Page): Promise<voi
   await expect(dark.getByRole("button")).toHaveText(["Phosphor", "Ice", "Amber"])
   await dark.getByRole("button", { name: "Ice" }).click(step)
   await expect.poll(() => style(settings)).toBe("terminal")
-  await settings.keyboard.down("Escape")
+  await pressEscapeToClose(settings)
   await expect.poll(() => app.windows().some((p) => p === settings)).toBe(false)
 }
 
