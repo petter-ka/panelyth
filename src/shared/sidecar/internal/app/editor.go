@@ -117,6 +117,8 @@ type (
 		Quality  int     `json:"quality"`
 		Metadata string  `json:"metadata"`
 		DPI      float64 `json:"dpi"`
+		// App is the app that saves (Electron main): the job is listed there.
+		App string `json:"app"`
 	}
 	editWriteResult struct {
 		JobID int64 `json:"jobId"`
@@ -575,7 +577,7 @@ func (s *indexService) editWrite(ctx context.Context, p editWriteParams) (editWr
 	default:
 		return editWriteResult{}, rpc.NewError(rpc.CodeInvalidArgument, `target is "copy", "replace" or "as"`)
 	}
-	snap, err := s.startJob(jobs.Spec{Kind: jobs.KindEditSave, IDs: []int64{src.EntryID}, Edit: &jobs.EditSpec{Save: req}})
+	snap, err := s.startJob(jobs.Spec{Kind: jobs.KindEditSave, App: p.App, IDs: []int64{src.EntryID}, Edit: &jobs.EditSpec{Save: req}})
 	if err != nil {
 		return editWriteResult{}, err
 	}

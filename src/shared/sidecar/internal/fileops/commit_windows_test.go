@@ -80,3 +80,55 @@ func TestCommitWaitsOutABriefHold(t *testing.T) {
 		t.Errorf("a taken name was waited for: %v", time.Since(start))
 	}
 }
+
+// A copy that carries the mark of the web can be refused as ACCESS_DENIED for
+// a few milliseconds after it is written. The commit waits that out too (a
+// read-only target, which a replacing rename is denied, stands in for it);
+// a lasting denial fails after the bound.
+func TestCommitWaitsOutABriefDenial(t *testing.T) {
+	dir := t.TempDir()
+	partial, dst := PartialName(dir, "a.pdf"), filepath.Join(dir, "a.pdf")
+	for p, s := range map[string]string{partial: "new", dst: "old"} {
+		if err := os.WriteFile(p, []byte(s), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.Chmod(dst, 0o444); err != nil {
+		t.Fatal(err)
+	}
+	go func() {
+		time.Sleep(60 * time.Millisecond)
+		clearReadOnly(dst)
+	}()
+	start := time.Now()
+	if err := renameReplace(partial, dst); err != nil {
+		t.Fatalf("commit after a brief denial: %v", err)
+	}
+	if waited := time.Since(start); waited < 50*time.Millisecond || waited > 2*time.Second {
+		t.Errorf("waited %v", waited)
+	}
+	if b, err := os.ReadFile(dst); err != nil || string(b) != "new" {
+		t.Errorf("committed file: %q %v", b, err)
+	}
+
+	// Denied for good: PERMISSION_DENIED within the bound, the target kept.
+	if err := os.WriteFile(partial, []byte("newer"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Chmod(dst, 0o444); err != nil {
+		t.Fatal(err)
+	}
+	start = time.Now()
+	err := renameReplace(partial, dst)
+	waited := time.Since(start)
+	clearReadOnly(dst)
+	if Code(err) != CodePermission {
+		t.Errorf("commit over a denied target: %v", err)
+	}
+	if waited < 300*time.Millisecond || waited > 3*time.Second {
+		t.Errorf("gave up after %v", waited)
+	}
+	if b, _ := os.ReadFile(dst); string(b) != "new" {
+		t.Errorf("a denied commit changed the target: %q", b)
+	}
+}

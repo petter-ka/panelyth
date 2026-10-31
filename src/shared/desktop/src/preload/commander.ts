@@ -8,6 +8,7 @@ import {
   TITLE_BAR_ARG,
   type CommanderApi,
   type CommanderJobParams,
+  type CompareWindowOpenParams,
   type EventChannel,
   type EventMessage,
   type RendererMethod,
@@ -25,6 +26,34 @@ const copySelection = (s: SelectionDescriptor): SelectionDescriptor => ({
   include: [...s.include],
   exclude: [...s.exclude],
 })
+
+/** What a compare window shows (ADR-0048), field by field. */
+function copyCompareWindow(p: CompareWindowOpenParams): CompareWindowOpenParams {
+  switch (p.view) {
+    case "files":
+      return {
+        view: "files",
+        left: { id: p.left.id, name: p.left.name },
+        right: { id: p.right.id, name: p.right.name },
+      }
+    case "many":
+      return {
+        view: "many",
+        jobId: p.jobId,
+        side: p.side,
+        count: p.count,
+        folder: p.folder,
+        mineQueryId: p.mineQueryId,
+        theirsQueryId: p.theirsQueryId,
+      }
+    case "sync":
+      return {
+        view: "sync",
+        left: { path: p.left.path, dirId: p.left.dirId },
+        right: { path: p.right.path, dirId: p.right.dirId },
+      }
+  }
+}
 
 type SourceJobParams = Extract<CommanderJobParams, { source: unknown }>
 
@@ -391,6 +420,7 @@ const api: CommanderApi = {
         dst: p.dst,
         ignoreDates: p.ignoreDates,
       }),
+    openWindow: (p) => invoke("compare.openWindow", copyCompareWindow(p)),
   },
   diff: {
     open: (leftId, rightId) => invoke("diff.open", { leftId, rightId }),

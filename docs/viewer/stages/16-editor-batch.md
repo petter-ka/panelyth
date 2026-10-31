@@ -147,7 +147,7 @@ runs in a batch with the parameters it has in the editor:
   once in a benchmark run before item errors were printed; it did not happen again in 4,600 further saves, so the
   cause is **not confirmed**. The retry is tested on its own (a file held for 60 ms is committed; a file held for
   good fails as `IN_USE` after the bound; a taken name is not waited for). It also applies to the copy engine's
-  commits.
+  commits. Later an access denial was added to what it waits out, and commits that replace a file wait too (ADR-0029).
 - `index.Store.Briefs`: entries without their paths, for the plan (below).
 
 ## Non-goals

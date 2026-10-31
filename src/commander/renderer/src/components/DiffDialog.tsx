@@ -12,6 +12,7 @@ import {
 } from "react"
 import {
   closeDiff,
+  compareDiffAgain,
   diffRows,
   hasManyDiff,
   openManyDiff,
@@ -58,46 +59,68 @@ const RIGHT_TONE: Record<TextDiffRow["op"], string> = {
  * next and the previous file that differs.
  */
 export function DiffDialog() {
-  const d = useCompareStore((s) => s.diff)
-  const fromList = useCompareStore((s) => s.many !== null)
-  if (!d) return null
+  const open = useCompareStore((s) => s.diff !== null)
+  if (!open) return null
   return (
     <DialogWindow
       open
-      onOpenChange={(open) => {
-        if (!open) closeDiff()
+      onOpenChange={(next) => {
+        if (!next) closeDiff()
       }}
       title={t("Compare by content")}
       contentClassName="w-[min(100rem,calc(100vw-2rem))]"
     >
-      <div className="flex flex-col gap-2 text-xs" data-testid="diff-dialog">
-        <div className="flex gap-3">
-          <FileHead name={d.left.name} file={d.info?.left} />
-          <FileHead name={d.right.name} file={d.info?.right} />
-        </div>
-        {d.error ? (
-          <p role="alert" className="text-danger">
-            {d.error}
-          </p>
-        ) : !d.info ? (
-          <p aria-live="polite" className="text-muted" data-testid="diff-status">
-            {t("Comparing…")}
-          </p>
-        ) : d.info.diffId === 0 ? (
-          <ContentAnswer d={d} info={d.info} />
-        ) : (
-          <TextDiff key={d.info.diffId} info={d.info} maxChars={d.maxChars} fromList={fromList} />
-        )}
-        {(d.error || !d.info || d.info.diffId === 0) && (
-          <div className="flex justify-end gap-2">
-            {fromList && <FileSteps />}
-            <Button onClick={closeDiff} autoFocus>
-              {fromList ? t("Back to the list") : t("Close")}
-            </Button>
-          </div>
-        )}
-      </div>
+      <DiffView />
     </DialogWindow>
+  )
+}
+
+/**
+ * The comparison itself: in the dialog, or filling its window (ADR-0048),
+ * where `fill` lets the lines take the window's height.
+ */
+export function DiffView({ fill = false }: { fill?: boolean }) {
+  const d = useCompareStore((s) => s.diff)
+  const fromList = useCompareStore((s) => s.many !== null)
+  if (!d) return null
+  return (
+    <div
+      className={`flex flex-col gap-2 text-xs ${fill ? "min-h-0 flex-1" : ""}`}
+      data-testid="diff-dialog"
+    >
+      <div className="flex gap-3">
+        <FileHead name={d.left.name} file={d.info?.left} />
+        <FileHead name={d.right.name} file={d.info?.right} />
+      </div>
+      {d.error ? (
+        <p role="alert" className="text-danger">
+          {d.error}
+        </p>
+      ) : !d.info ? (
+        <p aria-live="polite" className="text-muted" data-testid="diff-status">
+          {t("Comparing…")}
+        </p>
+      ) : d.info.diffId === 0 ? (
+        <ContentAnswer d={d} info={d.info} />
+      ) : (
+        <TextDiff
+          key={d.info.diffId}
+          info={d.info}
+          maxChars={d.maxChars}
+          fromList={fromList}
+          fill={fill}
+        />
+      )}
+      {(d.error || !d.info || d.info.diffId === 0) && (
+        <div className={`flex justify-end gap-2 ${fill ? "mt-auto" : ""}`}>
+          {d.error && <Button onClick={compareDiffAgain}>{t("Compare again")}</Button>}
+          {fromList && <FileSteps />}
+          <Button onClick={closeDiff} autoFocus>
+            {fromList ? t("Back to the list") : t("Close")}
+          </Button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -198,10 +221,12 @@ function TextDiff({
   info,
   maxChars,
   fromList,
+  fill,
 }: {
   info: TextDiffOpenResult
   maxChars: number
   fromList: boolean
+  fill: boolean
 }) {
   const scroll = useRef<HTMLDivElement>(null)
   const otherPane = useRef<HTMLDivElement>(null)
@@ -276,7 +301,7 @@ function TextDiff({
       <div
         data-testid="diff-rows"
         onKeyDown={onKeyDown}
-        className="flex h-[calc(100vh-14rem)] min-h-40 gap-3"
+        className={`flex gap-3 ${fill ? "min-h-0 flex-1" : "h-[calc(100vh-14rem)] min-h-40"}`}
       >
         <Pane
           side="left"

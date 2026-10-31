@@ -49,6 +49,7 @@ import {
 } from "./edit"
 import type { CompareProgress, EventMap, FindProgress, IndexProgress } from "./events"
 import {
+  APP_IDS,
   ARCHIVE_FORMATS,
   DIFF_ACTIONS,
   DIFF_STATES,
@@ -238,12 +239,17 @@ const isJobItemError = (v: unknown): v is JobItemError =>
 const isClipState = (v: unknown): v is ClipState =>
   isRec(v) && (v.mode === "" || v.mode === "copy" || v.mode === "cut") && isCount(v.count)
 
+/** A job's app: absent, or one of the shell's apps. */
+const isJobApp = (v: unknown): boolean =>
+  v === undefined || (APP_IDS as readonly unknown[]).includes(v)
+
 export function isJobSnapshot(v: unknown): v is JobSnapshot {
   return (
     isRec(v) &&
     isInt(v.jobId) &&
     isStr(v.kind) &&
     jobKinds.has(v.kind) &&
+    isJobApp(v.app) &&
     isStr(v.state) &&
     jobStates.has(v.state) &&
     isCount(v.total) &&
@@ -1192,7 +1198,7 @@ export const eventGuards: EventGuards = {
     isRec(v) && Array.isArray(v.items) && v.items.length <= 500 && v.items.every(isFolderCoverItem),
   "job.progress": isJobSnapshot,
   "job.conflict": (v): v is EventMap["job.conflict"] =>
-    isRec(v) && isInt(v.jobId) && isJobConflict(v.conflict),
+    isRec(v) && isInt(v.jobId) && isJobConflict(v.conflict) && isJobApp(v.app),
   "app.visibility": (v): v is EventMap["app.visibility"] =>
     isRec(v) && (v.app === "viewer" || v.app === "commander") && typeof v.visible === "boolean",
   "texteditor.closeRequest": (v): v is EventMap["texteditor.closeRequest"] =>

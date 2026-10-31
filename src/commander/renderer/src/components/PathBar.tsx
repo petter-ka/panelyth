@@ -14,6 +14,7 @@ import {
   toPanelError,
   useListingStore,
 } from "../features/listing"
+import { useUiStore } from "../features/commands"
 import { useKeymapStore } from "../features/keymap"
 import { TypeCounts } from "./TypeCounts"
 import { ViewOptions } from "./ViewOptions"
@@ -48,6 +49,8 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
 ) {
   const path = useListingStore((s) => s[side].path)
   const loading = useListingStore((s) => s[side].loading)
+  // While the app starts, a panel without a folder yet is on its way to one.
+  const starting = useUiStore((s) => s.starting)
   const branch = useListingStore((s) => s[side].branch)
   const find = useListingStore((s) => s[side].find)
   const archive = useListingStore((s) => s[side].archive)
@@ -204,7 +207,15 @@ export const PathBar = forwardRef<PathBarHandle, PathBarProps>(function PathBar(
                 ? remoteUrl(remote)
                 : archive
                   ? archivePath(path, archive)
-                  : path || t("No folder open")}
+                  : path ||
+                    (loading || starting ? (
+                      <span className="flex h-full items-center">
+                        <span aria-hidden="true" className="skeleton-bone skeleton-bone-l" />
+                        <span className="sr-only">{t("Opening…")}</span>
+                      </span>
+                    ) : (
+                      t("No folder open")
+                    ))}
             </button>
           </Tooltip>
           {/* In a Git repository: the branch, and a dot when there are changes (ADR-0043). */}

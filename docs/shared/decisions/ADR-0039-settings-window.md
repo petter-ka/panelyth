@@ -6,6 +6,9 @@ Accepted (2026-10-14), at the owner's request, outside the stage list, like ADR-
 shown; it adds no capability. Amends ADR-0027 (two new main methods in both profiles) and ADR-0031 (a setting
 written by the settings window reaches its app view).
 
+Amended by ADR-0048 (2026-10-31): the commander's settings (`commander.settings`) written by its settings window
+also reach its open compare windows.
+
 ## Context
 
 - Settings was an in-page dialog of each app view (`SharedSettingsDialog`, `src/shared/ui`): the General,

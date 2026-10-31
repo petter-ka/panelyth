@@ -3,6 +3,7 @@ import type { IpcMainInvokeEvent } from "electron"
 import { describe, expect, it, vi } from "vitest"
 import {
   createInvokeHandler,
+  eventTargets,
   forwardableEvent,
   profileParams,
   type MainHandlers,
@@ -108,6 +109,7 @@ const mainHandlers = (): MainHandlers => ({
   "programs.openFolder": vi.fn(async () => ({ ok: true })),
   "document.open": vi.fn(async () => ({ ok: true })),
   "media.openWindow": vi.fn(async () => ({ ok: true })),
+  "compare.openWindow": vi.fn(() => ({ ok: true })),
   "settings.openWindow": vi.fn(() => ({ ok: true })),
   "settings.closeWindow": vi.fn(() => ({ ok: true })),
   "media.windowStep": vi.fn(async () => ({ item: null })),
@@ -681,6 +683,64 @@ describe("invoke router", () => {
     }
   })
 
+  it("lets the commander open a compare window; the viewer cannot (ADR-0048)", async () => {
+    const { handler, sidecar, main, commander, ok } = setup()
+    for (const p of [
+      { view: "files", left: { id: 3, name: "a.txt" }, right: { id: 4, name: "b.txt" } },
+      {
+        view: "many",
+        jobId: 7,
+        side: "right",
+        count: 14,
+        folder: "C:\\work\\b",
+        mineQueryId: 2,
+        theirsQueryId: 5,
+      },
+      { view: "sync", left: { path: "C:\\a", dirId: 1 }, right: { path: "D:\\b", dirId: null } },
+    ] as const) {
+      await expect(handler(commander, "compare.openWindow", p), p.view).resolves.toMatchObject({
+        ok: true,
+      })
+      expect(main["compare.openWindow"]).toHaveBeenLastCalledWith(commander, p, "commander")
+    }
+    const viewer = await handler(ok, "compare.openWindow", {
+      view: "files",
+      left: { id: 3, name: "a.txt" },
+      right: { id: 4, name: "b.txt" },
+    })
+    expect(viewer).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    for (const p of [
+      { view: "files", left: { id: 3, name: "a.txt" } },
+      { view: "files", left: { id: 0, name: "a.txt" }, right: { id: 4, name: "b.txt" } },
+      { view: "files", left: { id: 3, name: "" }, right: { id: 4, name: "b.txt" } },
+      { view: "files", left: { id: 3, name: "a\u0000" }, right: { id: 4, name: "b.txt" } },
+      {
+        view: "files",
+        left: { id: 3, name: "a.txt", path: "/etc/passwd" },
+        right: { id: 4, name: "b.txt" },
+      },
+      {
+        view: "many",
+        jobId: 7,
+        side: "up",
+        count: 1,
+        folder: "/b",
+        mineQueryId: 2,
+        theirsQueryId: 5,
+      },
+      { view: "many", jobId: 7, side: "left", count: 1, folder: "/b", mineQueryId: 2 },
+      { view: "sync", left: { path: "/a", dirId: -1 }, right: { path: "/b", dirId: null } },
+      { view: "sync", left: { path: "/a" }, right: { path: "/b", dirId: null } },
+      { view: "lister" },
+    ]) {
+      expect(await handler(commander, "compare.openWindow", p), JSON.stringify(p)).toMatchObject({
+        ok: false,
+        e: { code: "INVALID_ARGUMENT" },
+      })
+    }
+    expect(sidecar.call).not.toHaveBeenCalled()
+  })
+
   it("gives the commander the command line and user commands; the viewer neither (Stage C10)", async () => {
     const { handler, main, sidecar, commander, ok } = setup()
     const sel = { queryId: 1, version: 1, ranges: [[0, 2]], include: [], exclude: [] }
@@ -977,8 +1037,11 @@ describe("invoke router", () => {
     ] as const) {
       const res = await handler(commander, m, p)
       expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
-      // Nothing is added for these: no copyLinks, no paths.
-      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+      // Nothing is added for these but the app on a job: no copyLinks, no paths.
+      expect(sidecar.call).toHaveBeenLastCalledWith(
+        m,
+        m === "jobs.start" ? { ...p, app: "commander" } : p,
+      )
     }
     for (const [m, p] of [
       ["compare.dirs", { ...dirs, leftDirId: 0 }],
@@ -1113,8 +1176,11 @@ describe("invoke router", () => {
     ] as const) {
       const res = await handler(commander, m, p)
       expect(res, `${m} ${JSON.stringify(res)}`).toMatchObject({ ok: true })
-      // Nothing is added for these: no copyLinks, no paths.
-      expect(sidecar.call).toHaveBeenLastCalledWith(m, p)
+      // Nothing is added for these but the app on a job: no copyLinks, no paths.
+      expect(sidecar.call).toHaveBeenLastCalledWith(
+        m,
+        m === "jobs.start" ? { ...p, app: "commander" } : p,
+      )
     }
     for (const [m, p] of [
       ["rename.preview", { ...preview, limit: 0 }],
@@ -1524,6 +1590,7 @@ describe("invoke router", () => {
       destinationDirId: 7,
       conflict: "keepBoth",
       copyLinks: true,
+      app: "commander",
     })
     const denied: [string, unknown][] = [
       ["jobs.start", { kind: "copy", source, destination: abs, conflict: "ask" }],
@@ -1661,23 +1728,35 @@ describe("invoke router", () => {
         e: { code: "INVALID_ARGUMENT" },
       })
     }
-    // The viewer's copy goes to Go as sent: links stay skipped.
-    expect(sidecar.call).toHaveBeenCalledWith("jobs.start", copy)
-    expect(profileParams("commander", "jobs.start", copy)).toEqual({ ...copy, copyLinks: true })
+    // The viewer's copy goes to Go as sent, with its app: links stay skipped.
+    expect(sidecar.call).toHaveBeenCalledWith("jobs.start", { ...copy, app: "viewer" })
+    expect(profileParams("commander", "jobs.start", copy)).toEqual({
+      ...copy,
+      copyLinks: true,
+      app: "commander",
+    })
     expect(profileParams("commander", "clip.paste", { destination: abs, conflict: "ask" })).toEqual(
       {
         destination: abs,
         conflict: "ask",
         copyLinks: true,
+        app: "commander",
       },
     )
     expect(profileParams("commander", "jobs.start", { kind: "dirSize", source: {} })).toEqual({
       kind: "dirSize",
       source: {},
+      app: "commander",
     })
     expect(profileParams("viewer", "clip.paste", { destination: abs, conflict: "ask" })).toEqual({
       destination: abs,
       conflict: "ask",
+      app: "viewer",
+    })
+    // The job list is the calling app's (ADR-0031 amended); a renderer cannot name another app.
+    expect(profileParams("viewer", "jobs.list", undefined)).toEqual({ app: "viewer" })
+    expect(profileParams("commander", "jobs.list", { app: "viewer" })).toEqual({
+      app: "commander",
     })
   })
 
@@ -2319,6 +2398,64 @@ describe("sidecar event forwarding", () => {
     expect(forwardableEvent({ t: "evt", ch: "sidecar.status", seq: 1, p: status })).toBeNull()
     expect(
       forwardableEvent({ t: "evt", ch: "index.progress", seq: 1, p: { ...progress, state: "?" } }),
+    ).toBeNull()
+  })
+
+  it("sends a job's events to the pages of the app that started it (ADR-0031 amended)", () => {
+    const origins = {
+      viewer: "app://panelyth",
+      commander: "app://commander",
+      system: "app://system",
+    }
+    const page = (url: string) => ({ getURL: () => url })
+    const viewer = page("app://panelyth/index.html")
+    const commander = page("app://commander/index.html")
+    // The commander's compare window and its settings window are the commander's pages too.
+    const compare = page("app://commander/compare.html#view=files")
+    const editor = page("app://texteditor/index.html")
+    const all = [viewer, commander, compare, editor]
+    const job = {
+      jobId: 4,
+      kind: "copy",
+      state: "running",
+      total: 1,
+      done: 0,
+      failed: 0,
+      skipped: 0,
+      bytesTotal: 0,
+      bytesDone: 0,
+      current: "",
+      destination: "",
+      error: "",
+      startedMs: 1,
+      finishedMs: 0,
+      bytesPerSec: 0,
+      etaMs: 0,
+    }
+    const event = (ch: string, p: unknown) => forwardableEvent({ t: "evt", ch, seq: 1, p })!
+    expect(eventTargets(event("job.progress", { ...job, app: "commander" }), all, origins)).toEqual(
+      [commander, compare],
+    )
+    expect(eventTargets(event("job.progress", { ...job, app: "viewer" }), all, origins)).toEqual([
+      viewer,
+    ])
+    const conflict = {
+      jobId: 4,
+      conflict: {
+        name: "a.jpg",
+        source: { id: 1, size: 1, modifiedMs: 1, isDir: false },
+        target: { id: 2, size: 2, modifiedMs: 2, isDir: false },
+      },
+    }
+    expect(
+      eventTargets(event("job.conflict", { ...conflict, app: "viewer" }), all, origins),
+    ).toEqual([viewer])
+    // A job that names no app, and every other event, reach every page.
+    expect(eventTargets(event("job.progress", job), all, origins)).toEqual(all)
+    expect(eventTargets(event("index.progress", progress), all, origins)).toEqual(all)
+    // A job snapshot naming something else is malformed: it is not forwarded at all.
+    expect(
+      forwardableEvent({ t: "evt", ch: "job.progress", seq: 1, p: { ...job, app: "other" } }),
     ).toBeNull()
   })
 })

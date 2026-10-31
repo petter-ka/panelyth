@@ -9,20 +9,152 @@
   </head>
   <body>
     <div id="root">
-      <!-- Shown from the first paint until React renders (styles.css, .boot-screen). -->
-      <div class="boot-screen" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" class="pending-spinner">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-opacity=".25" stroke-width="2" />
-          <circle
-            cx="8"
-            cy="8"
-            r="6"
-            stroke="var(--accent)"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-dasharray="11 100"
-          />
-        </svg>
+      <!--
+        Shown from the first paint until React renders (styles.css, "Skeletons"):
+        the dashboard's outline, with the classes App.tsx and its cards use, so a
+        first switch to Panelyth System never shows an empty surface. No words:
+        they would be in one language only.
+      -->
+      <div class="boot-screen boot-skeleton" aria-hidden="true" data-testid="boot-skeleton">
+        <div
+          class="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]"
+        >
+          <nav
+            class="app-rail glass-region row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
+          >
+            <!-- The apps' glyphs (AppSwitchButton.tsx): Panelyth System's in the accent color. -->
+            <span class="grid size-9 place-items-center text-muted">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+                <rect x="9" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+                <rect x="1.5" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+                <rect x="9" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+              </svg>
+            </span>
+            <span class="grid size-9 place-items-center text-muted">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <rect x="1.5" y="2.5" width="5.5" height="11" rx="1" stroke="currentColor" />
+                <rect x="9" y="2.5" width="5.5" height="11" rx="1" stroke="currentColor" />
+                <path d="M3 5.5h2.5M3 7.5h2.5M10.5 5.5h2.5M10.5 7.5h2.5" stroke="currentColor" />
+              </svg>
+            </span>
+            <span class="grid size-9 place-items-center text-accent">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <path d="M2.2 11.5a6 6 0 1 1 11.6 0" stroke="currentColor" stroke-linecap="round" />
+                <path d="m8 10.5 2.8-3.6" stroke="currentColor" stroke-linecap="round" />
+                <circle cx="8" cy="10.5" r="1.2" fill="currentColor" />
+                <path d="M4.5 13.5h7" stroke="currentColor" stroke-linecap="round" />
+              </svg>
+            </span>
+          </nav>
+          <div class="title-bar-mark bg-chrome"></div>
+          <header
+            class="title-bar flex min-w-0 shrink-0 items-center gap-2 bg-chrome text-xs select-none"
+          >
+            <span class="title-bar-name shrink-0 font-medium text-text">Panelyth System</span>
+          </header>
+          <main class="glass-stack min-h-0 min-w-0 overflow-hidden bg-canvas">
+            <div class="mx-auto flex max-w-7xl flex-col gap-4 p-5">
+              <div class="flex min-w-0 flex-col gap-2 px-1 py-1">
+                <span class="skeleton-bone w-20"></span>
+                <span class="skeleton-bone h-6 w-40 rounded-md"></span>
+                <span class="skeleton-bone w-56"></span>
+              </div>
+              <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <!-- Processor: the ring, the last minute, a bar per processor. -->
+                <section
+                  class="glass-region flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-chrome p-4"
+                >
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="size-7 shrink-0 rounded-lg bg-accent/15"></span>
+                    <span class="skeleton-bone w-20"></span>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <span class="size-28 shrink-0 rounded-full border-10 border-skeleton"></span>
+                    <div class="flex min-w-0 flex-1 flex-col gap-2">
+                      <span class="skeleton-bone w-16"></span>
+                      <span class="skeleton-bone h-10 w-full rounded-md"></span>
+                    </div>
+                  </div>
+                  <span class="skeleton-bone w-20"></span>
+                  <span class="skeleton-bone h-12 w-full rounded-md"></span>
+                </section>
+                <!-- Memory: the ring and the last minute. -->
+                <section
+                  class="glass-region flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-chrome p-4"
+                >
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="size-7 shrink-0 rounded-lg bg-accent/15"></span>
+                    <span class="skeleton-bone w-16"></span>
+                  </div>
+                  <div class="flex items-center gap-4">
+                    <span class="size-28 shrink-0 rounded-full border-10 border-skeleton"></span>
+                    <div class="flex min-w-0 flex-1 flex-col gap-2">
+                      <span class="skeleton-bone w-16"></span>
+                      <span class="skeleton-bone h-10 w-full rounded-md"></span>
+                    </div>
+                  </div>
+                  <span class="skeleton-bone w-48"></span>
+                </section>
+                <!-- Graphics: two adapters. -->
+                <section
+                  class="glass-region flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-chrome p-4 md:col-span-2 xl:col-span-1"
+                >
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="size-7 shrink-0 rounded-lg bg-accent/15"></span>
+                    <span class="skeleton-bone w-16"></span>
+                  </div>
+                  <span class="skeleton-bone h-3 w-48"></span>
+                  <span class="skeleton-bone w-32"></span>
+                  <span class="skeleton-bone h-3 w-40"></span>
+                  <span class="skeleton-bone w-28"></span>
+                </section>
+                <!-- Storage: the ring and a meter per volume. -->
+                <section
+                  class="glass-region flex min-w-0 flex-col gap-3 rounded-xl border border-border bg-chrome p-4 md:col-span-2 xl:col-span-3"
+                >
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="size-7 shrink-0 rounded-lg bg-accent/15"></span>
+                    <span class="skeleton-bone w-16"></span>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-6">
+                    <span class="size-32 shrink-0 rounded-full border-12 border-skeleton"></span>
+                    <div class="grid min-w-0 flex-1 grid-cols-3 gap-6">
+                      <div class="flex flex-col gap-2">
+                        <span class="skeleton-bone w-24"></span>
+                        <span class="skeleton-bone h-2 w-full"></span>
+                        <span class="skeleton-bone w-20"></span>
+                      </div>
+                      <div class="flex flex-col gap-2">
+                        <span class="skeleton-bone w-24"></span>
+                        <span class="skeleton-bone h-2 w-full"></span>
+                        <span class="skeleton-bone w-20"></span>
+                      </div>
+                      <div class="flex flex-col gap-2">
+                        <span class="skeleton-bone w-24"></span>
+                        <span class="skeleton-bone h-2 w-full"></span>
+                        <span class="skeleton-bone w-20"></span>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <!-- Search the volumes: the field and its button. -->
+                <section
+                  class="glass-region flex min-h-[24rem] min-w-0 flex-col gap-3 rounded-xl border border-border bg-chrome p-4 md:col-span-2 xl:col-span-3"
+                >
+                  <div class="flex min-w-0 items-center gap-2">
+                    <span class="size-7 shrink-0 rounded-lg bg-accent/15"></span>
+                    <span class="skeleton-bone w-32"></span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="h-9 min-w-0 flex-1 rounded-md border border-border"></span>
+                    <span class="h-9 w-18 shrink-0 rounded-md bg-accent/15"></span>
+                  </div>
+                </section>
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

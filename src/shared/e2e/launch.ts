@@ -4,7 +4,7 @@ import { tmpdir } from "node:os"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
 import type { SidecarStatus } from "@panelyth/contracts"
-import { _electron, expect, type ElectronApplication, type Page } from "@playwright/test"
+import { _electron, expect, test, type ElectronApplication, type Page } from "@playwright/test"
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..", "..", "..")
 export const desktopDir = join(repoRoot, "src", "shared", "desktop")
@@ -271,6 +271,46 @@ export async function openSettingsWindow(
   const settings = await settingsWindow(app, undefined, timeoutMs)
   await settings.waitForLoadState("domcontentloaded")
   return settings
+}
+
+/**
+ * An app page's first paint is its outline (each app's index.html), never an
+ * empty surface: the first contentful paint is the first paint
+ * (docs/shared/APP-SWITCHING.md, "Loading screen"). Chromium records no paint
+ * timing for a page it counts as hidden when it first paints (a window behind
+ * others, on a busy test machine); then there is nothing to check here, and
+ * outline.spec.ts still guards the outline itself.
+ */
+export async function expectOutlineFirst(page: Page): Promise<void> {
+  const paints = await page.evaluate(() =>
+    Object.fromEntries(performance.getEntriesByType("paint").map((p) => [p.name, p.startTime])),
+  )
+  if (paints["first-paint"] === undefined) {
+    test.info().annotations.push({ type: "note", description: "no paint timing recorded" })
+    return
+  }
+  expect(paints["first-contentful-paint"], "first contentful paint").toBe(paints["first-paint"])
+}
+
+/**
+ * The compare window that is open (ADR-0048): compare.html on the
+ * commander's origin, loaded; waits until it exists. A spec closes one
+ * before it opens the next, so there is one at a time.
+ */
+export async function compareWindow(app: ElectronApplication, timeoutMs = 10_000): Promise<Page> {
+  const deadline = Date.now() + timeoutMs
+  for (;;) {
+    const page = app.windows().find((p) => !p.isClosed() && p.url().includes("/compare.html"))
+    if (page) {
+      await page.waitForLoadState("domcontentloaded")
+      return page
+    }
+    if (Date.now() > deadline) {
+      const urls = app.windows().map((p) => p.url())
+      throw new Error(`compare window not found; the windows: ${urls.join(", ")}`)
+    }
+    await new Promise((r) => setTimeout(r, 25))
+  }
 }
 
 /**

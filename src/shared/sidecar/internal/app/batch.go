@@ -39,6 +39,8 @@ type (
 		Recipe editor.Recipe `json:"recipe"`
 		// Folder is the destination of a "folder" output (from main).
 		Folder string `json:"folder"`
+		// App is the app that runs the batch (from main): the job is listed there.
+		App string `json:"app"`
 	}
 	planSkip struct {
 		// Reason: folder, video, other, unsupported or notWritable.
@@ -351,7 +353,7 @@ func (s *indexService) editBatch(ctx context.Context, p editBatchParams) (jobs.S
 	if len(ids) == 0 {
 		return jobs.Snapshot{}, rpc.NewError(rpc.CodeInvalidArgument, "nothing is selected")
 	}
-	return s.startJob(jobs.Spec{Kind: jobs.KindEdit, IDs: ids, Destination: folder, Batch: &jobs.BatchSpec{
+	return s.startJob(jobs.Spec{Kind: jobs.KindEdit, App: p.App, IDs: ids, Destination: folder, Batch: &jobs.BatchSpec{
 		Recipe: p.Recipe, Folder: folder, Reserve: s.preview.ReserveDecode, Resources: s.editor.ResourcesFor,
 	}})
 }

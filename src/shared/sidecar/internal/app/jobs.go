@@ -53,6 +53,9 @@ type (
 		// CopyLinks is set by Electron main from the calling app's profile
 		// (the commander copies links as links), never by a renderer.
 		CopyLinks bool `json:"copyLinks"`
+		// App is the calling app, set by Electron main: each app lists the
+		// jobs it started (ADR-0031 amended).
+		App string `json:"app"`
 		// Rename.
 		Pattern string `json:"pattern"`
 		Start   int    `json:"start"`
@@ -107,6 +110,13 @@ type (
 	jobConflictEvent struct {
 		JobID    int64         `json:"jobId"`
 		Conflict jobs.Conflict `json:"conflict"`
+		// App is the job's app: Electron main asks only its views.
+		App string `json:"app,omitempty"`
+	}
+	jobListParams struct {
+		// App is the calling app, set by Electron main: its jobs, and those
+		// that name no app.
+		App string `json:"app"`
 	}
 	jobCancelResult struct {
 		Cancelled bool `json:"cancelled"`
@@ -137,6 +147,8 @@ type (
 		DestinationDirID int64  `json:"destinationDirId"`
 		Conflict         string `json:"conflict"`
 		CopyLinks        bool   `json:"copyLinks"`
+		// App is the app that pastes (Electron main): the job is listed there.
+		App string `json:"app"`
 	}
 	entryRenameParams struct {
 		EntryID int64  `json:"entryId"`
@@ -197,9 +209,26 @@ func (s *indexService) emitJob(snap jobs.Snapshot) {
 	s.events.Post(evJobProgress, strconv.FormatInt(snap.JobID, 10), snap)
 }
 
+// jobsList is the jobs an app lists: those it started and those that name
+// no app (ADR-0031 amended); every job when app is "".
+func (s *indexService) jobsList(app string) jobListResult {
+	all := s.jobs.List()
+	if app == "" {
+		return jobListResult{Jobs: all}
+	}
+	mine := make([]jobs.Snapshot, 0, len(all))
+	for _, snap := range all {
+		if snap.App == "" || snap.App == app {
+			mine = append(mine, snap)
+		}
+	}
+	return jobListResult{Jobs: mine}
+}
+
 // askJob publishes a job's conflict question (one per job at a time).
 func (s *indexService) askJob(jobID int64, c jobs.Conflict) {
-	s.events.Post(evJobConflict, strconv.FormatInt(jobID, 10), jobConflictEvent{JobID: jobID, Conflict: c})
+	ev := jobConflictEvent{JobID: jobID, Conflict: c, App: s.jobs.AppOf(jobID)}
+	s.events.Post(evJobConflict, strconv.FormatInt(jobID, 10), ev)
 }
 
 func (s *indexService) registerJobs(srv *rpc.Server) {
@@ -242,8 +271,8 @@ func (s *indexService) registerJobs(srv *rpc.Server) {
 		}
 		return jobErrorsResult{Errors: errs, Total: total}, err
 	})
-	rpc.Register(srv, "jobs.list", func(context.Context, emptyParams) (jobListResult, error) {
-		return jobListResult{Jobs: s.jobs.List()}, nil
+	rpc.Register(srv, "jobs.list", func(_ context.Context, p jobListParams) (jobListResult, error) {
+		return s.jobsList(p.App), nil
 	})
 	s.registerFsOps(srv)
 	rpc.Register(srv, "clip.set", s.clipSet)
@@ -273,7 +302,7 @@ func (s *indexService) registerJobs(srv *rpc.Server) {
 }
 
 func (s *indexService) jobsStart(ctx context.Context, p jobStartParams) (jobs.Snapshot, error) {
-	spec := jobs.Spec{Kind: jobs.Kind(p.Kind), Conflict: p.Conflict, Pattern: p.Pattern, Start: p.Start,
+	spec := jobs.Spec{Kind: jobs.Kind(p.Kind), App: p.App, Conflict: p.Conflict, Pattern: p.Pattern, Start: p.Start,
 		Favorite: p.Favorite, Rating: p.Rating, Label: p.Label, Tag: p.Tag, Add: p.Add,
 		Verify: p.Verify, Now: p.Now, CopyLinks: p.CopyLinks, Mask: p.Mask, Name: p.Name}
 	if len(p.Pattern) > MaxPatternBytes {
@@ -401,7 +430,7 @@ func (s *indexService) clipPaste(ctx context.Context, p clipPasteParams) (jobs.S
 	}
 	// The lock is not held across Start: the manager may emit (and so call
 	// jobDone) from inside it.
-	snap, err := s.startJob(jobs.Spec{Kind: kind, IDs: ids, Destination: dest, Conflict: p.Conflict, CopyLinks: p.CopyLinks})
+	snap, err := s.startJob(jobs.Spec{Kind: kind, App: p.App, IDs: ids, Destination: dest, Conflict: p.Conflict, CopyLinks: p.CopyLinks})
 	if err != nil || !cut {
 		return snap, err
 	}

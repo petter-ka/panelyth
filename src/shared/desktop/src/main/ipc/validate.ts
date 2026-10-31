@@ -670,6 +670,49 @@ const windowParams: Validator = (p) =>
     ? null
     : "expected { entryId, theme?, lang? }"
 
+// compare.openWindow (ADR-0048). Names and folders are only shown by the
+// window; the ids are the commander's own, as in its other calls.
+const MAX_COMPARE_NAME_CHARS = 1024
+const isCompareFile = (v: unknown): boolean =>
+  shape(v, ["id", "name"]) && isId(v.id) && isLine(v.name, MAX_COMPARE_NAME_CHARS, 1)
+const isCompareRoot = (v: unknown): boolean =>
+  shape(v, ["path", "dirId"]) &&
+  isLine(v.path, MAX_PATH_CHARS) &&
+  (v.dirId === null || isId(v.dirId))
+
+const compareWindowProblem: Validator = (p) => {
+  if (!isPlainObject(p)) return "expected { view, … }"
+  switch (p.view) {
+    case "files":
+      return shape(p, ["view", "left", "right"]) && isCompareFile(p.left) && isCompareFile(p.right)
+        ? null
+        : 'expected { view: "files", left: { id, name }, right: { id, name } }'
+    case "many":
+      return shape(p, [
+        "view",
+        "jobId",
+        "side",
+        "count",
+        "folder",
+        "mineQueryId",
+        "theirsQueryId",
+      ]) &&
+        isId(p.jobId) &&
+        (p.side === "left" || p.side === "right") &&
+        isCount(p.count) &&
+        isLine(p.folder, MAX_PATH_CHARS) &&
+        isId(p.mineQueryId) &&
+        isId(p.theirsQueryId)
+        ? null
+        : 'expected { view: "many", jobId, side, count, folder, mineQueryId, theirsQueryId }'
+    case "sync":
+      return shape(p, ["view", "left", "right"]) && isCompareRoot(p.left) && isCompareRoot(p.right)
+        ? null
+        : 'expected { view: "sync", left: { path, dirId }, right: { path, dirId } }'
+  }
+  return 'expected view "files", "many" or "sync"'
+}
+
 // The image editor (Stage 12, ADR-0035). An edit list is checked for its
 // structure here (editListProblem) and for its meaning in Go.
 const SESSION_ID = /^[0-9a-f]{24}$/
@@ -1367,6 +1410,7 @@ export const validators: Record<RendererMethod, Validator> = {
     (p.lang === undefined || (typeof p.lang === "string" && /^[a-z]{2,3}$/.test(p.lang)))
       ? null
       : "expected { entryId, key, theme?, lang? }",
+  "compare.openWindow": compareWindowProblem,
   "media.windowStep": (p) =>
     shape(p, ["direction"]) && isMediaWindowStep(p.direction)
       ? null

@@ -9,9 +9,9 @@ import {
 } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
-import { expect, test, type Page } from "@playwright/test"
+import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
-import { expectWithinBudget, repoRoot } from "../../launch"
+import { compareWindow, expectWithinBudget, repoRoot } from "../../launch"
 import { commanderOf, cursorTo, goTo, launch, type Side } from "./helpers"
 
 // Stage C08: compare, synchronize and checksums
@@ -45,24 +45,29 @@ async function menu(c: Page, side: Side, command: string): Promise<void> {
   await c.getByRole("menuitem", { name: command }).click()
 }
 
-/** The synchronize dialog's rows as "name action". */
-const tableRows = (c: Page) =>
-  c
+/** The synchronize table's rows as "name action". */
+const tableRows = (w: Page) =>
+  w
     .getByTestId("sync-table")
     .locator("[role=option][data-action]")
     .evaluateAll((rows) =>
       rows.map((r) => `${r.firstElementChild?.textContent} ${r.getAttribute("data-action")}`),
     )
 
-/** Opens the synchronize dialog, sets the options and compares. */
-async function compare(c: Page, options: { mirror?: boolean; content?: boolean }) {
+/** Opens Synchronize directories (a window of its own, ADR-0048), sets the options and compares. */
+async function compare(
+  app: ElectronApplication,
+  c: Page,
+  options: { mirror?: boolean; content?: boolean },
+) {
   await c.getByRole("button", { name: "Synchronize directories" }).click()
-  const dialog = c.getByTestId("sync-dialog")
+  const w = await compareWindow(app)
+  const dialog = w.getByTestId("sync-dialog")
   if (options.mirror) await dialog.getByLabel(/Left to right only/).check()
   if (options.content) await dialog.getByLabel("Compare contents").check()
   await dialog.getByRole("button", { name: "Compare", exact: true }).click()
-  await expect(c.getByTestId("sync-status")).toContainText("Compared", { timeout: 30_000 })
-  return dialog
+  await expect(w.getByTestId("sync-status")).toContainText("Compared", { timeout: 30_000 })
+  return { w, dialog }
 }
 
 test.describe("compare, synchronize and checksums (Stage C08)", () => {
@@ -101,9 +106,11 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
       await goTo(c, "right", join(right, "docs"))
       await goTo(c, "left", join(left, "docs"))
       await cursorTo(c, "left", "readme")
+      // It opens in a window of its own (ADR-0048).
       await menu(c, "left", "Compare by content")
-      const diff = c.getByTestId("diff-dialog")
-      await expect(c.getByTestId("diff-status")).toHaveText("2 differences")
+      const pair = await compareWindow(app)
+      const diff = pair.getByTestId("diff-dialog")
+      await expect(pair.getByTestId("diff-status")).toHaveText("2 differences")
       // Two panes, one file each.
       await expect(diff.locator("[data-op=changed][data-side=left]")).toContainText("beta")
       await expect(diff.locator("[data-op=changed][data-side=right]")).toContainText(
@@ -116,17 +123,18 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
       await expect(diff.locator("[data-op=equal][data-side=right]").first()).toContainText(
         "Panelyth sync fixture",
       )
-      await c.keyboard.press("Escape")
-      await expect(diff).toHaveCount(0)
+      // Esc closes the window on keydown: the keyup would go to a closed page.
+      await pair.keyboard.down("Escape")
+      await expect.poll(() => pair.isClosed()).toBe(true)
       await expect(grid(c, "left")).toBeFocused()
       await goTo(c, "right", right)
       await goTo(c, "left", left)
 
       // Synchronize: compare both trees (with contents), every difference with a direction.
-      let dialog = await compare(c, { content: true })
+      let { w, dialog } = await compare(app, c, { content: true })
       await expect(dialog.getByLabel("Left folder")).toHaveValue(left)
       await expect
-        .poll(() => tableRows(c))
+        .poll(() => tableRows(w))
         .toEqual([
           "content.bin none",
           "empty/ copyLeft",
@@ -144,32 +152,33 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
           "photos/new/b.jpg copyRight",
         ])
       // The equal files are counted, not listed.
-      await expect(c.getByTestId("sync-show-equal")).toContainText("2")
+      await expect(w.getByTestId("sync-show-equal")).toContainText("2")
 
       // A direction for a row without one: content.bin goes right.
-      const table = c.getByTestId("sync-table")
+      let table = w.getByTestId("sync-table")
       await table.locator("[role=option]", { hasText: "content.bin" }).click()
-      await c.keyboard.press("ArrowRight")
+      await w.keyboard.press("ArrowRight")
       await expect(table.locator("[role=option]", { hasText: "content.bin" })).toHaveAttribute(
         "data-action",
         "copyRight",
       )
       // A filter: without what goes left, then with it again.
-      await c.getByTestId("sync-show-copyLeft").click()
-      await expect.poll(async () => (await tableRows(c)).length).toBe(8)
-      await c.getByTestId("sync-show-copyLeft").click()
-      await expect.poll(async () => (await tableRows(c)).length).toBe(14)
+      await w.getByTestId("sync-show-copyLeft").click()
+      await expect.poll(async () => (await tableRows(w)).length).toBe(8)
+      await w.getByTestId("sync-show-copyLeft").click()
+      await expect.poll(async () => (await tableRows(w)).length).toBe(14)
 
       // The confirmation says what happens; nothing is deleted in this plan.
       await dialog.getByRole("button", { name: "Synchronize…" }).click()
-      const confirm = c.getByTestId("sync-confirm")
+      let confirm = w.getByTestId("sync-confirm")
       await expect(confirm).toContainText("Copy 5 files")
       await expect(confirm).toContainText(`to the right: ${right}`)
       await expect(confirm).toContainText("Copy 4 files")
       await expect(confirm).toContainText("Create 4 folders")
       await expect(confirm).not.toContainText("Delete")
       await confirm.getByRole("button", { name: "Synchronize", exact: true }).click()
-      await expect(c.getByTestId("sync-dialog")).toHaveCount(0)
+      // The job runs in the queue; the window closes with its comparison.
+      await expect.poll(() => w.isClosed()).toBe(true)
       await expect
         .poll(() => existsSync(join(left, "old", "gone.txt")), { timeout: 30_000 })
         .toBe(true)
@@ -186,16 +195,19 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
       expect(read(join(right, "size.txt"))).toBe("123456789")
 
       // Compared again, only that pair is left, with nothing to do.
-      dialog = await compare(c, { content: true })
-      await expect.poll(() => tableRows(c)).toEqual(["size.txt none"])
-      await expect(c.getByTestId("sync-summary")).toContainText("Nothing to synchronize")
+      ;({ w, dialog } = await compare(app, c, { content: true }))
+      await expect.poll(() => tableRows(w)).toEqual(["size.txt none"])
+      await expect(w.getByTestId("sync-summary")).toContainText("Nothing to synchronize")
       await expect(dialog.getByRole("button", { name: "Synchronize…" })).toBeDisabled()
       await dialog.getByRole("button", { name: "Close" }).click()
+      await expect.poll(() => w.isClosed()).toBe(true)
 
       // A mirror: a stray file on the right is shown with × before it is deleted.
       writeFileSync(join(right, "stray.txt"), "not on the left\n")
-      dialog = await compare(c, { mirror: true })
-      await expect.poll(() => tableRows(c)).toEqual(["size.txt copyRight", "stray.txt deleteRight"])
+      ;({ w, dialog } = await compare(app, c, { mirror: true }))
+      table = w.getByTestId("sync-table")
+      confirm = w.getByTestId("sync-confirm")
+      await expect.poll(() => tableRows(w)).toEqual(["size.txt copyRight", "stray.txt deleteRight"])
       await expect(table.locator("[role=option]", { hasText: "stray.txt" })).toContainText("×")
       await dialog.getByRole("button", { name: "Synchronize…" }).click()
       await expect(confirm).toContainText(`Delete 1 entry on the right: ${right}`)
@@ -257,13 +269,14 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
       const c = await commanderOf(app)
       await goTo(c, "left", keep)
       await c.getByRole("button", { name: "Synchronize directories" }).click()
-      const dialog = c.getByTestId("sync-dialog")
+      const w = await compareWindow(app)
+      const dialog = w.getByTestId("sync-dialog")
       await dialog.getByLabel("Left folder").fill(join(fixture.root, "tree-a"))
       await dialog.getByLabel("Right folder").fill(join(fixture.root, "tree-b"))
       const runs: number[] = []
       for (let i = 0; i < 3; i++) {
         // Compare → the table's first rows (in-page clock).
-        const ms = await c.evaluate(() => {
+        const ms = await w.evaluate(() => {
           const button = [
             ...document.querySelectorAll<HTMLButtonElement>('[data-testid="sync-dialog"] button'),
           ].find((b) => /^Compare/.test(b.textContent ?? ""))!
@@ -289,10 +302,10 @@ test.describe("compare, synchronize and checksums (Stage C08)", () => {
         runs.push(Math.round(ms))
       }
       // About 3 % of the files differ: newer, missing, extra or another size.
-      await expect(c.getByTestId("sync-show-copyRight")).not.toContainText(/^→\s*0$/)
-      const counts = await c.getByTestId("sync-status").textContent()
+      await expect(w.getByTestId("sync-show-copyRight")).not.toContainText(/^→\s*0$/)
+      const counts = await w.getByTestId("sync-status").textContent()
       // The table stays virtualized whatever the number of rows.
-      const mounted = await c.getByTestId("sync-table").locator("[role=option]").count()
+      const mounted = await w.getByTestId("sync-table").locator("[role=option]").count()
       expect(mounted).toBeLessThan(80)
       const best = Math.min(...runs)
       writeResult({

@@ -1021,6 +1021,75 @@ describe("compare several files (Stage C10.5)", () => {
   })
 })
 
+describe("in a window of its own (ADR-0048)", () => {
+  it("opens two files, several files and two folders in compare windows instead of dialogs", async () => {
+    const fake = await start({ textDiff: { rows: [] } })
+    fake.api.compare.openWindow.mockResolvedValue({ ok: true, r: { ok: true } } as never)
+    const queries = () => ({
+      mineQueryId: useListingStore.getState().left.query!.queryId,
+      theirsQueryId: useListingStore.getState().right.query!.queryId,
+    })
+
+    // The cursor file and its namesake in the other panel.
+    await cursorTo("newer.txt")
+    await run("compare.content")
+    await waitFor(() =>
+      expect(fake.api.compare.openWindow).toHaveBeenLastCalledWith({
+        view: "files",
+        left: { id: L + 101, name: "newer.txt" },
+        right: { id: R + 101, name: "newer.txt" },
+      }),
+    )
+    expect(fake.api.diff.open).not.toHaveBeenCalled()
+    expect(screen.queryByTestId("diff-dialog")).toBeNull()
+
+    // Several marked files: the job starts here, the window follows it.
+    for (const name of ["same.txt", "newer.txt", "only-left.txt"]) {
+      await cursorTo(name)
+      await key({ key: "Insert" })
+    }
+    await run("compare.content")
+    await waitFor(() => expect(fake.api.files.start).toHaveBeenCalledTimes(1))
+    const jobId = (await fake.api.files.list()).r.jobs.at(-1)!.jobId
+    await waitFor(() =>
+      expect(fake.api.compare.openWindow).toHaveBeenLastCalledWith({
+        view: "many",
+        jobId,
+        side: "left",
+        count: 3,
+        folder: BACKUP.path,
+        ...queries(),
+      }),
+    )
+    expect(screen.queryByTestId("compare-many")).toBeNull()
+    expect(useCompareStore.getState().many).toBeNull()
+    expect(fake.api.jobs.cancel).not.toHaveBeenCalled()
+
+    // Synchronize directories: the two panels' folders.
+    await run("compare.sync")
+    await waitFor(() =>
+      expect(fake.api.compare.openWindow).toHaveBeenLastCalledWith({
+        view: "sync",
+        left: { path: WORK.path, dirId: 10 },
+        right: { path: BACKUP.path, dirId: 20 },
+      }),
+    )
+    expect(screen.queryByTestId("sync-dialog")).toBeNull()
+    expect(fake.api.compare.dirs).not.toHaveBeenCalled()
+  })
+
+  it("shows the dialog when the window cannot open", async () => {
+    const fake = await start({ textDiff: { rows: [] } })
+    fake.api.compare.openWindow.mockResolvedValue({
+      ok: false,
+      e: { code: "INTERNAL", message: "no window" },
+    } as never)
+    await run("compare.sync")
+    await screen.findByTestId("sync-dialog")
+    expect(fake.api.compare.openWindow).toHaveBeenCalledTimes(1)
+  })
+})
+
 describe("checksums", () => {
   it("creates one checksum file beside the cursor file, or one list for the marks", async () => {
     const fake = await start()

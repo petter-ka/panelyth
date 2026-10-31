@@ -40,7 +40,6 @@ export function CompareManyDialog() {
   const m = useCompareStore((s) => s.many)
   const diffOpen = useCompareStore((s) => s.diff !== null)
   if (!m || diffOpen) return null
-  const running = m.job === null ? m.error === null : isActiveJob(m.job)
   return (
     <DialogWindow
       open
@@ -48,29 +47,49 @@ export function CompareManyDialog() {
         if (!open) closeCompareMany()
       }}
       title={t("Compare by content")}
-      description={t("{count} marked files, each with the file of its name in {folder}", {
-        count: formatCount(m.count),
-        folder: m.folder,
-      })}
+      description={describe(m)}
       contentClassName="w-[min(48rem,calc(100vw-2rem))]"
     >
-      <div className="flex flex-col gap-2 text-xs" data-testid="compare-many">
-        {m.error ? (
-          <p role="alert" className="text-danger">
-            {m.error}
-          </p>
-        ) : running ? (
-          <Progress m={m} />
-        ) : (
-          <Results m={m} />
-        )}
-        <div className="flex justify-end gap-2">
-          <Button onClick={closeCompareMany} autoFocus={running || m.error !== null}>
-            {running ? t("Stop") : t("Close")}
-          </Button>
-        </div>
-      </div>
+      <CompareManyView />
     </DialogWindow>
+  )
+}
+
+const describe = (m: CompareManyState): string =>
+  t("{count} marked files, each with the file of its name in {folder}", {
+    count: formatCount(m.count),
+    folder: m.folder,
+  })
+
+/**
+ * The list itself: in the dialog, or filling its window (ADR-0048), which
+ * says what was compared above it and gives the rows the window's height.
+ */
+export function CompareManyView({ fill = false }: { fill?: boolean }) {
+  const m = useCompareStore((s) => s.many)
+  if (!m) return null
+  const running = m.job === null ? m.error === null : isActiveJob(m.job)
+  return (
+    <div
+      className={`flex flex-col gap-2 text-xs ${fill ? "min-h-0 flex-1" : ""}`}
+      data-testid="compare-many"
+    >
+      {fill && <p className="truncate text-muted">{describe(m)}</p>}
+      {m.error ? (
+        <p role="alert" className="text-danger">
+          {m.error}
+        </p>
+      ) : running ? (
+        <Progress m={m} />
+      ) : (
+        <Results m={m} fill={fill} />
+      )}
+      <div className={`flex justify-end gap-2 ${fill ? "mt-auto" : ""}`}>
+        <Button onClick={closeCompareMany} autoFocus={running || m.error !== null}>
+          {running ? t("Stop") : t("Close")}
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -117,7 +136,7 @@ function summary(m: CompareManyState): string {
   )
 }
 
-function Results({ m }: { m: CompareManyState }) {
+function Results({ m, fill }: { m: CompareManyState; fill: boolean }) {
   const job = m.job!
   const allSame = job.state === "completed" && job.failed === 0
   return (
@@ -148,14 +167,22 @@ function Results({ m }: { m: CompareManyState }) {
                 </button>
               ))}
             </div>
-            <ResultList cursor={m.cursor} version={m.show} />
+            <ResultList cursor={m.cursor} version={m.show} fill={fill} />
           </>
         ))}
     </>
   )
 }
 
-function ResultList({ cursor, version }: { cursor: number; version: readonly ManyResult[] }) {
+function ResultList({
+  cursor,
+  version,
+  fill,
+}: {
+  cursor: number
+  version: readonly ManyResult[]
+  fill: boolean
+}) {
   const scroll = useRef<HTMLDivElement>(null)
   const count = manyRows.count()
   // TanStack Virtual returns methods that React Compiler cannot safely memoize.
@@ -199,7 +226,7 @@ function ResultList({ cursor, version }: { cursor: number; version: readonly Man
       tabIndex={0}
       onKeyDown={onKeyDown}
       data-testid="compare-many-rows"
-      className="relative h-72 overflow-auto rounded-md border border-border bg-canvas outline-none focus:border-accent"
+      className={`relative overflow-auto rounded-md border border-border bg-canvas outline-none focus:border-accent ${fill ? "min-h-24 flex-1" : "h-72"}`}
     >
       <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
         {virtualizer.getVirtualItems().map((v) => {

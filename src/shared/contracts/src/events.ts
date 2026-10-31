@@ -97,7 +97,7 @@ export interface EventMap {
   /** A job's full state, at most 4 Hz per job; the final state is always delivered. */
   "job.progress": JobSnapshot
   /** A job with the "ask" policy waits on this item (Stage P03); answer with jobs.resolve. */
-  "job.conflict": { jobId: number; conflict: JobConflict }
+  "job.conflict": { jobId: number; conflict: JobConflict; app?: AppId }
   /** From main: this app view was shown or hidden by the app switch (ADR-0031). */
   "app.visibility": { app: AppId; visible: boolean }
   /** From main (ADR-0045): the main window was maximized, restored, or went into or out of full screen. */

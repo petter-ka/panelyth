@@ -157,6 +157,15 @@ var commitWaits = []time.Duration{5 * time.Millisecond, 15 * time.Millisecond, 4
 // renameNoReplace commits a partial copy atomically, failing when dst
 // exists (MoveFileEx without MOVEFILE_REPLACE_EXISTING).
 func renameNoReplace(partial, dst string) error {
+	return commitRename(partial, dst, 0)
+}
+
+// renameReplace commits a partial copy over an existing dst.
+func renameReplace(partial, dst string) error {
+	return commitRename(partial, dst, windows.MOVEFILE_REPLACE_EXISTING)
+}
+
+func commitRename(partial, dst string, flags uint32) error {
 	p, err := windows.UTF16PtrFromString(LongPath(partial))
 	if err != nil {
 		return err
@@ -165,15 +174,15 @@ func renameNoReplace(partial, dst string) error {
 	if err != nil {
 		return err
 	}
-	err = windows.MoveFileEx(p, d, 0)
+	err = windows.MoveFileEx(p, d, flags)
 	for _, wait := range commitWaits {
 		// Only the partial file being held is waited for: nothing else of a
 		// commit is transient.
-		if err == nil || !isInUse(err) {
+		if err == nil || !held(err) {
 			break
 		}
 		time.Sleep(wait)
-		err = windows.MoveFileEx(p, d, 0)
+		err = windows.MoveFileEx(p, d, flags)
 	}
 	if err != nil {
 		if errors.Is(err, windows.ERROR_ALREADY_EXISTS) || errors.Is(err, windows.ERROR_FILE_EXISTS) {
@@ -182,6 +191,16 @@ func renameNoReplace(partial, dst string) error {
 		return &os.LinkError{Op: "rename", Old: partial, New: dst, Err: err}
 	}
 	return nil
+}
+
+// held reports a commit refused only for a moment. Besides a sharing
+// violation, a copy that carries the mark of the web (a Zone.Identifier
+// stream, kept by CopyFileExW) can be refused as ACCESS_DENIED right after it
+// is written: in a folder with extra permission entries every such commit
+// was, for 8 to 32 ms whatever the size (1 KB to 200 MB, Defender on). A
+// lasting denial still fails, after the bound.
+func held(err error) bool {
+	return isInUse(err) || errors.Is(err, windows.ERROR_ACCESS_DENIED)
 }
 
 const preservedAttrs = windows.FILE_ATTRIBUTE_READONLY | windows.FILE_ATTRIBUTE_HIDDEN | windows.FILE_ATTRIBUTE_SYSTEM

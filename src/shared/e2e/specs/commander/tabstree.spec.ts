@@ -2,7 +2,7 @@ import { appendFileSync, mkdirSync, mkdtempSync, writeFileSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
-import { expectWithinBudget, removeTemp, repoRoot } from "../../launch"
+import { compareWindow, expectWithinBudget, removeTemp, repoRoot } from "../../launch"
 import { commanderOf, cursorTo, goTo, launch, mixedFolder, openFolder, type Side } from "./helpers"
 
 // Stage C10.5: the tab bar and tab sets, the folder tree, and Compare by
@@ -275,44 +275,49 @@ test.describe("tab bar, tab sets, folder tree, compare several files (Stage C10.
       await cursorTo(c, "right", "other")
       await c.keyboard.press("Insert")
       await compare.click()
-      const diff = c.getByTestId("diff-dialog")
+      // Each comparison opens in a window of its own (ADR-0048).
+      let w = await compareWindow(app)
+      const diff = w.getByTestId("diff-dialog")
       await expect(diff).toContainText("f00.txt")
       await expect(diff).toContainText("other.txt")
-      await expect(c.getByTestId("diff-status")).toContainText("1 difference")
+      await expect(w.getByTestId("diff-status")).toContainText("1 difference")
       // "words" and "birds" end alike: what differs inside the line is "wo" and "bi".
-      await expect(c.getByTestId("diff-rows").locator("mark")).toHaveText(["wo", "bi"])
+      await expect(w.getByTestId("diff-rows").locator("mark")).toHaveText(["wo", "bi"])
       await diff.getByRole("button", { name: "Close" }).click()
+      await expect.poll(() => w.isClosed()).toBe(true)
 
       // All twenty files of the left panel against the right panel: one job, a result list.
       // (A click in the left panel makes it the active one again.)
       await cursorTo(c, "left", "f01")
       await c.keyboard.press("Control+a")
       await compare.click()
-      const many = c.getByTestId("compare-many")
-      await expect(c.getByTestId("compare-many-status")).toContainText(
+      w = await compareWindow(app)
+      const many = w.getByTestId("compare-many")
+      await expect(w.getByTestId("compare-many-status")).toContainText(
         "Identical: 16 · Not identical: 4",
         { timeout: 20_000 },
       )
       await expect(many.getByRole("button", { name: "Different 2" })).toBeVisible()
       await expect(many.getByRole("button", { name: "Missing 2" })).toBeVisible()
-      const rows = c.getByTestId("compare-many-rows").getByRole("option")
+      const rows = w.getByTestId("compare-many-rows").getByRole("option")
       await expect(rows).toHaveCount(4)
       // Only what differs: the missing ones hide with their filter.
       await many.getByRole("button", { name: "Missing 2" }).click()
       await expect(rows).toHaveCount(2)
       await expect(rows.first()).toContainText("f03.txt")
       // Enter: that pair side by side; Shift+N steps to the next file that differs.
-      await c.getByTestId("compare-many-rows").focus()
-      await c.keyboard.press("Enter")
-      await expect(diff).toContainText("f03.txt")
-      await expect(c.getByTestId("diff-rows").locator("mark")).toHaveText(["wo", "bi"])
-      await c.getByTestId("diff-rows").locator("[data-side=left][role=region]").focus()
-      await c.keyboard.press("Shift+N")
-      await expect(diff).toContainText("f07.txt")
-      await diff.getByRole("button", { name: "Back to the list" }).click()
+      await w.getByTestId("compare-many-rows").focus()
+      await w.keyboard.press("Enter")
+      const pair = w.getByTestId("diff-dialog")
+      await expect(pair).toContainText("f03.txt")
+      await expect(w.getByTestId("diff-rows").locator("mark")).toHaveText(["wo", "bi"])
+      await w.getByTestId("diff-rows").locator("[data-side=left][role=region]").focus()
+      await w.keyboard.press("Shift+N")
+      await expect(pair).toContainText("f07.txt")
+      await pair.getByRole("button", { name: "Back to the list" }).click()
       await expect(rows).toHaveCount(2)
       await many.getByRole("button", { name: "Close" }).click()
-      await expect(many).toHaveCount(0)
+      await expect.poll(() => w.isClosed()).toBe(true)
     } finally {
       await app.close().catch(() => undefined)
       removeTemp(root)

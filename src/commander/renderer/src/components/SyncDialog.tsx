@@ -77,18 +77,22 @@ export function SyncDialog() {
       title={t("Synchronize directories")}
       contentClassName="w-[min(76rem,calc(100vw-2rem))]"
     >
-      <SyncBody />
+      <SyncView />
     </DialogWindow>
   )
 }
 
-function SyncBody() {
+/** Synchronize directories itself: in the dialog, or filling its window (ADR-0048). */
+export function SyncView({ fill = false }: { fill?: boolean }) {
   const s = useCompareStore((st) => st.sync)
   if (!s) return null
   const comparing = isComparing(s)
   const compared = isCompared(s)
   return (
-    <div className="flex flex-col gap-3 text-xs" data-testid="sync-dialog">
+    <div
+      className={`flex flex-col gap-3 text-xs ${fill ? "min-h-0 flex-1" : ""}`}
+      data-testid="sync-dialog"
+    >
       <form
         className="flex flex-col gap-3"
         onSubmit={(e) => {
@@ -110,7 +114,7 @@ function SyncBody() {
       ) : (
         <>
           <Toolbar s={s} enabled={compared} />
-          <Table s={s} />
+          <Table s={s} fill={fill} />
           {s.error && (
             <p role="alert" className="text-danger">
               {s.error}
@@ -320,7 +324,7 @@ function Toolbar({ s, enabled }: { s: SyncDialogState; enabled: boolean }) {
   )
 }
 
-function Table({ s }: { s: SyncDialogState }) {
+function Table({ s, fill }: { s: SyncDialogState; fill: boolean }) {
   const scroll = useRef<HTMLDivElement>(null)
   const total = s.run?.total ?? 0
   const cursor = s.cursor
@@ -377,7 +381,9 @@ function Table({ s }: { s: SyncDialogState }) {
   }
 
   return (
-    <div className="flex flex-col rounded-md border border-border">
+    <div
+      className={`flex flex-col rounded-md border border-border ${fill ? "min-h-32 flex-1" : ""}`}
+    >
       <div
         className={`${COLUMNS} h-7 border-b border-border bg-chrome px-2 text-2xs font-semibold tracking-wide text-muted uppercase`}
         aria-hidden="true"
@@ -398,7 +404,7 @@ function Table({ s }: { s: SyncDialogState }) {
         aria-activedescendant={total > 0 ? `sync-row-${cursor}` : undefined}
         onKeyDown={onKeyDown}
         data-testid="sync-table"
-        className="relative h-[min(22rem,45vh)] overflow-auto bg-canvas outline-none focus:ring-1 focus:ring-accent"
+        className={`relative overflow-auto bg-canvas outline-none focus:ring-1 focus:ring-accent ${fill ? "min-h-0 flex-1" : "h-[min(22rem,45vh)]"}`}
       >
         <div style={{ height: virtualizer.getTotalSize(), position: "relative" }}>
           {items.map((v) => (

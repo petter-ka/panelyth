@@ -16,6 +16,7 @@ import type {
   CompareShow,
   CompareStartResult,
   CompareView,
+  CompareWindowOpenParams,
   ConflictDecision,
   ConflictPolicy,
   CopyPathsResult,
@@ -354,6 +355,9 @@ export const bridge = {
   closeSettingsWindow: async (then?: "shortcuts"): Promise<void> => {
     await unwrap(() => api().settings.closeWindow(then))
   },
+  /** Compare by content or synchronize in a window of its own (ADR-0048); false when it could not open. */
+  openCompareWindow: async (p: CompareWindowOpenParams): Promise<boolean> =>
+    (await unwrap(() => api().compare.openWindow(p))).ok,
   /** An image or video in a frameless full-screen window of its own (ADR-0033). */
   openMediaWindow: async (
     entryId: number,

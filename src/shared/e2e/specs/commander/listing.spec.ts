@@ -38,8 +38,8 @@ test.describe("commander listing (Stage C01)", () => {
     const { app } = await launch("commander")
     try {
       const c = await commanderOf(app)
-      // Scenario 1 (first run): both panels open the home folder.
-      await expect(c.getByTestId("path-left")).not.toHaveText("No folder open", { timeout: 15_000 })
+      // Scenario 1 (first run): both panels open the home folder (a path, not "Opening…").
+      await expect(c.getByTestId("path-left")).toHaveText(/[\\/]/, { timeout: 15_000 })
       await expect(c.getByTestId("path-right")).toHaveText(
         (await c.getByTestId("path-left").innerText()).trim(),
       )

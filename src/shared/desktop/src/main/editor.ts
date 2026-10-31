@@ -127,7 +127,9 @@ export function editorHandlers(
       if (!isBatchPlanResult(r)) throw new RpcError("INTERNAL", "unexpected plan", false)
       return r
     },
-    "batch.start": async (_event, params) => deps.call("edit.batch", withFolder(params)),
+    // The job is listed in the app that runs it (ADR-0031 amended).
+    "batch.start": async (_event, params, app) =>
+      deps.call("edit.batch", { ...withFolder(params), app }),
     "asset.pick": async (event, { sessionId }) => {
       // The dialog opens in the edited picture's folder: logos tend to live near.
       const { path: source } = await deps.call("edit.source", { sessionId })
@@ -187,9 +189,10 @@ export function editorHandlers(
         ...(r.before && { before: r.before }),
       }
     },
-    "edit.save": async (event, params) => {
+    "edit.save": async (event, params, app) => {
+      // The save job is listed in the app that saves (ADR-0031 amended).
       if (params.target !== "as") {
-        const { jobId, name } = await deps.call("edit.write", params)
+        const { jobId, name } = await deps.call("edit.write", { ...params, app })
         return { jobId, name }
       }
       // The dialog opens beside the original; the path never passes a renderer.
@@ -203,7 +206,7 @@ export function editorHandlers(
         throw new RpcError("INVALID_PATH", "the destination must be an absolute path", false)
       }
       const path = withFormatExtension(chosen, params.format)
-      const { jobId, name } = await deps.call("edit.write", { ...params, path })
+      const { jobId, name } = await deps.call("edit.write", { ...params, path, app })
       return { jobId, name }
     },
     "edit.reveal": async (_event, { jobId }) => {

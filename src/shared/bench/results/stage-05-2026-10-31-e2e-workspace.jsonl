@@ -1,0 +1,3 @@
+{"at":"2026-10-31T16:04:13.459Z","test":"tree-expand-10k","expandMs":116,"longTasks":0,"longTaskMaxMs":0,"mountedRows":38}
+{"at":"2026-10-31T16:04:18.227Z","test":"search-100k","samplesMs":[214,214,220,223],"p50Ms":220,"debounceMs":200}
+{"at":"2026-10-31T16:04:24.092Z","test":"pane-resize","steps":30,"longTasks":0,"longTaskMaxMs":0,"perRowBefore":6,"perRowAfter":4}

@@ -61,6 +61,7 @@ import type {
   CompareMarksParams,
   CompareMarksResult,
   ComparePlan,
+  CompareWindowOpenParams,
   CompareShow,
   CompareStartResult,
   CompareView,
@@ -615,6 +616,8 @@ export interface CommanderApi {
     plan(compareId: number): Promise<RpcEnvelope<ComparePlan>>
     /** Shift+F2: what is unique or newer in each of two listings. */
     marks(params: CompareMarksParams): Promise<RpcEnvelope<CompareMarksResult>>
+    /** A comparison in a window of its own (ADR-0048). */
+    openWindow(params: CompareWindowOpenParams): Promise<RpcEnvelope<OkResult>>
   }
   /** The side-by-side text diff (Stage C08): compared in Go, rows paged. */
   diff: {

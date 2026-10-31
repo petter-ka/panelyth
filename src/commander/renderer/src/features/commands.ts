@@ -105,6 +105,11 @@ interface UiState {
   rowMenu: RowMenuState | null
   /** Where the right button is being held (inside the panel's view area), while the hold ring shows. */
   hold: { side: Side; left: number; top: number } | null
+  /**
+   * The app is opening the panels' first folders (main.tsx): a panel without
+   * a folder yet shows skeleton rows meanwhile, not "No folder open".
+   */
+  starting: boolean
 }
 
 export interface RowMenuState {
@@ -123,7 +128,10 @@ export const useUiStore = create<UiState>(() => ({
   editFilter: { left: 0, right: 0 },
   rowMenu: null,
   hold: null,
+  starting: false,
 }))
+
+export const setStarting = (starting: boolean): void => useUiStore.setState({ starting })
 
 /** Shows the hold ring at a window position inside the panel area around `from`, or hides it. */
 export function setHold(side: Side, from: Element | null, x = 0, y = 0): void {
@@ -367,7 +375,7 @@ export function runPanelAction(side: Side, id: ActionId | ToolActionId): void {
       break
     case "compare.sync":
       closeQuickSearch()
-      openSync()
+      void openSync()
       break
     case "compare.content":
       closeQuickSearch()

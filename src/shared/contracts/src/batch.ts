@@ -14,7 +14,7 @@ import {
   type MetadataPolicy,
   type SaveFormat,
 } from "./edit"
-import type { JobSource } from "./rpc"
+import type { AppId, JobSource } from "./rpc"
 
 export const RECIPE_VERSION = 1
 export const MAX_RECIPE_OPS = 64
@@ -260,6 +260,8 @@ export interface EditBatchParams {
   source: JobSource
   recipe: Recipe
   folder?: string
+  /** The app that runs the batch (main names it): its job is listed there (ADR-0031 amended). */
+  app?: AppId
 }
 
 /** A folder picked in main's dialog: a handle, and the name to show. */

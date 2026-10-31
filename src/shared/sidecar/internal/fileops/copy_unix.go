@@ -34,6 +34,9 @@ func renameNoReplace(partial, dst string) error {
 	return os.Rename(partial, dst)
 }
 
+// renameReplace commits a partial copy over an existing dst.
+func renameReplace(partial, dst string) error { return os.Rename(partial, dst) }
+
 // clearReadOnly is a no-op: Unix renames and removes depend on the folder's
 // permissions, not the file's.
 func clearReadOnly(string) {}

@@ -9,20 +9,242 @@
   </head>
   <body>
     <div id="root">
-      <!-- Shown from the first paint until React renders (styles.css, .boot-screen). -->
-      <div class="boot-screen" aria-hidden="true">
-        <svg width="20" height="20" viewBox="0 0 16 16" fill="none" class="pending-spinner">
-          <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-opacity=".25" stroke-width="2" />
-          <circle
-            cx="8"
-            cy="8"
-            r="6"
-            stroke="var(--accent)"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-dasharray="11 100"
-          />
-        </svg>
+      <!--
+        Shown from the first paint until React renders (styles.css, .boot-skeleton):
+        the commander's outline, with the classes AppShell and its panels use, so a
+        first switch to the commander never shows an empty surface.
+      -->
+      <div class="boot-screen boot-skeleton" aria-hidden="true" data-testid="boot-skeleton">
+        <div
+          class="glass-shell relative grid h-full grid-cols-[2.75rem_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]"
+        >
+          <nav
+            class="app-rail glass-region row-span-full flex h-full w-11 shrink-0 flex-col items-center gap-1 border-r border-border bg-chrome py-2"
+          >
+            <!-- The apps' glyphs (AppSwitchButton.tsx): the commander's in the accent color. -->
+            <span class="grid size-9 place-items-center text-muted">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+                <rect x="9" y="1.5" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+                <rect x="1.5" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+                <rect x="9" y="9" width="5.5" height="5.5" rx="1" stroke="currentColor" />
+              </svg>
+            </span>
+            <span class="grid size-9 place-items-center text-accent">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <rect x="1.5" y="2.5" width="5.5" height="11" rx="1" stroke="currentColor" />
+                <rect x="9" y="2.5" width="5.5" height="11" rx="1" stroke="currentColor" />
+                <path d="M3 5.5h2.5M3 7.5h2.5M10.5 5.5h2.5M10.5 7.5h2.5" stroke="currentColor" />
+              </svg>
+            </span>
+            <span class="grid size-9 place-items-center text-muted">
+              <svg width="18" height="18" viewBox="0 0 16 16" fill="none">
+                <path d="M2.2 11.5a6 6 0 1 1 11.6 0" stroke="currentColor" stroke-linecap="round" />
+                <path d="m8 10.5 2.8-3.6" stroke="currentColor" stroke-linecap="round" />
+                <circle cx="8" cy="10.5" r="1.2" fill="currentColor" />
+                <path d="M4.5 13.5h7" stroke="currentColor" stroke-linecap="round" />
+              </svg>
+            </span>
+          </nav>
+          <div class="title-bar-mark bg-chrome"></div>
+          <header
+            class="title-bar flex min-w-0 shrink-0 items-center gap-2 bg-chrome text-xs select-none"
+          >
+            <span class="title-bar-name shrink-0 font-medium text-text">Panelyth Commander</span>
+          </header>
+          <div class="glass-stack flex min-h-0 min-w-0 flex-col">
+            <div
+              class="glass-region flex h-9 shrink-0 items-center gap-1 border-b border-border bg-chrome px-1.5"
+            >
+              <span class="grid size-8 place-items-center"
+                ><span class="skeleton-bone skeleton-bone-icon"></span
+              ></span>
+              <span class="grid size-8 place-items-center"
+                ><span class="skeleton-bone skeleton-bone-icon"></span
+              ></span>
+              <span class="grid size-8 place-items-center"
+                ><span class="skeleton-bone skeleton-bone-icon"></span
+              ></span>
+              <span class="grid size-8 place-items-center"
+                ><span class="skeleton-bone skeleton-bone-icon"></span
+              ></span>
+              <span class="grid size-8 place-items-center"
+                ><span class="skeleton-bone skeleton-bone-icon"></span
+              ></span>
+              <span class="grid size-8 place-items-center"
+                ><span class="skeleton-bone skeleton-bone-icon"></span
+              ></span>
+            </div>
+            <div class="flex min-h-0 flex-1">
+              <section class="glass-region relative flex h-full min-w-0 flex-1 flex-col">
+                <div
+                  class="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2"
+                >
+                  <span class="skeleton-bone skeleton-bone-s"></span>
+                  <span class="skeleton-bone skeleton-bone-xs"></span>
+                  <span class="skeleton-bone skeleton-bone-xs"></span>
+                  <span class="skeleton-bone skeleton-bone-xs"></span>
+                </div>
+                <div class="flex h-8 shrink-0 items-center border-b border-border bg-chrome px-2">
+                  <span class="skeleton-bone skeleton-bone-m"></span>
+                </div>
+                <div class="flex h-8 shrink-0 items-center border-b border-border bg-chrome px-2">
+                  <span class="skeleton-bone skeleton-bone-l"></span>
+                </div>
+                <div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-canvas">
+                  <div class="flex h-6 shrink-0 items-center border-b border-border bg-chrome px-3">
+                    <span class="skeleton-bone skeleton-bone-s"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                </div>
+              </section>
+              <div class="glass-gutter w-1 shrink-0 bg-border"></div>
+              <section class="glass-region relative flex h-full min-w-0 flex-1 flex-col">
+                <div
+                  class="flex h-8 shrink-0 items-center gap-2 border-b border-border bg-chrome px-2"
+                >
+                  <span class="skeleton-bone skeleton-bone-s"></span>
+                  <span class="skeleton-bone skeleton-bone-xs"></span>
+                  <span class="skeleton-bone skeleton-bone-xs"></span>
+                  <span class="skeleton-bone skeleton-bone-xs"></span>
+                </div>
+                <div class="flex h-8 shrink-0 items-center border-b border-border bg-chrome px-2">
+                  <span class="skeleton-bone skeleton-bone-m"></span>
+                </div>
+                <div class="flex h-8 shrink-0 items-center border-b border-border bg-chrome px-2">
+                  <span class="skeleton-bone skeleton-bone-l"></span>
+                </div>
+                <div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-canvas">
+                  <div class="flex h-6 shrink-0 items-center border-b border-border bg-chrome px-3">
+                    <span class="skeleton-bone skeleton-bone-s"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                  <div class="skeleton-row">
+                    <span class="skeleton-bone"></span><span class="skeleton-bone"></span
+                    ><span class="skeleton-bone"></span>
+                  </div>
+                </div>
+              </section>
+            </div>
+            <div class="glass-region glass-dock flex shrink-0 flex-col">
+              <div
+                class="flex h-8 shrink-0 items-center gap-2 border-t border-border bg-chrome px-2"
+              >
+                <span class="skeleton-bone skeleton-bone-l"></span>
+              </div>
+              <div class="flex h-9 shrink-0 items-stretch border-t border-border bg-chrome">
+                <span class="flex min-w-0 flex-1 items-center justify-center border-r border-border"
+                  ><span class="skeleton-bone skeleton-bone-m"></span
+                ></span>
+                <span class="flex min-w-0 flex-1 items-center justify-center border-r border-border"
+                  ><span class="skeleton-bone skeleton-bone-m"></span
+                ></span>
+                <span class="flex min-w-0 flex-1 items-center justify-center border-r border-border"
+                  ><span class="skeleton-bone skeleton-bone-m"></span
+                ></span>
+                <span class="flex min-w-0 flex-1 items-center justify-center border-r border-border"
+                  ><span class="skeleton-bone skeleton-bone-m"></span
+                ></span>
+                <span class="flex min-w-0 flex-1 items-center justify-center border-r border-border"
+                  ><span class="skeleton-bone skeleton-bone-m"></span
+                ></span>
+                <span class="flex min-w-0 flex-1 items-center justify-center"
+                  ><span class="skeleton-bone skeleton-bone-m"></span
+                ></span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>

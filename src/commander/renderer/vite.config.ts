@@ -15,12 +15,14 @@ export default defineConfig({
     target: "chrome130",
     sourcemap: true,
     // media.html is the full-screen media window's page (ADR-0033 amended),
-    // settings.html the settings window's (ADR-0039).
+    // settings.html the settings window's (ADR-0039), compare.html the
+    // compare windows' (ADR-0048).
     rollupOptions: {
       input: {
         main: "index.html",
         media: "media.html",
         settings: "settings.html",
+        compare: "compare.html",
       },
     },
   },

@@ -8,6 +8,7 @@ import {
   type ComparePlan,
   type CompareProgress,
   type CompareShow,
+  type CompareWindowOpenParams,
   type DiffAction,
   type JobSnapshot,
   type TextDiffOpenResult,
@@ -932,6 +933,8 @@ export function installFakeCommander(options: FakeOptions) {
           rightCount: right.count,
         })
       }),
+      // jsdom has no native windows: compare views fall back to dialogs unless a test says otherwise.
+      openWindow: vi.fn(async (_p: CompareWindowOpenParams) => ok({ ok: false })),
     },
     diff: {
       open: vi.fn(async (leftId: number, rightId: number) => {

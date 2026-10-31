@@ -104,6 +104,35 @@ describe("the result icons", () => {
 })
 
 describe("the dashboard", () => {
+  it("shows bars where values will be until they are read, never an empty card or 0%", async () => {
+    // The details and the volumes take a moment.
+    let answer!: () => void
+    const answered = new Promise<void>((resolve) => (answer = resolve))
+    const hardware = vi.mocked(fake.api.system.hardware).getMockImplementation()!
+    const volumes = vi.mocked(fake.api.fs.volumes).getMockImplementation()!
+    vi.mocked(fake.api.system.hardware).mockImplementation(async () => {
+      await answered
+      return hardware()
+    })
+    vi.mocked(fake.api.fs.volumes).mockImplementation(async () => {
+      await answered
+      return volumes()
+    })
+    start()
+    render(<App />)
+    expect(screen.getByTestId("hostname")).toHaveTextContent("Loading…")
+    expect(screen.getByTestId("gpu-reading")).toBeInTheDocument()
+    const storage = screen.getByTestId("storage-card")
+    expect(storage).not.toHaveTextContent("0%")
+    expect(storage).toHaveTextContent("–")
+    expect(screen.queryAllByTestId("volume")).toHaveLength(0)
+    await act(async () => answer())
+    expect(await screen.findByTestId("hostname")).toHaveTextContent("STUDIO-PC")
+    expect(screen.queryByTestId("gpu-reading")).toBeNull()
+    await waitFor(() => expect(screen.getAllByTestId("volume")).toHaveLength(3))
+    expect(storage).toHaveTextContent("95%")
+  })
+
   it("shows the computer, its graphics and its volumes", async () => {
     start()
     render(<App />)

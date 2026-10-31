@@ -2,6 +2,8 @@
 // viewer's profile only (ADR-0027). The renderer names a picture by entry id
 // and a session by its id; it receives frames as token URLs and never a path.
 
+import type { AppId } from "./rpc"
+
 /** Limits of an edit list; main checks them before anything reaches Go. */
 export const MAX_EDIT_OPS = 512
 export const MAX_EDIT_LIST_CHARS = 1024 * 1024
@@ -798,6 +800,8 @@ export interface EditSaveParams {
 /** Main → sidecar: `path` is the answer of the save dialog (target "as"). */
 export interface EditWriteParams extends EditSaveParams {
   path?: string
+  /** The app that saves (main names it): its job is listed there (ADR-0031 amended). */
+  app?: AppId
 }
 
 export interface EditWriteResult {

@@ -1,0 +1,2 @@
+{"at":"2026-10-31T16:04:00.642Z","test":"step-latency-media-window","source":"12 MP JPEG","stepP50Ms":629,"stepMaxMs":698}
+{"at":"2026-10-31T16:04:06.969Z","test":"large-decode","source":"48 MP JPEG","openToFitMs":1520,"oneToOneToOriginalMs":93,"longTasks":0,"longTaskMaxMs":0}

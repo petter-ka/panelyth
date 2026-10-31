@@ -3,6 +3,7 @@ import type {
   ComparePlan,
   CompareProgress,
   CompareShow,
+  CompareWindowOpenParams,
   ContentItem,
   DiffAction,
   HashAlgorithm,
@@ -162,6 +163,13 @@ export interface DiffDialogState {
 export type ManyResult = "different" | "missing" | "unreadable"
 export const MANY_RESULTS: readonly ManyResult[] = ["different", "missing", "unreadable"]
 
+export interface ManyQueries {
+  /** The marked files' panel. */
+  mine: number
+  /** The other panel. */
+  theirs: number
+}
+
 export interface ManyRow {
   name: string
   result: ManyResult
@@ -181,6 +189,10 @@ export interface CompareManyState {
   count: number
   /** The other panel's folder. */
   folder: string
+  /** The two panels' listings when they were compared, where a pair is found by name. */
+  queries: ManyQueries
+  /** The compareFiles job, and its latest snapshot. */
+  jobId: number | null
   job: JobSnapshot | null
   /** The job ended and its rows are being read, or are read. */
   loading: boolean
@@ -252,8 +264,17 @@ export const isComparing = (s: Pick<SyncDialogState, "run" | "progress">): boole
 export const isCompared = (s: Pick<SyncDialogState, "run" | "progress">): boolean =>
   s.run !== null && s.progress?.state === "completed"
 
-/** Synchronize directories: the dialog for the two panels' folders. */
-export function openSync(): void {
+/**
+ * Opens a comparison in a window of its own (ADR-0048). False when there is
+ * none (no bridge, as in component tests, or an error): the dialog then.
+ */
+async function inWindow(p: CompareWindowOpenParams): Promise<boolean> {
+  if (!isBridgeAvailable()) return false
+  return bridge.openCompareWindow(p).catch(() => false)
+}
+
+/** Synchronize directories for the two panels' folders: its window, or the dialog. */
+export async function openSync(): Promise<void> {
   if (get().sync) return
   for (const side of ["left", "right"] as const) {
     if (refusedOnConnection(side)) return
@@ -264,10 +285,19 @@ export function openSync(): void {
   }
   const l = panel("left")
   const r = panel("right")
+  const left = { path: l.path, dirId: l.dirId }
+  const right = { path: r.path, dirId: r.dirId }
+  if (await inWindow({ view: "sync", left, right })) return
+  showSync(left, right)
+}
+
+/** Synchronize directories for two folders, shown in this page (the window's, or the dialog). */
+export function showSync(left: SyncRoot, right: SyncRoot): void {
+  if (get().sync) return
   set({
     sync: {
-      left: { path: l.path, dirId: l.dirId },
-      right: { path: r.path, dirId: r.dirId },
+      left,
+      right,
       content: false,
       asymmetric: false,
       run: null,
@@ -583,6 +613,8 @@ function createDiffRows() {
   const listeners = new Set<() => void>()
   let wanted: number[] = []
   let version = 0
+  /** Comparisons opened again in a row because Go had let them go (several windows). */
+  let reopened = 0
   const changed = (): void => {
     version++
     listeners.forEach((l) => l())
@@ -594,6 +626,7 @@ function createDiffRows() {
     try {
       const res = await bridge.diffPage(forDiff, p * DIFF_PAGE, DIFF_PAGE)
       if (forDiff !== diffId) return
+      reopened = 0
       pages.delete(p)
       pages.set(p, res.rows)
       for (const key of pages.keys()) {
@@ -611,6 +644,18 @@ function createDiffRows() {
         const edited =
           error instanceof PanelythError &&
           (error.details as { reason?: string } | undefined)?.reason === "changed"
+        // Go keeps a few comparisons open; one that made room for newer ones
+        // (other compare windows) is compared again.
+        if (
+          !edited &&
+          error instanceof PanelythError &&
+          error.code === "NOT_FOUND" &&
+          reopened < 2
+        ) {
+          reopened++
+          void openDiff(d.left, d.right)
+          return
+        }
         set({
           diff: {
             ...d,
@@ -678,22 +723,35 @@ function cursorItem(side: Side): ContentItem | null {
   return index >= 0 ? (pageStoreOf(side).getItem(index) ?? null) : null
 }
 
-/** The file of that name in a panel, if it lists one. */
-async function sameNamed(side: Side, name: string): Promise<ContentItem | null> {
-  const q = panel(side).query
-  if (!q || /[*?]/.test(name)) return null
+/** The file of that name in a listing, if it has one; `itemAt` reads one of its rows. */
+async function findNamed(
+  queryId: number,
+  name: string,
+  itemAt: (index: number) => Promise<ContentItem | undefined>,
+): Promise<ContentItem | null> {
+  if (/[*?]/.test(name)) return null
   const want = name.toLowerCase()
   let from = 0
   // Quick search finds names that start with the text: a few may come first.
   for (let attempt = 0; attempt < 8; attempt++) {
-    const { index } = await bridge.locate(q.queryId, name, from, "forward")
+    const { index } = await bridge.locate(queryId, name, from, "forward")
     if (index < 0 || (attempt > 0 && index < from)) return null
-    const item = await pageStoreOf(side).ensureIndex(index)
+    const item = await itemAt(index)
     if (item && item.kind !== "dir" && item.name.toLowerCase() === want) return item
     from = index + 1
   }
   return null
 }
+
+/** The file of that name in a panel, if it lists one. */
+async function sameNamed(side: Side, name: string): Promise<ContentItem | null> {
+  const q = panel(side).query
+  return q ? findNamed(q.queryId, name, (index) => pageStoreOf(side).ensureIndex(index)) : null
+}
+
+/** The file of that name in a query session (a compare window has no panels). */
+const namedIn = (queryId: number, name: string): Promise<ContentItem | null> =>
+  findNamed(queryId, name, async (index) => (await bridge.page(queryId, index, 1)).items[0])
 
 /**
  * What Compare by content will do for a panel, in words for its menu entry
@@ -759,7 +817,10 @@ export async function openCompareFiles(side: Side): Promise<void> {
       notice(t("Only files can be compared by content."))
       return
     }
-    await openDiff({ id: pair[0].id, name: pair[0].name }, { id: pair[1].id, name: pair[1].name })
+    const left = { id: pair[0].id, name: pair[0].name }
+    const right = { id: pair[1].id, name: pair[1].name }
+    if (await inWindow({ view: "files", left, right })) return
+    await openDiff(left, right)
   } catch (error) {
     notice(errorText(error))
   }
@@ -796,43 +857,81 @@ function filterMany(show: readonly ManyResult[]): void {
     show.length === MANY_RESULTS.length ? manyAll : manyAll.filter((r) => show.includes(r.result))
 }
 
-/** More than two marked files: each against the file of its name in the other panel's folder. */
+/**
+ * More than two marked files: each against the file of its name in the other
+ * panel's folder, as one job. Its result list opens in a window of its own,
+ * or in the dialog.
+ */
 async function compareMany(side: Side): Promise<void> {
   const source = marksDescriptor(side)
+  const mine = panel(side).query
   const other = panel(otherSide(side))
-  if (!source) return
-  if (other.dirId === null || other.find !== null) {
+  if (!source || !mine) return
+  if (other.dirId === null || other.find !== null || !other.query) {
     notice(t("Open a folder in the other panel to compare the marked files with it."))
     return
   }
+  const list = {
+    side,
+    count: countMarks(marksOf(side)),
+    folder: other.path,
+    queries: { mine: mine.queryId, theirs: other.query.queryId },
+  }
+  let job: JobSnapshot
+  try {
+    job = await bridge.startJob({
+      kind: "compareFiles",
+      source: { selection: source },
+      destinationDirId: other.dirId,
+    })
+  } catch (error) {
+    showMany({ ...list, jobId: null }, errorText(error))
+    return
+  }
+  const windowed = await inWindow({
+    view: "many",
+    jobId: job.jobId,
+    side,
+    count: list.count,
+    folder: list.folder,
+    mineQueryId: list.queries.mine,
+    theirsQueryId: list.queries.theirs,
+  })
+  if (!windowed) showMany({ ...list, jobId: job.jobId })
+}
+
+/**
+ * The result list of a compareFiles job, shown in this page (the window's,
+ * or the dialog); `error` when the job could not start.
+ */
+export function showMany(
+  list: Pick<CompareManyState, "side" | "count" | "folder" | "queries" | "jobId">,
+  error: string | null = null,
+): void {
   manyAll = []
   manyShown = []
   set({
     many: {
-      side,
-      count: countMarks(marksOf(side)),
-      folder: other.path,
+      ...list,
       job: null,
       loading: false,
       counts: NO_COUNTS,
       show: MANY_RESULTS,
       cursor: 0,
-      error: null,
+      error,
     },
   })
-  try {
-    const job = await bridge.startJob({
-      kind: "compareFiles",
-      source: { selection: source },
-      destinationDirId: other.dirId,
+  const jobId = list.jobId
+  if (jobId === null) return
+  watch(jobId, "many")
+  // The job may have ended before this page followed it (a window opens after it started).
+  void bridge
+    .listJobs()
+    .then((jobs) => {
+      const job = jobs.find((j) => j.jobId === jobId)
+      if (job) onWatchedJob(job)
     })
-    if (get().many?.job === null && get().many?.side === side) {
-      patchMany({ job })
-      watch(job.jobId, "many")
-    } else void bridge.cancelJob(job.jobId).catch(() => undefined)
-  } catch (error) {
-    patchMany({ error: errorText(error) })
-  }
+    .catch(() => undefined)
 }
 
 /** The job ended: its items are read, a page at a time, one request in flight. */
@@ -841,13 +940,13 @@ async function loadManyRows(jobId: number): Promise<void> {
   try {
     for (let offset = 0; ; offset += MANY_PAGE) {
       const page = await bridge.jobErrors(jobId, offset, MANY_PAGE)
-      if (get().many?.job?.jobId !== jobId) return
+      if (get().many?.jobId !== jobId) return
       for (const e of page.errors)
         rows.push({ name: e.name, result: resultOf(e.code), message: e.message })
       if (page.errors.length < MANY_PAGE || rows.length >= page.total) break
     }
   } catch (error) {
-    if (get().many?.job?.jobId === jobId) patchMany({ loading: false, error: errorText(error) })
+    if (get().many?.jobId === jobId) patchMany({ loading: false, error: errorText(error) })
     return
   }
   const counts = { ...NO_COUNTS }
@@ -859,7 +958,7 @@ async function loadManyRows(jobId: number): Promise<void> {
 
 async function manyJobProgress(job: JobSnapshot): Promise<void> {
   const m = get().many
-  if (!m || m.job?.jobId !== job.jobId) return
+  if (!m || m.jobId !== job.jobId) return
   patchMany({ job })
   if (ACTIVE.has(job.state)) return
   watched.delete(job.jobId)
@@ -890,14 +989,15 @@ export function closeCompareMany(): void {
   set({ many: null })
   manyAll = []
   manyShown = []
-  if (m.job && ACTIVE.has(m.job.state)) void bridge.cancelJob(m.job.jobId).catch(() => undefined)
+  if (m.jobId !== null && (m.job === null || ACTIVE.has(m.job.state)))
+    void bridge.cancelJob(m.jobId).catch(() => undefined)
 }
 
 /**
  * Enter on a row of the list: that pair side by side. The two files are
- * found by name in the panels, so the panels must still show the folders
- * that were compared. `step` opens the next (or previous) file that differs
- * from the list's cursor instead.
+ * found by name in the listings that were compared, so the panels must still
+ * have them open. `step` opens the next (or previous) file that differs from
+ * the list's cursor instead.
  */
 export async function openManyDiff(step: -1 | 0 | 1 = 0): Promise<void> {
   const m = get().many
@@ -911,8 +1011,9 @@ export async function openManyDiff(step: -1 | 0 | 1 = 0): Promise<void> {
   if (!row || row.result !== "different") return
   if (at !== m.cursor) patchMany({ cursor: at })
   try {
-    const mine = await sameNamed(m.side, row.name)
-    const theirs = await sameNamed(otherSide(m.side), row.name)
+    // A listing the panel has closed since is gone: no pair.
+    const mine = await namedIn(m.queries.mine, row.name).catch(() => null)
+    const theirs = await namedIn(m.queries.theirs, row.name).catch(() => null)
     if (!mine || !theirs) {
       notice(t("The panels no longer show both files. Compare again."))
       return
@@ -967,7 +1068,8 @@ function onWatchedJob(job: JobSnapshot): void {
   if (kind === "hashVerify" && job.failed > 0) void showDetails(job.jobId)
 }
 
-async function openDiff(left: DiffSide, right: DiffSide): Promise<void> {
+/** Two files side by side in this page (the window's, or the dialog). */
+export async function openDiff(left: DiffSide, right: DiffSide): Promise<void> {
   diffRows.reset(0)
   set({ diff: { left, right, info: null, job: null, detail: "", maxChars: 80, error: null } })
   try {
@@ -1010,6 +1112,14 @@ export function closeDiff(): void {
   set({ diff: null })
   diffRows.reset(0)
   releaseDiff(d)
+}
+
+/** The pair shown compared again: a file changed, or a window was asked for the same two files. */
+export function compareDiffAgain(): void {
+  const d = get().diff
+  if (!d) return
+  releaseDiff(d)
+  void openDiff(d.left, d.right)
 }
 
 const ACTIVE = new Set(["queued", "running", "paused", "asking"])

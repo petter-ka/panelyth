@@ -248,11 +248,18 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
   Synchronize… replaces the table with a confirmation: what is copied each way with sizes, folders created, entries
   deleted per side, newer files replaced, and "Delete permanently instead of moving to the trash". The job then runs
   in the queue and the dialog closes.
+  Since ADR-0048 (owner request 2026-10-31) it opens in a window of its own beside the panels, which stay usable:
+  resizable, the table taking its height. The same two folders bring their window forward. The window closes with
+  Close, Esc or a sync that started. Where no window can open, the dialog is shown.
 - **Compare by content (Stage C08):** from the entry menu. Two marked files, or the cursor file against the file of
   the same name in the other panel (else that panel's cursor file). Text files: two columns with line numbers,
   changed lines in the warning tint, lines on one side only in the danger and success tints, a summary ("3
   differences", "identical", "differ only in line ends or encoding"), Previous / Next difference (P / N). Other
   files: "identical" or "different" with progress while they are read.
+  Since ADR-0048 the comparison opens in a window of its own beside the panels, titled "a.txt ↔ b.txt"; the same
+  two files bring their window forward. More than two marked files open their result list in such a window: Enter
+  shows a pair there, Back to the list (or Esc) returns, Shift+N and Shift+P step. A comparison with an error
+  offers Compare again.
 - **Create checksums (Stage C08):** from the entry menu, for the marks or the cursor entry: the algorithm (SHA-256,
   SHA-1, MD5, CRC32 as .sfv), one checksum file beside each file or one named list in the panel's folder. **Verify
   checksums** starts at once on the marked checksum files or the one under the cursor; the result is announced, and

@@ -281,7 +281,8 @@ describe("edit.save", () => {
         name: "a (edited).jpg",
       })
       expect(saveDialog).not.toHaveBeenCalled()
-      expect(call).toHaveBeenCalledWith("edit.write", { ...save, target })
+      // The job is listed in the app that saves (ADR-0031 amended).
+      expect(call).toHaveBeenCalledWith("edit.write", { ...save, target, app: "viewer" })
     }
   })
 
@@ -411,6 +412,7 @@ describe("batch (Stage 16)", () => {
       source,
       recipe,
       folder: "/photos/out/Web export",
+      app: "viewer",
     })
     // Without a folder the sidecar decides (a plan counts; a start is refused there).
     await handlers["batch.plan"](event, { source, recipe }, "viewer")

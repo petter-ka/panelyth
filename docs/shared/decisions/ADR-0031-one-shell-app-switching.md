@@ -9,6 +9,14 @@ with both app icons, the current app highlighted and the other app directly sele
 Amended by ADR-0042 (2026-10-16): a third app view, Panelyth System, created on first use from the rail; the
 switch key stays between the viewer and the commander.
 
+Amended 2026-10-31 (owner request): **each app lists the jobs it started.** The jobs still run in one queue (one
+job manager, its lanes and limits), but the commander's queue no longer shows the viewer's jobs, nor the viewer's
+job list the commander's. Main names the calling app on every job start (`jobs.start`, `clip.paste`, and the
+viewer's `edit.batch` and `edit.write`; never a renderer), Go keeps it on the job (`JobSnapshot.app`; an undo is
+the undone batch's), `jobs.list` returns the calling app's jobs, and main sends `job.progress` and `job.conflict`
+only to the pages of that app's origin (its view and its child windows). A paste is the job of the app that pastes,
+whichever app copied. A job that names no app is listed in both.
+
 It supersedes ADR-0025's process model: separate Electron apps, one sidecar per app, separate data per app,
 capabilities per app process, and the `apps/*-desktop` and `packages/desktop-core` parts of its code layout. ADR-0025's
 shared platform, documentation split, tracks and stage IDs stand. It amends ADR-0026 (one index with all entries,
@@ -61,7 +69,8 @@ filtered per query) and ADR-0027 (a capability profile per app view).
   Settings can route media to the system default app instead.
 - Shared: current folder (and with it the drive), focused entry, selection (bounded), last used app, theme and interface
   size, carry-over options, bookmarks (= the commander's hotlist), recent locations, user metadata, the index, the
-  preview cache, jobs and the internal clipboard. App-specific: layouts, views, sorts, the viewer's workspace and tile
+  preview cache, the job queue (each app lists its own jobs, amended 2026-10-31) and the internal clipboard.
+  App-specific: layouts, views, sorts, the viewer's workspace and tile
   size, the commander's panels and tabs.
 - A hidden app keeps its state but does no work (no requests, no watches); it refreshes when shown.
 

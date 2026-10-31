@@ -29,11 +29,13 @@ import { handleThumbProtocol } from "./thumbProtocol"
 import { DocumentWindows } from "./documentWindow"
 import { TextEditorWindows } from "./textEditorWindow"
 import { MediaWindows } from "./mediaWindow"
+import { CompareWindows } from "./compareWindow"
 import { startFileDrag } from "./dragOut"
 import { SettingsWindow, type SettingsPage } from "./settingsWindow"
 import { fileArgument, OpenWithSession } from "./openWith"
 import {
   broadcast,
+  eventTargets,
   forwardableEvent,
   ipcInvokeCounts,
   registerIpc,
@@ -158,6 +160,7 @@ let documentWindows: DocumentWindows | null = null
 let textEditors: TextEditorWindows | null = null
 let mediaWindows: MediaWindows | null = null
 let settingsWindow: SettingsWindow | null = null
+let compareWindows: CompareWindows | null = null
 let logger: Logger = consoleLogger
 let shutdownState: "running" | "stopping" | "done" = "running"
 // The main window's size and place of the previous run, read while the app loads.
@@ -611,6 +614,16 @@ async function boot(): Promise<void> {
     { devTools: !app.isPackaged, platform: process.platform, titleBar },
     () => mainWindow,
   )
+  compareWindows = new CompareWindows(
+    {
+      url: new URL("compare.html", `${commanderDevUrl() ?? COMMANDER_ORIGIN}/`).toString(),
+      origin: commanderOrigin(),
+      preload: commanderPreloadPath(),
+      devTools: !app.isPackaged,
+      titleBar,
+    },
+    () => mainWindow,
+  )
 
   const sc = new SidecarProcess({
     binaryPath: sidecarBinaryPath(),
@@ -705,11 +718,20 @@ async function boot(): Promise<void> {
     logger.info("sidecar status", { ...status })
     broadcast(webContents.getAllWebContents(), "sidecar.status", status)
   })
-  // Coalesced sidecar events (index progress, query invalidation) go to all windows.
+  // Each app's pages are those of its origin (ADR-0027, ADR-0031).
+  const appOrigins = {
+    viewer: trustedOrigin(devUrl),
+    commander: commanderOrigin(),
+    system: systemOrigin(),
+  }
+  // Coalesced sidecar events (index progress, query invalidation) go to all
+  // windows; a job's events to the pages of the app that started it.
   sc.onEvent((frame) => {
     const message = forwardableEvent(frame)
-    if (message) broadcast(webContents.getAllWebContents(), message.ch, message.p)
-    else logger.warn("dropped malformed sidecar event", { ch: frame.ch })
+    if (message) {
+      const targets = eventTargets(message, webContents.getAllWebContents(), appOrigins)
+      broadcast(targets, message.ch, message.p)
+    } else logger.warn("dropped malformed sidecar event", { ch: frame.ch })
   })
 
   const workspaceDeps: WorkspaceDeps = {
@@ -1033,6 +1055,12 @@ async function boot(): Promise<void> {
       })
       return { ok: true }
     },
+    // The commander: compare by content and synchronize in a window of their own (ADR-0048).
+    "compare.openWindow": (_event, params) => {
+      if (!compareWindows) return { ok: false }
+      compareWindows.open(params)
+      return { ok: true }
+    },
     // The media window asks its opener for a neighbour; the opener answers.
     "media.windowStep": async (event, { direction }) => ({
       item: (await mediaWindows?.step(event.sender, direction)) ?? null,
@@ -1108,11 +1136,7 @@ async function boot(): Promise<void> {
   registerIpc(ipcMain, {
     sidecar: sc,
     main,
-    origins: {
-      viewer: trustedOrigin(devUrl),
-      commander: commanderOrigin(),
-      system: systemOrigin(),
-    },
+    origins: appOrigins,
     devMethods,
     activeApp: () => appShell?.activeApp ?? "viewer",
     textEditor: { origin: textEditorOrigin(), handlers: editors.handlers() },
@@ -1127,6 +1151,18 @@ async function boot(): Promise<void> {
       if (key.startsWith("shared.")) return
       const opener = settingsWindow?.openerOf(sender)
       if (opener) broadcast([opener], "settings.changed", { key, value })
+      // The synchronize view edits the date rules Shift+F2 uses: the commander's
+      // settings stay one value in its view and its compare windows (ADR-0048).
+      if (key === COMMANDER_SETTINGS_KEY && compareWindows) {
+        const view = appShell?.webContentsOf("commander") ?? null
+        const targets = compareWindows.webContents()
+        if (view && compareWindows.owns(sender)) targets.push(view)
+        broadcast(
+          targets.filter((wc) => wc !== sender),
+          "settings.changed",
+          { key, value },
+        )
+      }
     },
   })
 

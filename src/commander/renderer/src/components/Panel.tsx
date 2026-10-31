@@ -97,6 +97,32 @@ function RemoteWaiting({ side }: { side: Side }) {
   )
 }
 
+/** More rows than a panel shows; those below its bottom are cut. */
+const SKELETON_ROWS = Array.from({ length: 40 }, (_, i) => i)
+
+/**
+ * A folder on its way: rows of bars where its rows will be (styles.css,
+ * "Skeletons"), as the boot screen shows them before the app has rendered.
+ */
+function RowsSkeleton({ side, label }: { side: Side; label: string }) {
+  return (
+    <div
+      role="status"
+      data-testid={`rows-skeleton-${side}`}
+      className="pointer-events-none absolute inset-x-0 top-7 bottom-0 overflow-hidden"
+    >
+      <span className="sr-only">{label}</span>
+      {SKELETON_ROWS.map((i) => (
+        <div key={i} aria-hidden="true" className="skeleton-row">
+          <span className="skeleton-bone" />
+          <span className="skeleton-bone" />
+          <span className="skeleton-bone" />
+        </div>
+      ))}
+    </div>
+  )
+}
+
 interface PanelProps {
   side: Side
   active: boolean
@@ -137,6 +163,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   const disconnected = useListingStore((s) => s[side].disconnected)
   const remoteBusy = useListingStore((s) => s[side].remoteBusy)
   const view = useListingStore((s) => s[side].view)
+  const starting = useUiStore((s) => s.starting)
   // Ctrl+F1 / Ctrl+F2 / Ctrl+Shift+F1 replace the focused view: the new one takes the keys.
   const viewSeen = useRef(view)
   useEffect(() => {
@@ -173,11 +200,15 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
   }
 
   let message: { title: string; detail?: string } | null = null
-  if (dirId === null && !error) message = { title: loading ? t("Opening…") : t("No folder open") }
-  else if (dirId !== null && total === 0 && !error && !loading) {
-    message = listing
-      ? { title: t("Listing…") }
-      : { title: emptyTitle(find !== null, branch, filter !== "") }
+  // A folder on its way (and every panel while the app starts): skeleton
+  // rows where its rows will be, its state in words for screen readers.
+  let pending: string | null = null
+  if (dirId === null && !error) {
+    if (loading || starting) pending = t("Opening…")
+    else message = { title: t("No folder open") }
+  } else if (dirId !== null && total === 0 && !error && !loading) {
+    if (listing) pending = t("Listing…")
+    else message = { title: emptyTitle(find !== null, branch, filter !== "") }
   }
 
   return (
@@ -230,6 +261,7 @@ export const Panel = forwardRef<PanelHandle, PanelProps>(function Panel(
         <HistoryMenu side={side} />
         <RowMenu side={side} />
         <HoldRing side={side} />
+        {pending && <RowsSkeleton side={side} label={pending} />}
         {message && (
           <div className="pointer-events-none absolute inset-x-0 top-14 text-center text-xs text-muted">
             {message.title}

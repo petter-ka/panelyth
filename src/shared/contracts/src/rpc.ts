@@ -785,6 +785,43 @@ export interface SettingsWindowCloseParams {
   then?: "shortcuts"
 }
 
+/** A file of the compare window's two-file view. */
+export interface CompareWindowFile {
+  id: number
+  name: string
+}
+
+/** A folder of the compare window's synchronize view; `dirId` is null for a typed path. */
+export interface CompareWindowRoot {
+  path: string
+  dirId: number | null
+}
+
+/**
+ * compare.openWindow (commander, ADR-0048): a comparison in a window of its
+ * own, a child of the shell window that does not block it. The page runs on
+ * the commander's origin and profile. `files`: two files side by side (the
+ * same pair again focuses its window). `many`: the result list of a
+ * compareFiles job the commander started; a pair is found by name in the two
+ * panels' query sessions. `sync`: Synchronize directories for two folders
+ * (the same two again focus its window).
+ */
+export type CompareWindowOpenParams =
+  | { view: "files"; left: CompareWindowFile; right: CompareWindowFile }
+  | {
+      view: "many"
+      jobId: number
+      /** The panel whose marked files are compared. */
+      side: "left" | "right"
+      count: number
+      /** The other panel's folder, as shown. */
+      folder: string
+      /** The query sessions of the marked files' panel and of the other panel. */
+      mineQueryId: number
+      theirsQueryId: number
+    }
+  | { view: "sync"; left: CompareWindowRoot; right: CompareWindowRoot }
+
 /**
  * Where the media window moves: 0 = the item it was opened for, -1 / 1 =
  * previous / next, "first" / "last" = the folder's first or last image or video.
@@ -1239,6 +1276,12 @@ export const MAX_RENAME_START = 1_000_000_000
 export interface JobSnapshot {
   jobId: number
   kind: JobKind
+  /**
+   * The app that started the job (ADR-0031 amended): main names it on every
+   * start, sends the job's events to that app's pages only, and lists it
+   * there. A job without one is listed in every app.
+   */
+  app?: AppId
   state: JobState
   total: number
   done: number
@@ -2669,6 +2712,7 @@ export interface MainMethodMap {
   "media.open": { params: MediaOpenParams; result: MediaOpenResult }
   /** Both apps (ADR-0033): an image or video in a frameless full-screen window. */
   "media.openWindow": { params: MediaWindowOpenParams; result: OkResult }
+  "compare.openWindow": { params: CompareWindowOpenParams; result: OkResult }
   /** Both apps (ADR-0039): Settings in a native window that blocks the shell window. */
   "settings.openWindow": { params: SettingsWindowOpenParams; result: OkResult }
   /** The settings window closes itself, optionally handing the shortcuts to its app view. */
@@ -2874,6 +2918,7 @@ export const COMMANDER_ONLY_METHODS = [
   "media.windowStep",
   "media.windowCommand",
   "media.windowReveal",
+  "compare.openWindow",
   "shell.edit",
   "fs.mkfile",
   "find.start",
@@ -3037,6 +3082,8 @@ export const COMMANDER_METHODS = [
   "media.windowCommand",
   "media.windowAnswer",
   "media.windowReveal",
+  // ADR-0048: compare by content and synchronize in a window of their own.
+  "compare.openWindow",
   "preview.ensure",
   "props.get",
   "file.open",
@@ -3162,6 +3209,7 @@ export const MAIN_METHODS = [
   "media.windowCommand",
   "media.windowAnswer",
   "media.windowReveal",
+  "compare.openWindow",
   "file.open",
   "document.open",
   "places.list",

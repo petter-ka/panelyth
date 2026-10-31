@@ -4,9 +4,8 @@ import {
   menuCommandHandler,
   connectWindowFrame,
   startSharedAppearanceSync,
-  whileAppLoads,
 } from "@panelyth/ui"
-import { initLocale, LocaleBoundary, t } from "@panelyth/i18n"
+import { initLocale, LocaleBoundary } from "@panelyth/i18n"
 import { StrictMode } from "react"
 import { createRoot } from "react-dom/client"
 import { aboutApi, bridge, isBridgeAvailable } from "./bridge"
@@ -18,6 +17,7 @@ import {
   startSwitchSettingsSync,
 } from "@panelyth/renderer-core"
 import { startPanels } from "./features/carry"
+import { setStarting } from "./features/commands"
 import { startDrives } from "./features/drives"
 import { startHotlist } from "./features/hotlist"
 import { startQueue } from "./features/queue"
@@ -109,10 +109,12 @@ if (isBridgeAvailable()) {
   // Marks, folder sizes, panel listings, events and the shared context (C01, C02).
   startMarks()
   startSizeJobs()
-  // The panels' first folders open behind the loading screen (a cold first switch shows it at once).
-  void whileAppLoads(startPanels(), { label: t("Loading…"), immediate: true }).catch(
-    () => undefined,
-  )
+  // The panels' first folders open with skeleton rows where their rows will be
+  // (APP-SWITCHING.md, "Loading screen"); the rest of the app is usable meanwhile.
+  setStarting(true)
+  void startPanels()
+    .catch(() => undefined)
+    .finally(() => setStarting(false))
   // Quick view and the lister: the shared media components on this bridge (C05).
   startMedia()
   // The Thumbnails view: finished previews reach both panels' tiles (C10).

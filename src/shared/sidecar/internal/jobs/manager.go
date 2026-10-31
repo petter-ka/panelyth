@@ -78,7 +78,11 @@ var policies = append([]string{ConflictAsk}, Decisions...)
 // Spec describes a job. IDs are resolved by the caller (selection or
 // clipboard) in display order.
 type Spec struct {
-	Kind        Kind
+	Kind Kind
+	// App is the app that started the job ("viewer", "commander"), named by
+	// Electron main, never a renderer: each app lists the jobs it started
+	// (ADR-0031 amended). A job without one is listed in every app.
+	App         string
 	IDs         []int64
 	Destination string // copy, move: clean absolute folder path
 	Conflict    string
@@ -128,8 +132,10 @@ type Spec struct {
 
 // Snapshot is a job's progress (the job.progress payload).
 type Snapshot struct {
-	JobID      int64  `json:"jobId"`
-	Kind       Kind   `json:"kind"`
+	JobID int64 `json:"jobId"`
+	Kind  Kind  `json:"kind"`
+	// App is the app that started the job (Spec.App).
+	App        string `json:"app,omitempty"`
 	State      State  `json:"state"`
 	Total      int    `json:"total"`
 	Done       int    `json:"done"`
@@ -336,7 +342,7 @@ func (m *Manager) start(spec Spec) (Snapshot, error) {
 	ctx, cancel := context.WithCancel(m.ctx)
 	j := &job{spec: spec, lane: lane, ctx: ctx, cancel: cancel, now: spec.Now, policy: spec.Conflict,
 		answers: make(chan answer, 1), snap: Snapshot{
-			JobID: id, Kind: spec.Kind, State: StateQueued, Total: spec.total(),
+			JobID: id, Kind: spec.Kind, App: spec.App, State: StateQueued, Total: spec.total(),
 			Destination: baseName(spec.Destination), StartedMs: time.Now().UnixMilli(),
 		}}
 	m.jobs[id] = j
@@ -575,6 +581,17 @@ func (m *Manager) List() []Snapshot {
 	}
 	slices.SortFunc(out, func(a, b Snapshot) int { return int(a.JobID - b.JobID) })
 	return out
+}
+
+// AppOf is the app that started a listed job ("" when it named none or is
+// not listed).
+func (m *Manager) AppOf(id int64) string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if j := m.jobs[id]; j != nil {
+		return j.spec.App
+	}
+	return ""
 }
 
 // Errors pages a job's item errors.

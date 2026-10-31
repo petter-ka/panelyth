@@ -24,7 +24,7 @@ import {
 } from "@panelyth/contracts"
 import type { IpcMainInvokeEvent, WebContents } from "electron"
 import { RpcError } from "../sidecar/RpcClient"
-import { isTrustedSender } from "../security"
+import { isTrustedSender, originOf } from "../security"
 import { validators } from "./validate"
 
 /** The subset of SidecarProcess the router needs; keeps it unit-testable. */
@@ -352,28 +352,49 @@ const CALLER_APP_METHODS: ReadonlySet<string> = new Set([
   "query.open",
   // A search's results session is the app's that started it (ADR-0042).
   "find.start",
+  // Each app lists the jobs it started (ADR-0031 amended).
+  "jobs.start",
+  "clip.paste",
+  "jobs.list",
 ])
 
 /**
  * What main adds to a call, never a renderer (ADR-0027):
  * - the calling app on folder and query opens (ADR-0026): the sidecar
  *   watches a folder while its app is on screen and budgets sessions per app;
+ * - the calling app on job starts and the job list (ADR-0031 amended);
  * - per-app job options (ADR-0029): the commander copies links as links; the
  *   viewer skips them.
  */
 export function profileParams(app: AppId, method: string, params: unknown): unknown {
-  if (!params || typeof params !== "object") return params ?? {}
-  // Last, so a renderer cannot name another app.
-  if (CALLER_APP_METHODS.has(method)) return { ...params, app }
-  if (app !== "commander") return params
-  const p = params as Record<string, unknown>
+  if (params !== undefined && params !== null && typeof params !== "object") return params
+  let p = (params ?? {}) as Record<string, unknown>
   if (
-    method === "clip.paste" ||
-    (method === "jobs.start" && (p.kind === "copy" || p.kind === "move"))
+    app === "commander" &&
+    (method === "clip.paste" ||
+      (method === "jobs.start" && (p.kind === "copy" || p.kind === "move")))
   ) {
-    return { ...p, copyLinks: true }
+    p = { ...p, copyLinks: true }
   }
-  return params
+  // Last, so a renderer cannot name another app.
+  return CALLER_APP_METHODS.has(method) ? { ...p, app } : p
+}
+
+/**
+ * The pages a sidecar event goes to: a job's events to the pages of the app
+ * that started it (ADR-0031 amended), so the other app neither lists nor
+ * hears of it; everything else to every page.
+ */
+export function eventTargets<W extends { getURL(): string }>(
+  message: EventMessage,
+  all: readonly W[],
+  origins: Readonly<Record<AppId, string>>,
+): W[] {
+  if (message.ch !== "job.progress" && message.ch !== "job.conflict") return [...all]
+  const app = (message.p as { app?: unknown }).app
+  if (!(APP_IDS as readonly unknown[]).includes(app)) return [...all]
+  const origin = origins[app as AppId]
+  return all.filter((wc) => originOf(wc.getURL()) === origin)
 }
 
 export interface IpcMainLike {

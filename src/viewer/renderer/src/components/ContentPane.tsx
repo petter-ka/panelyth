@@ -1,6 +1,7 @@
 import { useEffect } from "react"
 import { notify } from "../features/clipboard/clipboard"
 import { isScanning, openFolderDialog, useFolderStore } from "../features/folder/folderStore"
+import { useStartupStore } from "../features/settings/startupFolder"
 import { useSidecarStore } from "../features/system/sidecarStore"
 import { EmptyState } from "./EmptyState"
 import { FolderSummary } from "./FolderSummary"
@@ -31,6 +32,7 @@ function Body() {
   const error = useFolderStore((s) => s.error)
   const hasItems = useFolderStore((s) => (s.query?.total ?? 0) > 0)
   const scanning = useFolderStore((s) => isScanning(s.progress, s.folder))
+  const starting = useStartupStore((s) => s.pending)
 
   if (state === "failed") {
     return (
@@ -50,6 +52,8 @@ function Body() {
   if (error && !hasItems) {
     return <EmptyState tone="danger" title={t("Couldn't open the folder")} description={error} />
   }
+  // The first folder is on its way: tiles to come, not "No folder open".
+  if (!folder && (starting || opening)) return <GridPlaceholder />
   if (!folder) {
     return (
       <EmptyState

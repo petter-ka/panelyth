@@ -282,7 +282,7 @@ func commit(partial, dst string, replace, isDir bool) error {
 	var err error
 	if replace {
 		clearReadOnly(dst) // a read-only target can't be replaced by a rename on Windows
-		err = os.Rename(partial, dst)
+		err = renameReplace(partial, dst)
 	} else {
 		err = renameNoReplace(partial, dst)
 	}

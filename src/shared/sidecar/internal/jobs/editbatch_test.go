@@ -543,8 +543,10 @@ func TestUndoEditRemovesOnlyWhatTheBatchWrote(t *testing.T) {
 		writeImage(t, filepath.Join(b.root, name), 200, 100, 1)
 	}
 	root := b.index(b.root)
-	s := b.run(b.spec(b.all(root), fit64, editor.Output{Format: "jpeg", Destination: editor.DestBeside}, ""))
-	if s.Done != 3 {
+	spec := b.spec(b.all(root), fit64, editor.Output{Format: "jpeg", Destination: editor.DestBeside}, "")
+	spec.App = "viewer"
+	s := b.run(spec)
+	if s.Done != 3 || s.App != "viewer" {
 		t.Fatalf("batch: %+v", s)
 	}
 	// The user kept working on one of the results: it is theirs now.
@@ -557,6 +559,10 @@ func TestUndoEditRemovesOnlyWhatTheBatchWrote(t *testing.T) {
 	snap, err := b.m.UndoEdit(s.JobID)
 	if err != nil {
 		t.Fatal(err)
+	}
+	// The undo is listed where the batch was (ADR-0031 amended).
+	if snap.App != "viewer" {
+		t.Errorf("undo app %q", snap.App)
 	}
 	u := b.wait(snap.JobID)
 	if u.Kind != KindUndoEdit || u.State != StateCompleted || u.Total != 3 || u.Done != 1 || u.Skipped != 2 || u.Failed != 0 {

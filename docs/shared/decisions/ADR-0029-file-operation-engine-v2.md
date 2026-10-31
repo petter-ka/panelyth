@@ -39,7 +39,12 @@ implemented and what was chosen by measurement.
   `clonefile` on APFS when source and destination share a volume. Each has a portable fallback.
 - Small files: 2–4 files in flight per job on SSD lanes, chosen by measurement in P03.
 - Preserves modification and access times and the read-only/hidden attributes. ACLs, alternate data streams and
-  sparse files are out of scope.
+  sparse files are out of scope. On Windows `CopyFileEx` keeps alternate data streams anyway, the mark of the web
+  (`Zone.Identifier`) among them, as Explorer does.
+- On Windows the rename that commits a partial file waits out a moment's refusal: a sharing violation (Stage 16) or
+  an access denial, for at most 410 ms. A copy that carries the mark of the web was refused as ACCESS_DENIED for
+  8–32 ms after it was written, every time, in a folder with extra permission entries (Defender on); the copy
+  failed and left its partial file behind. A lasting denial still fails after the bound.
 - Long paths: Windows `\\?\` prefixes beyond 260 characters. Names are validated for the destination file system.
 - **Symlinks:** a job option. The commander copies a link as a link, never its target; the viewer keeps
   skip-and-report (ADR-0021).

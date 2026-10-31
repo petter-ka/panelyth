@@ -47,4 +47,24 @@ describe("boot.js", () => {
     initInterfaceSize()
     expect(early).toEqual(state())
   })
+
+  it("leaves room for the title strip where the page draws it (Windows, ADR-0045)", () => {
+    const w = window as unknown as { panelyth?: unknown }
+    try {
+      w.panelyth = { frame: { titleBar: true } }
+      new Function(boot)()
+      expect(document.documentElement.dataset.titleBar).toBe("")
+      delete document.documentElement.dataset.titleBar
+      w.panelyth = { frame: { titleBar: false } }
+      new Function(boot)()
+      expect(document.documentElement.dataset.titleBar).toBeUndefined()
+      // No bridge (a page opened outside the app): nothing.
+      delete w.panelyth
+      new Function(boot)()
+      expect(document.documentElement.dataset.titleBar).toBeUndefined()
+    } finally {
+      delete w.panelyth
+      delete document.documentElement.dataset.titleBar
+    }
+  })
 })

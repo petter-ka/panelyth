@@ -7,6 +7,7 @@ import { resetBridgeCache } from "./bridge"
 import { AppShell } from "./components/AppShell"
 import { OVERSCAN, ROW_HEIGHT } from "./components/FullView"
 import { applyContext, resetCarry, startPanels } from "./features/carry"
+import { setStarting } from "./features/commands"
 import { formatAttrs } from "./features/format"
 import { DEFAULT_COLUMNS, pageStoreOf, resetListing, useListingStore } from "./features/listing"
 import { applyLayoutPreset } from "./features/layoutPresets"
@@ -105,6 +106,54 @@ describe("listing (Stage C01)", () => {
     expect(within(grid("left")).getByText("file000000")).toBeInTheDocument()
     expect(within(grid("left")).getByText("secret")).toBeInTheDocument()
     expect(screen.getByTestId("path-left")).toHaveTextContent(HOME.path)
+  })
+
+  it("shows skeleton rows while the app starts and a folder opens, never an empty panel", async () => {
+    const fake = installFakeCommander({ folders: [home(), pics()], home: HOME.path, volumes: [] })
+    // The first folders take a moment.
+    let open!: () => void
+    const opened = new Promise<void>((resolve) => (open = resolve))
+    const real = fake.api.dir.open.getMockImplementation()!
+    fake.api.dir.open.mockImplementation(async (p: { path: string }) => {
+      await opened
+      return real(p)
+    })
+    try {
+      // As main.tsx starts the app (APP-SWITCHING.md, "Loading screen").
+      setStarting(true)
+      render(<AppShell />)
+      // Rows of bars and the state in words for screen readers; never "No folder open".
+      expect(screen.getByTestId("rows-skeleton-left")).toHaveTextContent("Opening…")
+      expect(screen.getByTestId("rows-skeleton-right")).toHaveTextContent("Opening…")
+      expect(screen.getByTestId("path-left")).toHaveTextContent("Opening…")
+      expect(screen.queryByText("No folder open")).toBeNull()
+      // No loading screen over the panels: the rest of the app is usable meanwhile.
+      expect(screen.queryByTestId("app-loading")).toBeNull()
+      let started: Promise<() => void> = Promise.resolve(() => undefined)
+      await act(async () => {
+        started = startPanels()
+        await Promise.resolve()
+      })
+      expect(screen.getByTestId("rows-skeleton-left")).toBeInTheDocument()
+      await act(async () => {
+        open()
+        stop = await started
+        setStarting(false)
+      })
+      await waitFor(() => expect(within(grid("left")).getByText("dir000001")).toBeInTheDocument())
+      expect(screen.queryByTestId("rows-skeleton-left")).toBeNull()
+      expect(screen.queryByTestId("rows-skeleton-right")).toBeNull()
+      expect(screen.getByTestId("path-left")).toHaveTextContent(HOME.path)
+    } finally {
+      setStarting(false)
+    }
+  })
+
+  it("says a panel has no folder once the app has started", async () => {
+    installFakeCommander({ folders: [home(), pics()], home: HOME.path, volumes: [] })
+    render(<AppShell />)
+    expect(screen.queryByTestId("rows-skeleton-left")).toBeNull()
+    expect(screen.getByTestId("path-left")).toHaveTextContent("No folder open")
   })
 
   it("uses a fixed row height per interface size", async () => {

@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { resetFolderStore, useFolderStore } from "../folder/folderStore"
 import type * as FolderStore from "../folder/folderStore"
 import { useLibraryStore } from "../library/libraryStore"
-import { startStartupFolder } from "./startupFolder"
+import { STARTUP_PENDING_MAX_MS, startStartupFolder, useStartupStore } from "./startupFolder"
 
 const openFolder = vi.hoisted(() => vi.fn(async () => undefined))
 vi.mock("../folder/folderStore", async (importOriginal) => ({
@@ -64,5 +64,45 @@ describe("startup folder", () => {
     await answered()
     useLibraryStore.setState({ recent: [] })
     expect(openFolder).not.toHaveBeenCalled()
+  })
+})
+
+// The content shows tiles to come, not "No folder open", until the first folder is decided.
+describe("the first folder still being decided", () => {
+  it("is pending from the start until the folder is chosen", async () => {
+    stop = startStartupFolder()
+    expect(useStartupStore.getState().pending).toBe(true)
+    await answered()
+    expect(useStartupStore.getState().pending).toBe(true)
+    useLibraryStore.setState({ loaded: true })
+    expect(openFolder).toHaveBeenCalledWith("/home/me")
+    expect(useStartupStore.getState().pending).toBe(false)
+  })
+
+  it("is decided by a file from the OS, and by an app with no folder to open", async () => {
+    openRequest.shown = true
+    stop = startStartupFolder()
+    await answered()
+    expect(useStartupStore.getState().pending).toBe(false)
+    stop()
+    openRequest.shown = false
+    useLibraryStore.setState({ loaded: false, places: [], recent: [], settings: {} })
+    stop = startStartupFolder()
+    await answered()
+    useLibraryStore.setState({ loaded: true })
+    expect(openFolder).not.toHaveBeenCalled()
+    expect(useStartupStore.getState().pending).toBe(false)
+  })
+
+  it("gives up after a while when the library never loads", async () => {
+    vi.useFakeTimers()
+    try {
+      stop = startStartupFolder()
+      expect(useStartupStore.getState().pending).toBe(true)
+      vi.advanceTimersByTime(STARTUP_PENDING_MAX_MS)
+      expect(useStartupStore.getState().pending).toBe(false)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 })

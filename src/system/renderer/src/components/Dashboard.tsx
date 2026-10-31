@@ -49,6 +49,11 @@ export function Card({
   )
 }
 
+/** A bar where a value will be until it is read (styles.css, "Skeletons"). */
+function Bone({ className }: { className: string }) {
+  return <span aria-hidden="true" className={`skeleton-bone ${className}`} />
+}
+
 const stroke = {
   fill: "none",
   stroke: "currentColor",
@@ -88,23 +93,36 @@ export function Header() {
   const hardware = useSystemStore((s) => s.hardware)
   const failed = useSystemStore((s) => s.hardwareFailed)
   const sampling = useSystemStore((s) => s.sample !== null)
+  const reading = !hardware && !failed
   return (
     <header className="flex min-w-0 flex-wrap items-end justify-between gap-3 px-1">
       <div className="min-w-0">
         <p className="text-2xs text-muted">{t("This computer")}</p>
         <h1 className="truncate text-2xl font-semibold tracking-tight" data-testid="hostname">
-          {hardware?.hostname ?? "…"}
+          {hardware?.hostname ??
+            (reading ? (
+              <span className="flex h-8 items-center">
+                <Bone className="h-6 w-40 rounded-md" />
+                <span className="sr-only">{t("Loading…")}</span>
+              </span>
+            ) : (
+              "…"
+            ))}
         </h1>
         <p className="truncate text-xs text-muted" data-testid="os">
-          {failed
-            ? t("Couldn't read this computer's details.")
-            : hardware
-              ? [
-                  hardware.os.name,
-                  hardware.os.arch,
-                  t("Up for {time}", { time: formatUptime(hardware.uptimeMs) }),
-                ].join(" · ")
-              : ""}
+          {failed ? (
+            t("Couldn't read this computer's details.")
+          ) : hardware ? (
+            [
+              hardware.os.name,
+              hardware.os.arch,
+              t("Up for {time}", { time: formatUptime(hardware.uptimeMs) }),
+            ].join(" · ")
+          ) : (
+            <span className="flex h-4 items-center">
+              <Bone className="w-56" />
+            </span>
+          )}
         </p>
       </div>
       {sampling && (
@@ -138,7 +156,12 @@ export function CpuCard() {
   const history = useSystemStore((s) => s.history)
   const now = history.at(-1)
   return (
-    <Card title={t("Processor")} icon={<CpuIcon />} aside={hardware?.cpu.model} testId="cpu-card">
+    <Card
+      title={t("Processor")}
+      icon={<CpuIcon />}
+      aside={hardware?.cpu.model ?? <Bone className="ml-auto w-40" />}
+      testId="cpu-card"
+    >
       <div className="flex items-center gap-4">
         <Ring value={now?.cpu ?? 0} label={t("Processor load")}>
           <RingValue value={now ? formatPercent(now.cpu) : "–"} caption={t("Load")} />
@@ -150,15 +173,21 @@ export function CpuCard() {
       </div>
       <div className="space-y-1">
         <p className="text-2xs text-muted">{t("Per processor")}</p>
-        <CoreBars cores={now?.cores ?? []} label={t("Load of each logical processor")} />
+        {now ? (
+          <CoreBars cores={now.cores} label={t("Load of each logical processor")} />
+        ) : (
+          <Bone className="h-12 w-full rounded-md" />
+        )}
       </div>
-      {hardware && (
+      {hardware ? (
         <p className="flex flex-wrap gap-x-4 gap-y-1 text-2xs text-muted prose-nums">
           <span>{t("Logical processors: {count}", { count: hardware.cpu.threads })}</span>
           {hardware.cpu.speedMhz > 0 && (
             <span>{t("Clock: {speed}", { speed: formatClock(hardware.cpu.speedMhz) })}</span>
           )}
         </p>
+      ) : (
+        <Bone className="w-48" />
       )}
     </Card>
   )
@@ -189,7 +218,7 @@ export function MemoryCard() {
           />
         </div>
       </div>
-      {now && (
+      {now ? (
         <p className="text-2xs text-muted prose-nums">
           {t("{used} of {total} in use, {free} free", {
             used: formatBytes(now.usedBytes),
@@ -197,6 +226,8 @@ export function MemoryCard() {
             free: formatBytes(now.totalBytes - now.usedBytes),
           })}
         </p>
+      ) : (
+        <Bone className="w-48" />
       )}
     </Card>
   )
@@ -204,6 +235,7 @@ export function MemoryCard() {
 
 export function GpuCard() {
   const hardware = useSystemStore((s) => s.hardware)
+  const failed = useSystemStore((s) => s.hardwareFailed)
   const gpus = hardware?.gpus ?? []
   return (
     <Card
@@ -214,6 +246,14 @@ export function GpuCard() {
     >
       {hardware && gpus.length === 0 && (
         <p className="text-xs text-muted">{t("No graphics adapter was found.")}</p>
+      )}
+      {!hardware && !failed && (
+        <div className="flex flex-col gap-3" data-testid="gpu-reading">
+          <Bone className="h-3 w-48" />
+          <Bone className="w-32" />
+          <Bone className="h-3 w-40" />
+          <Bone className="w-28" />
+        </div>
       )}
       <ul className="space-y-3">
         {gpus.map((gpu, i) => (
@@ -265,6 +305,7 @@ export function StorageCard() {
   const total = sized.reduce((sum, v) => sum + v.totalBytes, 0)
   const free = sized.reduce((sum, v) => sum + v.freeBytes, 0)
   const used = total > 0 ? (total - free) / total : 0
+  const reading = volumes === null && !failed
   return (
     <Card
       title={t("Storage")}
@@ -280,9 +321,17 @@ export function StorageCard() {
       {failed && <p className="text-xs text-danger">{t("Couldn't read the volumes.")}</p>}
       <div className="flex flex-wrap items-center gap-6">
         <Ring value={used} size={128} stroke={12} label={t("Storage in use, all volumes")}>
-          <RingValue value={formatPercent(used)} caption={t("Used")} />
+          <RingValue value={reading ? "–" : formatPercent(used)} caption={t("Used")} />
         </Ring>
         <ul className="grid min-w-0 flex-1 gap-3 [grid-template-columns:repeat(auto-fill,minmax(14rem,1fr))]">
+          {reading &&
+            [0, 1, 2].map((i) => (
+              <li key={i} aria-hidden="true" className="flex min-w-0 flex-col gap-2">
+                <Bone className="w-24" />
+                <Bone className="h-2 w-full" />
+                <Bone className="w-20" />
+              </li>
+            ))}
           {(volumes ?? []).map((v) => {
             const share = measured(v) ? (v.totalBytes - v.freeBytes) / v.totalBytes : 0
             return (

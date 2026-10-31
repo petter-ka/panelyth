@@ -64,6 +64,8 @@ test("renderer is isolated: no Node, no ipcRenderer, narrow API only", async () 
         "edit",
         "entry",
         "folder",
+        // ADR-0045: the title strip's window buttons and state.
+        "frame",
         "fs",
         "jobs",
         "library",

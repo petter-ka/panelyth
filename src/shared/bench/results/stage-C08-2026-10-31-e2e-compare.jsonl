@@ -1,0 +1,2 @@
+{"at":"2026-10-31T14:44:09.241Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[367,363,364],"ms":363,"budgetMs":3000,"status":"Compared 202,055 entries in 0.3 s.","mountedRows":28}
+{"at":"2026-10-31T14:44:30.087Z","metric":"compare two 100k-entry trees, Compare → first rows","runsMs":[344,349,334],"ms":334,"budgetMs":3000,"status":"Compared 202,055 entries in 0.3 s.","mountedRows":28}

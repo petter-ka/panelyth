@@ -6,6 +6,7 @@ import { commanderOf, goTo, launch, mixedFolder } from "./commander/helpers"
 import {
   commanderEnv,
   commanderPage,
+  expectOutlineFirst,
   expectWithinBudget,
   launchApp,
   repoRoot,
@@ -84,6 +85,8 @@ test.describe("app switch (ADR-0031)", () => {
       const firstSwitchMs = Date.now() - t0
       expect(await shellState(app)).toMatchObject({ active: "commander", commanderCreated: true })
       expect(await title(app)).toBe("Panelyth Commander")
+      // Its first paint is the commander's outline (index.html), never an empty surface.
+      await expectOutlineFirst(commander)
 
       // Keys reach the commander after the switch.
       await commander.keyboard.press("Tab")

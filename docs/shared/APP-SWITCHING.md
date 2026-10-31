@@ -79,7 +79,9 @@ your appearance settings.
 - Focus lands on the target's main surface: the viewer's tile view, or the commander's active panel.
 - While a modal dialog is open, the switch is unavailable: the rail sits behind the dialog's backdrop and the key does
   nothing.
-- Running jobs continue during and after a switch, and both apps show them.
+- Running jobs continue during and after a switch. Each app lists the jobs it started (ADR-0031, amended
+  2026-10-31): the commander's queue strip does not show the viewer's jobs, nor the viewer's job list the
+  commander's.
 
 ## What is shared
 
@@ -96,7 +98,7 @@ your appearance settings.
 | Recent locations | one list fed by every folder either app opens (`dir.open`); the viewer re-reads it when shown, the commander when its history menu opens; the commander's per-tab history stays its own | `library.db` `recent` | C03 |
 | Favorites, ratings, tags, labels, collections | one library; the commander shows them later | `library.db` | already shared |
 | Listings and thumbnails | one index and one preview cache: what one app listed or generated is ready in the other | `index.db`, preview cache | P01, P02 |
-| Jobs | one queue, visible in both apps | sidecar | P01 |
+| Jobs | one queue (lanes and limits shared); each app lists the jobs it started (2026-10-31) | sidecar | P01 |
 | Internal file clipboard | Ctrl+C in one app, Ctrl+V in the other | sidecar | P01 |
 
 **Not shared:** the viewer's workspace layout, tile size, sort, filters and search; the commander's panels, tabs,
@@ -184,7 +186,16 @@ scanned). Switching between two apps that are both loaded was already instant: t
 - **Loading screen** (`AppLoadingOverlay` and `whileAppLoads` in `src/shared/ui`): the app's glyph and a
   "Loading…" or "Opening…" chip over the app's content, beside the rail, which stays usable. It is the chrome, or
   the wallpaper in the glass style.
-  - The commander's start (its panels and a carried-over folder) shows it at once.
+  - The commander's start (its panels and a carried-over folder) no longer shows it (owner request, 2026-10-31):
+    its rail, title strip, toolbar and function keys are usable at once, and each panel shows **skeleton rows**
+    (bars where names, sizes and dates will be) and a bar for its path until its first folder is open. A panel
+    whose folder is opening or still listing its first rows shows the same rows later too; "Opening…" and
+    "Listing…" stay as their words for screen readers.
+  - The viewer's start shows its tile placeholder (`GridPlaceholder`) until its first folder is decided and open
+    (`useStartupStore` in `startupFolder.ts`, at most 10 s), never "No folder open" for a moment before the folder
+    it reopens. Panelyth System shows bars where the computer's name, its OS, the processor's model and per-processor
+    load, the memory in use, the graphics adapters and the volumes will be until they are read; the storage ring
+    shows "–" until then, never "0%".
   - The carry-over on a switch (`applyCommanderContext` in the viewer, `applyContext` in the commander) shows it
     after 120 ms. In the viewer it shows at once when the folder changes, because opening a folder clears the tiles
     straight away; the commander keeps the old rows until the new ones arrive.
@@ -194,6 +205,18 @@ scanned). Switching between two apps that are both loaded was already instant: t
   stored theme, style and interface size before the first paint, and `index.html` holds a ring in `#root` until
   React renders. The first frame used to be in the default light colors whatever the theme. `boot.test.ts` checks
   the script agrees with the appearance stores.
+  - Since 2026-10-31 (owner request) each app's `index.html` holds the **app's outline** instead of the ring,
+    in the classes its components use, so it looks right in every style: the rail with the apps' glyphs (its own
+    in the accent color) and the title strip, then the commander's toolbar, two panels with skeleton rows, command
+    line and function keys; the viewer's folder tree, preview, toolbar, filters and tiles in its default layout;
+    Panelyth System's header and cards. No words but the app's name (they would be in one language only), no
+    inline styles (the CSP). The bars are static, like the viewer's tile placeholder (styles.css, "Skeletons").
+    Measured before: the first switch to the commander showed an empty surface for about 270 ms in the E2E build,
+    and the owner saw 0.5–2 s; Panelyth System's for about 80 ms, the viewer's start for about 60 ms; the ring
+    fades in only after 300 ms. Now each page's first paint is its outline. `switch.spec.ts` and `system.spec.ts`
+    check that the first contentful paint is the first paint (when Chromium records paint timing at all, which it
+    does not for a window it counts as hidden), and `outline.spec.ts` checks the three pages hold their outlines.
+    `boot.js` also sets `data-title-bar` from the preload's flag, so the outline leaves the title strip its room.
 - **Main** paints the commander's view in the theme's chrome color before its page has loaded (`chromeColorOf` in
   `shell.ts`, following `shared.appearance`), instead of a fixed dark gray.
 

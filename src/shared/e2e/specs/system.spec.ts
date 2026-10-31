@@ -4,7 +4,7 @@ import { hostname, tmpdir } from "node:os"
 import { join } from "node:path"
 import { expect, test } from "@playwright/test"
 import { commanderOf, launch } from "./commander/helpers"
-import { removeTemp, shellState, systemPage } from "../launch"
+import { expectOutlineFirst, removeTemp, shellState, systemPage } from "../launch"
 
 // Panelyth System (ADR-0042): the third app on the rail. Its dashboard reads
 // the computer, its load and its volumes; its search runs the find engine on
@@ -20,6 +20,8 @@ test.describe("Panelyth System (ADR-0042)", () => {
       const s = await systemPage(app)
       await expect(s.getByTestId("system-dashboard")).toBeVisible()
       expect(await shellState(app)).toMatchObject({ active: "system", systemCreated: true })
+      // Its first paint is the dashboard's outline (index.html), never an empty surface.
+      await expectOutlineFirst(s)
       await expect(s.getByTestId("hostname")).toHaveText(hostname())
       await expect(s.getByTestId("live")).toBeVisible({ timeout: 5_000 })
       // Two samples make the first reading of the load: a percentage in the ring.
@@ -35,6 +37,8 @@ test.describe("Panelyth System (ADR-0042)", () => {
         "context",
         "dir",
         "find",
+        // ADR-0045: the title strip's window buttons and state.
+        "frame",
         "fs",
         "library",
         "onEvent",

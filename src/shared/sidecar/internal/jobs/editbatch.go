@@ -131,7 +131,8 @@ func (m *Manager) UndoEdit(jobID int64) (Snapshot, error) {
 	if len(files) == 0 {
 		return Snapshot{}, ErrUnknownJob
 	}
-	snap, err := m.start(Spec{Kind: KindUndoEdit, created: files, undoOf: jobID})
+	// The undo is listed where the batch it undoes was.
+	snap, err := m.start(Spec{Kind: KindUndoEdit, App: m.AppOf(jobID), created: files, undoOf: jobID})
 	if err != nil {
 		m.created.set(jobID, files)
 	}

@@ -23,6 +23,10 @@ entry by id; main starts the program without a shell, with the entry's path as i
 hands over folders and media only, never a program; its folder tree names a folder by path
 (`programs.openFolder`, viewer only, as `shell.revealPath`), which main checks is an existing folder.
 
+Amended by ADR-0048 (2026-10-31, owner request): the commander's profile gets the main method
+`compare.openWindow`. It opens a compare window whose page runs on the commander's own profile; it takes entry
+and job ids, query session ids and folders as shown, never a path main acts on.
+
 Amended 2026-10-16 (owner request): `query.facets` joins the commander's profile, for the path bar's count by
 type. It returns counts of the panel's own session (folders, file kinds, extensions) and no names or paths; Go
 now also counts the rows of a session over a source (find results, an archive, a server), and leaves the session's

@@ -1,4 +1,4 @@
-/* global document, localStorage, matchMedia */
+/* global document, localStorage, matchMedia, window */
 // Runs before the first paint (a classic script in each app's index.html; both
 // apps serve this folder as Vite's publicDir). It applies the stored theme,
 // style and interface size the way appearance.ts does (boot.test.ts checks
@@ -26,4 +26,8 @@
   var size = read("panelyth.interfaceSize")
   root.dataset.interfaceSize =
     ["small", "medium", "large", "xlarge"].indexOf(size) >= 0 ? size : "medium"
+  // Windows: the page draws the title strip (ADR-0045); the boot screen's
+  // outline leaves it room, as TitleBar.tsx does once React renders.
+  var api = window.panelyth
+  if (api && api.frame && api.frame.titleBar === true) root.dataset.titleBar = ""
 })()

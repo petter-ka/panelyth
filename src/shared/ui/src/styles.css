@@ -501,6 +501,87 @@
 }
 
 /*
+ * Skeletons (docs/shared/APP-SWITCHING.md, "Loading screen"): bars where
+ * names, rows and values will be, static like the viewer's tile placeholder.
+ * - The boot screen holds the app's outline (each app's index.html): its
+ *   regions with the app's own classes, in the stored theme and style
+ *   (boot.js), so the time until React renders (a first switch to an app
+ *   creates its view then) never shows an empty surface. Plain HTML and CSS:
+ *   no inline styles (the CSP).
+ * - In the apps: a commander panel whose folder is opening (Panel.tsx), the
+ *   viewer's tiles until its first folder opens, the System dashboard's
+ *   values until they are read.
+ * The bars are components: utilities (h-*, w-*) size them.
+ */
+/* The outline fills the screen, however much it holds; the spinner alone is centered. */
+.boot-skeleton {
+  grid-template: minmax(0, 1fr) / minmax(0, 1fr);
+  place-items: stretch;
+}
+
+@layer components {
+  .skeleton-bone {
+    display: block;
+    flex-shrink: 0;
+    height: 0.5rem;
+    border-radius: 9999px;
+    background: var(--skeleton);
+  }
+
+  .skeleton-bone-icon {
+    width: 1.125rem;
+    height: 1.125rem;
+    border-radius: 0.3rem;
+  }
+
+  .skeleton-bone-xs {
+    width: 0.875rem;
+  }
+
+  .skeleton-bone-s {
+    width: 2.5rem;
+  }
+
+  .skeleton-bone-m {
+    width: 4.5rem;
+  }
+
+  .skeleton-bone-l {
+    width: 10rem;
+  }
+
+  .skeleton-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    height: 1.625rem;
+    padding: 0 0.75rem;
+  }
+
+  /* Names of a few lengths, then a size and a date column. */
+  .skeleton-row .skeleton-bone:first-child {
+    width: 34%;
+  }
+
+  .skeleton-row:nth-child(3n + 2) .skeleton-bone:first-child {
+    width: 22%;
+  }
+
+  .skeleton-row:nth-child(4n + 3) .skeleton-bone:first-child {
+    width: 46%;
+  }
+
+  .skeleton-row .skeleton-bone:nth-child(2) {
+    width: 3rem;
+    margin-left: auto;
+  }
+
+  .skeleton-row .skeleton-bone:nth-child(3) {
+    width: 6.5rem;
+  }
+}
+
+/*
  * The app's loading screen (AppLoading.tsx): over the content, beside the
  * 44 px app rail. In the glass style, the wallpaper inside the cards' margins,
  * as if the cards had lifted off.
