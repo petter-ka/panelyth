@@ -2,7 +2,7 @@ import type { ContentItem } from "@panelyth/contracts"
 import { create } from "zustand"
 import { bridge, PanelythError } from "../bridge"
 import { notice, READ_ONLY, refusedOnConnection } from "./files"
-import { openDocumentWindow } from "./documents"
+import { openDocumentWindow, runsOnEnter } from "./documents"
 import { openLister, openMediaViewer } from "./viewers"
 import {
   focusEntry,
@@ -67,9 +67,11 @@ export async function openWithApp(item: ContentItem, side?: Side): Promise<void>
   )
     return
 
-  if (await openDocumentWindow(item)) return
-
   const mode = settings.runPrograms
+  // A shell script runs by that setting; with running off, it is shown as text.
+  const script = runsOnEnter(item) && mode !== "never"
+  if (!script && (await openDocumentWindow(item))) return
+
   try {
     await bridge.shellOpen(item.id, mode === "always" ? true : undefined)
   } catch (error) {

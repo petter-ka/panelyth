@@ -134,9 +134,9 @@ test.describe("image viewer (Stage 04; in the media window since ADR-0033)", () 
       await expect(viewer).toHaveAttribute("data-entry-id", second!)
       const shown = (await viewer.getAttribute("aria-label"))!.replace("Media viewer: ", "")
 
-      // The file keys work in the window: Ctrl+C copies the file shown.
+      // The file keys work in the window: Ctrl+C copies the picture shown.
       await viewer.press("Control+c")
-      await expect(media.getByRole("status")).toHaveText("1 item copied")
+      await expect(media.getByRole("status").filter({ hasText: "Picture copied" })).toBeVisible()
 
       // The window closes under the key press, which then has no page to return to.
       await viewer.press("Escape").catch(() => undefined)

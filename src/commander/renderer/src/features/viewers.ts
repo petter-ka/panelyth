@@ -224,9 +224,10 @@ async function answerStep(key: number, direction: MediaWindowStep): Promise<Cont
 
 /**
  * A file key in the media window, on the file it shows (never the marks):
- * the clipboard, paste into the panel's folder, the trash or a permanent
- * delete. After a delete the window shows the next file (the previous one at
- * the end), or nothing.
+ * the clipboard (a picture goes on the OS clipboard too, as in the viewer),
+ * paste into the panel's folder, the trash or a permanent delete. After a
+ * delete the window shows the next file (the previous one at the end), or
+ * nothing.
  */
 export async function runMediaCommand(
   key: number,
@@ -241,7 +242,9 @@ export async function runMediaCommand(
   switch (command) {
     case "copy":
     case "cut":
-      return { item: window.item, done: await clipboardSetOf(window.side, source, command) }
+      if (!(await clipboardSetOf(window.side, source, command))) return refused
+      if (command === "copy" && window.item.kind === "image") await bridge.copyImage(window.item.id)
+      return { item: window.item, done: true }
     case "paste":
       return { item: window.item, done: await clipboardPaste(window.side) }
     case "trash":

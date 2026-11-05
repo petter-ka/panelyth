@@ -87,6 +87,8 @@ test.describe("commander foundation (Stage C00)", () => {
           "file",
           "files",
           "find",
+          // The title bar's window controls.
+          "frame",
           "fs",
           // ADR-0043: Git in the commander.
           "git",
@@ -123,7 +125,7 @@ test.describe("commander foundation (Stage C00)", () => {
         files: ["errors", "list", "pause", "rename", "resolve", "resume", "start", "startNow"],
         fs: ["canTrash", "listDirs", "mkdir", "mkfile", "volumes"],
         clip: ["get", "paste", "set"],
-        clipboard: ["copyPaths", "copyText"],
+        clipboard: ["copyImage", "copyPaths", "copyText"],
         drag: ["start"],
         // windowReveal: the media window of a file opened from the OS asks for the viewer.
         media: [

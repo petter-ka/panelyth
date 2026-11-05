@@ -62,6 +62,7 @@ describe("a window for a file from the OS", () => {
   it("stands alone: it asks its source, not an opener, and the source goes with the window", async () => {
     const source = {
       step: vi.fn(async (direction: MediaWindowStep) => (direction === 0 ? item : null)),
+      command: vi.fn(async () => ({ item, done: true })),
       current: vi.fn(() => ({ dirId: 3, entryId: 7 })),
       close: vi.fn(),
     }
@@ -83,6 +84,13 @@ describe("a window for a file from the OS", () => {
     expect(await windows.step(sender, 0)).toEqual(item)
     expect(await windows.step(sender, 1)).toBeNull()
     expect(source.step.mock.calls.map((c) => c[0])).toEqual([0, 1])
+    // Its file keys go to the source as well: no opener carries them out.
+    expect(await windows.command(sender, "copy")).toEqual({ item, done: true })
+    expect(source.command).toHaveBeenCalledWith("copy")
+    expect(await windows.command({ id: 999 } as never, "delete")).toEqual({
+      item: null,
+      done: false,
+    })
     expect(windows.sourceOf(sender)).toBe(source)
     // Any other sender has no source (the reveal is refused for it).
     expect(windows.sourceOf({ id: 999 } as never)).toBeNull()
@@ -164,14 +172,20 @@ describe("MediaWindows relay", () => {
   })
 })
 
-describe("a window for a file from the OS takes no commands", () => {
-  it("answers null without asking anyone", async () => {
+describe("a window for a file from the OS has no opener", () => {
+  it("its source answers a command, and no opener is asked", async () => {
     created.length = 0
-    const source = { step: vi.fn(async () => item), current: vi.fn(() => null), close: vi.fn() }
+    const source = {
+      step: vi.fn(async () => item),
+      command: vi.fn(async () => ({ item: null, done: true })),
+      current: vi.fn(() => null),
+      close: vi.fn(),
+    }
     const windows = new MediaWindows(OPTIONS, () => null)
     windows.open({ source })
     await expect(
       windows.command({ id: created[0]!.webContents.id } as never, "delete"),
-    ).resolves.toEqual({ item: null, done: false })
+    ).resolves.toEqual({ item: null, done: true })
+    expect(source.command).toHaveBeenCalledWith("delete")
   })
 })

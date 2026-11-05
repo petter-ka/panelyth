@@ -2,8 +2,9 @@ import { vi } from "vitest"
 
 /**
  * jsdom has no layout: every element measures 0×0. The tile view reads
- * getBoundingClientRect and TanStack Virtual reads offsetWidth/offsetHeight,
- * so tests give elements a viewport size through both.
+ * getBoundingClientRect, TanStack Virtual reads offsetWidth/offsetHeight and
+ * the panel views the client size, so tests give elements a viewport size
+ * through all of them.
  */
 export function mockViewport(
   width: number,
@@ -26,6 +27,8 @@ export function mockViewport(
   )
   vi.spyOn(HTMLElement.prototype, "offsetWidth", "get").mockImplementation(() => size.width)
   vi.spyOn(HTMLElement.prototype, "offsetHeight", "get").mockImplementation(() => size.height)
+  vi.spyOn(Element.prototype, "clientWidth", "get").mockImplementation(() => size.width)
+  vi.spyOn(Element.prototype, "clientHeight", "get").mockImplementation(() => size.height)
   return {
     resize(w: number, h: number) {
       size = { width: w, height: h }

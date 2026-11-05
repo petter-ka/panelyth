@@ -555,17 +555,22 @@ test.describe("benchmarks (Stage C10.5)", () => {
       await goTo(c, "left", left)
       await grid(c, "left").focus()
       await c.keyboard.press("Control+a")
-      const compared = await c.evaluate(() => {
+      // It runs in a window of its own (ADR-0048); one clock: the wall clock of this computer.
+      const clickedAt = await c.evaluate(() => {
+        const button = document.querySelector<HTMLButtonElement>(
+          '[data-testid="quick-actions"] button[aria-label="Compare by content"]',
+        )!
+        const at = Date.now()
+        button.click()
+        return at
+      })
+      const w = await compareWindow(app)
+      const compared = await w.evaluate((clickedAt) => {
         const long: number[] = []
         const po = new PerformanceObserver((l) =>
           l.getEntries().forEach((e) => long.push(e.duration)),
         )
-        po.observe({ type: "longtask" })
-        const button = document.querySelector<HTMLButtonElement>(
-          '[data-testid="quick-actions"] button[aria-label="Compare by content"]',
-        )!
-        const t0 = performance.now()
-        button.click()
+        po.observe({ type: "longtask", buffered: true })
         return new Promise<{ ms: number; longTasks: number; longTaskMaxMs: number; rows: number }>(
           (resolve, reject) => {
             const tick = (): void => {
@@ -575,7 +580,7 @@ test.describe("benchmarks (Stage C10.5)", () => {
                 '[data-testid="compare-many-rows"] [role=option]',
               ).length
               if (status.startsWith("Identical:") && rows > 0) {
-                const ms = performance.now() - t0
+                const ms = Date.now() - clickedAt
                 setTimeout(() => {
                   po.disconnect()
                   resolve({
@@ -585,18 +590,18 @@ test.describe("benchmarks (Stage C10.5)", () => {
                     rows,
                   })
                 }, 300)
-              } else if (performance.now() - t0 > 60_000) reject(new Error(`compare: ${status}`))
+              } else if (Date.now() - clickedAt > 60_000) reject(new Error(`compare: ${status}`))
               else requestAnimationFrame(tick)
             }
             requestAnimationFrame(tick)
           },
         )
-      })
-      await expect(c.getByTestId("compare-many-status")).toContainText(
+      }, clickedAt)
+      await expect(w.getByTestId("compare-many-status")).toContainText(
         "Identical: 960 · Not identical: 40",
       )
       await expect(
-        c.getByTestId("compare-many").getByRole("button", { name: "Missing 10" }),
+        w.getByTestId("compare-many").getByRole("button", { name: "Missing 10" }),
       ).toBeVisible()
 
       const result = {

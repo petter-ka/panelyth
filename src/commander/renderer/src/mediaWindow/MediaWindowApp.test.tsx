@@ -176,12 +176,56 @@ describe("MediaWindowApp", () => {
     expect(screen.getByRole("dialog", { name: "a.jpg" })).toBeInTheDocument()
   })
 
-  it("standing alone, it has no file keys (no app carries them out)", async () => {
+  it("standing alone, the file keys work too; main carries them out", async () => {
     window.location.hash = "#alone=1"
     step.mockResolvedValueOnce(item(1, "a.jpg"))
+    command.mockResolvedValueOnce({ item: item(2, "b.jpg"), done: true })
     render(<MediaWindowApp />)
     await screen.findByRole("dialog", { name: "a.jpg" })
-    expect(screen.queryByText("key trash")).toBeNull()
+    fireEvent.click(screen.getByText("key trash"))
+    expect(screen.getByRole("alertdialog")).toHaveTextContent("Move a.jpg to the trash?")
+    fireEvent.click(screen.getByRole("button", { name: "Move to trash" }))
+    expect(await screen.findByRole("dialog", { name: "b.jpg" })).toBeInTheDocument()
+    expect(command).toHaveBeenCalledWith("trash")
+  })
+
+  it.each(["#alone=1", ""])(
+    "Ctrl+C on a picture says it is on the clipboard (%s)",
+    async (hash) => {
+      window.location.hash = hash
+      step.mockResolvedValueOnce(item(1, "a.jpg"))
+      command.mockResolvedValueOnce({ item: item(1, "a.jpg"), done: true })
+      render(<MediaWindowApp />)
+      await screen.findByRole("dialog", { name: "a.jpg" })
+      fireEvent.click(screen.getByText("key copy"))
+      expect(await screen.findByRole("status")).toHaveTextContent("Picture copied to the clipboard")
+      expect(command).toHaveBeenCalledWith("copy")
+    },
+  )
+
+  it("standing alone, a big picture says it is on its way, and a failure says so", async () => {
+    window.location.hash = "#alone=1"
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    let answer: (r: unknown) => void = () => undefined
+    command.mockImplementationOnce(() => new Promise((resolve) => (answer = resolve)))
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.jpg" })
+    fireEvent.click(screen.getByText("key copy"))
+    expect(await screen.findByRole("status")).toHaveTextContent("Copying picture…")
+    answer({ item: item(1, "a.jpg"), done: false })
+    await waitFor(() =>
+      expect(screen.getByRole("status")).toHaveTextContent("The operation failed."),
+    )
+  })
+
+  it("Ctrl+C on a video names the item, not a picture", async () => {
+    window.location.hash = "#alone=1"
+    step.mockResolvedValueOnce({ id: 1, kind: "video", name: "a.mp4" } as ContentItem)
+    command.mockResolvedValueOnce({ item: null, done: true })
+    render(<MediaWindowApp />)
+    await screen.findByRole("dialog", { name: "a.mp4" })
+    fireEvent.click(screen.getByText("key copy"))
+    expect(await screen.findByRole("status")).toHaveTextContent("1 item copied")
   })
 
   it("shows a loading chip until the first item comes (a drive spinning up)", async () => {

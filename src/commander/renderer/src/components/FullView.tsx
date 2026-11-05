@@ -24,7 +24,7 @@ import {
   type ColumnVisibilityState,
   type Updater,
 } from "@tanstack/react-table"
-import { useVirtualizer } from "@tanstack/react-virtual"
+import { useVirtualizer, type Rect, type Virtualizer } from "@tanstack/react-virtual"
 import {
   forwardRef,
   memo,
@@ -99,6 +99,25 @@ export const OVERSCAN = 12
 const HEADER_HEIGHT = 24
 const GUTTER_WIDTH = 10
 const gutterStyle: CSSProperties = { width: GUTTER_WIDTH }
+/**
+ * What the virtualizer takes for its viewport: the area rows can be seen in. Its
+ * default measures the border box, which counts a horizontal scrollbar (columns
+ * wider than the panel), so the cursor's row would stop behind that scrollbar.
+ * The content box the observer watches shrinks when the scrollbar appears.
+ */
+const observeClientRect = (
+  instance: Virtualizer<HTMLDivElement, Element>,
+  report: (rect: Rect) => void,
+): (() => void) | undefined => {
+  const node = instance.scrollElement
+  if (!node) return
+  const measure = (): void => report({ width: node.clientWidth, height: node.clientHeight })
+  measure()
+  const observer = new ResizeObserver(measure)
+  observer.observe(node)
+  return () => observer.disconnect()
+}
+
 const COLUMN_IDS: readonly ColumnId[] = ["name", "ext", "size", "date", "attr"]
 const COLUMN_LABEL: Record<ColumnId, string> = {
   name: msg("Name"),
@@ -258,6 +277,11 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     getScrollElement: () => body.current,
     estimateSize: () => rowHeight,
     overscan: OVERSCAN,
+    // The rows start below the sticky header, in the same scroll body: scrolled
+    // down, a row ends at the viewport's edge; scrolled up, it starts below the header.
+    scrollMargin: HEADER_HEIGHT,
+    scrollPaddingStart: HEADER_HEIGHT,
+    observeElementRect: observeClientRect,
   })
   useScrollMemory(
     body,
@@ -283,7 +307,11 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
     if (count > 0) virtualizer.scrollToIndex(cursor, { align: "auto" })
   }, [cursor, revealToken, count, virtualizer])
 
-  const data = useMemo(() => items.map((v) => ({ index: v.index, start: v.start })), [items])
+  // The rows' own container already sits below the header.
+  const data = useMemo(
+    () => items.map((v) => ({ index: v.index, start: v.start - HEADER_HEIGHT })),
+    [items],
+  )
   const onColumnSizingChange = useCallback(
     (updater: Updater<ColumnSizingState>) => {
       const current = useListingStore.getState()[side].columns
@@ -373,7 +401,7 @@ export const FullView = forwardRef<FullViewHandle, FullViewProps>(function FullV
   const fullWidth = Math.max(viewportWidth, tableWidth)
 
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
-    const viewport = body.current?.getBoundingClientRect().height ?? 0
+    const viewport = (body.current?.clientHeight ?? 0) - HEADER_HEIGHT
     const page = Math.max(1, Math.floor(viewport / rowHeight) - 1)
     onPanelKey(side, e, { count, cursor, page, column: 0 })
   }

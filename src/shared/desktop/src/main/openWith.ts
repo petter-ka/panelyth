@@ -2,9 +2,13 @@ import { isAbsolute, resolve } from "node:path"
 import type {
   ContentItem,
   EntryFromPathResult,
+  JobSnapshot,
+  MediaWindowCommand,
+  MediaWindowCommandResult,
   MediaWindowStep,
   OpenRequest,
   QueryDescriptor,
+  SelectionDescriptor,
   SidecarMethodMap,
 } from "@panelyth/contracts"
 
@@ -37,7 +41,17 @@ export function fileArgument(
 }
 
 type Call = <
-  M extends "entry.fromPath" | "query.open" | "query.indexOf" | "query.page" | "query.close",
+  M extends
+    | "entry.fromPath"
+    | "query.open"
+    | "query.indexOf"
+    | "query.page"
+    | "query.close"
+    | "clip.set"
+    | "clip.paste"
+    | "fs.canTrash"
+    | "jobs.start"
+    | "jobs.list",
 >(
   method: M,
   params: SidecarMethodMap[M]["params"],
@@ -72,14 +86,32 @@ export const LISTING_GRACE_MS = 5000
 export const LISTING_RETRY_MS = 300
 
 /**
+ * No app is behind this window to show a job's progress or its failure, and
+ * the app ends with the window, which cancels what still runs: a file key
+ * waits for its job. A delete is short and the window may close right after
+ * it. After these times the window goes on and the job runs behind it (one
+ * queued behind a large copy of a running app, a big file pasted).
+ */
+export const DELETE_WAIT_MS = 5000
+export const PASTE_WAIT_MS = 1000
+export const JOB_POLL_MS = 25
+
+const JOB_ENDED: ReadonlySet<JobSnapshot["state"]> = new Set(["completed", "cancelled", "failed"])
+
+const jobWentWrong = (job: JobSnapshot): boolean => job.state !== "completed" || job.failed > 0
+
+/**
  * The items of one media window opened for a file from the OS. The sidecar
  * indexes the file at once and lists its folder behind it; previous and next
  * come from a session over that folder, which follows the listing as it
  * arrives. Nothing here waits for the folder to be listed.
+ *
+ * It also carries out the window's file keys: there is no opener to do that.
  */
 export class OpenWithSession {
   private opened: Promise<Opened> | null = null
   private currentId: number | null = null
+  private shown: ContentItem | null = null
   private dirId: number | null = null
   private closed = false
   private openedAt = 0
@@ -87,6 +119,8 @@ export class OpenWithSession {
   constructor(
     private readonly call: Call,
     private readonly path: string,
+    /** Puts an indexed picture on the OS clipboard. */
+    private readonly copyImage: (entryId: number) => Promise<unknown>,
     private readonly now: () => number = Date.now,
     private readonly sleep: (ms: number) => Promise<void> = (ms) =>
       new Promise((resolve) => setTimeout(resolve, ms)),
@@ -122,8 +156,81 @@ export class OpenWithSession {
       await this.sleep(LISTING_RETRY_MS)
       if (!this.closed) item = await this.at(s, direction)
     }
-    if (item) this.currentId = item.id
+    if (item) this.show(item)
     return item
+  }
+
+  private show(item: ContentItem): void {
+    this.currentId = item.id
+    this.shown = item
+  }
+
+  /**
+   * A file key, on the file shown (ADR-0033 amended): the file clipboard, and
+   * a picture on the OS clipboard too (as Ctrl+C in the viewer), a paste into
+   * the file's folder, the trash or a delete for good. There is nobody to
+   * answer a name conflict here, so a paste keeps both files. After a delete
+   * the item is the next file (the previous one at the end), or null.
+   */
+  async command(command: MediaWindowCommand): Promise<MediaWindowCommandResult> {
+    if (this.closed) return { item: null, done: false }
+    const s = await (this.opened ??= this.open())
+    const refused = { item: this.shown, done: false }
+    const entryId = this.currentId ?? s.entryId
+    switch (command) {
+      case "copy":
+      case "cut":
+        await this.call("clip.set", { selection: await this.selection(s, entryId), mode: command })
+        if (command === "copy" && this.shown?.kind === "image") await this.copyImage(entryId)
+        return { item: this.shown, done: true }
+      case "paste": {
+        const job = await this.call("clip.paste", {
+          destinationDirId: s.dirId,
+          conflict: "keepBoth",
+        })
+        const end = await this.jobEnd(job, PASTE_WAIT_MS)
+        return end && jobWentWrong(end) ? refused : { item: this.shown, done: true }
+      }
+      case "trash":
+      case "delete": {
+        if (command === "trash" && !(await this.call("fs.canTrash", { dirId: s.dirId })).trash)
+          return refused
+        const next = (await this.at(s, 1)) ?? (await this.at(s, -1))
+        const job = await this.call("jobs.start", {
+          kind: command,
+          source: { selection: await this.selection(s, entryId) },
+        })
+        const end = await this.jobEnd(job, DELETE_WAIT_MS)
+        if (end && jobWentWrong(end)) return refused
+        if (next) this.show(next)
+        return { item: next, done: true }
+      }
+    }
+  }
+
+  /** One entry in a selection of the session as it is now (the listing moves its version on). */
+  private async selection(s: Opened, entryId: number): Promise<SelectionDescriptor> {
+    const { version } = await this.call("query.page", {
+      queryId: s.queryId,
+      offset: 0,
+      limit: 1,
+      thumbProfile: null,
+    })
+    return { queryId: s.queryId, version, ranges: [], include: [entryId], exclude: [] }
+  }
+
+  /** The job's final state; null while it still runs after `ms`. */
+  private async jobEnd(started: JobSnapshot, ms: number): Promise<JobSnapshot | null> {
+    const until = this.now() + ms
+    let job: JobSnapshot | undefined = started
+    while (job && !JOB_ENDED.has(job.state)) {
+      if (this.now() >= until) return null
+      await this.sleep(JOB_POLL_MS)
+      const { jobs }: { jobs: JobSnapshot[] } = await this.call("jobs.list", {})
+      job = jobs.find((j) => j.jobId === started.jobId)
+    }
+    // No longer listed: it ended a while ago.
+    return job ?? null
   }
 
   /** The item `direction` names in the session as it is now. */

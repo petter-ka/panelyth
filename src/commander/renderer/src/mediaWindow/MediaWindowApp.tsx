@@ -11,6 +11,9 @@ export const MEDIA_WINDOW_LANE = "cmd-media-window"
 /** How long a note about a file command stays on screen. */
 export const NOTE_MS = 2000
 
+/** "Copying picture…" shows only when the copy takes longer than this (a big picture is decoded first). */
+export const SLOW_COPY_MS = 200
+
 const closeWindow = (): void => window.close()
 
 /** Keys go back to the picture after the confirmation. */
@@ -49,10 +52,12 @@ function doneNote(command: MediaWindowCommand): string {
  * its folder.
  *
  * The file keys (copy, cut, paste, Delete, Shift+Delete) go to the opener,
- * which carries them out on the file shown; after a delete the window shows
- * the next file, or closes when none is left. A delete asks here first,
- * since the app's own dialogs are behind this window: always for good, and
- * for the trash unless Settings → Appearance → Full screen says not to.
+ * or to main in a window opened from the OS, which carries them out on the
+ * file shown; after a delete the window shows the next file, or closes when
+ * none is left. Ctrl+C on a picture also puts it on the OS clipboard, whoever
+ * carries it out. A delete asks here first, since the app's own dialogs are behind this
+ * window (or there is no app): always for good, and for the trash unless
+ * Settings → Appearance → Full screen says not to.
  */
 export function MediaWindowApp() {
   const [alone] = useState(standsAlone)
@@ -95,13 +100,15 @@ export function MediaWindowApp() {
     async (command: MediaWindowCommand): Promise<void> => {
       if (busy.current) return
       busy.current = true
+      const picture = command === "copy" && item?.kind === "image"
+      const slow = picture ? setTimeout(() => say(t("Copying picture…")), SLOW_COPY_MS) : null
       try {
         const { item: next, done } = await bridge.mediaWindowCommand(command)
         if (!done) {
           say(t("The operation failed."))
           return
         }
-        say(doneNote(command))
+        say(picture ? t("Picture copied to the clipboard") : doneNote(command))
         if (command === "trash" || command === "delete") {
           if (next) setItem(next)
           else closeWindow()
@@ -109,10 +116,11 @@ export function MediaWindowApp() {
       } catch {
         say(t("The operation failed."))
       } finally {
+        if (slow) clearTimeout(slow)
         busy.current = false
       }
     },
-    [say],
+    [say, item],
   )
 
   const onCommand = useCallback(
@@ -184,6 +192,7 @@ export function MediaWindowApp() {
         onClose={closeWindow}
         onStep={(direction) => void step(direction)}
         onJump={(to) => void step(to)}
+        onCommand={onCommand}
         {...(alone
           ? {
               // Main opens the viewer on this file's folder and closes this window.
@@ -191,7 +200,6 @@ export function MediaWindowApp() {
             }
           : {
               closeOnDoubleClick: true,
-              onCommand,
               // The main window's viewer opens its editor on the picture; this window is done.
               onEdit: () =>
                 void bridge

@@ -99,7 +99,13 @@ import {
 import { SidecarProcess } from "./sidecar/SidecarProcess"
 import { createMainWindow } from "./window"
 import { fsDeps, initialBounds, WindowStateFile } from "./windowState"
-import { COMMANDER_SETTINGS_KEY, pngSize, workspaceHandlers, type WorkspaceDeps } from "./workspace"
+import {
+  COMMANDER_SETTINGS_KEY,
+  copyImageToClipboard,
+  pngSize,
+  workspaceHandlers,
+  type WorkspaceDeps,
+} from "./workspace"
 import { shellRunHandlers, startInvocation, writeListFile } from "./shellRun"
 import { programsHandlers } from "./programs"
 import { statSync } from "node:fs"
@@ -246,6 +252,19 @@ function settingsPageOf(app: AppId): SettingsPage {
   }
 }
 
+async function writeClipboardImage(png: Buffer): Promise<void> {
+  // Tests read the size back from the PNG header.
+  if (recordShell) {
+    shellLog.push({ action: "clipboardImage", value: pngSize(png) })
+    return
+  }
+  await clipboard.write([
+    new ClipboardItem({
+      "image/png": new Blob([png as Uint8Array<ArrayBuffer>], { type: "image/png" }),
+    }),
+  ])
+}
+
 /**
  * A file from the OS in a full-screen media window of its own. A file that
  * turns out to be no picture or video opens the app as usual instead.
@@ -255,7 +274,15 @@ function openFile(path: string): void {
   const windows = mediaWindows
   if (!sc || !windows) return
   perfMark("open-with")
-  const session = new OpenWithSession((method, params) => sc.call(method, params), path)
+  const session = new OpenWithSession(
+    (method, params) => sc.call(method, params),
+    path,
+    (entryId) =>
+      copyImageToClipboard(
+        { call: (method, params) => sc.call(method, params), writeClipboardImage },
+        entryId,
+      ),
+  )
   let win: BrowserWindow | null = null
   const unavailable = (reason: unknown): void => {
     logger.warn("a file from the OS could not be shown", { reason: String(reason) })
@@ -274,6 +301,7 @@ function openFile(path: string): void {
           throw error
         }
       },
+      command: (command) => session.command(command),
       current: () => session.current(),
       close: () => session.close(),
     },
@@ -772,18 +800,7 @@ async function boot(): Promise<void> {
       })
     },
     platform: process.platform,
-    writeClipboardImage: async (png) => {
-      // Tests read the size back from the PNG header.
-      if (recordShell) {
-        shellLog.push({ action: "clipboardImage", value: pngSize(png) })
-        return
-      }
-      await clipboard.write([
-        new ClipboardItem({
-          "image/png": new Blob([png as Uint8Array<ArrayBuffer>], { type: "image/png" }),
-        }),
-      ])
-    },
+    writeClipboardImage,
   }
   const scriptedUpdate = app.isPackaged ? undefined : process.env.PANELYTH_TEST_UPDATE
   const updateService = new UpdateService({

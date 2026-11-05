@@ -559,7 +559,6 @@ describe("invoke router", () => {
       "shell.reveal",
       "shell.revealPath",
       "dialog.openFolder",
-      "clipboard.copyImage",
       "folder.covers",
       "library.tags",
     ]) {
@@ -578,6 +577,8 @@ describe("invoke router", () => {
       ["shell.edit", { entryId: 3 }],
       ["document.open", { entryId: 3 }],
       ["document.open", { entryId: 3, theme: "light" }],
+      // Ctrl+C in a media window opened from the commander (ADR-0033 amended).
+      ["clipboard.copyImage", { entryId: 3 }],
       ["media.open", { entryId: 3 }],
       ["media.openWindow", { entryId: 3, key: 1, theme: "dark", lang: "de" }],
       ["media.windowStep", { direction: -1 }],

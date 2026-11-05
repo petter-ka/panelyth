@@ -756,6 +756,7 @@ export interface CommanderApi {
     paste(destinationDirId: number, conflict: ConflictPolicy): Promise<RpcEnvelope<JobSnapshot>>
   }
   clipboard: {
+    copyImage(entryId: number): Promise<RpcEnvelope<CopyImageResult>>
     copyPaths(
       selection: SelectionDescriptor,
       namesOnly?: boolean,

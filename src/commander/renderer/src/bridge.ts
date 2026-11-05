@@ -340,6 +340,10 @@ export const bridge = {
   /** Files to other apps (ADR-0040): main starts the OS's drag of the selection. */
   dragStart: (selection: SelectionDescriptor): Promise<DragStartResult> =>
     unwrap(() => api().drag.start(selection)),
+  /** Puts an indexed picture on the OS clipboard (Go decodes it, main hands it over). */
+  copyImage: async (entryId: number): Promise<void> => {
+    await unwrap(() => api().clipboard.copyImage(entryId))
+  },
   copyText: async (text: string): Promise<void> => {
     await unwrap(() => api().clipboard.copyText(text))
   },

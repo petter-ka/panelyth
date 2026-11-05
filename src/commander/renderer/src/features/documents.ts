@@ -2,6 +2,7 @@ import { documentKindOf, type ContentItem } from "@panelyth/contracts"
 import { currentAppearance } from "@panelyth/ui"
 import { bridge } from "../bridge"
 import { notice } from "./files"
+import { IS_WINDOWS } from "./format"
 import { useSettingsStore } from "./settings"
 import { currentLocale, t } from "@panelyth/i18n"
 
@@ -15,6 +16,17 @@ export const opensInDocumentWindow = (item: ContentItem): boolean =>
   item.kind !== "dir" &&
   useSettingsStore.getState().settings.documentOpen === "window" &&
   documentKindOf(item.name) !== null
+
+/**
+ * Shell scripts are text, but Enter on one means run it: it follows "Run
+ * programs with Enter" like any program, and F3 shows it (ADR-0033 amended).
+ * Each of these is a program to the sidecar on its platform, so main asks
+ * first. Other code (.js, .ps1) is read far more often than run: Enter shows it.
+ */
+const RUN_ON_ENTER: ReadonlySet<string> = new Set(
+  IS_WINDOWS ? ["bat", "cmd"] : ["sh", "bash", "zsh"],
+)
+export const runsOnEnter = (item: ContentItem): boolean => RUN_ON_ENTER.has(item.ext)
 
 /**
  * Opens the file in a document window. Resolves false when the caller should

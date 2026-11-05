@@ -364,7 +364,8 @@ test.describe("video playback + media preview (Stage 06)", () => {
         .getByRole("toolbar", { name: "Playback controls" })
         .getByRole("button", { name: "Play" })
       await expect(player).not.toHaveAttribute("data-state", "loading", { timeout: 10_000 })
-      if (await play.isEnabled()) await play.click()
+      // Play is disabled the moment the player knows, which can fall between these two calls.
+      if (await play.isEnabled()) await play.click({ timeout: 1_000 }).catch(() => undefined)
       await expect(player).toHaveAttribute("data-problem", "unsupported", { timeout: 10_000 })
       await expect(player).toContainText("MPEG-4 Part 2 video isn't supported")
       await player.getByRole("button", { name: "Open with default app" }).click()

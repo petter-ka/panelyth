@@ -170,16 +170,23 @@ export function workspaceHandlers(deps: WorkspaceDeps): Pick<MainHandlers, Works
       deps.writeClipboard(text)
       return { ok: true }
     },
-    // Go decodes the picture into a temp file (Stage 08.6); main only reads
-    // it asynchronously and hands the bitmap to the OS clipboard.
-    "clipboard.copyImage": async (_event, { entryId }) => {
-      const { file, width, height } = await deps.call("clipboard.image", { entryId })
-      try {
-        await deps.writeClipboardImage(await readFile(file))
-      } finally {
-        await rm(file, { force: true })
-      }
-      return { width, height }
-    },
+    "clipboard.copyImage": (_event, { entryId }) => copyImageToClipboard(deps, entryId),
   }
+}
+
+/**
+ * An indexed picture on the OS clipboard. Go decodes it into a temp file
+ * (Stage 08.6); main only reads that asynchronously and hands the bitmap over.
+ */
+export async function copyImageToClipboard(
+  deps: Pick<WorkspaceDeps, "call" | "writeClipboardImage">,
+  entryId: number,
+): Promise<{ width: number; height: number }> {
+  const { file, width, height } = await deps.call("clipboard.image", { entryId })
+  try {
+    await deps.writeClipboardImage(await readFile(file))
+  } finally {
+    await rm(file, { force: true })
+  }
+  return { width, height }
 }

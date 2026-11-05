@@ -275,7 +275,9 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
 - As built (Stage C05): Tab moves into the quick view and back; quick view always shows in the inactive panel. The
   lister's header has the modes (unavailable ones disabled), the encoding, Wrap (W), Find and Close; F3 / Shift+F3
   find the next and previous match; its footer shows the position. Enter on a program asks "Run this program?" with
-  Cancel focused (Settings → "Run programs with Enter": ask, always, never); Settings → "Editor (F4)" names the
+  Cancel focused (Settings → "Run programs with Enter": ask, always, never). That includes shell scripts (`.bat`,
+  `.cmd`; `.sh`, `.bash`, `.zsh` on macOS and Linux), though they are text: with running off Enter shows them, and F3
+  always does (ADR-0033). Settings → "Editor (F4)" names the
   editor. Enter or double-click on an image or video opens the shared media overlay directly over Commander, keeping
   its workspace mounted underneath; closing the image or video reveals the same Commander session.
   Settings → "Open images and videos with" can use

@@ -178,6 +178,22 @@ async function hideHiddenEntries(app: ElectronApplication, c: Page): Promise<voi
   await expect.poll(() => app.windows().includes(settings)).toBe(false)
 }
 
+/**
+ * Text and PDFs go to the document window by default (ADR-0033). The specs of
+ * the lister itself turn that off, as a user does: Settings → Panels → "Open
+ * PDFs and text files with" → the system's app; F3 is the lister then.
+ */
+export async function textInLister(app: ElectronApplication, c: Page): Promise<void> {
+  const settings = await openSettingsWindow(app, c)
+  await settings
+    .getByRole("group", { name: "Open PDFs and text files with" })
+    .getByRole("radio", { name: "System default app" })
+    .check()
+  // Esc closes the window on keydown: there is no page left for a keyup.
+  await settings.keyboard.down("Escape")
+  await expect.poll(() => app.windows().includes(settings)).toBe(false)
+}
+
 /** Opens a folder that may be empty (goTo waits for entry rows). */
 export async function openFolder(c: Page, side: Side, path: string): Promise<void> {
   await c.getByTestId(`path-${side}`).click()

@@ -91,8 +91,9 @@ player.
   it: for good always, for the trash unless Settings → Appearance → Full screen → "Ask before moving to the trash"
   is off (on by default; stored with the player preferences, setting `player.confirmDelete`, so it is one setting
   for both apps and the window). A window for a file from the OS has no
-  opener: it shows no file keys, and main answers `done: false`. The keys are the apps' defaults, not the user's
-  keymap (the window does not know which app opened it).
+  opener: main carries the keys out itself (amendment "File keys in a window from the OS" below; until then the
+  window had none). The keys are the apps' defaults, not the user's keymap (the window does not know which app
+  opened it).
 - **The way back.** When the window closes, main sends the opener `mediaWindow.closed { key }`; the opener selects
   the file shown last and scrolls to it (the viewer's selection and reveal; the commander's cursor, in that panel,
   made active), provided the folder is still the one the window was opened from. Its index is looked up again
@@ -158,6 +159,60 @@ Verified (2026-10-17): unit tests for the key map, the overlay, the page (the co
 window from the OS), main's relay and `closed` event, the allowlists and validation, and both openers (the shown
 file only, the next file after a delete, a drive without a trash, the reveal on close); E2E `viewer.spec.ts`
 (Ctrl+C in the window, the last file shown selected after Esc).
+
+## Amendment: file keys in a window from the OS (2026-11-05, owner request)
+
+The window for a file from the OS had no file keys, because no opener could carry them out. Pressing Ctrl+C there did
+nothing, which is the first thing wanted of a picture opened from the file manager. Now the same keys work there, with
+the same `media.windowCommand { command }` from the same narrow page; only who carries them out differs.
+
+- **Main carries them out,** on the file shown: `OpenWithSession.command`, on the session it already holds for the
+  window. The page still names only the command, never an entry or a path.
+- **Ctrl/Cmd+C** puts the file on the shared file clipboard and, for a picture, the picture on the OS clipboard, as
+  Ctrl+C in the viewer does (`clipboard.image`, then `writeClipboardImage`). That is what lets it paste into Paint,
+  Word or a chat. A picture that cannot be put there is a failed command. "Copying picture…" shows after 200 ms.
+- **Ctrl/Cmd+V** pastes into the file's folder with `keepBoth`: nothing can answer a name conflict here, and this
+  policy loses nothing. **Ctrl/Cmd+X** fills the file clipboard for a later paste in the viewer or the commander; a
+  cut pasted back into the same folder is skipped by the sidecar, as anywhere.
+- **Delete and Shift+Delete** ask in the window as before. Main then waits for the job's end (`jobs.list`, every
+  25 ms), for two reasons: no app is behind the window to show a failure, and the app ends with this window, which
+  cancels a running job, so the last file of a folder could survive its own delete. The wait is capped so the window
+  never hangs on a job queued behind a large copy of a running app: 5 s for a delete and 1 s for a paste, after which
+  the window goes on and the job runs behind it. A job that ends in failure, or with a failed item, keeps the file on
+  screen and the window says "The operation failed."
+- **The commander too (same day, owner request):** Ctrl/Cmd+C on a picture in a media window it opened also puts the
+  picture on the OS clipboard, so all three ways of opening a picture do the same. The commander's profile gains
+  `clipboard.copyImage { entryId }`, which the viewer already had; it takes an entry id, and Go refuses anything it
+  cannot decode as a picture. A picture inside an archive or on a connection is not an indexed file: Ctrl+C says
+  "The operation failed." there, as it did before. The window now says "Picture copied to the clipboard" in every
+  case, and the viewer's answer reports a picture that could not be copied.
+- **Still not in such a window:** Edit, as above.
+- **Known limit:** closing the window ends the app when it is the only one, so a long paste still running then is
+  cancelled, as when the main window closes during a job.
+
+Verified: unit tests for each command in `OpenWithSession` (the shown file only, a current selection version, the OS
+clipboard for pictures alone, `keepBoth`, a failed or queued job, a drive without a trash, a closed window), main's
+routing and the page's notes; E2E `openwith.spec.ts` (Ctrl+C recorded as a 640x480 picture, Ctrl+V beside the original,
+the question and Esc, Shift+Delete showing the neighbour, deleting the only file really removing it before the app
+ends); once against the real Windows clipboard, which held the picture while the window was open and after the app
+had ended. Trash is covered by unit tests only: an E2E run leaves the recycle bin alone. Not run: macOS and Linux.
+
+## Amendment: shell scripts on Enter (2026-11-05, owner request)
+
+The text list includes scripts, so since this ADR Enter on a `.bat` showed it as text and never reached "Run programs
+with Enter", against ADR-0027 and `docs/commander/UX-DESIGN.md`. Nothing ran unasked, but the setting was silently
+ignored.
+
+- **Enter** on a shell script follows the setting: `.bat` and `.cmd` on Windows; `.sh`, `.bash` and `.zsh` on macOS and
+  Linux. Ask (the default) shows "Run this program?" with Cancel focused, always runs it, and never shows it as text.
+- **F3** always shows it as text. So does Enter on other code (`.js`, `.ps1`, a text file with an execute bit), which is
+  read far more often than run. Those still count as programs for `shell.open` (ADR-0027), so opening them with the
+  system's app asks first.
+- **The renderer only routes;** main still refuses a program without `allowProgram`, so a wrong route cannot run anything.
+  A script's name is in the list only on the platform where the sidecar calls it a program. With
+  `documentOpen: system` nothing changes.
+
+Verified: unit tests in `viewers.test.tsx` (ask, always, never, F3) and E2E `viewers.spec.ts` "safety".
 
 ## Consequences
 

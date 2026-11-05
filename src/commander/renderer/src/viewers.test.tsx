@@ -8,6 +8,7 @@ import { AppShell } from "./components/AppShell"
 import { setRangeFetch } from "./features/bytes"
 import { resetCarry, startPanels } from "./features/carry"
 import { resetDrives } from "./features/drives"
+import { IS_WINDOWS } from "./features/format"
 import { resetFiles, useFilesStore } from "./features/files"
 import { resetHotlist } from "./features/hotlist"
 import { resetKeymap } from "./features/keymap"
@@ -64,9 +65,12 @@ const ID = {
   photo: 1005,
   setup: 1006,
   wide: 1007,
+  script: 1008,
 }
 /** Rows: 0 "..", 1 dir000000, then the files by name. */
-const ROW = { dir: 1, big: 2, clip: 3, data: 4, notes: 5, photo: 6, setup: 7, wide: 8 }
+const ROW = { dir: 1, big: 2, clip: 3, data: 4, notes: 5, photo: 6, setup: 7, wide: 8, script: 9 }
+/** A shell script of this platform, last in the folder by name. */
+const SCRIPT = IS_WINDOWS ? "zz-tool.cmd" : "zz-tool.sh"
 
 const contents: Record<number, Uint8Array> = {
   [ID.big]: BIG,
@@ -74,6 +78,7 @@ const contents: Record<number, Uint8Array> = {
   [ID.notes]: utf8("Grüße aus Köln\r\nsecond line\nthird line\n"),
   [ID.wide]: utf16le("Wide text\r\nline two\r\n"),
   [ID.setup]: Uint8Array.of(0x4d, 0x5a, 0x90, 0),
+  [ID.script]: Uint8Array.of(0x65, 0x63, 0x68, 0x6f),
 }
 
 const folders = () => [
@@ -85,6 +90,7 @@ const folders = () => [
     item(ID.photo, "photo.jpg", { kind: "image", sizeBytes: 2048 }),
     item(ID.setup, "setup.exe", { sizeBytes: 4, attrs: 16 }),
     item(ID.wide, "wide.txt", { sizeBytes: contents[ID.wide]!.length }),
+    item(ID.script, SCRIPT, { sizeBytes: 4 }),
   ]),
   folder(20, DST.path, [ROOT, DST], 0, 2),
 ]
@@ -96,7 +102,7 @@ async function start(options: Partial<FakeOptions> = {}) {
     folders: folders(),
     home: SRC.path,
     contents,
-    programs: [ID.setup],
+    programs: [ID.setup, ID.script],
     settings: {
       [PANELS_KEY]: {
         v: 2,
@@ -505,6 +511,41 @@ describe("open and edit", () => {
     expect(fake.shell).toEqual([{ action: "open", entryId: ID.setup }])
   })
 
+  it("Enter on a shell script follows the setting; it is never shown instead of asking", async () => {
+    const fake = await start()
+    await cursorTo(ROW.script)
+    await panelKey({ key: "Enter" })
+    const dialog = await screen.findByTestId("program-dialog")
+    expect(screen.getByRole("dialog")).toHaveTextContent(`${SCRIPT} is a program`)
+    expect(within(dialog).getByRole("button", { name: "Cancel" })).toHaveFocus()
+    expect(fake.api.document.open).not.toHaveBeenCalled()
+    expect(fake.shell).toEqual([])
+    await act(async () => {
+      fireEvent.click(within(dialog).getByRole("button", { name: "Cancel" }))
+    })
+
+    // Always: it runs, without the question and without the document window.
+    act(() => updateSettings({ runPrograms: "always" }))
+    await panelKey({ key: "Enter" })
+    await waitFor(() => expect(fake.api.shell.open).toHaveBeenLastCalledWith(ID.script, true))
+    expect(screen.queryByTestId("program-dialog")).toBeNull()
+    expect(fake.api.document.open).not.toHaveBeenCalled()
+  })
+
+  it("with running off, Enter shows a shell script as text; F3 always shows it", async () => {
+    const fake = await start()
+    await cursorTo(ROW.script)
+    await panelKey({ key: "F3" })
+    await waitFor(() => expect(fake.api.document.open).toHaveBeenCalledTimes(1))
+    expect(fake.api.shell.open).not.toHaveBeenCalled()
+
+    act(() => updateSettings({ runPrograms: "never" }))
+    await panelKey({ key: "Enter" })
+    await waitFor(() => expect(fake.api.document.open).toHaveBeenCalledTimes(2))
+    expect(screen.queryByTestId("program-dialog")).toBeNull()
+    expect(fake.api.shell.open).not.toHaveBeenCalled()
+  })
+
   it("F4 edits the cursor file; Shift+F4 creates a text file, edits it and puts the cursor on it", async () => {
     const fake = await start()
     await cursorTo(ROW.notes)
@@ -619,6 +660,37 @@ describe("the full-screen media window", () => {
     )
   })
 
+  it("a cut stays on the file clipboard, and a picture that can't be copied is a failure", async () => {
+    const fake = await start()
+    const key = await openPhoto(fake)
+    await act(async () => {
+      fake.emit("mediaWindow.command", { requestId: 1, key, command: "cut" })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        1,
+        expect.objectContaining({ id: ID.photo }),
+        true,
+      ),
+    )
+    expect(fake.api.clipboard.copyImage).not.toHaveBeenCalled()
+
+    fake.api.clipboard.copyImage.mockResolvedValueOnce({
+      ok: false,
+      e: { code: "INVALID_ARGUMENT", message: "cannot decode", retryable: false },
+    } as never)
+    await act(async () => {
+      fake.emit("mediaWindow.command", { requestId: 2, key, command: "copy" })
+    })
+    await waitFor(() =>
+      expect(fake.api.media.windowAnswer).toHaveBeenLastCalledWith(
+        2,
+        expect.objectContaining({ id: ID.photo }),
+        false,
+      ),
+    )
+  })
+
   it("copies the shown file to the clipboard and says when a command can't run", async () => {
     const fake = await start({ trash: false })
     const key = await openPhoto(fake)
@@ -636,6 +708,8 @@ describe("the full-screen media window", () => {
       expect.objectContaining({ include: [ID.photo] }),
       "copy",
     )
+    // A picture goes on the OS clipboard too, as Ctrl+C in the viewer does.
+    expect(fake.api.clipboard.copyImage).toHaveBeenCalledWith(ID.photo)
     // No trash on this drive: nothing is deleted, the window keeps its file.
     await act(async () => {
       fake.emit("mediaWindow.command", { requestId: 2, key, command: "trash" })

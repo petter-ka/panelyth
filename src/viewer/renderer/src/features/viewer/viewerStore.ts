@@ -185,9 +185,10 @@ export async function runMediaCommand(
   focusAndSelect(window.index, window.item.id)
   const ran = (): boolean => useJobsStore.getState().error === null
   switch (command) {
-    case "copy":
-      await copySelectionToClipboard()
-      return { item: window.item, done: ran() }
+    case "copy": {
+      const copied = await copySelectionToClipboard()
+      return { item: window.item, done: copied && ran() }
+    }
     case "cut":
       await copySelection("cut")
       return { item: window.item, done: ran() }

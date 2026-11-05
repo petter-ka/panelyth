@@ -1,4 +1,12 @@
-import { appendFileSync, cpSync, mkdtempSync, readdirSync, writeFileSync } from "node:fs"
+import {
+  appendFileSync,
+  cpSync,
+  existsSync,
+  mkdtempSync,
+  readdirSync,
+  rmSync,
+  writeFileSync,
+} from "node:fs"
 import { spawn } from "node:child_process"
 import { tmpdir } from "node:os"
 import { basename, join } from "node:path"
@@ -140,6 +148,77 @@ test.describe("a file opened from the OS", () => {
       await expect(selected).toHaveAttribute("aria-label", third)
       await expect.poll(() => windowUrls(app).filter((u) => u.includes("media.html"))).toEqual([])
       expect(windowUrls(app).filter((u) => u.startsWith("app://panelyth/"))).toHaveLength(1)
+    } finally {
+      await app.close().catch(() => undefined)
+      removeTemp(join(dir, ".."))
+    }
+  })
+
+  test("the file keys work: Ctrl+C reaches the OS clipboard, Ctrl+V and Shift+Delete the folder", async () => {
+    const { dir, names } = pictures()
+    const { app, page } = await launchApp(env, [join(dir, names[1]!)])
+    const media = (): string[] =>
+      readdirSync(dir)
+        .filter((n) => /\.(jpe?g|png)$/i.test(n))
+        .sort()
+    try {
+      await pictureShown(page, names[1]!)
+
+      // Ctrl+C: the picture itself, for Paint, Word or a chat (the recorded write's PNG header).
+      await page.keyboard.press("Control+c")
+      await expect(page.getByRole("status").filter({ hasText: "Picture copied" })).toBeVisible()
+      await expect
+        .poll(() =>
+          app.evaluate(() =>
+            (
+              (
+                globalThis as unknown as {
+                  __panelythShellLog?: { action: string; value: string }[]
+                }
+              ).__panelythShellLog ?? []
+            )
+              .filter((e) => e.action === "clipboardImage")
+              .map((e) => e.value),
+          ),
+        )
+        .toEqual(["640x480"])
+
+      // Ctrl+V: into the file's folder, beside the original; nothing asks.
+      await page.keyboard.press("Control+v")
+      await expect.poll(() => media().length).toBe(names.length + 1)
+      expect(media()).toEqual(expect.arrayContaining(names))
+
+      // Shift+Delete asks; Esc keeps the file.
+      await page.keyboard.press("Shift+Delete")
+      await expect(page.getByTestId("media-delete-confirm")).toContainText(names[1]!)
+      await page.keyboard.press("Escape")
+      await expect(page.getByTestId("media-delete-confirm")).toHaveCount(0)
+      expect(media()).toContain(names[1]!)
+
+      // Confirmed: the file is gone and the window shows its neighbour.
+      await page.keyboard.press("Shift+Delete")
+      await page.getByRole("button", { name: "Delete permanently" }).click()
+      await expect.poll(() => media()).not.toContain(names[1]!)
+      await expect(page.getByTestId("media-viewer")).not.toContainText(names[1]!)
+    } finally {
+      await app.close().catch(() => undefined)
+      removeTemp(join(dir, ".."))
+    }
+  })
+
+  test("deleting the only file ends the app, and the file is really gone", async () => {
+    const { dir, names } = pictures()
+    for (const name of names.slice(1)) rmSync(join(dir, name))
+    const only = join(dir, names[0]!)
+    const { app, page } = await launchApp(env, [only])
+    try {
+      await pictureShown(page, names[0]!)
+      const closed = new Promise<void>((resolve) => app.once("close", () => resolve()))
+      await page.keyboard.press("Shift+Delete")
+      await page.getByRole("button", { name: "Delete permanently" }).click()
+      // The app ends with its only window, and that cancels a job still running.
+      await closed
+      expect(existsSync(only)).toBe(false)
     } finally {
       await app.close().catch(() => undefined)
       removeTemp(join(dir, ".."))

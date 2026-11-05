@@ -47,10 +47,10 @@ function errorText(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
 }
 
-let copying: Promise<void> | null = null
+let copying: Promise<boolean> | null = null
 
-/** Puts one indexed image on the OS clipboard as a picture. */
-export function copyImage(entryId: number): Promise<void> {
+/** Puts one indexed image on the OS clipboard as a picture; false when it could not. */
+export function copyImage(entryId: number): Promise<boolean> {
   // Repeated Ctrl+C while a big picture is still being prepared: one copy.
   if (copying) return copying
   const slow = setTimeout(() => notify(t("Copying picture…"), "info", true), SLOW_MS)
@@ -58,9 +58,11 @@ export function copyImage(entryId: number): Promise<void> {
     .copyImage(entryId)
     .then(() => {
       notify(t("Picture copied to the clipboard"))
+      return true
     })
     .catch((error: unknown) => {
       notify(t("Couldn't copy the picture: {reason}", { reason: errorText(error) }), "error")
+      return false
     })
     .finally(() => {
       clearTimeout(slow)
@@ -79,17 +81,17 @@ export function singleSelectedItem(): ContentItem | null {
 
 /**
  * Ctrl+C in the tile view: the files go to the internal clipboard (paste in
- * Panelyth) and a single picture also goes to the OS clipboard.
+ * Panelyth) and a single picture also goes to the OS clipboard. False when
+ * that picture could not.
  */
-export async function copySelectionToClipboard(): Promise<void> {
+export async function copySelectionToClipboard(): Promise<boolean> {
   const item = singleSelectedItem()
   if (item?.kind === "image") {
     void copySelection("copy")
-    await copyImage(item.id)
-    return
+    return copyImage(item.id)
   }
   const count = currentSelection()?.count ?? 0
-  if (count === 0) return
+  if (count === 0) return true
   await copySelection("copy")
   if (useJobsStore.getState().clip.mode === "copy")
     notify(
@@ -98,6 +100,7 @@ export async function copySelectionToClipboard(): Promise<void> {
         { count },
       ),
     )
+  return true
 }
 
 /** Copies an entry's full path (resolved in main; the renderer never sees it). */

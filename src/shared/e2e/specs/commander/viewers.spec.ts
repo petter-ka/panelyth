@@ -5,7 +5,7 @@ import type { CommanderApi } from "@panelyth/contracts"
 import { expect, test, type ElectronApplication, type Page } from "@playwright/test"
 import { ensureFixture } from "../../fixtures"
 import { expectWithinBudget, repoRoot } from "../../launch"
-import { commanderOf, cursorTo, goTo, launch } from "./helpers"
+import { commanderOf, cursorTo, goTo, launch, textInLister } from "./helpers"
 
 // Stage C05: quick view, lister, open and edit
 // (docs/commander/stages/C05-quick-view-and-lister.md; scenario 11 and the
@@ -87,6 +87,7 @@ test.describe("quick view and lister (Stage C05)", () => {
     const { app } = await launch("commander")
     try {
       const c = await commanderOf(app)
+      await textInLister(app, c)
       await goTo(c, "left", root)
       for (const [name, encoding] of [
         ["utf8.txt", "utf-8"],
@@ -176,6 +177,37 @@ test.describe("quick view and lister (Stage C05)", () => {
     }
   })
 
+  test("Ctrl+C in a media window opened here puts the picture on the OS clipboard too", async () => {
+    const images = imageFixture()
+    const { app } = await launch("commander")
+    try {
+      const c = await commanderOf(app)
+      await goTo(c, "left", images)
+      await cursorTo(c, "left", "photo_0000")
+      const opened = app.waitForEvent("window", (p) => p.url().includes("/media.html"))
+      await c.keyboard.press("Enter")
+      const media = await opened
+      await expect(media.getByTestId("media-viewer")).toContainText("photo_0000")
+      await media.keyboard.press("Control+c")
+      await expect(media.getByRole("status").filter({ hasText: "Picture copied" })).toBeVisible()
+      const pictures = (await shellLog(app)).filter((e) => e.action === "clipboardImage")
+      expect(pictures).toHaveLength(1)
+      // The file clipboard as well, as the other file keys use it.
+      expect(
+        await c.evaluate(async () => {
+          const { panelyth } = window as unknown as {
+            panelyth: {
+              clip: { get(): Promise<{ ok: boolean; r?: { mode: string; count: number } }> }
+            }
+          }
+          return (await panelyth.clip.get()).r
+        }),
+      ).toEqual({ mode: "copy", count: 1 })
+    } finally {
+      await app.close().catch(() => undefined)
+    }
+  })
+
   test("safety: programs ask first, shell actions are recorded, the viewer still cannot open non-media", async () => {
     test.setTimeout(120_000)
     const root = textFixture()
@@ -206,12 +238,20 @@ test.describe("quick view and lister (Stage C05)", () => {
         .toMatch(new RegExp(`${program.replace(".", "\\.")}$`))
       expect((await shellLog(app)).at(-1)!.action).toBe("open")
 
-      // A document opens with its default app (recorded); F4 opens Panelyth's own editor
+      // A file of no known kind opens with its default app (recorded).
+      await cursorToFile(c, "binary.bin")
+      await c.keyboard.press("Enter")
+      await expect
+        .poll(async () => (await shellLog(app)).at(-1)?.value ?? "")
+        .toMatch(/binary\.bin$/)
+      // Text opens in the document window (ADR-0033), and F4 in Panelyth's own editor
       // (ADR-0046) when Settings names no editor: no program is started.
       await cursorToFile(c, "utf8.txt")
-      await c.keyboard.press("Enter")
-      await expect.poll(async () => (await shellLog(app)).at(-1)?.value ?? "").toMatch(/utf8\.txt$/)
       const launched = (await shellLog(app)).length
+      const shown = app.waitForEvent("window", (p) => p.url().startsWith("app://documents/"))
+      await c.keyboard.press("Enter")
+      await (await shown).close()
+      expect((await shellLog(app)).length).toBe(launched)
       await c.keyboard.press("F4")
       const editor = await app.waitForEvent("window", (p) =>
         p.url().startsWith("app://texteditor/index.html"),
@@ -276,6 +316,7 @@ test.describe("quick view and lister (Stage C05)", () => {
     const { app } = await launch("commander")
     try {
       const c = await commanderOf(app)
+      await textInLister(app, c)
 
       // Quick view follow: one pass to fill the preview cache, then a measured pass.
       await goTo(c, "left", images)
@@ -317,6 +358,14 @@ test.describe("quick view and lister (Stage C05)", () => {
       // Lister: open the 2 GB log, End, 200 × PageDown, jumps by the scroll bar.
       await goTo(c, "left", text)
       await cursorToFile(c, "big.log")
+      // What the page keeps, not what the collector has yet to free: the bound is on the former.
+      const cdp = await c.context().newCDPSession(c)
+      const liveHeapMb = async (): Promise<number> => {
+        await cdp.send("HeapProfiler.collectGarbage")
+        const { usedSize } = await cdp.send("Runtime.getHeapUsage")
+        return Math.round(usedSize / 1e5) / 10
+      }
+      const liveBeforeMb = await liveHeapMb()
       const result = await c.evaluate(async () => {
         const wait = (test: () => boolean, ms = 15_000) =>
           new Promise<void>((resolve, reject) => {
@@ -330,15 +379,11 @@ test.describe("quick view and lister (Stage C05)", () => {
           })
         const view = () =>
           document.querySelector<HTMLElement>('[data-testid="lister"] [data-testid="text-view"]')
-        const heap = () =>
-          (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
-            ?.usedJSHeapSize ?? 0
         const long: number[] = []
         const po = new PerformanceObserver((l) =>
           l.getEntries().forEach((e) => long.push(e.duration)),
         )
         po.observe({ type: "longtask" })
-        const heapBefore = heap()
         const grid = document.querySelector<HTMLElement>('[data-testid="grid-left"]')!
         let t0 = performance.now()
         grid.dispatchEvent(new KeyboardEvent("keydown", { key: "F3", bubbles: true }))
@@ -396,17 +441,21 @@ test.describe("quick view and lister (Stage C05)", () => {
           jumpP95Ms: p95(jumpTimes),
           longTasks: long.length,
           longTaskMaxMs: Math.round(Math.max(0, ...long)),
-          heapBeforeMb: Math.round(heapBefore / 1e5) / 10,
-          heapAfterMb: Math.round(heap() / 1e5) / 10,
         }
       })
+      const liveAfterMb = await liveHeapMb()
       const metrics = await app.evaluate(({ app }) =>
         app.getAppMetrics().map((m) => ({ type: m.type, kb: m.memory.workingSetSize })),
       )
       const record = {
         test: "viewers",
         quickViewFollow: { samples: settled.length, p95Ms: quickP95 },
-        lister2g: { ...result, size: statSync(join(text, "big.log")).size },
+        lister2g: {
+          ...result,
+          liveBeforeMb,
+          liveAfterMb,
+          size: statSync(join(text, "big.log")).size,
+        },
         rendererWorkingSetMb: Math.round(
           Math.max(...metrics.filter((m) => m.type === "Tab").map((m) => m.kb)) / 1024,
         ),
@@ -416,7 +465,7 @@ test.describe("quick view and lister (Stage C05)", () => {
       // Budgets (docs/commander/PERFORMANCE.md "Viewers and tools").
       expectWithinBudget(quickP95, 100, "C05 quick view follow p95 (ms)")
       expectWithinBudget(result.openMs, 200, "C05 lister open on 2 GB (ms)")
-      expect(result.heapAfterMb - result.heapBeforeMb).toBeLessThan(32)
+      expect(liveAfterMb - liveBeforeMb).toBeLessThan(8)
     } finally {
       await app.close()
     }

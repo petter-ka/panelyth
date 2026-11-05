@@ -84,11 +84,12 @@ test.describe("archives (Stage C07)", () => {
       await c.keyboard.press("Enter")
       await expect(c.getByTestId("path-left")).toHaveText(join(root, "set.zip", "docs"))
       await cursorTo(c, "readme.txt")
+      // Text opens in the document window (ADR-0033), also from inside an archive.
+      const opened = app.waitForEvent("window", (p) => p.url().startsWith("app://documents/"))
       await c.keyboard.press("F3")
-      await expect(c.getByTestId("lister")).toContainText("read me first")
-      await c.keyboard.press("Escape")
-      await expect(c.getByTestId("lister")).toHaveCount(0)
-      // Closing the lister gives the panel its focus back (keys go nowhere before).
+      const doc = await opened
+      await expect(doc.getByTestId("text-body")).toContainText("read me first")
+      await doc.close()
       await expect(grid(c)).toBeFocused()
 
       // Archives are read-only.

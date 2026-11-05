@@ -33,6 +33,8 @@ export interface MediaWindowOptions {
 /** Where a window without an opener gets its items (a file opened from the OS). */
 export interface MediaSource {
   step(direction: MediaWindowStep): Promise<ContentItem | null>
+  /** A file key, on the item now shown: no opener carries it out here. */
+  command(command: MediaWindowCommand): Promise<MediaWindowCommandResult>
   /** The folder and the item now shown, for "show it in the viewer". */
   current(): OpenRequest | null
   close(): void
@@ -142,13 +144,14 @@ export class MediaWindows {
 
   /**
    * A file command from the media window `sender` (copy, cut, paste, trash,
-   * delete), carried out by its opener on the file the window shows; the
-   * answer is the item to show next and whether the command ran. A window
-   * opened from the OS has no opener to carry it out.
+   * delete), carried out on the file the window shows: by its opener, or by
+   * its source for a window opened from the OS. The answer is the item to
+   * show next and whether the command ran.
    */
   command(sender: WebContents, command: MediaWindowCommand): Promise<MediaWindowCommandResult> {
     const child = this.children.get(sender.id)
-    if (!child || "source" in child) return Promise.resolve(NO_ANSWER)
+    if (!child) return Promise.resolve(NO_ANSWER)
+    if ("source" in child) return child.source.command(command)
     return this.ask(child, (requestId) =>
       broadcast([child.opener], "mediaWindow.command", { requestId, key: child.key, command }),
     )

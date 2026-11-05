@@ -70,9 +70,11 @@ export const BriefView = forwardRef<FullViewHandle, BriefViewProps>(function Bri
   useLayoutEffect(() => {
     const el = box.current
     if (!el) return
+    // The client area: a column holds only the rows that fit above the horizontal scrollbar.
     const measure = (): void => {
-      const r = el.getBoundingClientRect()
-      setViewport((v) => (v.width === r.width && v.height === r.height ? v : r))
+      const width = el.clientWidth
+      const height = el.clientHeight
+      setViewport((v) => (v.width === width && v.height === height ? v : { width, height }))
     }
     measure()
     const observer = new ResizeObserver(measure)

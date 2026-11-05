@@ -570,6 +570,7 @@ const api: CommanderApi = {
         ...(namesOnly !== undefined && { namesOnly }),
       }),
     copyText: (text) => invoke("clipboard.copyText", { text }),
+    copyImage: (entryId) => invoke("clipboard.copyImage", { entryId }),
   },
   drag: {
     start: (selection) => invoke("drag.start", { selection: copySelection(selection) }),

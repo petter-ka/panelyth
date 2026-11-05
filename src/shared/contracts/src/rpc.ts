@@ -844,15 +844,16 @@ export interface MediaWindowStepResult {
 /**
  * What a key in the media window does to the file it shows: the file
  * clipboard (copy, cut, paste into the file's folder), the trash and a
- * permanent delete. The opener carries it out on that file only.
+ * permanent delete. The opener carries it out on that file only; for a window
+ * opened from the OS, which has no opener, main does.
  */
 export const MEDIA_WINDOW_COMMANDS = ["copy", "cut", "paste", "trash", "delete"] as const
 export type MediaWindowCommand = (typeof MEDIA_WINDOW_COMMANDS)[number]
 
 /**
- * media.windowCommand (the media window): a command for the opener, which
- * answers with the item the window shows next (the same one, a neighbour of
- * a deleted file, or null when nothing is left).
+ * media.windowCommand (the media window): a command for whoever carries it
+ * out, who answers with the item the window shows next (the same one, a
+ * neighbour of a deleted file, or null when nothing is left).
  */
 export interface MediaWindowCommandParams {
   command: MediaWindowCommand
@@ -3066,6 +3067,8 @@ export const COMMANDER_METHODS = [
   "fs.canTrash",
   "clipboard.copyPaths",
   "clipboard.copyText",
+  // ADR-0033 amended: Ctrl+C in a media window opened from the commander.
+  "clipboard.copyImage",
   "drag.start",
   // Stage C03: the directory hotlist (the shared bookmarks).
   "library.addBookmark",

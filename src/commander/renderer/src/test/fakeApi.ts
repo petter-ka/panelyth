@@ -1366,6 +1366,7 @@ export function installFakeCommander(options: FakeOptions) {
         ok({ count: resolve(sel).length, truncated: false }),
       ),
       copyText: vi.fn(async () => ok({ ok: true })),
+      copyImage: vi.fn(async () => ok({ width: 640, height: 480 })),
     },
     drag: {
       start: vi.fn(async (sel: SelectionDescriptor) =>
