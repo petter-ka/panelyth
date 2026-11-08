@@ -106,6 +106,10 @@ export function resetFolderStore(): void {
   openSeq = 0
   querySeq = 0
   recentProgress.clear()
+  // A pending trailing facets refresh would otherwise fire into the next test.
+  if (facetsTimer) clearTimeout(facetsTimer)
+  facetsTimer = null
+  facetsDirty = false
   resetPages(null)
   resetSelection()
 }
