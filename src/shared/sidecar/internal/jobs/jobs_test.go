@@ -16,6 +16,7 @@ import (
 	"panelyth/sidecar/internal/fileops"
 	"panelyth/sidecar/internal/index"
 	"panelyth/sidecar/internal/library"
+	"panelyth/sidecar/internal/media"
 	"panelyth/sidecar/internal/pathkey"
 	"panelyth/sidecar/internal/scan"
 )
@@ -577,11 +578,11 @@ func TestRenameOne(t *testing.T) {
 		{ids[2], "clip.jpg", fileops.CodeInvalidName}, // kind change
 		{999999, "z.jpg", fileops.CodeNotFound},
 	} {
-		if _, err := e.m.RenameOne(ctx, c.id, c.name); fileops.Code(err) != c.code {
+		if _, err := e.m.RenameOne(ctx, c.id, c.name, true); fileops.Code(err) != c.code {
 			t.Errorf("%q: got %v, want %s", c.name, err, c.code)
 		}
 	}
-	got, err := e.m.RenameOne(ctx, ids[0], "Holiday.JPEG")
+	got, err := e.m.RenameOne(ctx, ids[0], "Holiday.JPEG", true)
 	if err != nil || got != "Holiday.JPEG" {
 		t.Fatalf("rename: %q %v", got, err)
 	}
@@ -603,6 +604,58 @@ func TestRenameOne(t *testing.T) {
 	e.mu.Unlock()
 	if !notified {
 		t.Error("folder change not reported")
+	}
+}
+
+// TestRenameOneAnyKind is the commander's F2 (scope all, ADR-0026): any
+// file renames, its extension may change and the entry's kind follows.
+func TestRenameOneAnyKind(t *testing.T) {
+	e := newEnv(t)
+	write(t, filepath.Join(e.root, "notes.txt"), 1)
+	write(t, filepath.Join(e.root, "a.jpg"), 1)
+	write(t, filepath.Join(e.root, "taken.md"), 1)
+	root := e.index(e.root)
+	all, err := e.store.QueryIDs(ctx, index.Descriptor{DirID: root.ID, Scope: index.ScopeAll,
+		Sort: []index.SortKey{{Field: index.SortName}}}, root.Key)
+	if err != nil {
+		t.Fatal(err)
+	}
+	items, err := e.store.LoadItems(ctx, all)
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := map[string]int64{}
+	for _, it := range items {
+		id[it.Name] = it.ID
+	}
+	// The viewer's rule still holds for it.
+	if _, err := e.m.RenameOne(ctx, id["notes.txt"], "todo.txt", true); fileops.Code(err) != fileops.CodeInvalidName {
+		t.Errorf("viewer rename of a text file: got %v", err)
+	}
+	for _, c := range []struct {
+		from, to string
+		kind     media.Kind
+	}{
+		{"notes.txt", "todo.txt", media.KindFile},
+		{"todo.txt", "todo.md", media.KindFile},
+		{"a.jpg", "a.txt", media.KindFile},
+		{"a.txt", "b.png", media.KindImage},
+	} {
+		entry := id[c.from]
+		if got, err := e.m.RenameOne(ctx, entry, c.to, false); err != nil || got != c.to {
+			t.Fatalf("%s → %s: %q %v", c.from, c.to, got, err)
+		}
+		id[c.to] = entry
+		if !exist(filepath.Join(e.root, c.to)) || exist(filepath.Join(e.root, c.from)) {
+			t.Errorf("%s → %s: not renamed on disk", c.from, c.to)
+		}
+		got, err := e.store.LoadItems(ctx, []int64{entry})
+		if err != nil || len(got) != 1 || got[0].Name != c.to || got[0].Kind != c.kind {
+			t.Errorf("%s → %s: index has %+v %v", c.from, c.to, got, err)
+		}
+	}
+	if _, err := e.m.RenameOne(ctx, id["todo.md"], "taken.md", false); fileops.Code(err) != fileops.CodeExists {
+		t.Errorf("rename onto an existing name: got %v", err)
 	}
 }
 

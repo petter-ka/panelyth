@@ -1,0 +1,1 @@
+{"at":"2026-11-08T07:17:59.777Z","test":"viewers","quickViewFollow":{"samples":30,"p95Ms":10},"lister2g":{"openMs":24,"endMs":5,"pageDownP95Ms":7,"jumpP95Ms":16,"longTasks":0,"longTaskMaxMs":0,"liveBeforeMb":8.7,"liveAfterMb":9.1,"size":2147483724},"rendererWorkingSetMb":200}

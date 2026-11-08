@@ -677,6 +677,17 @@
   border-bottom-color: transparent;
 }
 
+/* The media window out of full screen: its header moves the window; its buttons stay buttons. */
+.media-header[data-windowed] {
+  -webkit-app-region: drag;
+  app-region: drag;
+}
+
+.media-header[data-windowed] :is(button, input, [role="toolbar"]) {
+  -webkit-app-region: no-drag;
+  app-region: no-drag;
+}
+
 /* Full-window overlays (the image viewer, the editor, the lister, media) start below the strip. */
 .below-title-bar {
   inset: var(--title-bar-height) 0 0 0;

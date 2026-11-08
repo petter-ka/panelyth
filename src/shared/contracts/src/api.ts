@@ -120,6 +120,7 @@ import type {
   MediaOpenResult,
   MediaWindowCommand,
   MediaWindowCommandResult,
+  MediaWindowFullScreenResult,
   MediaWindowStep,
   MediaWindowStepResult,
   OpenRequestResult,
@@ -696,6 +697,8 @@ export interface CommanderApi {
     windowCommand(command: MediaWindowCommand): Promise<RpcEnvelope<MediaWindowCommandResult>>
     /** The media window of a file opened from the OS: show its picture in the viewer, at its folder. */
     windowReveal(): Promise<RpcEnvelope<OkResult>>
+    /** The media window: full screen, or a smaller window over the app. */
+    windowFullScreen(fullScreen: boolean): Promise<RpcEnvelope<MediaWindowFullScreenResult>>
   }
   preview: {
     ensure(params: CommanderPreviewParams): Promise<RpcEnvelope<PreviewEnsureResult>>

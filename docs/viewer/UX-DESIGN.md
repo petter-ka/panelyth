@@ -25,7 +25,8 @@ Minimal, polished, desktop-native and power-user friendly.
 
 The app switcher rail sits at the far left; the workspace begins beside it. The workspace's left column sits beside the
 content pane. Its folder tree is above the preview. Drag the vertical divider to resize
-the columns and the horizontal divider in the left column to resize the tree and preview. Both sizes persist with the
+the columns (the left column from 180 px up to half the workspace) and the horizontal divider in the left column to
+resize the tree and preview. Both sizes persist with the
 workspace. An icon button on the tree/preview divider collapses or restores the preview.
 
 ## App switcher rail

@@ -1,4 +1,4 @@
-import { BrowserWindow, type WebContents } from "electron"
+import { BrowserWindow, screen, type Rectangle, type WebContents } from "electron"
 import type {
   ContentItem,
   MediaWindowCommand,
@@ -58,6 +58,28 @@ export function mediaWindowUrl(
   return `${base}#${params.toString()}`
 }
 
+/** Out of full screen: the share of the screen's work area the window takes, and its least size. */
+export const WINDOWED_SHARE = 0.7
+export const WINDOWED_MIN = { width: 480, height: 320 }
+
+/** The window out of full screen: centred on `area`, WINDOWED_SHARE of it, never below WINDOWED_MIN. */
+export function windowedBounds(area: Rectangle): Rectangle {
+  const width = Math.min(
+    area.width,
+    Math.max(WINDOWED_MIN.width, Math.round(area.width * WINDOWED_SHARE)),
+  )
+  const height = Math.min(
+    area.height,
+    Math.max(WINDOWED_MIN.height, Math.round(area.height * WINDOWED_SHARE)),
+  )
+  return {
+    x: area.x + Math.round((area.width - width) / 2),
+    y: area.y + Math.round((area.height - height) / 2),
+    width,
+    height,
+  }
+}
+
 /** How long an opener has to answer a step before the window is told "no neighbour". */
 export const STEP_TIMEOUT_MS = 5000
 
@@ -73,6 +95,10 @@ const NO_ANSWER: MediaWindowCommandResult = { item: null, done: false }
 
 export class MediaWindows {
   private readonly windows = new Set<BrowserWindow>()
+  /** By the page's web contents id: the window a full-screen change is for. */
+  private readonly byContents = new Map<number, BrowserWindow>()
+  /** Windows that left full screen once: they keep the size and place the user gave them. */
+  private readonly placed = new WeakSet<BrowserWindow>()
   private readonly children = new Map<number, Child>()
   private readonly pending = new Map<number, Pending>()
   private nextRequest = 1
@@ -115,6 +141,7 @@ export class MediaWindows {
     })
     win.on("closed", () => {
       this.windows.delete(win)
+      this.byContents.delete(id)
       const child = this.children.get(id)
       this.children.delete(id)
       if (child && "source" in child) child.source.close()
@@ -122,6 +149,7 @@ export class MediaWindows {
       else if (child) broadcast([child.opener], "mediaWindow.closed", { key: child.key })
     })
     this.windows.add(win)
+    this.byContents.set(id, win)
     void win.loadURL(
       mediaWindowUrl(this.options.url, {
         ...(alone ? { alone: true } : { entryId: request.entryId }),
@@ -130,6 +158,31 @@ export class MediaWindows {
       }),
     )
     return win
+  }
+
+  /**
+   * The media window `sender` leaves full screen (false) or goes back (true).
+   * The first time out it becomes a window of WINDOWED_SHARE of its screen,
+   * centred, over the app; after that it keeps the size and place it had.
+   * The answer is the state the window is in.
+   */
+  setFullScreen(sender: WebContents, fullScreen: boolean): boolean {
+    const win = this.byContents.get(sender.id)
+    if (!win || win.isDestroyed()) return true
+    if (win.isFullScreen() === fullScreen) return fullScreen
+    if (!fullScreen && !this.placed.has(win)) {
+      this.placed.add(win)
+      const area = screen.getDisplayMatching(win.getBounds()).workArea
+      // After the change: macOS animates out of full screen, and bounds set
+      // during it are lost.
+      win.once("leave-full-screen", () => {
+        if (win.isDestroyed()) return
+        win.setMinimumSize(WINDOWED_MIN.width, WINDOWED_MIN.height)
+        win.setBounds(windowedBounds(area))
+      })
+    }
+    win.setFullScreen(fullScreen)
+    return fullScreen
   }
 
   /** The media window `sender` asks for an item (MediaWindowStep): of its opener, or of its source. */

@@ -14,10 +14,12 @@ import (
 
 // RenameOne renames a single entry synchronously (F2): the inline editor
 // needs its validation error immediately, so this is not a job (ADR-0021).
-// A file must keep a supported extension of the same kind, so a rename
-// never turns a media file into an unindexed one. Errors are *fileops.Error
-// (codes NOT_FOUND, INVALID_NAME, ALREADY_EXISTS, …).
-func (m *Manager) RenameOne(ctx context.Context, id int64, newName string) (string, error) {
+// With mediaOnly (the viewer, scope media; ADR-0026) a file must keep a
+// supported extension of the same kind, so a rename never turns a media file
+// into one the viewer does not list. Without it (the commander, scope all)
+// any valid name goes and the entry's kind follows the new extension.
+// Errors are *fileops.Error (codes NOT_FOUND, INVALID_NAME, ALREADY_EXISTS, …).
+func (m *Manager) RenameOne(ctx context.Context, id int64, newName string, mediaOnly bool) (string, error) {
 	targets, err := m.deps.Store.Targets(ctx, []int64{id})
 	if err != nil {
 		return "", err
@@ -30,9 +32,18 @@ func (m *Manager) RenameOne(ctx context.Context, id int64, newName string) (stri
 		return "", fileops.Errorf(fileops.CodeInvalidName, "%s", err.Error())
 	}
 	isDir := t.Kind == media.KindDir
-	if !isDir {
-		if kind, _, ok := media.Classify(newName); !ok || kind != t.Kind {
+	kind := t.Kind
+	switch {
+	case isDir || t.Kind == media.KindLink:
+	case mediaOnly:
+		if k, _, ok := media.Classify(newName); !ok || k != t.Kind {
 			return "", fileops.Errorf(fileops.CodeInvalidName, "keep the .%s extension", media.Ext(t.Name))
+		}
+	default:
+		// As a scan would classify the new name.
+		var ok bool
+		if kind, _, ok = media.Classify(newName); !ok {
+			kind = media.KindFile
 		}
 	}
 	if newName == t.Name {
@@ -53,7 +64,7 @@ func (m *Manager) RenameOne(ctx context.Context, id int64, newName string) (stri
 			m.deps.Log.Warn("rename user metadata", "err", err)
 		}
 	}
-	mv := index.Moved{ID: t.ID, ParentID: t.ParentID, Kind: t.Kind, Name: newName, Ext: extOf(newName, isDir),
+	mv := index.Moved{ID: t.ID, ParentID: t.ParentID, Kind: kind, Name: newName, Ext: extOf(newName, isDir),
 		OldKey: t.Key, NewKey: newKey, OldPath: t.Path, NewPath: newPath}
 	if err := m.deps.Store.ApplyChanges(ctx, index.Changes{Moved: []index.Moved{mv}}); err != nil {
 		// The next listing of the folder reconciles the index (ADR-0015).

@@ -349,6 +349,52 @@ test.describe("video playback + media preview (Stage 06)", () => {
     }
   })
 
+  test("the media window's exit-full-screen button makes it a smaller window, not a closed one", async () => {
+    test.setTimeout(120_000)
+    const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })
+    try {
+      await waitForReady(page)
+      await showDialogFolder(page)
+      const tile = await findTile(page, "web.webm")
+      await tile.dblclick()
+      const media = await mediaPage(app)
+      const viewer = media.getByTestId("media-viewer")
+      const player = media.getByTestId("video-player")
+      await expect(player).toHaveAttribute("data-state", "playing", { timeout: 15_000 })
+      const state = () =>
+        app.evaluate(({ BrowserWindow }) => {
+          const win = BrowserWindow.getAllWindows().find((w) =>
+            w.webContents.getURL().includes("media.html"),
+          )
+          if (!win) return null
+          const { width, height } = win.getBounds()
+          return { fullScreen: win.isFullScreen(), width, height }
+        })
+      const before = await state()
+      expect(before?.fullScreen).toBe(true)
+
+      await player.hover()
+      await player.getByRole("button", { name: "Exit full screen" }).click()
+      await expect.poll(async () => (await state())?.fullScreen).toBe(false)
+      const windowed = (await state())!
+      expect(windowed.width).toBeLessThan(before!.width)
+      expect(windowed.height).toBeLessThan(before!.height)
+      // Out of full screen the header is the window's title bar and stays.
+      await expect(media.getByRole("banner")).toHaveAttribute("data-windowed", "true")
+      await expect(player.getByRole("button", { name: "Full screen" })).toBeVisible()
+
+      // The header's button goes back; Esc still closes.
+      await media.getByTestId("media-full-screen").click()
+      await expect.poll(async () => (await state())?.fullScreen).toBe(true)
+      await viewer.press("Escape").catch(() => undefined)
+      await expect
+        .poll(() => app.windows().filter((p) => p.url().includes("media.html")).length)
+        .toBe(0)
+    } finally {
+      await app.close()
+    }
+  })
+
   test("unsupported and damaged videos say why and offer a way out", async () => {
     test.setTimeout(120_000)
     const { app, page } = await launchApp({ PANELYTH_TEST_DIALOG_PATH: copyOfVideos() })

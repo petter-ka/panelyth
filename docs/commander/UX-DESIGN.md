@@ -208,7 +208,10 @@ All dialogs are keyboard-complete: Enter confirms, Esc cancels, Alt+underlined l
 - **Delete (F8 / Shift+F8):** count and size; trash vs permanent stated in the title. Permanent delete shows the
   danger color; where the trash is unavailable, the dialog says so and offers permanent delete.
 - **New folder (F7):** one field; `a/b/c` creates the chain.
-- **Rename in place (Shift+F6, F2):** inline editor on the row; the name is selected without the extension. A
+- **Rename in place (Shift+F6, F2):** inline editor on the row; the name is selected without the extension. Any
+  file can be renamed and its extension changed (the viewer alone keeps a media file's kind, ADR-0026). Enter or
+  leaving the field renames, Esc cancels; a refused name shows why under the field, or in the status bar when the
+  field was left. A
   click on the name of the row that has the cursor, in the active panel, opens it too (as in Explorer and Finder),
   500 ms after the click when no second click followed: a double-click still opens the entry, and a click that
   moves the cursor only moves it. A drag, a key or the wheel cancels it; not in an archive.

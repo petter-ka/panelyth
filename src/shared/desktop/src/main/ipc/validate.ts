@@ -1415,6 +1415,10 @@ export const validators: Record<RendererMethod, Validator> = {
     shape(p, ["direction"]) && isMediaWindowStep(p.direction)
       ? null
       : 'expected { direction: -1 | 0 | 1 | "first" | "last" }',
+  "media.windowFullScreen": (p) =>
+    shape(p, ["fullScreen"]) && typeof p.fullScreen === "boolean"
+      ? null
+      : "expected { fullScreen: boolean }",
   "media.windowCommand": (p) =>
     shape(p, ["command"]) && (MEDIA_WINDOW_COMMANDS as readonly unknown[]).includes(p.command)
       ? null

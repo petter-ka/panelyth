@@ -194,6 +194,46 @@ test.describe("search and sort", () => {
 })
 
 test.describe("workspace", () => {
+  test("the left column (tree and preview) widens up to half the workspace, no further", async () => {
+    test.setTimeout(60_000)
+    const { app, page } = await launchApp({
+      PANELYTH_CONFIG_DIR: mkdtempSync(join(tmpdir(), "panelyth-e2e-config-")),
+      PANELYTH_USER_DATA_DIR: mkdtempSync(join(tmpdir(), "panelyth-e2e-ud-")),
+    })
+    try {
+      await waitForReady(page)
+      await app.evaluate(({ BrowserWindow }) => {
+        const win = BrowserWindow.getAllWindows()[0]!
+        win.unmaximize()
+        win.setContentSize(1920, 1000)
+      })
+      const sep = page.locator("#sidebar-separator")
+      // The separator's left edge, as a share of the workspace it divides.
+      const share = () =>
+        sep.evaluate((el) => {
+          const group = el.parentElement!.getBoundingClientRect()
+          return (el.getBoundingClientRect().left - group.left) / group.width
+        })
+      // The window took its new size (the workspace is wider than the old 480 px cap allows for 50 %).
+      await expect
+        .poll(() => sep.evaluate((el) => el.parentElement!.getBoundingClientRect().width))
+        .toBeGreaterThan(1500)
+      await expect(page.getByTestId("tile").first()).toBeVisible()
+      expect(await share()).toBeLessThan(0.2)
+      const box = (await sep.boundingBox())!
+      const y = box.y + box.height / 2
+      await page.mouse.move(box.x + box.width / 2, y)
+      await page.mouse.down()
+      // Well past the middle of the window.
+      for (let i = 1; i <= 100; i++) await page.mouse.move(box.x + i * 14, y)
+      await page.mouse.up()
+      await expect.poll(share).toBeGreaterThan(0.45)
+      expect(await share()).toBeLessThanOrEqual(0.505)
+    } finally {
+      await app.close()
+    }
+  })
+
   test("pane resize is smooth and the workspace survives a restart", async () => {
     test.setTimeout(120_000)
     const fx = ensureFixture("flat-10k", { files: 10_000, nonMediaEvery: 10 })

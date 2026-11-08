@@ -153,6 +153,9 @@ type (
 	entryRenameParams struct {
 		EntryID int64  `json:"entryId"`
 		Name    string `json:"name"`
+		// App is the app that renames (Electron main): the viewer keeps a
+		// media file's kind, the commander renames freely (ADR-0026).
+		App string `json:"app"`
 	}
 	entryRenameResult struct {
 		Name string `json:"name"`
@@ -449,7 +452,7 @@ func (s *indexService) clipPaste(ctx context.Context, p clipPasteParams) (jobs.S
 }
 
 func (s *indexService) entryRename(ctx context.Context, p entryRenameParams) (entryRenameResult, error) {
-	name, err := s.jobs.RenameOne(ctx, p.EntryID, p.Name)
+	name, err := s.jobs.RenameOne(ctx, p.EntryID, p.Name, p.App != "commander")
 	if err == nil {
 		return entryRenameResult{Name: name}, nil
 	}

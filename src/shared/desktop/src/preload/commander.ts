@@ -501,6 +501,7 @@ const api: CommanderApi = {
     windowStep: (direction) => invoke("media.windowStep", { direction }),
     windowCommand: (command) => invoke("media.windowCommand", { command }),
     windowReveal: () => invoke("media.windowReveal", {}),
+    windowFullScreen: (fullScreen) => invoke("media.windowFullScreen", { fullScreen }),
   },
   preview: {
     ensure: ({ lane, epoch, profile, items, force }) =>

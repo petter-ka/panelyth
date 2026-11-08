@@ -873,6 +873,18 @@ export interface MediaWindowCommandResult {
   done: boolean
 }
 
+/**
+ * media.windowFullScreen (the media window): false leaves full screen for a
+ * smaller window over the app, true goes back. The answer is the state now.
+ */
+export interface MediaWindowFullScreenParams {
+  fullScreen: boolean
+}
+
+export interface MediaWindowFullScreenResult {
+  fullScreen: boolean
+}
+
 export interface Properties {
   id: number
   kind: EntryKind
@@ -2048,7 +2060,11 @@ export const MAX_ATTR_TIME_MS = Date.UTC(9999, 11, 31, 23, 59, 59)
 
 export interface EntryRenameParams {
   entryId: number
-  /** The full new name. Files must keep a supported extension of the same kind. */
+  /**
+   * The full new name. In the viewer a file must keep a supported extension of
+   * the same kind; the commander may give any valid name (main adds the
+   * calling app, ADR-0026).
+   */
   name: string
 }
 
@@ -2729,6 +2745,11 @@ export interface MainMethodMap {
    * its picture in the viewer, at its folder. The window closes.
    */
   "media.windowReveal": { params: EmptyParams; result: OkResult }
+  /** The media window (commander profile): full screen, or a smaller window over the app. */
+  "media.windowFullScreen": {
+    params: MediaWindowFullScreenParams
+    result: MediaWindowFullScreenResult
+  }
   /** Viewer, once at start: the folder and entry the app was started to show, if any. */
   "app.openRequest": { params: EmptyParams; result: OpenRequestResult }
   /** Home, Desktop, Documents, Downloads, Pictures, Videos (those that exist). */
@@ -2919,6 +2940,7 @@ export const COMMANDER_ONLY_METHODS = [
   "media.windowStep",
   "media.windowCommand",
   "media.windowReveal",
+  "media.windowFullScreen",
   "compare.openWindow",
   "shell.edit",
   "fs.mkfile",
@@ -3085,6 +3107,7 @@ export const COMMANDER_METHODS = [
   "media.windowCommand",
   "media.windowAnswer",
   "media.windowReveal",
+  "media.windowFullScreen",
   // ADR-0048: compare by content and synchronize in a window of their own.
   "compare.openWindow",
   "preview.ensure",
@@ -3212,6 +3235,7 @@ export const MAIN_METHODS = [
   "media.windowCommand",
   "media.windowAnswer",
   "media.windowReveal",
+  "media.windowFullScreen",
   "compare.openWindow",
   "file.open",
   "document.open",

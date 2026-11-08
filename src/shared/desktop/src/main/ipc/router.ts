@@ -356,6 +356,8 @@ const CALLER_APP_METHODS: ReadonlySet<string> = new Set([
   "jobs.start",
   "clip.paste",
   "jobs.list",
+  // The viewer keeps a media file's kind on rename; the commander renames freely (ADR-0026).
+  "entry.rename",
 ])
 
 /**

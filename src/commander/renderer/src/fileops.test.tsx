@@ -337,6 +337,39 @@ describe("delete, new folder and rename", () => {
     })
     expect(fake.api.files.rename).toHaveBeenCalledTimes(2)
   })
+
+  it("leaving the field renames; a refused name closes it with the reason in the status bar", async () => {
+    const fake = await start()
+    await cursorTo(7) // photo.jpg
+    await key("left", { key: "F2" })
+    let field = (await screen.findByTestId("rename-field")) as HTMLInputElement
+    fireEvent.change(field, { target: { value: "beach.jpg" } })
+    await act(async () => {
+      fireEvent.blur(field)
+    })
+    expect(fake.api.files.rename).toHaveBeenLastCalledWith(10_000_100, "beach.jpg")
+    expect(screen.queryByTestId("rename-field")).toBeNull()
+    expect(fake.api.files.rename).toHaveBeenCalledTimes(1)
+
+    // A refused name: Enter shows why by the row (not clipped by it) and keeps the editor.
+    await key("left", { key: "F2" })
+    field = (await screen.findByTestId("rename-field")) as HTMLInputElement
+    fireEvent.change(field, { target: { value: "file000001.txt" } })
+    await act(async () => {
+      fireEvent.keyDown(field, { key: "Enter" })
+    })
+    const alert = screen.getByRole("alert")
+    expect(alert).toHaveTextContent("already exists")
+    expect(grid("left").contains(alert)).toBe(false)
+    expect(field).toHaveAttribute("aria-invalid", "true")
+    // Leaving then closes it and says why.
+    await act(async () => {
+      fireEvent.blur(field)
+    })
+    expect(screen.queryByTestId("rename-field")).toBeNull()
+    expect(screen.getByTestId("files-notice")).toHaveTextContent("already exists")
+    expect(fake.api.files.rename).toHaveBeenCalledTimes(3)
+  })
 })
 
 describe("clipboard", () => {

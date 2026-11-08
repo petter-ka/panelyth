@@ -55,6 +55,12 @@ interface VideoPlayerProps {
   appFullscreen?: boolean
   /** Leaves the app-level fullscreen surface. */
   onExitFullscreen?: () => void
+  /**
+   * The host owns full screen (the media window, which leaves it for a
+   * smaller window): the button and F go back with this out of full screen,
+   * and Esc is left to the host.
+   */
+  onEnterFullscreen?: () => void
   /** Replaces the double-click fullscreen toggle (the media window closes instead). */
   onDoubleClick?: () => void
   /** Preview lane for Try again (the viewer's preview pane by default). */
@@ -85,6 +91,7 @@ export function VideoPlayer({
   playFullscreen = false,
   appFullscreen = false,
   onExitFullscreen,
+  onEnterFullscreen,
   onDoubleClick,
   lane = "pane",
   onIdleChange,
@@ -259,6 +266,10 @@ export function VideoPlayer({
       } else onExitFullscreen?.()
       return
     }
+    if (onEnterFullscreen && !document.fullscreenElement) {
+      onEnterFullscreen()
+      return
+    }
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined)
     else void rootRef.current?.requestFullscreen().catch(() => undefined)
   }
@@ -282,7 +293,7 @@ export function VideoPlayer({
       l: () => setLoop(!loop),
       f: toggleFullscreen,
       // Electron leaves leaving HTML full screen to the page.
-      ...(fullscreen || appFullscreen ? { Escape: toggleFullscreen } : {}),
+      ...((fullscreen || appFullscreen) && !onEnterFullscreen ? { Escape: toggleFullscreen } : {}),
     }
     const action = keys[e.key]
     if (!action || e.ctrlKey || e.metaKey || e.altKey) return

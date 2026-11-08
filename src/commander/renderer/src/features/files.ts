@@ -626,35 +626,50 @@ export function startRename(side: Side): void {
 
 export const cancelRename = (): void => set({ rename: null })
 
-export async function commitRename(name: string): Promise<boolean> {
+/** A rename on its way to Go: Enter and leaving the field never send it twice. */
+let renaming = false
+
+/**
+ * Enter, or leaving the field (`leaving`, as in Explorer, Finder and Total
+ * Commander): renames the entry. A refused name keeps the editor open with
+ * the reason by the row; when the user has left, the editor closes and the
+ * reason shows as a notice instead.
+ */
+export async function commitRename(name: string, leaving = false): Promise<boolean> {
   const r = get().rename
-  if (!r) return false
+  if (!r || renaming) return false
   const next = name.trim()
   if (next === "" || next === r.name) {
     set({ rename: null })
     return true
   }
-  if (inRemote(r.side)) {
-    try {
-      await bridge.remoteRename(r.entryId, next)
-      set({ rename: null })
-      // On a server the renamed entry is a new one: the cursor finds it by name.
-      void focusName(r.side, next)
-      return true
-    } catch (error) {
-      set({ rename: { ...r, error: remoteErrorText(error) } })
-      return false
-    }
-  }
+  const remote = inRemote(r.side)
+  renaming = true
   try {
-    await bridge.rename(r.entryId, next)
-    set({ rename: null })
-    // The entry keeps its id; the cursor follows it to its new place.
-    void focusEntry(r.side, r.entryId)
+    if (remote) {
+      await bridge.remoteRename(r.entryId, next)
+      if (get().rename?.entryId === r.entryId) set({ rename: null })
+      // On a server the renamed entry is a new one: the cursor finds it by name.
+      if (!leaving) void focusName(r.side, next)
+    } else {
+      await bridge.rename(r.entryId, next)
+      if (get().rename?.entryId === r.entryId) set({ rename: null })
+      // The entry keeps its id; the cursor follows it to its new place (unless
+      // the user left for another place: a click on another row keeps it there).
+      if (!leaving) void focusEntry(r.side, r.entryId)
+    }
     return true
   } catch (error) {
-    set({ rename: { ...r, error: errorText(error) } })
+    const reason = remote ? remoteErrorText(error) : errorText(error)
+    if (leaving) {
+      if (get().rename?.entryId === r.entryId) set({ rename: null })
+      notice(reason)
+    } else if (get().rename?.entryId === r.entryId) {
+      set({ rename: { ...r, error: reason } })
+    }
     return false
+  } finally {
+    renaming = false
   }
 }
 
@@ -823,5 +838,6 @@ export const activeSide = (): Side => usePanelsStore.getState().active
 /** Tests. */
 export function resetFiles(): void {
   if (noticeTimer) clearTimeout(noticeTimer)
+  renaming = false
   set({ copy: null, remove: null, mkdir: null, rename: null, notice: null })
 }

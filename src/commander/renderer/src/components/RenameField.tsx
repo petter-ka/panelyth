@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 import { cancelRename, commitRename, useFilesStore } from "../features/files"
 import type { Side } from "../features/panels"
 import { t } from "@panelyth/i18n"
@@ -10,12 +11,16 @@ export const useRenaming = (side: Side, row: number): boolean =>
 /**
  * F2 / Shift+F6 (Stage C04, CFR-12): the inline editor on the cursor row.
  * The name is selected without its extension; Enter renames (Go validates
- * the name), Esc or leaving the field cancels. Keys never reach the panel.
+ * the name), Esc cancels, and leaving the field renames too (as in Explorer,
+ * Finder and Total Commander). Keys never reach the panel.
  */
 export function RenameField({ onDone }: { onDone(): void }) {
   const r = useFilesStore((s) => s.rename)
   const [value, setValue] = useState(r?.name ?? "")
   const input = useRef<HTMLInputElement>(null)
+  const error = r?.error ?? null
+  // Where the reason shows: below the field, outside the row (rows and cells clip).
+  const [at, setAt] = useState<{ left: number; top: number } | null>(null)
 
   useEffect(() => {
     const el = input.current
@@ -27,13 +32,18 @@ export function RenameField({ onDone }: { onDone(): void }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useLayoutEffect(() => {
+    const box = error ? input.current?.getBoundingClientRect() : undefined
+    setAt(box ? { left: box.left, top: box.bottom + 2 } : null)
+  }, [error])
+
   if (!r) return null
   return (
     <span className="relative flex min-w-0 flex-1 items-center">
       <input
         ref={input}
         aria-label={t("New name")}
-        aria-invalid={r.error !== null}
+        aria-invalid={error !== null}
         value={value}
         spellCheck={false}
         data-testid="rename-field"
@@ -51,18 +61,24 @@ export function RenameField({ onDone }: { onDone(): void }) {
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onBlur={() => {
-          if (useFilesStore.getState().rename?.error === null) cancelRename()
+          // Switching to another window keeps the edit; focus comes back to it.
+          if (!document.hasFocus()) return
+          void commitRename(value, true)
         }}
-        className="h-[calc(100%-2px)] w-full rounded-sm border border-accent bg-canvas px-1 text-text outline-none"
+        className="h-[calc(100%-2px)] w-full rounded-sm border border-accent bg-canvas px-1 text-text outline-none aria-[invalid=true]:border-danger"
       />
-      {r.error && (
-        <span
-          role="alert"
-          className="glass-chip absolute top-full left-0 z-10 mt-0.5 rounded border border-border bg-raised px-2 py-1 text-danger shadow"
-        >
-          {r.error}
-        </span>
-      )}
+      {error &&
+        at &&
+        createPortal(
+          <span
+            role="alert"
+            className="glass-chip fixed z-50 max-w-[min(32rem,calc(100vw-2rem))] rounded border border-border bg-raised px-2 py-1 text-danger shadow"
+            style={{ left: at.left, top: at.top }}
+          >
+            {error}
+          </span>,
+          document.body,
+        )}
     </span>
   )
 }

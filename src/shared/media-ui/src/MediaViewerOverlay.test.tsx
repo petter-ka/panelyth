@@ -97,3 +97,41 @@ describe("MediaViewerOverlay keys through the folder", () => {
     expect(onJump).not.toHaveBeenCalled()
   })
 })
+
+describe("MediaViewerOverlay full screen of a window of its own", () => {
+  const image = { id: 2, kind: "image", name: "a.jpg" } as ContentItem
+
+  it("offers no full-screen button where the surface is no window of its own", () => {
+    render(<MediaViewerOverlay item={image} onClose={vi.fn()} />)
+    expect(screen.queryByTestId("media-full-screen")).toBeNull()
+  })
+
+  it("the button and F leave full screen without closing; out of it the header stays and moves the window", () => {
+    const onClose = vi.fn()
+    const onFullScreen = vi.fn()
+    const { rerender } = render(
+      <MediaViewerOverlay item={image} onClose={onClose} fullScreen onFullScreen={onFullScreen} />,
+    )
+    fireEvent.click(screen.getByRole("button", { name: "Exit full screen" }))
+    expect(onFullScreen).toHaveBeenLastCalledWith(false)
+    fireEvent.keyDown(screen.getByTestId("media-viewer"), { key: "f" })
+    expect(onFullScreen).toHaveBeenCalledTimes(2)
+    expect(onClose).not.toHaveBeenCalled()
+    expect(screen.getByRole("banner")).not.toHaveAttribute("data-windowed")
+
+    rerender(
+      <MediaViewerOverlay
+        item={image}
+        onClose={onClose}
+        fullScreen={false}
+        onFullScreen={onFullScreen}
+      />,
+    )
+    expect(screen.getByRole("banner")).toHaveAttribute("data-windowed", "true")
+    fireEvent.click(screen.getByRole("button", { name: "Full screen" }))
+    expect(onFullScreen).toHaveBeenLastCalledWith(true)
+    // Esc still closes.
+    fireEvent.keyDown(screen.getByTestId("media-viewer"), { key: "Escape" })
+    expect(onClose).toHaveBeenCalledTimes(1)
+  })
+})

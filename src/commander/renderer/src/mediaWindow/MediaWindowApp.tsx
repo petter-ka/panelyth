@@ -64,6 +64,14 @@ export function MediaWindowApp() {
   const [item, setItem] = useState<ContentItem | null>(null)
   const [failed, setFailed] = useState(false)
   const [wheelMode, setWheelMode] = useState<"zoom" | "previousNext">("zoom")
+  // The window opens full screen; the header button (and F) makes it a smaller window over the app.
+  const [fullScreen, setFullScreen] = useState(true)
+  const onFullScreen = useCallback((want: boolean): void => {
+    bridge
+      .mediaWindowFullScreen(want)
+      .then(setFullScreen)
+      .catch(() => undefined)
+  }, [])
   const [confirming, setConfirming] = useState<"trash" | "delete" | null>(null)
   const confirmTrash = useVideoPrefs((s) => s.confirmDelete)
   const [note, setNote] = useState<string | null>(null)
@@ -193,6 +201,8 @@ export function MediaWindowApp() {
         onStep={(direction) => void step(direction)}
         onJump={(to) => void step(to)}
         onCommand={onCommand}
+        fullScreen={fullScreen}
+        onFullScreen={onFullScreen}
         {...(alone
           ? {
               // Main opens the viewer on this file's folder and closes this window.

@@ -8,6 +8,7 @@ import { requestFit, requestMedia } from "./viewerImages"
 import { t } from "@panelyth/i18n"
 import { wheelNavigationStep } from "./wheelNavigation"
 import { mediaCommandOf } from "./mediaCommands"
+import { ExitFullscreenIcon, FullscreenIcon } from "./icons"
 
 export interface MediaViewerOverlayProps {
   item: ContentItem
@@ -34,6 +35,14 @@ export interface MediaViewerOverlayProps {
    * to the app, which carries them out on the file shown.
    */
   onCommand?: (command: MediaWindowCommand) => void
+  /**
+   * The surface is a window of its own (the media window): whether it fills
+   * the screen. With onFullScreen, a header button (and F) leaves full screen
+   * for a smaller window and goes back; Esc and Close still close. Out of
+   * full screen the header stays and moves the window.
+   */
+  fullScreen?: boolean
+  onFullScreen?: (fullScreen: boolean) => void
 }
 
 const isTextField = (target: EventTarget | null): boolean =>
@@ -75,7 +84,10 @@ export function MediaViewerOverlay({
   onEdit,
   onShowInApp,
   onCommand,
+  fullScreen = true,
+  onFullScreen,
 }: MediaViewerOverlayProps) {
+  const windowed = onFullScreen !== undefined && !fullScreen
   const onDoubleClick = onShowInApp ?? (closeOnDoubleClick ? onClose : undefined)
   const root = useRef<HTMLDivElement>(null)
   const imageController = useRef<ImageViewerController>(null)
@@ -90,7 +102,8 @@ export function MediaViewerOverlay({
   const autoHideImage = useVideoPrefs((s) => s.autoHideImage)
   const overHeader = useRef(false)
   const imageIdle = useIdle(isImage && autoHideImage, overHeader)
-  const headerHidden = isVideo ? chromeHidden : imageIdle
+  // Out of full screen the header is the window's title bar: it stays.
+  const headerHidden = windowed ? false : isVideo ? chromeHidden : imageIdle
   const main = useRef<HTMLElement>(null)
   const wheelRef = useRef({ wheelMode, onStep })
   useEffect(() => {
@@ -137,6 +150,13 @@ export function MediaViewerOverlay({
       return
     }
     if (event.ctrlKey || event.metaKey || event.altKey) return
+    // F, as on the player: full screen or the smaller window.
+    if (onFullScreen && (event.key === "f" || event.key === "F") && !isTextField(event.target)) {
+      event.preventDefault()
+      event.stopPropagation()
+      onFullScreen(!fullScreen)
+      return
+    }
     // A field or a slider (the player's seek bar) keeps Page Up / Down, Home and End.
     const ownKeys =
       isTextField(event.target) ||
@@ -185,7 +205,8 @@ export function MediaViewerOverlay({
         onPointerEnter={() => (overHeader.current = true)}
         onPointerLeave={() => (overHeader.current = false)}
         // It floats over the picture or video, so neither changes size when it hides.
-        className={`absolute inset-x-0 top-0 z-20 flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome/80 px-3 backdrop-blur-md transition-opacity duration-200 motion-reduce:transition-none ${headerHidden ? "pointer-events-none opacity-0" : "opacity-100"}`}
+        data-windowed={windowed || undefined}
+        className={`media-header absolute inset-x-0 top-0 z-20 flex h-11 shrink-0 items-center gap-2 border-b border-border bg-chrome/80 px-3 backdrop-blur-md transition-opacity duration-200 motion-reduce:transition-none ${headerHidden ? "pointer-events-none opacity-0" : "opacity-100"}`}
       >
         <button
           type="button"
@@ -260,6 +281,18 @@ export function MediaViewerOverlay({
             {t("Open in Panelyth")}
           </button>
         )}
+        {onFullScreen && (
+          <button
+            type="button"
+            className="grid size-7 place-items-center rounded-md text-text hover:bg-raised"
+            aria-label={fullScreen ? t("Exit full screen") : t("Full screen")}
+            title={fullScreen ? t("Exit full screen (F)") : t("Full screen (F)")}
+            onClick={() => onFullScreen(!fullScreen)}
+            data-testid="media-full-screen"
+          >
+            {fullScreen ? <ExitFullscreenIcon /> : <FullscreenIcon />}
+          </button>
+        )}
         <button
           type="button"
           className="h-7 rounded-md border border-border bg-raised px-2.5 text-xs hover:border-muted"
@@ -289,9 +322,14 @@ export function MediaViewerOverlay({
             name={item.name}
             placeholder={placeholder}
             playToken={playToken}
-            playFullscreen
-            appFullscreen
-            onExitFullscreen={onClose}
+            playFullscreen={!windowed}
+            appFullscreen={!windowed}
+            {...(onFullScreen
+              ? {
+                  onExitFullscreen: () => onFullScreen(false),
+                  onEnterFullscreen: () => onFullScreen(true),
+                }
+              : { onExitFullscreen: onClose })}
             lane={lane}
             onIdleChange={setChromeHidden}
             chromeHover={overHeader}

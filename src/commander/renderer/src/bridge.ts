@@ -381,6 +381,9 @@ export const bridge = {
   mediaWindowReveal: async (): Promise<void> => {
     await unwrap(() => api().media.windowReveal())
   },
+  /** The media window: full screen, or a smaller window over the app; the answer is the state now. */
+  mediaWindowFullScreen: async (fullScreen: boolean): Promise<boolean> =>
+    (await unwrap(() => api().media.windowFullScreen(fullScreen))).fullScreen,
   /** The opener's reply to a mediaWindow.step or mediaWindow.command event. */
   mediaWindowAnswer: async (
     requestId: number,

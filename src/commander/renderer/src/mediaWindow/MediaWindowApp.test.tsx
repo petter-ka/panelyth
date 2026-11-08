@@ -5,12 +5,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 const step = vi.fn()
 const reveal = vi.fn(async () => undefined)
 const command = vi.fn()
+const fullScreen = vi.fn(async (want: boolean) => want)
 const settings: Record<string, unknown> = {}
 vi.mock("../bridge", () => ({
   bridge: {
     mediaWindowStep: (d: number) => step(d),
     mediaWindowReveal: () => reveal(),
     mediaWindowCommand: (c: string) => command(c),
+    mediaWindowFullScreen: (want: boolean) => fullScreen(want),
     libraryNow: async () => ({ settings }),
   },
 }))
@@ -27,15 +29,19 @@ vi.mock("@panelyth/media-ui", () => ({
     onEdit?: () => void
     onShowInApp?: () => void
     onCommand?: (c: string) => void
+    fullScreen?: boolean
+    onFullScreen?: (want: boolean) => void
   }) => (
     <div
       role="dialog"
       aria-label={props.item.name}
+      data-full-screen={props.fullScreen}
       data-wheel={props.wheelMode}
       data-close={props.closeOnDoubleClick === true}
       data-edit={props.onEdit !== undefined}
     >
       <button onClick={() => props.onStep(1)}>next</button>
+      <button onClick={() => props.onFullScreen?.(!props.fullScreen)}>full screen</button>
       <button onClick={() => props.onJump("last")}>last</button>
       {props.onShowInApp && <button onClick={props.onShowInApp}>show in app</button>}
       {props.onCommand &&
@@ -73,6 +79,20 @@ describe("MediaWindowApp", () => {
     expect(dialog).toHaveAttribute("data-edit", "false")
     fireEvent.click(screen.getByText("show in app"))
     expect(reveal).toHaveBeenCalledTimes(1)
+  })
+
+  it("opens full screen and asks main to leave it for a smaller window, and to go back", async () => {
+    fullScreen.mockClear()
+    step.mockResolvedValueOnce(item(1, "a.jpg"))
+    render(<MediaWindowApp />)
+    const dialog = await screen.findByRole("dialog", { name: "a.jpg" })
+    expect(dialog).toHaveAttribute("data-full-screen", "true")
+    fireEvent.click(screen.getByText("full screen"))
+    expect(fullScreen).toHaveBeenLastCalledWith(false)
+    await waitFor(() => expect(dialog).toHaveAttribute("data-full-screen", "false"))
+    fireEvent.click(screen.getByText("full screen"))
+    expect(fullScreen).toHaveBeenLastCalledWith(true)
+    await waitFor(() => expect(dialog).toHaveAttribute("data-full-screen", "true"))
   })
 
   it("opened from an app, it offers no way into the app (it is in front of it)", async () => {

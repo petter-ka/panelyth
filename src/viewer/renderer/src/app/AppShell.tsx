@@ -184,7 +184,8 @@ export function AppShell() {
             panelRef={sidebar}
             defaultSize={240}
             minSize={180}
-            maxSize={480}
+            // Up to half the workspace: a wide window gives the tree and preview room.
+            maxSize="50%"
             collapsible
             groupResizeBehavior="preserve-pixel-size"
           >

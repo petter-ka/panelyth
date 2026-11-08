@@ -116,6 +116,7 @@ const mainHandlers = (): MainHandlers => ({
   "media.windowCommand": vi.fn(async () => ({ item: null, done: false })),
   "media.windowAnswer": vi.fn(async () => ({ ok: true })),
   "media.windowReveal": vi.fn(async () => ({ ok: true })),
+  "media.windowFullScreen": vi.fn(() => ({ fullScreen: false })),
   "app.openRequest": vi.fn(() => ({ request: null })),
   "media.open": vi.fn(async (_e, p: { entryId: number }) => ({
     url: `panelyth-media://m/${String(p.entryId).padStart(32, "0")}`,
@@ -587,6 +588,8 @@ describe("invoke router", () => {
       ["media.windowStep", { direction: "last" }],
       ["media.windowCommand", { command: "trash" }],
       ["media.windowCommand", { command: "paste" }],
+      ["media.windowFullScreen", { fullScreen: false }],
+      ["media.windowFullScreen", { fullScreen: true }],
     ] as const) {
       await expect(handler(commander, m, p), m).resolves.toMatchObject({ ok: true })
       expect(main[m]).toHaveBeenLastCalledWith(commander, p, "commander")
@@ -621,6 +624,8 @@ describe("invoke router", () => {
     expect(asked).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     const commanded = await handler(ok, "media.windowCommand", { command: "copy" })
     expect(commanded).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
+    const sized = await handler(ok, "media.windowFullScreen", { fullScreen: false })
+    expect(sized).toMatchObject({ ok: false, e: { code: "METHOD_NOT_FOUND" } })
     await expect(
       handler(ok, "media.windowAnswer", { requestId: 1, item: null }),
     ).resolves.toMatchObject({ ok: true })
@@ -672,6 +677,8 @@ describe("invoke router", () => {
       ["media.windowCommand", { command: "format" }],
       ["media.windowCommand", { command: "trash", entryId: 3 }],
       ["media.windowAnswer", { requestId: 1, item: { id: 1 } }],
+      ["media.windowFullScreen", { fullScreen: "no" }],
+      ["media.windowFullScreen", { fullScreen: false, width: 99999 }],
       ["fs.mkfile", { parentDirId: 2, name: "" }],
       ["fs.mkfile", { parentDirId: 2, name: "a\u0000b" }],
       ["fs.mkfile", { parentDirId: 2 }],
@@ -1331,6 +1338,11 @@ describe("invoke router", () => {
       ...descriptor,
       app: "viewer",
     })
+    // A rename names its app: the viewer keeps a media file's kind, the commander renames freely.
+    await handler(commander, "entry.rename", { entryId: 7, name: "notes.md" })
+    expect(sent("entry.rename")).toEqual({ entryId: 7, name: "notes.md", app: "commander" })
+    await handler(ok, "entry.rename", { entryId: 7, name: "beach.jpg" })
+    expect(sent("entry.rename")).toEqual({ entryId: 7, name: "beach.jpg", app: "viewer" })
 
     // Nothing is added to other calls.
     const page = { queryId: 1, offset: 0, limit: 256, thumbProfile: null }

@@ -197,6 +197,25 @@ the question and Esc, Shift+Delete showing the neighbour, deleting the only file
 ends); once against the real Windows clipboard, which held the picture while the window was open and after the app
 had ended. Trash is covered by unit tests only: an E2E run leaves the recycle bin alone. Not run: macOS and Linux.
 
+## Amendment: out of full screen (2026-11-08, owner request)
+
+The exit-full-screen button of a media window closed it, exactly as Esc and Close do. It now leaves full screen:
+the window becomes a **smaller window over the app** (still the shell window's child), and the same button (or F)
+takes it back to full screen. Esc, Close and a double-click still end the window.
+
+- **One method, main decides the size.** `media.windowFullScreen { fullScreen }` → `{ fullScreen }` (commander
+  profile, no size or position in it). The first time out, main makes the window 70 % of its screen's work area,
+  centred, at least 480 × 320, after `leave-full-screen` (macOS animates the change). Later it keeps the size and
+  place the user gave it.
+- **The page.** A picture gets the button in the header, beside Close; a video's player button does the same. Out
+  of full screen the header stays, as the window's title bar: it drags the window (`app-region`), its buttons stay
+  buttons, and the player's controls no longer hide on their own.
+- **The in-app overlay** (commander, no window of its own) is unchanged: there the button still leaves the surface.
+
+Verified: unit tests (`mediaWindow.test.ts` bounds and toggling, the router's allowlist and validation, the
+overlay, `MediaWindowApp`) and E2E `media.spec.ts` "the media window's exit-full-screen button makes it a smaller
+window" (Windows).
+
 ## Amendment: shell scripts on Enter (2026-11-05, owner request)
 
 The text list includes scripts, so since this ADR Enter on a `.bat` showed it as text and never reached "Run programs

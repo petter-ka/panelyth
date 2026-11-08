@@ -1085,6 +1085,10 @@ async function boot(): Promise<void> {
     // The media window's file command (copy, cut, paste, trash, delete); the opener carries it out.
     "media.windowCommand": async (event, { command }) =>
       (await mediaWindows?.command(event.sender, command)) ?? { item: null, done: false },
+    // The media window leaves full screen for a smaller window over the app, or goes back.
+    "media.windowFullScreen": (event, { fullScreen }) => ({
+      fullScreen: mediaWindows?.setFullScreen(event.sender, fullScreen) ?? true,
+    }),
     "media.windowAnswer": (event, { requestId, item, done }) => {
       mediaWindows?.answer(event.sender, requestId, item, done ?? false)
       return { ok: true }
